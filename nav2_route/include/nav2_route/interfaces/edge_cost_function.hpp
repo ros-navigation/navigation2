@@ -65,8 +65,7 @@ public:
    * start/end nodes and their associated metadata and actions
    */
   virtual bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & start_pose, const geometry_msgs::msg::PoseStamped & goal_pose,
-    const RouteData & route_data,
+    const EdgePtr edge, const RouteData & route_data,
     const EdgeType & edge_type, float & cost) = 0;
 
   /**

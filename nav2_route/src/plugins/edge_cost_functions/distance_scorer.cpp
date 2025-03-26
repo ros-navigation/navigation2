@@ -41,8 +41,6 @@ void DistanceScorer::configure(
 
 bool DistanceScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & /* start_pose */, 
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */, 
   const RouteData & /* route_data */,
   const EdgeType & /* edge_type */, float & cost)
 {

@@ -68,8 +68,6 @@ public:
   Route findRoute(
     Graph & graph, unsigned int start_index, unsigned int goal_index,
     const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & start_pose,
-    const geometry_msgs::msg::PoseStamped & goal_pose,
     const RouteData & route_data);
 
 protected:
@@ -89,8 +87,6 @@ protected:
   void findShortestGraphTraversal(
     Graph & graph, const NodePtr start_node, const NodePtr goal_node,
     const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & start_pose,
-    const geometry_msgs::msg::PoseStamped & goal_pose,
     const RouteData & route_data);
 
   /**
@@ -102,7 +98,7 @@ protected:
    */
   inline bool getTraversalCost(
     const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & start, const geometry_msgs::msg::PoseStamped & goal, const RouteData & route_data);
+    const RouteData & route_data);
 
   /**
    * @brief Gets the next node in the priority queue for search

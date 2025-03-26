@@ -48,9 +48,7 @@ void TimeScorer::configure(
 }
 
 bool TimeScorer::score(
-  const EdgePtr edge, 
-  const geometry_msgs::msg::PoseStamped & /* start_pose */, 
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */, 
+  const EdgePtr edge,  
   const RouteData & /* route_data */,
   const EdgeType & /* edge_type */, float & cost)
 {
