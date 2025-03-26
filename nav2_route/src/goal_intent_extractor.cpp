@@ -195,7 +195,7 @@ Route GoalIntentExtractor::pruneStartandGoal(
   return pruned_route;
 }
 
-geometry_msgs::msgs::PoseStamped  GoalIntentExtractor::getStart()
+geometry_msgs::msg::PoseStamped GoalIntentExtractor::getStart()
 {
   return start_;
 }
