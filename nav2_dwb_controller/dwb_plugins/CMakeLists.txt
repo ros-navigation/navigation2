@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(dwb_plugins)
 
 find_package(ament_cmake REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -33,7 +32,6 @@ ament_target_dependencies(standard_traj_generator
   nav_2d_msgs
   rclcpp
   rcl_interfaces
-  behaviortree_cpp
   nav_2d_utils
   pluginlib
 )

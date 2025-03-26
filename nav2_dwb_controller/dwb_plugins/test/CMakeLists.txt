@@ -10,7 +10,6 @@ ament_target_dependencies(twist_gen_test
   nav_2d_msgs
   rclcpp
   rclcpp_lifecycle
-  behaviortree_cpp
 )
 target_link_libraries(twist_gen_test
   standard_traj_generator
@@ -20,7 +19,6 @@ ament_add_gtest(kinematic_parameters_test kinematic_parameters_test.cpp)
 ament_target_dependencies(twist_gen_test
   rclcpp
   rcl_interfaces
-  behaviortree_cpp
 )
 target_link_libraries(kinematic_parameters_test
   standard_traj_generator
@@ -31,7 +29,6 @@ ament_target_dependencies(speed_limit_test
   nav2_costmap_2d
   nav2_util
   rclcpp
-  behaviortree_cpp
 )
 target_link_libraries(speed_limit_test
   standard_traj_generator
