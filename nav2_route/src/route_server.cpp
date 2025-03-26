@@ -215,9 +215,11 @@ Route RouteServer::findRoute(
     route.route_cost = 0.0;
     route.start_node = &graph_.at(start_route);
   } else {
+    //populate struct with start id, goal id, start pose, goal pose, and whether we are using pose
+
     // Compute the route via graph-search, returns a node-edge sequence
     route = route_planner_->findRoute(
-      graph_, start_route, end_route, rerouting_info.blocked_ids, goal_intent_extractor->getStart(),
+      graph_, start_route, end_route, rerouting_info.blocked_ids, goal_intent_extractor_->getStart(),
       goal->goal);
   }
 
