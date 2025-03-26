@@ -80,13 +80,9 @@ public:
    */
   std::string getName() override;
 
-  geometry_msgs::msg::PoseStamped getRobotPose();
-
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("StartPoseOrientationScorer")};
   std::string name_;
-  std::string route_frame_;
-  std::string base_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   double orientation_tolerance_;
   float orientation_weight_;

@@ -42,8 +42,6 @@ void StartPoseOrientationScorer::configure(
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
   orientation_weight_ =
     static_cast<float>(node->get_parameter(getName() + ".orientation_weight").as_double());
-  route_frame_ = node->get_parameter("route_frame").as_string();
-  base_frame_ = node->get_parameter("base_frame").as_string();
   use_orientation_threshold_ =
     node->get_parameter(getName() + ".use_orientation_threshold").as_bool();
 
@@ -73,16 +71,6 @@ bool StartPoseOrientationScorer::score(
     cost = orientation_weight_ * static_cast<float>(d_yaw);
   }
   return true;
-}
-
-geometry_msgs::msg::PoseStamped StartPoseOrientationScorer::getRobotPose()
-{
-  geometry_msgs::msg::PoseStamped pose;
-
-  if (!nav2_util::getCurrentPose(pose, *tf_buffer_, route_frame_, base_frame_)) {
-    throw nav2_core::RouteTFError("Unable to get robot pose in route frame: " + route_frame_);
-  }
-  return pose;
 }
 
 std::string StartPoseOrientationScorer::getName()
