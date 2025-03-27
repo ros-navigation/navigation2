@@ -178,7 +178,7 @@ protected:
     std::shared_ptr<ComputeAndTrackRoute::Result>/*result*/,
     const Route & /*route*/,
     const nav_msgs::msg::Path & /*path*/,
-    const rclcpp::Duration & /*planning_duration*/) {}
+    const rclcpp::Duration & /*planning_duration*/);
 
   /**
    * @brief The service callback to set a new route graph
@@ -218,7 +218,7 @@ protected:
   std::shared_ptr<PathConverter> path_converter_;
   std::shared_ptr<GoalIntentExtractor> goal_intent_extractor_;
 
-  // Data
+  // State Data
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
   std::string route_frame_, base_frame_;

@@ -199,7 +199,7 @@ TEST(RouteServerTest, test_minor_utils)
   path.poses.resize(406);
   server->populateActionResultWrapper(result, route, path, dur);
   EXPECT_EQ(result->path.poses.size(), path.poses.size());
-  EXPECT_EQ(result->route.edge_ids.size(), route.edges.size());
+  EXPECT_EQ(result->route.edges.size(), route.edges.size());
 
   server.reset();
 }
@@ -254,7 +254,7 @@ TEST(RouteServerTest, test_complete_action_api)
   auto result_future = compute_client->async_get_result(goal_handle);
   rclcpp::spin_until_future_complete(node2, result_future);
   auto result = result_future.get().result;
-  EXPECT_EQ(result->route.edge_ids.size(), 0u);
+  EXPECT_EQ(result->route.edges.size(), 0u);
   EXPECT_NEAR(result->route.route_cost, 0.0, 1e-6);
   EXPECT_EQ(result->route.nodes[0].nodeid, 1u);
 

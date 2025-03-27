@@ -168,6 +168,7 @@ inline nav2_msgs::msg::Route toMsg(
   msg.route_cost = route.route_cost;
 
   nav2_msgs::msg::RouteNode route_node;
+  nav2_msgs::msg::RouteEdge route_edge;
   route_node.nodeid = route.start_node->nodeid;
   route_node.position.x = route.start_node->coords.x;
   route_node.position.y = route.start_node->coords.y;
@@ -175,7 +176,13 @@ inline nav2_msgs::msg::Route toMsg(
 
   // Provide the Node info and Edge IDs we're traversing through
   for (unsigned int i = 0; i != route.edges.size(); i++) {
-    msg.edge_ids.push_back(route.edges[i]->edgeid);
+    route_edge.edgeid = route.edges[i]->edgeid;
+    route_edge.start.x = route.edges[i]->start->coords.x;
+    route_edge.start.y = route.edges[i]->start->coords.y;
+    route_edge.end.x = route.edges[i]->end->coords.x;
+    route_edge.end.y = route.edges[i]->end->coords.y;
+    msg.edges.push_back(route_edge);
+
     route_node.nodeid = route.edges[i]->end->nodeid;
     route_node.position.x = route.edges[i]->end->coords.x;
     route_node.position.y = route.edges[i]->end->coords.y;

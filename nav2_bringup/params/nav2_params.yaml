@@ -75,7 +75,6 @@ bt_navigator:
       - spin
       - undock_robot
       - wait
-      - route
 
 controller_server:
   ros__parameters:
@@ -363,7 +362,7 @@ waypoint_follower:
 
 route_server:
   ros__parameters:
-    graph_filepath: "($find nav2_route)/graphs/aws_graph.geojson"
+    graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
     operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
@@ -471,8 +470,8 @@ docking_server:
       v_linear_min: 0.15
       v_linear_max: 0.15
       use_collision_detection: true
-      costmap_topic: "/local_costmap/costmap_raw"
-      footprint_topic: "/local_costmap/published_footprint"
+      costmap_topic: "local_costmap/costmap_raw"
+      footprint_topic: "local_costmap/published_footprint"
       transform_tolerance: 0.1
       projection_time: 5.0
       simulation_step: 0.1

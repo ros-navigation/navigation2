@@ -68,6 +68,25 @@ nav_msgs::msg::Path PathConverter::densify(
       utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
   }
 
+  // Set path poses orientations for each point
+  for (size_t i = 0; i < path.poses.size() - 1; ++i) {
+    const auto & pose = path.poses[i];
+    const auto & next_pose = path.poses[i + 1];
+    const double dx = next_pose.pose.position.x - pose.pose.position.x;
+    const double dy = next_pose.pose.position.y - pose.pose.position.y;
+    const double yaw = atan2(dy, dx);
+    path.poses[i].pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+  }
+
+  // Set the last pose orientation to the last edge
+  if (!route.edges.empty()) {
+    const auto & last_edge = route.edges.back();
+    const double dx = last_edge->end->coords.x - last_edge->start->coords.x;
+    const double dy = last_edge->end->coords.y - last_edge->start->coords.y;
+    path.poses.back().pose.orientation =
+      nav2_util::geometry_utils::orientationAroundZAxis(atan2(dy, dx));
+  }
+
   // publish path similar to planner server
   path_pub_->publish(std::make_unique<nav_msgs::msg::Path>(path));
 

@@ -45,14 +45,17 @@ void GoalIntentExtractor::configure(
   prune_goal_ = node->get_parameter("prune_goal").as_bool();
 
   nav2_util::declare_parameter_if_not_declared(
-    node, "max_dist_from_edge", rclcpp::ParameterValue(8.0));
-  max_dist_from_edge_ = static_cast<float>(node->get_parameter("max_dist_from_edge").as_double());
+    node, "max_prune_dist_from_edge", rclcpp::ParameterValue(8.0));
+  max_dist_from_edge_ = static_cast<float>(
+    node->get_parameter("max_prune_dist_from_edge").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    node, "min_dist_from_goal", rclcpp::ParameterValue(0.15));
-  min_dist_from_goal_ = static_cast<float>(node->get_parameter("min_dist_from_goal").as_double());
+    node, "min_prune_dist_from_goal", rclcpp::ParameterValue(0.15));
+  min_dist_from_goal_ = static_cast<float>(
+    node->get_parameter("min_prune_dist_from_goal").as_double());
   nav2_util::declare_parameter_if_not_declared(
-    node, "min_dist_from_start", rclcpp::ParameterValue(0.10));
-  min_dist_from_start_ = static_cast<float>(node->get_parameter("min_dist_from_start").as_double());
+    node, "min_prune_dist_from_start", rclcpp::ParameterValue(0.10));
+  min_dist_from_start_ = static_cast<float>(
+    node->get_parameter("min_prune_dist_from_start").as_double());
 }
 
 void GoalIntentExtractor::setGraph(Graph & graph, GraphToIDMap * id_to_graph_map)
@@ -146,6 +149,7 @@ Route GoalIntentExtractor::pruneStartandGoal(
     return pruned_route;
   }
 
+  // Check on pruning the start node
   NodePtr first = pruned_route.start_node;
   NodePtr next = pruned_route.edges[0]->end;
   float vrx = next->coords.x - first->coords.x;
@@ -175,6 +179,7 @@ Route GoalIntentExtractor::pruneStartandGoal(
     return pruned_route;
   }
 
+  // Check on pruning the goal node
   next = pruned_route.edges.back()->start;
   NodePtr last = pruned_route.edges.back()->end;
   vrx = last->coords.x - next->coords.x;

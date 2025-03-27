@@ -195,6 +195,15 @@ void RouteServer::populateActionResult(
   result->planning_time = planning_duration;
 }
 
+void RouteServer::populateActionResult(
+  std::shared_ptr<ComputeAndTrackRoute::Result> result,
+  const Route &,
+  const nav_msgs::msg::Path &,
+  const rclcpp::Duration & execution_duration)
+{
+  result->execution_duration = execution_duration;
+}
+
 template<typename GoalT>
 Route RouteServer::findRoute(
   const std::shared_ptr<const GoalT> goal,
@@ -232,6 +241,7 @@ RouteServer::processRouteRequest(
   auto goal = action_server->get_current_goal();
   auto result = std::make_shared<typename ActionT::Result>();
   ReroutingState rerouting_info;
+  auto start_time = this->now();
 
   try {
     while (rclcpp::ok()) {
@@ -246,16 +256,14 @@ RouteServer::processRouteRequest(
       }
 
       // Find the route
-      auto start_time = this->now();
       Route route = findRoute(goal, rerouting_info);
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
-      auto planning_duration = findPlanningDuration(start_time);
 
       if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
         // blocks until re-route requested or task completion, publishes feedback
         switch (route_tracker_->trackRoute(route, path, rerouting_info)) {
           case TrackerResult::COMPLETED:
-            populateActionResult(result, route, path, planning_duration);
+            populateActionResult(result, route, path, this->now() - start_time);
             action_server->succeeded_current(result);
             return;
           case TrackerResult::INTERRUPTED:
@@ -267,7 +275,7 @@ RouteServer::processRouteRequest(
         }
       } else {
         // Return route if not tracking
-        populateActionResult(result, route, path, planning_duration);
+        populateActionResult(result, route, path, findPlanningDuration(start_time));
         action_server->succeeded_current(result);
         return;
       }

@@ -46,7 +46,7 @@ public:
   void setRouteMsgSize(const int & size)
   {
     nav2_msgs::msg::Route msg;
-    msg.edge_ids.resize(size);
+    msg.edges.resize(size);
     route_msg_ = msg;
   }
 };

@@ -104,10 +104,10 @@ route_server:
     boundary_radius_to_achieve_node: 1.0          # Radius (m) near boundary nodes (e.g. start/end) to enable evaluation of achievement metric
     radius_to_achieve_node: 2.0                   # Radius (m) near route nodes as preliminary condition for evaluation of achievement metric
 
-    max_dist_from_edge: 8.0                       # Max distance from an edge to consider pruning it as in-progress (e.g. if we're too far away from the edge, its nonsensical to prune it)
-    min_dist_from_goal: 0.15                      # Min distance from goal node away from goal pose to consider goal node pruning as considering it as being passed (in case goal pose is very close to a goal node, but not exact)
-    min_dist_from_start: 0.10                     # Min distance from start node away from start pose to consider start node pruning as considering it as being passed (in case start pose is very close to a start node, but not exact)
-    prune_goal: true                              # Whether pruning the goal node from the route due to being past the goal pose requested is possible (pose requests only)
+    max_prune_dist_from_edge: 8.0                       # Max distance from an edge to consider pruning it as in-progress (e.g. if we're too far away from the edge, its nonsensical to prune it)
+    min_prune_dist_from_goal: 0.15                      # Min distance from goal node away from goal pose to consider goal node pruning as considering it as being passed (in case goal pose is very close to a goal node, but not exact)
+    min_prune_dist_from_start: 0.10                     # Min distance from start node away from start pose to consider start node pruning as considering it as being passed (in case start pose is very close to a start node, but not exact)
+    prune_goal: true                              # Whether pruning the goal nodes from the route due to being past the goal pose requested is possible (pose requests only)
 ```
 
 #### `CostmapScorer`
@@ -362,7 +362,7 @@ A special condition of this when a routing or rerouting request is made up of on
 
 This is an application problem which can be addressed by A, B, C, D but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
 
-Note that there are parameters like `prune_goal`, `min_distance_from_start` and `min_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. 
+Note that there are parameters like `prune_route`, `min_prune_distance_from_start` and `min_prune_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. 
 
 ---
 
@@ -371,46 +371,36 @@ Note that there are parameters like `prune_goal`, `min_distance_from_start` and 
 ## New
 
 Questions:
-  - What's up with `pruneStartandGoal`? Is there a better way to do this?
-    - Pruning when first time and using poses? What happen then? Wouldn't we want a partial bit?
-    - Why `max_dist_from_edge_`? Why any of the dist parameters? (cehck out docs above too)
-    - why `prune_goal_`? When to use each? Consider removal.
-
+- [ ] fix reoute operation client; creation of srv client in-perform is deeply flawed
   - route operation client oddness
-  - collision
-
-  - Route include edge start/end position informations?
 
 - [ ] System tests for coverage, others missing
 - [ ] simple commander examples
 - [ ] update graphs, tests, examples for TB4 & warehouse world
 
----
-
-- [ ] fix reoute operation client; creation of srv client in-perform is deeply flawed
-- [ ] path marker points align with direction
-- [ ] Sample files: new maps used in nav2
-- [ ] QGIS demo + plugins for editing and visualizing graphs
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
     * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
-    * Or, use BFS and remove the Kd-tree
+    * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
+
+- [ ] Josh PR, Leidos docs PRs / rviz panel plugin
+
+---
+
+- [ ] QGIS demo + plugins for editing and visualizing graphs
 
 - [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? 
-- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait
-- [ ] yaml file substittutions
+- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation
 - [ ] Simple commander seprate goal handler stuff
-- [ ] Josh PR, Leidos docs PRs / rviz panel plugin
-- [ ] GPS?
-- [ ] Dynamic parameters + mutex lock
 - [ ] Navigator plugin type?
-- [ ] nodes as poses?
-- [ ] collision monotir use footprints? or at least the costmap topic collision checker
-- [ ] option for collision montir to fail rather than reroute
 - [ ] Extra critics and operation plugins
 - [ ] Question that'll come up: persist blocked edges between calls and the timemarker betwen sesions
 - [ ] Simplify: nodeAchieved, collision monitor perform, others. Possibility to clean up the `ReroutingState` mess
-- [ ] does this  collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
-- [ ] Dump graph to file again and/or get full graph message
+
+Collision:
+- [ ] does this collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
+- [ ] collision monotir use footprints? or at least the costmap topic collision checker
+- [ ] option for collision montir to fail rather than reroute
+- [ ] Generally: go over the scorers, monitors and make sure sensable and performant. Both local rolling, global rolling, global static map uses (and none)
 
 - [ ] Quality: 
   - Missing readme plugins, other plugins to add for usefulness
@@ -420,6 +410,7 @@ Questions:
   - web documentation (BT node configuration page, package configuration page, migration),
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
+  - System test with route file + evaluation
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
@@ -431,14 +422,22 @@ Questions:
     - 4. Using ComputeAndTrackRoute in BT (+/- some of these?)
     - 5. Global planner fallback if route is blocked after N seconds, until next node or after distance from blockage back on route's edge (BT XML)
 
-  - Finish system test with route file + evaluation
-  - stop / clearance -- open-RMF inspired (idr what; look into it)
-
 - [ ] Testing by users
-- [ ] Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap
-  * other multi-robot things like block edges due to other robot's occupation
-- [ ] Provide a 'force to go through these edges' capability
+
 
 # Questions
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
+
+
+
+# Future work
+
+- [ ] GPS
+- [ ] nodes as poses rather than points?
+- [ ] Dump updated graph to file in leidos rviz plugin
+- [ ] Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap
+- [ ] Provide a 'force to go through these edges' capability
+- [ ] stop / clearance -- open-RMF inspired (idr what; look into it)
+- [ ] Dynamic parameter handling (remember mutex not change during active request)
+

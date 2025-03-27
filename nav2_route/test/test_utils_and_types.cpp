@@ -120,13 +120,13 @@ TEST(UtilsTest, test_to_msg_conversions)
   EXPECT_EQ(route_msg.route_cost, 50.0);
 
   EXPECT_EQ(route_msg.nodes.size(), 3u);
-  EXPECT_EQ(route_msg.edge_ids.size(), 2u);
+  EXPECT_EQ(route_msg.edges.size(), 2u);
 
   EXPECT_EQ(route_msg.nodes[0].nodeid, test_node1.nodeid);
   EXPECT_EQ(route_msg.nodes[1].nodeid, test_node2.nodeid);
   EXPECT_EQ(route_msg.nodes[2].nodeid, test_node3.nodeid);
-  EXPECT_EQ(route_msg.edge_ids[0], test_edge1.edgeid);
-  EXPECT_EQ(route_msg.edge_ids[1], test_edge2.edgeid);
+  EXPECT_EQ(route_msg.edges[0].edgeid, test_edge1.edgeid);
+  EXPECT_EQ(route_msg.edges[1].edgeid, test_edge2.edgeid);
 }
 
 TEST(UtilsTest, test_to_visualization_msg_conversion)
