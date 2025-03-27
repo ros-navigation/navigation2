@@ -71,10 +71,10 @@ public:
   : RouteException(description) {}
 };
 
-class InvalidCriticUse : public RouteException
+class InvalidEdgeScorerUse : public RouteException
 {
 public:
-  explicit InvalidCriticUse(const std::string & description)
+  explicit InvalidEdgeScorerUse(const std::string & description)
   : RouteException(description) {}
 };
 
