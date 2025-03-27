@@ -204,6 +204,21 @@ struct Route
 };
 
 /**
+ * @struct nav2_route::RouteRequest
+ * @brief An object to store salient features of the route request including its start
+ * and goal node ids, start and goal pose, and a flag to indicate if the start and goal
+ * poses are relevant
+ */
+struct RouteRequest
+{
+  unsigned int start_nodeid;                    //node id of start node
+  unsigned int goal_nodeid;                     //node id of goal node
+  geometry_msgs::msg::PoseStamped start_pose;   //pose of start
+  geometry_msgs::msg::PoseStamped goal_pose;    //pose of goal
+  bool use_poses;                               //whether the start and goal poses are used 
+};
+
+/**
  * @enum nav2_route::TrackerResult
  * @brief Return result of the route tracker to the main server for processing
  */
@@ -269,6 +284,17 @@ struct ReroutingState
     closest_pt_on_edge = Coordinates();
     rerouting_start_pose = geometry_msgs::msg::PoseStamped();
   }
+};
+
+/**
+ * @enum nav2_route::EdgeType
+ * @brief An enum class describing what type of edge connecting two nodes is 
+ */
+enum class EdgeType
+{
+  NONE = 0,
+  START = 1,
+  END = 2
 };
 
 }  // namespace nav2_route

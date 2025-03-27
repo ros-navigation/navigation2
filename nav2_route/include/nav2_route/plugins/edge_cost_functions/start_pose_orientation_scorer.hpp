@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Open Navigation LLC
+// Copyright (c) 2025, Polymath Robotics Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,38 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
-#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
+#ifndef NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
+#define NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
+#include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.h"
+#include "angles/angles.h"
 
 namespace nav2_route
 {
 
 /**
- * @class SemanticScorer
- * @brief Scores an edge based on arbitrary graph semantic data such as set priority/danger
- * levels or regional attributes (e.g. living room, bathroom, work cell 2)
+ * @class StartPoseOrientationScorer
+ * @brief Scores initial edge by comparing the orientation of the robot's current 
+ * pose and the orientation of the edge by multiplying the deviation from the desired 
+ * orientation with a user defined weight. An alternative method can be selected, with 
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * tolerance
  */
-class SemanticScorer : public EdgeCostFunction
+class StartPoseOrientationScorer : public EdgeCostFunction
 {
 public:
   /**
    * @brief Constructor
    */
-  SemanticScorer() = default;
+  StartPoseOrientationScorer() = default;
 
   /**
    * @brief destructor
    */
-  virtual ~SemanticScorer() = default;
+  virtual ~StartPoseOrientationScorer() = default;
 
   /**
    * @brief Configure
@@ -65,31 +74,20 @@ public:
     const EdgeType & edge_type, float & cost) override;
 
   /**
-   * @brief Scores graph object based on metadata's semantic value at key
-   * @param mdata Metadata
-   * @param score to add to
-   */
-  void metadataValueScorer(Metadata & mdata, float & score);
-
-  /**
-   * @brief Scores graph object based on metadata's key values
-   * @param mdata Metadata
-   * @param score to add to
-   */
-  void metadataKeyScorer(Metadata & mdata, float & score);
-
-  /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */
   std::string getName() override;
 
 protected:
-  std::string name_, key_;
-  std::unordered_map<std::string, float> semantic_info_;
-  float weight_;
+  rclcpp::Logger logger_{rclcpp::get_logger("StartPoseOrientationScorer")};
+  std::string name_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  double orientation_tolerance_;
+  float orientation_weight_;
+  bool use_orientation_threshold_;
 };
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__SEMANTIC_SCORER_HPP_
+#endif  // NAV2_ROUTE__PLUGINS__EDGE_COST_FUNCTIONS__START_POSE_ORIENTATION_SCORER_HPP_

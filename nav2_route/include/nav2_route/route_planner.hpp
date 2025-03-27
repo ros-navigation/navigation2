@@ -22,6 +22,8 @@
 #include <mutex>
 #include <algorithm>
 
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/edge_scorer.hpp"
@@ -51,7 +53,9 @@ public:
    * @brief Configure the route planner, get parameters
    * @param node Node object to get parametersfrom
    */
-  void configure(nav2_util::LifecycleNode::SharedPtr node);
+  void configure(
+    nav2_util::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
 
   /**
    * @brief Find the route from start to goal on the graph
@@ -64,7 +68,7 @@ public:
   Route findRoute(
     Graph & graph, unsigned int start_index, unsigned int goal_index,
     const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & goal);
+    const RouteRequest & route_request);
 
 protected:
   /**
@@ -83,7 +87,7 @@ protected:
   void findShortestGraphTraversal(
     Graph & graph, const NodePtr start_node, const NodePtr goal_node,
     const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & goal);
+    const RouteRequest & route_request);
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
@@ -94,7 +98,7 @@ protected:
    */
   inline bool getTraversalCost(
     const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-    const geometry_msgs::msg::PoseStamped & goal);
+    const RouteRequest & route_request);
 
   /**
    * @brief Gets the next node in the priority queue for search
@@ -128,10 +132,26 @@ protected:
    */
   inline bool isGoal(const NodePtr node);
 
+  /**
+   * @brief Checks if a given node is the start node
+   * @param node Node to check
+   * @return bool If this node is the start
+   */
+  inline bool isStart(const NodePtr node);
+
+  /**
+   * @brief Checks edge is a start or end edge
+   * @param edge Edge to check
+   * @return EdgeType identifying whether the edge is start, end or none
+   */
+  nav2_route::EdgeType classifyEdge(const EdgePtr edge);
+
   int max_iterations_{0};
+  unsigned int start_id_{0};
   unsigned int goal_id_{0};
   NodeQueue queue_;
   std::unique_ptr<EdgeScorer> edge_scorer_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 };
 
 }  // namespace nav2_route

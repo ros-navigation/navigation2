@@ -20,6 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
 #include "nav2_util/line_iterator.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -33,7 +34,11 @@ namespace nav2_route
 
 /**
  * @class GoalOrientationScorer
- * @brief Scores final edge by comparing the
+ * @brief Scores an edge leading to the goal node by comparing the orientation of the route 
+ * pose and the orientation of the edge by multiplying the deviation from the desired 
+ * orientation with a user defined weight. An alternative method can be selected, with 
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * tolerance
  */
 class GoalOrientationScorer : public EdgeCostFunction
 {
@@ -53,6 +58,7 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & name) override;
 
   /**
@@ -63,8 +69,8 @@ public:
    * @return bool if this edge is open valid to traverse
    */
   bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose, bool final_edge,
-    float & cost) override;
+    const EdgePtr edge, const RouteRequest & route_request,
+    const EdgeType & edge_type, float & cost) override;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping
@@ -76,6 +82,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("GoalOrientationScorer")};
   std::string name_;
   double orientation_tolerance_;
+  float orientation_weight_;
+  bool use_orientation_threshold_;
 };
 
 }  // namespace nav2_route

@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 
+#include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -55,6 +56,7 @@ public:
    */
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & name) = 0;
 
   /**
@@ -63,8 +65,8 @@ public:
    * start/end nodes and their associated metadata and actions
    */
   virtual bool score(
-    const EdgePtr edge, const geometry_msgs::msg::PoseStamped & goal_pose,
-    bool final_edge, float & cost) = 0;
+    const EdgePtr edge, const RouteRequest & route_request,
+    const EdgeType & edge_type, float & cost) = 0;
 
   /**
    * @brief Get name of the plugin for parameter scope mapping

@@ -22,6 +22,7 @@ namespace nav2_route
 
 void DistanceScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring distance scorer.");
@@ -40,8 +41,8 @@ void DistanceScorer::configure(
 
 bool DistanceScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  bool /* final_edge */, float & cost)
+  const RouteRequest & /* route_request */,
+  const EdgeType & /* edge_type */, float & cost)
 {
   // Get the speed limit, if set for an edge
   float speed_val = 1.0f;

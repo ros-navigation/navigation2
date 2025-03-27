@@ -22,6 +22,7 @@ namespace nav2_route
 
 void DynamicEdgesScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring adjust edges scorer.");
@@ -63,10 +64,10 @@ void DynamicEdgesScorer::closedEdgesCb(
   response->success = true;
 }
 
-bool DynamicEdgesScorer::score(
+bool AdjustEdgesScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  bool /* final_edge */, float & cost)
+  const RouteRequest & /* route_request */,
+  const EdgeType & /* edge_type */, float & cost)
 {
   // Find if this edge is in the closed set of edges
   if (closed_edges_.find(edge->edgeid) != closed_edges_.end()) {

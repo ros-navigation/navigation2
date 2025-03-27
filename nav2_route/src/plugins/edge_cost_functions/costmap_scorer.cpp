@@ -22,6 +22,7 @@ namespace nav2_route
 
 void CostmapScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring costmap scorer.");
@@ -74,8 +75,8 @@ void CostmapScorer::prepare()
 
 bool CostmapScorer::score(
   const EdgePtr edge,
-  const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  bool /* final_edge */, float & cost)
+  const RouteRequest & /* route_request */,
+  const EdgeType & /* edge_type */, float & cost)
 {
   if (!costmap_) {
     RCLCPP_WARN(logger_, "No costmap yet received!");

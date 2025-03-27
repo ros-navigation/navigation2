@@ -24,7 +24,9 @@
 namespace nav2_route
 {
 
-void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
+void RoutePlanner::configure(
+  nav2_util::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
 {
   nav2_util::declare_parameter_if_not_declared(
     node, "max_iterations", rclcpp::ParameterValue(0));
@@ -34,13 +36,13 @@ void RoutePlanner::configure(nav2_util::LifecycleNode::SharedPtr node)
     max_iterations_ = std::numeric_limits<int>::max();
   }
 
-  edge_scorer_ = std::make_unique<EdgeScorer>(node);
+  edge_scorer_ = std::make_unique<EdgeScorer>(node, tf_buffer);
 }
 
 Route RoutePlanner::findRoute(
   Graph & graph, unsigned int start_index, unsigned int goal_index,
   const std::vector<unsigned int> & blocked_ids,
-  const geometry_msgs::msg::PoseStamped & goal_pose)
+  const RouteRequest & route_request)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");
@@ -51,7 +53,7 @@ Route RoutePlanner::findRoute(
   // is valid when this function goes out of scope
   const NodePtr & start_node = &graph.at(start_index);
   const NodePtr & goal_node = &graph.at(goal_index);
-  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, goal_pose);
+  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, route_request);
 
   EdgePtr & parent_edge = goal_node->search_state.parent_edge;
   if (!parent_edge) {
@@ -83,10 +85,11 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 void RoutePlanner::findShortestGraphTraversal(
   Graph & graph, const NodePtr start_node, const NodePtr goal_node,
   const std::vector<unsigned int> & blocked_ids,
-  const geometry_msgs::msg::PoseStamped & goal_pose)
+  const RouteRequest & route_request)
 {
   // Setup the Dijkstra's search
   resetSearchStates(graph);
+  start_id_ = start_node->nodeid;
   goal_id_ = goal_node->nodeid;
   start_node->search_state.integrated_cost = 0.0;
   addNode(0.0, start_node);
@@ -120,7 +123,7 @@ void RoutePlanner::findShortestGraphTraversal(
       neighbor = edge->end;
 
       // If edge is invalid (lane closed, occupied, etc), don't expand
-      if (!getTraversalCost(edge, traversal_cost, blocked_ids, goal_pose)) {
+      if (!getTraversalCost(edge, traversal_cost, blocked_ids, route_request)) {
         continue;
       }
 
@@ -143,7 +146,7 @@ void RoutePlanner::findShortestGraphTraversal(
 
 bool RoutePlanner::getTraversalCost(
   const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const RouteRequest & route_request)
 {
   // If edge or node is in the blocked list, don't expand
   auto is_blocked = std::find_if(
@@ -165,7 +168,7 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, goal, isGoal(edge->end), score);
+  return edge_scorer_->score(edge, route_request, classifyEdge(edge), score);
 }
 
 NodeElement RoutePlanner::getNextNode()
@@ -194,6 +197,21 @@ void RoutePlanner::clearQueue()
 bool RoutePlanner::isGoal(const NodePtr node)
 {
   return node->nodeid == goal_id_;
+}
+
+bool RoutePlanner::isStart(const NodePtr node)
+{
+  return node->nodeid == start_id_;
+}
+
+nav2_route::EdgeType RoutePlanner::classifyEdge(const EdgePtr edge)
+{
+  if (isStart(edge->start)) {
+    return EdgeType::START;
+  } else if (isGoal(edge->end)) {
+    return EdgeType::END;
+  }
+  return nav2_route::EdgeType::NONE;
 }
 
 }  // namespace nav2_route

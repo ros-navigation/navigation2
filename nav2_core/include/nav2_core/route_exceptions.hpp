@@ -71,6 +71,13 @@ public:
   : RouteException(description) {}
 };
 
+class InvalidEdgeScorerUse : public RouteException
+{
+public:
+  explicit InvalidEdgeScorerUse(const std::string & description)
+  : RouteException(description) {}
+};
+
 }  // namespace nav2_core
 
 #endif  // NAV2_CORE__ROUTE_EXCEPTIONS_HPP_

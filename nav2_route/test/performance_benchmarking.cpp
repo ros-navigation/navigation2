@@ -69,6 +69,7 @@ int main(int argc, char const * argv[])
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("route_benchmarking2");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   Graph graph = createGraph();
 
@@ -78,7 +79,7 @@ int main(int argc, char const * argv[])
   // graph_vis_pub->publish(utils::toMsg(graph, "map", node->now()));
 
   RoutePlanner planner;
-  planner.configure(node);
+  planner.configure(node, tf_buffer);
   std::vector<unsigned int> blocked_ids;
   Route route;
 

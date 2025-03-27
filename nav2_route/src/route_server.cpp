@@ -80,7 +80,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       node, graph_, &id_to_graph_map_, tf_, route_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
-    route_planner_->configure(node);
+    route_planner_->configure(node, tf_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
@@ -224,10 +224,17 @@ Route RouteServer::findRoute(
     route.route_cost = 0.0;
     route.start_node = &graph_.at(start_route);
   } else {
+    // Populate request data (start & goal id, start & goal pose, if set) for routing
+    RouteRequest route_request;
+    route_request.start_nodeid = start_route;
+    route_request.goal_nodeid = end_route;
+    route_request.start_pose = goal_intent_extractor_->getStart();
+    route_request.goal_pose = goal->goal;
+    route_request.use_poses = goal->use_poses;
+
     // Compute the route via graph-search, returns a node-edge sequence
     route = route_planner_->findRoute(
-      graph_, start_route, end_route, rerouting_info.blocked_ids,
-      goal->goal);
+      graph_, start_route, end_route, rerouting_info.blocked_ids, route_request);
   }
 
   return goal_intent_extractor_->pruneStartandGoal(route, goal, rerouting_info);
@@ -283,44 +290,49 @@ RouteServer::processRouteRequest(
   } catch (nav2_core::NoValidRouteCouldBeFound & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_ROUTE;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::TimedOut & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TIMEOUT;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::RouteTFError & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::TF_ERROR;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::NoValidGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::NO_VALID_GRAPH;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::IndeterminantNodesOnGraph & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::INDETERMINANT_NODES_ON_GRAPH;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
+    action_server->terminate_current(result);
+  } catch (nav2_core::InvalidEdgeScorerUse & ex) {
+    exceptionWarning(goal, ex);
+    result->error_code = ActionT::Goal::INVALID_EDGE_SCORER_USE;
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::OperationFailed & ex) {
     // A special case since Operation Failed is only in Compute & Track
     // actions, specifying it to allow otherwise fully shared code
     exceptionWarning(goal, ex);
     result->error_code = ComputeAndTrackRoute::Goal::OPERATION_FAILED;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (nav2_core::RouteException & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   } catch (std::exception & ex) {
     exceptionWarning(goal, ex);
     result->error_code = ActionT::Goal::UNKNOWN;
-    result->error_msg = ex.what();
+    result->error_msg = ex.what(); 
     action_server->terminate_current(result);
   }
 }

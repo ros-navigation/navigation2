@@ -22,6 +22,7 @@ namespace nav2_route
 
 void TimeScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring time scorer.");
@@ -47,8 +48,9 @@ void TimeScorer::configure(
 }
 
 bool TimeScorer::score(
-  const EdgePtr edge, const geometry_msgs::msg::PoseStamped & /* goal_pose */,
-  bool /* final_edge */, float & cost)
+  const EdgePtr edge,  
+  const RouteRequest & /* route_request */,
+  const EdgeType & /* edge_type */, float & cost)
 {
   // We have a previous actual time to utilize for a refined estimate
   float time = 0.0;
