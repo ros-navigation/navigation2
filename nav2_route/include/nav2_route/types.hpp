@@ -286,6 +286,10 @@ struct ReroutingState
   }
 };
 
+/**
+ * @enum nav2_route::EdgeType
+ * @brief An enum class describing what type of edge connecting two nodes is 
+ */
 enum class EdgeType
 {
   NONE = 0,
