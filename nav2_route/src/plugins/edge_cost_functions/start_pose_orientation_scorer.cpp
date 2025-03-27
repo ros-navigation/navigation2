@@ -55,7 +55,7 @@ bool StartPoseOrientationScorer::score(
 {
   
   if (!route_data.use_poses) {
-    throw nav2_core::InvalidCriticUse("Cannot use start pose orientation scorer without start pose specified!");
+    throw nav2_core::InvalidEdgeScorerUse("Cannot use start pose orientation scorer without start pose specified!");
   }
 
   if (edge_type == EdgeType::START) {

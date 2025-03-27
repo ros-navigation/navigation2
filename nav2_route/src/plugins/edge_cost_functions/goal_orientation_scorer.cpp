@@ -52,7 +52,7 @@ bool GoalOrientationScorer::score(
 {
   
   if (!route_data.use_poses) {
-    throw nav2_core::InvalidCriticUse("Cannot use goal orientation scorer without goal pose specified!");
+    throw nav2_core::InvalidEdgeScorerUse("Cannot use goal orientation scorer without goal pose specified!");
   }
 
   if (edge_type == EdgeType::END) {
