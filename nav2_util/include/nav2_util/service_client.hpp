@@ -19,11 +19,6 @@
 #include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/node_thread.hpp"
-
-using std::chrono::nanoseconds;
-using std::chrono::seconds;
-using std::chrono::steady_clock;
 
 namespace nav2_util
 {
@@ -40,17 +35,26 @@ public:
   * @brief A constructor
   * @param service_name name of the service to call
   * @param provided_node Node to create the service client off of
-  * @param spin_thread Whether to spin with a dedicated thread internally
+  * @param use_internal_executor Whether to create an internal executor or not
   */
   explicit ServiceClient(
     const std::string & service_name,
-    const NodeT & provided_node, bool spin_thread = false)
-  : service_name_(service_name), node_(provided_node)
+    const NodeT & provided_node, bool use_internal_executor = false)
+  : service_name_(service_name), node_(provided_node), use_internal_executor_(use_internal_executor)
   {
-    if(spin_thread) {
+    if(use_internal_executor) {
       callback_group_ = node_->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
+      callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+      callback_group_executor_->add_callback_group(callback_group_,
+          node_->get_node_base_interface());
+    } else {
+      callback_group_ = node_->get_node_base_interface()->get_default_callback_group();
+      rclcpp::ExecutorOptions options;
+      options.context = node_->get_node_base_interface()->get_context();
+      callback_group_executor_ =
+        std::make_shared<rclcpp::executors::SingleThreadedExecutor>(options);
     }
 
     client_ = node_->template create_client<ServiceT>(
@@ -71,12 +75,6 @@ public:
 
     this->client_->configure_introspection(
         node_->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
-    if(spin_thread) {
-      callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      callback_group_executor_->add_callback_group(callback_group_,
-          node_->get_node_base_interface());
-      executor_thread_ = std::make_unique<nav2_util::NodeThread>(callback_group_executor_);
-    }
   }
 
   using RequestType = typename ServiceT::Request;
@@ -107,27 +105,20 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if (callback_group_executor_) {
-      // Internal thread is spinning executor already
-      if (timeout < std::chrono::nanoseconds(0)) {
-        future_result.wait();
-      } else {
-        if (future_result.wait_for(timeout) != std::future_status::ready) {
-          // Pending request must be manually cleaned up if execution is interrupted or timed out
-          client_->remove_pending_request(future_result);
-          throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-        }
-      }
-    } else {
-      // No internal spin thread; spin node directly
-      if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
-        // Pending request must be manually cleaned up if execution is interrupted or timed out
-        client_->remove_pending_request(future_result);
-        throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-      }
+    if(!use_internal_executor_) {
+      callback_group_executor_->add_node(node_->get_node_base_interface());
     }
+    if (callback_group_executor_->spin_until_future_complete(future_result, timeout) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+    {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
+      throw std::runtime_error(service_name_ + " service client: async_send_request failed");
+    }
+    if(!use_internal_executor_) {
+      callback_group_executor_->remove_node(node_->get_node_base_interface());
+    }
+
     return future_result.get();
   }
 
@@ -155,12 +146,18 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if(callback_group_executor_) {
-      // Internal thread is spinning executor already
-      future_result.wait();
-    } else {
-      // No internal spin thread; spin node directly
-      rclcpp::spin_until_future_complete(node_, future_result);
+    if(!use_internal_executor_) {
+      callback_group_executor_->add_node(node_->get_node_base_interface());
+    }
+    if (callback_group_executor_->spin_until_future_complete(future_result) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+    {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
+      return false;
+    }
+    if(!use_internal_executor_) {
+      callback_group_executor_->remove_node(node_->get_node_base_interface());
     }
     response = future_result.get();
     return response.get();
@@ -201,6 +198,21 @@ public:
   }
 
   /**
+   * @brief Spins the executor until the provided future is complete or the timeout is reached.
+   *
+   * @param future The shared future to wait for completion.
+   * @param timeout The maximum time to wait for the future to complete. Default is -1 (no timeout).
+   * @return rclcpp::FutureReturnCode indicating the result of the spin operation.
+   */
+  template<typename FutureT>
+  rclcpp::FutureReturnCode spin_until_complete(
+    std::shared_future<FutureT> future,
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
+  {
+    return callback_group_executor_->spin_until_future_complete(future, timeout);
+  }
+
+  /**
   * @brief Gets the service name
   * @return string Service name
   */
@@ -214,8 +226,8 @@ protected:
   NodeT node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
   rclcpp::executors::SingleThreadedExecutor::SharedPtr callback_group_executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
   typename rclcpp::Client<ServiceT>::SharedPtr client_;
+  bool use_internal_executor_;
 };
 
 }  // namespace nav2_util

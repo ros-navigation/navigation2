@@ -37,8 +37,8 @@ public:
   TestServiceClient(
     const std::string & name,
     const rclcpp::Node::SharedPtr & provided_node = rclcpp::Node::SharedPtr(),
-    bool spin_thread = false)
-  : ServiceClient(name, provided_node, spin_thread)
+    bool use_internal_executor = false)
+  : ServiceClient(name, provided_node, use_internal_executor)
   {}
 
   string name() {return node_->get_name();}
@@ -121,7 +121,7 @@ TEST(ServiceClient, can_ServiceClient_async_call) {
   auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
   // Define service client
   auto node = rclcpp::Node::make_shared("test_node");
-  ServiceClient<std_srvs::srv::Empty> client("empty_srv", node, true);
+  ServiceClient<std_srvs::srv::Empty> client("empty_srv", node, false);
   auto req = std::make_shared<std_srvs::srv::Empty::Request>();
   auto callback =
     [&callback_called](rclcpp::Client<std_srvs::srv::Empty>::SharedFuture /*future*/) {
@@ -129,8 +129,8 @@ TEST(ServiceClient, can_ServiceClient_async_call) {
     };
   // Test async_call
   client.async_call(req, callback);
-  rclcpp::spin_some(node);
   std::this_thread::sleep_for(std::chrono::seconds(1));
+  rclcpp::spin_some(node);
 
   rclcpp::shutdown();
   srv_thread.join();

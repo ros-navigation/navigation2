@@ -111,7 +111,7 @@ public:
       service_name_ = service_new;
       node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
       service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
-      service_name_, node_, true);
+      service_name_, node_, true /*creates and spins an internal executor*/);
     }
   }
 
@@ -213,15 +213,15 @@ public:
     if (remaining > std::chrono::milliseconds(0)) {
       auto timeout = remaining > max_timeout_ ? max_timeout_ : remaining;
 
-      std::future_status future;
-      future = future_result_.wait_for(timeout);
-      if(future == std::future_status::ready) {
+      rclcpp::FutureReturnCode rc;
+      rc = service_client_->spin_until_complete(future_result_, timeout);
+      if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
         BT::NodeStatus status = on_completion(future_result_.get());
         return status;
       }
 
-      if (future == std::future_status::timeout) {
+      if (rc == rclcpp::FutureReturnCode::TIMEOUT) {
         on_wait_for_result();
         elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();
         if (elapsed < server_timeout_) {
