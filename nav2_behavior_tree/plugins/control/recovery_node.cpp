@@ -52,6 +52,7 @@ BT::NodeStatus RecoveryNode::tick()
 
         case BT::NodeStatus::SUCCESS:
           // reset node and return success when first child returns success
+          ControlNode::haltChild(1);
           halt();
           return BT::NodeStatus::SUCCESS;
 
