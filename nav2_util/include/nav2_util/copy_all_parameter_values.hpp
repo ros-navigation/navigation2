@@ -26,7 +26,7 @@
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
 
-namespace rclcpp
+namespace nav2_util
 {
 
 /**
@@ -77,6 +77,6 @@ copy_all_parameter_values(
   }
 }
 
-}  // namespace rclcpp
+}  // namespace nav2_util
 
 #endif  // NAV2_UTIL__COPY_ALL_PARAMETER_VALUES_HPP_
