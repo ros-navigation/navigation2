@@ -686,7 +686,7 @@ TEST(EdgeScorersTest, test_goal_orientation_threshold)
 
   route_data.use_poses = false;
   
-  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_goal_orientation_scoring)
@@ -757,7 +757,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 
   route_data.use_poses = false;
   
-  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
@@ -839,7 +839,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   route_data.use_poses = false;
   
-  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
@@ -927,6 +927,6 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   route_data.use_poses = false;
   
-  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidCriticUse);
+  EXPECT_THROW(scorer.score(&edge, route_data, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
 
 }
