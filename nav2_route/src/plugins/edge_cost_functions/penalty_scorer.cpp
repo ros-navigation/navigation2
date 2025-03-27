@@ -41,7 +41,7 @@ void PenaltyScorer::configure(
 
 bool PenaltyScorer::score(
   const EdgePtr edge,
-  const RouteData & /* route_data */,
+  const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
 {
   // Get the speed limit, if set for an edge

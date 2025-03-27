@@ -42,7 +42,7 @@ void RoutePlanner::configure(
 Route RoutePlanner::findRoute(
   Graph & graph, unsigned int start_index, unsigned int goal_index,
   const std::vector<unsigned int> & blocked_ids,
-  const RouteData & route_data)
+  const RouteRequest & route_request)
 {
   if (graph.empty()) {
     throw nav2_core::NoValidGraph("Graph is invalid for routing!");
@@ -53,7 +53,7 @@ Route RoutePlanner::findRoute(
   // is valid when this function goes out of scope
   const NodePtr & start_node = &graph.at(start_index);
   const NodePtr & goal_node = &graph.at(goal_index);
-  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, route_data);
+  findShortestGraphTraversal(graph, start_node, goal_node, blocked_ids, route_request);
 
   EdgePtr & parent_edge = goal_node->search_state.parent_edge;
   if (!parent_edge) {
@@ -85,7 +85,7 @@ void RoutePlanner::resetSearchStates(Graph & graph)
 void RoutePlanner::findShortestGraphTraversal(
   Graph & graph, const NodePtr start_node, const NodePtr goal_node,
   const std::vector<unsigned int> & blocked_ids,
-  const RouteData & route_data)
+  const RouteRequest & route_request)
 {
   // Setup the Dijkstra's search
   resetSearchStates(graph);
@@ -123,7 +123,7 @@ void RoutePlanner::findShortestGraphTraversal(
       neighbor = edge->end;
 
       // If edge is invalid (lane closed, occupied, etc), don't expand
-      if (!getTraversalCost(edge, traversal_cost, blocked_ids, route_data)) {
+      if (!getTraversalCost(edge, traversal_cost, blocked_ids, route_request)) {
         continue;
       }
 
@@ -146,7 +146,7 @@ void RoutePlanner::findShortestGraphTraversal(
 
 bool RoutePlanner::getTraversalCost(
   const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-  const RouteData & route_data)
+  const RouteRequest & route_request)
 {
   // If edge or node is in the blocked list, don't expand
   auto is_blocked = std::find_if(
@@ -168,7 +168,7 @@ bool RoutePlanner::getTraversalCost(
     return true;
   }
 
-  return edge_scorer_->score(edge, route_data, classifyEdge(edge), score);
+  return edge_scorer_->score(edge, route_request, classifyEdge(edge), score);
 }
 
 NodeElement RoutePlanner::getNextNode()

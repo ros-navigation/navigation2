@@ -50,11 +50,11 @@ void StartPoseOrientationScorer::configure(
 
 bool StartPoseOrientationScorer::score(
   const EdgePtr edge,
-  const RouteData & route_data,
+  const RouteRequest & route_request,
   const EdgeType & edge_type, float & cost)
 {
   
-  if (!route_data.use_poses) {
+  if (!route_request.use_poses) {
     throw nav2_core::InvalidEdgeScorerUse("Cannot use start pose orientation scorer without start pose specified!");
   }
 
@@ -62,7 +62,7 @@ bool StartPoseOrientationScorer::score(
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);
-    double start_orientation = tf2::getYaw(route_data.start_pose.pose.orientation);
+    double start_orientation = tf2::getYaw(route_request.start_pose.pose.orientation);
     double d_yaw = std::abs(angles::shortest_angular_distance(edge_orientation, start_orientation));
 
     if (use_orientation_threshold_) {

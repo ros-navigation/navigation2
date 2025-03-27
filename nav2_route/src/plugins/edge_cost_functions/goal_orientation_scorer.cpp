@@ -47,11 +47,11 @@ void GoalOrientationScorer::configure(
 
 bool GoalOrientationScorer::score(
   const EdgePtr edge,
-  const RouteData & route_data,
+  const RouteRequest & route_request,
   const EdgeType & edge_type, float & cost)
 {
   
-  if (!route_data.use_poses) {
+  if (!route_request.use_poses) {
     throw nav2_core::InvalidEdgeScorerUse("Cannot use goal orientation scorer without goal pose specified!");
   }
 
@@ -59,7 +59,7 @@ bool GoalOrientationScorer::score(
     double edge_orientation = std::atan2(
       edge->end->coords.y - edge->start->coords.y,
       edge->end->coords.x - edge->start->coords.x);
-    double goal_orientation = tf2::getYaw(route_data.goal_pose.pose.orientation);
+    double goal_orientation = tf2::getYaw(route_request.goal_pose.pose.orientation);
     double d_yaw = std::abs(angles::shortest_angular_distance(edge_orientation, goal_orientation));
 
     if (use_orientation_threshold_) {

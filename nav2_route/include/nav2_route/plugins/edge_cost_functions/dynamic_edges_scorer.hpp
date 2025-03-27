@@ -63,7 +63,7 @@ public:
    * @return bool if this edge is open valid to traverse
    */
   bool score(
-    const EdgePtr edge, const RouteData & route_data,
+    const EdgePtr edge, const RouteRequest & route_request,
     const EdgeType & edge_type, float & cost) override;
 
   /**

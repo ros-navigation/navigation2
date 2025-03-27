@@ -75,7 +75,7 @@ void CostmapScorer::prepare()
 
 bool CostmapScorer::score(
   const EdgePtr edge,
-  const RouteData & /* route_data */,
+  const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
 {
   if (!costmap_) {

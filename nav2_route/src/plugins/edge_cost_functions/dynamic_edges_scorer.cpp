@@ -66,7 +66,7 @@ void DynamicEdgesScorer::closedEdgesCb(
 
 bool AdjustEdgesScorer::score(
   const EdgePtr edge,
-  const RouteData & /* route_data */,
+  const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
 {
   // Find if this edge is in the closed set of edges

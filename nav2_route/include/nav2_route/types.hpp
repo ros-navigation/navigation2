@@ -203,7 +203,13 @@ struct Route
   float route_cost{0.0};
 };
 
-struct RouteData
+/**
+ * @struct nav2_route::RouteRequest
+ * @brief An object to store salient features of the route request including its start
+ * and goal node ids, start and goal pose, and a flag to indicate if the start and goal
+ * poses are relevant
+ */
+struct RouteRequest
 {
   unsigned int start_nodeid;                    //node id of start node
   unsigned int goal_nodeid;                     //node id of goal node

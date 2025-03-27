@@ -63,7 +63,7 @@ EdgeScorer::EdgeScorer(
 }
 
 bool EdgeScorer::score(
-  const EdgePtr edge, const RouteData & route_data,
+  const EdgePtr edge, const RouteRequest & route_request,
   const EdgeType & edge_type, float & total_score)
 {
   total_score = 0.0;
@@ -75,7 +75,7 @@ bool EdgeScorer::score(
 
   for (auto & plugin : plugins_) {
     curr_score = 0.0;
-    if (plugin->score(edge, route_data, edge_type, curr_score)) {
+    if (plugin->score(edge, route_request, edge_type, curr_score)) {
       total_score += curr_score;
     } else {
       return false;

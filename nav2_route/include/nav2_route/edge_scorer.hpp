@@ -66,7 +66,7 @@ public:
    * @return If edge is valid
    */
   bool score(
-    const EdgePtr edge, const RouteData & route_data,
+    const EdgePtr edge, const RouteRequest & route_request,
     const EdgeType & edge_type,
     float & score);
 

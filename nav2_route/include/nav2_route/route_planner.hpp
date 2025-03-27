@@ -68,7 +68,7 @@ public:
   Route findRoute(
     Graph & graph, unsigned int start_index, unsigned int goal_index,
     const std::vector<unsigned int> & blocked_ids,
-    const RouteData & route_data);
+    const RouteRequest & route_request);
 
 protected:
   /**
@@ -87,7 +87,7 @@ protected:
   void findShortestGraphTraversal(
     Graph & graph, const NodePtr start_node, const NodePtr goal_node,
     const std::vector<unsigned int> & blocked_ids,
-    const RouteData & route_data);
+    const RouteRequest & route_request);
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
@@ -98,7 +98,7 @@ protected:
    */
   inline bool getTraversalCost(
     const EdgePtr edge, float & score, const std::vector<unsigned int> & blocked_ids,
-    const RouteData & route_data);
+    const RouteRequest & route_request);
 
   /**
    * @brief Gets the next node in the priority queue for search

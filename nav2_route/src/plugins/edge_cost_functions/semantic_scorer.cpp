@@ -72,7 +72,7 @@ void SemanticScorer::metadataValueScorer(Metadata & mdata, float & score)
 
 bool SemanticScorer::score(
   const EdgePtr edge,
-  const RouteData & /* route_data */,
+  const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
 {
   float score = 0.0;

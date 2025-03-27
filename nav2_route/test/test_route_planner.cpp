@@ -128,7 +128,7 @@ inline Graph create4x4Graph()
 TEST(RoutePlannerTest, test_route_planner_positive)
 {
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
-  RouteData route_data;
+  RouteRequest route_request;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
@@ -143,7 +143,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   // Plan across diagonal, should be length 6
   start = 0u;
   goal = 15u;
-  Route route = planner.findRoute(graph, start, goal, blocked_ids, route_data);
+  Route route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 6.0, 0.001);
   EXPECT_EQ(route.edges.size(), 6u);
 
@@ -154,19 +154,19 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   EXPECT_THROW(
     planner.findRoute(
       graph, start, goal, blocked_ids,
-      route_data), nav2_core::NoValidRouteCouldBeFound);
+      route_request), nav2_core::NoValidRouteCouldBeFound);
 
   // Lets find a simple plan and then mess with the planner with blocking edges
   start = 0;
   goal = 12;
-  route = planner.findRoute(graph, start, goal, blocked_ids, route_data);
+  route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 3.0, 0.001);
   EXPECT_EQ(route.edges.size(), 3u);
 
   // Now block an edge as closed along the chain, should find the next best path
   unsigned int key_edgeid = 19u;
   blocked_ids.push_back(key_edgeid);  // Edge between node 0-4 in the 0-4-9-12 chain
-  route = planner.findRoute(graph, start, goal, blocked_ids, route_data);
+  route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 5.0, 0.001);
   EXPECT_EQ(route.edges.size(), 5u);
   for (auto & edge : route.edges) {
@@ -178,7 +178,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   blocked_ids.clear();
   graph[0].neighbors[1].edge_cost.cost = 1e6;
   graph[0].neighbors[1].edge_cost.overridable = false;
-  route = planner.findRoute(graph, start, goal, blocked_ids, route_data);
+  route = planner.findRoute(graph, start, goal, blocked_ids, route_request);
   EXPECT_NEAR(route.route_cost, 5.0, 0.001);
   EXPECT_EQ(route.edges.size(), 5u);
 }
@@ -186,7 +186,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
 TEST(RoutePlannerTest, test_route_planner_negative)
 {
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
-  RouteData route_data;
+  RouteRequest route_request;
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
@@ -202,14 +202,14 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   EXPECT_THROW(
     planner.findRoute(
       graph, start, goal, blocked_ids,
-      route_data), nav2_core::NoValidGraph);
+      route_request), nav2_core::NoValidGraph);
 
   // Create a graph to test routing upon.
   graph = create4x4Graph();
 
   // Try with a stupidly low number of iterations
   graph[0].neighbors[1].edge_cost.overridable = true;
-  EXPECT_THROW(planner.findRoute(graph, start, goal, blocked_ids, route_data), nav2_core::TimedOut);
+  EXPECT_THROW(planner.findRoute(graph, start, goal, blocked_ids, route_request), nav2_core::TimedOut);
 
   // If we try to plan but we both cannot override and has 0 cost, will throw
   graph[0].neighbors[1].edge_cost.overridable = false;
@@ -217,5 +217,5 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   EXPECT_THROW(
     planner.findRoute(
       graph, start, goal, blocked_ids,
-      route_data), nav2_core::NoValidGraph);
+      route_request), nav2_core::NoValidGraph);
 }
