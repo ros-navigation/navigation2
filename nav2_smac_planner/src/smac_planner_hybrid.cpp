@@ -303,6 +303,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
+  unsigned int start_orientation_bin_id = orientation_bin_id;
   _a_star->setStart(mx, my, orientation_bin_id);
 
   // Set goal point, in A* bin search coordinates
@@ -318,7 +319,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  // Using the starting point orientation as the goal orientation to plan for easyest solution 
+  _a_star->setGoal(mx, my, start_orientation_bin_id);
 
   // Setup message
   nav_msgs::msg::Path plan;
