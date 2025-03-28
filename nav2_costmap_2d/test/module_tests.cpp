@@ -623,6 +623,30 @@ TEST(costmap, testStaticMap) {
   ASSERT_EQ(wy, 9.5);
 }
 
+/**
+ * Test for mapToWorldNoBounds
+ */
+
+TEST_F(costmap, MapToWorldNoBoundsNegative) {
+  nav2_costmap_2d::Costmap2D map(GRID_WIDTH, GRID_HEIGHT, RESOLUTION, 0.0, 0.0,
+    ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS,
+    10.0, MAX_Z, 10.0, 25, MAP_10_BY_10, THRESHOLD);
+
+  double wx, wy;
+
+  map.mapToWorldNoBounds(-1, -1, wx, wy);
+  EXPECT_DOUBLE_EQ(wx, 4.5);
+  EXPECT_DOUBLE_EQ(wy, 4.5);
+
+  map.mapToWorldNoBounds(-5, -5, wx, wy);
+  EXPECT_DOUBLE_EQ(wx, 0.5);
+  EXPECT_DOUBLE_EQ(wy, 0.5);
+
+  map.mapToWorldNoBounds(10, 10, wx, wy);
+  EXPECT_DOUBLE_EQ(wx, 15.5);
+  EXPECT_DOUBLE_EQ(wy, 15.5);
+}
+
 
 /**
  * Verify that dynamic obstacles are added
