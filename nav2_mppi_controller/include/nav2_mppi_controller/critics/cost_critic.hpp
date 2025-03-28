@@ -133,6 +133,7 @@ protected:
   float circumscribed_cost_{0.0f};
   float collision_cost_{0.0f};
   float critical_cost_{0.0f};
+  float near_collision_cost_{253.0f};
   float weight_{0};
   unsigned int trajectory_point_step_;
 

@@ -26,6 +26,7 @@ void CostCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.81f);
   getParam(critical_cost_, "critical_cost", 300.0f);
+  getParam(near_collision_cost_, "near_collision_cost", 253.0f);
   getParam(collision_cost_, "collision_cost", 1000000.0f);
   getParam(near_goal_distance_, "near_goal_distance", 0.5f);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
@@ -52,6 +53,14 @@ void CostCritic::initialize()
       " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
       "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
       " for full instructions. This will substantially impact run-time performance.");
+  }
+
+  if(costmap_ros_->getUseRadius()==consider_footprint_){
+    RCLCPP_WARN(logger_, "Considering footprint but robot radius set in costmap");
+  }
+
+  if(near_collision_cost_ > 253.0f){
+    RCLCPP_WARN(logger_, "Near collision cost is set higher than INSCRIBED_INFLATED_OBSTACLE");
   }
 
   RCLCPP_INFO(
@@ -153,28 +162,24 @@ void CostCritic::score(CriticData & data)
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       if (!worldToMapFloat(Tx, Ty, x_i, y_i)) {
-        if (!is_tracking_unknown_) {
-          traj_cost = collision_cost_;
-          trajectory_collide = true;
-          break;
-        }
         pose_cost = 255.0f;  // NO_INFORMATION in float
       } else {
         pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
         if (pose_cost < 1.0f) {
           continue;  // In free space
         }
-        if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
-          traj_cost = collision_cost_;
-          trajectory_collide = true;
-          break;
-        }
+      }
+
+      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+        traj_cost = collision_cost_;
+        trajectory_collide = true;
+        break;
       }
 
       // Let near-collision trajectory points be punished severely
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
-      if (pose_cost >= 253.0f /*INSCRIBED_INFLATED_OBSTACLE in float*/) {
+      if (pose_cost >= near_collision_cost_) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
         traj_cost += pose_cost;
