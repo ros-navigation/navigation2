@@ -41,3 +41,19 @@ jobs:
         distribution: rolling
         package-name: "${{ join(matrix.mypy_packages, ' ') }}"
         arguments: --config tools/pyproject.toml
+
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: >-
+            ament_lint_cmake,
+            ament_cpplint,
+            ament_uncrustify,
+            ament_xmllint,
+            ament_flake8,
+            ament_pep257,
