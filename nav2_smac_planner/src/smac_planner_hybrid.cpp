@@ -303,24 +303,25 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  unsigned int start_orientation_bin_id = orientation_bin_id;
   _a_star->setStart(mx, my, orientation_bin_id);
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
     throw std::runtime_error("Goal pose is out of costmap!");
   }
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
-  }
-  // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
-  }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  // Using the starting point orientation as the goal orientation to plan for easyest solution 
-  _a_star->setGoal(mx, my, start_orientation_bin_id);
+  // Removed the orientation bin calculation for the goal pose as we use the start poit orientation for that
+  // orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
+  // while (orientation_bin < 0.0) {
+  //   orientation_bin += static_cast<float>(_angle_quantizations);
+  // }
+  // // This is needed to handle precision issues
+  // if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+  //   orientation_bin -= static_cast<float>(_angle_quantizations);
+  // }
+  // orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
+
+  // Using the starting point orientation as the goal orientation to plan for easiest solution 
+  _a_star->setGoal(mx, my, orientation_bin_id);
 
   // Setup message
   nav_msgs::msg::Path plan;
