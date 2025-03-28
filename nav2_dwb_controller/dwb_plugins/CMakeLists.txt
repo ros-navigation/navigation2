@@ -24,19 +24,18 @@ target_include_directories(standard_traj_generator PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(standard_traj_generator PUBLIC
-  dwb_core::dwb_core
-  ${dwb_msgs_TARGETS}
-  ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
-  rclcpp::rclcpp
-  ${rcl_interfaces_TARGETS}
+ament_target_dependencies(standard_traj_generator
+  dwb_core
+  dwb_msgs
+  geometry_msgs
+  nav2_util
+  nav_2d_msgs
+  rclcpp
+  rcl_interfaces
+  nav_2d_utils
+  pluginlib
 )
-target_link_libraries(standard_traj_generator PRIVATE
-  nav_2d_utils::conversions
-  pluginlib::pluginlib
-)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

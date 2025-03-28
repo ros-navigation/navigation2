@@ -20,9 +20,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import EqualsSubstitution
+from launch.substitutions import PythonExpression
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode, ParameterFile
@@ -122,7 +121,7 @@ def generate_launch_description():
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' == ''"])
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -136,7 +135,7 @@ def generate_launch_description():
             ),
             Node(
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' != ''"])
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -181,7 +180,7 @@ def generate_launch_description():
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' == ''"])
                 ),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -196,7 +195,7 @@ def generate_launch_description():
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' != ''"])
                 ),
                 composable_node_descriptions=[
                     ComposableNode(

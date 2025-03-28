@@ -28,7 +28,7 @@ from launch.actions import (
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import TextSubstitution
-from launch_ros.actions import Node, PushROSNamespace
+from launch_ros.actions import Node #, PushROSNamespace
 
 from launch_testing.legacy import LaunchTestService
 
@@ -125,7 +125,7 @@ def generate_launch_description():
         group = GroupAction(
             [
                 # Instances use the robot's name for namespace
-                PushROSNamespace(robot['name']),
+                # PushROSNamespace(robot['name']),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
                         os.path.join(bringup_dir, 'launch', 'bringup_launch.py')

@@ -1,9 +1,9 @@
 ament_add_gtest_executable(test_localization_node
   test_localization_node.cpp
 )
-target_link_libraries(test_localization_node
-  ${geometry_msgs_TARGETS}
-  rclcpp::rclcpp
+ament_target_dependencies(test_localization_node
+  geometry_msgs
+  rclcpp
 )
 
 ament_add_test(test_localization

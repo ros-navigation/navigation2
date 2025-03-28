@@ -93,10 +93,9 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
       500), false, server_options);
 
   from_ll_to_map_client_ = std::make_unique<
-    nav2_util::ServiceClient<robot_localization::srv::FromLL,
-    std::shared_ptr<nav2_util::LifecycleNode>>>(
+    nav2_util::ServiceClient<robot_localization::srv::FromLL>>(
     "/fromLL",
-    node);
+    std::dynamic_pointer_cast<rclcpp::Node>(node));
 
   gps_action_server_ = std::make_unique<ActionServerGPS>(
     get_node_base_interface(),

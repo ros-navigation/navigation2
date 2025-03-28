@@ -27,7 +27,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
-from launch_ros.actions import PushROSNamespace
+# from launch_ros.actions import PushROSNamespace
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
@@ -125,10 +125,11 @@ def generate_launch_description():
     # Specify the actions
     bringup_cmd_group = GroupAction(
         [
-            PushROSNamespace(namespace),
+            # PushROSNamespace(namespace),
             Node(
                 condition=IfCondition(use_composition),
                 name='nav2_container',
+                namespace=namespace,
                 package='rclcpp_components',
                 executable='component_container_isolated',
                 parameters=[configured_params, {'autostart': autostart}],
