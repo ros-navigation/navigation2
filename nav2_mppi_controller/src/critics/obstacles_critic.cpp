@@ -44,7 +44,7 @@ void ObstaclesCritic::initialize()
       " for full instructions. This will substantially impact run-time performance.");
   }
 
-  if(costmap_ros_->getUseRadius()==consider_footprint_){
+  if(costmap_ros_->getUseRadius() == consider_footprint_) {
     RCLCPP_WARN(logger_, "Considering footprint but robot radius set in costmap");
   }
 

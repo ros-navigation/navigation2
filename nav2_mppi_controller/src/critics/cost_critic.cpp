@@ -55,11 +55,11 @@ void CostCritic::initialize()
       " for full instructions. This will substantially impact run-time performance.");
   }
 
-  if(costmap_ros_->getUseRadius()==consider_footprint_){
+  if(costmap_ros_->getUseRadius() == consider_footprint_) {
     RCLCPP_WARN(logger_, "Considering footprint but robot radius set in costmap");
   }
 
-  if(near_collision_cost_ > 253.0f){
+  if(near_collision_cost_ > 253.0f) {
     RCLCPP_WARN(logger_, "Near collision cost is set higher than INSCRIBED_INFLATED_OBSTACLE");
   }
 
