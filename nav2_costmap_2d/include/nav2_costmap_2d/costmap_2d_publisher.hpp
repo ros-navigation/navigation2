@@ -54,6 +54,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/service_server.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -180,7 +181,9 @@ private:
     costmap_raw_update_pub_;
 
   // Service for getting the costmaps
-  rclcpp::Service<nav2_msgs::srv::GetCostmap>::SharedPtr costmap_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr
+    costmap_service_;
 
   float grid_resolution_;
   unsigned int grid_width_, grid_height_;
