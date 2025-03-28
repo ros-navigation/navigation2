@@ -368,8 +368,8 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-- [ ] simple commander examples updated (test working)
 - [ ] update graphs, system & integration tests for TB4 warehouse world
+- [ ] simple commander examples updated (test working)
 
 
 
@@ -383,8 +383,6 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 - [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
 
----
-
 Collision:
 - [ ] does this collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
 - [ ] collision monotir use footprints? or at least the costmap topic collision checker
@@ -392,7 +390,11 @@ Collision:
 - [ ] Generally: go over the scorers, monitors and make sure sensable and performant. Both local rolling, global rolling, global static map uses (and none)
 - [ ] collision monitor perform simplifications
 
+---
+
+
 - [ ] Quality: 
+  - Update simple navigator docs on website for task bit
   - Missing readme plugins, other plugins to add for usefulness
   - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
   - Docs: Prove point with plugins, but arbitrary behaviors and annotations

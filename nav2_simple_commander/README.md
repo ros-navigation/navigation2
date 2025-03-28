@@ -26,8 +26,8 @@ New as of September 2023: the simple navigator constructor will accept a `namesp
 | spin(spin_dist=1.57, time_allowance=10, disable_collision_checks=False)   | Requests the robot to performs an in-place rotation by a given angle.      |
 | backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10, disable_collision_checks=False) | Requests the robot to back up by a given distance.         |
 | cancelTask()                       | Cancel an ongoing task request.|
-| isTaskComplete(trackingRoute=False)  | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going. If checking on a Route Tracking task, set default argument to `True`.                 |
-| getFeedback(trackingRoute=False)                     | Gets feedback from task, returns action server feedback object. If getting feedback on a Route Tracking task, set default argument to `True`. |
+| isTaskComplete(task=RunningTask.None)  | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going. Provide the running task return.                  |
+| getFeedback(task=RunningTask.None)                     | Gets feedback from task, returns action server feedback object. Provide the running task return. |
 | getResult()				        | Gets final result of task, to be called after `isTaskComplete` returns `True`. Returns action server result object. |
 | getPath(start, goal, planner_id='', use_start=False) | Gets a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.      |
 | getPathThroughPoses(start, goals, planner_id='', use_start=False) | Gets a path through a starting to a set of goals, a list of `PoseStamped`, `nav_msgs/Path`. |
@@ -62,9 +62,9 @@ nav.waitUntilNav2Active() # if autostarted, else use `lifecycleStartup()`
 path = nav.getPath(init_pose, goal_pose)
 smoothed_path = nav.smoothPath(path)
 ...
-nav.goToPose(goal_pose)
-while not nav.isTaskComplete():
-	feedback = nav.getFeedback()
+go_to_pose_task = nav.goToPose(goal_pose)
+while not nav.isTaskComplete(task=go_to_pose_task):
+	feedback = nav.getFeedback(task=go_to_pose_task)
 	if feedback.navigation_duration > 600:
 		nav.cancelTask()
 ...

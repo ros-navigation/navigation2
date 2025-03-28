@@ -87,10 +87,10 @@ def main():
     # path = navigator.getPath(initial_pose, goal_pose1)
 
     nav_start = navigator.get_clock().now()
-    navigator.followWaypoints(goal_poses)
+    follow_waypoints_task = navigator.followWaypoints(goal_poses)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=follow_waypoints_task):
         ################################################
         #
         # Implement some code here for your application!
@@ -99,7 +99,7 @@ def main():
 
         # Do something with the feedback
         i = i + 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=follow_waypoints_task)
         if feedback and i % 5 == 0:
             print(
                 'Executing current waypoint: '
@@ -124,7 +124,7 @@ def main():
                 goal_pose4.pose.orientation.z = 0.0
                 goal_poses = [goal_pose4]
                 nav_start = now
-                navigator.followWaypoints(goal_poses)
+                follow_waypoints_task = navigator.followWaypoints(goal_poses)
 
     # Do something depending on the return code
     result = navigator.getResult()

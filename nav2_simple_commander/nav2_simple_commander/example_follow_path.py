@@ -54,10 +54,10 @@ def main():
     smoothed_path = navigator.smoothPath(path)
 
     # Follow path
-    navigator.followPath(smoothed_path)
+    follow_path_task = navigator.followPath(smoothed_path)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=follow_path_task):
         ################################################
         #
         # Implement some code here for your application!
@@ -66,7 +66,7 @@ def main():
 
         # Do something with the feedback
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=follow_path_task)
         if feedback and i % 5 == 0:
             print(
                 'Estimated distance remaining to goal position: '

@@ -72,8 +72,8 @@ def main(argv=sys.argv[1:]):
     for controller, error_code in follow_path.items():
         success = navigator.followPath(path, controller)
 
-        if success:
-            while not navigator.isTaskComplete():
+        if success != None:
+            while not navigator.isTaskComplete(task=success):
                 time.sleep(0.5)
 
             assert (

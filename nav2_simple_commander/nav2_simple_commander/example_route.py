@@ -73,14 +73,14 @@ def main():
     # [path, route] = navigator.getRoute(initial_pose, goal_pose)
 
     # May also use NodeIDs on the graph if they are known by passing them instead as `int`
-    navigator.getAndTrackRoute(initial_pose, goal_pose)
+    route_tracking_task = navigator.getAndTrackRoute(initial_pose, goal_pose)
 
     # Note for the route server, we have a special route argument in the API b/c it may be
     # providing feedback messages simultaneously to others (e.g. controller or WPF as below)
-    isTrackingRoute = True
     task_canceled = False
     last_feedback = None
-    while not navigator.isTaskComplete(trackingRoute=isTrackingRoute):
+    follow_path_task = RunningTask.NONE
+    while not navigator.isTaskComplete(task=route_tracking_task):
         ################################################
         #
         # Implement some code here for your application!
@@ -88,7 +88,7 @@ def main():
         ################################################
 
         # Do something with the feedback, which contains the route / path if tracking
-        feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
+        feedback = navigator.getFeedback(task=route_tracking_task)
         while feedback is not None:
             if not last_feedback or \
                 (feedback.last_node_id != last_feedback.last_node_id or \
@@ -102,24 +102,24 @@ def main():
             if feedback.rerouted:
                 # Follow the path from the route server using the controller server
                 print('Passing new route to controller!')
-                navigator.followPath(feedback.path)
+                follow_path_task = navigator.followPath(feedback.path)
 
                 # May instead use the waypoint follower (or nav through poses) and use the route's sparse nodes!
                 # print("Passing route to waypoint follower!")
                 # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
                 # navigator.followWaypoints(nodes)
 
-            feedback = navigator.getFeedback(trackingRoute=isTrackingRoute)
+            feedback = navigator.getFeedback(task=route_tracking_task)
 
         # Check if followPath or WPF task is done (or failed), will cancel all current tasks, including route
-        if navigator.isTaskComplete():
+        if navigator.isTaskComplete(task=follow_path_task):
             print("Controller or waypoint follower server completed its task!")
             navigator.cancelTask()
             task_canceled = True
 
     # Route server will return completed status before the controller / WPF server
     # so wait for the actual robot task processing server to complete
-    while not navigator.isTaskComplete() and not task_canceled:
+    while not navigator.isTaskComplete(task=follow_path_task) and not task_canceled:
         pass
 
     # Do something depending on the return code
