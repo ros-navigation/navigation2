@@ -25,7 +25,7 @@ from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
-from launch_ros.actions import PushROSNamespace
+# from launch_ros.actions import PushROSNamespace
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
@@ -91,14 +91,10 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
-                ),
-                namespace=namespace,
-            ),
+
             Node(
                 package='nav2_lifecycle_manager',
+                namespace=namespace,
                 executable='lifecycle_manager',
                 name='lifecycle_manager_collision_detector',
                 output='screen',
@@ -109,6 +105,7 @@ def generate_launch_description():
             Node(
                 package='nav2_collision_monitor',
                 executable='collision_detector',
+                namespace=namespace,
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
                 parameters=[configured_params],
@@ -121,18 +118,14 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
-                ),
-                namespace=namespace,
-            ),
+
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
+                        namespace=namespace,
                         name='lifecycle_manager_collision_detector',
                         parameters=[
                             {'autostart': autostart},
@@ -143,6 +136,7 @@ def generate_launch_description():
                     ComposableNode(
                         package='nav2_collision_monitor',
                         plugin='nav2_collision_monitor::CollisionDetector',
+                        namespace=namespace,
                         name='collision_detector',
                         parameters=[configured_params],
                         remappings=remappings,
