@@ -81,9 +81,16 @@ public:
     unsigned int n_cols = state.vx.cols();
 
     for (unsigned int i = 1; i < n_cols; i++) {
+      Eigen::ArrayXf lower_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + min_delta_vx,
+        state.vx.col(i - 1) - max_delta_vx);
+      Eigen::ArrayXf upper_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + max_delta_vx,
+        state.vx.col(i - 1) - min_delta_vx);
+
       state.cvx.col(i - 1) = state.cvx.col(i - 1)
-        .cwiseMax(state.vx.col(i - 1) + min_delta_vx)
-        .cwiseMin(state.vx.col(i - 1) + max_delta_vx);
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
       state.vx.col(i) = state.cvx.col(i - 1);
 
       state.cwz.col(i - 1) = state.cwz.col(i - 1)
@@ -92,9 +99,15 @@ public:
       state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
+        Eigen::ArrayXf lower_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + min_delta_vy,
+          state.vy.col(i - 1) - max_delta_vy);
+        Eigen::ArrayXf upper_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + max_delta_vy,
+          state.vy.col(i - 1) - min_delta_vy);
         state.cvy.col(i - 1) = state.cvy.col(i - 1)
-          .cwiseMax(state.vy.col(i - 1) + min_delta_vy)
-          .cwiseMin(state.vy.col(i - 1) + max_delta_vy);
+          .cwiseMax(lower_bound_vy)
+          .cwiseMin(upper_bound_vy);
         state.vy.col(i) = state.cvy.col(i - 1);
       }
     }

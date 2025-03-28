@@ -269,9 +269,9 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if(vx_last > 0){
+    if(vx_last > 0) {
       vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
-    } else if(vx_last < 0){
+    } else {
       vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
     }
     vx_last = vx_curr;
@@ -284,9 +284,9 @@ void Optimizer::applyControlSequenceConstraints()
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if(vy_last > 0){
+      if(vy_last > 0) {
         vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
-      } else if(vy_last < 0){
+      } else {
         vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
       }
       vy_last = vy_curr;
