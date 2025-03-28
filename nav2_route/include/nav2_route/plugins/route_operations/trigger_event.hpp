@@ -36,9 +36,9 @@ namespace nav2_route
  * named accordingly to the event of query in the parameter file (e.g. OpenDoor, CallElevator).
  * Thus, a single TriggerEvent plugin type can support many different operation instances
  * calling different services. It may be set up to either trigger a
- * single service if the `service_name` is set in the parameter file at launch file
+ * single service if the `service_name` is set in the parameter file at launch
  * **or** trigger different services depending on the `service_name` set in the metadata of the
- * node or edge operation given for centralized or decentralized events.
+ * node or edge operation given for centralized or decentralized events by node or edge.
  *
  * See the Route Operation Client for more details
  */

@@ -23,8 +23,8 @@
   <depend>nav2_util</depend>
   <depend>nav2_core</depend>
   <depend>angles</depend>
-  <depend>lib-nanoflann</depend>
-  <depend>nlohmann-json</depend>
+  <depend>libnanoflann-dev</depend>
+  <depend>nlohmann-json-dev</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

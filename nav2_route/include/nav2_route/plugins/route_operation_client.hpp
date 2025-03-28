@@ -38,19 +38,19 @@ using namespace std::chrono_literals;  // NOLINT
  * (e.g. OpenDoor, CallElevator). Thus, a single RouteOperationClient implementation can
  * support many different operation instances calling different services. The template type
  * may be overridden for any applications. It may be set up to either trigger a
- * single service if the `service_name` is set in the parameter file at launch file for all calls
+ * single service if the `service_name` is set in the parameter file at launch for all calls
  * **or** trigger different services depending on the `service_name` set in the metadata of the
  * node or edge operation given.
  *
  * For example: OpenDoor<nav2_msgs::srv::OpenDoor>
  * RouteOperationClient instance can open a door at service "/open_door" set in the parameter file
- * that it calls every time the OpenDoor operation is triggered in the graph. Or the
- * OpenDoor instance can call any service whose `service_name` is set in the operation's metadata
- * (e.g. "/open_door1", "/open_door2", ...) corresponding to other instances of similar use.
- * In this case, the specification of "OpenDoor" operation is less to do with the service name
- * and more to do with the type of service template (nav2_msgs) used to populate the request.
- * This allows for massive reuse of a single plugin implementation in centralized or decentralized
- * applications.
+ * that it calls every time the OpenDoor operation is triggered in the graph (ceneralized service).
+ * Or the OpenDoor instance can call any service whose `service_name` is set in the operation's
+ * metadata (e.g. "/open_door1", "/open_door2", ...) corresponding to other instances of similar
+ * use. In this case, the specification of "OpenDoor" operation is less to do with the service name
+ * and more to do with the type of service template (nav2_msgs) used to populate the request
+ * (decentralized). This allows for massive reuse of a single plugin implementation in centralized
+ * or decentralized applications.
  *
  * The templated nature of this node makes it a base class for any such service
  * containing additional request or response fields by implementing the virtual interfaces
@@ -72,8 +72,8 @@ public:
   virtual ~RouteOperationClient() = default;
 
   /**
-   * @brief Configure API for subtask event, should it be necessary for another
-   * template type. May change or reset `main_srv_name_` variable to control
+   * @brief Configure client with any necessary parameters, etc.
+   * May change or reset `main_srv_name_` variable to control
    * main service name and existance.
    */
   virtual void configureEvent(
@@ -81,15 +81,13 @@ public:
     const std::string & /*name*/) {}
 
   /**
-   * @brief Populate request with details for service, should it be necessary for another
-   * template type
+   * @brief Populate request with details for service, if necessary
    */
   virtual void populateRequest(
     std::shared_ptr<typename SrvT::Request>/*request*/, const Metadata * /*mdata*/) {}
 
   /**
-   * @brief Process response from service to populate a result, should it be necessary
-   * for another template type
+   * @brief Process response from service to populate a result, if necessary
    */
   virtual OperationResult processResponse(
     std::shared_ptr<typename SrvT::Response>/*response*/) {return OperationResult();}

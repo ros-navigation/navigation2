@@ -368,39 +368,29 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-## New
+- [ ] simple commander examples updated (test working)
+- [ ] update graphs, system & integration tests for TB4 warehouse world
 
-Questions:
-- [ ] fix reoute operation client; creation of srv client in-perform is deeply flawed
-  - route operation client oddness
 
-- [ ] System tests for coverage, others missing
-- [ ] simple commander examples
-- [ ] update graphs, tests, examples for TB4 & warehouse world
+
 
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
     * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
     * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
 
 - [ ] Josh PR, Leidos docs PRs / rviz panel plugin
-
----
-
 - [ ] QGIS demo + plugins for editing and visualizing graphs
 
-- [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? 
-- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation
-- [ ] Simple commander seprate goal handler stuff
-- [ ] Navigator plugin type?
-- [ ] Extra critics and operation plugins
-- [ ] Question that'll come up: persist blocked edges between calls and the timemarker betwen sesions
-- [ ] Simplify: nodeAchieved, collision monitor perform, others. Possibility to clean up the `ReroutingState` mess
+- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
+
+---
 
 Collision:
 - [ ] does this collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
 - [ ] collision monotir use footprints? or at least the costmap topic collision checker
 - [ ] option for collision montir to fail rather than reroute
 - [ ] Generally: go over the scorers, monitors and make sure sensable and performant. Both local rolling, global rolling, global static map uses (and none)
+- [ ] collision monitor perform simplifications
 
 - [ ] Quality: 
   - Missing readme plugins, other plugins to add for usefulness
@@ -433,11 +423,11 @@ Collision:
 
 # Future work
 
-- [ ] GPS
-- [ ] nodes as poses rather than points?
-- [ ] Dump updated graph to file in leidos rviz plugin
-- [ ] Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap
+- [ ] GPS coordinate support
+- [ ] nodes as poses rather than points. Is this useful?
 - [ ] Provide a 'force to go through these edges' capability
-- [ ] stop / clearance -- open-RMF inspired (idr what; look into it)
+- [ ] stop / clearance -- open-RMF inspired
 - [ ] Dynamic parameter handling (remember mutex not change during active request)
-
+- [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.
+- [ ] persist blocked edges between calls and the timemarker betwen sesions
+- [ ] Extra critics and operation plugins
