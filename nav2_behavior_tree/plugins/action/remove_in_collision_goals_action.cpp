@@ -20,6 +20,7 @@
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -63,12 +64,29 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
     return BT::NodeStatus::FAILURE;
   }
 
+  // get the `waypoint_statuses` vector
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
+  auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
+  if (!waypoint_statuses_get_res) {
+    RCLCPP_WARN(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+  }
+
   nav_msgs::msg::Goals valid_goal_poses;
   for (size_t i = 0; i < response->costs.size(); ++i) {
     if ((response->costs[i] == 255 && !consider_unknown_as_obstacle_) ||
       response->costs[i] < cost_threshold_)
     {
       valid_goal_poses.goals.push_back(input_goals_.goals[i]);
+    } else if (waypoint_statuses_get_res) {
+      using namespace nav2_util::geometry_utils;  // NOLINT
+      auto cur_waypoint_index =
+        find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, input_goals_.goals[i]);
+      if (cur_waypoint_index == -1) {
+        RCLCPP_ERROR(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
+        return BT::NodeStatus::FAILURE;
+      }
+      waypoint_statuses[cur_waypoint_index].waypoint_status =
+        nav2_msgs::msg::WaypointStatus::MISSED;
     }
   }
   // Inform if all goals have been removed
@@ -78,6 +96,11 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
       "All goals are in collision and have been removed from the list");
   }
   setOutput("output_goals", valid_goal_poses);
+  // set `waypoint_statuses` output
+  if (waypoint_statuses_get_res) {
+    setOutput("output_waypoint_statuses", waypoint_statuses);
+  }
+
   return BT::NodeStatus::SUCCESS;
 }
 
