@@ -25,10 +25,19 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
+    strategy:
+      matrix:
+        mypy_packages:
+          - "nav2_smac_planner"
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install typeshed
+      run: sudo apt update && sudo apt install -y python3-typeshed
+
     - uses: ros-tooling/action-ros-lint@v0.1
       with:
         linter: mypy
         distribution: rolling
-        package-name: "nav2_smac_planner"
+        package-name: "${{ join(matrix.mypy_packages, ' ') }}"
+        arguments: --config tools/pyproject.toml

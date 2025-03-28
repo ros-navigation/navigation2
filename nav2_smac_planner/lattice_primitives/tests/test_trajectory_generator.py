@@ -15,9 +15,10 @@
 from typing import cast
 import unittest
 
+from nav2_smac_planner.lattice_primitives.trajectory import Trajectory
+from nav2_smac_planner.lattice_primitives.trajectory_generator import (
+    TrajectoryGenerator, TrajectoryGeneratorConfigDict)
 import numpy as np
-from trajectory import Trajectory
-from trajectory_generator import TrajectoryGenerator, TrajectoryGeneratorConfigDict
 
 TURNING_RADIUS = 1
 STEP_DISTANCE = 0.1

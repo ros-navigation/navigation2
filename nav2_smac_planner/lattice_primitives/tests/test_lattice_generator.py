@@ -14,7 +14,7 @@
 
 import unittest
 
-from lattice_generator import ConfigDict, LatticeGenerator
+from nav2_smac_planner.lattice_primitives.lattice_generator import ConfigDict, LatticeGenerator
 import numpy as np
 
 MOTION_MODEL = 'ackermann'
