@@ -116,7 +116,7 @@ The `nav2_simple_commander` has a few examples to highlight the API functions av
 - `example_nav_through_poses.py` - Demonstrates the navigate through poses capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_waypoint_follower.py` - Demonstrates the waypoint following capabilities of the navigator, as well as a number of auxiliary methods.
 - `example_follow_path.py` - Demonstrates the path following capabilities of the navigator, as well as a number of auxiliary methods such as path smoothing.
-- `example_route.py` - Demonstrates the route server's capabilities of the navigator, as well as a number of methods of how to use it, such as via waypoint following or control server path tracking (among other options).
+- `example_route.py` - Demonstrates the route server's capabilities of the navigator, as well as a number of methods of how to use it, such as via waypoint following or control server path tracking (among other options). Make sure to set the `aws_graph.geojson` in your nav2_params.yaml file
 - `example_assisted_teleop.py` - Demonstrates the assisted teleop's capabilities of the navigator.
 ## Demos
 

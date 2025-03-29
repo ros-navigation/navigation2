@@ -368,18 +368,16 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-- [ ] update graphs, system & integration tests for TB4 warehouse world
-- [ ] simple commander examples updated (test working)
-
+- [ ] Leidos docs PR / rviz panel plugin
+  - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
+  - [ ] https://github.com/ros-navigation/navigation2/pull/4775
 
 
 
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
     * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
     * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
-
-- [ ] Josh PR, Leidos docs PRs / rviz panel plugin
-- [ ] QGIS demo + plugins for editing and visualizing graphs
+    * Check Josh's BFS PR
 
 - [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
 
@@ -394,7 +392,7 @@ Collision:
 
 
 - [ ] Quality: 
-  - Update simple navigator docs on website for task bit
+  - Update simple navigator docs on website for task bit; migration guide update
   - Missing readme plugins, other plugins to add for usefulness
   - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
   - Docs: Prove point with plugins, but arbitrary behaviors and annotations
@@ -402,7 +400,7 @@ Collision:
   - web documentation (BT node configuration page, package configuration page, migration),
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
-  - System test with route file + evaluation
+  - System test with route file + evaluation (tb3, check works and complete)
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
@@ -421,15 +419,16 @@ Collision:
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
 
+- Can lanes be effectively implemented using this?
 
+# Future work (by priority level)
 
-# Future work
+- [ ] 1 Provide a 'force to go through these edges' capability
+- [ ] 1 stop / clearance -- open-RMF inspired
+- [ ] 3 Extra critics and operation plugins
+- [ ] 4 Dynamic parameter handling (remember mutex not change during active request)
+- [ ] 4 edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.
+- [ ] 8 persist blocked edges between calls and the timemarker betwen sesions
+- [ ] 10 GPS coordinate support
+- [ ] 10 nodes as poses rather than points. Is this useful?
 
-- [ ] GPS coordinate support
-- [ ] nodes as poses rather than points. Is this useful?
-- [ ] Provide a 'force to go through these edges' capability
-- [ ] stop / clearance -- open-RMF inspired
-- [ ] Dynamic parameter handling (remember mutex not change during active request)
-- [ ] edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.
-- [ ] persist blocked edges between calls and the timemarker betwen sesions
-- [ ] Extra critics and operation plugins

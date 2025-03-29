@@ -26,9 +26,34 @@ try:
 except Exception:
     raise Exception('Incorrect arguements provide')
 
+# Rename columns to match the expected output
+nodes = nodes.rename(columns={"start_node": "startid"})
+edges = edges.rename(columns={"start_node": "startid"})
+nodes = nodes.rename(columns={"end_node": "endid"})
+edges = edges.rename(columns={"end_node": "endid"})
+
+# Remove edgeid and use standard id
+edges = edges.rename(columns={"edge_id": "id"})
+
+# Make sure IDs are integers
+if "id" in nodes.columns:
+    nodes["id"] = nodes["id"].astype(int)
+if "id" in edges.columns:
+    edges["id"] = edges["id"].astype(int)
+
 now = datetime.now()
 
 graph = pd.concat([nodes, edges])
+
+# Set start/endids to integers, for nodes, set to -1 (not used)
+if "startid" in graph.columns:
+    graph["startid"] = graph["startid"].fillna(-1).astype(int)
+if "endid" in graph.columns:
+    graph["endid"] = graph["endid"].fillna(-1).astype(int)
+if "startid" in graph.columns:
+    graph["startid"] = graph["startid"].astype(int)
+if "endid" in graph.columns:
+    graph["endid"] = graph["endid"].astype(int)
 
 file_name = file_prefix + '_' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.geojson'
 

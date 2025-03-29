@@ -75,7 +75,10 @@ void GeoJsonGraphFileLoader::getGraphElements(
   for (const auto & feature : features) {
     if (feature["geometry"]["type"] == "Point") {
       nodes.emplace_back(feature);
-    } else if (feature["geometry"]["type"] == "MultiLineString") {
+    } else if (
+      feature["geometry"]["type"] == "MultiLineString" ||
+      feature["geometry"]["type"] == "LineString")
+    {
       edges.emplace_back(feature);
     }
   }

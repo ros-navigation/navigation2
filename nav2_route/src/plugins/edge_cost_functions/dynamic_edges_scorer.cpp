@@ -64,7 +64,7 @@ void DynamicEdgesScorer::closedEdgesCb(
   response->success = true;
 }
 
-bool AdjustEdgesScorer::score(
+bool DynamicEdgesScorer::score(
   const EdgePtr edge,
   const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
