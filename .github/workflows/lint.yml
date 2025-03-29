@@ -29,6 +29,7 @@ jobs:
       matrix:
         mypy_packages:
           - "nav2_smac_planner"
+          - "nav2_common"
     steps:
     - uses: actions/checkout@v4
 
