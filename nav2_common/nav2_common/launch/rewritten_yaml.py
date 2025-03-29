@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import tempfile
-from typing import Dict, List, Optional, Text
+from typing import Any, Dict, Generator, List, Optional, Text
 
 import launch
 import yaml
@@ -21,18 +21,18 @@ import yaml
 
 class DictItemReference:
 
-    def __init__(self, dictionary, key):
+    def __init__(self, dictionary: Dict[Text, Any], key: Text):
         self.dictionary = dictionary
         self.dictKey = key
 
-    def key(self):
+    def key(self) -> Text:
         return self.dictKey
 
-    def setValue(self, value):
+    def setValue(self, value: Any) -> None:
         self.dictionary[self.dictKey] = value
 
 
-class RewrittenYaml(launch.Substitution):
+class RewrittenYaml(launch.Substitution):  # type: ignore
     """
     Substitution that modifies the given YAML file.
 
@@ -42,10 +42,10 @@ class RewrittenYaml(launch.Substitution):
     def __init__(
         self,
         source_file: launch.SomeSubstitutionsType,
-        param_rewrites: Dict,
+        param_rewrites: Dict[Text, launch.SomeSubstitutionsType],
         root_key: Optional[launch.SomeSubstitutionsType] = None,
-        key_rewrites: Optional[Dict] = None,
-        convert_types=False,
+        key_rewrites: Optional[Dict[Text, launch.SomeSubstitutionsType]] = None,
+        convert_types: bool = False,
     ) -> None:
         super().__init__()
         """
@@ -81,7 +81,7 @@ class RewrittenYaml(launch.Substitution):
     @property
     def name(self) -> List[launch.Substitution]:
         """Getter for name."""
-        return self.__source_file
+        return self.__source_file  # type: ignore
 
     def describe(self) -> Text:
         """Return a description of this substitution as a string."""
@@ -103,7 +103,8 @@ class RewrittenYaml(launch.Substitution):
         rewritten_yaml.close()
         return rewritten_yaml.name
 
-    def resolve_rewrites(self, context):
+    def resolve_rewrites(self, context: launch.LaunchContext) -> \
+            tuple[Dict[Text, Text], Dict[Text, Text]]:
         resolved_params = {}
         for key in self.__param_rewrites:
             resolved_params[key] = launch.utilities.perform_substitutions(
@@ -116,7 +117,8 @@ class RewrittenYaml(launch.Substitution):
             )
         return resolved_params, resolved_keys
 
-    def substitute_params(self, yaml, param_rewrites):
+    def substitute_params(self, yaml: Dict[Text, Any],
+                          param_rewrites: Dict[Text, Text]) -> None:
         # substitute leaf-only parameters
         for key in self.getYamlLeafKeys(yaml):
             if key.key() in param_rewrites:
@@ -132,7 +134,8 @@ class RewrittenYaml(launch.Substitution):
                 yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
-    def add_params(self, yaml, param_rewrites):
+    def add_params(self, yaml: Dict[Text, Any],
+                   param_rewrites: Dict[Text, Text]) -> None:
         # add new total path parameters
         yaml_paths = self.pathify(yaml)
         for path in param_rewrites:
@@ -142,7 +145,8 @@ class RewrittenYaml(launch.Substitution):
                 if 'ros__parameters' in yaml_keys:
                     yaml = self.updateYamlPathVals(yaml, yaml_keys, new_val)
 
-    def updateYamlPathVals(self, yaml, yaml_key_list, rewrite_val):
+    def updateYamlPathVals(self, yaml: Dict[Text, Any],
+                           yaml_key_list: List[Text], rewrite_val: Any) -> Dict[Text, Any]:
         for key in yaml_key_list:
             if key == yaml_key_list[-1]:
                 yaml[key] = rewrite_val
@@ -158,7 +162,7 @@ class RewrittenYaml(launch.Substitution):
                 )
         return yaml
 
-    def substitute_keys(self, yaml, key_rewrites):
+    def substitute_keys(self, yaml: Dict[Text, Any], key_rewrites: Dict[Text, Text]) -> None:
         if len(key_rewrites) != 0:
             for key in list(yaml.keys()):
                 val = yaml[key]
@@ -169,7 +173,8 @@ class RewrittenYaml(launch.Substitution):
                 if isinstance(val, dict):
                     self.substitute_keys(val, key_rewrites)
 
-    def getYamlLeafKeys(self, yamlData):
+    def getYamlLeafKeys(self, yamlData: Dict[Text, Any]) -> \
+            Generator[DictItemReference, None, None]:
         try:
             for key in yamlData.keys():
                 for k in self.getYamlLeafKeys(yamlData[key]):
@@ -178,11 +183,14 @@ class RewrittenYaml(launch.Substitution):
         except AttributeError:
             return
 
-    def pathify(self, d, p=None, paths=None, joinchar='.'):
+    def pathify(self, d: Dict[Text, Any], p: Optional[Text] = None,
+                paths: Optional[Dict[Text, Any]] = None, joinchar: str = '.') -> Dict[Text, Any]:
         if p is None:
             paths = {}
             self.pathify(d, '', paths, joinchar=joinchar)
             return paths
+
+        assert paths is not None
         pn = p
         if p != '':
             pn += joinchar
@@ -195,8 +203,9 @@ class RewrittenYaml(launch.Substitution):
                 self.pathify(e, pn + str(idx), paths, joinchar=joinchar)
         else:
             paths[p] = d
+        return paths
 
-    def convert(self, text_value):
+    def convert(self, text_value: Text) -> Any:
         if self.__convert_types:
             # try converting to int or float
             try:

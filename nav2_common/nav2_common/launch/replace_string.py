@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Text
 import launch
 
 
-class ReplaceString(launch.Substitution):
+class ReplaceString(launch.Substitution):  # type: ignore
     """
     Substitution that replaces strings on a given file.
 
@@ -28,7 +28,7 @@ class ReplaceString(launch.Substitution):
     def __init__(
         self,
         source_file: launch.SomeSubstitutionsType,
-        replacements: Dict,
+        replacements: Dict[Text, launch.SomeSubstitutionsType],
         condition: Optional[launch.Condition] = None,
     ) -> None:
         super().__init__()
@@ -37,7 +37,8 @@ class ReplaceString(launch.Substitution):
 
         # import here to avoid loop
 
-        self.__source_file = normalize_to_list_of_substitutions(source_file)
+        self.__source_file: List[launch.Substitution] = \
+            normalize_to_list_of_substitutions(source_file)
         self.__replacements = {}
         for key in replacements:
             self.__replacements[key] = normalize_to_list_of_substitutions(
@@ -60,7 +61,9 @@ class ReplaceString(launch.Substitution):
         return ''
 
     def perform(self, context: launch.LaunchContext) -> Text:
-        yaml_filename = launch.utilities.perform_substitutions(context, self.name)
+        yaml_filename: Text = launch.utilities.perform_substitutions(
+            context, self.name
+        )
         if self.__condition is None or self.__condition.evaluate(context):
             output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
             replacements = self.resolve_replacements(context)
@@ -76,7 +79,7 @@ class ReplaceString(launch.Substitution):
         else:
             return yaml_filename
 
-    def resolve_replacements(self, context):
+    def resolve_replacements(self, context: launch.LaunchContext) -> Dict[Text, Text]:
         resolved_replacements = {}
         for key in self.__replacements:
             resolved_replacements[key] = launch.utilities.perform_substitutions(
@@ -84,7 +87,8 @@ class ReplaceString(launch.Substitution):
             )
         return resolved_replacements
 
-    def replace(self, input_file, output_file, replacements):
+    def replace(self, input_file: launch.SomeSubstitutionsType,
+                output_file: launch.SomeSubstitutionsType, replacements: Dict[Text, Text]) -> None:
         for line in input_file:
             for key, value in replacements.items():
                 if isinstance(key, str) and isinstance(value, str):

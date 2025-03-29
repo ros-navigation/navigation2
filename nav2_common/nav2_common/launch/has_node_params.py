@@ -18,7 +18,7 @@ import launch
 import yaml
 
 
-class HasNodeParams(launch.Substitution):
+class HasNodeParams(launch.Substitution):  # type: ignore
     """
     Substitution that checks if a param file contains parameters for a node.
 
@@ -45,7 +45,7 @@ class HasNodeParams(launch.Substitution):
     @property
     def name(self) -> List[launch.Substitution]:
         """Getter for name."""
-        return self.__source_file
+        return self.__source_file  # type: ignore
 
     def describe(self) -> Text:
         """Return a description of this substitution as a string."""
