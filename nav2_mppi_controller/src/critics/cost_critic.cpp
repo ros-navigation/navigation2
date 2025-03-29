@@ -26,7 +26,7 @@ void CostCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.81f);
   getParam(critical_cost_, "critical_cost", 300.0f);
-  getParam(near_collision_cost_, "near_collision_cost", 253.0f);
+  getParam(near_collision_cost_, "near_collision_cost", 253);
   getParam(collision_cost_, "collision_cost", 1000000.0f);
   getParam(near_goal_distance_, "near_goal_distance", 0.5f);
   getParam(inflation_layer_name_, "inflation_layer_name", std::string(""));
@@ -55,11 +55,19 @@ void CostCritic::initialize()
       " for full instructions. This will substantially impact run-time performance.");
   }
 
-  if(costmap_ros_->getUseRadius() == consider_footprint_) {
-    RCLCPP_WARN(logger_, "Considering footprint but robot radius set in costmap");
+  if (costmap_ros_->getUseRadius() == consider_footprint_) {
+    RCLCPP_WARN(
+    logger_,
+    "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+    "in both the costmap and the cost critic.");
+    if (costmap_ros_->getUseRadius()) {
+      throw std::invalid_argument(
+      "Considering footprint in collision checking but no robot footprint provided in the "
+      "costmap.");
+    }
   }
 
-  if(near_collision_cost_ > 253.0f) {
+  if(near_collision_cost_ > 253) {
     RCLCPP_WARN(logger_, "Near collision cost is set higher than INSCRIBED_INFLATED_OBSTACLE");
   }
 
@@ -179,7 +187,7 @@ void CostCritic::score(CriticData & data)
       // Let near-collision trajectory points be punished severely
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
-      if (pose_cost >= near_collision_cost_) {
+      if (pose_cost >= static_cast<float>(near_collision_cost_)) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
         traj_cost += pose_cost;
