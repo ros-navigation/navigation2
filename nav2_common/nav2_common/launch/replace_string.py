@@ -33,9 +33,9 @@ class ReplaceString(launch.Substitution):
     ) -> None:
         super().__init__()
 
-        from launch.utilities import (
-            normalize_to_list_of_substitutions,
-        )  # import here to avoid loop
+        from launch.utilities import normalize_to_list_of_substitutions
+
+        # import here to avoid loop
 
         self.__source_file = normalize_to_list_of_substitutions(source_file)
         self.__replacements = {}

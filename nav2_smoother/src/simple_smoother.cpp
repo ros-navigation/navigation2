@@ -184,7 +184,7 @@ void SimpleSmoother::smoothImpl(
     last_path = new_path;
   }
 
-  // Lets do additional refinement, it shouldn't take more than a couple milliseconds
+  // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;

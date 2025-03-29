@@ -12,6 +12,7 @@
   <depend>osrf_pycommon</depend>
   <depend>rclpy</depend>
   <depend>python3-yaml</depend>
+  <depend>python3-types-pyyaml</depend>
 
   <buildtool_depend>ament_cmake_core</buildtool_depend>
 

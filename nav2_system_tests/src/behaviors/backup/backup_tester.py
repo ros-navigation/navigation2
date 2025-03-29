@@ -21,14 +21,11 @@ from geometry_msgs.msg import Point32, PolygonStamped
 from nav2_msgs.action import BackUp
 from nav2_msgs.msg import Costmap
 from nav2_msgs.srv import ManageLifecycleNodes
-
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
 
 class BackupTest(Node):

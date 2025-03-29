@@ -36,7 +36,7 @@ protected:
     goal_handle)
   {
     while (!goal_handle->is_canceling()) {
-      // Spining here until goal cancels
+      // Spinning here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
   }
@@ -135,7 +135,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
   // Setting target yaw
   goal_msg.target_yaw = 1.57;
 
-  // Spining for server and sending a goal
+  // Spinning for server and sending a goal
   client_->wait_for_action_server();
   client_->async_send_goal(goal_msg, send_goal_options);
 

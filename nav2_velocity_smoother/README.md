@@ -3,7 +3,7 @@
 The ``nav2_velocity_smoother`` is a package containing a lifecycle-component node for smoothing velocities sent by Nav2 to robot controllers.
 The aim of this package is to implement velocity, acceleration, and deadband smoothing from Nav2 to reduce wear-and-tear on robot motors and hardware controllers by smoothing out the accelerations/jerky movements that might be present with some local trajectory planners' control efforts.
 
-It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
+It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/).
 
 See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
 

@@ -3,7 +3,7 @@ The Theta Star Planner is a global planning plugin meant to be used with the Nav
 
 See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-thetastar.html) for additional parameter descriptions.
 
-## Features 
+## Features
 - The planner uses A\* search along with line of sight (LOS) checks to form any-angle paths thus avoiding zig-zag paths that may be present in the usual implementation of A\*
 - As it also considers the costmap traversal cost during execution it tends to smoothen the paths automatically, thus mitigating the need to smoothen the path (The presence of sharp turns depends on the resolution of the map, and it decreases as the map resolution increases)
 - Uses the costs from the costmap to penalise high cost regions
@@ -51,7 +51,7 @@ w1*euc_cost(par, neigh) + w2*(costmap(par,neigh)/LETHAL_COST)^2`
 ## Parameters
 The parameters of the planner are :
 - ` .how_many_corners ` : to choose between 4-connected and 8-connected graph expansions, the accepted values are 4 and 8
-- ` .w_euc_cost ` : weight applied on the length of the path. 
+- ` .w_euc_cost ` : weight applied on the length of the path.
 - ` .w_traversal_cost ` : it tunes how harshly the nodes of high cost are penalised. From the above g(neigh) equation you can see that the cost-aware component of the cost function forms a parabolic curve, thus this parameter would, on increasing its value, make that curve steeper allowing for a greater differentiation (as the delta of costs would increase, when the graph becomes steep) among the nodes of different costs.
 Below are the default values of the parameters :
 ```

@@ -15,10 +15,15 @@
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-
 import rclpy
 from rclpy.duration import Duration
 
+"""
+Basic item picking demo. In this demonstration, the expectation
+is that there is a person at the item shelf to put the item on the robot
+and at the pallet jack to remove it
+(probably with some kind of button for 'got item, robot go do next task').
+"""
 
 # Shelf positions for picking
 shelf_positions = {
@@ -34,13 +39,6 @@ shipping_destinations = {
     'frieght_bay_2': [-6.0, 0.0, 3.14],
     'frieght_bay_3': [-6.0, -5.0, 3.14],
 }
-
-"""
-Basic item picking demo. In this demonstration, the expectation
-is that there is a person at the item shelf to put the item on the robot
-and at the pallet jack to remove it
-(probably with some kind of button for 'got item, robot go do next task').
-"""
 
 
 def main():
