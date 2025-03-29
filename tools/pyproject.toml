@@ -18,5 +18,10 @@ explicit_package_bases = true
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["matplotlib.*", "rtree.*"]
+module = [
+    "matplotlib.*",
+    "rtree.*",
+    "launch.*",
+]
+
 ignore_missing_imports = true

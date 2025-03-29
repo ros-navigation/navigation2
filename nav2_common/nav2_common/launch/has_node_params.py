@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Text
+from typing import List
 
 import launch
 import yaml
 
 
-class HasNodeParams(launch.Substitution):
+class HasNodeParams(launch.Substitution):  # type: ignore[misc]
     """
     Substitution that checks if a param file contains parameters for a node.
 
@@ -26,7 +26,7 @@ class HasNodeParams(launch.Substitution):
     """
 
     def __init__(
-        self, source_file: launch.SomeSubstitutionsType, node_name: Text
+        self, source_file: launch.SomeSubstitutionsType, node_name: str
     ) -> None:
         super().__init__()
         """
@@ -39,7 +39,8 @@ class HasNodeParams(launch.Substitution):
         # import here to avoid loop
         from launch.utilities import normalize_to_list_of_substitutions
 
-        self.__source_file = normalize_to_list_of_substitutions(source_file)
+        self.__source_file: List[launch.Substitution] = \
+            normalize_to_list_of_substitutions(source_file)
         self.__node_name = node_name
 
     @property
@@ -47,11 +48,11 @@ class HasNodeParams(launch.Substitution):
         """Getter for name."""
         return self.__source_file
 
-    def describe(self) -> Text:
+    def describe(self) -> str:
         """Return a description of this substitution as a string."""
         return ''
 
-    def perform(self, context: launch.LaunchContext) -> Text:
+    def perform(self, context: launch.LaunchContext) -> str:
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
         data = yaml.safe_load(open(yaml_filename, 'r'))
 
