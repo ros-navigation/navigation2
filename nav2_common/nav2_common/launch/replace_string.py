@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import tempfile
-from typing import Dict, List, Optional
+from typing import Optional
 
 import launch
 
@@ -28,7 +28,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
     def __init__(
         self,
         source_file: launch.SomeSubstitutionsType,
-        replacements: Dict[str, launch.SomeSubstitutionsType],
+        replacements: dict[str, launch.SomeSubstitutionsType],
         condition: Optional[launch.Condition] = None,
     ) -> None:
         super().__init__()
@@ -37,7 +37,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
 
         # import here to avoid loop
 
-        self.__source_file: List[launch.Substitution] = \
+        self.__source_file: list[launch.Substitution] = \
             normalize_to_list_of_substitutions(source_file)
         self.__replacements = {}
         for key in replacements:
@@ -47,7 +47,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
         self.__condition = condition
 
     @property
-    def name(self) -> List[launch.Substitution]:
+    def name(self) -> list[launch.Substitution]:
         """Getter for name."""
         return self.__source_file
 
@@ -68,7 +68,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
             output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
             replacements = self.resolve_replacements(context)
             try:
-                input_file = open(yaml_filename, 'r')
+                input_file = open(yaml_filename)
                 self.replace(input_file, output_file, replacements)
             except Exception as err:  # noqa: B902
                 print('ReplaceString substitution error: ', err)
@@ -79,7 +79,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
         else:
             return yaml_filename
 
-    def resolve_replacements(self, context: launch.LaunchContext) -> Dict[str, str]:
+    def resolve_replacements(self, context: launch.LaunchContext) -> dict[str, str]:
         resolved_replacements = {}
         for key in self.__replacements:
             resolved_replacements[key] = launch.utilities.perform_substitutions(
@@ -88,7 +88,7 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
         return resolved_replacements
 
     def replace(self, input_file: launch.SomeSubstitutionsType,
-                output_file: launch.SomeSubstitutionsType, replacements: Dict[str, str]) -> None:
+                output_file: launch.SomeSubstitutionsType, replacements: dict[str, str]) -> None:
         for line in input_file:
             for key, value in replacements.items():
                 if isinstance(key, str) and isinstance(value, str):

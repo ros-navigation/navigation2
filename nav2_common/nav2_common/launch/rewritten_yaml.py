@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Generator
 import tempfile
-from typing import Dict, Generator, List, Optional, TypeAlias, Union
+from typing import Optional, TypeAlias, Union
 
 import launch
 import yaml
@@ -23,7 +24,7 @@ YamlValue: TypeAlias = Union[str, int, float, bool]
 
 class DictItemReference:
 
-    def __init__(self, dictionary: Dict[str, YamlValue], key: str):
+    def __init__(self, dictionary: dict[str, YamlValue], key: str):
         self.dictionary = dictionary
         self.dictKey = key
 
@@ -44,9 +45,9 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
     def __init__(
         self,
         source_file: launch.SomeSubstitutionsType,
-        param_rewrites: Dict[str, launch.SomeSubstitutionsType],
+        param_rewrites: dict[str, launch.SomeSubstitutionsType],
         root_key: Optional[launch.SomeSubstitutionsType] = None,
-        key_rewrites: Optional[Dict[str, launch.SomeSubstitutionsType]] = None,
+        key_rewrites: Optional[dict[str, launch.SomeSubstitutionsType]] = None,
         convert_types: bool = False,
     ) -> None:
         super().__init__()
@@ -63,7 +64,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         # import here to avoid loop
         from launch.utilities import normalize_to_list_of_substitutions
 
-        self.__source_file: List[launch.Substitution] = \
+        self.__source_file: list[launch.Substitution] = \
             normalize_to_list_of_substitutions(source_file)
         self.__param_rewrites = {}
         self.__key_rewrites = {}
@@ -82,7 +83,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             self.__root_key = normalize_to_list_of_substitutions(root_key)
 
     @property
-    def name(self) -> List[launch.Substitution]:
+    def name(self) -> list[launch.Substitution]:
         """Getter for name."""
         return self.__source_file
 
@@ -94,7 +95,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
         rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
-        data = yaml.safe_load(open(yaml_filename, 'r'))
+        data = yaml.safe_load(open(yaml_filename))
         self.substitute_params(data, param_rewrites)
         self.add_params(data, param_rewrites)
         self.substitute_keys(data, keys_rewrites)
@@ -107,7 +108,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         return rewritten_yaml.name
 
     def resolve_rewrites(self, context: launch.LaunchContext) -> \
-            tuple[Dict[str, str], Dict[str, str]]:
+            tuple[dict[str, str], dict[str, str]]:
         resolved_params = {}
         for key in self.__param_rewrites:
             resolved_params[key] = launch.utilities.perform_substitutions(
@@ -120,8 +121,8 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             )
         return resolved_params, resolved_keys
 
-    def substitute_params(self, yaml: Dict[str, YamlValue],
-                          param_rewrites: Dict[str, str]) -> None:
+    def substitute_params(self, yaml: dict[str, YamlValue],
+                          param_rewrites: dict[str, str]) -> None:
         # substitute leaf-only parameters
         for key in self.getYamlLeafKeys(yaml):
             if key.key() in param_rewrites:
@@ -137,8 +138,8 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                 yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
-    def add_params(self, yaml: Dict[str, YamlValue],
-                   param_rewrites: Dict[str, str]) -> None:
+    def add_params(self, yaml: dict[str, YamlValue],
+                   param_rewrites: dict[str, str]) -> None:
         # add new total path parameters
         yaml_paths = self.pathify(yaml)
         for path in param_rewrites:
@@ -149,8 +150,8 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                     yaml = self.updateYamlPathVals(yaml, yaml_keys, new_val)
 
     def updateYamlPathVals(
-            self, yaml: Dict[str, YamlValue],
-            yaml_key_list: List[str], rewrite_val: YamlValue) -> Dict[str, YamlValue]:
+            self, yaml: dict[str, YamlValue],
+            yaml_key_list: list[str], rewrite_val: YamlValue) -> dict[str, YamlValue]:
 
         for key in yaml_key_list:
             if key == yaml_key_list[-1]:
@@ -170,7 +171,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         return yaml
 
     def substitute_keys(
-            self, yaml: Dict[str, YamlValue], key_rewrites: Dict[str, str]) -> None:
+            self, yaml: dict[str, YamlValue], key_rewrites: dict[str, str]) -> None:
         if len(key_rewrites) != 0:
             for key in list(yaml.keys()):
                 val = yaml[key]
@@ -181,7 +182,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                 if isinstance(val, dict):
                     self.substitute_keys(val, key_rewrites)
 
-    def getYamlLeafKeys(self, yamlData: Dict[str, YamlValue]) -> \
+    def getYamlLeafKeys(self, yamlData: dict[str, YamlValue]) -> \
             Generator[DictItemReference, None, None]:
         if not isinstance(yamlData, dict):
             return
@@ -196,10 +197,10 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             yield DictItemReference(yamlData, key)
 
     def pathify(
-            self, d: Union[Dict[str, YamlValue], List[YamlValue], YamlValue],
+            self, d: Union[dict[str, YamlValue], list[YamlValue], YamlValue],
             p: Optional[str] = None,
-            paths: Optional[Dict[str, YamlValue]] = None,
-            joinchar: str = '.') -> Dict[str, YamlValue]:
+            paths: Optional[dict[str, YamlValue]] = None,
+            joinchar: str = '.') -> dict[str, YamlValue]:
         if p is None:
             paths = {}
             self.pathify(d, '', paths, joinchar=joinchar)
