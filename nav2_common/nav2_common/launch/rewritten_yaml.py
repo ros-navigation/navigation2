@@ -13,22 +13,24 @@
 # limitations under the License.
 
 import tempfile
-from typing import Any, Dict, Generator, List, Optional
+from typing import Dict, Generator, List, Optional, TypeAlias, Union
 
 import launch
 import yaml
 
+YamlValue: TypeAlias = Union[str, int, float, bool]
+
 
 class DictItemReference:
 
-    def __init__(self, dictionary: Dict[str, Any], key: str):
+    def __init__(self, dictionary: Dict[str, YamlValue], key: str):
         self.dictionary = dictionary
         self.dictKey = key
 
     def key(self) -> str:
         return self.dictKey
 
-    def setValue(self, value: Any) -> None:
+    def setValue(self, value: YamlValue) -> None:
         self.dictionary[self.dictKey] = value
 
 
@@ -118,7 +120,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             )
         return resolved_params, resolved_keys
 
-    def substitute_params(self, yaml: Dict[str, Any],
+    def substitute_params(self, yaml: Dict[str, YamlValue],
                           param_rewrites: Dict[str, str]) -> None:
         # substitute leaf-only parameters
         for key in self.getYamlLeafKeys(yaml):
@@ -135,7 +137,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                 yaml_keys = path.split('.')
                 yaml = self.updateYamlPathVals(yaml, yaml_keys, rewrite_val)
 
-    def add_params(self, yaml: Dict[str, Any],
+    def add_params(self, yaml: Dict[str, YamlValue],
                    param_rewrites: Dict[str, str]) -> None:
         # add new total path parameters
         yaml_paths = self.pathify(yaml)
@@ -146,8 +148,10 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                 if 'ros__parameters' in yaml_keys:
                     yaml = self.updateYamlPathVals(yaml, yaml_keys, new_val)
 
-    def updateYamlPathVals(self, yaml: Dict[str, Any],
-                           yaml_key_list: List[str], rewrite_val: Any) -> Dict[str, Any]:
+    def updateYamlPathVals(
+            self, yaml: Dict[str, YamlValue],
+            yaml_key_list: List[str], rewrite_val: YamlValue) -> Dict[str, YamlValue]:
+
         for key in yaml_key_list:
             if key == yaml_key_list[-1]:
                 yaml[key] = rewrite_val
@@ -158,12 +162,15 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                     yaml[int(key)], yaml_key_list, rewrite_val
                 )
             else:
-                yaml[key] = self.updateYamlPathVals(
-                    yaml.get(key, {}), yaml_key_list, rewrite_val
+                yaml[key] = self.updateYamlPathVals(  # type: ignore[assignment]
+                    yaml.get(key, {}),  # type: ignore[arg-type]
+                    yaml_key_list,
+                    rewrite_val
                 )
         return yaml
 
-    def substitute_keys(self, yaml: Dict[str, Any], key_rewrites: Dict[str, str]) -> None:
+    def substitute_keys(
+            self, yaml: Dict[str, YamlValue], key_rewrites: Dict[str, str]) -> None:
         if len(key_rewrites) != 0:
             for key in list(yaml.keys()):
                 val = yaml[key]
@@ -174,18 +181,25 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
                 if isinstance(val, dict):
                     self.substitute_keys(val, key_rewrites)
 
-    def getYamlLeafKeys(self, yamlData: Dict[str, Any]) -> \
+    def getYamlLeafKeys(self, yamlData: Dict[str, YamlValue]) -> \
             Generator[DictItemReference, None, None]:
-        try:
-            for key in yamlData.keys():
-                for k in self.getYamlLeafKeys(yamlData[key]):
-                    yield k
-                yield DictItemReference(yamlData, key)
-        except AttributeError:
+        if not isinstance(yamlData, dict):
             return
 
-    def pathify(self, d: Dict[str, Any], p: Optional[str] = None,
-                paths: Optional[Dict[str, Any]] = None, joinchar: str = '.') -> Dict[str, Any]:
+        for key in yamlData.keys():
+            child = yamlData[key]
+
+            if isinstance(child, dict):
+                # Recursively process nested dictionaries
+                yield from self.getYamlLeafKeys(child)
+
+            yield DictItemReference(yamlData, key)
+
+    def pathify(
+            self, d: Union[Dict[str, YamlValue], List[YamlValue], YamlValue],
+            p: Optional[str] = None,
+            paths: Optional[Dict[str, YamlValue]] = None,
+            joinchar: str = '.') -> Dict[str, YamlValue]:
         if p is None:
             paths = {}
             self.pathify(d, '', paths, joinchar=joinchar)
@@ -206,7 +220,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             paths[p] = d
         return paths
 
-    def convert(self, text_value: str) -> Any:
+    def convert(self, text_value: str) -> YamlValue:
         if self.__convert_types:
             # try converting to int or float
             try:
