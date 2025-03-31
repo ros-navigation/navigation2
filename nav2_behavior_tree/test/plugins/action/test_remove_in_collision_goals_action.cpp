@@ -247,7 +247,7 @@ TEST_F(RemoveInCollisionGoalsTestFixture,
   EXPECT_EQ(output_waypoint_statuses[0].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
   EXPECT_EQ(output_waypoint_statuses[1].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
   EXPECT_EQ(output_waypoint_statuses[2].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
-  EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::MISSED);
+  EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::SKIPPED);
 }
 
 TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fail)

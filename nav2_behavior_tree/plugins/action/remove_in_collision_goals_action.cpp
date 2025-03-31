@@ -86,7 +86,7 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
         return BT::NodeStatus::FAILURE;
       }
       waypoint_statuses[cur_waypoint_index].waypoint_status =
-        nav2_msgs::msg::WaypointStatus::MISSED;
+        nav2_msgs::msg::WaypointStatus::SKIPPED;
     }
   }
   // Inform if all goals have been removed

@@ -115,7 +115,7 @@ NavigateThroughPosesNavigator::goalCompleted(
 
   // populate remaining waypoint statuses based on final_bt_status
   auto integrate_waypoint_status = final_bt_status == nav2_behavior_tree::BtStatus::SUCCEEDED ?
-    nav2_msgs::msg::WaypointStatus::COMPLETED : nav2_msgs::msg::WaypointStatus::MISSED;
+    nav2_msgs::msg::WaypointStatus::COMPLETED : nav2_msgs::msg::WaypointStatus::FAILED;
   for (auto & waypoint_status : waypoint_statuses) {
     if (waypoint_status.waypoint_status == nav2_msgs::msg::WaypointStatus::PENDING) {
       waypoint_status.waypoint_status = integrate_waypoint_status;
