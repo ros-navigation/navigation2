@@ -209,7 +209,10 @@ TEST(RoutePlannerTest, test_route_planner_negative)
 
   // Try with a stupidly low number of iterations
   graph[0].neighbors[1].edge_cost.overridable = true;
-  EXPECT_THROW(planner.findRoute(graph, start, goal, blocked_ids, route_request), nav2_core::TimedOut);
+  EXPECT_THROW(
+    planner.findRoute(
+      graph, start, goal, blocked_ids,
+      route_request), nav2_core::TimedOut);
 
   // If we try to plan but we both cannot override and has 0 cost, will throw
   graph[0].neighbors[1].edge_cost.overridable = false;

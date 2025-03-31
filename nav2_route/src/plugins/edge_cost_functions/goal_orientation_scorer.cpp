@@ -37,7 +37,7 @@ void GoalOrientationScorer::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".use_orientation_threshold", rclcpp::ParameterValue(false));
-  
+
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();
   orientation_weight_ =
     static_cast<float>(node->get_parameter(getName() + ".orientation_weight").as_double());
@@ -50,9 +50,10 @@ bool GoalOrientationScorer::score(
   const RouteRequest & route_request,
   const EdgeType & edge_type, float & cost)
 {
-  
+
   if (!route_request.use_poses) {
-    throw nav2_core::InvalidEdgeScorerUse("Cannot use goal orientation scorer without goal pose specified!");
+    throw nav2_core::InvalidEdgeScorerUse(
+            "Cannot use goal orientation scorer without goal pose specified!");
   }
 
   if (edge_type == EdgeType::END) {

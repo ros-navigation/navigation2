@@ -685,8 +685,11 @@ TEST(EdgeScorersTest, test_goal_orientation_threshold)
   EXPECT_EQ(traversal_cost, 0.0);
 
   route_request.use_poses = false;
-  
-  EXPECT_THROW(scorer.score(&edge, route_request, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
+
+  EXPECT_THROW(
+    scorer.score(
+      &edge, route_request, edge_type,
+      traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_goal_orientation_scoring)
@@ -706,7 +709,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   nav2_util::declare_parameter_if_not_declared(
     node, "GoalOrientationScorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
-      nav2_util::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "GoalOrientationScorer.use_orientation_thershold",
     rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
@@ -756,8 +759,11 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
   EXPECT_NEAR(traversal_cost, orientation_weight * M_PI, 0.001);
 
   route_request.use_poses = false;
-  
-  EXPECT_THROW(scorer.score(&edge, route_request, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
+
+  EXPECT_THROW(
+    scorer.score(
+      &edge, route_request, edge_type,
+      traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
@@ -797,7 +803,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   start_pose.header.frame_id = "map";
   start_pose.header.stamp = node->get_clock()->now();
-  
+
   start_pose.pose.position.x = 0.0;
   start_pose.pose.position.x = 0.0;
   start_pose.pose.position.z = 0.0;
@@ -838,8 +844,11 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
   EXPECT_EQ(traversal_cost, 0.0);
 
   route_request.use_poses = false;
-  
-  EXPECT_THROW(scorer.score(&edge, route_request, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
+
+  EXPECT_THROW(
+    scorer.score(
+      &edge, route_request, edge_type,
+      traversal_cost), nav2_core::InvalidEdgeScorerUse);
 }
 
 TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
@@ -870,7 +879,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   EdgeScorer scorer(node, tf_buffer);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
-  
+
   double yaw = 0.0;
 
   tf2::Quaternion q;
@@ -884,7 +893,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   start_pose.header.frame_id = "map";
   start_pose.header.stamp = node->get_clock()->now();
-  
+
   start_pose.pose.position.x = 0.0;
   start_pose.pose.position.x = 0.0;
   start_pose.pose.position.z = 0.0;
@@ -926,7 +935,10 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
   EXPECT_NEAR(traversal_cost, orientation_weight * M_PI, 0.001);
 
   route_request.use_poses = false;
-  
-  EXPECT_THROW(scorer.score(&edge, route_request, edge_type, traversal_cost), nav2_core::InvalidEdgeScorerUse);
+
+  EXPECT_THROW(
+    scorer.score(
+      &edge, route_request, edge_type,
+      traversal_cost), nav2_core::InvalidEdgeScorerUse);
 
 }

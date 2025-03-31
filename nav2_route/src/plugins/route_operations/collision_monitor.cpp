@@ -42,8 +42,13 @@ void CollisionMonitor::configure(
   checking_duration_ = rclcpp::Duration::from_seconds(1.0 / checking_rate);
 
   nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".reroute_on_collision", rclcpp::ParameterValue(true));
+  reroute_on_collision_ = node->get_parameter(getName() + ".reroute_on_collision").as_bool();
+
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
   max_cost_ = static_cast<float>(node->get_parameter(getName() + ".max_cost").as_double());
+
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_collision_dist", rclcpp::ParameterValue(5.0));
@@ -110,13 +115,20 @@ OperationResult CollisionMonitor::perform(
       }
     }
 
-    // Collision check edge on grid within max distance and report blocked edges for rerouting
+    // Collision check edge on grid within max distance and
+    // report blocked edges for rerouting or exit task
     if (isInCollision(line)) {
       RCLCPP_INFO(
         logger_, "Collision has been detected within %0.2fm of robot pose!", max_collision_dist_);
-      result.reroute = true;
-      result.blocked_ids.push_back(curr_edge_id);
-      return result;
+
+      if (reroute_on_collision_) {
+        result.reroute = true;
+        result.blocked_ids.push_back(curr_edge_id);
+        return result;
+      }
+
+      throw nav2_core::OperationFailed(
+              "Collision detected, but rerouting is not enabled, canceling tracking task.");
     }
 
     // Restart loop for next edge until complete

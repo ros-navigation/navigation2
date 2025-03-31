@@ -48,7 +48,7 @@ void TimeScorer::configure(
 }
 
 bool TimeScorer::score(
-  const EdgePtr edge,  
+  const EdgePtr edge,
   const RouteRequest & /* route_request */,
   const EdgeType & /* edge_type */, float & cost)
 {

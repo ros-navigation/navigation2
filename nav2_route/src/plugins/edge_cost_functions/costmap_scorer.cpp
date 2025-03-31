@@ -28,6 +28,7 @@ void CostmapScorer::configure(
   RCLCPP_INFO(node->get_logger(), "Configuring costmap scorer.");
   name_ = name;
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   // Find whether to use average or maximum cost values
   nav2_util::declare_parameter_if_not_declared(
@@ -46,9 +47,16 @@ void CostmapScorer::configure(
   invalid_off_map_ =
     static_cast<float>(node->get_parameter(getName() + ".invalid_off_map").as_bool());
 
+  // Max cost to be considered valid
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
   max_cost_ = static_cast<float>(node->get_parameter(getName() + ".max_cost").as_double());
+
+  // Resolution to check the costmap over (1=every cell, 2=every other cell, etc.)
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".check_resolution", rclcpp::ParameterValue(2));
+  check_resolution_ = static_cast<unsigned int>(
+    node->get_parameter(getName() + ".check_resolution").as_int());
 
   // Create costmap subscriber
   nav2_util::declare_parameter_if_not_declared(
@@ -79,7 +87,7 @@ bool CostmapScorer::score(
   const EdgeType & /* edge_type */, float & cost)
 {
   if (!costmap_) {
-    RCLCPP_WARN(logger_, "No costmap yet received!");
+    RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000, "No costmap yet received!");
     return false;
   }
 
@@ -89,14 +97,16 @@ bool CostmapScorer::score(
     !costmap_->worldToMap(edge->end->coords.x, edge->end->coords.y, x1, y1))
   {
     if (invalid_off_map_) {
+      // Edge is invalid if it is off the costmap
       return false;
     }
     return true;
   }
 
-  for (nav2_util::LineIterator iter(x0, y0, x1, y1); iter.isValid(); iter.advance()) {
+  for (nav2_util::LineIterator iter(x0, y0, x1, y1); iter.isValid(); ) {
     point_cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
-    if (point_cost >= max_cost_ && max_cost_ != 255.0 /*Unknown*/ && invalid_on_collision_) {
+    if (point_cost >= max_cost_ && max_cost_ != 255.0f /*Unknown*/ && invalid_on_collision_) {
+      // Edge is invalid if it is in collision or higher than max allowed cost
       return false;
     }
 
@@ -104,6 +114,11 @@ bool CostmapScorer::score(
     running_cost += point_cost;
     if (largest_cost < point_cost && point_cost != 255.0) {
       largest_cost = point_cost;
+    }
+
+    // Advance the iterator by the check resolution on the edge, pruning to a coarse resolution
+    for (unsigned int i = 0; i < check_resolution_; i++) {
+      iter.advance();
     }
   }
 

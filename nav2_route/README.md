@@ -368,28 +368,16 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-- [ ] Leidos docs PR / rviz panel plugin
+- [ ] Leidos docs PR for file saving / rviz panel plugin
   - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
   - [ ] https://github.com/ros-navigation/navigation2/pull/4775
-
-
 
 - [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
     * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
     * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
-    * Check Josh's BFS PR
-
-- [ ] Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
-
-Collision:
-- [ ] does this collision sorer critic make efficiency sense at a reasonable sized graph / node distance? Lower iterator density?
-- [ ] collision monotir use footprints? or at least the costmap topic collision checker
-- [ ] option for collision montir to fail rather than reroute
-- [ ] Generally: go over the scorers, monitors and make sure sensable and performant. Both local rolling, global rolling, global static map uses (and none)
-- [ ] collision monitor perform simplifications
+    * Check Josh's BFS PR https://github.com/ros-navigation/navigation2/pull/3536
 
 ---
-
 
 - [ ] Quality: 
   - Update simple navigator docs on website for task bit; migration guide update
@@ -401,6 +389,7 @@ Collision:
   - Keep graph visualization in rviz but turn off by default
   - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
   - System test with route file + evaluation (tb3, check works and complete)
+  - Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
@@ -428,6 +417,7 @@ Collision:
 - [ ] 3 Extra critics and operation plugins
 - [ ] 4 Dynamic parameter handling (remember mutex not change during active request)
 - [ ] 4 edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.
+- [ ] CostmapScorer / CollisionMonitor use the orientatation of the edge and footprint collision checking rather than point-checks (although: circular or non-circular robots whereas the robot is length-wise long,length > width, this would be the same as a full collision check as width-wise is the inscribed radius)
 - [ ] 8 persist blocked edges between calls and the timemarker betwen sesions
 - [ ] 10 GPS coordinate support
 - [ ] 10 nodes as poses rather than points. Is this useful?

@@ -34,10 +34,10 @@ namespace nav2_route
 
 /**
  * @class GoalOrientationScorer
- * @brief Scores an edge leading to the goal node by comparing the orientation of the route 
- * pose and the orientation of the edge by multiplying the deviation from the desired 
- * orientation with a user defined weight. An alternative method can be selected, with 
- * the use_orientation_threshold flag, which rejects the edge it is greater than some 
+ * @brief Scores an edge leading to the goal node by comparing the orientation of the route
+ * pose and the orientation of the edge by multiplying the deviation from the desired
+ * orientation with a user defined weight. An alternative method can be selected, with
+ * the use_orientation_threshold flag, which rejects the edge it is greater than some
  * tolerance
  */
 class GoalOrientationScorer : public EdgeCostFunction

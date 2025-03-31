@@ -215,7 +215,7 @@ struct RouteRequest
   unsigned int goal_nodeid;                     //node id of goal node
   geometry_msgs::msg::PoseStamped start_pose;   //pose of start
   geometry_msgs::msg::PoseStamped goal_pose;    //pose of goal
-  bool use_poses;                               //whether the start and goal poses are used 
+  bool use_poses;                               //whether the start and goal poses are used
 };
 
 /**
@@ -288,7 +288,7 @@ struct ReroutingState
 
 /**
  * @enum nav2_route::EdgeType
- * @brief An enum class describing what type of edge connecting two nodes is 
+ * @brief An enum class describing what type of edge connecting two nodes is
  */
 enum class EdgeType
 {
