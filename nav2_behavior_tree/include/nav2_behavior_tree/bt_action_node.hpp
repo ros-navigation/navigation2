@@ -32,7 +32,7 @@ using namespace std::chrono_literals;  // NOLINT
 /**
  * @brief Abstract class representing an action based BT node
  * @tparam ActionT Type of action
- * @warning This is an Asynchronous (long-running) Action (may return RUNNING)
+ * @warning This is an Asynchronous (long-running) Action (may return RUNNING), which will reset when halted
  *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 template<class ActionT>

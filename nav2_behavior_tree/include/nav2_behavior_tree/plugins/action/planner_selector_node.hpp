@@ -34,6 +34,8 @@ namespace nav2_behavior_tree
  * to get the decision about what planner must be used. It is usually used before of
  * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
  * input port of the ComputePathToPoseAction
+ * @warning This is an Asynchronous Action, which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class PlannerSelector : public BT::SyncActionNode
 {

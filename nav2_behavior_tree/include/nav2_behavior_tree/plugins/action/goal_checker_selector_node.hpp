@@ -34,6 +34,8 @@ namespace nav2_behavior_tree
  * to get the decision about what goal_checker must be used. It is usually used before of
  * the FollowPath. The selected_goal_checker output port is passed to goal_checker_id
  * input port of the FollowPath
+ * @warning This is an Asynchronous Action, which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class GoalCheckerSelector : public BT::SyncActionNode
 {

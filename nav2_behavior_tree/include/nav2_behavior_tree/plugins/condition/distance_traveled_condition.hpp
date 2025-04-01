@@ -32,7 +32,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time the robot
  * travels a specified distance and FAILURE otherwise
- * @warning This is an Asynchronous (long-running) Node, which will reset when halted
+ * @warning This is an Asynchronous Node, which will reset when halted
  *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class DistanceTraveledCondition : public BT::ConditionNode

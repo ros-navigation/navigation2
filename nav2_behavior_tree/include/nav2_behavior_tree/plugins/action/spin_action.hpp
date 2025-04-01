@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Spin
+ * @warning This is an Asynchronous (long-running) Action, which will reset when halted
+ *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
  */
 class SpinAction : public BtActionNode<nav2_msgs::action::Spin>
 {
