@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include "rclcpp/copy_all_parameter_values.hpp"
+#include "nav2_util/copy_all_parameter_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 class TestNode : public ::testing::Test
@@ -50,7 +50,7 @@ TEST_F(TestNode, TestParamCopying)
   EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("barz2"));
 
   bool override = false;
-  rclcpp::copy_all_parameter_values(node1, node2, override);
+  nav2_util::copy_all_parameter_values(node1, node2, override);
 
   // Test new parameters exist, of expected value, and original param is not overridden
   EXPECT_TRUE(node2->has_parameter("Foo1"));
@@ -64,7 +64,7 @@ TEST_F(TestNode, TestParamCopying)
 
   // Test if parameter overrides are permissible that Node2's value is overridden
   override = true;
-  rclcpp::copy_all_parameter_values(node1, node2, override);
+  nav2_util::copy_all_parameter_values(node1, node2, override);
   EXPECT_EQ(node2->get_parameter("Foo").as_string(), std::string("bar"));
 }
 
@@ -79,10 +79,10 @@ TEST_F(TestNode, TestParamCopyingExceptions)
 
   bool override = true;
   EXPECT_NO_THROW(
-    rclcpp::copy_all_parameter_values(node1, node2, override));
+    nav2_util::copy_all_parameter_values(node1, node2, override));
 
   // Tests for Parameter read-only handled
   node1->declare_parameter("Foo1", rclcpp::ParameterValue(std::string(("bar"))));
   node2->declare_parameter("Foo1", rclcpp::ParameterValue(0.123));
-  EXPECT_NO_THROW(rclcpp::copy_all_parameter_values(node1, node2, override));
+  EXPECT_NO_THROW(nav2_util::copy_all_parameter_values(node1, node2, override));
 }
