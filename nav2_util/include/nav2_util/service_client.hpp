@@ -49,20 +49,14 @@ public:
       callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       callback_group_executor_->add_callback_group(callback_group_,
           node_->get_node_base_interface());
-    } else {
-      callback_group_ = node_->get_node_base_interface()->get_default_callback_group();
-      rclcpp::ExecutorOptions options;
-      options.context = node_->get_node_base_interface()->get_context();
-      callback_group_executor_ =
-        std::make_shared<rclcpp::executors::SingleThreadedExecutor>(options);
     }
-
+    // When a nullptr is passed, the client will use the default callback group
     client_ = node_->template create_client<ServiceT>(
       service_name,
       rclcpp::SystemDefaultsQoS(),
       callback_group_);
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if(!node_->has_parameter("service_introspection_mode")) {
+    if (!node_->has_parameter("service_introspection_mode")) {
       node_->declare_parameter("service_introspection_mode", "disabled");
     }
     std::string service_introspection_mode =
@@ -105,18 +99,22 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if(!use_internal_executor_) {
-      callback_group_executor_->add_node(node_->get_node_base_interface());
-    }
-    if (callback_group_executor_->spin_until_future_complete(future_result, timeout) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      // Pending request must be manually cleaned up if execution is interrupted or timed out
-      client_->remove_pending_request(future_result);
-      throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-    }
-    if(!use_internal_executor_) {
-      callback_group_executor_->remove_node(node_->get_node_base_interface());
+    if(use_internal_executor_) {
+      if (callback_group_executor_->spin_until_future_complete(future_result, timeout) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        // Pending request must be manually cleaned up if execution is interrupted or timed out
+        client_->remove_pending_request(future_result);
+        throw std::runtime_error(service_name_ + " service client: async_send_request failed");
+      }
+    } else {
+      if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        // Pending request must be manually cleaned up if execution is interrupted or timed out
+        client_->remove_pending_request(future_result);
+        throw std::runtime_error(service_name_ + " service client: async_send_request failed");
+      }
     }
 
     return future_result.get();
@@ -146,18 +144,22 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if(!use_internal_executor_) {
-      callback_group_executor_->add_node(node_->get_node_base_interface());
-    }
-    if (callback_group_executor_->spin_until_future_complete(future_result) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
+    if(use_internal_executor_) {
+      if (callback_group_executor_->spin_until_future_complete(future_result) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
       // Pending request must be manually cleaned up if execution is interrupted or timed out
-      client_->remove_pending_request(future_result);
-      return false;
-    }
-    if(!use_internal_executor_) {
-      callback_group_executor_->remove_node(node_->get_node_base_interface());
+        client_->remove_pending_request(future_result);
+        return false;
+      }
+    } else {
+      if (rclcpp::spin_until_future_complete(node_, future_result) !=
+        rclcpp::FutureReturnCode::SUCCESS)
+      {
+        // Pending request must be manually cleaned up if execution is interrupted or timed out
+        client_->remove_pending_request(future_result);
+        return false;
+      }
     }
     response = future_result.get();
     return response.get();
@@ -209,7 +211,12 @@ public:
     std::shared_future<FutureT> future,
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
   {
-    return callback_group_executor_->spin_until_future_complete(future, timeout);
+    // return callback_group_executor_->spin_until_future_complete(future, timeout);
+    if(use_internal_executor_) {
+      return callback_group_executor_->spin_until_future_complete(future, timeout);
+    } else {
+      return rclcpp::spin_until_future_complete(node_, future, timeout);
+    }
   }
 
   /**
