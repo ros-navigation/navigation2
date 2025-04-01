@@ -70,17 +70,6 @@ public:
   };
 
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
-
-  /**
-   * @struct nav2_smac_planner::GoalState
-   * @brief A struct to store the goal state
-   */
-  struct GoalState
-  {
-    NodePtr goal;
-    bool is_valid = true;
-  };
-
   typedef std::vector<GoalState> GoalStateVector;
 
   /**
