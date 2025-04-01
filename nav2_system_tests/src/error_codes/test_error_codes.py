@@ -147,7 +147,8 @@ def main(argv=sys.argv[1:]):
     }
 
     for planner, error_code in compute_path_through_poses.items():
-        result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, planner)
+        result = navigator._getPathThroughPosesImpl(
+            initial_pose, goal_poses, planner)
         assert (
             result.error_code == error_code
         ), 'Compute path through pose error does not match'
@@ -156,7 +157,8 @@ def main(argv=sys.argv[1:]):
         ), 'Compute path through pose error_msg is empty'
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
-    result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'cancelled')
+    result = navigator._getPathThroughPosesImpl(
+        initial_pose, goal_poses, 'cancelled')
     assert (
         navigator.getResult() == TaskResult.CANCELED
     ), 'Compute path through poses cancel failed'

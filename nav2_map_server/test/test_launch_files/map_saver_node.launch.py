@@ -32,7 +32,8 @@ def generate_launch_description():
         package='nav2_map_server',
         executable='map_saver_server',
         output='screen',
-        parameters=[os.path.join(os.getenv('TEST_DIR'), 'map_saver_params.yaml')],
+        parameters=[os.path.join(
+            os.getenv('TEST_DIR'), 'map_saver_params.yaml')],
     )
 
     map_publisher_cmd = ExecuteProcess(cmd=[map_publisher])

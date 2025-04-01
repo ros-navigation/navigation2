@@ -29,7 +29,8 @@ def generate_launch_description():
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
-    lifecycle_nodes = ['controller_server', 'planner_server', 'smoother_server']
+    lifecycle_nodes = ['controller_server',
+                       'planner_server', 'smoother_server']
 
     load_nodes = GroupAction(
         actions=[
@@ -94,7 +95,8 @@ def generate_launch_description():
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
                 output='screen',
-                parameters=[{'autostart': True}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': True}, {
+                    'node_names': lifecycle_nodes}],
             ),
         ]
     )

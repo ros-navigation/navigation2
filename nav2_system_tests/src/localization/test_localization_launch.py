@@ -94,7 +94,8 @@ def main(argv=sys.argv[1:]):
         executable='lifecycle_manager',
         name='lifecycle_manager',
         output='screen',
-        parameters=[{'node_names': ['map_server', 'amcl']}, {'autostart': True}],
+        parameters=[{'node_names': ['map_server', 'amcl']},
+                    {'autostart': True}],
     )
     ld = LaunchDescription(
         [

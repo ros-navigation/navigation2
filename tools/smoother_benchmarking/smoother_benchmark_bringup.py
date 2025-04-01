@@ -26,7 +26,8 @@ def generate_launch_description():
     benchmark_dir = os.getcwd()
     metrics_py = os.path.join(benchmark_dir, 'metrics.py')
     config = os.path.join(
-        get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml'
+        get_package_share_directory(
+            'nav2_bringup'), 'params', 'nav2_params.yaml'
     )
     map_file = os.path.join(benchmark_dir, 'maps', 'smoothers_world.yaml')
     lifecycle_nodes = ['map_server', 'planner_server', 'smoother_server']

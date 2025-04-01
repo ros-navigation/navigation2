@@ -112,7 +112,8 @@ class GpsWaypointFollowerTest(Node):
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
         req.parameters = [
-            Parameter('stop_on_failure', Parameter.Type.BOOL, value).to_parameter_msg()
+            Parameter('stop_on_failure', Parameter.Type.BOOL,
+                      value).to_parameter_msg()
         ]
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -124,9 +125,11 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg('Destroyed follow_gps_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -194,7 +197,8 @@ def main(argv=sys.argv[1:]):
 
     # stop on failure test with bogus waypoint
     test.setStopFailureParam(True)
-    bwps = [[55.944831, -3.186998], [55.929834, -3.184343], [55.944782, -3.187060]]
+    bwps = [[55.944831, -3.186998],
+            [55.929834, -3.184343], [55.944782, -3.187060]]
     test.setWaypoints(bwps)
     result = test.run(True, False)
     assert not result

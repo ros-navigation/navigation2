@@ -35,7 +35,8 @@ class WaypointFollowerTest(Node):
     def __init__(self):
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints = None
-        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
+        self.action_client = ActionClient(
+            self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
@@ -85,7 +86,8 @@ class WaypointFollowerTest(Node):
         #     return False
 
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'follow_waypoints' action server not available, waiting...")
+            self.info_msg(
+                "'follow_waypoints' action server not available, waiting...")
 
         action_request = FollowWaypoints.Goal()
         action_request.poses = self.waypoints
@@ -126,7 +128,8 @@ class WaypointFollowerTest(Node):
         if len(self.action_result.missed_waypoints) > 0:
             self.info_msg(
                 'Goal failed to process all waypoints,'
-                ' missed {0} wps.'.format(len(self.action_result.missed_waypoints))
+                ' missed {0} wps.'.format(
+                    len(self.action_result.missed_waypoints))
             )
             return False
 
@@ -139,7 +142,8 @@ class WaypointFollowerTest(Node):
     def setStopFailureParam(self, value):
         req = SetParameters.Request()
         req.parameters = [
-            Parameter('stop_on_failure', Parameter.Type.BOOL, value).to_parameter_msg()
+            Parameter('stop_on_failure', Parameter.Type.BOOL,
+                      value).to_parameter_msg()
         ]
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
@@ -151,9 +155,11 @@ class WaypointFollowerTest(Node):
         self.info_msg('Destroyed follow_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -167,9 +173,11 @@ class WaypointFollowerTest(Node):
         self.info_msg(f'{transition_service} finished')
 
         transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN

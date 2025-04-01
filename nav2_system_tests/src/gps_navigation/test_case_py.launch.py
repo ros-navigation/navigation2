@@ -38,7 +38,8 @@ def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
-    world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_empty_world.sdf.xacro')
+    world_sdf_xacro = os.path.join(
+        sim_dir, 'worlds', 'tb3_empty_world.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle_gps.sdf.xacro')
 
     urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle_gps.urdf')
@@ -98,7 +99,8 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(nav2_bringup_dir, 'launch', 'navigation_launch.py')
+                    os.path.join(nav2_bringup_dir, 'launch',
+                                 'navigation_launch.py')
                 ),
                 launch_arguments={
                     'namespace': '',

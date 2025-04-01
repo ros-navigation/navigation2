@@ -39,7 +39,8 @@ def generate_launch_description():
     sim_dir = get_package_share_directory('nav2_minimal_tb4_sim')
     desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
 
-    robot_sdf = os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
+    robot_sdf = os.path.join(
+        desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
     world = os.path.join(sim_dir, 'worlds', 'depot.sdf')
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'depot.yaml')
 
@@ -68,12 +69,13 @@ def generate_launch_description():
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
-            OpaqueFunction(function=lambda _: os.remove(world_sdf) if os.path.exists(world_sdf) else None)
+            OpaqueFunction(function=lambda _: os.remove(world_sdf)
+                           if os.path.exists(world_sdf) else None)
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            os.path.join(sim_dir, 'worlds'))
+        'GZ_SIM_RESOURCE_PATH',
+        os.path.join(sim_dir, 'worlds'))
     start_gazebo_client_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'),
@@ -103,7 +105,8 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[
-            {'use_sim_time': True, 'robot_description': Command(['xacro', ' ', robot_sdf])}
+            {'use_sim_time': True, 'robot_description': Command(
+                ['xacro', ' ', robot_sdf])}
         ]
     )
 
@@ -133,8 +136,8 @@ def generate_launch_description():
     )
 
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            str(Path(os.path.join(desc_dir)).parent.resolve()))
+        'GZ_SIM_RESOURCE_PATH',
+        str(Path(os.path.join(desc_dir)).parent.resolve()))
 
     ld = LaunchDescription()
     ld.add_action(declare_use_rviz_cmd)

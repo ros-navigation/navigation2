@@ -60,7 +60,8 @@ class ReplaceString(launch.Substitution):
         return ''
 
     def perform(self, context: launch.LaunchContext) -> Text:
-        yaml_filename = launch.utilities.perform_substitutions(context, self.name)
+        yaml_filename = launch.utilities.perform_substitutions(
+            context, self.name)
         if self.__condition is None or self.__condition.evaluate(context):
             output_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
             replacements = self.resolve_replacements(context)

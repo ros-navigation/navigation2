@@ -60,22 +60,28 @@ class LoopbackSimulator(Node):
         self.mat_base_to_laser = None
 
         self.declare_parameter('update_duration', 0.01)
-        self.update_dur = self.get_parameter('update_duration').get_parameter_value().double_value
+        self.update_dur = self.get_parameter(
+            'update_duration').get_parameter_value().double_value
 
         self.declare_parameter('base_frame_id', 'base_footprint')
-        self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
+        self.base_frame_id = self.get_parameter(
+            'base_frame_id').get_parameter_value().string_value
 
         self.declare_parameter('map_frame_id', 'map')
-        self.map_frame_id = self.get_parameter('map_frame_id').get_parameter_value().string_value
+        self.map_frame_id = self.get_parameter(
+            'map_frame_id').get_parameter_value().string_value
 
         self.declare_parameter('odom_frame_id', 'odom')
-        self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
+        self.odom_frame_id = self.get_parameter(
+            'odom_frame_id').get_parameter_value().string_value
 
         self.declare_parameter('scan_frame_id', 'base_scan')
-        self.scan_frame_id = self.get_parameter('scan_frame_id').get_parameter_value().string_value
+        self.scan_frame_id = self.get_parameter(
+            'scan_frame_id').get_parameter_value().string_value
 
         self.declare_parameter('enable_stamped_cmd_vel', True)
-        use_stamped = self.get_parameter('enable_stamped_cmd_vel').get_parameter_value().bool_value
+        use_stamped = self.get_parameter(
+            'enable_stamped_cmd_vel').get_parameter_value().bool_value
 
         self.declare_parameter('scan_publish_dur', 0.1)
         self.scan_publish_dur = self.get_parameter(
@@ -86,7 +92,8 @@ class LoopbackSimulator(Node):
             'publish_map_odom_tf').get_parameter_value().bool_value
 
         self.declare_parameter('publish_clock', True)
-        self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
+        self.publish_clock = self.get_parameter(
+            'publish_clock').get_parameter_value().bool_value
 
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
@@ -179,7 +186,8 @@ class LoopbackSimulator(Node):
             self.t_map_to_odom.transform.rotation = self.initial_pose.orientation
             self.t_odom_to_base_link.transform.translation = Vector3()
             self.t_odom_to_base_link.transform.rotation = Quaternion()
-            self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
+            self.publishTransforms(
+                self.t_map_to_odom, self.t_odom_to_base_link)
 
             # Start republication timer and velocity processing
             if self.setupTimer is not None:
@@ -187,7 +195,8 @@ class LoopbackSimulator(Node):
                 self.setupTimer.destroy()
                 self.setupTimer = None
             self.timer = self.create_timer(self.update_dur, self.timerCallback)
-            self.timer_laser = self.create_timer(self.scan_publish_dur, self.publishLaserScan)
+            self.timer_laser = self.create_timer(
+                self.scan_publish_dur, self.publishLaserScan)
             return
 
         self.initial_pose = msg.pose.pose
@@ -201,17 +210,21 @@ class LoopbackSimulator(Node):
         t_map_to_base_link.transform.translation.z = 0.0
         t_map_to_base_link.transform.rotation = self.initial_pose.orientation
         mat_map_to_base_link = transformStampedToMatrix(t_map_to_base_link)
-        mat_odom_to_base_link = transformStampedToMatrix(self.t_odom_to_base_link)
-        mat_base_link_to_odom = tf_transformations.inverse_matrix(mat_odom_to_base_link)
+        mat_odom_to_base_link = transformStampedToMatrix(
+            self.t_odom_to_base_link)
+        mat_base_link_to_odom = tf_transformations.inverse_matrix(
+            mat_odom_to_base_link)
         mat_map_to_odom = \
-            tf_transformations.concatenate_matrices(mat_map_to_base_link, mat_base_link_to_odom)
+            tf_transformations.concatenate_matrices(
+                mat_map_to_base_link, mat_base_link_to_odom)
         self.t_map_to_odom.transform = matrixToTransform(mat_map_to_odom)
 
     def timerCallback(self):
         # If no data, just republish existing transforms without change
         one_sec = Duration(seconds=1)
         if self.curr_cmd_vel is None or self.get_clock().now() - self.curr_cmd_vel_time > one_sec:
-            self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
+            self.publishTransforms(
+                self.t_map_to_odom, self.t_odom_to_base_link)
             self.curr_cmd_vel = None
             return
 
@@ -224,8 +237,10 @@ class LoopbackSimulator(Node):
              self.t_odom_to_base_link.transform.rotation.z,
              self.t_odom_to_base_link.transform.rotation.w]
         _, _, yaw = tf_transformations.euler_from_quaternion(q)
-        self.t_odom_to_base_link.transform.translation.x += dx * math.cos(yaw) - dy * math.sin(yaw)
-        self.t_odom_to_base_link.transform.translation.y += dx * math.sin(yaw) + dy * math.cos(yaw)
+        self.t_odom_to_base_link.transform.translation.x += dx * \
+            math.cos(yaw) - dy * math.sin(yaw)
+        self.t_odom_to_base_link.transform.translation.y += dx * \
+            math.sin(yaw) + dy * math.cos(yaw)
         self.t_odom_to_base_link.transform.rotation = \
             addYawToQuat(self.t_odom_to_base_link.transform.rotation, dth)
 
@@ -323,7 +338,8 @@ class LoopbackSimulator(Node):
 
     def getLaserScan(self, num_samples):
         if self.map is None or self.initial_pose is None or self.mat_base_to_laser is None:
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            self.scan_msg.ranges = [
+                self.scan_msg.range_max - 0.1] * num_samples
             return
 
         x0, y0, theta = self.getLaserPose()
@@ -332,7 +348,8 @@ class LoopbackSimulator(Node):
 
         if not 0 < mx0 < self.map.info.width or not 0 < my0 < self.map.info.height:
             # outside map
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            self.scan_msg.ranges = [
+                self.scan_msg.range_max - 0.1] * num_samples
             return
 
         for i in range(num_samples):

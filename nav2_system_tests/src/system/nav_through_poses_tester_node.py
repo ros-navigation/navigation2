@@ -235,9 +235,11 @@ class NavTester(Node):
         self.action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -246,13 +248,16 @@ class NavTester(Node):
             self.info_msg('Shutting down navigation lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg('Shutting down navigation lifecycle manager complete.')
+            self.info_msg(
+                'Shutting down navigation lifecycle manager complete.')
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
         transition_service = 'lifecycle_manager_localization/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN
@@ -261,7 +266,8 @@ class NavTester(Node):
             self.info_msg('Shutting down localization lifecycle manager...')
             rclpy.spin_until_future_complete(self, future)
             future.result()
-            self.info_msg('Shutting down localization lifecycle manager complete')
+            self.info_msg(
+                'Shutting down localization lifecycle manager complete')
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
@@ -335,7 +341,8 @@ def get_testers(args):
 
 def main(argv=sys.argv[1:]):
     # The robot(s) positions from the input arguments
-    parser = argparse.ArgumentParser(description='System-level navigation tester node')
+    parser = argparse.ArgumentParser(
+        description='System-level navigation tester node')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '-r',

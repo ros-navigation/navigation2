@@ -72,7 +72,7 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
         AppendEnvironmentVariable(
-                'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
+            'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
         ),
         AppendEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
@@ -110,12 +110,12 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(
                 os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
             launch_arguments={
-                              'map': map_yaml_file,
-                              'use_sim_time': 'True',
-                              'use_composition': 'False',
-                              'params_file': new_yaml,
-                              'bt_xml_file': bt_navigator_xml,
-                              'autostart': 'True'}.items()),
+                'map': map_yaml_file,
+                'use_sim_time': 'True',
+                'use_composition': 'False',
+                'params_file': new_yaml,
+                'bt_xml_file': bt_navigator_xml,
+                'autostart': 'True'}.items()),
     ])
 
 

@@ -164,7 +164,8 @@ def write_to_json(
     trajectory_start_angles = list(minimal_set_trajectories.keys())
 
     heading_angle_list = create_heading_angle_list(minimal_set_trajectories)
-    heading_lookup = {angle: idx for idx, angle in enumerate(heading_angle_list)}
+    heading_lookup = {angle: idx for idx,
+                      angle in enumerate(heading_angle_list)}
 
     idx = 0
     for start_angle in sorted(trajectory_start_angles, key=lambda x: (x < 0, x)):
@@ -186,7 +187,8 @@ def write_to_json(
             traj_info['trajectory_length'] = round(
                 trajectory.parameters.total_length, 5
             )
-            traj_info['arc_length'] = round(trajectory.parameters.arc_length, 5)
+            traj_info['arc_length'] = round(
+                trajectory.parameters.arc_length, 5)
             traj_info['straight_length'] = round(
                 trajectory.parameters.start_straight_length
                 + trajectory.parameters.end_straight_length,

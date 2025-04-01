@@ -41,7 +41,8 @@ class DriveTest(Node):
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1,
         )
-        self.action_client = ActionClient(self, DriveOnHeading, 'drive_on_heading')
+        self.action_client = ActionClient(
+            self, DriveOnHeading, 'drive_on_heading')
         self.costmap_pub = self.create_publisher(
             Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
         self.footprint_pub = self.create_publisher(
@@ -119,7 +120,8 @@ class DriveTest(Node):
         self.result_future = self.goal_handle.get_result_async()
 
         # Wait for new goal to complete
-        self.info_msg("Waiting for 'DriveOnHeading' action Preemption to complete")
+        self.info_msg(
+            "Waiting for 'DriveOnHeading' action Preemption to complete")
         try:
             rclpy.spin_until_future_complete(self, self.result_future)
             status = self.result_future.result().status
@@ -175,7 +177,8 @@ class DriveTest(Node):
         costmap_msg.metadata.size_y = 100
         costmap_msg.metadata.origin.position.x = -2.5
         costmap_msg.metadata.origin.position.y = -2.5
-        costmap_msg.data = [0] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
+        costmap_msg.data = [
+            0] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
         self.costmap_pub.publish(costmap_msg)
 
         footprint_msg = PolygonStamped()
@@ -198,7 +201,8 @@ class DriveTest(Node):
         costmap_msg.metadata.size_y = 100
         costmap_msg.metadata.origin.position.x = -2.5
         costmap_msg.metadata.origin.position.y = -2.5
-        costmap_msg.data = [254] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
+        costmap_msg.data = [
+            254] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
         self.costmap_pub.publish(costmap_msg)
 
         footprint_msg = PolygonStamped()
@@ -214,7 +218,8 @@ class DriveTest(Node):
 
     def run(self):
         while not self.action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'DriveOnHeading' action server not available, waiting...")
+            self.info_msg(
+                "'DriveOnHeading' action server not available, waiting...")
 
         # Test A: Send without valid costmap
         action_request = DriveOnHeading.Goal()
@@ -224,7 +229,8 @@ class DriveTest(Node):
         cmd1 = self.sendCommand(action_request)
 
         if cmd1:
-            self.error_msg('Test A failed: Passed while costmap was not available!')
+            self.error_msg(
+                'Test A failed: Passed while costmap was not available!')
             return not cmd1
         else:
             self.info_msg('Test A passed')
@@ -237,13 +243,15 @@ class DriveTest(Node):
         cmd2 = self.sendCommand(action_request)
 
         if not cmd1 or not cmd2:
-            self.error_msg('Test B failed: Failed to DriveOnHeading with valid costmap!')
+            self.error_msg(
+                'Test B failed: Failed to DriveOnHeading with valid costmap!')
             return not cmd1 or not cmd2
 
         action_request.target.x = 0.5
         cmd_preempt = self.sendAndPreemptWithFasterCommand(action_request)
         if not cmd_preempt:
-            self.error_msg('Test B failed: Failed to preempt and invert command!')
+            self.error_msg(
+                'Test B failed: Failed to preempt and invert command!')
             return not cmd_preempt
 
         cmd_cancel = self.sendAndCancelCommand(action_request)
@@ -257,13 +265,15 @@ class DriveTest(Node):
         action_request.time_allowance = Duration(seconds=0.1).to_msg()
         cmd3 = self.sendCommand(action_request)
         if cmd3:
-            self.error_msg('Test C failed: Passed while impoossible timing requested!')
+            self.error_msg(
+                'Test C failed: Passed while impoossible timing requested!')
             return not cmd3
 
         action_request.target.y = 0.5
         cmd_invalid_target = self.sendCommand(action_request)
         if cmd_invalid_target:
-            self.error_msg('Test C failed: Passed while impoossible target requested!')
+            self.error_msg(
+                'Test C failed: Passed while impoossible target requested!')
             return not cmd_invalid_target
         else:
             action_request.target.y = 0.0
@@ -271,7 +281,8 @@ class DriveTest(Node):
         action_request.target.x = -0.5
         cmd_invalid_sign = self.sendCommand(action_request)
         if cmd_invalid_sign:
-            self.error_msg('Test C failed: Passed while impoossible target sign requested!')
+            self.error_msg(
+                'Test C failed: Passed while impoossible target sign requested!')
             return not cmd_invalid_sign
         else:
             action_request.target.x = 0.5
@@ -283,7 +294,8 @@ class DriveTest(Node):
         time.sleep(1)
         cmd4 = self.sendCommand(action_request)
         if cmd4:
-            self.error_msg('Test D failed: Passed while costmap was not lethal!')
+            self.error_msg(
+                'Test D failed: Passed while costmap was not lethal!')
             return not cmd4
         else:
             self.info_msg('Test D passed')
@@ -296,9 +308,11 @@ class DriveTest(Node):
         self.info_msg('Destroyed DriveOnHeading action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN

@@ -22,10 +22,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
-# from launch_ros.actions import PushROSNamespace
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
@@ -99,7 +97,8 @@ def generate_launch_description():
                 name='lifecycle_manager_collision_detector',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
                 remappings=remappings,
             ),
             Node(
