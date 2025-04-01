@@ -215,10 +215,9 @@ void SmacPlannerHybrid::configure(
   }
 
   if (_angle_quantizations % _coarse_search_resolution != 0) {
-    RCLCPP_WARN(
-      _logger, "coarse iteration should be an increment of the number of angular bins configured"
-    );
-    _coarse_search_resolution = 1;
+    std::string error_msg = "coarse iteration should be an increment"
+    " of the number of angular bins configured";
+    throw nav2_core::PlannerException(error_msg);    
   }
 
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
