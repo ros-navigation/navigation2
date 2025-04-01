@@ -161,6 +161,7 @@ public:
         return false;
       }
     }
+
     response = future_result.get();
     return response.get();
   }
