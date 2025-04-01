@@ -26,6 +26,7 @@ namespace nav2_route
 
 void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
 {
+  // Density to make path points
   nav2_util::declare_parameter_if_not_declared(
     node, "path_density", rclcpp::ParameterValue(0.05));
   density_ = static_cast<float>(node->get_parameter("path_density").as_double());

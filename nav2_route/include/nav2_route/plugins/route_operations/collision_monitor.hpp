@@ -146,6 +146,7 @@ protected:
   rclcpp::Duration checking_duration_{0, 0};
   float max_collision_dist_, max_cost_;
   bool reroute_on_collision_;
+  unsigned int check_resolution_{1u};
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
 };

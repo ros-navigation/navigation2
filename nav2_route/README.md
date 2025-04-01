@@ -1,8 +1,12 @@
 # Nav2 Route Server
 
-The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) at [Open Navigation](https://www.opennav.org/) with assistence from [Josh Wallace](https://www.linkedin.com/in/joshua-wallace-b4848a113/) at Locus Robotics.
+The Route Server is a Nav2 Task server to compliment the Planner Server's free-space planning capabilities with pre-defined Navigation Route Graph planning, created by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) at [Open Navigation](https://www.opennav.org/) with assistance from [Josh Wallace](https://www.linkedin.com/in/joshua-wallace-b4848a113/) at Locus Robotics. It can be used to:
+* Fully replace free-space planning when following a particular route closely is required (less Controller plugins' tuning to deviate or track the path closely), or
+* Augment the global planner with long-distance routing to a goal and using free-space feasible planning in a more localized fashion for the immediate 10m, 100m, etc future.
+
 This graph has very few rules associated with it and may be generated manually or automatically via AI, geometric, or probablistic techniques.
-This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm. It uses plugin-based scoring functions to be applied each edge based on abitrary user-defined semantic information and the chosen optimization criteria(s).
+docs.nav2.org includes tutorials for how to generate such a graph by annotations on a grid map created via SLAM, but can also be procedurally generated.
+This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm. It uses plugin-based scoring functions applied each edge based on abitrary user-defined semantic information and the chosen optimization criteria(s).
 
 The Nav2 Route Server may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes. These behaviors are defined as another type of plugin and can leverage the graph's edges' and nodes' arbitrary semantic data.
 
@@ -15,30 +19,54 @@ Additionally, the server leverages **additional arbitrary metadata** specified w
 Thus, we do not restrict the data that can be embedded in the navigation route graph for an application and this metadata is communicated to the edge scoring and operations plugins to adjust behavior as demanded by the application.
 Note that plugins may also use outside information from topics, services, and actions for dynamic behavior or centralized knowledge sharing as well if desired.
 
-[A demo of the basic features can be seen here](https://www.youtube.com/watch?v=T57pac6q4RU) using the `route_example_launch.py` provided in `nav2_simple_commander`.
+[A rudimentary demo of the basic features can be seen here](https://www.youtube.com/watch?v=T57pac6q4RU) using the `route_example_launch.py` provided in `nav2_simple_commander`.
 
 ## Features
 
 - Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
 - Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph for pose-based planning requests
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
-- All edges are directional allowing for single-direction lanes
+- All edges are directional allowing for single-direction lanes or planning
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
 - Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
 - Action interface request can process requests with start / goal node IDs or euclidean poses
 - Service interface to change navigation route graphs at run-time
-- Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions from sensor or system state data
+- Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions from sensor or system state information
 - Graph file parsing dynamic plugins allow for use of custom or proprietary formats
 - Operation dynamic plugins to perform arbitrary tasks at a given node or when entering or leaving an edge on the route
-- Operation may be graph-centric (e.g. graph file identifies operation to perform) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon) 
-- Operations may trigger rerouting if necessary (e.g. due to new information, blockages, etc)
+- Operation may be graph-centric (e.g. graph file identifies operation to perform at a time) or plugin-centric (e.g. plugins self-identify nodes and edges to act upon during execution) 
+- Operations may trigger rerouting if necessary (e.g. due to new information, blockages, multi-robot data, etc)
 - The nodes and edges metadata may be modified or used to communicate information across plugins including different types across different runs
-- The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an option, etc)
+- The Route Tracking action returns regular feedback on important events or state updates (e.g. rerouting requests, passed a node, triggered an operation, etc)
 - If rerouting occurs during Route Tracking along the previous current edge, that state will be retained for improved behavior and provide an interpolated nav_msgs/Path from the closest point on the edge to the edge's end (or rerouting's starting node) to minimize free-space planning connections where a known edge exists and is being continued.
+
+## Practical Architectures for Use
+
+There are several practical architectures and designs for how this Route Serve can be assembled into a robotics solution.
+Which to use depends on the nature of an application's needs and behavior.
+This is not an exhausive list, but enough to get users started thinking about how to fit this into their system.
+
+* 1. Route Server's output dense path -> Controller Server for direct route following
+  - This is most useful when close or exact route following is required, fully replaces the Planner Server
+  - Considering adding in the Smoother Server or spline fitting between the Route Server and Controller Server in a Behavior Tree to smooth out the edge transitions for following
+* 2. Route Server's output sparse route -> Planner Server to plan to the next node(s) -> Controller Server to track global path
+  - This is useful when you want to follow the general route, but wish to have the flexibility to leave the route when obstacles are in the way and need the free-space planner to do so
+  - This is also useful in conjunction with (1) above as a fallback behavior to follow the route when possible, leave when blocked, and then track the route again in situations where you want to only leave the route when absolutely required
+  - Consider using ComputePathToPose to plan to the next node in the route and change nodes as you approach the next
+  - Consider using ComputePathThroughPoses to plan through several nodes in the future to have smooth interchange
+* 3.  Route Server's output sparse route -> Waypoint Follower or Navigate Through Poses to navigate with task
+  - Similar to (2), this is useful to take the nodes and edges and navigate along the intended route using intelligent navigation
+  - This architecturally puts the route planning in the higher-level autonomy logic rather than with in the main navigation task, which could be useful separation of concerns for some applications.
+* 4. Create a behavior tree to NavigateToPose to the first node in the graph, then select (1) or (2) to track the route, finally NavigateToPose to get to the final goal pose off of the graph
+  - This is useful when the start and/or goal poses are not on the navigation graph, and thus the robot needs to navigate to its starting node or final goal pose in a 'first-mile' and 'last-mile' style task
+* 5. Route Server's `ComputeAndTrackRoute` instead of `ComputeRoute` and send the dense path in (1) or sparse route in (2) or (3)
+  - This is useful to track the progress of the route in the Route Server while following the route as an application sees fit. This process allows for the triggering of spatial, graph, or contextual behaviors while executing the task like adjusting speeds, turning on lights, rerouting due to multi-robot coordination resource constraints, opening doors, etc.
+* 6. Teleoping a robot -> having a script which automatically stores new nodes and/or operator manually triggers a node capture -> saving this to file -> annotating file with operation plugin to do at each waypoint (if any) -> later using the graph to navigate the robot and perform tasks
+  - This is one possible way to setup a Teach-and-Repeat bahavior using the route server with custom behaviors at each node. There are likely many.
 
 ## Design
 
-The Nav2 Route Server is designed of several composed objects to make the system easy to understand and easily unit testable. The breakdown exists between different classes of capabilities like ROS 2 Interfaces (e.g. actions, services, debugging topics), the core search algorithm, scoring factory, route progress tracking, operations factory, file parsing, and action request 'intent' extraction. This distinction makes a relatively complex system easier to grasp, as there are quite a large number of moving pieces. Luckily, few of these pieces (tracker is the exception) don't need to know much about each other so they can be isolated.
+The Nav2 Route Server is designed as several composed objects to make the system easy to understand and easily unit testable. The breakdown exists between different classes of capabilities like ROS 2 Interfaces (e.g. actions, services, debugging topics), the core search algorithm, scoring factory, route progress tracking, operations factory, file parsing, and action request 'intent' extraction. This distinction makes a relatively complex system easier to grasp, as there are a number of moving pieces. Luckily, few of these pieces (tracker is the exception) don't need to know much about each other so they can be isolated.
 
 The diagram below provides context for how the package is structured from the consititutent files you'll find in this project. 
 
@@ -66,7 +94,7 @@ A set of 1,000 experiments were run with the route planner with randomly selecte
 | 250,000     | 11.36 ms            |
 | 1,000,000   | 44.07 ms            |
 
-This is in comparison with typical run-times of free-space global planners between 50 ms - 400 ms (depending on environment size and structure). Thus, the typical performance of using the route planner - even in truly massive environments to need hundreds of thousands of nodes of interest or importance - is well in excess of freespace planning. This enables Nav2 to operate in much larger spaces and still perform global routing.
+This is in comparison with typical run-times of free-space global planners between 50 ms - 400 ms (depending on environment size and structure). Thus, the typical performance of using the route planner - even in truly massive environments to need hundreds of thousands of nodes of interest or importance - is well in excess of freespace planning. This enables Nav2 to operate in much larger spaces and still perform global routing. There's little reason then to use a heuristic-driven A* when Dikjstra's Algorithm is plenty fast for even massively connected graphs.
 
 The script used for this analysis can be found in `test/performance_benchmarking.cpp`.
 
@@ -86,18 +114,17 @@ route_server:
       plugin: nav2_route::GeoJsonGraphFileLoader  # file loader plugin to use 
     graph_filepath: ""                            # file path to graph to use
 
-    edge_cost_functions: ["DistanceScorer", "AdjustEdgesScorer"]  # Edge scoring cost functions to use
+    edge_cost_functions: ["DistanceScorer", "DynamicEdgesScorer"]  # Edge scoring cost functions to use
     DistanceScorer:
       plugin: "nav2_route::DistanceScorer" 
-    AdjustEdgesScorer:
-      plugin: "nav2_route::AdjustEdgesScorer"
+    DynamicEdgesScorer:
+      plugin: "nav2_route::DynamicEdgesScorer"
 
     operations: ["AdjustSpeedLimit", "ReroutingService"] # Route operations plugins to use
     AdjustSpeedLimit:
       plugin: "nav2_route::AdjustSpeedLimit"
     ReroutingService:
       plugin: "nav2_route::ReroutingService"
-    use_feedback_operations: True                 # Whether operations may be triggered on feedback message publication rather than in the server itself. This allows operations in the graph that don't exist as plugins to not throw an error. 
 
     tracker_update_rate: 50.0                     # Rate at which to check the status of path tracking
     aggregate_blocked_ids: false                  # Whether to aggregate the blocked IDs reported by route operations over the lifespan of the navigation request or only use the currently blocked IDs.
@@ -117,11 +144,12 @@ This edge scoring plugin will score based on the costmap values of the edge (e.g
 | Parameter             | Description                                                         |
 |-----------------------|---------------------------------------------------------------------|
 | weight                | Relative scoring weight (1.0)                                       |
-| costmap_topic         | Costmap topic for collision checking (`local_costmap/costmap_raw`)  |
+| costmap_topic         | Costmap topic for collision checking (`global_costmap/costmap_raw`) |
 | max_cost              | Maximum cost to consider an route blocked (253.0)                   |
 | use_maximum           | Whether to score based on single maximum or average (true)          |
 | invalid_on_collision  | Whether to consider collision status as a terminal condition (true) |
-| invalid_off_map       | Whether to consider route going off the map invalid (false)         |
+| invalid_off_map       | Whether to consider route going off the map invalid (true)          |
+| check_resolution      | Resolution to check costs at (1 = costmap resolution, 2 = 2x costmap resolution, etc) |
 
 #### `DistanceScorer`
 
@@ -131,6 +159,10 @@ This edge scoring plugin will score based on the distance length of the edge, we
 |-----------------------|---------------------------------------------------------------------|
 | weight                | Relative scoring weight (1.0)                                       |
 | speed_tag             | Graph metadata key to look for % speed limits (speed_limit)         |
+
+#### `DynamicEdgesScorer`
+
+This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked, in use by other robots, or otherwise temporarily non-traversible.
 
 #### `TimeScorer`
 
@@ -163,9 +195,27 @@ This edge scoring plugin will score based on semantic information provided in th
 | `<for each class>`    | The cost to apply for a class (e.g. `highway: 8.4`)                 |
 | semantic_key          | Key to search edges for for semantic data (class). If empty string, will look at key names instead. |
 
-#### `AdjustEdgesScorer`
+#### `StartPoseOrientationScorer`
 
-This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked or otherwise temporarily non-traversible.
+This edge scoring plugin will score an edge starting at the start node (vector from start->goal) based on its angular proximity to the starting pose's orientation.
+This will either score a weighted-angular distance or reject traversals that are outside of a set threshold to force the route to go down a particular direction (i.e. direction robot is already facing).
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| orientation_weight    | Relative scoring weight (1.0)                                       |
+| use_orientation_threshold  | Whether to use orient. threshold or weighted-angular distance scoring (false)  |
+| orientation_tolerance | The angular threshold to reject edges' angles if greater than this w.r.t. starting pose, when `use_orientation_threshold: true` (PI/2) |
+
+#### `GoalPoseOrientationScorer`
+
+This edge scoring plugin will score a an edge with terminus of the goal node (vector from start->goal) based on its angular proximity to the goal pose's orientation.
+This will either score a weighted-angular distance or reject traversals that are outside of a set threshold to force the route to go down a particular direction (i.e. direction robot wants to be facing).
+
+| Parameter             | Description                                                         |
+|-----------------------|---------------------------------------------------------------------|
+| orientation_weight    | Relative scoring weight (1.0)                                       |
+| use_orientation_threshold  | Whether to use orient. threshold or weighted-angular distance scoring (false)  |
+| orientation_tolerance | The angular threshold to reject edges' angles if greater than this w.r.t. goal pose, when `use_orientation_threshold: true` (PI/2) |
 
 #### `AdjustSpeedLimit`
 
@@ -186,6 +236,8 @@ This route operation will evalulate a future-looking portion of the route for va
 | rate                  | Throttled rate to evaluate collision at, rather than `tracker_update_rate` which might be excessively expensive for forward looking non-control collision checking (1.0 hz)             |
 | max_cost              | Max cost to be considered invalid (253.0)                           |
 | max_collision_dist    | How far ahead to evaluate the route's validity (5.0 m)              |
+| check_resolution      | Resolution to check costs at (1 = costmap resolution, 2 = 2x costmap resolution, etc) |
+| reroute_on_collision  | Whether to reroute on collision or exit tracking as failed when a future collision is detected (default: true) |
 
 #### `ReroutingService`
 
@@ -212,11 +264,11 @@ This route operation will trigger an external service when a graph node or edge 
 | speed_limit     | nav2_msgs/msg/SpeedLimit            |
 | route_graph     | visualization_msgs/msg/MarkerArray  |
 
-| Service                                         | Description                                                    |
-|-------------------------------------------------|----------------------------------------------------------------|
-| `route_server/set_route_graph`                  | Sets new route graph to use                                    |
-| `route_server/<AdjustEdgesScorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
-| `route_server/<ReroutingService>/reroute`       | Trigger a reroute from a 3rd party                             |
+| Service                                          | Description                                                    |
+|--------------------------------------------------|----------------------------------------------------------------|
+| `route_server/set_route_graph`                   | Sets new route graph to use                                    |
+| `route_server/<DynamicEdgesScorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
+| `route_server/<ReroutingService>/reroute`        | Trigger a reroute from a 3rd party                             |
 
 | Action                           | Description                                                           |
 |----------------------------------|-----------------------------------------------------------------------|
@@ -230,7 +282,7 @@ A parser is provided for GeoJSON formats.
 The only three required features of the navigation graph is (1) for the nodes and edges to have identifiers from each other to be unique for referencing and (2) for edges to have the IDs of the nodes belonging to the start and end of the edge and (3) nodes contain coordinates.
 This is strictly required for the Route Server to operate properly in all of its features.
 
-Besides this, we establish some requirements and conventions for route graph files to standardize this information to offer consistent and documented behavior.
+Besides this, we establish some conventions for route graph files to standardize this information to offer consistent and documented behavior with our provided plugins.
 The unique identifier for each node and edge should be given as `id`. The edge's nodes are `startid` and `endid`. The coordinates are given in an array called `coordinates`.
 While technically optional, it is highly recommended to also provide:
 - The node's frame of reference (`frame`), if not the global frame and you want it transformed
@@ -355,14 +407,16 @@ A special case exists for rerouting, where as if we reroute along the same edge 
 If a routing or rerouting request is made using poses which are not known to be nodes in the graph, there may be a gap between the robot's pose and the start of the route (as well as the end of the route and the goal pose) -- or a "last-mile" problem. This gap may be trivial to overcome with denser graphs and small distances between nodes that a local trajectory planner can overcome. However, with sparser graphs, some kind of augmentation would likely be required. For example: 
 - (A) Using a behavior tree which uses free-space planning to connect the robot and goal poses with the start / end of the route
 - (B) Using the waypoint follower (or navigate through poses or otherwise) that takes the nodes and uses them as waypoints terminating with the goal pose for freespace navigation using the route as a general prior
-- (C) some other solution which will get the robot from its pose, through the route, to the goal
-- (D) The trajectory planner can handle these gaps itself
+- (C) Using the Route as a goal route to the goal, global planner to make a feasible plan for the next 100 meters (or so), and use the controller to track the global feasible path rather than the general route
+- (D) some other solution which will get the robot from its pose, through the route, to the goal
+- (E) The trajectory planner can handle these gaps itself, so Route dense path to the controller directly
 
-A special condition of this when a routing or rerouting request is made up of only 1-2 edges, whereas both the start and the goal are not 'on or near' the terminal nodes (e.g. they're already along an edge meaningfully), the edges may be pruned away leaving only a single node as the route. This is since we have already passed the starting node of the initial edge and/or the goal is along the edge before the ending node of the final edge. This is not different than the other conditions, but is a useful edge case to consider while developing your application solution.
+A special condition of this when a routing or rerouting request is made up of only 1-2 edges, whereas both the start and the goal are not 'on or near' the terminal nodes (e.g. they're already along an edge meaningfully, so going to a goal node and then the final pose would involve back tracking), the edges may be pruned away leaving only a single node as the route. This is since we have already passed the starting node of the initial edge and/or the goal is along the edge before the ending node of the final edge. This is not different than the other conditions, but is a useful edge case to consider while developing your application solution.
 
-This is an application problem which can be addressed by A, B, C, D but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
+This is an application problem which can be addressed above but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
 
-Note that there are parameters like `prune_route`, `min_prune_distance_from_start` and `min_prune_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. 
+Note that there are parameters like `prune_route`, `min_prune_distance_from_start` and `min_prune_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. That bypasses the entire issue if the goal(s) are always known to be on the graph.
+
 
 ---
 
@@ -376,44 +430,41 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
     * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
     * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
     * Check Josh's BFS PR https://github.com/ros-navigation/navigation2/pull/3536
+    * Update the kd-Tree part in the readme to that or the BFS
 
 ---
+  - Launch configuration to set the graph file (mirror `map`). 
+  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list + error code/msg/ports),
+  - System test with route file + evaluation (tb3, check works and complete)
 
 - [ ] Quality: 
-  - Update simple navigator docs on website for task bit; migration guide update
-  - Missing readme plugins, other plugins to add for usefulness
-  - Readme msising context, uses cases for (planner replacement, tracking, route->global->local, route->local, navigate through poses)
-  - Docs: Prove point with plugins, but arbitrary behaviors and annotations
-  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list + error code/msg/ports),
-  - web documentation (BT node configuration page, package configuration page, migration),
-  - Keep graph visualization in rviz but turn off by default
-  - Default graph sandbox + launch configuration to set (and get filepath + mirror `map` comments). 
-  - System test with route file + evaluation (tb3, check works and complete)
+  - web documentation (BT node configuration page, package configuration pages, simple command docs, migration for all),
   - Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
-  - BT XMLs (first/last mile, freq. replanning, navigation using it, WPF using it, clearance)
-  - Demos (route -> global -> local. outdoor non-planar. waypoint follower (GPS?) of route nodes. controller server of dense path)
   - Demos:
-    - 1. Route -> Smoother -> Controller for direct route following, spline turns for tracking with min radius
+    - 1. Route -> Smoother (or turning radius in path converter?) -> Controller for direct route following, spline turns for tracking with min radius
     - 2. 3 Stage planning BT: Route -> Global planner to node(s) in the future with compute path to pose // compute path through poses -> trajectory planning
     - 3. Plan from pose on-to/off-of graph with feaislbe planner -> route plan -> trajectory planner
     - 4. Using ComputeAndTrackRoute in BT (+/- some of these?)
     - 5. Global planner fallback if route is blocked after N seconds, until next node or after distance from blockage back on route's edge (BT XML)
+    - 6. Outdoor non-planar
+    - 7. waypoint follower of route nodes
+    - 8. FIrst and last mile off graph navigation
+    - Q: Frequent replanning? Plan once and recovery if failing to redo? Continue to replan often?
 
-- [ ] Testing by users
+- [ ] Beta testing by users
 
 
 # Questions
 
 - How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
 
-- Can lanes be effectively implemented using this?
-
 # Future work (by priority level)
 
 - [ ] 1 Provide a 'force to go through these edges' capability
 - [ ] 1 stop / clearance -- open-RMF inspired
+- [ ] 3 Show lanes effectively implemented using this feature, with demo
 - [ ] 3 Extra critics and operation plugins
 - [ ] 4 Dynamic parameter handling (remember mutex not change during active request)
 - [ ] 4 edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.

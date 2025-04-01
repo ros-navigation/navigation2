@@ -414,7 +414,6 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   op2.trigger = OperationTrigger::NODE;
 
   // Should also do nothing, this type isn't a plugin type supported
-  // and `use_feedback_operations` is false
   node2.operations.push_back(op);
   EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 

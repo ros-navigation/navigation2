@@ -49,7 +49,12 @@ void CollisionMonitor::configure(
     node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
   max_cost_ = static_cast<float>(node->get_parameter(getName() + ".max_cost").as_double());
 
-
+  // Resolution to check the costmap over (1=every cell, 2=every other cell, etc.)
+  nav2_util::declare_parameter_if_not_declared(
+    node, getName() + ".check_resolution", rclcpp::ParameterValue(1));
+  check_resolution_ = static_cast<unsigned int>(
+    node->get_parameter(getName() + ".check_resolution").as_int());
+  
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_collision_dist", rclcpp::ParameterValue(5.0));
   max_collision_dist_ = static_cast<float>(
@@ -99,7 +104,7 @@ OperationResult CollisionMonitor::perform(
   while (!final_edge) {
     // Track how far we've checked and should check for collisions
     const float edge_dist = hypotf(end.x - start.x, end.y - start.y);
-    if (dist_checked + edge_dist > max_collision_dist_) {
+    if (dist_checked + edge_dist >= max_collision_dist_) {
       float dist_to_eval = max_collision_dist_ - dist_checked;
       end = backoutValidEndPoint(start, end, dist_to_eval);
       final_edge = true;
@@ -205,10 +210,15 @@ bool CollisionMonitor::lineToMap(
 bool CollisionMonitor::isInCollision(const LineSegment & line)
 {
   nav2_util::LineIterator iter(line.x0, line.y0, line.x1, line.y1);
-  for (; iter.isValid(); iter.advance()) {
+  for (; iter.isValid();) {
     float cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
     if (cost >= max_cost_ && cost != 255.0 /*unknown*/) {
       return true;
+    }
+
+    // Advance the iterator by the check resolution on the edge, pruning to a coarse resolution
+    for (unsigned int i = 0; i < check_resolution_; i++) {
+      iter.advance();
     }
   }
   return false;
