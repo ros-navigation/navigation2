@@ -66,7 +66,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
     AnalyticExpansionNodes current_best_analytic_nodes = {};
     NodePtr current_best_goal = nullptr;
-    NodePtr current_best_node = nullptr;
     float current_best_score = std::numeric_limits<float>::max();
 
     closest_distance = std::min(
@@ -103,7 +102,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
           if (score < current_best_score) {
             current_best_analytic_nodes = analytic_nodes;
             current_best_goal = current_goal_node;
-            current_best_node = current_node;
             current_best_score = score;
           }
         }
@@ -123,7 +121,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             if (score < current_best_score) {
               current_best_analytic_nodes = analytic_nodes;
               current_best_goal = current_goal_node;
-              current_best_node = current_node;
               current_best_score = score;
             }
           }
@@ -133,7 +130,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
     if (!current_best_analytic_nodes.empty()) {
       return setAnalyticPath(
-        current_best_node, current_best_goal,
+        current_node, current_best_goal,
         current_best_analytic_nodes);
     }
     analytic_iterations--;
