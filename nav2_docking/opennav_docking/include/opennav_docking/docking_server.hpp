@@ -102,9 +102,10 @@ public:
   /**
    * @brief Reset the robot for another approach by controlling back to staging pose.
    * @param staging_pose The target pose that will reset for another approach.
+   * @param backward If true, the robot will drive backwards.
    * @returns True if reset is successful.
    */
-  bool resetApproach(const geometry_msgs::msg::PoseStamped & staging_pose);
+  bool resetApproach(const geometry_msgs::msg::PoseStamped & staging_pose, bool backward);
 
   /**
    * @brief Run a single iteration of the control loop to approach a pose.
@@ -241,8 +242,6 @@ protected:
   std::string base_frame_;
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame_;
-  // Does the robot drive backwards onto the dock? Default is forwards
-  bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
 

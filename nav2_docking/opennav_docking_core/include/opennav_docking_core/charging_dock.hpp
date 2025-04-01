@@ -123,6 +123,11 @@ public:
    */
   virtual bool isCharger() {return true;}
 
+  /**
+   * @brief Indicates if the dock is designed to dock forward.
+   */
+  virtual bool dockForward() = 0;
+
   std::string getName() {return name_;}
 
 protected:

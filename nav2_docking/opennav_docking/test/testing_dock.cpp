@@ -100,6 +100,11 @@ public:
     return true;
   }
 
+  virtual bool dockForward()
+  {
+    return true;
+  }
+
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };

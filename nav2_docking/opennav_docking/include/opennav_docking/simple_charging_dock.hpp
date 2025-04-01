@@ -103,6 +103,11 @@ public:
    */
   virtual bool hasStoppedCharging();
 
+  /**
+   * @brief Indicates if the dock is designed to dock forward.
+   */
+  virtual bool dockForward();
+
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
 
@@ -146,6 +151,8 @@ protected:
   // Offset for staging pose relative to dock pose
   double staging_x_offset_;
   double staging_yaw_offset_;
+  // Does the robot drive backwards onto the dock? Default is forwards
+  bool dock_direction_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;

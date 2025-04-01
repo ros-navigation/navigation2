@@ -129,6 +129,11 @@ public:
    * @brief Gets if this is a charging-typed dock
    */
   bool isCharger() final {return false;}
+
+  /**
+   * @brief Indicates if the dock is designed to dock forward.
+   */
+  virtual bool dockForward() = 0;
 };
 
 }  // namespace opennav_docking_core
