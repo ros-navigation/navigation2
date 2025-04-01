@@ -226,7 +226,7 @@ void DockingServer::dockRobot()
   Dock * dock{nullptr};
   num_retries_ = 0;
   bool dock_backward =
-    dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD;
+    dock && (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
 
   try {
     // Get dock (instance and plugin information) from request
@@ -420,7 +420,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(dock_approach_timeout_);
   bool dock_backward =
-    dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD;
+    (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
 
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
