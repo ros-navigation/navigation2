@@ -42,7 +42,7 @@ public:
     const NodeT & provided_node, bool use_internal_executor = false)
   : service_name_(service_name), node_(provided_node), use_internal_executor_(use_internal_executor)
   {
-    if(use_internal_executor) {
+    if (use_internal_executor) {
       callback_group_ = node_->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
