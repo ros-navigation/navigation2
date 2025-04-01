@@ -38,6 +38,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("max_retries", 3);
   declare_parameter("base_frame", "base_link");
   declare_parameter("fixed_frame", "odom");
+  declare_parameter("dock_backwards", false);
   declare_parameter("dock_prestaging_tolerance", 0.5);
 }
 
@@ -58,6 +59,10 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
+
+  get_parameter("dock_backwards", dock_backwards_);
+  RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
+      "Please use the dock_direction parameter in your dock plugin instead.");
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());

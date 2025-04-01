@@ -242,6 +242,8 @@ protected:
   std::string base_frame_;
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame_;
+  // Does the robot drive backwards onto the dock? Default is forwards
+  bool dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
 
