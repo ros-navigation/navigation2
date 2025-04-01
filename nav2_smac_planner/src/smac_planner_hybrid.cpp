@@ -749,6 +749,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       }
     }
   }
+  
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     // convert to grid coordinates
