@@ -36,12 +36,14 @@ endforeach()
 
 # This is a special case requiring linking against the critics library
 ament_add_gtest(critics_tests critics_tests.cpp)
+ament_target_dependencies(critics_tests
+  rclcpp
+  rclcpp_lifecycle
+  nav2_costmap_2d
+)
 target_link_libraries(critics_tests
   mppi_controller
   mppi_critics
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  nav2_costmap_2d::nav2_costmap_2d_core
 )
 if(${TEST_DEBUG_INFO})
   target_compile_definitions(critics_tests PUBLIC -DTEST_DEBUG_INFO)

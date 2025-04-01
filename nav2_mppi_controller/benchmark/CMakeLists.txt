@@ -9,14 +9,17 @@ foreach(name IN LISTS BENCHMARK_NAMES)
   add_executable(${name}
     ${name}.cpp
   )
+  ament_target_dependencies(${name}
+    rclcpp
+    geometry_msgs
+    nav2_core
+    nav2_costmap_2d
+    nav_msgs
+  )
   target_link_libraries(${name}
     benchmark
-    ${geometry_msgs_TARGETS}
     mppi_controller
     mppi_critics
-    nav2_core::nav2_core
-    nav2_costmap_2d::nav2_costmap_2d_core
-    ${nav_msgs_TARGETS}
   )
 
   target_include_directories(${name} PRIVATE
