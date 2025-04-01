@@ -13,6 +13,13 @@
 
 ---
 
+## Description of testing performed
+<!--
+  For example: Linting validation using -> pre-commit run --all,
+    Package testing using -> colcon test --packages-select <modified package>,
+    or functional testing of changes on the robot or in simulation
+-->
+
 ## Description of contribution in a few bullet points
 
 <!--

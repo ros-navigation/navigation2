@@ -14,7 +14,7 @@
 
 import unittest
 
-from lattice_generator import LatticeGenerator
+from nav2_smac_planner.lattice_primitives.lattice_generator import ConfigDict, LatticeGenerator
 import numpy as np
 
 MOTION_MODEL = 'ackermann'
@@ -28,7 +28,7 @@ class TestLatticeGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {
+        config: ConfigDict = {
             'motion_model': MOTION_MODEL,
             'turning_radius': TURNING_RADIUS,
             'grid_resolution': GRID_RESOLUTION,
@@ -40,7 +40,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
         self.minimal_set = lattice_gen.run()
 
-    def test_minimal_set_lengths_are_positive(self):
+    def test_minimal_set_lengths_are_positive(self) -> None:
         # Test that lengths are all positive
 
         for start_angle in self.minimal_set.keys():
@@ -51,7 +51,7 @@ class TestLatticeGenerator(unittest.TestCase):
                 self.assertGreaterEqual(trajectory.parameters.end_straight_length, 0)
                 self.assertGreaterEqual(trajectory.parameters.total_length, 0)
 
-    def test_minimal_set_end_points_lie_on_grid(self):
+    def test_minimal_set_end_points_lie_on_grid(self) -> None:
         # Test that end points lie on the grid resolution
 
         for start_angle in self.minimal_set.keys():
@@ -66,7 +66,7 @@ class TestLatticeGenerator(unittest.TestCase):
                 self.assertAlmostEqual(div_x, np.round(div_x), delta=0.00001)
                 self.assertAlmostEqual(div_y, np.round(div_y), delta=0.00001)
 
-    def test_minimal_set_end_angle_is_correct(self):
+    def test_minimal_set_end_angle_is_correct(self) -> None:
         # Test that end angle agrees with the end angle parameter
 
         for start_angle in self.minimal_set.keys():
@@ -76,7 +76,7 @@ class TestLatticeGenerator(unittest.TestCase):
 
                 self.assertEqual(end_point_angle, trajectory.parameters.end_angle)
 
-    def test_output_angles_in_correct_range(self):
+    def test_output_angles_in_correct_range(self) -> None:
         # Test that the outputted angles always lie within 0 to 2*pi
 
         for start_angle in self.minimal_set.keys():

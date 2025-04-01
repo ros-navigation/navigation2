@@ -282,6 +282,12 @@ void Costmap2D::mapToWorld(unsigned int mx, unsigned int my, double & wx, double
   wy = origin_y_ + (my + 0.5) * resolution_;
 }
 
+void Costmap2D::mapToWorldNoBounds(int mx, int my, double & wx, double & wy) const
+{
+  wx = origin_x_ + (mx + 0.5) * resolution_;
+  wy = origin_y_ + (my + 0.5) * resolution_;
+}
+
 bool Costmap2D::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const
 {
   if (wx < origin_x_ || wy < origin_y_) {

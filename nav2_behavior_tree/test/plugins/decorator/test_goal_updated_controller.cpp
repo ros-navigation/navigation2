@@ -32,8 +32,8 @@ public:
     // Setting fake goals on blackboard
     geometry_msgs::msg::PoseStamped goal1;
     goal1.header.stamp = node_->now();
-    geometry_msgs::msg::PoseStampedArray poses1;
-    poses1.poses.push_back(goal1);
+    nav_msgs::msg::Goals poses1;
+    poses1.goals.push_back(goal1);
     config_->blackboard->set("goal", goal1);
     config_->blackboard->set("goals", poses1);
     bt_node_ = std::make_shared<nav2_behavior_tree::GoalUpdatedController>(
@@ -63,8 +63,8 @@ TEST_F(GoalUpdatedControllerTestFixture, test_behavior)
   // Creating updated fake-goals
   geometry_msgs::msg::PoseStamped goal2;
   goal2.header.stamp = node_->now();
-  geometry_msgs::msg::PoseStampedArray poses2;
-  poses2.poses.push_back(goal2);
+  nav_msgs::msg::Goals poses2;
+  poses2.goals.push_back(goal2);
 
   // starting in idle
   EXPECT_EQ(bt_node_->status(), BT::NodeStatus::IDLE);

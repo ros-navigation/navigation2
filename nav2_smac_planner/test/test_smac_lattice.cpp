@@ -192,7 +192,6 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   // Similar modulous test but when the issue is from the  number
   // of heading, test output includes number of heading 15
   parameters.clear();
-  std::cout << "***************************************" << std::endl;
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath",
     ament_index_cpp::get_package_share_directory("nav2_smac_planner") +

@@ -25,7 +25,6 @@ import numpy as np
 import rclpy
 from transforms3d.euler import euler2quat
 
-
 # Note: Map origin is assumed to be (0,0)
 
 

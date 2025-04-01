@@ -186,7 +186,7 @@ protected:
    */
   bool isGoalReached();
   /**
-   * @brief Obtain current pose of the robot
+   * @brief Obtain current pose of the robot in costmap's frame
    * @param pose To store current pose of the robot
    * @return true if able to obtain current pose of the robot, else false
    */

@@ -109,8 +109,9 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 3.81
+        near_collision_cost: 253
         critical_cost: 300.0
-        consider_footprint: true
+        consider_footprint: false
         collision_cost: 1000000.0
         near_goal_distance: 1.0
         trajectory_point_step: 2
@@ -194,7 +195,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.1
       # When using GPS navigation you will potentially traverse huge environments which are not practical to
-      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to 
+      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to
       # contain each pair of successive waypoints. See: https://github.com/ros-planning/navigation2/issues/2174
       rolling_window: True
       width: 50

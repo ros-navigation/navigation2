@@ -102,7 +102,7 @@ private:
     std::vector<double> orientation);
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
-  void startNavThroughPoses(geometry_msgs::msg::PoseStampedArray poses);
+  void startNavThroughPoses(nav_msgs::msg::Goals poses);
   using NavigationGoalHandle =
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
   using WaypointFollowerGoalHandle =
@@ -196,8 +196,8 @@ private:
   QState * accumulated_wp_{nullptr};
   QState * accumulated_nav_through_poses_{nullptr};
 
-  geometry_msgs::msg::PoseStampedArray acummulated_poses_;
-  geometry_msgs::msg::PoseStampedArray store_poses_;
+  nav_msgs::msg::Goals acummulated_poses_;
+  nav_msgs::msg::Goals store_poses_;
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
