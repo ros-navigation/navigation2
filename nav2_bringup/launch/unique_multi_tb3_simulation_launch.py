@@ -120,7 +120,8 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+        default_value=os.path.join(
+            bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use.',
     )
 
@@ -145,7 +146,8 @@ def generate_launch_description():
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
-            OpaqueFunction(function=lambda _: os.remove(world_sdf) if os.path.exists(world_sdf) else None)
+            OpaqueFunction(function=lambda _: os.remove(world_sdf)
+                           if os.path.exists(world_sdf) else None)
         ]))
 
     # Define commands for launching the navigation instances
@@ -167,7 +169,8 @@ def generate_launch_description():
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
-                        os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')
+                        os.path.join(bringup_dir, 'launch',
+                                     'tb3_simulation_launch.py')
                     ),
                     launch_arguments={
                         'namespace': robot['name'],
@@ -224,8 +227,8 @@ def generate_launch_description():
     set_env_vars_resources = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            str(Path(os.path.join(sim_dir)).parent.resolve()))
+        'GZ_SIM_RESOURCE_PATH',
+        str(Path(os.path.join(sim_dir)).parent.resolve()))
 
     # Create the launch description and populate
     ld = LaunchDescription()

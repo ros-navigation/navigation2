@@ -141,7 +141,8 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'slam_launch.py')
                 ),
-                condition=IfCondition(PythonExpression([slam, ' and ', use_localization])),
+                condition=IfCondition(PythonExpression(
+                    [slam, ' and ', use_localization])),
                 launch_arguments={
                     'namespace': namespace,
                     'use_sim_time': use_sim_time,
@@ -154,7 +155,8 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'localization_launch.py')
                 ),
-                condition=IfCondition(PythonExpression(['not ', slam, ' and ', use_localization])),
+                condition=IfCondition(PythonExpression(
+                    ['not ', slam, ' and ', use_localization])),
                 launch_arguments={
                     'namespace': namespace,
                     'map': map_yaml_file,

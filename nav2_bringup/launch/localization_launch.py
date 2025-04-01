@@ -143,7 +143,8 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': map_yaml_file}],
+                parameters=[configured_params, {
+                    'yaml_filename': map_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
@@ -164,7 +165,8 @@ def generate_launch_description():
                 name='lifecycle_manager_localization',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
             ),
         ],
     )

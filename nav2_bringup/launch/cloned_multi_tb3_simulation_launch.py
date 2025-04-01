@@ -72,45 +72,47 @@ def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]
 
     # Define commands for launching the navigation instances
     group = GroupAction(
-            [
-                LogInfo(
-                    msg=['Launching namespace=', name, ' init_pose=', str(pose),]
+        [
+            LogInfo(
+                msg=['Launching namespace=', name,
+                     ' init_pose=', str(pose),]
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(launch_dir, 'rviz_launch.py')
                 ),
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        os.path.join(launch_dir, 'rviz_launch.py')
-                    ),
-                    condition=IfCondition(use_rviz),
-                    launch_arguments={
-                        'namespace': TextSubstitution(text=name),
-                        'rviz_config': rviz_config_file,
-                    }.items(),
+                condition=IfCondition(use_rviz),
+                launch_arguments={
+                    'namespace': TextSubstitution(text=name),
+                    'rviz_config': rviz_config_file,
+                }.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(bringup_dir, 'launch',
+                                 'tb3_simulation_launch.py')
                 ),
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        os.path.join(bringup_dir, 'launch', 'tb3_simulation_launch.py')
-                    ),
-                    launch_arguments={
-                        'namespace': name,
-                        'map': map_yaml_file,
-                        'use_sim_time': 'True',
-                        'params_file': params_file,
-                        'autostart': autostart,
-                        'use_rviz': 'False',
-                        'use_simulator': 'False',
-                        'headless': 'False',
-                        'use_robot_state_pub': use_robot_state_pub,
-                        'x_pose': TextSubstitution(text=str(pose.get('x', 0.0))),
-                        'y_pose': TextSubstitution(text=str(pose.get('y', 0.0))),
-                        'z_pose': TextSubstitution(text=str(pose.get('z', 0.0))),
-                        'roll': TextSubstitution(text=str(pose.get('roll', 0.0))),
-                        'pitch': TextSubstitution(text=str(pose.get('pitch', 0.0))),
-                        'yaw': TextSubstitution(text=str(pose.get('yaw', 0.0))),
-                        'robot_name': TextSubstitution(text=name),
-                    }.items(),
-                ),
-            ]
-        )
+                launch_arguments={
+                    'namespace': name,
+                    'map': map_yaml_file,
+                    'use_sim_time': 'True',
+                    'params_file': params_file,
+                    'autostart': autostart,
+                    'use_rviz': 'False',
+                    'use_simulator': 'False',
+                    'headless': 'False',
+                    'use_robot_state_pub': use_robot_state_pub,
+                    'x_pose': TextSubstitution(text=str(pose.get('x', 0.0))),
+                    'y_pose': TextSubstitution(text=str(pose.get('y', 0.0))),
+                    'z_pose': TextSubstitution(text=str(pose.get('z', 0.0))),
+                    'roll': TextSubstitution(text=str(pose.get('roll', 0.0))),
+                    'pitch': TextSubstitution(text=str(pose.get('pitch', 0.0))),
+                    'yaw': TextSubstitution(text=str(pose.get('yaw', 0.0))),
+                    'robot_name': TextSubstitution(text=name),
+                }.items(),
+            ),
+        ]
+    )
     return [group]
 
 
@@ -207,14 +209,15 @@ def generate_launch_description():
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
-            OpaqueFunction(function=lambda _: os.remove(world_sdf) if os.path.exists(world_sdf) else None)
+            OpaqueFunction(function=lambda _: os.remove(world_sdf)
+                           if os.path.exists(world_sdf) else None)
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
-            str(Path(os.path.join(sim_dir)).parent.resolve()))
+        'GZ_SIM_RESOURCE_PATH',
+        str(Path(os.path.join(sim_dir)).parent.resolve()))
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -237,10 +240,12 @@ def generate_launch_description():
     ld.add_action(remove_temp_sdf_file)
 
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings), msg=['map yaml: ', map_yaml_file])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['map yaml: ', map_yaml_file])
     )
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings), msg=['params yaml: ', params_file])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['params yaml: ', params_file])
     )
     ld.add_action(
         LogInfo(
@@ -255,10 +260,12 @@ def generate_launch_description():
         )
     )
     ld.add_action(
-        LogInfo(condition=IfCondition(log_settings), msg=['autostart: ', autostart])
+        LogInfo(condition=IfCondition(log_settings),
+                msg=['autostart: ', autostart])
     )
 
     ld.add_action(OpaqueFunction(function=count_robots))
-    ld.add_action(ForEach(LaunchConfiguration('robots'), function=generate_robot_actions))
+    ld.add_action(ForEach(LaunchConfiguration('robots'),
+                  function=generate_robot_actions))
 
     return ld
