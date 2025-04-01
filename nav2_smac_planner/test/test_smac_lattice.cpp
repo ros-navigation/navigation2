@@ -71,7 +71,7 @@ TEST(SmacTest, test_smac_lattice)
     EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
     nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
 
-    // invalid COnfiguration resolution
+    // invalid Configuration resolution
     nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
@@ -86,12 +86,15 @@ TEST(SmacTest, test_smac_lattice)
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
 
-    // Coarse search resolution will default to 1, not muiltiple of number of heading(16 default)
+    // Coarse search resolution will throw, not muiltiple of number of heading(16 default)
     nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
 
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 4));
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
-    EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+    EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
   } catch (...) {
   }
   planner->activate();

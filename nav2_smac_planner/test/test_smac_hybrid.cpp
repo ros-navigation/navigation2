@@ -100,12 +100,14 @@ TEST(SmacTest, test_smac_se2)
   EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
 
 
-  // angle_quantizations not multiple of coarse search resolution-> default to 1
+  // angle_quantizations not multiple of coarse search resolution would trigger a throw
   nodeSE2->set_parameter(rclcpp::Parameter("test.angle_quantization_bins", 72));
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 5));
-  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
-  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
 
+  // valid configuration
+  nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 4));
+  EXPECT_NO_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros));
 
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);
   planner->activate();
