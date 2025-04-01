@@ -308,6 +308,7 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 
   // Check if ending point is valid
   if (getToleranceHeuristic() < 0.001) {
+    bool all_nodes_occupied = true;
     // if a node is not valid, prune it from the goals set, goals vector, and goals coordinates
     for (auto it = _goals_set.begin(); it != _goals_set.end(); ) {
       if (!(*it)->isNodeValid(_traverse_unknown, _collision_checker)) {
@@ -323,10 +324,11 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
         }
         it = _goals_set.erase(it);
       } else {
+        all_node_invalid = false;
         ++it;
       }
     }
-    if (_goals_set.empty()) {
+    if (!all_nodes_occupied) {
       throw nav2_core::GoalOccupied("Goal was in lethal cost");
     }
   }
