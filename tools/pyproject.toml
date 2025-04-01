@@ -7,7 +7,7 @@ interactive = 0
 quiet = 34
 skip="*.pgm,./build/*,./install/*,./log*,./.venv/*,./.git*,*.toml"
 uri-ignore-words-list = "segue"
-write-changes = false
+write-changes = true
 [tool.isort]
 profile = "google"
 force_single_line = false
