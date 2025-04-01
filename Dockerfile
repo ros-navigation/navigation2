@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=ros:rolling
+ARG FROM_IMAGE=ros:humble
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -57,7 +57,8 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    && pip3 install --break-system-packages \
+      ros-$ROS_DISTRO-gtest-vendor \
+    && pip3 install  \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
@@ -97,13 +98,16 @@ ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
 
-RUN . $UNDERLAY_WS/install/setup.sh && \
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
         slam_toolbox \
         "\
       --ignore-src \
+    && apt install -y \
+      ros-$ROS_DISTRO-gtest-vendor \  
     && rm -rf /var/lib/apt/lists/*
 
 # multi-stage for testing
@@ -113,7 +117,8 @@ FROM builder AS tester
 COPY --from=cacher $OVERLAY_WS ./
 ARG OVERLAY_MIXINS="release ccache lld"
 ARG CCACHE_DIR="$OVERLAY_WS/.ccache"
-RUN . $UNDERLAY_WS/install/setup.sh && \
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    . $UNDERLAY_WS/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
@@ -146,7 +151,7 @@ RUN apt-get update && \
       bash-completion \
       gdb \
       wget && \
-    pip3 install --break-system-packages \
+    pip3 install  \
       bottle \
       glances
 

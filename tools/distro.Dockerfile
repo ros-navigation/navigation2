@@ -6,14 +6,14 @@
 #
 # Example build command:
 # export DOCKER_BUILDKIT=1
-# export FROM_IMAGE="ros:rolling"
+# export FROM_IMAGE="ros:humble"
 # export OVERLAY_MIXINS="release ccache lld"
-# docker build -t nav2:rolling \
+# docker build -t nav2:humble \
 #   --build-arg FROM_IMAGE \
 #   --build-arg OVERLAY_MIXINS \
 #   -f distro.Dockerfile ../
 
-ARG FROM_IMAGE=ros:rolling
+ARG FROM_IMAGE=ros:humble
 ARG OVERLAY_WS=/opt/overlay_ws
 
 # multi-stage for caching
@@ -22,13 +22,15 @@ FROM $FROM_IMAGE AS cacher
 # copy overlay source
 ARG OVERLAY_WS
 WORKDIR $OVERLAY_WS/src
-RUN echo "\
+
+RUN echo "\ 
 repositories: \n\
   ros-planning/navigation2: \n\
     type: git \n\
     url: https://github.com/ros-planning/navigation2.git \n\
-    version: ${ROS_DISTRO}-devel \n\
+    version: ${ROS_DISTRO}-main \n\
 " > ../overlay.repos
+
 RUN vcs import ./ < ../overlay.repos && \
     find ./ -name ".git" | xargs rm -rf
 # COPY ./ ./ros-planning/navigation2
