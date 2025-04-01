@@ -225,6 +225,8 @@ void DockingServer::dockRobot()
   getPreemptedGoalIfRequested(goal, docking_action_server_);
   Dock * dock{nullptr};
   num_retries_ = 0;
+  bool dock_backward =
+    dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD;
 
   try {
     // Get dock (instance and plugin information) from request
@@ -315,7 +317,7 @@ void DockingServer::dockRobot()
       }
 
       // Reset to staging pose to try again
-      if (!resetApproach(dock->getStagingPose(), !dock->plugin->dockForward())) {
+      if (!resetApproach(dock->getStagingPose(), dock_backward)) {
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
@@ -417,6 +419,9 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(dock_approach_timeout_);
+  bool dock_backward =
+    dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD;
+
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
 
@@ -443,7 +448,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
-    if (!dock->plugin->dockForward()) {
+    if (dock_backward) {
       target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
         tf2::getYaw(target_pose.pose.orientation) + M_PI);
     }
@@ -462,7 +467,7 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
     if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, true,
-      !dock->plugin->dockForward()))
+      dock_backward))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
@@ -657,9 +662,11 @@ void DockingServer::undockRobot()
       // Get command to approach staging pose
       auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
       command->header.stamp = now();
+      bool dock_backward =
+        dock->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD;
       if (getCommandToPose(
           command->twist, staging_pose, undock_linear_tolerance_, undock_angular_tolerance_, false,
-          dock->dockForward()))
+          !dock_backward))
       {
         RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
         // Have reached staging_pose

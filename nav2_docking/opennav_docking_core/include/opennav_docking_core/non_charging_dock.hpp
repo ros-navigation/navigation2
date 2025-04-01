@@ -131,9 +131,11 @@ public:
   bool isCharger() final {return false;}
 
   /**
-   * @brief Indicates if the dock is designed to dock forward.
+   * @brief Indicates the direction of the dock. This is used to determine if the
+   * robot should drive forwards or backwards onto the dock.
+   * @return DockDirection The direction of the dock
    */
-  virtual bool dockForward() = 0;
+  virtual DockDirection getDockDirection() = 0;
 };
 
 }  // namespace opennav_docking_core

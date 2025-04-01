@@ -100,9 +100,9 @@ public:
     return true;
   }
 
-  virtual bool dockForward()
+  virtual opennav_docking_core::DockDirection getDockDirection()
   {
-    return true;
+    return opennav_docking_core::DockDirection::FORWARD;
   }
 
 protected:

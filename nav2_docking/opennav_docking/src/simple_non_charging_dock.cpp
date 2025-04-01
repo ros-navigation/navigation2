@@ -71,7 +71,7 @@ void SimpleNonChargingDock::configure(
 
   // Direction of docking
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".dock_direction", rclcpp::ParameterValue(true));
+    node_, name + ".dock_direction", rclcpp::ParameterValue(std::string("forward")));
 
   node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
@@ -273,9 +273,16 @@ void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointStat
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
 }
 
-bool SimpleNonChargingDock::dockForward()
+opennav_docking_core::DockDirection SimpleNonChargingDock::getDockDirection()
 {
-  return dock_direction_;
+  if (dock_direction_ == "forward") {
+    return opennav_docking_core::DockDirection::FORWARD;
+  } else if (dock_direction_ == "backward") {
+    return opennav_docking_core::DockDirection::BACKWARD;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "Invalid dock direction: %s", dock_direction_.c_str());
+    return opennav_docking_core::DockDirection::UNKNOWN;
+  }
 }
 
 }  // namespace opennav_docking
