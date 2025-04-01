@@ -144,7 +144,7 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if(use_internal_executor_) {
+    if (use_internal_executor_) {
       if (callback_group_executor_->spin_until_future_complete(future_result) !=
         rclcpp::FutureReturnCode::SUCCESS)
       {
