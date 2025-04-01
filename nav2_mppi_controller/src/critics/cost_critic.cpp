@@ -15,6 +15,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
 {
@@ -61,7 +62,7 @@ void CostCritic::initialize()
     "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
     "in both the costmap and the cost critic.");
     if (costmap_ros_->getUseRadius()) {
-      throw std::invalid_argument(
+      throw nav2_core::ControllerException(
       "Considering footprint in collision checking but no robot footprint provided in the "
       "costmap.");
     }

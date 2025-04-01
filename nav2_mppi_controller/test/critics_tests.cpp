@@ -142,7 +142,7 @@ TEST(CriticTests, ObstacleCriticMisalignedParams) {
   // Expect throw when settings mismatched
   EXPECT_THROW(
     critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
-    std::invalid_argument
+    nav2_core::ControllerException
   );
 }
 
@@ -180,7 +180,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
   // Expect throw when settings mismatched
   EXPECT_THROW(
     critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
-    std::invalid_argument
+    nav2_core::ControllerException
   );
 }
 
