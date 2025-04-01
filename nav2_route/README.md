@@ -162,7 +162,7 @@ This edge scoring plugin will score based on the distance length of the edge, we
 
 #### `DynamicEdgesScorer`
 
-This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked, in use by other robots, or otherwise temporarily non-traversible.
+This edge scoring plugin will score based on the requested values from a 3rd party application via a service interface. It can set dynamically any cost for any edge and also be used to close and reopen particular edges if they are blocked, in use by other robots locking out its shared use by other robots, higher cost due to overlap with other platforms in service, increased cost due to fleet manager analytics that this space is underperforming throughput, or otherwise temporarily non-traversible. For example, if other robots report an edge to be blocked, all robots can avoid this edge/aisle/etc.
 
 #### `TimeScorer`
 
@@ -439,7 +439,6 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 - [ ] Quality: 
   - web documentation (BT node configuration page, package configuration pages, simple command docs, migration for all),
-  - Enable or document the use for blocking edges or pausing for anothe robot locking out an edge. Blocked edges due to other robots , Go another way ando/or wait. other multi-robot things like block edges due to other robot's occupation. Add temporal element that can track relative to other routes other robots are taking. Put higher cost in edges with overlap with other platforms to reduce overlap (just use DynamicEdges service from fleet management app?)
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
   - Demos:
