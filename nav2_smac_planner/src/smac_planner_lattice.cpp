@@ -345,7 +345,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   _a_star->setGoal(
     mx_goal, my_goal,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)),
-    getGoalHeadingMode(), getCoarseSearchResolution());
+    _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;

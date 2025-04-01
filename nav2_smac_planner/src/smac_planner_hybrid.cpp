@@ -432,7 +432,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
-                  getGoalHeadingMode(), getCoarseSearchResolution());
+                  _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
