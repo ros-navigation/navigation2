@@ -31,6 +31,7 @@ jobs:
           - "nav2_smac_planner"
           - "nav2_common"
           - "nav2_bringup"
+          - "nav2_collision_monitor"
     steps:
     - uses: actions/checkout@v4
 
