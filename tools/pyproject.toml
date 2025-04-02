@@ -22,6 +22,8 @@ module = [
     "matplotlib.*",
     "rtree.*",
     "launch.*",
+    "ament_index_python.*",
+    "nav2_common.*",
 ]
 
 ignore_missing_imports = true
