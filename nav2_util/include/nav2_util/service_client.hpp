@@ -188,7 +188,6 @@ public:
     const FutureT & future,
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
   {
-    // return callback_group_executor_->spin_until_future_complete(future, timeout);
     if (use_internal_executor_) {
       return callback_group_executor_->spin_until_future_complete(future, timeout);
     } else {
