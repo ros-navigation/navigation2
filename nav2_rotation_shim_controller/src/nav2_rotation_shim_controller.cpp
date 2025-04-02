@@ -214,8 +214,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       double angular_distance_to_heading;
       if (use_path_orientations_) {
         angular_distance_to_heading = angles::shortest_angular_distance(
-                  tf2::getYaw(pose.pose.orientation),
-                  tf2::getYaw(sampled_pt.pose.orientation));
+          tf2::getYaw(pose.pose.orientation),
+          tf2::getYaw(sampled_pt.pose.orientation));
       } else {
         geometry_msgs::msg::Pose sampled_pt_base = transformPoseToBaseFrame(sampled_pt);
         angular_distance_to_heading = std::atan2(sampled_pt_base.position.y,
