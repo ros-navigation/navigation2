@@ -26,7 +26,7 @@ from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Environment
     package_dir = get_package_share_directory('nav2_collision_monitor')
 
