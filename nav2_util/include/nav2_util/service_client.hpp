@@ -99,22 +99,10 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if (use_internal_executor_) {
-      if (callback_group_executor_->spin_until_future_complete(future_result, timeout) !=
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
-        // Pending request must be manually cleaned up if execution is interrupted or timed out
-        client_->remove_pending_request(future_result);
-        throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-      }
-    } else {
-      if (rclcpp::spin_until_future_complete(node_, future_result, timeout) !=
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
-        // Pending request must be manually cleaned up if execution is interrupted or timed out
-        client_->remove_pending_request(future_result);
-        throw std::runtime_error(service_name_ + " service client: async_send_request failed");
-      }
+    if (spin_until_complete(future_result, timeout) != rclcpp::FutureReturnCode::SUCCESS) {
+      // Pending request must be manually cleaned up if execution is interrupted or timed out
+      client_->remove_pending_request(future_result);
+      throw std::runtime_error(service_name_ + " service client: async_send_request failed");
     }
 
     return future_result.get();
@@ -144,22 +132,10 @@ public:
       node_->get_logger(), "%s service client: send async request",
       service_name_.c_str());
     auto future_result = client_->async_send_request(request);
-    if (use_internal_executor_) {
-      if (callback_group_executor_->spin_until_future_complete(future_result) !=
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
+    if (spin_until_complete(future_result) != rclcpp::FutureReturnCode::SUCCESS) {
       // Pending request must be manually cleaned up if execution is interrupted or timed out
-        client_->remove_pending_request(future_result);
-        return false;
-      }
-    } else {
-      if (rclcpp::spin_until_future_complete(node_, future_result) !=
-        rclcpp::FutureReturnCode::SUCCESS)
-      {
-        // Pending request must be manually cleaned up if execution is interrupted or timed out
-        client_->remove_pending_request(future_result);
-        return false;
-      }
+      client_->remove_pending_request(future_result);
+      return false;
     }
 
     response = future_result.get();
@@ -209,11 +185,11 @@ public:
    */
   template<typename FutureT>
   rclcpp::FutureReturnCode spin_until_complete(
-    std::shared_future<FutureT> future,
+    const FutureT & future,
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
   {
     // return callback_group_executor_->spin_until_future_complete(future, timeout);
-    if(use_internal_executor_) {
+    if (use_internal_executor_) {
       return callback_group_executor_->spin_until_future_complete(future, timeout);
     } else {
       return rclcpp::spin_until_future_complete(node_, future, timeout);
