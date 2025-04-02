@@ -38,6 +38,7 @@ See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/
 | `max_angular_accel` | Maximum angular acceleration for rotation to heading |
 | `simulate_ahead_time` | Time in seconds to forward simulate a rotation command to check for collisions. If a collision is found, forwards control back to the primary controller plugin. |
 | `rotate_to_goal_heading` | If true, the rotationShimController will take back control of the robot when in XY tolerance of the goal and start rotating to the goal heading |
+| `use_path_orientations` | If true, the controller will use the orientations of the path points to compute the heading of the path instead of computing the heading from the path points. If true, the controller will use the orientations of the path points to compute the heading of the path instead of computing the heading from the path points. Use for for feasible planners like the Smac Planner which generate feasible paths with orientations for forward and reverse motion. |
 
 Example fully-described XML with default parameter values:
 
@@ -70,6 +71,7 @@ controller_server:
       max_angular_accel: 3.2
       simulate_ahead_time: 1.0
       rotate_to_goal_heading: false
+      use_path_orientations: false
 
       # DWB parameters
       ...
