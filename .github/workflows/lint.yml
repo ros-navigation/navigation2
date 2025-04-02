@@ -32,6 +32,7 @@ jobs:
           - "nav2_common"
           - "nav2_bringup"
           - "nav2_collision_monitor"
+          - "nav2_costmap_2d"
     steps:
     - uses: actions/checkout@v4
 
