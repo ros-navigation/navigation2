@@ -33,6 +33,7 @@ def generate_launch_description():
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
+    graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
@@ -87,6 +88,11 @@ def generate_launch_description():
         'params_file',
         default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value='', description='Path to the graph file to load'
     )
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -160,7 +166,7 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[configured_params, {'graph_filepath': graph_filepath}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
@@ -273,7 +279,7 @@ def generate_launch_description():
                         package='nav2_route',
                         plugin='nav2_route::RouteServer',
                         name='route_server',
-                        parameters=[configured_params],
+                        parameters=[configured_params, {'graph_filepath': graph_filepath}],
                         remappings=remappings),
                     ComposableNode(
                         package='nav2_behaviors',
@@ -342,6 +348,7 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)

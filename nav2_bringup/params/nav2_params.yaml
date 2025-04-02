@@ -283,7 +283,7 @@ global_costmap:
       always_send_full_costmap: True
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
-# If you'd rather set it in the yaml, remove the default "map" value in the tb3_simulation_launch.py
+# If you'd rather set it in the yaml, remove the default "map" value in the launch file(s).
 # file & provide full path to map below. If CLI map configuration or launch default is provided, that will be used.
 # map_server:
 #   ros__parameters:
@@ -362,7 +362,10 @@ waypoint_follower:
 
 route_server:
   ros__parameters:
-    graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
+    # The graph_filepath does not need to be specified since it going to be set by defaults in launch.
+    # If you'd rather set it in the yaml, remove the default "graph" value in the launch file(s).
+    # file & provide full path to map below. If graph config or launch default is provided, it is used
+    # graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
     operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]

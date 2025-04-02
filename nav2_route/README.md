@@ -422,6 +422,8 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
+- System test with route file + evaluation (tb3, check works and complete)
+
 - [ ] Leidos docs PR for file saving / rviz panel plugin
   - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
   - [ ] https://github.com/ros-navigation/navigation2/pull/4775
@@ -433,14 +435,12 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
     * Update the kd-Tree part in the readme to that or the BFS
 
 ---
-  - Launch configuration to set the graph file (mirror `map`). 
-  - BT nodes for 2x route APIs + cancel nodes (+ groot xml + add to BT navlist + add to default yaml list + error code/msg/ports),
-  - System test with route file + evaluation (tb3, check works and complete)
 
-- [ ] Quality: 
+Quality: 
   - web documentation (BT node configuration page, package configuration pages, simple command docs, migration for all),
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
+
   - Demos:
     - 1. Route -> Smoother (or turning radius in path converter?) -> Controller for direct route following, spline turns for tracking with min radius
     - 2. 3 Stage planning BT: Route -> Global planner to node(s) in the future with compute path to pose // compute path through poses -> trajectory planning
@@ -452,12 +452,7 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
     - 8. FIrst and last mile off graph navigation
     - Q: Frequent replanning? Plan once and recovery if failing to redo? Continue to replan often?
 
-- [ ] Beta testing by users
-
-
-# Questions
-
-- How can BT trigger BT node again if its still feedback-pending? preemption! Make sure works. + regular replanning and/or reroute BT node as a fallback to the controller server failing (add current edge to closed list?).
+  - Beta testing by users
 
 # Future work (by priority level)
 

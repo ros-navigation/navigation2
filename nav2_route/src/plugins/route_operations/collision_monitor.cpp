@@ -54,7 +54,7 @@ void CollisionMonitor::configure(
     node, getName() + ".check_resolution", rclcpp::ParameterValue(1));
   check_resolution_ = static_cast<unsigned int>(
     node->get_parameter(getName() + ".check_resolution").as_int());
-  
+
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_collision_dist", rclcpp::ParameterValue(5.0));
   max_collision_dist_ = static_cast<float>(
@@ -210,7 +210,7 @@ bool CollisionMonitor::lineToMap(
 bool CollisionMonitor::isInCollision(const LineSegment & line)
 {
   nav2_util::LineIterator iter(line.x0, line.y0, line.x1, line.y1);
-  for (; iter.isValid();) {
+  for (; iter.isValid(); ) {
     float cost = static_cast<float>(costmap_->getCost(iter.getX(), iter.getY()));
     if (cost >= max_cost_ && cost != 255.0 /*unknown*/) {
       return true;

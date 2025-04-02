@@ -76,6 +76,7 @@ def generate_launch_description():
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
+    graph_filepath = LaunchConfiguration('graph')
 
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
@@ -94,6 +95,11 @@ def generate_launch_description():
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
         description='Full path to map file to load',
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot3_graph.geojson'),
     )
 
     declare_robot1_params_file_cmd = DeclareLaunchArgument(
@@ -172,6 +178,7 @@ def generate_launch_description():
                     launch_arguments={
                         'namespace': robot['name'],
                         'map': map_yaml_file,
+                        'graph': graph_filepath,
                         'use_sim_time': 'True',
                         'params_file': params_file,
                         'autostart': autostart,
@@ -235,6 +242,7 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_robot1_params_file_cmd)
     ld.add_action(declare_robot2_params_file_cmd)
     ld.add_action(declare_use_rviz_cmd)

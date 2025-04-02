@@ -59,6 +59,11 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="CancelComputeAndTrackRoute">
+      <input_port name="server_name">Server name to cancel the route compute and tracker server</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
@@ -96,6 +101,32 @@
       <output_port name="path">Path created by ComputePathToPose node</output_port>
       <output_port name="error_code_id">"Compute path through poses error code"</output_port>
       <output_port name="error_msg">"Compute path through poses error message"</output_port>
+    </Action>
+
+    <Action ID="ComputeRoute">
+      <input_port name="start_id">Node ID to start at</input_port>
+      <input_port name="goal_id">Node ID for the goal</input_port>
+      <input_port name="start">Start pose of the route if overriding current robot pose and using poses over IDs</input_port>
+      <input_port name="goal">Goal pose of the route if using poses over IDs</input_port>
+      <input_port name="use_start">Whether to use a fixed start pose or the TF current robot pose</input_port>
+      <input_port name="use_poses">Whether to use start/goal poses or startid and goalids on the graph</input_port>
+      <output_port name="planning_time">Duration to compute route</output_port>
+      <output_port name="path">Path created by ComputeRoute node</output_port>
+      <output_port name="route">Route created by ComputeRoute node</output_port>
+      <output_port name="error_code_id">"Compute route to pose error code"</output_port>
+      <output_port name="error_msg">"Compute route to pose error message"</output_port>
+    </Action>
+
+    <Action ID="ComputeAndTrackRoute">
+      <input_port name="start_id">Node ID to start at</input_port>
+      <input_port name="goal_id">Node ID for the goal</input_port>
+      <input_port name="start">Start pose of the route if overriding current robot pose and using poses over IDs</input_port>
+      <input_port name="goal">Goal pose of the route if using poses over IDs</input_port>
+      <input_port name="use_start">Whether to use a fixed start pose or the TF current robot pose</input_port>
+      <input_port name="use_poses">Whether to use start/goal poses or startid and goalids on the graph</input_port>
+      <output_port name="execution_time">Duration to compute route</output_port>
+      <output_port name="error_code_id">"Compute route to pose error code"</output_port>
+      <output_port name="error_msg">"Compute route to pose error message"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
