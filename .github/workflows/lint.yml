@@ -30,6 +30,7 @@ jobs:
         mypy_packages:
           - "nav2_smac_planner"
           - "nav2_common"
+          - "nav2_bringup"
     steps:
     - uses: actions/checkout@v4
 
