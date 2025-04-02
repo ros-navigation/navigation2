@@ -46,11 +46,22 @@ BT::NodeStatus RecoveryNode::tick()
     if (current_child_idx_ == 0) {
       switch (child_status) {
         case BT::NodeStatus::SUCCESS:
+<<<<<<< HEAD
           {
             // reset node and return success when first child returns success
             halt();
             return BT::NodeStatus::SUCCESS;
           }
+=======
+          // reset node and return success when first child returns success
+          // also halt the recovery action as the main action is successful, reset its state
+          ControlNode::haltChild(1);
+          halt();
+          return BT::NodeStatus::SUCCESS;
+
+        case BT::NodeStatus::RUNNING:
+          return BT::NodeStatus::RUNNING;
+>>>>>>> e6cef393 (Halt recovery action when main action succeeds to reset status (#5027))
 
         case BT::NodeStatus::FAILURE:
           {
