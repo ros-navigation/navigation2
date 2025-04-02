@@ -24,6 +24,7 @@ module = [
     "launch.*",
     "ament_index_python.*",
     "nav2_common.*",
+    "launch_testing.*",
 ]
 
 ignore_missing_imports = true
