@@ -90,11 +90,11 @@ BtActionServer<ActionT>::BtActionServer(
     "wait",
   };
 
-  if (node->has_parameter("error_code_names")) {
-    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
-      " 'error_code_name_prefixes' and MUST be removed.\n"
-      " Please review migration guide and update your configuration.");
-  }
+  // if (node->has_parameter("error_code_names")) {
+  //   throw std::runtime_error("parameter 'error_code_names' has been replaced by "
+  //     " 'error_code_name_prefixes' and MUST be removed.\n"
+  //     " Please review migration guide and update your configuration.");
+  // }
 
   if (!node->has_parameter("error_code_name_prefixes")) {
     const rclcpp::ParameterValue value = node->declare_parameter(

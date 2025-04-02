@@ -95,7 +95,7 @@ def generate_launch_description():
 
             Node(
                 package='nav2_lifecycle_manager',
-                # namespace=namespace,
+                namespace=namespace,
                 executable='lifecycle_manager',
                 name='lifecycle_manager_collision_monitor',
                 output='screen',
@@ -106,7 +106,7 @@ def generate_launch_description():
             ),
             Node(
                 package='nav2_collision_monitor',
-                # namespace=namespace,
+                namespace=namespace,
                 executable='collision_monitor',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
@@ -127,7 +127,7 @@ def generate_launch_description():
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
-                        # namespace=namespace,
+                        namespace=namespace,
                         name='lifecycle_manager_collision_monitor',
                         parameters=[
                             {'autostart': autostart},
@@ -138,7 +138,7 @@ def generate_launch_description():
                     ComposableNode(
                         package='nav2_collision_monitor',
                         plugin='nav2_collision_monitor::CollisionMonitor',
-                        # namespace=namespace,
+                        namespace=namespace,
                         name='collision_monitor',
                         parameters=[configured_params],
                         remappings=remappings,
