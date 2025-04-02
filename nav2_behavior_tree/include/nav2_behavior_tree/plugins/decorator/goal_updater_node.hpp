@@ -33,8 +33,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
  * the current goal on the blackboard
- * @warning This is an Asynchronous Decorator, which will reset when halted
- *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will reset when halted.
  */
 class GoalUpdater : public BT::DecoratorNode
 {

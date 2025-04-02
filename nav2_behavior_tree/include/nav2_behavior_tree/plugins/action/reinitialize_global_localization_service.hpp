@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::Empty
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will reset when halted.
  */
 class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
 {

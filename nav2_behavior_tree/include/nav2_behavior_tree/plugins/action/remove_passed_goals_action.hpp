@@ -30,8 +30,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::ActionNodeBase that removes goals that the robot passed near to
- * @warning This is an Asynchronous Action, which will reset when halted
- *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
+ * @note This is an Asynchronous node. It will reset when halted.
  */
 class RemovePassedGoals : public BT::ActionNodeBase
 {

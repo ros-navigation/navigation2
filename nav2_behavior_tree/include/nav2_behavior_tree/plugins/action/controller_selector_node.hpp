@@ -34,8 +34,7 @@ namespace nav2_behavior_tree
  * to get the decision about what controller must be used. It is usually used before of
  * the FollowPath. The selected_controller output port is passed to controller_id
  * input port of the FollowPath
- * @warning This is an Asynchronous Action, which will reset when halted
- *          Use cautiously with Reactive control nodes (only one Asynchronous action may be used)
+ * @note This is an Asynchronous node. It will reset when halted.
  */
 class ControllerSelector : public BT::SyncActionNode
 {
