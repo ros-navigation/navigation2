@@ -422,7 +422,7 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-- System test with route file + evaluation (tb3, check works and complete)
+- System test for tracking
 
 - [ ] Leidos docs PR for file saving / rviz panel plugin
   - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
@@ -434,9 +434,16 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
     * Check Josh's BFS PR https://github.com/ros-navigation/navigation2/pull/3536
     * Update the kd-Tree part in the readme to that or the BFS
 
+Rebase:
+  - Service introspection
+  - 
+
 ---
 
 Quality: 
+  - Test all plugins in final maps to validate functionality (costmap scorer potentially problematic?)
+    - Select Default plugins to include
+  
   - web documentation (BT node configuration page, package configuration pages, simple command docs, migration for all),
 
   - Tutorials (bt xml change, plugin customize (op/edge), file field examples)

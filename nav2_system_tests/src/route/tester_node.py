@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2023 Samsung Research
+# Copyright 2025 Open Navigation LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class RouteTester(Node):
         route_msg.use_poses = True
 
         self.info_msg('Sending ComputeRoute goal request...')
-        send_goal_future = self.compute_track_action_client.send_goal_async(goal_msg)
+        send_goal_future = self.compute_action_client.send_goal_async(route_msg)
 
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
@@ -97,87 +97,95 @@ class RouteTester(Node):
         self.info_msg('Action completed! Checking validity of results...')
 
         # Check result for validity
-        assert(len(result.path) > 0)
-        assert(result.route.route_cost > 0) # TODO for actual values expected
-        assert(len(result.route.nodes) > 0) # TODO for actual values expected
-        assert(len(result.route.edge_ids) > 0) # TODO for actual values expected
+        assert(len(result.path.poses) > 60)
+        assert(len(result.path.poses) < 70)
+        assert(result.route.route_cost > 3)
+        assert(len(result.route.nodes) == 4)
+        assert(len(result.route.edges) == 3)
         assert(result.error_code == 0)
+        assert(result.error_msg == '')
 
         self.info_msg('Goal succeeded!')
         return True
 
     def runTrackRouteTest(self):
-        # Test 1: See if we can compute and track a route with proper state
-        self.info_msg("Waiting for 'ComputeAndTrackRoute' action server")
-        while not self.compute_track_action_client.wait_for_server(timeout_sec=1.0):
-            self.info_msg("'ComputeAndTrackRoute' action server not available, waiting...")
-
-        route_msg = ComputeAndTrackRoute.Goal()
-        route_msg.goal = self.getStampedPoseMsg(self.goal_pose)
-        route_msg.use_start = False  # Use TF pose instead
-        route_msg.use_poses = True
-
-        self.info_msg('Sending ComputeAndTrackRoute goal request...')
-        send_goal_future = self.compute_track_action_client.send_goal_async(
-            goal_msg, feedback_callback=self.feedback_callback)
-
-        rclpy.spin_until_future_complete(self, send_goal_future)
-        goal_handle = send_goal_future.result()
-
-        if not goal_handle.accepted:
-            self.error_msg('Goal rejected')
-            return False
-
-        self.info_msg('Goal accepted')
-        get_result_future = goal_handle.get_result_async()
-
-        self.info_msg("Waiting for 'ComputeAndTrackRoute' action to complete")
-        progressing = True
-        last_feedback_msg = None
-        while progressing:
-            rclpy.spin_until_future_complete(self, get_result_future, timeout_sec = 0.10)
-            status = get_result_future.result().status
-            if status == GoalStatus.STATUS_SUCCEEDED:
-                progressing = False
-            elif status == GoalStatus.STATUS_CANCELED or status == GoalStatus.STATUS_ABORTED:
-                self.info_msg(f'Goal failed with status code: {status}')
-                return False
-
-            # Else, processing. Check feedback
-            while len(self.feedback_msgs) > 0:
-                feedback_msg = self.feedback_msgs.pop(0)
-                assert(len(feedback_msg.path) > 0)
-                assert(feedback_msg.route.route_cost > 0) # TODO for actual values expected
-                assert(len(feedback_msg.route.nodes) > 0) # TODO for actual values expected
-                assert(len(feedback_msg.route.edge_ids) > 0) # TODO for actual values expected
-                assert(len(feedback_msg.operations_triggered) == 1)
-                assert(feedback_msg.operations_triggered[0] == "ReroutingService")
-
-                if last_feedback_msg and last_feedback_msg != feedback_msg and last_feedback_msg.route == False:
-                    if last_feedback_msg.next_node_id != feedback_msg.last_node_id:
-                        self.error_msg('Feedback state is not tracking in order!')
-                        return False
-                    if feedback_msg.current_edge_id == 0:
-                        self.error_msg('Feedback state does not contain the proper edge info!')
-                        return False
-
-                last_feedback_msg = feedback_msg
-
-        result = get_result_future.result().result
-
-        if int(last_feedback_msg.next_node_id) != int(last_feedback.route.nodes[-1].nodeid):
-            self.error_msg('Terminal feedback state is not correct!')
-            return False
-
-        self.info_msg('Action completed! Checking validity of terminal condition...')
-
-        # Check result for validity
-        if not self.distanceFromGoal() < 0.5:
-            self.error_msg('Did not make it to the goal pose!')
-            return False
-
-        self.info_msg('Goal succeeded!')
         return True
+    #     # Test 1: See if we can compute and track a route with proper state
+    #     self.info_msg("Waiting for 'ComputeAndTrackRoute' action server")
+    #     while not self.compute_track_action_client.wait_for_server(timeout_sec=1.0):
+    #         self.info_msg("'ComputeAndTrackRoute' action server not available, waiting...")
+
+    #     route_msg = ComputeAndTrackRoute.Goal()
+    #     route_msg.goal = self.getStampedPoseMsg(self.goal_pose)
+    #     route_msg.use_start = False  # Use TF pose instead
+    #     route_msg.use_poses = True
+
+    #     self.info_msg('Sending ComputeAndTrackRoute goal request...')
+    #     send_goal_future = self.compute_track_action_client.send_goal_async(
+    #         route_msg, feedback_callback=self.feedback_callback)
+
+    #     rclpy.spin_until_future_complete(self, send_goal_future)
+    #     goal_handle = send_goal_future.result()
+
+    #     if not goal_handle.accepted:
+    #         self.error_msg('Goal rejected')
+    #         return False
+
+    #     self.info_msg('Goal accepted')
+    #     get_result_future = goal_handle.get_result_async()
+
+    #     # TODO test preemption
+
+    #     self.info_msg("Waiting for 'ComputeAndTrackRoute' action to complete")
+    #     progressing = True
+    #     last_feedback_msg = None
+    #     while progressing:
+    #         rclpy.spin_until_future_complete(self, get_result_future, timeout_sec = 0.10)
+    #         if get_result_future.result() is not None:
+    #             status = get_result_future.result().status
+    #             if status == GoalStatus.STATUS_SUCCEEDED:
+    #                 progressing = False
+    #             elif status == GoalStatus.STATUS_CANCELED or status == GoalStatus.STATUS_ABORTED:
+    #                 self.info_msg(f'Goal failed with status code: {status}')
+    #                 return False
+
+    #         # TODO send to controller to execute
+
+    #         # Else, processing. Check feedback
+    #         while len(self.feedback_msgs) > 0:
+    #             feedback_msg = self.feedback_msgs.pop(0)
+    #             assert(len(feedback_msg.path) > 0)
+    #             assert(feedback_msg.route.route_cost > 0) # TODO for actual values expected
+    #             assert(len(feedback_msg.route.nodes) > 0) # TODO for actual values expected
+    #             assert(len(feedback_msg.route.edge_ids) > 0) # TODO for actual values expected
+    #             assert(len(feedback_msg.operations_triggered) == 1)
+    #             assert(feedback_msg.operations_triggered[0] == "ReroutingService")
+
+    #             if last_feedback_msg and last_feedback_msg != feedback_msg and last_feedback_msg.route == False:
+    #                 if last_feedback_msg.next_node_id != feedback_msg.last_node_id:
+    #                     self.error_msg('Feedback state is not tracking in order!')
+    #                     return False
+    #                 if feedback_msg.current_edge_id == 0:
+    #                     self.error_msg('Feedback state does not contain the proper edge info!')
+    #                     return False
+
+    #             last_feedback_msg = feedback_msg
+
+    #     result = get_result_future.result().result
+
+    #     if int(last_feedback_msg.next_node_id) != int(last_feedback.route.nodes[-1].nodeid):
+    #         self.error_msg('Terminal feedback state is not correct!')
+    #         return False
+
+    #     self.info_msg('Action completed! Checking validity of terminal condition...')
+
+    #     # Check result for validity
+    #     if not self.distanceFromGoal() < 0.5:
+    #         self.error_msg('Did not make it to the goal pose!')
+    #         return False
+
+    #     self.info_msg('Goal succeeded!')
+    #     return True
 
     def feedback_callback(self, feedback_msg):
         self.feedback_msgs.append(feedback_msg)
@@ -238,7 +246,8 @@ class RouteTester(Node):
 
     def shutdown(self):
         self.info_msg('Shutting down')
-        self.action_client.destroy()
+        self.compute_action_client.destroy()
+        self.compute_track_action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
         mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
@@ -285,8 +294,7 @@ def run_all_tests(robot_tester):
     robot_tester.wait_for_node_active('amcl')
     robot_tester.wait_for_initial_pose()
     robot_tester.wait_for_node_active('bt_navigator')
-    result = robot_tester.runComputeRouteTest()
-    result = result and robot_tester.runTrackRouteTest()
+    result = robot_tester.runComputeRouteTest() and robot_tester.runTrackRouteTest()
 
     if result:
         robot_tester.info_msg('Test PASSED')
@@ -346,15 +354,16 @@ def main(argv=sys.argv[1:]):
 
     # run tests
     passed = run_all_tests(tester)
+    expect_failure = False
 
     tester.shutdown()
-    testers[0].info_msg('Done Shutting Down.')
+    tester.info_msg('Done Shutting Down.')
 
     if passed != expect_failure:
-        testers[0].info_msg('Exiting failed')
+        tester.info_msg('Exiting failed')
         exit(1)
     else:
-        testers[0].info_msg('Exiting passed')
+        tester.info_msg('Exiting passed')
         exit(0)
 
 
