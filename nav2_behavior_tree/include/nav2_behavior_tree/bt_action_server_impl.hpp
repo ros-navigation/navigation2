@@ -299,14 +299,10 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 
   // Enable monitoring with Groot2
   if (enable_groot_monitoring_) {
-    try {
-      bt_->addGrootMonitoring(&tree_, groot_publisher_port_);
-      RCLCPP_INFO(
-        logger_, "Enabling Groot2 monitoring for %s: %d",
-        action_name_.c_str(), groot_publisher_port_);
-    } catch (const std::logic_error & e) {
-      RCLCPP_ERROR(logger_, "Groot2 already enabled, Error: %s", e.what());
-    }
+    bt_->addGrootMonitoring(&tree_, groot_publisher_port_);
+    RCLCPP_INFO(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_publisher_port_);
   }
 
   return true;

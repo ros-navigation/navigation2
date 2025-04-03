@@ -20,10 +20,12 @@
 #include <vector>
 
 #include "behaviortree_cpp/decorator_node.h"
-
-#include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -49,6 +51,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
       BT::InputPort<nav_msgs::msg::Goals>(
         "goals", "Vector of navigation goals"),

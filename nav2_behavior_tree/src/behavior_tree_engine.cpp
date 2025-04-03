@@ -109,14 +109,9 @@ BehaviorTreeEngine::addGrootMonitoring(
   // This logger publish status changes using Groot2
   groot_monitor_ = std::make_unique<BT::Groot2Publisher>(*tree, publisher_port);
 
-  // Register JSON definitions
+  // Register common types JSON definitions
   BT::RegisterJsonDefinition<builtin_interfaces::msg::Time>();
   BT::RegisterJsonDefinition<std_msgs::msg::Header>();
-  BT::RegisterJsonDefinition<geometry_msgs::msg::Point>();
-  BT::RegisterJsonDefinition<geometry_msgs::msg::Quaternion>();
-  BT::RegisterJsonDefinition<geometry_msgs::msg::Pose>();
-  BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
-  BT::RegisterJsonDefinition<std::chrono::milliseconds>();
 }
 
 void
