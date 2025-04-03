@@ -24,7 +24,12 @@ module = [
     "launch.*",
     "ament_index_python.*",
     "nav2_common.*",
+    "nav2_msgs.*",
     "launch_testing.*",
+    "action_msgs.*",
+    "geometry_msgs.*",
+    "sensor_msgs.*",
+    "tf2_ros.*",
 ]
 
 ignore_missing_imports = true
