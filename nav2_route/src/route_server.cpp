@@ -354,7 +354,7 @@ RouteServer::computeAndTrackRoute()
 }
 
 void RouteServer::setRouteGraph(
-  const shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {

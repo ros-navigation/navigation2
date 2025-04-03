@@ -28,6 +28,7 @@
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/service_server.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "nav2_msgs/msg/route.hpp"
@@ -187,7 +188,7 @@ protected:
    * @param response from the service
    */
   void setRouteGraph(
-    const shared_ptr<rmw_request_id_t>/*request_header*/,
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
