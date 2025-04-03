@@ -79,7 +79,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(controller->get_parameter("failure_tolerance").as_double(), 5.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

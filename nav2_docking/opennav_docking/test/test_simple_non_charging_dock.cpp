@@ -196,7 +196,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 
 }  // namespace opennav_docking
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

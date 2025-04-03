@@ -18,7 +18,7 @@ repositories:
   ros/diagnostics:
     type: git
     url: https://github.com/ros/diagnostics.git
-    version: ros2   
+    version: ros2-humble
   ros/geographic_info:
     type: git
     url: https://github.com/ros-geographic-info/geographic_info.git

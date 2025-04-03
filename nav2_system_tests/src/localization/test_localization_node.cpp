@@ -110,7 +110,7 @@ TEST_F(TestAmclPose, SimpleAmclTest)
   EXPECT_EQ(true, defaultAmclTest());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

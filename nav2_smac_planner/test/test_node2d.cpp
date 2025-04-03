@@ -148,7 +148,7 @@ TEST(Node2DTest, test_node_2d_neighbors)
   EXPECT_EQ(neighbors.size(), 0u);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

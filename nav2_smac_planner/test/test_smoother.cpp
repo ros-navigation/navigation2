@@ -184,7 +184,7 @@ TEST(SmootherTest, test_full_smoother)
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

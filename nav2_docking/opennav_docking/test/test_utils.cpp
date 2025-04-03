@@ -137,7 +137,7 @@ TEST(UtilsTests, testl2Norm)
 
 }  // namespace opennav_docking
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

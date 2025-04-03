@@ -14,7 +14,7 @@ target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-ament_target_dependencies(${library_name} 
+ament_target_dependencies(${library_name}
   bondcpp
   geometry_msgs
   lifecycle_msgs

@@ -168,7 +168,7 @@ TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
   EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

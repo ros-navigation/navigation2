@@ -675,8 +675,8 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
   rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
   if (!nav_2d_utils::transformPose(
-          costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
-          robot_pose_in_path_frame, tolerance))
+      costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
+      robot_pose_in_path_frame, tolerance))
   {
     throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
   }
@@ -691,7 +691,8 @@ void ControllerServer::computeAndPublishVelocity()
       double curr_min_dist = std::numeric_limits<double>::max();
       for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
         double curr_dist =
-          nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
+          nav2_util::geometry_utils::euclidean_distance(
+          robot_pose_in_path_frame,
           current_path.poses[curr_idx]);
         if (curr_dist < curr_min_dist) {
           curr_min_dist = curr_dist;
@@ -702,8 +703,9 @@ void ControllerServer::computeAndPublishVelocity()
     };
 
   const std::size_t closest_pose_idx = find_closest_pose_idx();
-  feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
-      closest_pose_idx);
+  feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(
+    current_path_,
+    closest_pose_idx);
   action_server_->publish_feedback(feedback);
 }
 
