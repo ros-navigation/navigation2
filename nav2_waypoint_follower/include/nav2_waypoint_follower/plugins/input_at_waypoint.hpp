@@ -28,7 +28,7 @@ namespace nav2_waypoint_follower
 {
 
 /**
- * @brief Simple plugin based on WaypointTaskExecutor, lets robot to wait for a
+ * @brief Simple plugin based on WaypointTaskExecutor, let's robot to wait for a
  *        user input at waypoint arrival.
  */
 class InputAtWaypoint : public nav2_core::WaypointTaskExecutor

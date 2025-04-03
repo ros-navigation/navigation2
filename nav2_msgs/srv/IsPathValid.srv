@@ -5,4 +5,4 @@ uint8 max_cost 253
 bool consider_unknown_as_obstacle false
 ---
 bool is_valid
-int32[] invalid_pose_indices 
+int32[] invalid_pose_indices

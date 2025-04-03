@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "message_filters/subscriber.hpp"
 #include "nav2_amcl/angleutils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_amcl/pf/pf.hpp"
@@ -1565,18 +1564,21 @@ AmclNode::initPubSub()
 void
 AmclNode::initServices()
 {
-  global_loc_srv_ = create_service<std_srvs::srv::Empty>(
-    "reinitialize_global_localization",
+  global_loc_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "reinitialize_global_localization", shared_from_this(),
     std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
-  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
-    "set_initial_pose",
+  initial_guess_srv_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "set_initial_pose", shared_from_this(),
     std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
-  nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
-    "request_nomotion_update",
+  nomotion_update_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    "request_nomotion_update", shared_from_this(),
     std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 }

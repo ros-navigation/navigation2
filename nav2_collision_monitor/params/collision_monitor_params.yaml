@@ -81,7 +81,7 @@ collision_monitor:
         theta_max: 1.0
       # This is the last polygon to be checked, it should cover the entire range of robot's velocities
       # It is used as the stopped polygon when the robot is not moving and as a fallback if the velocity
-      # is not covered by any of the other sub-polygons 
+      # is not covered by any of the other sub-polygons
       stopped:
         points: "[[0.25, 0.25], [0.25, -0.25], [-0.25, -0.25], [-0.25, 0.25]]"
         linear_min: -1.0

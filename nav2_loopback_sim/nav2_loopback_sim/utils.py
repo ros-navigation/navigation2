@@ -19,7 +19,6 @@ from geometry_msgs.msg import Quaternion, Transform
 import numpy as np
 import tf_transformations
 
-
 """
 Transformation utilities for the loopback simulator
 """

@@ -188,7 +188,7 @@ TEST_F(TestNode, testRaytracing2) {
   ASSERT_EQ(obs_before, 20);
 
   // The sensor origin will be <0,0>. So if we add an obstacle at 9,9,
-  // we would expect cells <0, 0> thru <8, 8> to be traced through
+  // we would expect cells <0, 0> through <8, 8> to be traced through
   // however the static map is not cleared by obstacle layer
   addObservation(olayer, 9.5, 9.5, MAX_Z / 2, 0.5, 0.5, MAX_Z / 2);
   layers.updateMap(0, 0, 0);

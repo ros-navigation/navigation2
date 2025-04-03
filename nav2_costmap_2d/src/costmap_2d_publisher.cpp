@@ -82,11 +82,13 @@ Costmap2DPublisher::Costmap2DPublisher(
     topic_name + "_raw_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
-  costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
-    "get_" + topic_name, std::bind(
-      &Costmap2DPublisher::costmap_service_callback,
-      this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+  costmap_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+    std::string("get_") + topic_name,
+    node,
+    std::bind(
+      &Costmap2DPublisher::costmap_service_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];

@@ -15,8 +15,8 @@
 
 import math
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, Twist, TwistStamped
-from geometry_msgs.msg import Quaternion, TransformStamped, Vector3
+from geometry_msgs.msg import (PoseWithCovarianceStamped, Quaternion, TransformStamped, Twist,
+                               TwistStamped, Vector3)
 from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
@@ -29,13 +29,8 @@ from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 import tf_transformations
 
-from .utils import (
-    addYawToQuat,
-    getMapOccupancy,
-    matrixToTransform,
-    transformStampedToMatrix,
-    worldToMap,
-)
+from .utils import (addYawToQuat, getMapOccupancy, matrixToTransform, transformStampedToMatrix,
+                    worldToMap)
 
 """
 This is a loopback simulator that replaces a physics simulator to create a

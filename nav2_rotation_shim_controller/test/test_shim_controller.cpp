@@ -621,7 +621,8 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.primary_controller", std::string("HI")),
       rclcpp::Parameter("test.rotate_to_goal_heading", true),
       rclcpp::Parameter("test.rotate_to_heading_once", true),
-      rclcpp::Parameter("test.closed_loop", false)});
+      rclcpp::Parameter("test.closed_loop", false),
+      rclcpp::Parameter("test.use_path_orientations", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -635,6 +636,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.rotate_to_goal_heading").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_once").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.closed_loop").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_path_orientations").as_bool(), true);
 }
 
 int main(int argc, char **argv)
