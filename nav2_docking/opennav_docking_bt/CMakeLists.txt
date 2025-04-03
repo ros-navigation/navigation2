@@ -22,11 +22,11 @@ target_include_directories(opennav_dock_action_bt_node
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_compile_definitions(opennav_dock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
-target_link_libraries(opennav_dock_action_bt_node PUBLIC
-  behaviortree_cpp::behaviortree_cpp
-  ${geometry_msgs_TARGETS}
-  nav2_behavior_tree::nav2_behavior_tree
-  ${nav2_msgs_TARGETS}
+ament_target_dependencies(opennav_dock_action_bt_node
+  behaviortree_cpp
+  geometry_msgs
+  nav2_behavior_tree
+  nav2_msgs
 )
 
 add_library(opennav_undock_action_bt_node SHARED src/undock_robot.cpp)
@@ -36,11 +36,11 @@ target_include_directories(opennav_undock_action_bt_node
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_compile_definitions(opennav_undock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
-target_link_libraries(opennav_undock_action_bt_node PUBLIC
-  behaviortree_cpp::behaviortree_cpp
-  ${geometry_msgs_TARGETS}
-  nav2_behavior_tree::nav2_behavior_tree
-  ${nav2_msgs_TARGETS}
+ament_target_dependencies(opennav_undock_action_bt_node
+  behaviortree_cpp
+  geometry_msgs
+  nav2_behavior_tree
+  nav2_msgs
 )
 
 install(TARGETS opennav_dock_action_bt_node opennav_undock_action_bt_node

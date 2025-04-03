@@ -1116,7 +1116,7 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

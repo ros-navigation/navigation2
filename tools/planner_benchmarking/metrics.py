@@ -30,7 +30,8 @@ from transforms3d.euler import euler2quat
 def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     results = []
     for planner in planners:
-        path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
+        path = navigator._getPathImpl(
+            initial_pose, goal_pose, planner, use_start=True)
         if path is not None and path.error_code == 0:
             results.append(path)
         else:
@@ -97,7 +98,8 @@ def main():
     navigator = BasicNavigator()
 
     # Set map to use, other options: 100by100_15, 100by100_10
-    map_path = os.getcwd() + '/' + glob.glob('**/100by100_20.yaml', recursive=True)[0]
+    map_path = os.getcwd() + '/' + \
+        glob.glob('**/100by100_20.yaml', recursive=True)[0]
     navigator.changeMap(map_path)
     time.sleep(2)
 
@@ -119,7 +121,8 @@ def main():
     while len(results) != random_pairs:
         print('Cycle: ', i, 'out of: ', random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
-        goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
+        goal = getRandomGoal(costmap, start, max_cost,
+                             side_buffer, time_stamp, res)
         print('Start', start)
         print('Goal', goal)
         result = getPlannerResults(navigator, start, goal, planners)

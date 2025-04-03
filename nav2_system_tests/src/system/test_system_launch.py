@@ -69,10 +69,12 @@ def generate_launch_description():
         param_substitutions.update({'use_astar': 'True'})
 
     param_substitutions.update(
-        {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')}
+        {'planner_server.ros__parameters.GridBased.plugin': os.getenv(
+            'PLANNER')}
     )
     param_substitutions.update(
-        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER')}
+        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv(
+            'CONTROLLER')}
     )
 
     configured_params = RewrittenYaml(
@@ -125,7 +127,8 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
+                    os.path.join(nav2_bringup_dir, 'launch',
+                                 'bringup_launch.py')
                 ),
                 launch_arguments={
                     'namespace': '',

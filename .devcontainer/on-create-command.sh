@@ -4,8 +4,8 @@
 set -eo pipefail
 
 # Uncomment for debugging
-# set -x
-# env
+set -x
+env
 
 git config --global --add safe.directory "*"
 

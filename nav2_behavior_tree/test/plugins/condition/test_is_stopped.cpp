@@ -59,7 +59,8 @@ IsStoppedTestFixture::odom_smoother_ = nullptr;
 
 TEST_F(IsStoppedTestFixture, test_behavior)
 {
-  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>("odom",
+  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>(
+    "odom",
     rclcpp::SystemDefaultsQoS());
   nav_msgs::msg::Odometry odom_msg;
 

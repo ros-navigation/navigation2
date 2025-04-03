@@ -64,13 +64,13 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
+    rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(),
     callback_group_);
 
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
+    rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(),
     callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;

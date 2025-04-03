@@ -18,13 +18,15 @@ foreach(name IN LISTS TEST_NAMES)
   )
   target_link_libraries(${name}
     mppi_controller
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
-    nav2_core::nav2_core
-    nav2_costmap_2d::nav2_costmap_2d_core
-    rclcpp::rclcpp
-    rclcpp_lifecycle::rclcpp_lifecycle
-    nav2_core::nav2_core
+  )
+  ament_target_dependencies(${name}
+    geometry_msgs
+    nav_msgs
+    nav2_core
+    nav2_costmap_2d
+    rclcpp
+    rclcpp_lifecycle
+    nav2_core
   )
 
   if(${TEST_DEBUG_INFO})
@@ -34,12 +36,14 @@ endforeach()
 
 # This is a special case requiring linking against the critics library
 ament_add_gtest(critics_tests critics_tests.cpp)
+ament_target_dependencies(critics_tests
+  rclcpp
+  rclcpp_lifecycle
+  nav2_costmap_2d
+)
 target_link_libraries(critics_tests
   mppi_controller
   mppi_critics
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  nav2_costmap_2d::nav2_costmap_2d_core
 )
 if(${TEST_DEBUG_INFO})
   target_compile_definitions(critics_tests PUBLIC -DTEST_DEBUG_INFO)

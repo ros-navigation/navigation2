@@ -88,7 +88,8 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
-    bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    bt_action_server_->setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       std::string("Error loading XML file: ") + bt_xml_filename + ". Navigation canceled.");
     return false;
   }
@@ -103,13 +104,15 @@ NavigateToPoseNavigator::goalCompleted(
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
-      RCLCPP_WARN(logger_,
+      RCLCPP_WARN(
+        logger_,
         "NavigateToPoseNavigator::goalCompleted, internal error %d:%s.",
         result->error_code,
         result->error_msg.c_str());
     }
   } else {
-    RCLCPP_WARN(logger_, "NavigateToPoseNavigator::goalCompleted error %d:%s.",
+    RCLCPP_WARN(
+      logger_, "NavigateToPoseNavigator::goalCompleted error %d:%s.",
       result->error_code,
       result->error_msg.c_str());
   }
@@ -225,7 +228,8 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+    bt_action_server_->setInternalError(
+      ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
@@ -235,7 +239,8 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+    bt_action_server_->setInternalError(
+      ActionT::Result::TF_ERROR,
       "Failed to transform a goal pose provided with frame_id '" +
       goal->pose.header.frame_id +
       "' to the global frame '" +

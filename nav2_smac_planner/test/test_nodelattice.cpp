@@ -388,7 +388,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   delete costmap;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

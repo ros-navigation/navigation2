@@ -178,11 +178,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     try {
-      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-          shared_from_this(), callback_group_);
+      plugin->initialize(
+        layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+        shared_from_this(), callback_group_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
-          plugin_names_[i].c_str(), e.what());
+      RCLCPP_ERROR(
+        get_logger(), "Failed to initialize costmap plugin %s! %s.",
+        plugin_names_[i].c_str(), e.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
 
@@ -858,7 +860,7 @@ void Costmap2DROS::getCostsCallback(
     } else {
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at point (%f, %f)",
-          pose_transformed.pose.position.x,
+        pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
       bool in_bounds = costmap->worldToMap(

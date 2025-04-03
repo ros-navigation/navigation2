@@ -35,12 +35,15 @@ void PluginContainerLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "enabled",
-      rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "plugins",
-      rclcpp::ParameterValue(std::vector<std::string>{}));
-  nav2_util::declare_parameter_if_not_declared(node, name_ + "." + "combination_method",
-      rclcpp::ParameterValue(1));
+  nav2_util::declare_parameter_if_not_declared(
+    node, name_ + "." + "enabled",
+    rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, name_ + "." + "plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{}));
+  nav2_util::declare_parameter_if_not_declared(
+    node, name_ + "." + "combination_method",
+    rclcpp::ParameterValue(1));
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "plugins", plugin_names_);
@@ -185,7 +188,7 @@ bool PluginContainerLayer::isClearable()
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
-    if((*plugin)->isClearable()) {
+    if ((*plugin)->isClearable()) {
       return true;
     }
   }

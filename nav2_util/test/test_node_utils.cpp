@@ -87,7 +87,7 @@ TEST(GetPluginTypeParam, GetPluginTypeParam)
   EXPECT_THROW(get_plugin_type_param(node, "Waldo"), std::runtime_error);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -632,7 +632,7 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -85,7 +85,7 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
     };
 
   auto dynamicCb = [&](const rclcpp::Parameter & /*param*/,
-    rcl_interfaces::msg::SetParametersResult & /*result*/) {
+      rcl_interfaces::msg::SetParametersResult & /*result*/) {
       dynamic_triggered = true;
     };
 
@@ -161,7 +161,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
     node->get_node_services_interface());
 
   std::shared_future<rcl_interfaces::msg::SetParametersResult> result_future =
-    rec_param->set_parameters_atomically({
+    rec_param->set_parameters_atomically(
+  {
     rclcpp::Parameter("my_node.verbose", true),
     rclcpp::Parameter("dynamic_int", 10),
     rclcpp::Parameter("static_int", 10)
@@ -175,7 +176,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
   auto result = result_future.get();
   EXPECT_EQ(result.successful, false);
   EXPECT_FALSE(result.reason.empty());
-  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+  EXPECT_EQ(
+    result.reason, std::string("Rejected change to static parameter: ") +
     "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
 
   // Now, only param1 should change, param 2 should be the same
@@ -206,7 +208,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
     node->get_node_services_interface());
 
   std::shared_future<rcl_interfaces::msg::SetParametersResult> result_future =
-    rec_param->set_parameters_atomically({
+    rec_param->set_parameters_atomically(
+  {
     // Don't set default param rclcpp::Parameter("my_node.verbose", false),
     rclcpp::Parameter("dynamic_int", 10),
     rclcpp::Parameter("static_int", 10)
@@ -220,7 +223,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
   auto result = result_future.get();
   EXPECT_EQ(result.successful, false);
   EXPECT_FALSE(result.reason.empty());
-  EXPECT_EQ(result.reason, std::string("Rejected change to static parameter: ") +
+  EXPECT_EQ(
+    result.reason, std::string("Rejected change to static parameter: ") +
     "{\"name\": \"static_int\", \"type\": \"integer\", \"value\": \"10\"}");
 
   // Now, only param1 should change, param 2 should be the same
@@ -245,7 +249,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
     node->get_node_services_interface());
 
   std::shared_future<rcl_interfaces::msg::SetParametersResult>
-  result_future = rec_param->set_parameters_atomically({
+  result_future = rec_param->set_parameters_atomically(
+  {
     rclcpp::Parameter("my_node.verbose", true),
   });
 
@@ -259,7 +264,8 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   EXPECT_TRUE(result.reason.empty());
 
   // Try to set some parameters that have not been declared via the service client
-  result_future = rec_param->set_parameters_atomically({
+  result_future = rec_param->set_parameters_atomically(
+  {
     rclcpp::Parameter("static_int", 10),
     rclcpp::Parameter("not_declared", true),
     rclcpp::Parameter("not_declared2", true),
@@ -278,7 +284,7 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

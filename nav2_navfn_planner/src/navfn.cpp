@@ -326,14 +326,14 @@ int NavFn::getPathLen() {return npath;}
 
 // inserting onto the priority blocks
 #define push_cur(n)  {if (n >= 0 && n < ns && !pending[n] && \
-  costarr[n] < COST_OBS && curPe < PRIORITYBUFSIZE) \
-  {curP[curPe++] = n; pending[n] = true;}}
+      costarr[n] < COST_OBS && curPe < PRIORITYBUFSIZE) \
+    {curP[curPe++] = n; pending[n] = true;}}
 #define push_next(n) {if (n >= 0 && n < ns && !pending[n] && \
-  costarr[n] < COST_OBS && nextPe < PRIORITYBUFSIZE) \
-  {nextP[nextPe++] = n; pending[n] = true;}}
+      costarr[n] < COST_OBS && nextPe < PRIORITYBUFSIZE) \
+    {nextP[nextPe++] = n; pending[n] = true;}}
 #define push_over(n) {if (n >= 0 && n < ns && !pending[n] && \
-  costarr[n] < COST_OBS && overPe < PRIORITYBUFSIZE) \
-  {overP[overPe++] = n; pending[n] = true;}}
+      costarr[n] < COST_OBS && overPe < PRIORITYBUFSIZE) \
+    {overP[overPe++] = n; pending[n] = true;}}
 
 
 // Set up navigation potential arrays for new propagation

@@ -95,7 +95,7 @@ public:
   {
     this->updateCostmapMsgCount++;
     std::vector<uint8_t> data;
-    for(unsigned int i = 0; i < update_msg->data.size(); i++) {
+    for (unsigned int i = 0; i < update_msg->data.size(); i++) {
       data.push_back(update_msg->data[i]);
     }
     receivedGrids.push_back(data);
@@ -256,7 +256,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
     }
     // Publish full costmap for the first iteration
-    if(!first_iteration) {
+    if (!first_iteration) {
       x0 = mapChange.x0;
       xn = mapChange.xn;
       y0 = mapChange.y0;
@@ -294,7 +294,7 @@ TEST_F(
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

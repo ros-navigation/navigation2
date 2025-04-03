@@ -44,7 +44,8 @@ def getTimes(results):
         if (i % 2) == 0:
             # Append non-smoothed time
             times.append(
-                results[i].planning_time.nanosec / 1e09 + results[i].planning_time.sec
+                results[i].planning_time.nanosec /
+                1e09 + results[i].planning_time.sec
             )
         else:
             # Append smoothed times array
@@ -197,7 +198,8 @@ def averagePathCost(paths, costmap, num_of_planners):
     for i in range(0, len(coords), 2):
         costs = []
         for j in range(len(coords[i])):
-            costs.append(data[math.floor(coords[i + 1][j])][math.floor(coords[i][j])])
+            costs.append(data[math.floor(coords[i + 1][j])]
+                         [math.floor(coords[i][j])])
         average_path_costs[k % num_of_planners].append(sum(costs) / len(costs))
         k += 1
 
@@ -263,7 +265,8 @@ def main():
     times = np.transpose(times)
 
     # Costs
-    average_path_costs = np.asarray(averagePathCost(paths, costmap, methods_num))
+    average_path_costs = np.asarray(
+        averagePathCost(paths, costmap, methods_num))
     max_path_costs = np.asarray(maxPathCost(paths, costmap, methods_num))
 
     # Smoothness

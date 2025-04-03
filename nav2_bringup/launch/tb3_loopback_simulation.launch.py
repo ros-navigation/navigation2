@@ -91,7 +91,8 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+        default_value=os.path.join(
+            bringup_dir, 'rviz', 'nav2_default_view.rviz'),
         description='Full path to the RVIZ config file to use',
     )
 
@@ -123,7 +124,8 @@ def generate_launch_description():
     )
 
     rviz_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'rviz_launch.py')),
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'rviz_launch.py')),
         condition=IfCondition(use_rviz),
         launch_arguments={
             'namespace': namespace,
@@ -133,7 +135,8 @@ def generate_launch_description():
     )
 
     bringup_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(launch_dir, 'bringup_launch.py')),
+        PythonLaunchDescriptionSource(
+            os.path.join(launch_dir, 'bringup_launch.py')),
         launch_arguments={
             'namespace': namespace,
             'map': map_yaml_file,
@@ -174,7 +177,8 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': map_yaml_file}],
+                parameters=[configured_params, {
+                    'yaml_filename': map_yaml_file}],
                 remappings=remappings,
             ),
             Node(

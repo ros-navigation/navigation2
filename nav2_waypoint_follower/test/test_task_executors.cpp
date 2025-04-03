@@ -154,7 +154,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   EXPECT_TRUE(paw->processAtWaypoint(pose, 0));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

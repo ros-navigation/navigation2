@@ -320,7 +320,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   EXPECT_LT(length, base_length);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

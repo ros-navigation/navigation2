@@ -47,8 +47,10 @@ class TestLatticeGenerator(unittest.TestCase):
             for trajectory in self.minimal_set[start_angle]:
 
                 self.assertGreaterEqual(trajectory.parameters.arc_length, 0)
-                self.assertGreaterEqual(trajectory.parameters.start_straight_length, 0)
-                self.assertGreaterEqual(trajectory.parameters.end_straight_length, 0)
+                self.assertGreaterEqual(
+                    trajectory.parameters.start_straight_length, 0)
+                self.assertGreaterEqual(
+                    trajectory.parameters.end_straight_length, 0)
                 self.assertGreaterEqual(trajectory.parameters.total_length, 0)
 
     def test_minimal_set_end_points_lie_on_grid(self):
@@ -74,7 +76,8 @@ class TestLatticeGenerator(unittest.TestCase):
 
                 end_point_angle = trajectory.path.yaws[-1]
 
-                self.assertEqual(end_point_angle, trajectory.parameters.end_angle)
+                self.assertEqual(
+                    end_point_angle, trajectory.parameters.end_angle)
 
     def test_output_angles_in_correct_range(self):
         # Test that the outputted angles always lie within 0 to 2*pi

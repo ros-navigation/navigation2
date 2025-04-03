@@ -109,7 +109,8 @@ class TestDockingServer(unittest.TestCase):
         self.node.destroy_node()
 
     def command_velocity_callback(self, msg):
-        self.node.get_logger().info('Command: %f %f' % (msg.twist.linear.x, msg.twist.angular.z))
+        self.node.get_logger().info('Command: %f %f' %
+                                    (msg.twist.linear.x, msg.twist.angular.z))
         self.command = msg.twist
 
     def timer_callback(self):
@@ -153,7 +154,8 @@ class TestDockingServer(unittest.TestCase):
         self.x = goal.pose.pose.position.x - 0.05
         self.y = goal.pose.pose.position.y + 0.05
         self.theta = 2.0 * acos(goal.pose.pose.orientation.w)
-        self.node.get_logger().info('Navigating to %f %f %f' % (self.x, self.y, self.theta))
+        self.node.get_logger().info('Navigating to %f %f %f' %
+                                    (self.x, self.y, self.theta))
         goal_handle.succeed()
         self.publish()
 
@@ -170,8 +172,10 @@ class TestDockingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.dock_action_client = ActionClient(self.node, DockRobot, 'dock_robot')
-        self.undock_action_client = ActionClient(self.node, UndockRobot, 'undock_robot')
+        self.dock_action_client = ActionClient(
+            self.node, DockRobot, 'dock_robot')
+        self.undock_action_client = ActionClient(
+            self.node, UndockRobot, 'undock_robot')
 
         # Subscribe to command velocity
         self.node.create_subscription(
@@ -206,7 +210,7 @@ class TestDockingServer(unittest.TestCase):
         # Test docking action
         self.action_result = []
         assert self.dock_action_client.wait_for_server(timeout_sec=5.0), \
-               'dock_robot service not available'
+            'dock_robot service not available'
 
         goal = DockRobot.Goal()
         goal.use_dock_id = True
@@ -239,7 +243,8 @@ class TestDockingServer(unittest.TestCase):
         self.action_result.append(result_future_original.result())
 
         # First is aborted due to preemption
-        self.assertEqual(self.action_result[0].status, GoalStatus.STATUS_ABORTED)
+        self.assertEqual(
+            self.action_result[0].status, GoalStatus.STATUS_ABORTED)
         self.assertFalse(self.action_result[0].result.success)
 
         self.node.get_logger().info('Goal preempted')
@@ -250,7 +255,8 @@ class TestDockingServer(unittest.TestCase):
             time.sleep(0.1)
 
         # Second is aborted due to preemption during main loop (takes down all actions)
-        self.assertEqual(self.action_result[1].status, GoalStatus.STATUS_ABORTED)
+        self.assertEqual(
+            self.action_result[1].status, GoalStatus.STATUS_ABORTED)
         self.assertFalse(self.action_result[1].result.success)
 
         # Resend the goal
@@ -265,7 +271,8 @@ class TestDockingServer(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, result_future)
         self.action_result.append(result_future.result())
 
-        self.assertEqual(self.action_result[2].status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(
+            self.action_result[2].status, GoalStatus.STATUS_SUCCEEDED)
         self.assertTrue(self.action_result[2].result.success)
         self.assertEqual(self.action_result[2].result.num_retries, 1)
 
@@ -283,7 +290,8 @@ class TestDockingServer(unittest.TestCase):
         rclpy.spin_until_future_complete(self.node, result_future)
         self.action_result.append(result_future.result())
 
-        self.assertEqual(self.action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
+        self.assertEqual(
+            self.action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
         self.assertTrue(self.action_result[3].result.success)
 
 

@@ -103,7 +103,7 @@ INSTANTIATE_TEST_SUITE_P(
       true))
 );
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

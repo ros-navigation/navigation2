@@ -72,8 +72,9 @@ public:
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     if (!received_odom_) {
-      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
-          "OdomSmoother has not received any data yet, returning empty Twist");
+      RCLCPP_ERROR(
+        rclcpp::get_logger("OdomSmoother"),
+        "OdomSmoother has not received any data yet, returning empty Twist");
       geometry_msgs::msg::Twist twist;
       return twist;
     }
@@ -88,8 +89,9 @@ public:
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     if (!received_odom_) {
-      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
-          "OdomSmoother has not received any data yet, returning empty Twist");
+      RCLCPP_ERROR(
+        rclcpp::get_logger("OdomSmoother"),
+        "OdomSmoother has not received any data yet, returning empty Twist");
       geometry_msgs::msg::TwistStamped twist_stamped;
       return twist_stamped;
     }
@@ -104,25 +106,27 @@ public:
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     if (!received_odom_) {
-      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
-          "OdomSmoother has not received any data yet, returning empty Twist");
+      RCLCPP_ERROR(
+        rclcpp::get_logger("OdomSmoother"),
+        "OdomSmoother has not received any data yet, returning empty Twist");
       geometry_msgs::msg::Twist twist;
       return twist;
     }
     return odom_history_.back().twist.twist;
   }
 
-    /**
-   * @brief Get raw twist stamped msg from smoother (without smoothing)
-   * @return twist TwistStamped msg
-   */
+  /**
+ * @brief Get raw twist stamped msg from smoother (without smoothing)
+ * @return twist TwistStamped msg
+ */
   inline geometry_msgs::msg::TwistStamped getRawTwistStamped()
   {
     std::lock_guard<std::mutex> lock(odom_mutex_);
     geometry_msgs::msg::TwistStamped twist_stamped;
     if (!received_odom_) {
-      RCLCPP_ERROR(rclcpp::get_logger("OdomSmoother"),
-          "OdomSmoother has not received any data yet, returning empty Twist");
+      RCLCPP_ERROR(
+        rclcpp::get_logger("OdomSmoother"),
+        "OdomSmoother has not received any data yet, returning empty Twist");
       return twist_stamped;
     }
     twist_stamped.header = odom_history_.back().header;

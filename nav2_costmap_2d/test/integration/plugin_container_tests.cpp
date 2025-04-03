@@ -82,7 +82,8 @@ public:
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
     node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-    node_->declare_parameter("unknown_cost_value",
+    node_->declare_parameter(
+      "unknown_cost_value",
       rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
     node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
     node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
@@ -188,7 +189,8 @@ TEST_F(TestNode, testObstacleLayers) {
 TEST_F(TestNode, testObstacleAndStaticLayers) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -223,13 +225,16 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
 TEST_F(TestNode, testDifferentInflationLayers) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -272,13 +277,16 @@ TEST_F(TestNode, testDifferentInflationLayers) {
 TEST_F(TestNode, testDifferentInflationLayers2) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_a.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -321,19 +329,24 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
 TEST_F(TestNode, testResetting) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_a.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -392,19 +405,24 @@ TEST_F(TestNode, testResetting) {
 TEST_F(TestNode, testClearing) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_a.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -458,19 +476,24 @@ TEST_F(TestNode, testClearing) {
 TEST_F(TestNode, testOverwriteCombinationMethods) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_a.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
@@ -519,19 +542,24 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
 TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  node_->declare_parameter("pclayer_a.static.map_topic",
+  node_->declare_parameter(
+    "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  node_->declare_parameter("pclayer_a.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_a.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_a.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.cost_scaling_factor",
+  node_->declare_parameter(
+    "pclayer_b.inflation.cost_scaling_factor",
     rclcpp::ParameterValue(1.0));
 
-  node_->declare_parameter("pclayer_b.inflation.inflation_radius",
+  node_->declare_parameter(
+    "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
   nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
@@ -616,31 +644,39 @@ TEST_F(TestNode, testDynParamsSetPluginContainerLayer)
   plugins_str.push_back("plugin_container_layer_b");
   costmap->set_parameter(rclcpp::Parameter("plugins", plugins_str));
 
-  costmap->declare_parameter("plugin_container_layer_a.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_a.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::PluginContainerLayer")));
-  costmap->declare_parameter("plugin_container_layer_b.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_b.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::PluginContainerLayer")));
 
   std::vector<std::string> plugins_str_a;
   plugins_str_a.push_back("obstacle_layer");
   plugins_str_a.push_back("inflation_layer");
-  costmap->declare_parameter("plugin_container_layer_a.plugins",
+  costmap->declare_parameter(
+    "plugin_container_layer_a.plugins",
     rclcpp::ParameterValue(plugins_str_a));
 
-  costmap->declare_parameter("plugin_container_layer_a.obstacle_layer.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_a.obstacle_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::ObstacleLayer")));
-  costmap->declare_parameter("plugin_container_layer_a.inflation_layer.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_a.inflation_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::InflationLayer")));
 
   std::vector<std::string> plugins_str_b;
   plugins_str_b.push_back("static_layer");
   plugins_str_b.push_back("inflation_layer");
-  costmap->declare_parameter("plugin_container_layer_b.plugins",
+  costmap->declare_parameter(
+    "plugin_container_layer_b.plugins",
     rclcpp::ParameterValue(plugins_str_b));
 
-  costmap->declare_parameter("plugin_container_layer_b.static_layer.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_b.static_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::StaticLayer")));
-  costmap->declare_parameter("plugin_container_layer_b.inflation_layer.plugin",
+  costmap->declare_parameter(
+    "plugin_container_layer_b.inflation_layer.plugin",
     rclcpp::ParameterValue(std::string("nav2_costmap_2d::InflationLayer")));
 
 
@@ -679,7 +715,7 @@ TEST_F(TestNode, testDynParamsSetPluginContainerLayer)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

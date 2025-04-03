@@ -27,18 +27,16 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  bondcpp::bondcpp
-  diagnostic_updater::diagnostic_updater
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
-  ${std_srvs_TARGETS}
-)
-target_link_libraries(${library_name} PRIVATE
-  ${diagnostic_msgs_TARGETS}
-  ${lifecycle_msgs_TARGETS}
-  rclcpp_components::component
+ament_target_dependencies(${library_name}
+  bondcpp
+  diagnostic_updater
+  nav2_util
+  rclcpp
+  rclcpp_action
+  std_srvs
+  diagnostic_msgs
+  lifecycle_msgs
+  rclcpp_components
 )
 
 add_executable(lifecycle_manager
@@ -49,9 +47,11 @@ target_include_directories(lifecycle_manager
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(lifecycle_manager PRIVATE
+ament_target_dependencies(lifecycle_manager
+  rclcpp
+)
+target_link_libraries(lifecycle_manager
   ${library_name}
-  rclcpp::rclcpp
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")

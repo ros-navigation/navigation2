@@ -277,7 +277,7 @@ TEST_F(TestNode, testProbabilisticModelDownward) {
   ASSERT_EQ(layers.getCostmap()->getCost(3, 7), 254);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

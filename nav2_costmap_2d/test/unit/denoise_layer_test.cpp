@@ -509,7 +509,7 @@ TEST_F(DenoiseLayerTester, initializeInvalid) {
     std::make_tuple(true, ConnectivityType::Way8, 1));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 
