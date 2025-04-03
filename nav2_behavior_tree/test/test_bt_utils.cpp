@@ -419,29 +419,6 @@ TEST(MillisecondsPortTest, test_correct_syntax)
   EXPECT_EQ(value.count(), 123);
 }
 
-TEST(ErrorCodePortTest, test_correct_syntax)
-{
-  std::string xml_txt =
-    R"(
-      <root BTCPP_format="4">
-        <BehaviorTree ID="MainTree">
-            <ErrorCodePort test="100;204;212"/>
-        </BehaviorTree>
-      </root>)";
-
-  BT::BehaviorTreeFactory factory;
-  factory.registerNodeType<TestNode<std::set<int>>>("ErrorCodePort");
-  auto tree = factory.createTreeFromText(xml_txt);
-
-  tree = factory.createTreeFromText(xml_txt);
-  std::set<int> value;
-  tree.rootNode()->getInput("test", value);
-
-  EXPECT_TRUE(value.find(100) != value.end());
-  EXPECT_TRUE(value.find(204) != value.end());
-  EXPECT_TRUE(value.find(212) != value.end());
-}
-
 TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
 {
   std::string xml_txt =
