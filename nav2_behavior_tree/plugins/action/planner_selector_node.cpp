@@ -71,6 +71,8 @@ BT::NodeStatus PlannerSelector::tick()
     initialize();
   }
 
+  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
   callback_group_executor_.spin_some();
 
   // This behavior always use the last selected planner received from the topic input.
