@@ -33,6 +33,7 @@ jobs:
           - "nav2_bringup"
           - "nav2_collision_monitor"
           - "nav2_costmap_2d"
+          - "opennav_docking"
     steps:
     - uses: actions/checkout@v4
 
