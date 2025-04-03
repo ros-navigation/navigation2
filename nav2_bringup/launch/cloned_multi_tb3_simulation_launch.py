@@ -57,7 +57,7 @@ def generate_robot_actions(context, *args, **kwargs):
         group = GroupAction(
             [
                 LogInfo(
-                    msg=['Launching namespace=', robot_name, ' init_pose=', str(init_pose),]
+                    msg=['Launching namespace=', robot_name, ' init_pose=', str(init_pose), ]
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(

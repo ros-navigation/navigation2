@@ -67,7 +67,10 @@ def getSrcPath(package, prefix, OS):
 
 
 def getBinPath(package, prefix, OS):
-    return f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_amd64__binary/'
+    return (
+        f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__'
+        f'ubuntu_{OS}_amd64__binary/'
+    )
 
 
 def createPreamble(Distros):
