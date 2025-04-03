@@ -182,10 +182,12 @@ protected:
 
   /**
    * @brief The service callback to set a new route graph
+   * @param request_header to the service
    * @param request to the service
    * @param response from the service
    */
   void setRouteGraph(
+    const shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
@@ -209,7 +211,8 @@ protected:
     graph_vis_publisher_;
 
   // Set or modify graph
-  rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::SetRouteGraph,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr set_graph_service_;
 
   // Internal tools
   std::shared_ptr<GraphLoader> graph_loader_;

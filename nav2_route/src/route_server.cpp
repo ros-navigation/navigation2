@@ -52,11 +52,13 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&RouteServer::computeAndTrackRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
 
-  set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
+  set_graph_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetRouteGraph,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string(node->get_name()) + "/set_route_graph",
+    node,
     std::bind(
       &RouteServer::setRouteGraph, this,
-      std::placeholders::_1, std::placeholders::_2));
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   declare_parameter_if_not_declared(
     node, "route_frame", rclcpp::ParameterValue(std::string("map")));
@@ -352,6 +354,7 @@ RouteServer::computeAndTrackRoute()
 }
 
 void RouteServer::setRouteGraph(
+  const shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {

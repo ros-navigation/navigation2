@@ -434,10 +434,6 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
     * Check Josh's BFS PR https://github.com/ros-navigation/navigation2/pull/3536
     * Update the kd-Tree part in the readme to that or the BFS
 
-Rebase:
-  - Service introspection
-  - 
-
 ---
 
 Quality: 
