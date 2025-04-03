@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <chrono>
-#include <set>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
