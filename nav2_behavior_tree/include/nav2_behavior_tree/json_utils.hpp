@@ -24,8 +24,8 @@
 #include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "nav_msgs/msg/goals.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 // The follow templates are required when using Groot 2 to visualize the BT. They
@@ -84,6 +84,27 @@ BT_JSON_CONVERTER(geometry_msgs::msg::PoseStamped, msg)
 }
 
 }  // namespace geometry_msgs::msg
+
+namespace nav_msgs::msg
+{
+
+BT_JSON_CONVERTER(nav_msgs::msg::Goals, msg)
+{
+  add_field("header", &msg.header);
+  // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
+  // https://github.com/BehaviorTree/Groot2/issues/55
+  // add_field("goals", &msg.goals);
+}
+
+BT_JSON_CONVERTER(nav_msgs::msg::Path, msg)
+{
+  add_field("header", &msg.header);
+  // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
+  // https://github.com/BehaviorTree/Groot2/issues/55
+  // add_field("poses", &msg.poses);
+}
+
+}  // namespace nav_msgs::msg
 
 namespace std
 {
