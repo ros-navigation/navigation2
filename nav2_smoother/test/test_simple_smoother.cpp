@@ -278,7 +278,7 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_TRUE(smoother->smooth(max_its_path, max_time));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

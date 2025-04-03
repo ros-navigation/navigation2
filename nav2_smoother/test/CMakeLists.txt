@@ -9,7 +9,7 @@ ament_target_dependencies(test_smoother_server
   pluginlib
   rclcpp
   rclcpp_action
-  rclcpp_lifecycle  
+  rclcpp_lifecycle
 )
 target_link_libraries(test_smoother_server
   ${library_name}

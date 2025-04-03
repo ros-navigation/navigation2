@@ -10,7 +10,7 @@ function(plugin_add_test target filename plugin)
     ${library_name}
     ${plugin}
   )
-  ament_target_dependencies(${target} 
+  ament_target_dependencies(${target}
     ${dependencies})
 
   target_include_directories(${target}

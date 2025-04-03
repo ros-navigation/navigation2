@@ -47,9 +47,9 @@ add_library(${library_name} SHARED
   src/behavior_tree_engine.cpp
 )
 target_include_directories(${library_name}
- PUBLIC
- "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
- "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -225,9 +225,9 @@ list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
-   PRIVATE
-   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    PRIVATE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)

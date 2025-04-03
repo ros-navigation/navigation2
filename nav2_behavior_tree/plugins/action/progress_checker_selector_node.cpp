@@ -52,7 +52,7 @@ void ProgressCheckerSelector::createROSInterfaces()
 
     progress_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
       topic_name_, qos,
-        std::bind(&ProgressCheckerSelector::callbackProgressCheckerSelect, this, _1));
+      std::bind(&ProgressCheckerSelector::callbackProgressCheckerSelect, this, _1));
   }
 }
 
