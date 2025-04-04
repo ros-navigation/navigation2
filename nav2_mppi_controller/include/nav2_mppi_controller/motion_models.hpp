@@ -99,7 +99,7 @@ public:
       state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
-        Eigen::ArrayXf lower_bound_vy = (state.vy.col(i - 1) >
+        auto lower_bound_vy = (state.vy.col(i - 1) >
           0).select(state.vy.col(i - 1) + min_delta_vy,
           state.vy.col(i - 1) - max_delta_vy);
         auto upper_bound_vy = (state.vy.col(i - 1) >
