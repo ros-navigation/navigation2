@@ -108,7 +108,6 @@ class RouteTester(Node):
 
         # Check result for validity
         assert(len(result.path.poses) == 80)
-        self.error_msg(str(result.route.route_cost))
         assert(result.route.route_cost > 6)
         assert(result.route.route_cost < 7)
         assert(len(result.route.nodes) == 5)
