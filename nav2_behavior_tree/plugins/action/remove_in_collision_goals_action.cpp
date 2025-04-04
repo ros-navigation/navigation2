@@ -68,7 +68,7 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
   auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
   if (!waypoint_statuses_get_res) {
-    RCLCPP_WARN(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+    RCLCPP_ERROR(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
   }
 
   nav_msgs::msg::Goals valid_goal_poses;
@@ -97,9 +97,7 @@ BT::NodeStatus RemoveInCollisionGoals::on_completion(
   }
   setOutput("output_goals", valid_goal_poses);
   // set `waypoint_statuses` output
-  if (waypoint_statuses_get_res) {
-    setOutput("output_waypoint_statuses", waypoint_statuses);
-  }
+  setOutput("output_waypoint_statuses", waypoint_statuses);
 
   return BT::NodeStatus::SUCCESS;
 }

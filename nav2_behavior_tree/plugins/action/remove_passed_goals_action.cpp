@@ -71,11 +71,11 @@ inline BT::NodeStatus RemovePassedGoals::tick()
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
   auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
   if (!waypoint_statuses_get_res) {
-    RCLCPP_WARN(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+    RCLCPP_ERROR(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
   }
 
   double dist_to_goal;
-  while (goal_poses.goals.size() > 0) {
+  while (goal_poses.goals.size() > 1) {
     dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose.pose);
 
     if (dist_to_goal > viapoint_achieved_radius_) {
@@ -86,15 +86,12 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     if (waypoint_statuses_get_res) {
       auto cur_waypoint_index =
         find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, goal_poses.goals[0]);
-      if (cur_waypoint_index != -1) {
-        waypoint_statuses[cur_waypoint_index].waypoint_status =
-          nav2_msgs::msg::WaypointStatus::COMPLETED;
+      if (cur_waypoint_index == -1) {
+        RCLCPP_ERROR(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
+        return BT::NodeStatus::FAILURE;
       }
-    }
-
-    // prevent from removing the last goal
-    if (goal_poses.goals.size() == 1) {
-      break;
+      waypoint_statuses[cur_waypoint_index].waypoint_status =
+        nav2_msgs::msg::WaypointStatus::COMPLETED;
     }
 
     goal_poses.goals.erase(goal_poses.goals.begin());
@@ -102,9 +99,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
 
   setOutput("output_goals", goal_poses);
   // set `waypoint_statuses` output
-  if (waypoint_statuses_get_res) {
-    setOutput("output_waypoint_statuses", waypoint_statuses);
-  }
+  setOutput("output_waypoint_statuses", waypoint_statuses);
 
   return BT::NodeStatus::SUCCESS;
 }
