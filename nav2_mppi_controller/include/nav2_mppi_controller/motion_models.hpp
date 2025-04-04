@@ -84,7 +84,7 @@ public:
       auto lower_bound_vx = (state.vx.col(i - 1) >
         0).select(state.vx.col(i - 1) + min_delta_vx,
         state.vx.col(i - 1) - max_delta_vx);
-      Eigen::ArrayXf upper_bound_vx = (state.vx.col(i - 1) >
+      auto upper_bound_vx = (state.vx.col(i - 1) >
         0).select(state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
 
