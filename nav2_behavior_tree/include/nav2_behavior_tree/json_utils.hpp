@@ -118,7 +118,15 @@ inline void from_json(const nlohmann::json & js, std::chrono::milliseconds & des
 
 inline void to_json(nlohmann::json & js, const std::chrono::milliseconds & src)
 {
-  js = src.count();
+  if (js.is_null()) {
+    js = nlohmann::json();
+  }
+
+  if (src.count() < 0) {
+    throw std::invalid_argument("Milliseconds value cannot be negative");
+  }
+
+  js = std::to_string(src.count());
 }
 
 }  // namespace std
