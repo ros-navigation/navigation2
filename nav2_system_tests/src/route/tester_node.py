@@ -243,13 +243,16 @@ class RouteTester(Node):
 
         result = get_result_future.result().result
 
-        self.error_msg('Comparisons:')
-        self.error_msg(str(last_feedback_msg.next_node_id)) # 0
-        self.error_msg(str(last_feedback_msg.route.nodes[-1].nodeid)) #13
-        # TODO
-        # if int(last_feedback_msg.next_node_id) != int(last_feedback_msg.route.nodes[-1].nodeid):
-        #     self.error_msg('Terminal feedback state is not correct!')
-        #     return False
+        # Validate the state of the final feedback message
+        if int(last_feedback_msg.next_node_id) != 0:
+            self.error_msg('Terminal feedback state of nodes is not correct!')
+            return False
+        if int(last_feedback_msg.current_edge_id) != 0:
+            self.error_msg('Terminal feedback state of edges is not correct!')
+            return False
+        if int(last_feedback_msg.route.nodes[-1].nodeid != 13:
+            self.error_msg('Final route node is not correct!')
+            return False
 
         while not self.navigator.isTaskComplete(task=follow_path_task):
             time.sleep(0.1)
@@ -260,6 +263,8 @@ class RouteTester(Node):
         if not self.distanceFromGoal() < 0.5:
             self.error_msg('Did not make it to the goal pose!')
             return False
+        
+        # TODO cancel test
 
         self.info_msg('Goal succeeded!')
         return True

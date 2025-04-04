@@ -422,7 +422,7 @@ Note that there are parameters like `prune_route`, `min_prune_distance_from_star
 
 # Steve's TODO list
 
-- System test for tracking
+- System test for tracking: Feedback validation, cancel mid-execution
 
 - [ ] Leidos docs PR for file saving / rviz panel plugin
   - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
