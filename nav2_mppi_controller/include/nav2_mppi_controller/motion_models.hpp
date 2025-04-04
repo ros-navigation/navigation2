@@ -75,14 +75,22 @@ public:
     float max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
 
     unsigned int n_cols = state.vx.cols();
 
     for (unsigned int i = 1; i < n_cols; i++) {
+      auto lower_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + min_delta_vx,
+        state.vx.col(i - 1) - max_delta_vx);
+      auto upper_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + max_delta_vx,
+        state.vx.col(i - 1) - min_delta_vx);
+
       state.cvx.col(i - 1) = state.cvx.col(i - 1)
-        .cwiseMax(state.vx.col(i - 1) + min_delta_vx)
-        .cwiseMin(state.vx.col(i - 1) + max_delta_vx);
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
       state.vx.col(i) = state.cvx.col(i - 1);
 
       state.cwz.col(i - 1) = state.cwz.col(i - 1)
@@ -91,9 +99,15 @@ public:
       state.wz.col(i) = state.cwz.col(i - 1);
 
       if (is_holo) {
+        auto lower_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + min_delta_vy,
+          state.vy.col(i - 1) - max_delta_vy);
+        auto upper_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + max_delta_vy,
+          state.vy.col(i - 1) - min_delta_vy);
         state.cvy.col(i - 1) = state.cvy.col(i - 1)
-          .cwiseMax(state.vy.col(i - 1) - max_delta_vy)
-          .cwiseMin(state.vy.col(i - 1) + max_delta_vy);
+          .cwiseMax(lower_bound_vy)
+          .cwiseMin(upper_bound_vy);
         state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
@@ -114,7 +128,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f};
+    0.0f, 0.0f};
 };
 
 /**
