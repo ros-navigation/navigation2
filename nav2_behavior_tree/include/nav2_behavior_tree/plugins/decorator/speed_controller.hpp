@@ -34,6 +34,8 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that ticks its child every at a rate proportional to
  * the speed of the robot. If the robot travels faster, this node will tick its child at a
  * higher frequency and reduce the tick frequency if the robot slows down
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will reset when halted.
  */
 class SpeedController : public BT::DecoratorNode
 {

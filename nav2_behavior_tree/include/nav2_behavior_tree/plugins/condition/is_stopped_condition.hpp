@@ -16,8 +16,6 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_STOPPED_CONDITION_HPP_
 
 #include <string>
-#include <atomic>
-#include <deque>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"

@@ -49,7 +49,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
     return BT::NodeStatus::FAILURE;
   }
 
-  // Determine how long its been since we've started this iteration
+  // Determine how long it's been since we've started this iteration
   auto elapsed = node_->now() - start_;
 
   // Now, get that in seconds

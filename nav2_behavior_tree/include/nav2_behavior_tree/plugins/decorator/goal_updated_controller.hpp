@@ -30,6 +30,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::DecoratorNode that ticks its child if the goal was updated
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will reset when halted.
  */
 class GoalUpdatedController : public BT::DecoratorNode
 {
