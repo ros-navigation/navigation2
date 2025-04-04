@@ -25,17 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
-    strategy:
-      matrix:
-        mypy_packages:
-          - "nav2_smac_planner"
-          - "nav2_common"
-          - "nav2_bringup"
-          - "nav2_collision_monitor"
-          - "nav2_costmap_2d"
-          - "opennav_docking"
-          - "nav2_lifecycle_manager"
-          - "nav2_loopback_sim"
     steps:
     - uses: actions/checkout@v4
 
@@ -46,7 +35,15 @@ jobs:
       with:
         linter: mypy
         distribution: rolling
-        package-name: "${{ join(matrix.mypy_packages, ' ') }}"
+        package-name: >-
+          nav2_smac_planner
+          nav2_common
+          nav2_bringup
+          nav2_collision_monitor
+          nav2_costmap_2d
+          opennav_docking
+          nav2_lifecycle_manager
+          nav2_loopback_sim
         arguments: --config tools/pyproject.toml
 
   pre-commit:
