@@ -35,6 +35,7 @@ jobs:
           - "nav2_costmap_2d"
           - "opennav_docking"
           - "nav2_lifecycle_manager"
+          - "nav2_loopback_sim"
     steps:
     - uses: actions/checkout@v4
 
