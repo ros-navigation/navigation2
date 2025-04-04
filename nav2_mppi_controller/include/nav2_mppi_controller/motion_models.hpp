@@ -81,7 +81,7 @@ public:
     unsigned int n_cols = state.vx.cols();
 
     for (unsigned int i = 1; i < n_cols; i++) {
-      Eigen::ArrayXf lower_bound_vx = (state.vx.col(i - 1) >
+      auto lower_bound_vx = (state.vx.col(i - 1) >
         0).select(state.vx.col(i - 1) + min_delta_vx,
         state.vx.col(i - 1) - max_delta_vx);
       Eigen::ArrayXf upper_bound_vx = (state.vx.col(i - 1) >
