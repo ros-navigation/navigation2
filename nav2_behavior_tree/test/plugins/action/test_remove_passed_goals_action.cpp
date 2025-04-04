@@ -215,6 +215,66 @@ TEST_F(RemovePassedGoalsTestFixture,
   EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
 }
 
+TEST_F(RemovePassedGoalsTestFixture,
+  test_tick_remove_passed_goals_find_matching_waypoint_fail)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.25;
+  pose.position.y = 0.0;
+
+  transform_handler_->waitForTransform();
+  transform_handler_->updateRobotPose(pose);
+
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemovePassedGoals radius="0.5" input_goals="{goals}" output_goals="{goals}"
+                             input_waypoint_statuses="{waypoint_statuses}"
+                             output_waypoint_statuses="{waypoint_statuses}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
+
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
+
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
+
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
+
+  config_->blackboard->set("goals", poses);
+
+  // create waypoint_statuses and set it on blackboard
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
+  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+    waypoint_statuses[i].waypoint_pose = poses.goals[i];
+    waypoint_statuses[i].waypoint_index = i;
+  }
+  // inconsistency between waypoint_statuses and poses
+  waypoint_statuses[1].waypoint_pose.pose.position.x = 0.0;
+  config_->blackboard->set("waypoint_statuses", waypoint_statuses);
+
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check that it failed
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

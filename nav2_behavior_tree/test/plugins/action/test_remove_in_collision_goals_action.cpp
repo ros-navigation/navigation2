@@ -250,6 +250,70 @@ TEST_F(RemoveInCollisionGoalsTestFixture,
   EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::SKIPPED);
 }
 
+TEST_F(RemoveInCollisionGoalsTestFixture,
+  test_tick_remove_in_collision_goals_find_matching_waypoint_fail)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemoveInCollisionGoals service_name="/global_costmap/get_cost_global_costmap"
+                                  input_goals="{goals}" output_goals="{goals}"
+                                  cost_threshold="253"
+                                  input_waypoint_statuses="{waypoint_statuses}"
+                                  output_waypoint_statuses="{waypoint_statuses}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
+
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
+
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
+
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
+
+  config_->blackboard->set("goals", poses);
+
+  // create waypoint_statuses and set it on blackboard
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
+  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+    waypoint_statuses[i].waypoint_pose = poses.goals[i];
+    waypoint_statuses[i].waypoint_index = i;
+  }
+  // inconsistency between waypoint_statuses and poses
+  waypoint_statuses[3].waypoint_pose.pose.position.x = 0.0;
+
+  config_->blackboard->set("waypoint_statuses", waypoint_statuses);
+
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check that it failed and returned the original goals
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+  nav_msgs::msg::Goals output_poses;
+  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
+
+  EXPECT_EQ(output_poses.goals.size(), 4u);
+  EXPECT_EQ(output_poses.goals[0], poses.goals[0]);
+  EXPECT_EQ(output_poses.goals[1], poses.goals[1]);
+  EXPECT_EQ(output_poses.goals[2], poses.goals[2]);
+  EXPECT_EQ(output_poses.goals[3], poses.goals[3]);
+}
+
 TEST_F(RemoveInCollisionGoalsTestFixture, test_tick_remove_in_collision_goals_fail)
 {
   // create tree
