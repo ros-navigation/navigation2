@@ -940,5 +940,4 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
     scorer.score(
       &edge, route_request, edge_type,
       traversal_cost), nav2_core::InvalidEdgeScorerUse);
-
 }

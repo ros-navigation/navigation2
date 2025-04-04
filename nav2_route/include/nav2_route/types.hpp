@@ -211,11 +211,11 @@ struct Route
  */
 struct RouteRequest
 {
-  unsigned int start_nodeid;                    //node id of start node
-  unsigned int goal_nodeid;                     //node id of goal node
-  geometry_msgs::msg::PoseStamped start_pose;   //pose of start
-  geometry_msgs::msg::PoseStamped goal_pose;    //pose of goal
-  bool use_poses;                               //whether the start and goal poses are used
+  unsigned int start_nodeid;                    // node id of start node
+  unsigned int goal_nodeid;                     // node id of goal node
+  geometry_msgs::msg::PoseStamped start_pose;   // pose of start
+  geometry_msgs::msg::PoseStamped goal_pose;    // pose of goal
+  bool use_poses;                               // whether the start and goal poses are used
 };
 
 /**

@@ -50,7 +50,6 @@ bool GoalOrientationScorer::score(
   const RouteRequest & route_request,
   const EdgeType & edge_type, float & cost)
 {
-
   if (!route_request.use_poses) {
     throw nav2_core::InvalidEdgeScorerUse(
             "Cannot use goal orientation scorer without goal pose specified!");
