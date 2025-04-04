@@ -53,7 +53,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     nullptr, std::chrono::milliseconds(500), true);
 
   set_graph_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetRouteGraph,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     std::string(node->get_name()) + "/set_route_graph",
     node,
     std::bind(

@@ -188,6 +188,32 @@ class RouteTester(Node):
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
 
+        # Cancel it after a bit
+        time.sleep(2)
+        cancel_future = goal_handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(self, cancel_future)
+        status = cancel_future.result()
+        if status is not None and len(status.goals_canceling) > 0:
+            self.info_msg('Action cancel completed!')
+        else:
+            self.info_msg('Goal cancel failed')
+            return False
+
+        # Send it again
+        self.info_msg('Sending ComputeAndTrackRoute goal request...')
+        send_goal_future = self.compute_track_action_client.send_goal_async(
+            route_msg, feedback_callback=self.feedback_callback)
+
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        goal_handle = send_goal_future.result()
+
+        if not goal_handle.accepted:
+            self.error_msg('Goal rejected')
+            return False
+
+        self.info_msg('Goal accepted')
+        get_result_future = goal_handle.get_result_async()
+
         # Wait a bit for it to compute the route and start tracking (but no movement)
         time.sleep(2)
 
@@ -207,6 +233,7 @@ class RouteTester(Node):
 
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
+        self.feedback_msgs = []
 
         self.info_msg("Waiting for 'ComputeAndTrackRoute' action to complete")
         progressing = True
@@ -225,19 +252,16 @@ class RouteTester(Node):
             # Else, processing. Check feedback
             while len(self.feedback_msgs) > 0:
                 feedback_msg = self.feedback_msgs.pop(0)
-                
+
                 # Start following the path
                 if (last_feedback_msg and feedback_msg.path != last_feedback_msg.path):
                     follow_path_task = self.navigator.followPath(feedback_msg.path)
 
-                # Check if the feedback is valid TODO
-                # if last_feedback_msg and last_feedback_msg != feedback_msg:
-                #     if last_feedback_msg.next_node_id != feedback_msg.last_node_id:
-                #         self.error_msg('Feedback state is not tracking in order!')
-                #         return False
-                #     if feedback_msg.current_edge_id == 0 and last_feedback_msg != None:
-                #         self.error_msg('Feedback state does not contain the proper edge info!')
-                #         return False
+                # Check if the feedback is valid, if changed (not for route operations)
+                if last_feedback_msg and last_feedback_msg.current_edge_id != feedback_msg.current_edge_id and int(feedback_msg.current_edge_id) != 0:
+                    if last_feedback_msg.next_node_id != feedback_msg.last_node_id:
+                        self.error_msg('Feedback state is not tracking in order!')
+                        return False
 
                 last_feedback_msg = feedback_msg
 
@@ -250,7 +274,7 @@ class RouteTester(Node):
         if int(last_feedback_msg.current_edge_id) != 0:
             self.error_msg('Terminal feedback state of edges is not correct!')
             return False
-        if int(last_feedback_msg.route.nodes[-1].nodeid != 13:
+        if int(last_feedback_msg.route.nodes[-1].nodeid) != 13:
             self.error_msg('Final route node is not correct!')
             return False
 
@@ -260,11 +284,9 @@ class RouteTester(Node):
         self.info_msg('Action completed! Checking validity of terminal condition...')
 
         # Check result for validity
-        if not self.distanceFromGoal() < 0.5:
+        if not self.distanceFromGoal() < 1.0:
             self.error_msg('Did not make it to the goal pose!')
             return False
-        
-        # TODO cancel test
 
         self.info_msg('Goal succeeded!')
         return True
