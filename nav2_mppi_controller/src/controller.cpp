@@ -38,12 +38,16 @@ void MPPIController::configure(
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
 
+  getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
+
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, parameters_handler_.get());
   path_handler_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
   trajectory_visualizer_.on_configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
+  opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+    "trajectory", rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
@@ -53,19 +57,23 @@ void MPPIController::cleanup()
   optimizer_.shutdown();
   trajectory_visualizer_.on_cleanup();
   parameters_handler_.reset();
+  opt_traj_pub_.reset();
   RCLCPP_INFO(logger_, "Cleaned up MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::activate()
 {
+  auto node = parent_.lock();
   trajectory_visualizer_.on_activate();
   parameters_handler_->start();
+  opt_traj_pub_->on_activate();
   RCLCPP_INFO(logger_, "Activated MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::deactivate()
 {
   trajectory_visualizer_.on_deactivate();
+  opt_traj_pub_->on_deactivate();
   RCLCPP_INFO(logger_, "Deactivated MPPI Controller: %s", name_.c_str());
 }
 
@@ -100,8 +108,19 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
 #endif
 
+  Eigen::ArrayXXf optimal_trajectory;
+  if (publish_optimal_trajectory_) {
+    optimal_trajectory = optimizer_.getOptimizedTrajectory();
+    auto trajectory_msg = utils::toTrajectoryMsg(
+      optimal_trajectory,
+      optimizer_.getOptimalControlSequence(),
+      optimizer_.getSettings().model_dt,
+      cmd.header);
+    opt_traj_pub_->publish(std::move(trajectory_msg));
+  }
+
   if (visualize_) {
-    visualize(std::move(transformed_plan), cmd.header.stamp);
+    visualize(std::move(transformed_plan), cmd.header.stamp, optimal_trajectory);
   }
 
   return cmd;
@@ -109,10 +128,16 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 
 void MPPIController::visualize(
   nav_msgs::msg::Path transformed_plan,
-  const builtin_interfaces::msg::Time & cmd_stamp)
+  const builtin_interfaces::msg::Time & cmd_stamp,
+  const Eigen::ArrayXXf & optimal_trajectory)
 {
   trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
-  trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory", cmd_stamp);
+  if (optimal_trajectory.size() > 0) {
+    trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
+  } else {
+    trajectory_visualizer_.add(
+      optimizer_.getOptimizedTrajectory(), "Optimal Trajectory", cmd_stamp);
+  }
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
