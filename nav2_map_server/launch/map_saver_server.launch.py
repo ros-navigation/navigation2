@@ -18,7 +18,7 @@ from launch import LaunchDescription
 import launch_ros.actions
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Parameters
     lifecycle_nodes = ['map_saver']
     use_sim_time = True
