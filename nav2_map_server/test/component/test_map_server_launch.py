@@ -23,9 +23,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
-    launchFile = os.path.join(os.getenv('TEST_LAUNCH_DIR'), 'map_server_node.launch.py')
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+    launchDir = os.getenv('TEST_LAUNCH_DIR', '')
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
+
+    launchFile = os.path.join(launchDir, 'map_server_node.launch.py')
     ld = LaunchDescription(
         [
             IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
@@ -39,7 +41,7 @@ def main(argv=sys.argv[1:]):
     lts.add_test_action(ld, test1_action)
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    os.chdir(os.getenv('TEST_LAUNCH_DIR'))
+    os.chdir(launchDir)
     return lts.run(ls)
 
 
