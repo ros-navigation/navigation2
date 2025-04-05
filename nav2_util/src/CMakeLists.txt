@@ -27,6 +27,7 @@ target_link_libraries(${library_name} PUBLIC
   tf2_ros::tf2_ros
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}
+  pluginlib::pluginlib
 )
 target_link_libraries(${library_name} PRIVATE
   ${bond_TARGETS}
