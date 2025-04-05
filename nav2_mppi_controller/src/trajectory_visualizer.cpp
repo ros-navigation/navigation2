@@ -27,7 +27,8 @@ void TrajectoryVisualizer::on_configure(
   frame_id_ = frame_id;
   trajectories_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories", 1);
-  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/transformed_global_plan", 1);
+  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
+    "~/transformed_global_plan", 1);
   optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path", 1);
   parameters_handler_ = parameters_handler;
 
