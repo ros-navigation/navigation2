@@ -35,6 +35,8 @@ struct Parameters
   double transform_tolerance;
   double min_lookahead;
   double max_lookahead;
+  double lookahead_resolution;
+  bool interpolate_after_goal;
   double max_robot_pose_search_dist;
   double k_phi;
   double k_delta;
