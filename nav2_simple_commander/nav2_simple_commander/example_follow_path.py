@@ -22,7 +22,7 @@ Basic navigation demo to follow a given path after smoothing
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -69,9 +69,9 @@ def main():
         if feedback and i % 5 == 0:
             print(
                 'Estimated distance remaining to goal position: '
-                + '{0:.3f}'.format(feedback.distance_to_goal)
+                + f'{feedback.distance_to_goal:.3f}'
                 + '\nCurrent speed of the robot: '
-                + '{0:.3f}'.format(feedback.speed)
+                + f'{feedback.speed:.3f}'
             )
 
     # Do something depending on the return code

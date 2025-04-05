@@ -24,13 +24,13 @@ LETHAL_OBSTACLE = 254
 
 class TestFootprintCollisionChecker(unittest.TestCase):
 
-    def test_no_costmap(self):
+    def test_no_costmap(self) -> None:
         # Test if a type error raised when costmap is not specified yet
         fcc_ = FootprintCollisionChecker()
         self.assertRaises(ValueError, fcc_.worldToMapValidated, 0.0, 0.0)
         self.assertRaises(ValueError, fcc_.pointCost, 0.0, 0.0)
 
-    def test_pointCost(self):
+    def test_pointCost(self) -> None:
         # Test if point cost is calculated correctly
         # Create test grid 10 pixels wide by 10 pixels long, at 1 meters per pixel
         # AKA 10 meters x 10 meters
@@ -48,7 +48,7 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         self.assertEqual(fcc_.pointCost(1, 1), 0)
         self.assertRaises(IndexError, fcc_.pointCost, 11, 11)
 
-    def test_worldToMapValidated(self):
+    def test_worldToMapValidated(self) -> None:
         # Test if worldToMap conversion is calculated correctly
         # Create test grid 10 pixels wide by 10 pixels long, at 1 meters per pixel
         # AKA 10 meters x 10 meters
@@ -70,7 +70,7 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         self.assertEqual(fcc_.worldToMapValidated(14, 14), (9, 9))
         self.assertEqual(fcc_.worldToMapValidated(15, 14), (None, None))
 
-    def test_lineCost(self):
+    def test_lineCost(self) -> None:
         # Test if line cost is calculated correctly
         # Create test grid 10 pixels wide by 10 pixels long, at 1 meters per pixel
         # AKA 10 meters x 10 meters
@@ -88,7 +88,7 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         self.assertRaises(IndexError, fcc_.lineCost, 0, 15, 0, 9, 1)
         self.assertEqual(fcc_.lineCost(0, 9, 0, 9, 1), 0.0)
 
-    def test_footprintCost(self):
+    def test_footprintCost(self) -> None:
         # Test if footprint cost is calculated correctly
         # Create test grid 10 pixels wide by 10 pixels long, at 1 meters per pixel
         # AKA 10 meters x 10 meters
