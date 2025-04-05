@@ -46,8 +46,11 @@ void MPPIController::configure(
   trajectory_visualizer_.on_configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
-  opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
-    "trajectory", rclcpp::SystemDefaultsQoS());
+
+  if (publish_optimal_trajectory_) {
+    opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+      "trajectory", rclcpp::SystemDefaultsQoS());
+  }
 
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
@@ -66,14 +69,18 @@ void MPPIController::activate()
   auto node = parent_.lock();
   trajectory_visualizer_.on_activate();
   parameters_handler_->start();
-  opt_traj_pub_->on_activate();
+  if (opt_traj_pub_) {
+    opt_traj_pub_->on_activate();
+  }
   RCLCPP_INFO(logger_, "Activated MPPI Controller: %s", name_.c_str());
 }
 
 void MPPIController::deactivate()
 {
   trajectory_visualizer_.on_deactivate();
-  opt_traj_pub_->on_deactivate();
+  if (opt_traj_pub_) {
+    opt_traj_pub_->on_deactivate();
+  }
   RCLCPP_INFO(logger_, "Deactivated MPPI Controller: %s", name_.c_str());
 }
 
