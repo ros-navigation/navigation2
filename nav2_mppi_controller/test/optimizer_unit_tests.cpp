@@ -650,6 +650,26 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   }
 }
 
+TEST(OptimizerTests, TestGetters)
+{
+  OptimizerTester optimizer_tester;
+  optimizer_tester.fillOptimizerWithGarbage();
+
+  auto control_seq = optimizer_tester.getOptimalControlSequence();
+  EXPECT_EQ(control_seq.vx(0), 342.0);
+  EXPECT_EQ(control_seq.vx.rows(), 30);
+
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
+  EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
