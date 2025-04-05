@@ -49,7 +49,7 @@ void MPPIController::configure(
 
   if (publish_optimal_trajectory_) {
     opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
-      "trajectory", rclcpp::SystemDefaultsQoS());
+      "~/optimal_trajectory", rclcpp::SystemDefaultsQoS());
   }
 
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
@@ -116,7 +116,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   Eigen::ArrayXXf optimal_trajectory;
-  if (publish_optimal_trajectory_) {
+  if (publish_optimal_trajectory_ && opt_traj_pub_->get_subscription_count() > 0) {
     optimal_trajectory = optimizer_.getOptimizedTrajectory();
     auto trajectory_msg = utils::toTrajectoryMsg(
       optimal_trajectory,

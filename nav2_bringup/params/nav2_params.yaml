@@ -131,6 +131,7 @@ controller_server:
       gamma: 0.015
       motion_model: "DiffDrive"
       visualize: true
+      publish_optimal_trajectory: true
       regenerate_noises: true
       TrajectoryVisualizer:
         trajectory_step: 5

@@ -186,6 +186,9 @@ inline std::unique_ptr<nav2_msgs::msg::Trajectory> toTrajectoryMsg(
     curr_pt.time_from_start = rclcpp::Duration::from_seconds(i * model_dt);
     curr_pt.pose.position.x = trajectory(i, 0);
     curr_pt.pose.position.y = trajectory(i, 1);
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, trajectory(i, 2));
+    curr_pt.pose.orientation = tf2::toMsg(quat);
     curr_pt.velocity.linear.x = control_sequence.vx(i);
     curr_pt.velocity.angular.z = control_sequence.wz(i);
     if (control_sequence.vy.size() > 0) {
