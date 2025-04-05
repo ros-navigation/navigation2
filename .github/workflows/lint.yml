@@ -44,6 +44,7 @@ jobs:
           opennav_docking
           nav2_lifecycle_manager
           nav2_loopback_sim
+          nav2_map_server
         arguments: --config tools/pyproject.toml
 
   pre-commit:
