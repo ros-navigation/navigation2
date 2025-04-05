@@ -45,6 +45,7 @@ jobs:
           nav2_lifecycle_manager
           nav2_loopback_sim
           nav2_map_server
+          nav2_simple_commander
         arguments: --config tools/pyproject.toml
 
   pre-commit:
