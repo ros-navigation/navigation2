@@ -25,7 +25,7 @@ to get out of it.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()

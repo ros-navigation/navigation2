@@ -26,7 +26,7 @@ collecting information about stock quantity and location.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()

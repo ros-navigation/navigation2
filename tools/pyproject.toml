@@ -37,6 +37,9 @@ module = [
     "ament_pep257.*",
     "ament_flake8.*",
     "ament_copyright.*",
+    "builtin_interfaces.*",
+    "lifecycle_msgs.*",
+    "geographic_msgs.*",
 ]
 
 ignore_missing_imports = true

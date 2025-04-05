@@ -41,7 +41,7 @@ shipping_destinations = {
 }
 
 
-def main():
+def main() -> None:
     # Received virtual request for picking item at Shelf A and bring to
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ('shelf_A') and shipping destination ('frieght_bay_3')
@@ -94,7 +94,7 @@ def main():
                 'Estimated time of arrival at '
                 + request_item_location
                 + ' for worker: '
-                + '{0:.0f}'.format(
+                + '{:.0f}'.format(
                     Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                     / 1e9
                 )
