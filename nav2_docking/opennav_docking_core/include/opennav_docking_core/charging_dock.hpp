@@ -134,7 +134,7 @@ public:
    * robot should drive forwards or backwards onto the dock.
    * @return DockDirection The direction of the dock
    */
-  virtual DockDirection getDockDirection() = 0;
+  virtual DockDirection getDockDirection() {return DockDirection::FORWARD;}
 
   std::string getName() {return name_;}
 
