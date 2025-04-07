@@ -42,6 +42,9 @@ namespace nav2_rviz_plugins
         ui_->add_node_button->setChecked(true);
         ui_->edit_node_button->setChecked(true);
         ui_->remove_node_button->setChecked(true);
+        // Needed to prevent memory addresses moving from resizing
+        // when adding nodes and edges
+        graph_.reserve(1000);
     }
 
     void RouteTool::onInitialize(void) {

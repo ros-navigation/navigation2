@@ -40,9 +40,10 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
 
-Please visit our [documentation site](https://navigation.ros.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-hu52lnnq-cKYjuhTY~sEMbZXL8p9tOw) (if this link does not work, please contact maintainers to reactivate).
-
 ## Citation
+
+If you use the navigation framework, an algorithm from this repository, or ideas from it
+please cite this work in your papers!
 
  - S. Macenski, F. Martín, R. White, J. Clavero. [**The Marathon 2: A Navigation System**](https://arxiv.org/abs/2003.00368). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2020.
 
@@ -98,7 +99,7 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 
  If you use our work on VSLAM and formal comparisons for service robot needs, please cite the paper:
 
- If you use our work on VSLAM and formal comparisons for service robot needs, please cite the paper:
+ - A. Merzlyakov, S. Macenski. [**A Comparison of Modern General-Purpose Visual SLAM Approaches**](https://arxiv.org/abs/2107.07589). IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2021.
 
  ```bibtex
  @InProceedings{vslamComparison2021,
