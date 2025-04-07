@@ -33,6 +33,7 @@
   <exec_depend>nav2_behaviors</exec_depend>
   <exec_depend>nav2_smoother</exec_depend>
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
+  <exec_depend>nav2_route</exec_depend>
   <exec_depend>nav2_rotation_shim_controller</exec_depend>
   <exec_depend>nav2_rviz_plugins</exec_depend>
   <exec_depend>nav2_simple_commander</exec_depend>
