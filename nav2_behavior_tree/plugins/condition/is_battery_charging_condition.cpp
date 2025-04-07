@@ -26,12 +26,20 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   battery_topic_("/battery_status"),
   is_battery_charging_(false)
 {
+<<<<<<< HEAD
   getInput("battery_topic", battery_topic_);
   auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node->get_node_base_interface());
+=======
+  initialize();
+
+  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
+}
+>>>>>>> 4e8469e5 (Add double spin_some in some BT nodes (#5055))
 
   rclcpp::SubscriptionOptions sub_option;
   sub_option.callback_group = callback_group_;

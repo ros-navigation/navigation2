@@ -32,11 +32,19 @@ ControllerSelector::ControllerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
+<<<<<<< HEAD
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+=======
+  initialize();
+
+  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
+}
+>>>>>>> 4e8469e5 (Add double spin_some in some BT nodes (#5055))
 
   getInput("topic_name", topic_name_);
 
