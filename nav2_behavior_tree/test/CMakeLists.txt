@@ -4,6 +4,12 @@ target_link_libraries(test_bt_utils
   ${geometry_msgs_TARGETS}
 )
 
+ament_add_gtest(test_json_utils test_json_utils.cpp)
+target_link_libraries(test_json_utils
+  ${library_name}
+  ${geometry_msgs_TARGETS}
+)
+
 function(plugin_add_test target filename plugin)
   ament_add_gtest(${target} ${filename})
   target_link_libraries(${target}

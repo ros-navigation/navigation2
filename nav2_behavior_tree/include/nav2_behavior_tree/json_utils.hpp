@@ -93,7 +93,7 @@ BT_JSON_CONVERTER(nav_msgs::msg::Goals, msg)
   add_field("header", &msg.header);
   // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
   // https://github.com/BehaviorTree/Groot2/issues/55
-  // add_field("goals", &msg.goals);
+  add_field("goals", &msg.goals);
 }
 
 BT_JSON_CONVERTER(nav_msgs::msg::Path, msg)
@@ -101,7 +101,7 @@ BT_JSON_CONVERTER(nav_msgs::msg::Path, msg)
   add_field("header", &msg.header);
   // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
   // https://github.com/BehaviorTree/Groot2/issues/55
-  // add_field("poses", &msg.poses);
+  add_field("poses", &msg.poses);
 }
 
 }  // namespace nav_msgs::msg
@@ -111,22 +111,17 @@ namespace std
 
 inline void from_json(const nlohmann::json & js, std::chrono::milliseconds & dest)
 {
-  std::string key;
-  js.get_to(key);
-  dest = std::chrono::milliseconds(std::stoul(key));
+  if (js.contains("ms")) {
+    dest = std::chrono::milliseconds(js.at("ms").get<int>());
+  } else {
+    throw std::runtime_error("Invalid JSON for std::chrono::milliseconds");
+  }
 }
 
 inline void to_json(nlohmann::json & js, const std::chrono::milliseconds & src)
 {
-  if (js.is_null()) {
-    js = nlohmann::json();
-  }
-
-  if (src.count() < 0) {
-    throw std::invalid_argument("Milliseconds value cannot be negative");
-  }
-
-  js = std::to_string(src.count());
+  js["__type"] = "std::chrono::milliseconds";
+  js["ms"] = src.count();
 }
 
 }  // namespace std
