@@ -461,12 +461,11 @@ def main(argv=sys.argv[1:]):
 
     # run tests
     passed = run_all_tests(tester)
-    expect_failure = False
 
     tester.shutdown()
     tester.info_msg('Done Shutting Down.')
 
-    if passed != expect_failure:
+    if not passed:
         tester.info_msg('Exiting failed')
         exit(1)
     else:
