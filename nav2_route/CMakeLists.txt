@@ -230,6 +230,7 @@ install(TARGETS ${executable_name}
 )
 
 install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -248,7 +249,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_dependencies(${dependencies})
 ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
@@ -265,4 +265,5 @@ ament_export_dependencies(
   nlohmann_json
 )
 ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
