@@ -114,9 +114,10 @@ bool GraphSaver::transformGraph(Graph & graph)
         node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
 
       if (!got_transform) {
-        RCLCPP_WARN(logger_, 
-        "Could not get transform from node frame %s to route frame %s", 
-        node_frame.c_str(), route_frame_.c_str());
+        RCLCPP_WARN(
+          logger_,
+          "Could not get transform from node frame %s to route frame %s",
+          node_frame.c_str(), route_frame_.c_str());
         return false;
       }
 

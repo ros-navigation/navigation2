@@ -45,7 +45,7 @@ public:
    * @brief A constructor for nav2_route::GraphSaver
    * @param node Lifecycle node encapsulated by the GraphSaver
    * @param tf A tf buffer
-   * @param frame Coordinate frame that the graph belongs to 
+   * @param frame Coordinate frame that the graph belongs to
    */
   explicit GraphSaver(
     nav2_util::LifecycleNode::SharedPtr node,

@@ -49,7 +49,7 @@ bool GeoJsonGraphFileSaver::saveGraphToFile(
     file.close();
   } catch (const std::ios_base::failure & e) {
     RCLCPP_ERROR(logger_, "Error: %s", e.what());
-  } catch (const std::bad_alloc& e) {
+  } catch (const std::bad_alloc & e) {
     RCLCPP_ERROR(logger_, "Error allocating memory to save the GEOJson file");
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "An error occured: %s", e.what());
@@ -111,7 +111,7 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
 }
 
 void GeoJsonGraphFileSaver::convertMetaDataToJson(
-  const Metadata & metadata, Json & json_metadata) 
+  const Metadata & metadata, Json & json_metadata)
 {
   /* Function partially created using GPT */
   for (auto itr = metadata.data.begin(); itr != metadata.data.end(); itr++) {
@@ -135,7 +135,7 @@ void GeoJsonGraphFileSaver::convertMetaDataToJson(
     } else if (itr->second.type() == typeid(std::vector<std::any>)) {
       // If the itr->second is a vector, convert each element
       std::vector<Json> arrayJson;
-      for (const auto& element : std::any_cast<std::vector<std::any>>(itr->second)) {
+      for (const auto & element : std::any_cast<std::vector<std::any>>(itr->second)) {
         if (element.type() == typeid(std::string)) {
           arrayJson.push_back(std::any_cast<std::string>(element));
         } else if (element.type() == typeid(int)) {

@@ -25,22 +25,6 @@ nav2_package()
 set(executable_name route_server)
 set(library_name ${executable_name}_core)
 
-set(dependencies
-  rclcpp
-  rclcpp_lifecycle
-  rclcpp_components
-  std_msgs
-  geometry_msgs
-  nav2_costmap_2d
-  pluginlib
-  visualization_msgs
-  nav_msgs
-  tf2_ros
-  nav2_core
-  nanoflann
-  nlohmann_json
-)
-
 include_directories(
   include
 )
@@ -205,11 +189,34 @@ target_link_libraries(graph_file_loaders PRIVATE
 )
 
 add_library(graph_file_savers SHARED
-  src/plugins/graph_file_savers/geojson_graph_file_saver.cpp  
+    src/plugins/graph_file_savers/geojson_graph_file_saver.cpp
 )
-
-ament_target_dependencies(graph_file_savers
-  ${dependencies}
+target_include_directories(graph_file_savers
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(graph_file_savers PUBLIC
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  nlohmann_json::nlohmann_json
+)
+target_link_libraries(graph_file_savers PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+  tf2::tf2
 )
 
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
@@ -242,5 +249,20 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
+ament_export_dependencies(
+  rclcpp
+  rclcpp_lifecycle
+  rclcpp_components
+  std_msgs
+  geometry_msgs
+  nav2_costmap_2d
+  pluginlib
+  visualization_msgs
+  nav_msgs
+  tf2_ros
+  nav2_core
+  nanoflann
+  nlohmann_json
+)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
 ament_package()
