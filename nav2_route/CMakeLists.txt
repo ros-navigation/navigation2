@@ -264,5 +264,5 @@ ament_export_dependencies(
   nanoflann
   nlohmann_json
 )
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_package()
