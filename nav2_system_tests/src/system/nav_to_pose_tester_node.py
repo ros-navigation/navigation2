@@ -30,7 +30,6 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
-
 import zmq
 
 
@@ -92,12 +91,12 @@ class NavTester(Node):
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'NavigateToPose' action server not available, waiting...")
 
-        if os.getenv("GROOT_MONITORING") == "True":
+        if os.getenv('GROOT_MONITORING') == 'True':
             if self.grootMonitoringGetStatus():
-                self.error_msg("Behavior Tree must not be running already!")
-                self.error_msg("Are you running multiple goals/bts..?")
+                self.error_msg('Behavior Tree must not be running already!')
+                self.error_msg('Are you running multiple goals/bts..?')
                 return False
-            self.info_msg("This Error above MUST Fail and is o.k.!")
+            self.info_msg('This Error above MUST Fail and is o.k.!')
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
@@ -117,16 +116,16 @@ class NavTester(Node):
         get_result_future = goal_handle.get_result_async()
 
         future_return = True
-        if os.getenv("GROOT_MONITORING") == "True":
+        if os.getenv('GROOT_MONITORING') == 'True':
             try:
                 if not self.grootMonitoringReloadTree():
-                    self.error_msg("Failed GROOT_BT - Reload Tree from ZMQ Server")
+                    self.error_msg('Failed GROOT_BT - Reload Tree from ZMQ Server')
                     future_return = False
                 if not self.grootMonitoringGetStatus():
-                    self.error_msg("Failed GROOT_BT - Get Status from ZMQ Publisher")
+                    self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
                     future_return = False
             except Exception as e:  # noqa: B902
-                self.error_msg(f"Failed GROOT_BT - ZMQ Tests: {e}")
+                self.error_msg(f'Failed GROOT_BT - ZMQ Tests: {e}')
                 future_return = False
 
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
@@ -155,38 +154,38 @@ class NavTester(Node):
         sock.setsockopt(zmq.RCVTIMEO, 1000)
         # sock.setsockopt(zmq.LINGER, 0)
 
-        sock.connect(f"tcp://localhost:{port}")
-        self.info_msg(f"ZMQ Server Port:{port}")
+        sock.connect(f'tcp://localhost:{port}')
+        self.info_msg(f'ZMQ Server Port:{port}')
 
         # this should fail
         try:
             sock.recv()
-            self.error_msg("ZMQ Reload Tree Test 1/3 - This should have failed!")
+            self.error_msg('ZMQ Reload Tree Test 1/3 - This should have failed!')
             # Only works when ZMQ server receives a request first
             sock.close()
             return False
         except zmq.error.ZMQError:
-            self.info_msg("ZMQ Reload Tree Test 1/3: Check")
+            self.info_msg('ZMQ Reload Tree Test 1/3: Check')
         try:
             # request tree from server
-            sock.send_string("")
+            sock.send_string('')
             # receive tree from server as flat_buffer
             sock.recv()
-            self.info_msg("ZMQ Reload Tree Test 2/3: Check")
+            self.info_msg('ZMQ Reload Tree Test 2/3: Check')
         except zmq.error.Again:
-            self.info_msg("ZMQ Reload Tree Test 2/3 - Failed to load tree")
+            self.info_msg('ZMQ Reload Tree Test 2/3 - Failed to load tree')
             sock.close()
             return False
 
         # this should fail
         try:
             sock.recv()
-            self.error_msg("ZMQ Reload Tree Test 3/3 - This should have failed!")
+            self.error_msg('ZMQ Reload Tree Test 3/3 - This should have failed!')
             # Tree should only be loadable ONCE after ZMQ server received a request
             sock.close()
             return False
         except zmq.error.ZMQError:
-            self.info_msg("ZMQ Reload Tree Test 3/3: Check")
+            self.info_msg('ZMQ Reload Tree Test 3/3: Check')
 
         return True
 
@@ -200,18 +199,18 @@ class NavTester(Node):
         # sock.setsockopt(zmq.LINGER, 0)
 
         # Define subscription and messages with prefix to accept.
-        sock.setsockopt_string(zmq.SUBSCRIBE, "")
+        sock.setsockopt_string(zmq.SUBSCRIBE, '')
         port = 1666  # default publishing port for groot monitoring
-        sock.connect(f"tcp://127.0.0.1:{port}")
+        sock.connect(f'tcp://127.0.0.1:{port}')
 
         for request in range(3):
             try:
                 sock.recv()
             except zmq.error.Again:
-                self.error_msg("ZMQ - Did not receive any status")
+                self.error_msg('ZMQ - Did not receive any status')
                 sock.close()
                 return False
-        self.info_msg("ZMQ - Did receive status")
+        self.info_msg('ZMQ - Did receive status')
         return True
 
     def poseCallback(self, msg):
@@ -437,7 +436,7 @@ def main(argv=sys.argv[1:]):
         action='append',
         nargs=5,
         metavar=('name', 'init_x', 'init_y', 'final_x', 'final_y'),
-        help="The robot's namespace and starting and final positions. "
+        help="The robot's namespace and starting and final positions."
         + 'Repeating the argument for multiple robots is supported.',
     )
 
