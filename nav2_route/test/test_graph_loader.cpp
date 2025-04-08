@@ -125,3 +125,24 @@ TEST(GraphLoader, test_transformation_api)
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   EXPECT_EQ(graph[0].coords.x, or_coord);
 }
+
+TEST(GraphLoader, test_transformation_api2)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_loader_test");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf->setUsingDedicatedThread(true);
+
+  std::string frame = "map";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/test/test_graphs/no_frame.json"));
+
+  GraphLoader graph_loader(node, tf, frame);
+
+  // Test with a file that has unknown frames that cannot be transformed
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  EXPECT_FALSE(graph_loader.loadGraphFromParameter(graph, graph_to_id_map));
+}

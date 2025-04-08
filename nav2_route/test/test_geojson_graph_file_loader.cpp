@@ -167,6 +167,23 @@ TEST(GeoJsonGraphFileLoader, test_invalid_start_id_for_edge)
     std::runtime_error);
 }
 
+TEST(GeoJsonGraphFileLoader, test_invalid_goal_id_for_edge)
+{
+  Json json_graph = g_simple_graph;
+  auto & properties = json_graph["features"][2]["properties"];
+  properties["endid"] = 1000;
+
+  std::string file_path = "invalid_goal_id.geojson";
+  writeGraphToFile(json_graph, file_path);
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  EXPECT_THROW(
+    graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path),
+    std::runtime_error);
+}
+
 TEST(GeoJsonGraphFileLoader, test_node_metadata) {
   Json json_graph = g_simple_graph;
 
@@ -358,4 +375,14 @@ TEST(GeoJsonGraphFileLoader, sample_graph)
   std::string type;
   type = operations[1].metadata.getValue("type", type);
   EXPECT_EQ(type, "jpg");
+}
+
+TEST(GeoJsonGraphFileLoader, invalid_file)
+{
+  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
+    "/test/test_graphs/invalid.json";
+  GeoJsonGraphFileLoader graph_file_loader;
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  EXPECT_FALSE(graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path));
 }

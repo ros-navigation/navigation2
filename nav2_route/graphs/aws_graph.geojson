@@ -127,6 +127,6 @@
 { "type": "Feature", "properties": { "id": 120, "startid": 1, "endid": 32 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ -4.0, -3.35 ], [ -2.0, -4.35 ] ] ] } },
 { "type": "Feature", "properties": { "id": 121, "startid": 33, "endid": 32 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ -4.0, -5.35 ], [ -2.0, -4.35 ] ] ] } },
 { "type": "Feature", "properties": { "id": 122, "startid": 4, "endid": 20 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ -4.0, 3.65 ], [ 1.0, 3.65 ] ] ] } },
-{ "type": "Feature", "properties": { "id": 123, "startid": 20, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 3.65 ], [ -4.0, 3.65 ] ] ] } }
+{ "type": "Feature", "properties": { "id": 123, "startid": 20, "endid": 4 }, "geometry": { "type": "LineString", "coordinates": [ [ [ 1.0, 3.65 ], [ -4.0, 3.65 ] ] ] } }
 ]
 }
