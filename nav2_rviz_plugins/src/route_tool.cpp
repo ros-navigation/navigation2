@@ -71,7 +71,10 @@ void RouteTool::on_load_button_clicked(void)
   edge_to_node_map_.clear();
   graph_to_incoming_edges_map_.clear();
   graph_.clear();
-  struct passwd * pw = getpwuid(getuid());
+  struct passwd pwd;
+  struct passwd *pw;
+  char buf[1024];
+  getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pw);
   std::string homedir(pw->pw_dir);
   QString filename = QFileDialog::getOpenFileName(
     this,
@@ -99,7 +102,10 @@ void RouteTool::on_load_button_clicked(void)
 
 void RouteTool::on_save_button_clicked(void)
 {
-  struct passwd * pw = getpwuid(getuid());
+  struct passwd pwd;
+  struct passwd *pw;
+  char buf[1024];
+  getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pw);
   std::string homedir(pw->pw_dir);
   QString filename = QFileDialog::getSaveFileName(
     this,
