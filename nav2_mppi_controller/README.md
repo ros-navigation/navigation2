@@ -310,6 +310,8 @@ By default, the controller is tuned and has the capabilities established in the 
 
 If you want to slow further on approach to goal, consider increasing the ``threshold_to_consider`` parameters to give a hand off from the path tracking critics to the goal approach critics sooner - then tune those critics for your profile of interest.
 
+The timesteps are stored in the tensor's columns while the batches are stored in the rows.
+
 ### Prediction Horizon, Costmap Sizing, and Offsets
 
 As this is a predictive planner, there is some relationship between maximum speed, prediction times, std sampling, and costmap size that users should keep in mind while tuning for their application. If a controller server costmap is set to 3.0m in size, that means that with the robot in the center, there is 1.5m of information on either side of the robot. When your prediction horizon (``time_steps * model_dt``) at maximum speed (``vx_max``) is larger than this, then your robot will be artificially limited in its maximum speeds and behavior by the costmap limitation. For example, if you predict forward 3 seconds (60 steps @ 0.05s per step) at 0.5m/s maximum speed, the **minimum** required costmap radius is 1.5m - or 3m total width. The faster the robot is set to go, the higher the velocity sampling standard deviations should be in order to effectively explore the velocity space.

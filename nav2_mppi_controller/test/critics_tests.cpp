@@ -1,5 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
-// Copyright (c) 2023 Open Navigation LLC
+// Copyright (c) 2023-2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,8 @@ TEST(CriticTests, ConstraintsCritic)
 {
   // Standard preamble
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  node->declare_parameter("mppi.ax_min", -300.0);
+  node->declare_parameter("mppi.ax_max", 400.0);
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
@@ -111,6 +113,29 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_NEAR(costs(1), 1.2, 0.01);
   costs.setZero();
 
+  data.motion_model = std::make_shared<OmniMotionModel>();
+  state.vx = 0.40 * Eigen::ArrayXXf::Ones(1000, 30);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
+  state.wz = Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+
+  // provide out of maximum velocity constraint
+  state.vx.row(999).setConstant(0.60f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(999), 1.2, 0.01);
+  costs.setZero();
+
+  // provide out of minimum velocity constraint
+  state.vx.row(1).setConstant(-0.45f);
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  // 4.0 weight * 0.1 model_dt * 0.1 error introduced * 30 timesteps = 1.2
+  EXPECT_NEAR(costs(1), 1.2, 0.01);
+  costs.setZero();
+
   // Now with ackermann, all in constraint so no costs to score
   state.vx.setConstant(0.40f);
   state.wz.setConstant(1.5f);
@@ -124,6 +149,124 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_GT(costs.sum(), 0);
   // 4.0 weight * 0.1 model_dt * (0.2 - 0.4/2.5) * 30 timesteps = 0.48
   EXPECT_NEAR(costs(1), 0.48, 0.01);
+}
+
+TEST(CriticTests, ConstraintsCriticAccelerations)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  // Test accelerations only
+  node->declare_parameter("mppi.ax_min", -3.0);
+  node->declare_parameter("mppi.ax_max", 4.0);
+  node->declare_parameter("mppi.vx_max", 1e10);
+  node->declare_parameter("mppi.vx_min", -1e10);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  // provide velocities in constraints, should not have any costs
+  state.vx = Eigen::ArrayXXf::Zero(1000, 30);
+  state.vy = Eigen::ArrayXXf::Zero(1000, 30);
+  state.wz = Eigen::ArrayXXf::Zero(1000, 30);
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Initialization testing
+
+  // Make sure initializes correctly and that defaults are reasonable
+  ConstraintCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getAxMinConstraint(), -3.0f);
+  EXPECT_EQ(critic.getAxMaxConstraint(), 4.0f);
+
+  // Test null input (all 0 trajectories)
+  state.speed.linear.x = 0.0;
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+
+  // Test in bound with some velocity. All constant, so should be OK
+  // No matter the value, so set to something crazy high for testing
+  state.speed.linear.x = 1e6;
+  state.vx = 1e6 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+
+  // Test in bound with some non-constant, reasonable velocity.
+  // This is equal to the acceleration limit of 0.1 * 4.0 = 0.4
+  state.speed.linear.x = 0.0;
+  state.vx = 0.4 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0, 1e-6);
+
+  // Test out of bounds, constant velocity, too high from positive/no movement.
+  state.speed.linear.x = 0.0;
+  state.vx = 0.5 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 40.0, 1e-3);
+  costs.setZero();
+
+  state.speed.linear.x = 0.0;
+  state.vx = 3.0 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 1040.0, 1e-3);
+  costs.setZero();
+
+  // Test out of bounds high, negative movement
+  state.speed.linear.x = -0.1;
+  state.vx = -0.6 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 40.0, 1e-3);
+  costs.setZero();
+
+  state.speed.linear.x = -0.1;
+  state.vx = -2.0 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 600.0, 1e-3);
+  costs.setZero();
+
+  // Test out of bounds low, positive movement
+  state.speed.linear.x = 1.0;
+  state.vx = 0.0 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 280.0, 1e-3);
+  costs.setZero();
+
+  state.speed.linear.x = 1.0;
+  state.vx = 0.5 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 80.0, 1e-3);
+  costs.setZero();
+
+  // Slow down, but in bounds
+  state.speed.linear.x = 1.0;
+  state.vx = 0.8 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 0.0, 1e-3);
+  costs.setZero();
+
+  // Test out of bounds low, negative movement
+  state.speed.linear.x = -1.0;
+  state.vx = -0.5 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 80.0, 1e-3);
+  costs.setZero();
+
+  state.speed.linear.x = -1.0;
+  state.vx = -0.2 * Eigen::ArrayXXf::Ones(1000, 30);
+  critic.score(data);
+  EXPECT_NEAR(costs.sum(), 200.0, 1e-3);
+  costs.setZero();
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {

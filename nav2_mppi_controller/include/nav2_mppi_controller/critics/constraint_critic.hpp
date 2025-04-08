@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,14 +42,39 @@ public:
    */
   void score(CriticData & data) override;
 
+  /**
+   * @brief Apply acceleration constraints to the cost
+   *
+   * @param min_accel Minimum acceleration, should be negative
+   * @param max_accel Maximum acceleration, must be positive
+   * @param init_value Initial value of the state
+   * @param velocities Velocities to apply constraints to
+   * @param model_dt Model time step
+   * @param costs [out] add reference cost values to this tensor
+   */
+  void applyAccelerationConstraints(
+    const float min_accel,
+    const float max_accel,
+    const float init_value,
+    const Eigen::ArrayXXf & velocities,
+    const float model_dt,
+    Eigen::ArrayXf & costs);
+
   float getMaxVelConstraint() {return max_vel_;}
   float getMinVelConstraint() {return min_vel_;}
+  float getAxMinConstraint() {return ax_min_;}
+  float getAxMaxConstraint() {return ax_max_;}
 
 protected:
   unsigned int power_{0};
   float weight_{0};
   float min_vel_;
   float max_vel_;
+  float ax_min_;
+  float ax_max_;
+  float ay_min_;
+  float ay_max_;
+  bool use_acc_{false};
 };
 
 }  // namespace mppi::critics
