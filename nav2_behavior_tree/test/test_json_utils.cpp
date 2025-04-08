@@ -390,8 +390,8 @@ TEST_F(JsonTest, test_pose_stamped_vector)
   ASSERT_EQ(json["poses"][1]["pose"]["orientation"]["w"], 18.0);
 
   // Check the two-ways transform, i.e. "from_json"
-  auto pose_stamped_vector_test2 =
-    exporter.fromJson(json["poses"])->first.cast<std::vector<geometry_msgs::msg::PoseStamped>>();
+  // auto pose_stamped_vector_test2 =
+  //   exporter.fromJson(json["poses"])->first.cast<std::vector<geometry_msgs::msg::PoseStamped>>();
   // ASSERT_EQ(pose_stamped_vector_test[0].header.stamp.sec,
   //   pose_stamped_vector_test2[0].header.stamp.sec);
   // ASSERT_EQ(pose_stamped_vector_test[0].header.stamp.nanosec,

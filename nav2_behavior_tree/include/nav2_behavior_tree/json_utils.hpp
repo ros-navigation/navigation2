@@ -91,16 +91,12 @@ namespace nav_msgs::msg
 BT_JSON_CONVERTER(nav_msgs::msg::Goals, msg)
 {
   add_field("header", &msg.header);
-  // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
-  // https://github.com/BehaviorTree/Groot2/issues/55
   add_field("goals", &msg.goals);
 }
 
 BT_JSON_CONVERTER(nav_msgs::msg::Path, msg)
 {
   add_field("header", &msg.header);
-  // FIXME(ajtudela): Uncomment the following line when std::vector is fixed in Groot2
-  // https://github.com/BehaviorTree/Groot2/issues/55
   add_field("poses", &msg.poses);
 }
 
