@@ -65,6 +65,7 @@ add_library(${library_name} SHARED
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
   ${nav2_rviz_plugins_moc_files}
+  ${route_tool_UIS_H}
 )
 target_include_directories(${library_name} PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS}
