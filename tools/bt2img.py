@@ -137,7 +137,8 @@ def find_behavior_tree(xml_tree, tree_name):
         if tree_name == tree.get('ID'):
             return tree
 
-    raise RuntimeError(f'No behavior tree for name {tree_name} found in the XML file')
+    raise RuntimeError(
+        f'No behavior tree for name {tree_name} found in the XML file')
 
 
 # Generate a dot description of the root of the behavior tree.

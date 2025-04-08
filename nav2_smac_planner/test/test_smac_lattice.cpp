@@ -150,7 +150,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -19,6 +19,20 @@ find_package(tf2_ros REQUIRED)
 
 nav2_package()
 
+set(dependencies
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  pluginlib
+  tf2_geometry_msgs
+)
+
 set(library_name behavior_server_core)
 set(executable_name behavior_server)
 
@@ -31,21 +45,8 @@ target_include_directories(nav2_spin_behavior
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_spin_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
-)
-target_link_libraries(nav2_spin_behavior PRIVATE
-  pluginlib::pluginlib
-  tf2_geometry_msgs::tf2_geometry_msgs
+ament_target_dependencies(nav2_spin_behavior
+  ${dependencies}
 )
 
 add_library(nav2_wait_behavior SHARED
@@ -56,16 +57,8 @@ target_include_directories(nav2_wait_behavior
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_wait_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
+ament_target_dependencies(nav2_wait_behavior
+  ${dependencies}
 )
 
 add_library(nav2_drive_on_heading_behavior SHARED
@@ -76,19 +69,8 @@ target_include_directories(nav2_drive_on_heading_behavior
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_drive_on_heading_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
-)
-target_link_libraries(nav2_drive_on_heading_behavior PRIVATE
-  pluginlib::pluginlib
+ament_target_dependencies(nav2_drive_on_heading_behavior
+  ${dependencies}
 )
 
 add_library(nav2_back_up_behavior SHARED
@@ -99,19 +81,8 @@ target_include_directories(nav2_back_up_behavior
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_back_up_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
-)
-target_link_libraries(nav2_back_up_behavior PRIVATE
-  pluginlib::pluginlib
+ament_target_dependencies(nav2_back_up_behavior
+  ${dependencies}
 )
 
 add_library(nav2_assisted_teleop_behavior SHARED
@@ -122,20 +93,8 @@ target_include_directories(nav2_assisted_teleop_behavior
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_assisted_teleop_behavior PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
-  tf2::tf2
-  tf2_ros::tf2_ros
-)
-target_link_libraries(nav2_assisted_teleop_behavior PRIVATE
-  pluginlib::pluginlib
+ament_target_dependencies(nav2_assisted_teleop_behavior
+  ${dependencies}
 )
 
 pluginlib_export_plugin_description_file(nav2_core behavior_plugin.xml)
@@ -149,17 +108,9 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_client
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-)
-target_link_libraries(${library_name} PRIVATE
-  rclcpp_components::component
+ament_target_dependencies(${library_name}
+  ${dependencies}
+  rclcpp_components
 )
 
 # Executable

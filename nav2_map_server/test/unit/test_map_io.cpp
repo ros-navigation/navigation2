@@ -330,7 +330,7 @@ TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldExpandHomeSequenceWhenHome
   ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

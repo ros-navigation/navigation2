@@ -68,8 +68,10 @@ def matrixToTransform(matrix):
 
 
 def worldToMap(world_x, world_y, map_msg):
-    map_x = int(math.floor((world_x - map_msg.info.origin.position.x) / map_msg.info.resolution))
-    map_y = int(math.floor((world_y - map_msg.info.origin.position.y) / map_msg.info.resolution))
+    map_x = int(math.floor(
+        (world_x - map_msg.info.origin.position.x) / map_msg.info.resolution))
+    map_y = int(math.floor(
+        (world_y - map_msg.info.origin.position.y) / map_msg.info.resolution))
     return map_x, map_y
 
 

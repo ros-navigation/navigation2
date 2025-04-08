@@ -57,7 +57,8 @@ class LatticeGenerator:
         self.turning_radius = config['turning_radius']
         self.stopping_threshold = config['stopping_threshold']
         self.num_of_headings = config['num_of_headings']
-        self.headings = self._get_heading_discretization(config['num_of_headings'])
+        self.headings = self._get_heading_discretization(
+            config['num_of_headings'])
 
         self.motion_model = self.MotionModel[config['motion_model'].upper()]
 
@@ -286,7 +287,8 @@ class LatticeGenerator:
                 self.headings, key=lambda x: (abs(x - start_heading), -x)
             )
             target_headings = list(
-                filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
+                filter(lambda x: abs(start_heading - x)
+                       <= np.pi / 2, target_headings)
             )
 
             while iterations_without_trajectory < self.stopping_threshold:
@@ -323,10 +325,14 @@ class LatticeGenerator:
 
                                 # Create a new bounding box in the RTree
                                 # for this trajectory
-                                left_bb = target_point[0] - self.DISTANCE_THRESHOLD
-                                right_bb = target_point[0] + self.DISTANCE_THRESHOLD
-                                bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
-                                top_bb = target_point[1] + self.DISTANCE_THRESHOLD
+                                left_bb = target_point[0] - \
+                                    self.DISTANCE_THRESHOLD
+                                right_bb = target_point[0] + \
+                                    self.DISTANCE_THRESHOLD
+                                bottom_bb = target_point[1] - \
+                                    self.DISTANCE_THRESHOLD
+                                top_bb = target_point[1] + \
+                                    self.DISTANCE_THRESHOLD
 
                                 prior_end_poses.insert(
                                     0,
@@ -472,16 +478,21 @@ class LatticeGenerator:
 
                 else:
                     unflipped_start_angle = start_angle
-                    flipped_x_start_angle = self._flip_angle(start_angle, self.Flip.X)
-                    flipped_y_start_angle = self._flip_angle(start_angle, self.Flip.Y)
+                    flipped_x_start_angle = self._flip_angle(
+                        start_angle, self.Flip.X)
+                    flipped_y_start_angle = self._flip_angle(
+                        start_angle, self.Flip.Y)
                     flipped_xy_start_angle = self._flip_angle(
                         start_angle, self.Flip.BOTH
                     )
 
                     unflipped_end_angle = end_angle
-                    flipped_x_end_angle = self._flip_angle(end_angle, self.Flip.X)
-                    flipped_y_end_angle = self._flip_angle(end_angle, self.Flip.Y)
-                    flipped_xy_end_angle = self._flip_angle(end_angle, self.Flip.BOTH)
+                    flipped_x_end_angle = self._flip_angle(
+                        end_angle, self.Flip.X)
+                    flipped_y_end_angle = self._flip_angle(
+                        end_angle, self.Flip.Y)
+                    flipped_xy_end_angle = self._flip_angle(
+                        end_angle, self.Flip.BOTH)
 
                     # Generate trajectories from calculated parameters
                     unflipped_trajectory = (
@@ -566,7 +577,8 @@ class LatticeGenerator:
             return omni_spanning_set
 
         else:
-            print('No handling implemented for Motion Model: ' + f'{self.motion_model}')
+            print('No handling implemented for Motion Model: ' +
+                  f'{self.motion_model}')
             raise NotImplementedError
 
     def _add_in_place_turns(self, spanning_set: dict) -> dict:
@@ -614,13 +626,16 @@ class LatticeGenerator:
 
             position = np.full(steps, 0)
             left_yaws = interpolate_yaws(start_angle, next_angle, True, steps)
-            right_yaws = interpolate_yaws(start_angle, prev_angle, False, steps)
+            right_yaws = interpolate_yaws(
+                start_angle, prev_angle, False, steps)
 
             left_turn_path = Path(xs=position, ys=position, yaws=left_yaws)
             right_turn_path = Path(xs=position, ys=position, yaws=right_yaws)
 
-            left_turn = Trajectory(parameters=left_turn_params, path=left_turn_path)
-            right_turn = Trajectory(parameters=right_turn_params, path=right_turn_path)
+            left_turn = Trajectory(
+                parameters=left_turn_params, path=left_turn_path)
+            right_turn = Trajectory(
+                parameters=right_turn_params, path=right_turn_path)
 
             spanning_set[start_angle].append(left_turn)
             spanning_set[start_angle].append(right_turn)

@@ -42,10 +42,10 @@ void PreferForwardCritic::score(CriticData & data)
 
   if (power_ > 1u) {
     data.costs += (
-      (data.state.vx.unaryExpr([&](const float & x){return std::max(-x, 0.0f);}) *
+      (data.state.vx.unaryExpr([&](const float & x) {return std::max(-x, 0.0f);}) *
       data.model_dt).rowwise().sum() * weight_).pow(power_);
   } else {
-    data.costs += (data.state.vx.unaryExpr([&](const float & x){return std::max(-x, 0.0f);}) *
+    data.costs += (data.state.vx.unaryExpr([&](const float & x) {return std::max(-x, 0.0f);}) *
       data.model_dt).rowwise().sum() * weight_;
   }
 }

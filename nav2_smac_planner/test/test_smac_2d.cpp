@@ -143,7 +143,7 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
     results);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

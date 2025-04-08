@@ -175,7 +175,8 @@ class BackupTest(Node):
         costmap_msg.metadata.size_y = 100
         costmap_msg.metadata.origin.position.x = -2.5
         costmap_msg.metadata.origin.position.y = -2.5
-        costmap_msg.data = [0] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
+        costmap_msg.data = [
+            0] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
         self.costmap_pub.publish(costmap_msg)
 
         footprint_msg = PolygonStamped()
@@ -198,7 +199,8 @@ class BackupTest(Node):
         costmap_msg.metadata.size_y = 100
         costmap_msg.metadata.origin.position.x = -2.5
         costmap_msg.metadata.origin.position.y = -2.5
-        costmap_msg.data = [254] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
+        costmap_msg.data = [
+            254] * (costmap_msg.metadata.size_x * costmap_msg.metadata.size_y)
         self.costmap_pub.publish(costmap_msg)
 
         footprint_msg = PolygonStamped()
@@ -224,7 +226,8 @@ class BackupTest(Node):
         cmd1 = self.sendCommand(action_request)
 
         if cmd1:
-            self.error_msg('Test A failed: Passed while costmap was not available!')
+            self.error_msg(
+                'Test A failed: Passed while costmap was not available!')
             return not cmd1
         else:
             self.info_msg('Test A passed')
@@ -237,13 +240,15 @@ class BackupTest(Node):
         cmd2 = self.sendCommand(action_request)
 
         if not cmd1 or not cmd2:
-            self.error_msg('Test B failed: Failed to Backup with valid costmap!')
+            self.error_msg(
+                'Test B failed: Failed to Backup with valid costmap!')
             return not cmd1 or not cmd2
 
         action_request.target.x = 0.5
         cmd_preempt = self.sendAndPreemptWithFasterCommand(action_request)
         if not cmd_preempt:
-            self.error_msg('Test B failed: Failed to preempt and invert command!')
+            self.error_msg(
+                'Test B failed: Failed to preempt and invert command!')
             return not cmd_preempt
 
         cmd_cancel = self.sendAndCancelCommand(action_request)
@@ -257,13 +262,15 @@ class BackupTest(Node):
         action_request.time_allowance = Duration(seconds=0.1).to_msg()
         cmd3 = self.sendCommand(action_request)
         if cmd3:
-            self.error_msg('Test C failed: Passed while impoossible timing requested!')
+            self.error_msg(
+                'Test C failed: Passed while impoossible timing requested!')
             return not cmd3
 
         action_request.target.y = 0.5
         cmd_invalid_target = self.sendCommand(action_request)
         if cmd_invalid_target:
-            self.error_msg('Test C failed: Passed while impoossible target requested!')
+            self.error_msg(
+                'Test C failed: Passed while impoossible target requested!')
             return not cmd_invalid_target
         else:
             action_request.target.y = 0.0
@@ -275,7 +282,8 @@ class BackupTest(Node):
         time.sleep(1)
         cmd4 = self.sendCommand(action_request)
         if cmd4:
-            self.error_msg('Test D failed: Passed while costmap was not lethal!')
+            self.error_msg(
+                'Test D failed: Passed while costmap was not lethal!')
             return not cmd4
         else:
             self.info_msg('Test D passed')
@@ -288,9 +296,11 @@ class BackupTest(Node):
         self.info_msg('Destroyed backup action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client = self.create_client(
+            ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
-            self.info_msg(f'{transition_service} service not available, waiting...')
+            self.info_msg(
+                f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
         req.command = ManageLifecycleNodes.Request().SHUTDOWN

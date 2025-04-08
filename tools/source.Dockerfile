@@ -21,7 +21,7 @@
 # actually use any of the ros release packages. Instead we are going to build
 # everything from source in one big workspace.
 
-ARG FROM_IMAGE=osrf/ros2:devel
+ARG FROM_IMAGE=osrf/ros:humble
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -29,7 +29,7 @@ ARG OVERLAY_WS=/opt/overlay_ws
 FROM $FROM_IMAGE AS cacher
 
 # clone ros2 source
-ARG ROS2_BRANCH=master
+ARG ROS2_BRANCH=humble
 ARG ROS2_REPO=https://github.com/ros2/ros2.git
 WORKDIR $ROS2_WS/src
 RUN git clone $ROS2_REPO -b $ROS2_BRANCH && \

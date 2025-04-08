@@ -22,10 +22,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
-from launch_ros.actions import PushROSNamespace
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
@@ -94,23 +92,21 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
-                ),
-                namespace=namespace,
-            ),
+
             Node(
                 package='nav2_lifecycle_manager',
+                namespace=namespace,
                 executable='lifecycle_manager',
                 name='lifecycle_manager_collision_monitor',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
                 remappings=remappings,
             ),
             Node(
                 package='nav2_collision_monitor',
+                namespace=namespace,
                 executable='collision_monitor',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
@@ -124,18 +120,14 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
-                ),
-                namespace=namespace,
-            ),
+
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
+                        namespace=namespace,
                         name='lifecycle_manager_collision_monitor',
                         parameters=[
                             {'autostart': autostart},
@@ -146,6 +138,7 @@ def generate_launch_description():
                     ComposableNode(
                         package='nav2_collision_monitor',
                         plugin='nav2_collision_monitor::CollisionMonitor',
+                        namespace=namespace,
                         name='collision_monitor',
                         parameters=[configured_params],
                         remappings=remappings,

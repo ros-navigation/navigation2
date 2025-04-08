@@ -29,10 +29,10 @@ macro(nav2_package)
 
   # Default to C++17
   if(NOT CMAKE_CXX_STANDARD)
-    if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+    if("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       set(CMAKE_CXX_STANDARD 17)
     else()
-      message( FATAL_ERROR "cxx_std_17 could not be found.")
+      message(FATAL_ERROR "cxx_std_17 could not be found.")
     endif()
   endif()
 

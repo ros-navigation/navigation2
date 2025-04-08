@@ -194,7 +194,8 @@ class TrajectoryGenerator:
 
             # Handle the end straight line segment
             else:
-                line_t = (cur_t - transition_points[1]) / (1 - transition_points[1])
+                line_t = (
+                    cur_t - transition_points[1]) / (1 - transition_points[1])
                 x, y = self._get_line_point(
                     trajectory_params.arc_end_point, trajectory_params.end_point, line_t
                 )
@@ -321,7 +322,8 @@ class TrajectoryGenerator:
         direction_vec_from_points = direction_vec_from_points.round(5)
 
         if np.all(
-            np.sign(direction_vec_from_points) == np.sign(direction_vec_from_gradient)
+            np.sign(direction_vec_from_points) == np.sign(
+                direction_vec_from_gradient)
         ):
             return True
         else:
@@ -389,7 +391,8 @@ class TrajectoryGenerator:
 
             # Deal with edge case of 90
             elif (
-                abs(start_angle) == np.pi / 2 and arc_end_point[0] == arc_start_point[0]
+                abs(start_angle) == np.pi /
+                    2 and arc_end_point[0] == arc_start_point[0]
             ):
                 return TrajectoryParameters.no_arc(
                     end_point=end_point,
@@ -405,7 +408,8 @@ class TrajectoryGenerator:
                 return None
 
         # Find intersection point of lines 1 and 2
-        intersection_point = self._get_intersection_point(m1, 0, m2, -m2 * x2 + y2)
+        intersection_point = self._get_intersection_point(
+            m1, 0, m2, -m2 * x2 + y2)
 
         # Check that the vector from (0,0) to intersection point agrees
         # with the angle of line 1
@@ -564,6 +568,7 @@ class TrajectoryGenerator:
 
         logger.debug('Trajectory found')
 
-        trajectory_path = self._create_path(trajectory_params, primitive_resolution)
+        trajectory_path = self._create_path(
+            trajectory_params, primitive_resolution)
 
         return Trajectory(trajectory_path, trajectory_params)

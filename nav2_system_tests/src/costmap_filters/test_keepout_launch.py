@@ -49,7 +49,8 @@ def generate_launch_description():
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
-    map_yaml_file = os.path.join(nav2_sys_test_dir, 'maps', 'map_circular.yaml')
+    map_yaml_file = os.path.join(
+        nav2_sys_test_dir, 'maps', 'map_circular.yaml')
     filter_mask_file = os.getenv('TEST_MASK')
 
     bt_navigator_xml = os.path.join(
@@ -148,7 +149,8 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
+                    os.path.join(nav2_bringup_dir, 'launch',
+                                 'bringup_launch.py')
                 ),
                 launch_arguments={
                     'namespace': '',

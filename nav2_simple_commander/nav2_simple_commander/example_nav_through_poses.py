@@ -103,7 +103,8 @@ def main():
             print(
                 'Estimated time of arrival: '
                 + '{0:.0f}'.format(
-                    Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
+                    Duration.from_msg(
+                        feedback.estimated_time_remaining).nanoseconds
                     / 1e9
                 )
                 + ' seconds.'

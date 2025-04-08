@@ -112,12 +112,13 @@ public:
       callback_group_ = node_->create_callback_group(
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
-      callback_group_executor_.add_callback_group(callback_group_,
-          node_->get_node_base_interface());
+      callback_group_executor_.add_callback_group(
+        callback_group_,
+        node_->get_node_base_interface());
 
       service_client_ = node_->create_client<ServiceT>(
         service_name_,
-        rclcpp::SystemDefaultsQoS(),
+        rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(),
         callback_group_);
     }
   }

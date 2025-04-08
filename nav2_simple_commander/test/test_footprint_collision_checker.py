@@ -138,7 +138,8 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         costmap_ = PyCostmap2D(occupancyGrid_)
         fcc_ = FootprintCollisionChecker()
         fcc_.setCostmap(costmap_)
-        self.assertEqual(fcc_.footprintCostAtPose(4.0, 4.0, 0.0, footprint), 100)
+        self.assertEqual(fcc_.footprintCostAtPose(
+            4.0, 4.0, 0.0, footprint), 100)
         # Append a point that is outside the map
         point = Point32()
         point.x = 30.0

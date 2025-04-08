@@ -68,10 +68,12 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("velocity_threshold", 0.01,
-          "Velocity threshold below which robot is considered stopped"),
-      BT::InputPort<std::chrono::milliseconds>("duration_stopped", 1000ms,
-          "Duration (ms) the velocity must remain below the threshold"),
+      BT::InputPort<double>(
+        "velocity_threshold", 0.01,
+        "Velocity threshold below which robot is considered stopped"),
+      BT::InputPort<std::chrono::milliseconds>(
+        "duration_stopped", 1000ms,
+        "Duration (ms) the velocity must remain below the threshold"),
     };
   }
 

@@ -62,10 +62,12 @@ target_include_directories(motions_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(motions_lib PUBLIC
+ament_target_dependencies(motions_lib
+  pluginlib
+  nav2_util
+)
+target_link_libraries(motions_lib
   pf_lib
-  pluginlib::pluginlib
-  nav2_util::nav2_util_core
 )
 
 add_library(sensors_lib SHARED
@@ -78,7 +80,7 @@ target_include_directories(sensors_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(sensors_lib PUBLIC
+target_link_libraries(sensors_lib
   pf_lib
   map_lib
 )
@@ -97,24 +99,24 @@ target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  message_filters::message_filters
-  nav2_util::nav2_util_core
-  ${sensor_msgs_TARGETS}
-  ${std_srvs_TARGETS}
-  pluginlib::pluginlib
-  sensors_lib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${nav_msgs_TARGETS}
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${nav2_msgs_TARGETS}
+ament_target_dependencies(${library_name}
+  geometry_msgs
+  message_filters
+  nav2_util
+  sensor_msgs
+  std_srvs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  nav_msgs
+  tf2_ros
+  tf2
+  nav2_msgs
+  rclcpp_components
+  tf2_geometry_msgs
 )
-target_link_libraries(${library_name} PRIVATE
-  rclcpp_components::component
-  tf2_geometry_msgs::tf2_geometry_msgs
+target_link_libraries(${library_name}
+  sensors_lib
 )
 
 add_executable(${executable_name}
@@ -124,7 +126,7 @@ target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(${executable_name} PRIVATE
+target_link_libraries(${executable_name}
   ${library_name}
 )
 

@@ -100,7 +100,8 @@ class LineIterator:
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
                 self.x_ = round(
-                    self.clamp(self.x_ + self.step_size_, self.x0_, self.x1_), 5
+                    self.clamp(self.x_ + self.step_size_,
+                               self.x0_, self.x1_), 5
                 )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
@@ -108,7 +109,8 @@ class LineIterator:
         elif self.x1_ < self.x0_:
             if self.x_ > self.x1_:
                 self.x_ = round(
-                    self.clamp(self.x_ - self.step_size_, self.x1_, self.x0_), 5
+                    self.clamp(self.x_ - self.step_size_,
+                               self.x1_, self.x0_), 5
                 )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
@@ -117,14 +119,16 @@ class LineIterator:
             if self.y1_ > self.y0_:
                 if self.y_ < self.y1_:
                     self.y_ = round(
-                        self.clamp(self.y_ + self.step_size_, self.y0_, self.y1_), 5
+                        self.clamp(self.y_ + self.step_size_,
+                                   self.y0_, self.y1_), 5
                     )
                 else:
                     self.valid_ = False
             elif self.y1_ < self.y0_:
                 if self.y_ > self.y1_:
                     self.y_ = round(
-                        self.clamp(self.y_ - self.step_size_, self.y1_, self.y0_), 5
+                        self.clamp(self.y_ - self.step_size_,
+                                   self.y1_, self.y0_), 5
                     )
                 else:
                     self.valid_ = False

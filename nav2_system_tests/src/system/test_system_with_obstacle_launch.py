@@ -70,10 +70,12 @@ def generate_launch_description():
         param_substitutions.update({'use_astar': 'True'})
 
     param_substitutions.update(
-        {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')}
+        {'planner_server.ros__parameters.GridBased.plugin': os.getenv(
+            'PLANNER')}
     )
     param_substitutions.update(
-        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER')}
+        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv(
+            'CONTROLLER')}
     )
 
     configured_params = RewrittenYaml(
@@ -85,7 +87,8 @@ def generate_launch_description():
 
     new_yaml = configured_params.perform(context)
 
-    cardbox_sdf = os.path.join(nav2_system_tests_dir, 'models', 'cardboard_box.sdf')
+    cardbox_sdf = os.path.join(
+        nav2_system_tests_dir, 'models', 'cardboard_box.sdf')
 
     return LaunchDescription(
         [
@@ -125,7 +128,7 @@ def generate_launch_description():
                     '-entity', 'cardboard_box',
                     '-file', cardbox_sdf,
                     '-x', '-1.0', '-y', '0.6', '-z', '0.15',
-                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0', ]
             ),
             Node(
                 package='robot_state_publisher',
@@ -138,7 +141,8 @@ def generate_launch_description():
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')
+                    os.path.join(nav2_bringup_dir, 'launch',
+                                 'bringup_launch.py')
                 ),
                 launch_arguments={
                     'namespace': '',

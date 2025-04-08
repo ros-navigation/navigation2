@@ -41,12 +41,12 @@ if(BUILD_TESTING)
   set(local_controller_plugin_lib local_controller)
 
   add_library(${local_controller_plugin_lib} SHARED src/error_codes/controller/controller_error_plugins.cpp)
-  target_link_libraries(${local_controller_plugin_lib} PRIVATE
-    ${geometry_msgs_TARGETS}
-    nav2_core::nav2_core
-    nav2_costmap_2d::nav2_costmap_2d_core
-    ${nav_msgs_TARGETS}
-    pluginlib::pluginlib
+  ament_target_dependencies(${local_controller_plugin_lib}
+    geometry_msgs
+    nav2_core
+    nav2_costmap_2d
+    nav_msgs
+    pluginlib
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/controller_plugins.xml)
 
@@ -63,13 +63,13 @@ if(BUILD_TESTING)
   set(global_planner_plugin_lib global_planner)
 
   add_library(${global_planner_plugin_lib} SHARED src/error_codes/planner/planner_error_plugin.cpp)
-  target_link_libraries(${global_planner_plugin_lib} PRIVATE
-    ${geometry_msgs_TARGETS}
-    nav2_core::nav2_core ${nav_msgs_TARGETS}
-    nav2_costmap_2d::nav2_costmap_2d_core
-    rclcpp::rclcpp
-    rclcpp_lifecycle::rclcpp_lifecycle
-    tf2_ros::tf2_ros
+  ament_target_dependencies(${global_planner_plugin_lib}
+    geometry_msgs
+    nav2_core
+    nav2_costmap_2d
+    rclcpp
+    rclcpp_lifecycle
+    tf2_ros
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/planner_plugins.xml)
 
@@ -86,13 +86,13 @@ if(BUILD_TESTING)
   set(smoother_plugin_lib smoother)
 
   add_library(${smoother_plugin_lib} SHARED src/error_codes/smoother/smoother_error_plugin.cpp)
-  target_link_libraries(${smoother_plugin_lib} PRIVATE
-    nav2_core::nav2_core
-    nav2_costmap_2d::nav2_costmap_2d_core
-    ${nav_msgs_TARGETS}
-    rclcpp::rclcpp
-    rclcpp_lifecycle::rclcpp_lifecycle
-    tf2_ros::tf2_ros
+  ament_target_dependencies(${smoother_plugin_lib}
+    nav2_core
+    nav2_costmap_2d
+    nav_msgs
+    rclcpp
+    rclcpp_lifecycle
+    tf2_ros
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
 

@@ -3,8 +3,8 @@
     "build": {
         "dockerfile": "../Dockerfile",
         "context": "..",
-        "target": "dever",
-        "cacheFrom": "ghcr.io/ros-navigation/navigation2:main"
+        "target": "dever"
+        // "cacheFrom": "ghcr.io/ros-navigation/navigation2:main"
     },
     "runArgs": [
         "--name=nav2"

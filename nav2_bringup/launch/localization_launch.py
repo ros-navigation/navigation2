@@ -20,9 +20,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.actions import SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import EqualsSubstitution
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
 from launch_ros.actions import LoadComposableNodes, SetParameter
 from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode, ParameterFile
@@ -122,7 +120,7 @@ def generate_launch_description():
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' == ''"])
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -136,7 +134,7 @@ def generate_launch_description():
             ),
             Node(
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' != ''"])
                 ),
                 package='nav2_map_server',
                 executable='map_server',
@@ -144,7 +142,8 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': map_yaml_file}],
+                parameters=[configured_params, {
+                    'yaml_filename': map_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
@@ -165,7 +164,8 @@ def generate_launch_description():
                 name='lifecycle_manager_localization',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
             ),
         ],
     )
@@ -181,7 +181,7 @@ def generate_launch_description():
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' == ''"])
                 ),
                 composable_node_descriptions=[
                     ComposableNode(
@@ -196,7 +196,7 @@ def generate_launch_description():
             LoadComposableNodes(
                 target_container=container_name_full,
                 condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                    PythonExpression(["'", map_yaml_file, "' != ''"])
                 ),
                 composable_node_descriptions=[
                     ComposableNode(

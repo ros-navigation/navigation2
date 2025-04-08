@@ -240,7 +240,7 @@ void ObstacleLayer::onInitialize()
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
           rclcpp_lifecycle::LifecycleNode>>(
-          node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+        node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
       #endif
 
       sub->unsubscribe();
@@ -280,7 +280,7 @@ void ObstacleLayer::onInitialize()
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
           rclcpp_lifecycle::LifecycleNode>>(
-          node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+        node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
       #endif
 
       sub->unsubscribe();

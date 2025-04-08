@@ -318,7 +318,7 @@ void Optimizer::integrateStateVelocities(
   const size_t n_size = traj_yaws.size();
 
   float last_yaw = initial_yaw;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_yaw += wz(i) * settings_.model_dt;
     traj_yaws(i) = last_yaw;
   }
@@ -341,7 +341,7 @@ void Optimizer::integrateStateVelocities(
 
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_x += dx(i) * settings_.model_dt;
     last_y += dy(i) * settings_.model_dt;
     traj_x(i) = last_x;
@@ -377,9 +377,11 @@ void Optimizer::integrateStateVelocities(
     dy += state.vy * yaw_cos;
   }
 
-  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(trajectories.x.rows(),
+  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
+    trajectories.x.rows(),
     state.pose.pose.position.x);
-  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(trajectories.y.rows(),
+  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(
+    trajectories.y.rows(),
     state.pose.pose.position.y);
 
   for (size_t i = 0; i != n_cols; i++) {

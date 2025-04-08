@@ -76,7 +76,8 @@ class BasicNavigator(Node):
         self.nav_through_poses_client = ActionClient(
             self, NavigateThroughPoses, 'navigate_through_poses'
         )
-        self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.nav_to_pose_client = ActionClient(
+            self, NavigateToPose, 'navigate_to_pose')
         self.follow_waypoints_client = ActionClient(
             self, FollowWaypoints, 'follow_waypoints'
         )
@@ -110,7 +111,8 @@ class BasicNavigator(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.change_maps_srv = self.create_client(LoadMap, 'map_server/load_map')
+        self.change_maps_srv = self.create_client(
+            LoadMap, 'map_server/load_map')
         self.clear_costmap_global_srv = self.create_client(
             ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
         )
@@ -161,7 +163,8 @@ class BasicNavigator(Node):
         self.clearTaskError()
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
-            self.info("'NavigateThroughPoses' action server not available, waiting...")
+            self.info(
+                "'NavigateThroughPoses' action server not available, waiting...")
 
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses = poses
@@ -312,7 +315,8 @@ class BasicNavigator(Node):
         goal_msg.time_allowance = Duration(sec=time_allowance)
         goal_msg.disable_collision_checks = disable_collision_checks
 
-        self.info(f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
+        self.info(
+            f'Backing up {goal_msg.target.x} m at {goal_msg.speed} m/s....')
         send_goal_future = self.backup_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -340,7 +344,8 @@ class BasicNavigator(Node):
         goal_msg.time_allowance = Duration(sec=time_allowance)
         goal_msg.disable_collision_checks = disable_collision_checks
 
-        self.info(f'Drive {goal_msg.target.x} m on heading at {goal_msg.speed} m/s....')
+        self.info(
+            f'Drive {goal_msg.target.x} m on heading at {goal_msg.speed} m/s....')
         send_goal_future = self.drive_on_heading_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -421,7 +426,8 @@ class BasicNavigator(Node):
         goal_msg.use_dock_id = False
         goal_msg.dock_pose = dock_pose
         goal_msg.dock_type = dock_type
-        goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
+        # if want to navigate before staging
+        goal_msg.navigate_to_staging_pose = nav_to_dock
 
         self.info('Docking at pose: ' + str(dock_pose) + '...')
         send_goal_future = self.docking_client.send_goal_async(goal_msg,
@@ -448,7 +454,8 @@ class BasicNavigator(Node):
         goal_msg = DockRobot.Goal()
         goal_msg.use_dock_id = True
         goal_msg.dock_id = dock_id
-        goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
+        # if want to navigate before staging
+        goal_msg.navigate_to_staging_pose = nav_to_dock
 
         self.info('Docking at dock ID: ' + str(dock_id) + '...')
         send_goal_future = self.docking_client.send_goal_async(goal_msg,
@@ -504,7 +511,8 @@ class BasicNavigator(Node):
         if not self.result_future:
             # task was cancelled or completed
             return True
-        rclpy.spin_until_future_complete(self, self.result_future, timeout_sec=0.10)
+        rclpy.spin_until_future_complete(
+            self, self.result_future, timeout_sec=0.10)
         if self.result_future.result():
             self.status = self.result_future.result().status
             if self.status != GoalStatus.STATUS_SUCCEEDED:
@@ -560,7 +568,7 @@ class BasicNavigator(Node):
 
     def _getPathImpl(
             self, start, goal, planner_id='', use_start=False
-            ) -> ComputePathToPose.Result:
+    ) -> ComputePathToPose.Result:
         """
         Send a `ComputePathToPose` action request.
 
@@ -568,7 +576,8 @@ class BasicNavigator(Node):
         """
         self.debug("Waiting for 'ComputePathToPose' action server")
         while not self.compute_path_to_pose_client.wait_for_server(timeout_sec=1.0):
-            self.info("'ComputePathToPose' action server not available, waiting...")
+            self.info(
+                "'ComputePathToPose' action server not available, waiting...")
 
         goal_msg = ComputePathToPose.Goal()
         goal_msg.start = start
@@ -577,7 +586,8 @@ class BasicNavigator(Node):
         goal_msg.use_start = use_start
 
         self.info('Getting path...')
-        send_goal_future = self.compute_path_to_pose_client.send_goal_async(goal_msg)
+        send_goal_future = self.compute_path_to_pose_client.send_goal_async(
+            goal_msg)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -657,7 +667,8 @@ class BasicNavigator(Node):
     def getPathThroughPoses(self, start, goals, planner_id='', use_start=False):
         """Send a `ComputePathThroughPoses` action request."""
         self.clearTaskError()
-        rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
+        rtn = self._getPathThroughPosesImpl(
+            start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
             return rtn.path
@@ -683,7 +694,8 @@ class BasicNavigator(Node):
 
         goal_msg = SmoothPath.Goal()
         goal_msg.path = path
-        goal_msg.max_smoothing_duration = rclpyDuration(seconds=max_duration).to_msg()
+        goal_msg.max_smoothing_duration = rclpyDuration(
+            seconds=max_duration).to_msg()
         goal_msg.smoother_id = smoother_id
         goal_msg.check_for_collisions = check_for_collision
 
@@ -710,7 +722,8 @@ class BasicNavigator(Node):
     ):
         """Send a `SmoothPath` action request."""
         self.clearTaskError()
-        rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
+        rtn = self._smoothPathImpl(
+            path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
             return rtn.path
@@ -776,7 +789,8 @@ class BasicNavigator(Node):
     def clearCostmapExceptRegion(self, reset_distance: float):
         """Clear the costmap except for a specified region."""
         while not self.clear_costmap_except_region_srv.wait_for_service(timeout_sec=1.0):
-            self.info('ClearCostmapExceptRegion service not available, waiting...')
+            self.info(
+                'ClearCostmapExceptRegion service not available, waiting...')
         req = ClearCostmapExceptRegion.Request()
         req.reset_distance = reset_distance
         future = self.clear_costmap_except_region_srv.call_async(req)
@@ -827,7 +841,8 @@ class BasicNavigator(Node):
                 # starting up requires a full map->odom->base_link TF tree
                 # so if we're not successful, try forwarding the initial pose
                 while True:
-                    rclpy.spin_until_future_complete(self, future, timeout_sec=0.10)
+                    rclpy.spin_until_future_complete(
+                        self, future, timeout_sec=0.10)
                     if not future:
                         self._waitForInitialPose()
                     else:

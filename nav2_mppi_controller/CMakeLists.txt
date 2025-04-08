@@ -50,21 +50,22 @@ target_include_directories(mppi_controller
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(mppi_controller PUBLIC
-  angles::angles
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::layers
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
-  tf2::tf2
-  tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
+
+ament_target_dependencies(mppi_controller
+  angles
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_costmap_2d
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+  visualization_msgs
 )
 
 add_library(mppi_critics SHARED
@@ -85,23 +86,21 @@ target_include_directories(mppi_critics
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
-target_link_libraries(mppi_critics PUBLIC
-  angles::angles
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::layers
-  nav2_costmap_2d::nav2_costmap_2d_core
-  ${nav_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  ${std_msgs_TARGETS}
-  tf2::tf2
-  tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
-)
-target_link_libraries(mppi_critics PRIVATE
-  pluginlib::pluginlib
+
+ament_target_dependencies(mppi_critics
+  angles
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav_msgs
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+  visualization_msgs
+  pluginlib
 )
 
 install(TARGETS mppi_controller mppi_critics

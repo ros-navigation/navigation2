@@ -74,7 +74,8 @@ def main(argv=sys.argv[1:]):
 
     ld = LaunchDescription(
         [
-            IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([launchFile])),
             map_to_odom,
             lifecycle_manager,
         ]

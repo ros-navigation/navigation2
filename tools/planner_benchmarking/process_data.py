@@ -35,7 +35,8 @@ def getTimes(results):
     times = []
     for result in results:
         for time in result:
-            times.append(time.planning_time.nanosec / 1e09 + time.planning_time.sec)
+            times.append(time.planning_time.nanosec /
+                         1e09 + time.planning_time.sec)
     return times
 
 
@@ -95,7 +96,8 @@ def averagePathCost(paths, costmap, num_of_planners):
     for i in range(0, len(coords), 2):
         costs = []
         for j in range(len(coords[i])):
-            costs.append(data[math.floor(coords[i + 1][j])][math.floor(coords[i][j])])
+            costs.append(data[math.floor(coords[i + 1][j])]
+                         [math.floor(coords[i][j])])
         average_path_costs[k % num_of_planners].append(sum(costs) / len(costs))
         k += 1
 
@@ -153,7 +155,8 @@ def main():
     times = np.transpose(times)
 
     # Costs
-    average_path_costs = np.asarray(averagePathCost(paths, costmap, len(planners)))
+    average_path_costs = np.asarray(
+        averagePathCost(paths, costmap, len(planners)))
     max_path_costs = np.asarray(maxPathCost(paths, costmap, len(planners)))
 
     # Generate table

@@ -151,7 +151,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   EXPECT_EQ(twist_raw_msg.angular.z, 5.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 
