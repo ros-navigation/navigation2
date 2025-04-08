@@ -47,7 +47,7 @@ public:
   /**
    * @brief A destructor for nav2_route::RoutePlanner
    */
-  ~RoutePlanner() = default;
+  virtual ~RoutePlanner() = default;
 
   /**
    * @brief Configure the route planner, get parameters
@@ -65,7 +65,7 @@ public:
    * @param blocked_ids A set of blocked node and edge IDs not to traverse
    * @return Route object containing the navigation graph route
    */
-  Route findRoute(
+  virtual Route findRoute(
     Graph & graph, unsigned int start_index, unsigned int goal_index,
     const std::vector<unsigned int> & blocked_ids,
     const RouteRequest & route_request);

@@ -72,6 +72,9 @@ def generate_launch_description():
     param_substitutions.update(
         {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER')}
     )
+    param_substitutions.update(
+        {'route_server.ros__parameters.max_planning_time': '0.0001'}
+    )
 
     configured_params = RewrittenYaml(
         source_file=params_file,

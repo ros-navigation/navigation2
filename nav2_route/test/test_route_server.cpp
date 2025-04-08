@@ -40,6 +40,44 @@ RclCppFixture g_rclcppfixture;
 
 using namespace nav2_route;  // NOLINT
 
+class RoutePlannerErrorTester : public RoutePlanner
+{
+public:
+  RoutePlannerErrorTester() = default;
+
+  Route findRoute(
+    Graph & graph, unsigned int start_index, unsigned int goal_index,
+    const std::vector<unsigned int> & blocked_ids,
+    const RouteRequest & route_request) override
+  {
+    const NodePtr & start_node = &graph.at(start_index);
+
+    // Special inputs to trigger specific exceptions for server testing
+    if (start_node->nodeid == 399u) {
+      throw std::runtime_error("runtime_error");
+    } else if (start_node->nodeid == 400u) {
+      throw nav2_core::RouteException("RouteException");
+    } else if (start_node->nodeid == 401u) {
+      throw nav2_core::RouteTFError("RouteTFError");
+    } else if (start_node->nodeid == 402u) {
+      throw nav2_core::NoValidGraph("NoValidGraph");
+    } else if (start_node->nodeid == 403u) {
+      throw nav2_core::IndeterminantNodesOnGraph("IndeterminantNodesOnGraph");
+    } else if (start_node->nodeid == 404u) {
+      throw nav2_core::TimedOut("TimedOut");
+    } else if (start_node->nodeid == 405u) {
+      throw nav2_core::NoValidRouteCouldBeFound("NoValidRouteCouldBeFound");
+    } else if (start_node->nodeid == 406u) {
+      throw nav2_core::OperationFailed("OperationFailed");
+    } else if (start_node->nodeid == 407u) {
+      throw nav2_core::InvalidEdgeScorerUse("InvalidEdgeScorerUse");
+    }
+
+    // If none set, just call the base class
+    return RoutePlanner::findRoute(graph, start_index, goal_index, blocked_ids, route_request);
+  }
+};
+
 class RouteServerWrapper : public RouteServer
 {
 public:
@@ -107,6 +145,11 @@ public:
   void setNontrivialGraph()
   {
     graph_.resize(1);
+  }
+
+  void useErrorCodePlanner()
+  {
+    route_planner_ = std::make_shared<RoutePlannerErrorTester>();
   }
 };
 
@@ -303,6 +346,56 @@ TEST(RouteServerTest, test_complete_action_api)
   EXPECT_EQ(code, rclcpp_action::ResultCode::CANCELED);
 
   // Make sure it still shuts down completely after real work
+  server->shutdown();
+  node_thread.reset();
+  server.reset();
+}
+
+TEST(RouteServerTest, test_error_codes)
+{
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
+  std::string real_file = pkg_share_dir + "/test/test_graphs/error_codes.geojson";
+
+  rclcpp::NodeOptions options;
+  auto server = std::make_shared<RouteServerWrapper>(options);
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(server);
+  server->startup();
+
+  // This uses the error code planner rather than the built-in planner
+  // to test throwing error conditions in the action and how that's handled by the server.
+  server->useErrorCodePlanner();
+
+  // Compute a simple route action request
+  using nav2_msgs::action::ComputeAndTrackRoute;
+  auto node2 = std::make_shared<rclcpp::Node>("my_node2");
+  auto compute_client =
+    rclcpp_action::create_client<ComputeAndTrackRoute>(node2, "compute_and_track_route");
+
+  // These make use of poses to bypass data structure lookups and `map` to bypass TF
+  // Our test planner will still use the start ID
+  nav2_msgs::action::ComputeAndTrackRoute::Goal goal;
+  goal.use_start = true;
+  goal.use_poses = true;
+  goal.start.header.frame_id = "map";
+  goal.goal.header.frame_id = "map";
+  goal.goal.pose.position.x = 1.0;  // On graph, just make sure always different
+  for (unsigned int i = 399; i != 408; i++) {
+    goal.start.pose.position.x = static_cast<float>(i);
+    auto future_goal = compute_client->async_send_goal(goal);
+
+    rclcpp::spin_until_future_complete(node2, future_goal);
+    auto goal_handle = future_goal.get();
+    auto result_future = compute_client->async_get_result(goal_handle);
+    rclcpp::spin_until_future_complete(node2, result_future);
+    auto result = result_future.get().result;
+    if (i == 399u) {
+      EXPECT_EQ(result->error_code, i + 1u);  // Also UNKNOWN, just distinguished differently
+    } else {
+      EXPECT_EQ(result->error_code, i);
+    }
+  }
+
   server->shutdown();
   node_thread.reset();
   server.reset();
