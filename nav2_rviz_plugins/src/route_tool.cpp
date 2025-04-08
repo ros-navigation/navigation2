@@ -48,13 +48,13 @@ RouteTool::RouteTool(QWidget * parent)
 
 void RouteTool::onInitialize(void)
 {
-    auto ros_node_abstraction = getDisplayContext()->getRosNodeAbstraction().lock();
-    if (!ros_node_abstraction) {
-        RCLCPP_ERROR(
-          node_->get_logger(), "Unable to get ROS node abstraction");
-        return;
-    }
-    auto node = ros_node_abstraction->get_raw_node();
+  auto ros_node_abstraction = getDisplayContext()->getRosNodeAbstraction().lock();
+  if (!ros_node_abstraction) {
+    RCLCPP_ERROR(
+      node_->get_logger(), "Unable to get ROS node abstraction");
+    return;
+  }
+  auto node = ros_node_abstraction->get_raw_node();
 
   clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
     "clicked_point", 1, [this](const geometry_msgs::msg::PointStamped::SharedPtr msg) {
