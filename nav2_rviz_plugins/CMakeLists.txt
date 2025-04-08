@@ -78,7 +78,7 @@ target_link_libraries(${library_name} PUBLIC
   nav2_lifecycle_manager::nav2_lifecycle_manager_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
-  nav2_route::nav2_route_core
+  nav2_route::route_server_core
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rviz_common::rviz_common
