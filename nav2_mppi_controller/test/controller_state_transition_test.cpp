@@ -38,6 +38,7 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
   options.parameter_overrides(params);
 
   auto node = getDummyNode(options);
+  node->declare_parameter("publish_optimal_trajectory", true);
   auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = getDummyCostmapRos(costmap_settings);
   costmap_ros->setRobotFootprint(getDummySquareFootprint(0.01));

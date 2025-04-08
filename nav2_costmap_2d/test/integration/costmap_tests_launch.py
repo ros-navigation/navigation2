@@ -24,9 +24,9 @@ import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]) -> LaunchTestService:
     launchFile = os.path.join(
-        os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py'
+        os.getenv('TEST_LAUNCH_DIR', ''), 'costmap_map_server.launch.py'
     )
     testExecutable = os.getenv('TEST_EXECUTABLE')
 

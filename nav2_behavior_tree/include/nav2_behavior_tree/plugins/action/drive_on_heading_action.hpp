@@ -86,9 +86,6 @@ public:
    * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
-
-private:
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

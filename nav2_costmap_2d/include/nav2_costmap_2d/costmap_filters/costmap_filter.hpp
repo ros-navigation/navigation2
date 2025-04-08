@@ -49,6 +49,7 @@
 #include "std_srvs/srv/set_bool.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_util/service_server.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -241,7 +242,8 @@ protected:
   /**
    * @brief: A service to enable/disable costmap filter
    */
-  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_service_;
+  nav2_util::ServiceServer<std_srvs::srv::SetBool,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr enable_service_;
 
 private:
   /**

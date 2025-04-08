@@ -31,7 +31,8 @@ namespace nav2_util
 class LifecycleServiceClient
 {
 public:
-  explicit LifecycleServiceClient(const std::string & lifecycle_node_name);
+  explicit LifecycleServiceClient(
+    const std::string & lifecycle_node_name);
   LifecycleServiceClient(
     const std::string & lifecycle_node_name,
     rclcpp::Node::SharedPtr parent_node);

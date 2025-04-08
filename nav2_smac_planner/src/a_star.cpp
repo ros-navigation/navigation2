@@ -435,7 +435,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_list, fine_list;
-  prepareGoalsForExpansion(coarse_list, fine_list);
+  _goal_manager->prepareGoalsForExpansion(coarse_list, fine_list);
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());

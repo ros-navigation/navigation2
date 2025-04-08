@@ -211,24 +211,6 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
 }
 
 /**
- * @brief Parse XML string to std::set<int>
- * @param key XML string
- * @return std::set<int>
- */
-template<>
-inline std::set<int> convertFromString(StringView key)
-{
-  // Real numbers separated by semicolons
-  auto parts = splitString(key, ';');
-
-  std::set<int> set;
-  for (const auto part : parts) {
-    set.insert(convertFromString<int>(part));
-  }
-  return set;
-}
-
-/**
  * @brief Return parameter value from behavior tree node or ros2 parameter file.
  * @param node rclcpp::Node::SharedPtr
  * @param param_name std::string
