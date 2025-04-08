@@ -32,6 +32,146 @@ namespace nav2_smac_planner
 {
 
 template<typename NodeT>
+GoalManager<NodeT>::GoalManager()
+: _goal_set(NodeSet()),
+  _goal_state(GoalStateVector()),
+  _goal_coordinates(CoordinateVector())
+  _previous_goal_coordinates(CoordinateVector())
+{
+}
+
+template<typename NodeT>
+GoalManager<NodeT>::~GoalManager()
+{
+}
+
+template<typename NodeT>
+bool GoalManager<NodeT>::haveUpdated()
+{
+  bool has_changed = (_goal_coordinates != _previous_goal_coordinates);
+  if (has_changed) {
+    _previous_goal_coordinates = _goal_coordinates;
+  }
+  return has_changed;
+}
+
+template<typename NodeT>
+bool GoalManager<NodeT>::goalsEmpty()
+{
+  return _goal_set.empty();
+}
+
+template<typename NodeT>
+void GoalManager<NodeT>::addGoal( const float & mx, const float & my, const unsigned int & dim_3)
+{
+  NodePtr goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
+  _goal_coordinate.push_back(
+    typename Node::Coordinates(
+      static_cast<float>(mx),
+      static_cast<float>(my),
+      static_cast<float>(dim_3)));
+  
+  goal->setPose(_goal_coordinate.back());
+  _goal_set.insert(goal);
+  _goal_state.push_back({goal, true});
+}
+
+template<>
+void GoalManager<Node2D>::addGoal(const float & mx, const float & my, const unsigned int & dim_3)
+{
+  NodePtr goal = addToGraph(
+    Node2D::getIndex(
+      static_cast<unsigned int>(mx),
+      static_cast<unsigned int>(my),
+      dim_3));
+  _goal_coordinate.push_back(Node2D::Coordinates(mx, my));
+  _goal_set.insert(goal);
+  _goal_state.push_back({goal, true});
+}
+
+template<typename NodeT>
+void GoalManager<NodeT>::clear()
+{
+  _goal_set.clear();
+  _goal_state.clear();
+  _goal_coordinates.clear();
+}
+
+template<typename NodeT>
+void GoalManager<NodeT>::prepareGoalsForExpansion(
+  NodeVector & coarse_list, NodeVector & fine_list)
+{
+  for (unsigned int i = 0; i < _goals_state.size(); i++) {
+    if (_goals_state[i].is_valid) {
+      if (i % _coarse_search_resolution == 0) {
+        coarse_list.push_back(_goals_state[i].goal);
+      } else {
+        fine_list.push_back(_goals_state[i].goal);
+      }
+    }
+  }
+}
+
+template<typename NodeT>
+void GoalManager<NodeT>::removeInvalidGoals(
+  const bool & traverse_unknown,
+  GridCollisionChecker * collision_checker,
+  bool & all_nodes_invalid)
+{
+  all_nodes_invalid = true;
+
+  for (auto it = _goal_set.begin(); it != _goal_set.end(); ) {
+    if (!(*it)->isNodeValid(traverse_unknown, collision_checker)) {
+      // Remove from coordinates
+      _goal_coordinates.erase(
+        std::remove(
+          _goal_coordinates.begin(), _goal_coordinates.end(), (*it)->pose),
+        _goal_coordinates.end());
+
+      // Mark state as invalid
+      auto goal_state_it = std::find_if(_goal_states.begin(), _goal_states.end(),
+        [&it](const GoalState & goal_state) {
+          return goal_state.goal == *it;
+        });
+
+      if (goal_state_it != _goal_states.end()) {
+        goal_state_it->is_valid = false;
+      }
+
+      // Remove from goal set
+      it = _goal_set.erase(it);
+    } else {
+      all_nodes_invalid = false;
+      ++it;
+    }
+  }
+}
+
+template<typename NodeT>
+bool GoalManager<NodeT>::isGoal(NodePtr & node)
+{
+  return _goals_set.find(node) != _goals_set.end();
+}
+
+template<typename NodeT>
+typename GoalManager<NodeT>::NodeSet & GoalManager<NodeT>::getGoals()
+{
+  return _goals_set;
+}
+
+template<typename NodeT>
+typename GoalManager<NodeT>::GoalStateVector & GoalManager<NodeT>::getGoalsState()
+{
+  return _goals_state;
+}
+
+template<typename NodeT>
+typename GoalManager<NodeT>::CoordinateVector & GoalManager<NodeT>::getGoalsCoordinates()
+{
+  return _goals_coordinates;
+}
+
+template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
   const SearchInfo & search_info)
@@ -43,10 +183,8 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _x_size(0),
   _y_size(0),
   _search_info(search_info),
-  _goals_coordinates(CoordinateVector()),
   _start(nullptr),
-  _goals_set(NodeSet()),
-  _goals_state(GoalStateVector()),
+  _goal_manager(GoalManager()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -200,16 +338,8 @@ void AStarAlgorithm<Node2D>::setGoal(
   if (dim_3 != 0) {
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
-  _goals_coordinates.clear();
-  _goals_set.clear();
-  _goals_state.clear();
-  _goals_set.insert(addToGraph(
-    Node2D::getIndex(
-      static_cast<unsigned int>(mx),
-      static_cast<unsigned int>(my),
-      getSizeX())));
-  _goals_state.push_back({*_goals_set.begin(), true});
-  _goals_coordinates.push_back(Node2D::Coordinates(mx, my));
+  _goal_manager->clear();
+  _goal_manager->addGoal(mx, my, getSizeX());
   _coarse_search_resolution = 1;
 }
 
@@ -221,60 +351,35 @@ void AStarAlgorithm<NodeT>::setGoal(
   const GoalHeadingMode & goal_heading_mode,
   const int & coarse_search_resolution)
 {
-  _goals_set.clear();
-  _goals_state.clear();
-  NodeVector goals;
+
   _coarse_search_resolution = 1;
-  CoordinateVector goals_coordinates;
   unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
   unsigned int dim_3_half_bin = 0;
+  _goal_manager->clear();
   switch (goal_heading_mode) {
     case GoalHeadingMode::DEFAULT:
-      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
-      goals_coordinates.push_back(
-        typename NodeT::Coordinates(
-          static_cast<int>(mx),
-          static_cast<int>(my),
-          static_cast<int>(dim_3)));
+      _goal_manager->addGoal(mx, my, dim_3)
       break;
     case GoalHeadingMode::BIDIRECTIONAL:
       // Add two goals, one for each direction
-      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
+      _goal_manager->addGoal(mx, my, dim_3);
       // 180 degrees
       dim_3_half_bin = (dim_3 + (num_bins / 2)) % num_bins;
-      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3_half_bin)));
-      goals_coordinates.push_back(
-        typename NodeT::Coordinates(
-          static_cast<int>(mx),
-          static_cast<int>(my),
-          static_cast<int>(dim_3)));
-      goals_coordinates.push_back(
-        typename NodeT::Coordinates(
-          static_cast<int>(mx),
-          static_cast<int>(my),
-          static_cast<int>(dim_3_half_bin)));
+      _goal_manager->addGoal(mx, my, dim_3_half_bin);
       break;
     case GoalHeadingMode::ALL_DIRECTION:
       // Set the coarse search resolution only for all direction
       _coarse_search_resolution = coarse_search_resolution;
       // Add all goals for each direction
       for (unsigned int i = 0; i < num_bins; ++i) {
-        goals.push_back(addToGraph(NodeT::getIndex(mx, my, i)));
-        goals_coordinates.push_back(
-          typename NodeT::Coordinates(
-            static_cast<float>(mx),
-            static_cast<float>(my),
-            static_cast<float>(i)));
+        _goal_manager->addGoal(mx, my, i);
       }
       break;
     case GoalHeadingMode::UNKNOWN:
       throw std::runtime_error("Goal heading is UNKNOWN.");
   }
 
-  // we just have to check whether the x and y are the same because the dim3 is not used
-  // in the computation of the obstacle heuristic
-  if (!_search_info.cache_obstacle_heuristic ||
-    (goals_coordinates != _goals_coordinates))
+  if (!_search_info.cache_obstacle_heuristic || _goal_manager->hasGoalChanged())
   {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
@@ -282,13 +387,6 @@ void AStarAlgorithm<NodeT>::setGoal(
 
     NodeT::resetObstacleHeuristic(
       _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
-  }
-
-  _goals_coordinates = goals_coordinates;
-  for (unsigned int i = 0; i < goals.size(); i++) {
-    goals[i]->setPose(_goals_coordinates[i]);
-    _goals_set.insert(goals[i]);
-    _goals_state.push_back({goals[i], true});
   }
 }
 
@@ -302,32 +400,15 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Check if points were filled in
-  if (!_start || _goals_set.empty()) {
+  if (!_start || _goal_manager->goalsEmpty()) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
   // Check if ending point is valid
   if (getToleranceHeuristic() < 0.001) {
     bool all_nodes_occupied = true;
-    // if a node is not valid, prune it from the goals set, goals vector, and goals coordinates
-    for (auto it = _goals_set.begin(); it != _goals_set.end(); ) {
-      if (!(*it)->isNodeValid(_traverse_unknown, _collision_checker)) {
-        _goals_coordinates.erase(
-          std::remove(
-            _goals_coordinates.begin(), _goals_coordinates.end(), (*it)->pose),
-          _goals_coordinates.end());
-        // we set the goal as invalid
-        auto goal_state_it = std::find_if(_goals_state.begin(), _goals_state.end(),
-            [&it](const GoalState & goal_state) {return goal_state.goal == *it;});
-        if (goal_state_it != _goals_state.end()) {
-          goal_state_it->is_valid = false;
-        }
-        it = _goals_set.erase(it);
-      } else {
-        all_node_invalid = false;
-        ++it;
-      }
-    }
+    _goal_manager->removeInvalidGoals(
+      _traverse_unknown, _collision_checker, all_nodes_occupied);
     if (!all_nodes_occupied) {
       throw nav2_core::GoalOccupied("Goal was in lethal cost");
     }
@@ -423,13 +504,13 @@ bool AStarAlgorithm<NodeT>::createPath(
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
       current_node, coarse_list, fine_list,
-      getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
+      _goal_manager->getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
 
     // 3) Check if we're at the goal, backtrace if required
-    if (isGoal(current_node)) {
+    if (_goal_manager->isGoal(current_node)) {
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
@@ -471,27 +552,9 @@ bool AStarAlgorithm<NodeT>::createPath(
 }
 
 template<typename NodeT>
-bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
-{
-  return _goals_set.find(node) != _goals_set.end();
-}
-
-template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()
 {
   return _start;
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodeSet & AStarAlgorithm<NodeT>::getGoals()
-{
-  return _goals_set;
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::GoalStateVector & AStarAlgorithm<NodeT>::getGoalsState()
-{
-  return _goals_state;
 }
 
 template<typename NodeT>
@@ -516,7 +579,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
-  float heuristic = NodeT::getHeuristicCost(node_coords, getGoalsCoordinates());
+  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager->getGoalsCoordinates());
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
   }
@@ -582,28 +645,7 @@ unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 }
 
 template<typename NodeT>
-typename AStarAlgorithm<NodeT>::CoordinateVector & AStarAlgorithm<NodeT>::getGoalsCoordinates()
-{
-  return _goals_coordinates;
-}
-
-template<typename NodeT>
-void AStarAlgorithm<NodeT>::prepareGoalsForExpansion(
-  NodeVector & coarse_list, NodeVector & fine_list)
-{
-  for (unsigned int i = 0; i < _goals_state.size(); i++) {
-    if (_goals_state[i].is_valid) {
-      if (i % _coarse_search_resolution == 0) {
-        coarse_list.push_back(_goals_state[i].goal);
-      } else {
-        fine_list.push_back(_goals_state[i].goal);
-      }
-    }
-  }
-}
-
-template<typename NodeT>
-unsigned int AStarAlgorithm<NodeT>::getCoarseSearchResolution()
+unsigned int GoalManager<NodeT>::getCoarseSearchResolution()
 {
   return _coarse_search_resolution;
 }

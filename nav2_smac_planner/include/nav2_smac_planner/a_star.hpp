@@ -40,6 +40,106 @@ namespace nav2_smac_planner
 {
 
 /**
+* @class nav2_smac_planner::GoalManager
+* @brief Responsible for managing multiple varibales storing information on the goal
+*/
+template<typename NodeT>
+class GoalManager{
+public:
+  typedef NodeT * NodePtr;
+  typedef std::vector<NodePtr> NodeVector;
+  typedef std::unordered_set<NodePtr> NodeSet;
+  typedef typenmae NodeT::Coordinates Coordinates;
+  typedef std::vector<GoalState> GoalStateVector;
+
+  /**
+   * @brief Constructor for the GoalManager
+   */
+  GoalManager();
+
+  /**
+   * @brief Destructor for the GoalManager
+   */
+  ~GoalManager();
+
+  /**
+   * @brief Checks if the goal has changed
+   * @return true if the goal value has changed
+   */
+  bool hasGoalChanged();
+
+  /**
+   * @brief Checks if the goals set is empty
+   * @return true if the goals set is empty
+   */
+  bool goalsEmpty();
+  
+  /**
+   * @brief Adds a new goals to the goals coordinate
+   */
+
+   void addGoal();
+
+  /**
+   * @brief Clears all goal-related data.
+   */
+  void clear();
+
+  /**
+   * @brief Creates the coarse and fine lists of goals to expand
+   * @param coarse_list List of goals to expand
+   * @param fine_list List of goals to refine
+   */
+  void prepareGoalsForExpansion(
+    NodeVector & coarse_list, NodeVector & fine_list);
+  
+  /**
+   * @brief Remove invalid goals from the goal set, goal coordinates, and goal state.
+   *        In addition, it sets the all_nodes_invalid flag to true if all goals are invalid.
+   * @param traverse_unknown Flag to indicate if unknown space should be traversed
+   * @param collision_checker Pointer to the collision checker
+   * @param all_nodes_invalid Reference to the flag indicating if all nodes are invalid
+   */
+
+  void removeInvalidGoals(
+    const bool & traverse_unknown,
+    GridCollisionChecker * collision_checker,
+    bool & all_nodes_invalid);
+  
+
+    /**
+   * @brief Check if this node is the goal node
+   * @param node Node pointer to check if its the goal node
+   * @return if node is goal
+   */
+  inline bool isGoal(NodePtr & node);
+
+  /**
+   * @brief Get pointer reference to goals node
+   * @return unordered_set of node pointers reference to the goals nodes
+   */
+  inline NodeSet & getGoals();
+
+  /**
+   * @brief Get pointer reference to goals state
+   * @return vector of node pointers reference to the goals state
+   */
+  inline GoalStateVector & getGoalsState();
+
+  /**
+   * @brief Get pointer reference to goals coordinates
+   * @return vector of goals coordinates reference to the goals coordinates
+   */
+  inline CoordinateVector & getGoalsCoordinates();
+
+protected:
+  NodeSet _goal_set;
+  GoalStateVector _goal_state;
+  CoordinateVector _goal_coordinates;
+  CoordinateVector _previous_goal_coordinates;
+};
+
+/**
  * @class nav2_smac_planner::AStarAlgorithm
  * @brief An A* implementation for planning in a costmap. Templated based on the Node type.
  */
@@ -49,13 +149,11 @@ class AStarAlgorithm
 public:
   typedef NodeT * NodePtr;
   typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
-  typedef std::vector<NodePtr> NodeVector;
-  typedef std::unordered_set<NodePtr> NodeSet;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
-  typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
+  typedef GoalManager<NodeT> GoalManagerPtr;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -70,7 +168,6 @@ public:
   };
 
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
-  typedef std::vector<GoalState> GoalStateVector;
 
   /**
    * @brief A constructor for nav2_smac_planner::AStarAlgorithm
@@ -164,24 +261,6 @@ public:
   NodePtr & getStart();
 
   /**
-   * @brief Get pointer reference to goals node
-   * @return unordered_set of node pointers reference to the goals nodes
-   */
-  NodeSet & getGoals();
-
-  /**
-   * @brief Get pointer reference to goals state
-   * @return vector of node pointers reference to the goals state
-   */
-  GoalStateVector & getGoalsState();
-
-  /**
-   * @brief Get pointer reference to goals coordinates
-   * @return vector of goals coordinates reference to the goals coordinates
-   */
-  CoordinateVector & getGoalsCoordinates();
-
-  /**
    * @brief Get maximum number of on-approach iterations after within threshold
    * @return Reference to Maximum on-approach iterations parameter
    */
@@ -212,14 +291,6 @@ public:
   unsigned int & getSizeDim3();
 
   /**
-   * @brief Creates the coarse and fine lists of goals to expand
-   * @param coarse_list List of goals to expand
-   * @param fine_list List of goals to refine
-   */
-  void prepareGoalsForExpansion(
-    NodeVector & coarse_list, NodeVector & fine_list);
-
-  /**
    * @brief Get the resolution of the coarse search
    * @return Size of the goals to expand
    */
@@ -244,13 +315,6 @@ protected:
    * @param index Node index to add
    */
   inline NodePtr addToGraph(const uint64_t & index);
-
-  /**
-   * @brief Check if this node is the goal node
-   * @param node Node pointer to check if its the goal node
-   * @return if node is goal
-   */
-  inline bool isGoal(NodePtr & node);
 
   /**
    * @brief Get cost of heuristic of node
@@ -303,10 +367,8 @@ protected:
   unsigned int _coarse_search_resolution;
   SearchInfo _search_info;
 
-  CoordinateVector _goals_coordinates;
   NodePtr _start;
-  NodeSet _goals_set;
-  GoalStateVector _goals_state;
+  GoalManagerPtr _goal_manager;
 
 
   Graph _graph;
