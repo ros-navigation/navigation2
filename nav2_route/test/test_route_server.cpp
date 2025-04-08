@@ -143,6 +143,12 @@ TEST(RouteServerTest, test_set_srv)
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);
 
+  auto req3 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
+  req3->graph_filepath = ament_index_cpp::get_package_share_directory("nav2_route") +
+    "/test/test_graphs/invalid.json";
+  auto resp3 = srv_client.invoke(req3, std::chrono::nanoseconds(1000000000));
+  EXPECT_FALSE(resp3->success);
+
   server->shutdown();
   node_thread.reset();
   server.reset();

@@ -28,6 +28,7 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import ComputeRoute, ComputeAndTrackRoute
 from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_simple_commander.robot_navigator import BasicNavigator
+from std_srvs.srv import Trigger
 
 import rclpy
 
@@ -187,6 +188,22 @@ class RouteTester(Node):
 
         self.info_msg('Goal accepted')
         get_result_future = goal_handle.get_result_async()
+
+        # Trigger a reroute
+        time.sleep(1)
+        self.info_msg('Triggering a reroute')
+        srv_client = self.create_client(Trigger, 'route_server/ReroutingService/reroute')
+        while not srv_client.wait_for_service(timeout_sec=1.0):
+            self.info_msg('Reroute service not available, waiting...')
+        req = Trigger.Request()
+        future = srv_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        if future.result() is not None:
+            self.info_msg('Reroute triggered')
+        else:
+            self.error_msg('Reroute failed')
+            return False
+        # Wait a bit for it to compute the route and start tracking (but no movement)
 
         # Cancel it after a bit
         time.sleep(2)

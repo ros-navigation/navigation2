@@ -145,4 +145,7 @@ TEST(GraphLoader, test_transformation_api2)
   Graph graph;
   GraphToIDMap graph_to_id_map;
   EXPECT_FALSE(graph_loader.loadGraphFromParameter(graph, graph_to_id_map));
+  std::string filepath = ament_index_cpp::get_package_share_directory("nav2_route") +
+    "/test/test_graphs/no_frame.json";
+  EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
 }
