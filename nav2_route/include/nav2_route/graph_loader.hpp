@@ -83,7 +83,6 @@ public:
     Graph & graph,
     GraphToIDMap & idx_map);
 
-protected:
   /**
    * @brief Transform the coordinates in the graph to the route frame
    * @param[in/out] graph The graph to be transformed
@@ -91,6 +90,7 @@ protected:
    */
   bool transformGraph(Graph & graph);
 
+protected:
   std::string route_frame_, graph_filepath_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("GraphLoader")};

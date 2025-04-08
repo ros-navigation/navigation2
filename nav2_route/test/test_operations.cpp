@@ -44,6 +44,14 @@ TEST(OperationsManagerTest, test_lifecycle)
   OperationsManager manager(node);
 }
 
+TEST(OperationsManagerTest, test_failed_plugins)
+{
+  // This plugin does not exist
+  auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
+  node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
+  EXPECT_THROW(OperationsManager manager(node), std::runtime_error);
+}
+
 TEST(OperationsManagerTest, test_find_operations)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
@@ -522,4 +530,25 @@ TEST(OperationsManagerTest, test_time_marker)
   time = 0.0f;
   time = last.metadata.getValue<float>("abs_time_taken", time);
   EXPECT_GT(time, 0.5f);
+}
+
+// A test operation that does nothing to test `processType()`
+class TestRouteOperations : public nav2_route::RouteOperation
+{
+public:
+  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &) override {}
+  std::string getName() override {return "TestRouteOperation";}
+  OperationResult perform(
+    NodePtr,
+    EdgePtr,
+    EdgePtr,
+    const Route &,
+    const geometry_msgs::msg::PoseStamped &,
+    const Metadata *) override {return OperationResult();}
+};
+
+TEST(OperationsTest, test_interface)
+{
+  TestRouteOperations op;
+  EXPECT_EQ(op.processType(), nav2_route::RouteOperationType::ON_GRAPH);
 }

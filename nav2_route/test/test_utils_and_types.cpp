@@ -328,3 +328,19 @@ TEST(UtilsTest, test_find_closest_point)
   EXPECT_NEAR(rtn.x, 0.0, 0.01);
   EXPECT_NEAR(rtn.y, 0.0, 0.01);
 }
+
+TEST(UtilsTest, test_routing_state)
+{
+  ReroutingState state;
+  state.blocked_ids.resize(10);
+  state.first_time = false;
+  state.closest_pt_on_edge.x = 1.0;
+  state.rerouting_start_id = 10u;
+  state.rerouting_start_pose.pose.position.x = 1.0;
+  state.reset();
+  EXPECT_EQ(state.blocked_ids.size(), 0u);
+  EXPECT_EQ(state.first_time, true);
+  EXPECT_EQ(state.closest_pt_on_edge.x, 0.0);
+  EXPECT_EQ(state.rerouting_start_id, std::numeric_limits<unsigned int>::max());
+  EXPECT_EQ(state.rerouting_start_pose.pose.position.x, 0.0);
+}

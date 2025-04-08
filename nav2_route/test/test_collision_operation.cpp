@@ -162,6 +162,9 @@ TEST(TestCollisionMonitor, test_costmap_apis)
   CollisionMonitorWrapper monitor;
   monitor.configure(node, "name");
 
+  // No costmap recieved yet
+  EXPECT_THROW(monitor.getCostmapWrapper(), nav2_core::OperationFailed);
+
   // Create a demo costmap: * = 100, - = 0, / = 254
   // * * * * - - - - - - - -
   // * * * * - - - - - - - -
