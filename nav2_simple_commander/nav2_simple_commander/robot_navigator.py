@@ -16,7 +16,7 @@
 
 from enum import Enum
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
@@ -53,10 +53,9 @@ class BasicNavigator(Node):
         super().__init__(node_name=node_name, namespace=namespace)
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
-        self.goal_handle: Optional[ClientGoalHandle[NavigateToPose.Goal, NavigateToPose.Result,
-                                                    NavigateToPose.Feedback]] = None
+        self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
         self.result_future: \
-            Optional[Future[GetResultServiceResponse[NavigateToPose.Result]]] = None
+            Optional[Future[GetResultServiceResponse[Any]]] = None
         self.feedback: str = ''
         self.status: Optional[int] = None
         self.last_action_error_code = 0
@@ -500,6 +499,8 @@ class BasicNavigator(Node):
             if self.goal_handle is not None:
                 future = self.goal_handle.cancel_goal_async()
                 rclpy.spin_until_future_complete(self, future)
+            else:
+                self.error('No goal handle to cancel!')
         self.clearTaskError()
         return
 
@@ -523,6 +524,10 @@ class BasicNavigator(Node):
                         f' error code:{result.error_code}'
                         f' error msg:{result.error_msg}'
                     )
+                    return True
+                else:
+                    self.setTaskError(0, 'No result received')
+                    self.debug('Task failed with no result received')
                     return True
         else:
             # Timed out, still processing, not complete yet
@@ -602,20 +607,9 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
+        self.status = self.result_future.result().status  # type: ignore[union-attr]
 
-        result_response = self.result_future.result()
-
-        if result_response is None:
-            self.error('Get path failed!')
-            self.status = GoalStatus.UNKNOWN
-            result = ComputePathToPose.Result()
-            result.error_code = ComputePathToPose.UNKNOWN
-            result.error_msg = 'Get path failed'
-            return result
-
-        self.status = result_response.status
-
-        return result_response.result
+        return self.result_future.result().result  # type: ignore[union-attr]
 
     def getPath(
         self, start: PoseStamped, goal: PoseStamped,
@@ -675,19 +669,9 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
+        self.status = self.result_future.result().status  # type: ignore[union-attr]
 
-        result_response = self.result_future.result()
-
-        if result_response is None:
-            self.error('Get path failed!')
-            result = ComputePathThroughPoses.Result()
-            result.error_code = ComputePathThroughPoses.UNKNOWN
-            result.error_msg = 'Get path failed!'
-            return result
-
-        self.status = result_response.status
-
-        return result_response.result
+        return self.result_future.result().result  # type: ignore[union-attr]
 
     def getPathThroughPoses(
         self, start: PoseStamped, goals: Goals,
@@ -739,19 +723,9 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
+        self.status = self.result_future.result().status  # type: ignore[union-attr]
 
-        result_response = self.result_future.result()
-
-        if result_response is None:
-            self.error('Smooth path failed!')
-            result = SmoothPath.Result()
-            result.error_code = SmoothPath.UNKNOWN
-            result.error_msg = 'Smooth path failed'
-            return result
-
-        self.status = result_response.status
-
-        return result_response.result
+        return self.result_future.result().result  # type: ignore[union-attr]
 
     def smoothPath(
         self, path: Path, smoother_id: str = '',
