@@ -4,7 +4,7 @@ The Route Server is a Nav2 Task server to compliment the Planner Server's free-s
 * Fully replace free-space planning when following a particular route closely is required (less Controller plugins' tuning to deviate or track the path closely), or
 * Augment the global planner with long-distance routing to a goal and using free-space feasible planning in a more localized fashion for the immediate 10m, 100m, etc future.
 
-+his graph has very few rules associated with it and may be generated manually or automatically via AI, geometric, or probabilistic techniques.
+This graph has very few rules associated with it and may be generated manually or automatically via AI, geometric, or probabilistic techniques.
 docs.nav2.org includes tutorials for how to generate such a graph by annotations on a grid map created via SLAM, but can also be procedurally generated.
 This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm. It uses plugin-based scoring functions applied each edge based on arbitrary user-defined semantic information and the chosen optimization criteria(s).
 
