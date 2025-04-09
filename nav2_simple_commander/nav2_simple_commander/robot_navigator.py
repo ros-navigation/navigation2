@@ -568,10 +568,11 @@ class BasicNavigator(Node):
                 result = result_response.result
                 if result is not None:
                     self.setTaskError(result.error_code, result.error_msg)
-                    self.debug('Task with failed with'
-                              f' status code:{self.status}'
-                              f' error code:{result.error_code}'
-                              f' error msg:{result.error_msg}')
+                    self.debug(
+                        'Task with failed with'
+                        f' status code:{self.status}'
+                        f' error code:{result.error_code}'
+                        f' error msg:{result.error_msg}')
                     return True
                 else:
                     self.setTaskError(0, 'No result received')
