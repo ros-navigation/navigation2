@@ -213,7 +213,7 @@ void loadMapFromFile(
 
   // Load image with OpenCV instead of ImageMagick
   cv::Mat img = cv::imread(load_parameters.image_file_name, cv::IMREAD_UNCHANGED);
-  
+
   if (img.empty()) {
     throw std::runtime_error("Failed to open image file: " + load_parameters.image_file_name);
   }
@@ -237,7 +237,7 @@ void loadMapFromFile(
   } else {
     gray = img;
   }
-  
+
   // Check if image has alpha channel
   bool has_alpha = img.channels() == 4;
   cv::Mat alpha_channel;
@@ -251,110 +251,110 @@ void loadMapFromFile(
   switch (load_parameters.mode) {
     case MapMode::Trinary: {
       // Convert to normalized float (0.0-1.0)
-      cv::Mat normalized;
-      gray.convertTo(normalized, CV_32F, 1.0/255.0);
-      
+        cv::Mat normalized;
+        gray.convertTo(normalized, CV_32F, 1.0 / 255.0);
+
       // Apply negate parameter
-      if (!load_parameters.negate) {
-        normalized = 1.0 - normalized;
-      }
-      
+        if (!load_parameters.negate) {
+          normalized = 1.0 - normalized;
+        }
+
       // Create binary masks for occupied and free space
-      cv::Mat occupied, free;
-      cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
-      cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
-      
+        cv::Mat occupied, free;
+        cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
+        cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
+
       // Create result matrix
-      cv::Mat result(gray.size(), CV_8SC1);
-      result.setTo(nav2_util::OCC_GRID_UNKNOWN);
-      result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
-      result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
-      
+        cv::Mat result(gray.size(), CV_8SC1);
+        result.setTo(nav2_util::OCC_GRID_UNKNOWN);
+        result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
+        result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
+
       // Apply alpha mask if needed
-      if (has_alpha) {
-        cv::Mat transparent = alpha_channel < 255;
-        result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
-      }
-      
+        if (has_alpha) {
+          cv::Mat transparent = alpha_channel < 255;
+          result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
+        }
+
       // Copy to result with y-flip
-      for (int y = 0; y < result.rows; y++) {
-        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
-        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        for (int y = 0; y < result.rows; y++) {
+          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
+          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        }
+        break;
       }
-      break;
-    }
-    
+
     case MapMode::Scale: {
       // Convert to normalized float (0.0-1.0)
-      cv::Mat normalized;
-      gray.convertTo(normalized, CV_32F, 1.0/255.0);
-      
+        cv::Mat normalized;
+        gray.convertTo(normalized, CV_32F, 1.0 / 255.0);
+
       // Apply negate parameter
-      if (!load_parameters.negate) {
-        normalized = 1.0 - normalized;
-      }
-      
+        if (!load_parameters.negate) {
+          normalized = 1.0 - normalized;
+        }
+
       // Create binary masks for occupied and free space
-      cv::Mat occupied, free;
-      cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
-      cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
-      
+        cv::Mat occupied, free;
+        cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
+        cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
+
       // Create result matrix
-      cv::Mat result(gray.size(), CV_8SC1);
-      result.setTo(nav2_util::OCC_GRID_UNKNOWN);
-      result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
-      result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
-      
+        cv::Mat result(gray.size(), CV_8SC1);
+        result.setTo(nav2_util::OCC_GRID_UNKNOWN);
+        result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
+        result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
+
       // Process in-between values
-      cv::Mat in_between_mask = (normalized > load_parameters.free_thresh) & 
-                               (normalized < load_parameters.occupied_thresh);
-      
-      if (cv::countNonZero(in_between_mask) > 0) {
+        cv::Mat in_between_mask = (normalized > load_parameters.free_thresh) &
+          (normalized < load_parameters.occupied_thresh);
+
+        if (cv::countNonZero(in_between_mask) > 0) {
         // Scale values between thresholds to 0-100
-        cv::Mat scaled = ((normalized - load_parameters.free_thresh) / 
-                      (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
-        
-        cv::Mat scaled_values;
-        scaled.convertTo(scaled_values, CV_8SC1);
-        
+          cv::Mat scaled = ((normalized - load_parameters.free_thresh) /
+            (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
+
+          cv::Mat scaled_values;
+          scaled.convertTo(scaled_values, CV_8SC1);
+
         // Apply only where in_between_mask is true
-        cv::Mat in_between_vals;
-        scaled_values.copyTo(in_between_vals, in_between_mask);
-        in_between_vals.copyTo(result, in_between_mask);
-      }
-      
+          cv::Mat in_between_vals;
+          scaled_values.copyTo(in_between_vals, in_between_mask);
+          in_between_vals.copyTo(result, in_between_mask);
+        }
+
       // Apply alpha mask if needed
-      if (has_alpha) {
-        cv::Mat transparent = alpha_channel < 255;
-        result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
-      }
-      
+        if (has_alpha) {
+          cv::Mat transparent = alpha_channel < 255;
+          result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
+        }
+
       // Copy to result with y-flip
-      for (int y = 0; y < result.rows; y++) {
-        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
-        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        for (int y = 0; y < result.rows; y++) {
+          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
+          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        }
+        break;
       }
-      break;
-    }
-    
+
     case MapMode::Raw: {
       // Convert to 8-bit signed
-      cv::Mat result;
-      gray.convertTo(result, CV_8SC1);
-      
+        cv::Mat result;
+        gray.convertTo(result, CV_8SC1);
+
       // Apply valid range check
-      cv::Mat out_of_bounds = (result < nav2_util::OCC_GRID_FREE) | 
-                             (result > nav2_util::OCC_GRID_OCCUPIED);
-      result.setTo(nav2_util::OCC_GRID_UNKNOWN, out_of_bounds);
-      
+        cv::Mat out_of_bounds = (result < nav2_util::OCC_GRID_FREE) |
+          (result > nav2_util::OCC_GRID_OCCUPIED);
+        result.setTo(nav2_util::OCC_GRID_UNKNOWN, out_of_bounds);
+
       // Copy to result with y-flip
-      for (int y = 0; y < result.rows; y++) {
-        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
-        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        for (int y = 0; y < result.rows; y++) {
+          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
+          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+        }
+        break;
       }
-      break;
-    }
-    
+
     default:
       throw std::runtime_error("Invalid map mode");
   }
