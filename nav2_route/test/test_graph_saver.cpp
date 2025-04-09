@@ -22,6 +22,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_route/graph_loader.hpp"
 #include "nav2_route/graph_saver.hpp"
+#include "tf2_ros/static_transform_broadcaster.h"
 
 class RclCppFixture
 {
@@ -83,4 +84,62 @@ TEST(GraphSaver, test_api)
     EXPECT_EQ(first_graph_to_id_map[i], second_graph_to_id_map[i]);
   }
   std::filesystem::remove(file_path);
+}
+
+TEST(GraphSaver, test_transformation_api)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf->setUsingDedicatedThread(true);
+  auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
+  auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
+
+  std::string frame = "map";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/aws_graph.geojson"));
+
+  GraphLoader graph_loader(node, tf, frame);
+
+  // Test with a file that now works
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  std::string filepath;
+  filepath =
+    ament_index_cpp::get_package_share_directory("nav2_route") +
+    "/graphs/aws_graph.geojson";
+  graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath);
+
+  // Test with another frame, should transform
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "map_test";
+  transform.header.stamp = node->now();
+  transform.transform.rotation.w = 1.0;
+  transform.transform.translation.x = 1.0;
+  tf_broadcaster->sendTransform(transform);
+  rclcpp::Rate(1).sleep();
+  tf_broadcaster->sendTransform(transform);
+  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
+  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
+  
+  GraphSaver graph_saver(node, tf, frame);
+  std::string file_path = "test.geojson";
+  graph[0].coords.frame_id = "map_test";
+  EXPECT_EQ(graph[0].coords.frame_id, "map_test");
+  double or_coord = graph[0].coords.x;
+  EXPECT_TRUE(graph_saver.saveGraphToFile(graph, file_path));
+  EXPECT_EQ(graph[0].coords.frame_id, "map");
+  EXPECT_NE(graph[0].coords.x, or_coord);
+  std::filesystem::remove(file_path);
+
+  // Test failing to do so because no frame exists
+  graph[0].coords.frame_id = "map_test2";
+  EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
+  or_coord = graph[0].coords.x;
+  EXPECT_FALSE(graph_saver.saveGraphToFile(graph, file_path));
+  EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
+  EXPECT_EQ(graph[0].coords.x, or_coord);
 }
