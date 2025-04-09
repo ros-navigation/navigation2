@@ -17,7 +17,7 @@
 
 from enum import Enum
 import time
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
@@ -78,7 +78,7 @@ class BasicNavigator(Node):
         self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
         self.result_future: \
             Optional[Future[GetResultServiceResponse[Any]]] = None
-        self.feedback: Any = ''
+        self.feedback: Any = None
         self.status: Optional[int] = None
 
         # Since the route server's compute and track action server is likely
