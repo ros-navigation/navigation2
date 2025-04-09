@@ -37,7 +37,7 @@
   </class>
 
   <class name="nav2_rviz_plugins/Route Tool"
-         type="nav2_rviz_plugins::RouteTool" 
+         type="nav2_rviz_plugins::RouteTool"
          base_class_type="rviz_common::Panel">
     <description>A tool used to create route graphs.</description>
   </class>

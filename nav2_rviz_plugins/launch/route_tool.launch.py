@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from ament_index_python.packages import get_package_share_directory
 import launch_ros.actions
-import os
 
 
 def generate_launch_description():
@@ -38,7 +39,7 @@ def generate_launch_description():
         executable='rviz2',
         output='screen',
         arguments=['-d' + os.path.join(get_package_share_directory('nav2_rviz_plugins'), 'rviz', 'route_tool.rviz')])
-    
+
     start_map_server = launch_ros.actions.Node(
         package='nav2_map_server',
         executable='map_server',

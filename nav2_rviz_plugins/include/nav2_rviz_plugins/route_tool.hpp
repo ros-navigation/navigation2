@@ -53,7 +53,7 @@ public:
            *  parameter (which usually defaults to 0).  At the same time,
            *  pluginlib::ClassLoader creates instances by calling the default
            *  constructor (with no arguments). Taking the parameter and giving
-           *  a default of 0 lets the default constructor work and also lets
+           *  a default of 0 let's the default constructor work and also let's
            *  someone using the class for something else to pass in a parent
            *  widget as they normally would with Qt.
            */
