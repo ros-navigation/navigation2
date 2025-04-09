@@ -29,7 +29,7 @@ Note that plugins may also use outside information from topics, services, and ac
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
 - All edges are directional allowing for single-direction lanes or planning
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
-- Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.  
+- Action interface response returns both a sparse route of nodes and edges for client applications with navigation graph knowledge and `nav_msgs/Path` dense paths minimicking freespace planning for drop-in behavior replacement of the Planner Server.
 - Action interface request can process requests with start / goal node IDs or euclidean poses
 - Service interface to change navigation route graphs at run-time
 - Edge scoring dynamic plugins return a cost for traversing an edge and may mark an edge as invalid in current conditions from sensor or system state information
@@ -385,7 +385,7 @@ The Route Operation `TriggerEvent` and more broadly any operation plugins derive
 
 The metadata contained in the graph's nodes and edges can serve a secondary purpose to communicating arbitrary information from the graph file for use in routing behavior or operations. It may also be used to communicate or store information about a node or edge during run-time to query from a plugin in a future iteration, from another plugin in the system, or from another plugin type entirely.
 
-For example: 
+For example:
 - If the collision monitor Route Operation identifies an edge as being blocked on a regular basis, a counter can be used to track the number of times this edge is blocked and if exceeding a threshold, it adds additional costs to that edge to incentivize taking another direction in an Edge Scorer.
 - If we want to minimize the time to traverse the space, rather than estimating the times to traverse an edge, we can store actual times to navigate into the metadata of the edges. This can be stored as part of a route operation after completing an edge and retrieved at planning time by an edge scorer.
 

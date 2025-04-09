@@ -29,8 +29,7 @@ import rclpy
 
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from std_srvs.srv import Trigger
 
 
