@@ -23,6 +23,7 @@ Note that plugins may also use outside information from topics, services, and ac
 
 ## Features
 
+- 98% Unit Test Coverage
 - Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
 - Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph for pose-based planning requests
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
@@ -416,55 +417,3 @@ A special condition of this when a routing or rerouting request is made up of on
 This is an application problem which can be addressed above but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
 
 Note that there are parameters like `prune_route`, `min_prune_distance_from_start` and `min_prune_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. That bypasses the entire issue if the goal(s) are always known to be on the graph.
-
-
----
-
-# Steve's TODO list
-
-- [ ] Leidos docs PR for file saving / rviz panel plugin
-  - [ ] https://github.com/ros-navigation/docs.nav2.org/pull/633
-  - [ ] https://github.com/ros-navigation/navigation2/pull/4775
-
-- [ ] use map for checking start/goal nodes for infra blockages not just NN. Evaluate K. Share costmap? 
-    * `findStartandGoal`, use Kd-tree to get closest ~5 and use that?
-    * Or, use BFS and remove the Kd-tree (See Josh PR to start?)
-    * Check Josh's BFS PR https://github.com/ros-navigation/navigation2/pull/3536
-    * Update the kd-Tree part in the readme to that or the BFS
-
----
-
-Quality: 
-  - Test all plugins in final maps to validate functionality (costmap scorer potentially problematic?)
-    - Select Default plugins to include
-  
-  - web documentation (BT node configuration page, package configuration pages, simple command docs, migration for all),
-
-  - Tutorials (bt xml change, plugin customize (op/edge), file field examples)
-
-  - Demos:
-    - 1. Route -> Smoother (or turning radius in path converter?) -> Controller for direct route following, spline turns for tracking with min radius
-    - 2. 3 Stage planning BT: Route -> Global planner to node(s) in the future with compute path to pose // compute path through poses -> trajectory planning
-    - 3. Plan from pose on-to/off-of graph with feaislbe planner -> route plan -> trajectory planner
-    - 4. Using ComputeAndTrackRoute in BT (+/- some of these?)
-    - 5. Global planner fallback if route is blocked after N seconds, until next node or after distance from blockage back on route's edge (BT XML)
-    - 6. Outdoor non-planar
-    - 7. waypoint follower of route nodes
-    - 8. FIrst and last mile off graph navigation
-    - Q: Frequent replanning? Plan once and recovery if failing to redo? Continue to replan often?
-
-  - Beta testing by users
-
-# Future work (by priority level)
-
-- [ ] 1 Provide a 'force to go through these edges' capability
-- [ ] 1 stop / clearance -- open-RMF inspired
-- [ ] 3 Show lanes effectively implemented using this feature, with demo
-- [ ] 3 Extra critics and operation plugins
-- [ ] 4 Dynamic parameter handling (remember mutex not change during active request)
-- [ ] 4 edges have non-straight paths. Path as edge metadata. Concat when creating the route path. transfortm poses? CPR supported.
-- [ ] CostmapScorer / CollisionMonitor use the orientatation of the edge and footprint collision checking rather than point-checks (although: circular or non-circular robots whereas the robot is length-wise long,length > width, this would be the same as a full collision check as width-wise is the inscribed radius)
-- [ ] 8 persist blocked edges between calls and the timemarker betwen sesions
-- [ ] 10 GPS coordinate support
-- [ ] 10 nodes as poses rather than points. Is this useful?
-
