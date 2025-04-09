@@ -85,7 +85,7 @@ bool RouteTracker::nodeAchieved(
   }
 
   // We can evaluate the unit distance vector from the node w.r.t. the unit vector bisecting
-  // the last and current edges to find the average whose orthogonal is an imaginery
+  // the last and current edges to find the average whose orthogonal is an imaginary
   // line representing the migration from one edge's spatial domain to the other.
   // When the dot product is negative, it means that there exists a projection between
   // the vectors and that the robot position has passed this imaginary orthogonal line.

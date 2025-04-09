@@ -37,7 +37,7 @@ namespace nav2_route
  * specified algorithms to influence graph search. It has access to the edge, which
  * in turn has access to the parent and child node of the connection. It also contains
  * action and arbitrary user-defined metadata to enable edge scoring logic based on
- * arbitrary properties of the graph you select (e.g. some regions have a multipler,
+ * arbitrary properties of the graph you select (e.g. some regions have a multiplier,
  * some actions are discouraged with higher costs like having to go through a door,
  * edges with reduced speed limits are proportionally less preferred for optimality
  * relative to the distance the edge represents to optimize time to goal)

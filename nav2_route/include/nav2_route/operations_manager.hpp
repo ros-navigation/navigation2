@@ -54,7 +54,7 @@ public:
    * @brief Finds the set of operations stored in the graph to trigger at this transition
    * @param node Node to check
    * @param edge_entered Edge entered to check for ON_ENTER events
-   * @param edge_exit Edge exite to check for ON_EXIT events
+   * @param edge_exit Edge exit to check for ON_EXIT events
    * @return OperationPtrs A vector of operation pointers to execute
    */
   OperationPtrs findGraphOperations(
