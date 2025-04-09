@@ -31,7 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BehaviorTreeLog.msg"
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
-  "msg/MissedWaypoint.msg"
+  "msg/WaypointStatus.msg"
   "msg/Route.msg"
   "msg/RouteNode.msg"
   "msg/RouteEdge.msg"
