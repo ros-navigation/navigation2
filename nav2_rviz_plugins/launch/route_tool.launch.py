@@ -25,42 +25,53 @@ import launch_ros.actions
 
 def generate_launch_description():
 
-
     # Nodes launching commands
     map_file = LaunchConfiguration("yaml_filename")
 
     declare_map_file_cmd = DeclareLaunchArgument(
-        'yaml_filename',
-        default_value='',
-        description='Full path to an occupancy grid map yaml file')
+        "yaml_filename",
+        default_value="",
+        description="Full path to an occupancy grid map yaml file",
+    )
 
     start_route_tool_cmd = launch_ros.actions.Node(
-        package='rviz2',
-        executable='rviz2',
-        output='screen',
-        arguments=['-d' + os.path.join(get_package_share_directory('nav2_rviz_plugins'), 'rviz', 'route_tool.rviz')])
+        package="rviz2",
+        executable="rviz2",
+        output="screen",
+        arguments=[
+            "-d"
+            + os.path.join(
+                get_package_share_directory("nav2_rviz_plugins"),
+                "rviz",
+                "route_tool.rviz",
+            )
+        ],
+    )
 
     start_map_server = launch_ros.actions.Node(
-        package='nav2_map_server',
-        executable='map_server',
-        output='screen',
-        parameters=[{'yaml_filename' : map_file}]
+        package="nav2_map_server",
+        executable="map_server",
+        output="screen",
+        parameters=[{"yaml_filename": map_file}],
     )
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager',
-        output='screen',
-        parameters=[{'use_sim_time': False},
-                {'autostart': True},
-                {'node_names': ["map_server"]}])
+        package="nav2_lifecycle_manager",
+        executable="lifecycle_manager",
+        name="lifecycle_manager",
+        output="screen",
+        parameters=[
+            {"use_sim_time": False},
+            {"autostart": True},
+            {"node_names": ["map_server"]},
+        ],
+    )
 
-
-
-    return LaunchDescription([
-        declare_map_file_cmd,
-        start_route_tool_cmd,
-        start_map_server,
-        start_lifecycle_manager_cmd
-    ])
+    return LaunchDescription(
+        [
+            declare_map_file_cmd,
+            start_route_tool_cmd,
+            start_map_server,
+            start_lifecycle_manager_cmd,
+        ]
+    )
