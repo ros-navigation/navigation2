@@ -32,7 +32,7 @@ void RoutePlanner::configure(
     node, "max_iterations", rclcpp::ParameterValue(0));
   max_iterations_ = node->get_parameter("max_iterations").as_int();
 
-  if (max_iterations_ == 0) {
+  if (max_iterations_ <= 0) {
     max_iterations_ = std::numeric_limits<int>::max();
   }
 
