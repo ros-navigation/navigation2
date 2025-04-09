@@ -39,6 +39,7 @@ public:
 
     config_ = new BT::NodeConfiguration();
     transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>(node_);
+    transform_handler_->activate();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
@@ -98,7 +99,6 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   pose.position.x = 0.25;
   pose.position.y = 0.0;
 
-  transform_handler_->activate();
   transform_handler_->waitForTransform();
   transform_handler_->updateRobotPose(pose);
 
@@ -142,6 +142,137 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   EXPECT_EQ(output_poses.goals.size(), 2u);
   EXPECT_EQ(output_poses.goals[0], poses.goals[2]);
   EXPECT_EQ(output_poses.goals[1], poses.goals[3]);
+}
+
+TEST_F(RemovePassedGoalsTestFixture,
+  test_tick_remove_passed_goals_success_and_output_waypoint_statuses)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.25;
+  pose.position.y = 0.0;
+
+  transform_handler_->waitForTransform();
+  transform_handler_->updateRobotPose(pose);
+
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemovePassedGoals radius="0.5" input_goals="{goals}" output_goals="{goals}"
+                             input_waypoint_statuses="{waypoint_statuses}"
+                             output_waypoint_statuses="{waypoint_statuses}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
+
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
+
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
+
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
+
+  config_->blackboard->set("goals", poses);
+
+  // create waypoint_statuses and set it on blackboard
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
+  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+    waypoint_statuses[i].waypoint_pose = poses.goals[i];
+    waypoint_statuses[i].waypoint_index = i;
+  }
+  config_->blackboard->set("waypoint_statuses", waypoint_statuses);
+
+  // tick until node succeeds
+  while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check that it removed the point in range
+  nav_msgs::msg::Goals output_poses;
+  EXPECT_TRUE(config_->blackboard->get("goals", output_poses));
+
+  EXPECT_EQ(output_poses.goals.size(), 2u);
+  EXPECT_EQ(output_poses.goals[0], poses.goals[2]);
+  EXPECT_EQ(output_poses.goals[1], poses.goals[3]);
+
+  // check the waypoint_statuses
+  std::vector<nav2_msgs::msg::WaypointStatus> output_waypoint_statuses;
+  EXPECT_TRUE(config_->blackboard->get("waypoint_statuses", output_waypoint_statuses));
+  EXPECT_EQ(output_waypoint_statuses.size(), 4u);
+  EXPECT_EQ(output_waypoint_statuses[0].waypoint_status, nav2_msgs::msg::WaypointStatus::COMPLETED);
+  EXPECT_EQ(output_waypoint_statuses[1].waypoint_status, nav2_msgs::msg::WaypointStatus::COMPLETED);
+  EXPECT_EQ(output_waypoint_statuses[2].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
+  EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
+}
+
+TEST_F(RemovePassedGoalsTestFixture,
+  test_tick_remove_passed_goals_find_matching_waypoint_fail)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0.25;
+  pose.position.y = 0.0;
+
+  transform_handler_->waitForTransform();
+  transform_handler_->updateRobotPose(pose);
+
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <RemovePassedGoals radius="0.5" input_goals="{goals}" output_goals="{goals}"
+                             input_waypoint_statuses="{waypoint_statuses}"
+                             output_waypoint_statuses="{waypoint_statuses}"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // create new goal and set it on blackboard
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(4);
+  poses.goals[0].pose.position.x = 0.0;
+  poses.goals[0].pose.position.y = 0.0;
+
+  poses.goals[1].pose.position.x = 0.5;
+  poses.goals[1].pose.position.y = 0.0;
+
+  poses.goals[2].pose.position.x = 1.0;
+  poses.goals[2].pose.position.y = 0.0;
+
+  poses.goals[3].pose.position.x = 2.0;
+  poses.goals[3].pose.position.y = 0.0;
+
+  config_->blackboard->set("goals", poses);
+
+  // create waypoint_statuses and set it on blackboard
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
+  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+    waypoint_statuses[i].waypoint_pose = poses.goals[i];
+    waypoint_statuses[i].waypoint_index = i;
+  }
+  // inconsistency between waypoint_statuses and poses
+  waypoint_statuses[1].waypoint_pose.pose.position.x = 0.0;
+  config_->blackboard->set("waypoint_statuses", waypoint_statuses);
+
+  // tick until node is not running
+  tree_->rootNode()->executeTick();
+  while (tree_->rootNode()->status() == BT::NodeStatus::RUNNING) {
+    tree_->rootNode()->executeTick();
+  }
+
+  // check that it failed
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
 }
 
 int main(int argc, char ** argv)

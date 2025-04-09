@@ -14,6 +14,7 @@ uint16 TF_ERROR=9102
 
 uint16 error_code
 string error_msg
+WaypointStatus[] waypoint_statuses
 ---
 #feedback definition
 geometry_msgs/PoseStamped current_pose
@@ -22,3 +23,4 @@ builtin_interfaces/Duration estimated_time_remaining
 int16 number_of_recoveries
 float32 distance_remaining
 int16 number_of_poses_remaining
+WaypointStatus[] waypoint_statuses

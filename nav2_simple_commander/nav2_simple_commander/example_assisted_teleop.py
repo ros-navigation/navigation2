@@ -24,7 +24,7 @@ Basic navigation demo to go to pose.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
