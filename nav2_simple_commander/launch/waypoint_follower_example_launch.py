@@ -27,7 +27,7 @@ from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb4_sim')
     desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
