@@ -17,7 +17,6 @@ from pathlib import Path
 import tempfile
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess,
                             IncludeLaunchDescription, OpaqueFunction, RegisterEventHandler)
@@ -39,14 +38,9 @@ def generate_launch_description():
     graph_filepath = os.path.join(nav2_bringup_dir, 'graphs', 'turtlebot4_graph.geojson')
 
     # Launch configuration variables
-    use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
 
     # Declare the launch arguments
-    declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='True', description='Whether to start RVIZ'
-    )
-
     declare_headless_cmd = DeclareLaunchArgument(
         'headless', default_value='False', description='Whether to execute gzclient)'
     )
@@ -127,7 +121,6 @@ def generate_launch_description():
             str(Path(os.path.join(desc_dir)).parent.resolve()))
 
     ld = LaunchDescription()
-    ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_headless_cmd)
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)

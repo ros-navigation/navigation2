@@ -156,7 +156,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
       graph, start, goal, blocked_ids,
       route_request), nav2_core::NoValidRouteCouldBeFound);
 
-  // Lets find a simple plan and then mess with the planner with blocking edges
+  // Let's find a simple plan and then mess with the planner with blocking edges
   start = 0;
   goal = 12;
   route = planner.findRoute(graph, start, goal, blocked_ids, route_request);

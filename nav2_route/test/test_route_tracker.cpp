@@ -175,7 +175,7 @@ TEST(RouteTrackerTest, test_node_achievement_simple)
   geometry_msgs::msg::PoseStamped pose;
 
   // Test a few cases surrounding the line y = 10 where the triggering should occur.
-  // In a single straight line for a simple test that the mathematical critera works exactly
+  // In a single straight line for a simple test that the mathematical criteria works exactly
   // at the boundary. Tests below will test for odd / real angled routes to ensure functionality
   // in realistic conditions but without having to find the exact line equations after being proven
   state.last_node = &node1;

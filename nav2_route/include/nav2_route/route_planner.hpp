@@ -91,7 +91,7 @@ protected:
 
   /**
    * @brief Gets the traversal cost for an edge using edge scorers
-   * @param edge Edge pointer to find traveral cost for
+   * @param edge Edge pointer to find traversal cost for
    * @param travel cost
    * @param blocked_ids A set of blocked node and edge IDs not to traverse
    * @return if this edge is valid for search

@@ -262,21 +262,21 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   node2.operations.push_back(op);
   EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
-  // Now, lets try a node that should make it through the operations manager but fail
+  // Now, let's try a node that should make it through the operations manager but fail
   // because the proper service_name was provided neither in the parameter nor operation
   // metadata
   node2.operations.clear();
   node2.operations.push_back(op2);
   EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
-  // Now lets test what should actually work with a real service in the metadata
+  // Now let's test what should actually work with a real service in the metadata
   node2.operations.clear();
   node2.operations.push_back(op3);
 
   // This should throw because this service is not yet available on wait_for_service
   EXPECT_THROW(manager.process(true, state, route, pose, info), nav2_core::OperationFailed);
 
-  // Now, lets test with a real server that is really available for use
+  // Now, let's test with a real server that is really available for use
   bool got_srv = false;
   auto callback =
     [&](
@@ -304,7 +304,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   auto node_int = std::make_shared<rclcpp::Node>("my_node2");
   auto node_thread_int = std::make_unique<nav2_util::NodeThread>(node_int);
 
-  // Set the global service to use intead of file settings for conflict testing
+  // Set the global service to use instead of file settings for conflict testing
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
   nav2_util::declare_parameter_if_not_declared(
@@ -356,7 +356,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   EXPECT_FALSE(result.reroute);
   EXPECT_TRUE(got_srv);
 
-  // Now, lets reset without the metadata and see that the global version is now called
+  // Now, let's reset without the metadata and see that the global version is now called
   node2.operations.clear();
   Operation op4;
   op4.type = "OpenDoor";

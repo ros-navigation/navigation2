@@ -68,7 +68,7 @@ public:
   /**
    * @brief The main speed limit operation to adjust the maximum speed of the vehicle
    * @param mdata Metadata corresponding to the operation in the navigation graph.
-   * If metadata is invalid or irrelevent, a nullptr is given
+   * If metadata is invalid or irrelevant, a nullptr is given
    * @param node_achieved Node achieved, for additional context
    * @param edge_entered Edge entered by node achievement, for additional context
    * @param edge_exited Edge exited by node achievement, for additional context

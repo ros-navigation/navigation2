@@ -4,13 +4,13 @@
     "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
     "date_generated": "Tue Feb 28 07:48:03 PM EST 2025",
     "features": [
-        { 
-            "type": "Feature", 
-            "properties": 
-            { 
-                "id": 0, 
-                "frame": "map", 
-                "metadata": 
+        {
+            "type": "Feature",
+            "properties":
+            {
+                "id": 0,
+                "frame": "map",
+                "metadata":
                 {
                     "region":
                     {
@@ -27,19 +27,19 @@
                     "stop":
                     {
                         "type": "stop",
-                        "trigger": "NODE", 
+                        "trigger": "NODE",
                         "metadata":
                         {
                             "wait_for": 5.0
                         }
                     }
                 }
-            }, 
-            "geometry": 
-            { 
-                "type": "Point", 
-                "coordinates": [ 0.0, 0.0 ] 
-            } 
+            },
+            "geometry":
+            {
+                "type": "Point",
+                "coordinates": [ 0.0, 0.0 ]
+            }
         },
         { "type": "Feature", "properties": { "id": 1, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 1.0, 0.0 ] } },
         { "type": "Feature", "properties": { "id": 2, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 2.0, 0.0 ] } },
@@ -49,27 +49,27 @@
         { "type": "Feature", "properties": { "id": 6, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 0.0, 2.0 ] } },
         { "type": "Feature", "properties": { "id": 7, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 1.0, 2.0 ] } },
         { "type": "Feature", "properties": { "id": 8, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 2.0, 2.0 ] } },
-        { 
-            "type": "Feature", 
-            "properties": 
-            { 
-                "id": 9, 
-                "startid": 0, 
-                "endid": 1, 
+        {
+            "type": "Feature",
+            "properties":
+            {
+                "id": 9,
+                "startid": 0,
+                "endid": 1,
                 "overridable": false,
                 "cost": 10.0,
-                "metadata": 
+                "metadata":
                 {
                     "speed_limit": 0.85,
                     "aisle_number": 14
                 },
                 "operations":
                 {
-                    "open_door": 
+                    "open_door":
                     {
                         "type": "open_door",
-                        "trigger": "ON_ENTER", 
-                        "metadata": 
+                        "trigger": "ON_ENTER",
+                        "metadata":
                         {
                             "door_id": 54,
                             "service_name": "open_door"
@@ -81,17 +81,17 @@
                         "trigger": "ON_EXIT",
                         "metadata":
                         {
-                            "type": "jpg", 
+                            "type": "jpg",
                             "resolution": [1080, 720]
                         } 
                     }
                 }
-            }, 
-            "geometry": 
-            { 
-                "type": "MultiLineString", 
-                "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ] 
-            } 
+            },
+            "geometry":
+            {
+                "type": "MultiLineString",
+                "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
+            }
         },
         { "type": "Feature", "properties": { "id": 10, "startid": 1, "endid": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
         { "type": "Feature", "properties": { "id": 11, "startid": 1, "endid": 2 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 2.0, 0.0 ] ] ] } },

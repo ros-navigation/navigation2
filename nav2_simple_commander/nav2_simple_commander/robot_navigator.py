@@ -23,6 +23,7 @@ from builtin_interfaces.msg import Duration
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import AssistedTeleop, BackUp, DriveOnHeading, Spin
+from nav2_msgs.action import ComputeAndTrackRoute, ComputeRoute, SmoothPath
 from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose
 from nav2_msgs.action import (
     DockRobot,
@@ -33,7 +34,6 @@ from nav2_msgs.action import (
     NavigateToPose,
     UndockRobot,
 )
-from nav2_msgs.action import SmoothPath, ComputeAndTrackRoute, ComputeRoute
 from nav2_msgs.srv import ClearCostmapAroundRobot, ClearCostmapExceptRegion, ClearEntireCostmap
 from nav2_msgs.srv import GetCostmap, LoadMap, ManageLifecycleNodes
 
@@ -538,9 +538,8 @@ class BasicNavigator(Node):
 
     def isTaskComplete(self, task=RunningTask.NONE) -> bool:
         """Check if the task request of any type is complete yet."""
-
         # Find the result future to spin
-        if task == None:
+        if task is None:
             self.error('Task is None, cannot check for completion')
             return False
 
@@ -726,6 +725,7 @@ class BasicNavigator(Node):
     def _getRouteImpl(self, start, goal, use_start=False):
         """
         Send a `ComputeRoute` action request.
+
         Internal implementation to get the full result, not just the sparse route and dense path.
         """
         self.debug("Waiting for 'ComputeRoute' action server")
@@ -736,11 +736,11 @@ class BasicNavigator(Node):
         goal_msg.use_start = use_start
 
         # Support both ID based requests and PoseStamped based requests
-        if type(start) == int and type(goal) == int:
+        if isinstance(start, int) and isinstance(goal, int):
             goal_msg.start_id = start
             goal_msg.goal_id = goal
             goal_msg.use_poses = False
-        elif type(start) == PoseStamped and type(goal) == PoseStamped:
+        elif isinstance(start, PoseStamped) and isinstance(goal, PoseStamped):
             goal_msg.start = start
             goal_msg.goal = goal
             goal_msg.use_poses = True
@@ -795,11 +795,11 @@ class BasicNavigator(Node):
         goal_msg.use_start = use_start
 
         # Support both ID based requests and PoseStamped based requests
-        if type(start) == int and type(goal) == int:
+        if isinstance(start, int) and isinstance(goal, int):
             goal_msg.start_id = start
             goal_msg.goal_id = goal
             goal_msg.use_poses = False
-        elif type(start) == PoseStamped and type(goal) == PoseStamped:
+        elif isinstance(start, PoseStamped) and isinstance(goal, PoseStamped):
             goal_msg.start = start
             goal_msg.goal = goal
             goal_msg.use_poses = True
@@ -810,7 +810,7 @@ class BasicNavigator(Node):
 
         self.info('Computing and tracking route...')
         send_goal_future = self.compute_and_track_route_client.send_goal_async(goal_msg,
-                                                                   self._routeFeedbackCallback)
+            self._routeFeedbackCallback)  # noqa: E128
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.route_goal_handle = send_goal_future.result()
 

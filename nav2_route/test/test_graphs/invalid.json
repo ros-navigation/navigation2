@@ -131,4 +131,3 @@
   { "type": "Feature", "properties": { "id": 123, "startid": 20, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 3.65 ], [ -4.0, 3.65 ] ] ] } }
   ]
   }
-  

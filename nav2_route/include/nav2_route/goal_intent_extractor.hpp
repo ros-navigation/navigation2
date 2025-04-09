@@ -53,7 +53,7 @@ public:
   ~GoalIntentExtractor() = default;
 
   /**
-   * @brief Configure extactor
+   * @brief Configure extractor
    * @param node Node to use to create any interface needed
    * @param graph Graph to populate kD tree using
    * @param id_to_graph_map Remapping vector to correlate nodeIDs

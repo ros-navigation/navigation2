@@ -64,7 +64,7 @@ target_link_libraries(test_geojson_graph_file_loader
   ${library_name} graph_file_loaders
 )
 
-# Test collision monitor seperately due to relative complexity
+# Test collision monitor separately due to relative complexity
 ament_add_gtest(test_collision_operation
   test_collision_operation.cpp
 )

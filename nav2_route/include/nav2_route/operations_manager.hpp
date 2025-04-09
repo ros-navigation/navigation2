@@ -64,7 +64,7 @@ public:
    * @brief Finds the set of operations stored in graph objects, by event
    * @param node op_vec Operations vector to check
    * @param trigger Trigger for which operations in op_vec should be included
-   * @param operations Output vector populated with relavent operations
+   * @param operations Output vector populated with relevant operations
    */
   template<typename T>
   void findGraphOperationsToProcess(

@@ -13,16 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from math import sqrt
-
 from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult, RunningTask
+from nav2_simple_commander.robot_navigator import BasicNavigator, RunningTask, TaskResult
 import rclpy
-from rclpy.duration import Duration
 
 """
 Basic navigation demo to using the route server.
 """
+
 
 def toPoseStamped(pt, header):
     pose = PoseStamped()
@@ -30,6 +28,7 @@ def toPoseStamped(pt, header):
     pose.pose.position.y = pt.y
     pose.header = header
     return pose
+
 
 def main():
     rclpy.init()
@@ -93,7 +92,7 @@ def main():
         feedback = navigator.getFeedback(task=route_tracking_task)
         while feedback is not None:
             if not last_feedback or \
-                (feedback.last_node_id != last_feedback.last_node_id or \
+                (feedback.last_node_id != last_feedback.last_node_id or
                     feedback.next_node_id != last_feedback.next_node_id):
                 print('Passed node ' + str(feedback.last_node_id) +
                       ' to next node ' + str(feedback.next_node_id) +
@@ -101,22 +100,26 @@ def main():
 
             last_feedback = feedback
 
-            if feedback.rerouted: # or follow_path_task == RunningTask.None
+            if feedback.rerouted:  # or follow_path_task == RunningTask.None
                 # Follow the path from the route server using the controller server
                 print('Passing new route to controller!')
                 follow_path_task = navigator.followPath(feedback.path)
 
-                # May instead use the waypoint follower (or nav through poses) and use the route's sparse nodes!
+                # May instead use the waypoint follower
+                # (or nav through poses) and use the route's sparse nodes!
                 # print("Passing route to waypoint follower!")
-                # nodes = [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
+                # nodes =
+                # [toPoseStamped(x.position, feedback.route.header) for x in feedback.route.nodes]
                 # navigator.followWaypoints(nodes)
-                # Or navigator.navigateThroughPoses(nodes) # Consider sending only the first few and iterating
+                # Or navigator.navigateThroughPoses(nodes)
+                # Consider sending only the first few and iterating
 
             feedback = navigator.getFeedback(task=route_tracking_task)
 
-        # Check if followPath or WPF task is done (or failed), will cancel all current tasks, including route
+        # Check if followPath or WPF task is done (or failed),
+        # will cancel all current tasks, including route
         if navigator.isTaskComplete(task=follow_path_task):
-            print("Controller or waypoint follower server completed its task!")
+            print('Controller or waypoint follower server completed its task!')
             navigator.cancelTask()
             task_canceled = True
 

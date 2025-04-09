@@ -46,7 +46,7 @@ nav_msgs::msg::Path PathConverter::densify(
   path.header.frame_id = frame;
 
   // If we're rerouting and covering the same previous edge to start,
-  // the path should contain the relevent partial information along edge
+  // the path should contain the relevant partial information along edge
   // to avoid unnecessary free-space planning where state is retained
   if (rerouting_info.curr_edge) {
     const Coordinates & start = rerouting_info.closest_pt_on_edge;

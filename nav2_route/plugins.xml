@@ -69,7 +69,7 @@
   </library>
   <library path="route_operations">
     <class type="nav2_route::TimeMarker" base_class_type="nav2_route::RouteOperation">
-      <description>Route operation to add actual times of traversal to edge's metdata for use in later more accurate planning by the TimeScorer</description>
+      <description>Route operation to add actual times of traversal to edge's metadata for use in later more accurate planning by the TimeScorer</description>
     </class>
   </library>
 </class_libraries>

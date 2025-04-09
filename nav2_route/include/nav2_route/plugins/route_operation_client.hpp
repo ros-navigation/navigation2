@@ -74,7 +74,7 @@ public:
   /**
    * @brief Configure client with any necessary parameters, etc.
    * May change or reset `main_srv_name_` variable to control
-   * main service name and existance.
+   * main service name and existence.
    */
   virtual void configureEvent(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr /*node*/,
@@ -127,7 +127,7 @@ protected:
   /**
    * @brief The main operation to call a service of arbitrary type and arbitrary name
    * @param mdata Metadata corresponding to the operation in the navigation graph.
-   * If metadata is invalid or irrelevent, a nullptr is given
+   * If metadata is invalid or irrelevant, a nullptr is given
    * @param node_achieved Node achieved, for additional context
    * @param edge_entered Edge entered by node achievement, for additional context
    * @param edge_exited Edge exited by node achievement, for additional context

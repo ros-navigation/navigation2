@@ -129,7 +129,6 @@ def generate_launch_description() -> LaunchDescription:
 
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
-    graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')

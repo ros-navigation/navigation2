@@ -275,7 +275,7 @@ TEST(GoalIntentExtractorTest, test_pruning)
   EXPECT_EQ(rtn.route_cost, 2.0);
 
   // Test start, and only start is after the start node along edge1
-  // should not be pruned, within min ditance
+  // should not be pruned, within min distance
   start.pose.position.x = 0.09;
   extractor.setStartAndGoal(start, goal);
   rtn = extractor.pruneStartandGoal(route, poses_goal, rerouting_info);

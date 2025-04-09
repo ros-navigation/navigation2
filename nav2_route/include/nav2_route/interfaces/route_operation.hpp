@@ -110,7 +110,7 @@ public:
    * Could be if this operation is checking if a route is in collision or operation
    * failed (to open a door, for example) and thus this current route is now invalid.
    * @param mdata Metadata corresponding to the operation in the navigation graph.
-   * If metadata is invalid or irrelevent, a nullptr is given
+   * If metadata is invalid or irrelevant, a nullptr is given
    * @param node_achieved Node achieved,
    * for additional context (must check nullptr if at goal)
    * @param edge_entered Edge entered by node achievement,

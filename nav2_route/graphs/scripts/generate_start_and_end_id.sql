@@ -4,14 +4,14 @@ WITH start_points AS
 	       ,e.id       AS edge_id
 	       ,e.geometry AS edge_geometry
 	FROM edges AS e, nodes AS n
-	WHERE ST_INTERSECTS(n.geometry, ST_StartPoint(e.geometry)) 
+	WHERE ST_INTERSECTS(n.geometry, ST_StartPoint(e.geometry))
 ), end_points AS
 (
 	SELECT  n.id       AS node_id
 	       ,e.id       AS edge_id
 	       ,e.geometry AS edge_geometry
 	FROM edges AS e, nodes AS n
-	WHERE ST_INTERSECTS(n.geometry, ST_EndPoint(e.geometry)) 
+	WHERE ST_INTERSECTS(n.geometry, ST_EndPoint(e.geometry))
 )
 SELECT  sp.edge_id       AS edge_id
        ,sp.node_id       AS start_node

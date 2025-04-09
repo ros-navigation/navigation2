@@ -282,7 +282,7 @@ TEST(UtilsTest, test_find_closest_point)
   EXPECT_NEAR(rtn.x, 0.1, 0.01);
   EXPECT_NEAR(rtn.y, 0.0, 0.01);
 
-  // Lets try a more legit line now that we know the basics work OK
+  // Let's try a more legit line now that we know the basics work OK
   start.x = 0.0;
   start.y = 0.0;
   end.x = 10.0;

@@ -18,17 +18,12 @@ import math
 import sys
 import time
 
-from typing import Optional
-
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import ComputeRoute, ComputeAndTrackRoute
+from nav2_msgs.action import ComputeAndTrackRoute, ComputeRoute
 from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_simple_commander.robot_navigator import BasicNavigator
-from std_srvs.srv import Trigger
 
 import rclpy
 
@@ -36,6 +31,7 @@ from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
 from rclpy.qos import QoSProfile
+from std_srvs.srv import Trigger
 
 
 class RouteTester(Node):
@@ -60,7 +56,8 @@ class RouteTester(Node):
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
         self.compute_action_client = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_track_action_client = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
+        self.compute_track_action_client = ActionClient(
+            self, ComputeAndTrackRoute, 'compute_and_track_route')
         self.feedback_msgs = []
 
         self.navigator = BasicNavigator()
@@ -108,17 +105,17 @@ class RouteTester(Node):
         self.info_msg('Action completed! Checking validity of results...')
 
         # Check result for validity
-        assert(len(result.path.poses) == 80)
-        assert(result.route.route_cost > 6)
-        assert(result.route.route_cost < 7)
-        assert(len(result.route.nodes) == 5)
-        assert(len(result.route.edges) == 4)
-        assert(result.error_code == 0)
-        assert(result.error_msg == '')
+        assert (len(result.path.poses) == 80)
+        assert (result.route.route_cost > 6)
+        assert (result.route.route_cost < 7)
+        assert (len(result.route.nodes) == 5)
+        assert (len(result.route.edges) == 4)
+        assert (result.error_code == 0)
+        assert (result.error_msg == '')
 
         self.info_msg('Goal succeeded!')
         return True
-    
+
     def runComputeRouteSamePoseTest(self):
         # Test 2: try with the same start and goal point edge case
         self.info_msg("Waiting for 'ComputeRoute' action server")
@@ -155,11 +152,11 @@ class RouteTester(Node):
         self.info_msg('Action completed! Checking validity of results...')
 
         # Check result for validity, should be a 1-node path as its the same
-        assert(len(result.path.poses) == 1)
-        assert(len(result.route.nodes) == 1)
-        assert(len(result.route.edges) == 0)
-        assert(result.error_code == 0)
-        assert(result.error_msg == '')
+        assert (len(result.path.poses) == 1)
+        assert (len(result.route.nodes) == 1)
+        assert (len(result.route.edges) == 0)
+        assert (result.error_code == 0)
+        assert (result.error_msg == '')
 
         self.info_msg('Goal succeeded!')
         return True
@@ -257,7 +254,7 @@ class RouteTester(Node):
         last_feedback_msg = None
         follow_path_task = None
         while progressing:
-            rclpy.spin_until_future_complete(self, get_result_future, timeout_sec = 0.10)
+            rclpy.spin_until_future_complete(self, get_result_future, timeout_sec=0.10)
             if get_result_future.result() is not None:
                 status = get_result_future.result().status
                 if status == GoalStatus.STATUS_SUCCEEDED:
@@ -275,14 +272,14 @@ class RouteTester(Node):
                     follow_path_task = self.navigator.followPath(feedback_msg.path)
 
                 # Check if the feedback is valid, if changed (not for route operations)
-                if last_feedback_msg and last_feedback_msg.current_edge_id != feedback_msg.current_edge_id and int(feedback_msg.current_edge_id) != 0:
+                if last_feedback_msg and \
+                   last_feedback_msg.current_edge_id != feedback_msg.current_edge_id and \
+                   int(feedback_msg.current_edge_id) != 0:
                     if last_feedback_msg.next_node_id != feedback_msg.last_node_id:
                         self.error_msg('Feedback state is not tracking in order!')
                         return False
 
                 last_feedback_msg = feedback_msg
-
-        result = get_result_future.result().result
 
         # Validate the state of the final feedback message
         if int(last_feedback_msg.next_node_id) != 0:

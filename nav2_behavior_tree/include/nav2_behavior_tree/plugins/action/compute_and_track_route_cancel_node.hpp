@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class
- * that wraps nav2_msgs::action::ComputeAndTrackRoute cancelation
+ * that wraps nav2_msgs::action::ComputeAndTrackRoute cancellation
  */
 class ComputeAndTrackRouteCancel
   : public BtCancelActionNode<nav2_msgs::action::ComputeAndTrackRoute>

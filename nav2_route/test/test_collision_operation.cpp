@@ -123,7 +123,7 @@ TEST(TestCollisionMonitor, test_geometric_backout_vector)
   EXPECT_NEAR(rtn.x, 0.0, 0.01);
   EXPECT_NEAR(rtn.y, 15.0, 0.01);
 
-  // Now that we know the basis work, lets try a none vector
+  // Now that we know the basis work, let's try a none vector
   start.x = 0.0;
   start.y = 10.0;
   end.x = 0.0;
@@ -143,7 +143,7 @@ TEST(TestCollisionMonitor, test_geometric_backout_vector)
   EXPECT_NEAR(rtn.x, 3.53, 0.01);
   EXPECT_NEAR(rtn.y, 3.53, 0.01);
 
-  // Lets try a random vector that I solved by hand
+  // Let's try a random vector that I solved by hand
   start.x = 4.0;
   start.y = 10.0;
   end.x = 50.0;
@@ -162,7 +162,7 @@ TEST(TestCollisionMonitor, test_costmap_apis)
   CollisionMonitorWrapper monitor;
   monitor.configure(node, "name");
 
-  // No costmap recieved yet
+  // No costmap received yet
   EXPECT_THROW(monitor.getCostmapWrapper(), nav2_core::OperationFailed);
 
   // Create a demo costmap: * = 100, - = 0, / = 254
@@ -316,7 +316,7 @@ TEST(TestCollisionMonitor, test_costmap_apis)
   rclcpp::Rate r3(0.8);
   r3.sleep();
 
-  // Finally lets try once more after the collision block to make sure handles terminal situations
+  // Finally let's try once more after the collision block to make sure handles terminal situations
   pose.pose.position.x = 8.0;
   pose.pose.position.y = 2.0;
   curr_edge = &edge2;
