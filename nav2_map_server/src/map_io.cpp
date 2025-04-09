@@ -42,6 +42,7 @@
 #include <cstdlib>
 
 #include "Magick++.h"
+#include <opencv2/opencv.hpp>
 #include "nav2_util/geometry_utils.hpp"
 
 #include "yaml-cpp/yaml.h"
@@ -204,18 +205,22 @@ void loadMapFromFile(
   const LoadParameters & load_parameters,
   nav_msgs::msg::OccupancyGrid & map)
 {
-  Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
   RCLCPP_INFO_STREAM(
     rclcpp::get_logger("map_io"), "Loading image_file: " <<
       load_parameters.image_file_name);
-  Magick::Image img(load_parameters.image_file_name);
+
+  // Load image with OpenCV instead of ImageMagick
+  cv::Mat img = cv::imread(load_parameters.image_file_name, cv::IMREAD_UNCHANGED);
+  
+  if (img.empty()) {
+    throw std::runtime_error("Failed to open image file: " + load_parameters.image_file_name);
+  }
 
   // Copy the image data into the map structure
-  msg.info.width = img.size().width();
-  msg.info.height = img.size().height();
-
+  msg.info.width = img.cols;
+  msg.info.height = img.rows;
   msg.info.resolution = load_parameters.resolution;
   msg.info.origin.position.x = load_parameters.origin[0];
   msg.info.origin.position.y = load_parameters.origin[1];
@@ -225,70 +230,133 @@ void loadMapFromFile(
   // Allocate space to hold the data
   msg.data.resize(msg.info.width * msg.info.height);
 
-  // Copy pixel data into the map structure
-  for (size_t y = 0; y < msg.info.height; y++) {
-    for (size_t x = 0; x < msg.info.width; x++) {
-      auto pixel = img.pixelColor(x, y);
+  // Convert to grayscale if needed
+  cv::Mat gray;
+  if (img.channels() > 1) {
+    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+  } else {
+    gray = img;
+  }
+  
+  // Check if image has alpha channel
+  bool has_alpha = img.channels() == 4;
+  cv::Mat alpha_channel;
+  if (has_alpha) {
+    std::vector<cv::Mat> channels;
+    cv::split(img, channels);
+    alpha_channel = channels[3];
+  }
 
-      std::vector<Magick::Quantum> channels = {pixel.redQuantum(), pixel.greenQuantum(),
-        pixel.blueQuantum()};
-      if (load_parameters.mode == MapMode::Trinary && img.matte()) {
-        // To preserve existing behavior, average in alpha with color channels in Trinary mode.
-        // CAREFUL. alpha is inverted from what you might expect. High = transparent, low = opaque
-        channels.push_back(MaxRGB - pixel.alphaQuantum());
+  // Process based on map mode
+  switch (load_parameters.mode) {
+    case MapMode::Trinary: {
+      // Convert to normalized float (0.0-1.0)
+      cv::Mat normalized;
+      gray.convertTo(normalized, CV_32F, 1.0/255.0);
+      
+      // Apply negate parameter
+      if (!load_parameters.negate) {
+        normalized = 1.0 - normalized;
       }
-      double sum = 0;
-      for (auto c : channels) {
-        sum += c;
+      
+      // Create binary masks for occupied and free space
+      cv::Mat occupied, free;
+      cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
+      cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
+      
+      // Create result matrix
+      cv::Mat result(gray.size(), CV_8SC1);
+      result.setTo(nav2_util::OCC_GRID_UNKNOWN);
+      result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
+      result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
+      
+      // Apply alpha mask if needed
+      if (has_alpha) {
+        cv::Mat transparent = alpha_channel < 255;
+        result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
       }
-      /// on a scale from 0.0 to 1.0 how bright is the pixel?
-      double shade = Magick::ColorGray::scaleQuantumToDouble(sum / channels.size());
-
-      // If negate is true, we consider blacker pixels free, and whiter
-      // pixels occupied. Otherwise, it's vice versa.
-      /// on a scale from 0.0 to 1.0, how occupied is the map cell (before thresholding)?
-      double occ = (load_parameters.negate ? shade : 1.0 - shade);
-
-      int8_t map_cell;
-      switch (load_parameters.mode) {
-        case MapMode::Trinary:
-          if (load_parameters.occupied_thresh < occ) {
-            map_cell = nav2_util::OCC_GRID_OCCUPIED;
-          } else if (occ < load_parameters.free_thresh) {
-            map_cell = nav2_util::OCC_GRID_FREE;
-          } else {
-            map_cell = nav2_util::OCC_GRID_UNKNOWN;
-          }
-          break;
-        case MapMode::Scale:
-          if (pixel.alphaQuantum() != OpaqueOpacity) {
-            map_cell = nav2_util::OCC_GRID_UNKNOWN;
-          } else if (load_parameters.occupied_thresh < occ) {
-            map_cell = nav2_util::OCC_GRID_OCCUPIED;
-          } else if (occ < load_parameters.free_thresh) {
-            map_cell = nav2_util::OCC_GRID_FREE;
-          } else {
-            map_cell = std::rint(
-              (occ - load_parameters.free_thresh) /
-              (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
-          }
-          break;
-        case MapMode::Raw: {
-            double occ_percent = std::round(shade * 255);
-            if (nav2_util::OCC_GRID_FREE <= occ_percent &&
-              occ_percent <= nav2_util::OCC_GRID_OCCUPIED)
-            {
-              map_cell = static_cast<int8_t>(occ_percent);
-            } else {
-              map_cell = nav2_util::OCC_GRID_UNKNOWN;
-            }
-            break;
-          }
-        default:
-          throw std::runtime_error("Invalid map mode");
+      
+      // Copy to result with y-flip
+      for (int y = 0; y < result.rows; y++) {
+        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
+        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
       }
-      msg.data[msg.info.width * (msg.info.height - y - 1) + x] = map_cell;
+      break;
     }
+    
+    case MapMode::Scale: {
+      // Convert to normalized float (0.0-1.0)
+      cv::Mat normalized;
+      gray.convertTo(normalized, CV_32F, 1.0/255.0);
+      
+      // Apply negate parameter
+      if (!load_parameters.negate) {
+        normalized = 1.0 - normalized;
+      }
+      
+      // Create binary masks for occupied and free space
+      cv::Mat occupied, free;
+      cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
+      cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
+      
+      // Create result matrix
+      cv::Mat result(gray.size(), CV_8SC1);
+      result.setTo(nav2_util::OCC_GRID_UNKNOWN);
+      result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
+      result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
+      
+      // Process in-between values
+      cv::Mat in_between_mask = (normalized > load_parameters.free_thresh) & 
+                               (normalized < load_parameters.occupied_thresh);
+      
+      if (cv::countNonZero(in_between_mask) > 0) {
+        // Scale values between thresholds to 0-100
+        cv::Mat scaled = ((normalized - load_parameters.free_thresh) / 
+                      (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
+        
+        cv::Mat scaled_values;
+        scaled.convertTo(scaled_values, CV_8SC1);
+        
+        // Apply only where in_between_mask is true
+        cv::Mat in_between_vals;
+        scaled_values.copyTo(in_between_vals, in_between_mask);
+        in_between_vals.copyTo(result, in_between_mask);
+      }
+      
+      // Apply alpha mask if needed
+      if (has_alpha) {
+        cv::Mat transparent = alpha_channel < 255;
+        result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
+      }
+      
+      // Copy to result with y-flip
+      for (int y = 0; y < result.rows; y++) {
+        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
+        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+      }
+      break;
+    }
+    
+    case MapMode::Raw: {
+      // Convert to 8-bit signed
+      cv::Mat result;
+      gray.convertTo(result, CV_8SC1);
+      
+      // Apply valid range check
+      cv::Mat out_of_bounds = (result < nav2_util::OCC_GRID_FREE) | 
+                             (result > nav2_util::OCC_GRID_OCCUPIED);
+      result.setTo(nav2_util::OCC_GRID_UNKNOWN, out_of_bounds);
+      
+      // Copy to result with y-flip
+      for (int y = 0; y < result.rows; y++) {
+        const int8_t* src_row = result.ptr<int8_t>(result.rows - y - 1);
+        std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
+      }
+      break;
+    }
+    
+    default:
+      throw std::runtime_error("Invalid map mode");
   }
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.

@@ -17,6 +17,9 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(OpenCV REQUIRED)
+
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 nav2_package()
 
@@ -44,6 +47,7 @@ target_include_directories(${map_io_library_name}
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 target_link_libraries(${map_io_library_name} PUBLIC
   nav2_util::nav2_util_core
+  ${OpenCV_LIBRARIES}
   ${nav_msgs_TARGETS}
 )
 target_link_libraries(${map_io_library_name} PRIVATE
