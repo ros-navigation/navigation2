@@ -32,6 +32,10 @@ void GeoJsonGraphFileSaver::configure(
 bool GeoJsonGraphFileSaver::saveGraphToFile(
   Graph & graph, std::string filepath)
 {
+  if (filepath.empty()) {
+    RCLCPP_ERROR(logger_, "File path is empty");
+    return false;
+  }
   Json json_graph, json_crs, json_properties;
   json_graph["type"] = "FeatureCollection";
   json_graph["name"] = "graph";
@@ -47,12 +51,9 @@ bool GeoJsonGraphFileSaver::saveGraphToFile(
     std::ofstream file(filepath);
     file << json_graph.dump(4) << std::endl;
     file.close();
-  } catch (const std::ios_base::failure & e) {
-    RCLCPP_ERROR(logger_, "Error: %s", e.what());
-  } catch (const std::bad_alloc & e) {
-    RCLCPP_ERROR(logger_, "Error allocating memory to save the GEOJson file");
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(logger_, "An error occured: %s", e.what());
+    RCLCPP_ERROR(logger_, "An error occurred: %s", e.what());
+    return false;
   }
   return true;
 }
@@ -100,11 +101,10 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
       if (json_operations.size()) {
         json_properties["operations"] = json_operations;
       }
+      json_properties["cost"] = edge.edge_cost.cost;
+      json_properties["overridable"] = edge.edge_cost.overridable;
       json_edge["properties"] = json_properties;
       json_edge["type"] = "Feature";
-      if (edge.edge_cost.cost != 0.0) {
-        json_edge["cost"] = edge.edge_cost.cost;
-      }
       json_edges.push_back(json_edge);
     }
   }
@@ -125,8 +125,6 @@ void GeoJsonGraphFileSaver::convertMetaDataToJson(
       json_metadata[itr->first] = std::any_cast<float>(itr->second);
     } else if (itr->second.type() == typeid(bool)) {
       json_metadata[itr->first] = std::any_cast<bool>(itr->second);
-    } else if (itr->second.type() == typeid(std::nullptr_t)) {
-      json_metadata[itr->first] = nullptr;
     } else if (itr->second.type() == typeid(Metadata)) {
       // If the itr->second is another Metadata, recursively convert it to JSON
       Json nested_metadata_json;

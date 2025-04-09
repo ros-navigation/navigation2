@@ -19,6 +19,7 @@
 
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/graph_file_saver.hpp"
+#include "nav2_route/plugins/graph_file_loaders/geojson_graph_file_loader.hpp"
 
 #ifndef NAV2_ROUTE__PLUGINS__GRAPH_FILE_SAVERS__GEOJSON_GRAPH_FILE_SAVER_HPP_
 #define NAV2_ROUTE__PLUGINS__GRAPH_FILE_SAVERS__GEOJSON_GRAPH_FILE_SAVER_HPP_
@@ -93,14 +94,6 @@ protected:
 
   rclcpp::Logger logger_{rclcpp::get_logger("GeoJsonGraphFileSaver")};
 };
-
-NLOHMANN_JSON_SERIALIZE_ENUM(
-  OperationTrigger, {
-    {OperationTrigger::NODE, "NODE"},
-    {OperationTrigger::ON_ENTER, "ON_ENTER"},
-    {OperationTrigger::ON_EXIT, "ON_EXIT"},
-  })
-
 }  // namespace nav2_route
 
 #endif  // NAV2_ROUTE__PLUGINS__GRAPH_FILE_SAVERS__GEOJSON_GRAPH_FILE_SAVER_HPP_
