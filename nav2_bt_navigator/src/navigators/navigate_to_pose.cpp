@@ -52,7 +52,7 @@ NavigateToPoseNavigator::configure(
     std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
-    node->declare_parameter(getName() + ".enable_groot_monitoring", true);
+    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
   }
 
   if (!node->has_parameter(getName() + ".groot_publisher_port")) {

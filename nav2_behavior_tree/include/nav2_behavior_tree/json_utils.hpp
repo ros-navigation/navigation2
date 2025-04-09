@@ -1,4 +1,5 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2025 Alberto J. Tudela Roldán
+// Copyright (c) 2025 Grupo Avispa, DTE, Universidad de Málaga
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

@@ -72,7 +72,7 @@ public:
   static BT::PortsList providedPorts()
   {
     // Register JSON definitions for the types used in the ports
-    BT::RegisterJsonDefinition<geometry_msgs::msg::Point>();
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
 
     return providedBasicPorts(
       {
