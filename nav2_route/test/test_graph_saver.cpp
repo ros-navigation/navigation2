@@ -124,7 +124,7 @@ TEST(GraphSaver, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
   rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
-  
+
   GraphSaver graph_saver(node, tf, frame);
   std::string file_path = "test.geojson";
   graph[0].coords.frame_id = "map_test";

@@ -158,7 +158,8 @@ TEST(GeoJsonGraphFileSaver, test_node_metadata) {
       EXPECT_EQ(graph[i].neighbors[j].start->nodeid, graph2[i].neighbors[j].start->nodeid);
       EXPECT_EQ(graph[i].neighbors[j].end->nodeid, graph2[i].neighbors[j].end->nodeid);
       EXPECT_EQ(graph[i].neighbors[j].edge_cost.cost, graph2[i].neighbors[j].edge_cost.cost);
-      EXPECT_EQ(graph[i].neighbors[j].edge_cost.overridable,
+      EXPECT_EQ(
+        graph[i].neighbors[j].edge_cost.overridable,
         graph2[i].neighbors[j].edge_cost.overridable);
     }
   }
@@ -250,7 +251,8 @@ TEST(GeoJsonGraphFileSaver, operations)
       EXPECT_EQ(graph[i].neighbors[j].start->nodeid, graph2[i].neighbors[j].start->nodeid);
       EXPECT_EQ(graph[i].neighbors[j].end->nodeid, graph2[i].neighbors[j].end->nodeid);
       EXPECT_EQ(graph[i].neighbors[j].edge_cost.cost, graph2[i].neighbors[j].edge_cost.cost);
-      EXPECT_EQ(graph[i].neighbors[j].edge_cost.overridable,
+      EXPECT_EQ(
+        graph[i].neighbors[j].edge_cost.overridable,
         graph2[i].neighbors[j].edge_cost.overridable);
     }
   }
