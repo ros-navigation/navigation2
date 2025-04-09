@@ -24,9 +24,7 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import ComputeAndTrackRoute, ComputeRoute
 from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_simple_commander.robot_navigator import BasicNavigator
-
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
