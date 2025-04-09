@@ -27,7 +27,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowPath
  * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will reset when halted.
+ *       It will re-initialize when halted.
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
