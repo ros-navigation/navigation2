@@ -53,6 +53,27 @@ TEST(GraphSaver, test_invalid_plugin)
   EXPECT_THROW(GraphSaver graph_saver(node, tf, frame), std::runtime_error);
 }
 
+TEST(GraphSaver, test_empty_filename)
+{
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  std::string frame = "map";
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, "graph_filepath", rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("nav2_route") +
+      "/graphs/aws_graph.geojson"));
+
+  GraphLoader graph_loader(node, tf, frame);
+  GraphSaver graph_saver(node, tf, frame);
+
+  Graph first_graph, second_graph;
+  GraphToIDMap first_graph_to_id_map, second_graph_to_id_map;
+  std::string file_path = "";
+  graph_loader.loadGraphFromParameter(first_graph, first_graph_to_id_map);
+  EXPECT_TRUE(graph_saver.saveGraphToFile(first_graph, file_path));
+}
+
 TEST(GraphSaver, test_api)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
