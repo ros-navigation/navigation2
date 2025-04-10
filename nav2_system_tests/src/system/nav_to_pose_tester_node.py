@@ -98,7 +98,6 @@ class NavTester(Node):
                 self.error_msg('Behavior Tree must not be running already!')
                 self.error_msg('Are you running multiple goals/bts..?')
                 return False
-            self.info_msg('This Error above MUST Fail and is o.k.!')
 
         self.goal_pose = goal_pose if goal_pose is not None else self.goal_pose
         goal_msg = NavigateToPose.Goal()
