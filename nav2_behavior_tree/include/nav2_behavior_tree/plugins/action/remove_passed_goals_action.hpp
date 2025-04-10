@@ -19,12 +19,15 @@
 #include <memory>
 #include <string>
 
+#include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/goals.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "behaviortree_cpp/action_node.h"
-#include "nav2_behavior_tree/bt_utils.hpp"
-#include "nav2_msgs/msg/waypoint_status.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -43,6 +46,11 @@ public:
 
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+    BT::RegisterJsonDefinition<nav2_msgs::msg::WaypointStatus>();
+    BT::RegisterJsonDefinition<std::vector<nav2_msgs::msg::WaypointStatus>>();
+
     return {
       BT::InputPort<nav_msgs::msg::Goals>("input_goals",
           "Original goals to remove viapoints from"),

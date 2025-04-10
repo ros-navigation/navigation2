@@ -20,9 +20,13 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_util/service_client.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -62,6 +66,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<std::chrono::milliseconds>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout"),

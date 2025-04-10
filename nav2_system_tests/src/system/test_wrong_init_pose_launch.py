@@ -61,6 +61,9 @@ def generate_launch_description():
     if os.getenv('ASTAR') == 'True':
         param_substitutions.update({'use_astar': 'True'})
 
+    if (os.getenv('GROOT_MONITORING') == 'True'):
+        param_substitutions.update({'enable_groot_monitoring': 'True'})
+
     param_substitutions.update(
         {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER')}
     )

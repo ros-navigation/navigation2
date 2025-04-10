@@ -52,6 +52,18 @@ NavigateThroughPosesNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
+  if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
+    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
+  }
+
+  if (!node->has_parameter(getName() + ".groot_server_port")) {
+    node->declare_parameter(getName() + ".groot_server_port", 1669);
+  }
+
+  bt_action_server_->setGrootMonitoring(
+      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
+      node->get_parameter(getName() + ".groot_server_port").as_int());
+
   return true;
 }
 
