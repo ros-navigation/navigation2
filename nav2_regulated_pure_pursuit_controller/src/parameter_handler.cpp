@@ -162,56 +162,80 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist",
     params_.max_robot_pose_search_dist);
-  if (params_.max_robot_pose_search_dist < 0.0) {
-    RCLCPP_WARN(
-      logger_, "Max robot search distance is negative, setting to max to search"
-      " every point on path for the closest value.");
-    params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
-  }
 
   node->get_parameter(
     plugin_name_ + ".interpolate_curvature_after_goal",
     params_.interpolate_curvature_after_goal);
-  if (!params_.use_fixed_curvature_lookahead && params_.interpolate_curvature_after_goal) {
-    RCLCPP_WARN(
-      logger_, "For interpolate_curvature_after_goal to be set to true, "
-      "use_fixed_curvature_lookahead should be true, it is currently set to false. Disabling.");
-    params_.interpolate_curvature_after_goal = false;
-  }
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
 
-  if (params_.inflation_cost_scaling_factor <= 0.0) {
-    RCLCPP_WARN(
-      logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
-      "it should be >0. Disabling cost regulated linear velocity scaling.");
-    params_.use_cost_regulated_linear_velocity_scaling = false;
-  }
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &ParameterHandler::dynamicParametersCallback,
+      &ParameterHandler::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+  pre_set_params_handler_ = node->add_pre_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::modifyParametersCallback,
+      this, std::placeholders::_1));
+
 }
 
 ParameterHandler::~ParameterHandler()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
-rcl_interfaces::msg::SetParametersResult
-ParameterHandler::dynamicParametersCallback(
+void ParameterHandler::modifyParametersCallback(std::vector<rclcpp::Parameter> parameters)
+{
+  for (auto & parameter : parameters) {
+    const auto & name = parameter.get_name();
+    if (name == plugin_name_ + ".max_robot_pose_search_dist") {
+      if (parameter < 0.0) {
+        RCLCPP_WARN(
+          logger_, "Max robot search distance is negative, setting to max to search"
+          " every point on path for the closest value.");
+        params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
+      }
+    }
+    if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
+      if (params_.inflation_cost_scaling_factor <= 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+        "it should be >0. Disabling cost regulated linear velocity scaling.");
+        params_.use_cost_regulated_linear_velocity_scaling = false;
+      }
+    }
+    // #TODO: i think using params_ here is wrong
+    if (!params_.use_fixed_curvature_lookahead && params_.interpolate_curvature_after_goal) {
+      RCLCPP_WARN(
+        logger_, "For interpolate_curvature_after_goal to be set to true, "
+        "use_fixed_curvature_lookahead should be true, it is currently set to false. Disabling.");
+      params_.interpolate_curvature_after_goal = false;
+    }
+  }
+
+}
+
+rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-
-  for (auto parameter : parameters) {
+  result.successful = true;
+  for (auto & parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
 
@@ -221,8 +245,35 @@ ParameterHandler::dynamicParametersCallback(
           RCLCPP_WARN(
             logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
             "it should be >0. Ignoring parameter update.");
-          continue;
+          result.successful = false;
         }
+      }
+    } else if (type == ParameterType::PARAMETER_BOOL) {
+      if (name == plugin_name_ + ".allow_reversing") {
+        // TODO: i think using params_ here is wrong
+        if (params_.use_rotate_to_heading && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          result.successful = false;
+        }
+      }
+    }
+  }
+  return result;
+}
+void
+ParameterHandler::updateParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+    // TODO: .transform_tolerance .max_robot_pose_search_dist .interpolate_curvature_after_goal
+    if (type == ParameterType::PARAMETER_DOUBLE) {
+      if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
         params_.inflation_cost_scaling_factor = parameter.as_double();
       } else if (name == plugin_name_ + ".desired_linear_vel") {
         params_.desired_linear_vel = parameter.as_double();
@@ -274,19 +325,10 @@ ParameterHandler::dynamicParametersCallback(
       } else if (name == plugin_name_ + ".use_cancel_deceleration") {
         params_.use_cancel_deceleration = parameter.as_bool();
       } else if (name == plugin_name_ + ".allow_reversing") {
-        if (params_.use_rotate_to_heading && parameter.as_bool()) {
-          RCLCPP_WARN(
-            logger_, "Both use_rotate_to_heading and allow_reversing "
-            "parameter cannot be set to true. Rejecting parameter update.");
-          continue;
-        }
         params_.allow_reversing = parameter.as_bool();
       }
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller
