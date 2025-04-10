@@ -43,7 +43,13 @@ LikelihoodFieldModelProb::LikelihoodFieldModelProb(
   beam_skip_distance_ = beam_skip_distance;
   beam_skip_threshold_ = beam_skip_threshold;
   beam_skip_error_threshold_ = beam_skip_error_threshold;
-  map_update_cspace(map, max_occ_dist);
+  // recompute cpace only when nescessary, i.e. if:
+  // - max_occ_dist changed
+  // OR
+  // - cspace was not computed yet, i.e. when map->max_occ_dist == 0.0
+  if (map->max_occ_dist != max_occ_dist || map->max_occ_dist == 0.0) {
+    map_update_cspace(map, max_occ_dist);
+  }
 }
 
 // Determine the probability for the given pose
