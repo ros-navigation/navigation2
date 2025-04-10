@@ -110,11 +110,11 @@ get_distance_map(double scale, double max_dist)
  * @brief enqueue cell data for caching
  */
 void enqueue(
-    map_t * map, int i, int j,
-    int src_i, int src_j,
-    std::priority_queue<CellData> & Q,
-    CachedDistanceMap * cdm,
-    unsigned char * marked)
+  map_t * map, int i, int j,
+  int src_i, int src_j,
+  std::priority_queue<CellData> & Q,
+  CachedDistanceMap * cdm,
+  unsigned char * marked)
 {
   const int map_index = MAP_INDEX(map, i, j);
 
@@ -133,8 +133,8 @@ void enqueue(
   map->cells[map_index].occ_dist = distance * map->scale;
 
   Q.emplace(CellData{map, static_cast<unsigned int>(i), static_cast<unsigned int>(j),
-                     static_cast<unsigned int>(src_i), static_cast<unsigned int>(src_j),
-                     map->cells[map_index].occ_dist});
+      static_cast<unsigned int>(src_i), static_cast<unsigned int>(src_j),
+      map->cells[map_index].occ_dist});
 
   marked[map_index] = 1;
 }
