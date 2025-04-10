@@ -28,6 +28,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/goals.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/waypoint_status.hpp"
 
 // The follow templates are required when using Groot 2 to visualize the BT. They
 // convert the data types into JSON format easy for visualization.
@@ -102,6 +103,20 @@ BT_JSON_CONVERTER(nav_msgs::msg::Path, msg)
 }
 
 }  // namespace nav_msgs::msg
+
+namespace nav2_msgs::msg
+{
+
+BT_JSON_CONVERTER(nav2_msgs::msg::WaypointStatus, msg)
+{
+  add_field("waypoint_status", &msg.waypoint_status);
+  add_field("waypoint_index", &msg.waypoint_index);
+  add_field("waypoint_pose", &msg.waypoint_pose);
+  add_field("error_code", &msg.error_code);
+  add_field("error_msg", &msg.error_msg);
+}
+
+}  // namespace nav2_msgs::msg
 
 namespace std
 {

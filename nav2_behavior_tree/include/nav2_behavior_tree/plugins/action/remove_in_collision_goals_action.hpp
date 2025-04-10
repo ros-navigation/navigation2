@@ -53,6 +53,8 @@ public:
   {
     // Register JSON definitions for the types used in the ports
     BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+    BT::RegisterJsonDefinition<nav2_msgs::msg::WaypointStatus>();
+    BT::RegisterJsonDefinition<std::vector<nav2_msgs::msg::WaypointStatus>>();
 
     return providedBasicPorts(
       {
