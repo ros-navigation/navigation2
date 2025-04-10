@@ -42,8 +42,9 @@
 #include <cstdlib>
 
 #include "Magick++.h"
-#include <opencv2/opencv.hpp>
 #include "nav2_util/geometry_utils.hpp"
+
+#include <Eigen/Dense>
 
 #include "yaml-cpp/yaml.h"
 
@@ -205,22 +206,18 @@ void loadMapFromFile(
   const LoadParameters & load_parameters,
   nav_msgs::msg::OccupancyGrid & map)
 {
+  Magick::InitializeMagick(nullptr);
   nav_msgs::msg::OccupancyGrid msg;
 
   RCLCPP_INFO_STREAM(
     rclcpp::get_logger("map_io"), "Loading image_file: " <<
       load_parameters.image_file_name);
-
-  // Load image with OpenCV instead of ImageMagick
-  cv::Mat img = cv::imread(load_parameters.image_file_name, cv::IMREAD_UNCHANGED);
-
-  if (img.empty()) {
-    throw std::runtime_error("Failed to open image file: " + load_parameters.image_file_name);
-  }
+  Magick::Image img(load_parameters.image_file_name);
 
   // Copy the image data into the map structure
-  msg.info.width = img.cols;
-  msg.info.height = img.rows;
+  msg.info.width = img.size().width();
+  msg.info.height = img.size().height();
+
   msg.info.resolution = load_parameters.resolution;
   msg.info.origin.position.x = load_parameters.origin[0];
   msg.info.origin.position.y = load_parameters.origin[1];
@@ -230,133 +227,93 @@ void loadMapFromFile(
   // Allocate space to hold the data
   msg.data.resize(msg.info.width * msg.info.height);
 
-  // Convert to grayscale if needed
-  cv::Mat gray;
-  if (img.channels() > 1) {
-    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-  } else {
-    gray = img;
-  }
+  // Convert the image to grayscale
+  Magick::Image gray = img;
+  gray.type(Magick::GrayscaleType);
 
-  // Check if image has alpha channel
-  bool has_alpha = img.channels() == 4;
-  cv::Mat alpha_channel;
+  // Convert image data into occupancy grid data
+  size_t width = gray.columns();
+  size_t height = gray.rows();
+
+  std::vector<uint8_t> buffer(width * height);
+  gray.write(0, 0, width, height, "I", Magick::CharPixel, buffer.data());
+
+  Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> 
+      gray_matrix(buffer.data(), height, width);
+  
+  bool has_alpha = img.matte(); 
+  Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> alpha_matrix;
+
   if (has_alpha) {
-    std::vector<cv::Mat> channels;
-    cv::split(img, channels);
-    alpha_channel = channels[3];
+    std::vector<uint8_t> alpha_buf(width * height);
+    img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
+
+    Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> 
+        alpha(alpha_buf.data(), height, width);
+
+    alpha_matrix = alpha;
   }
 
-  // Process based on map mode
-  switch (load_parameters.mode) {
-    case MapMode::Trinary: {
-      // Convert to normalized float (0.0-1.0)
-        cv::Mat normalized;
-        gray.convertTo(normalized, CV_32F, 1.0 / 255.0);
+  if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale)
+  {
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
+    if (!load_parameters.negate) {
+      normalized = (1.0f - normalized.array()).matrix();
+    }
+    
+    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
+      (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
 
-      // Apply negate parameter
-        if (!load_parameters.negate) {
-          normalized = 1.0 - normalized;
-        }
+    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
+      (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
+          
+    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
+    result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
 
-      // Create binary masks for occupied and free space
-        cv::Mat occupied, free;
-        cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
-        cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
+    result = (occupied.array() > 0).select(nav2_util::OCC_GRID_OCCUPIED, result);
+    result = (free.array() > 0).select(nav2_util::OCC_GRID_FREE, result);
 
-      // Create result matrix
-        cv::Mat result(gray.size(), CV_8SC1);
-        result.setTo(nav2_util::OCC_GRID_UNKNOWN);
-        result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
-        result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
+    if (load_parameters.mode == MapMode::Scale) 
+    {
+      // Create in-between mask
+      auto in_between_mask = (normalized.array() > load_parameters.free_thresh) &&
+      (normalized.array() < load_parameters.occupied_thresh);
 
-      // Apply alpha mask if needed
-        if (has_alpha) {
-          cv::Mat transparent = alpha_channel < 255;
-          result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
-        }
-
-      // Copy to result with y-flip
-        for (int y = 0; y < result.rows; y++) {
-          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
-          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
-        }
-        break;
+      if (in_between_mask.any()) 
+      {
+        Eigen::ArrayXXf scaled_float = ((normalized.array() - load_parameters.free_thresh) /
+        (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
+        Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int = 
+          scaled_float.array().round().cast<int8_t>();
+        result = in_between_mask.select(scaled_int, result);
       }
+    }
+    
+    if (has_alpha) {
+      auto transparent_mask = (alpha_matrix.array() < 255);
+      result = transparent_mask.select(nav2_util::OCC_GRID_UNKNOWN, result);
+    }
+    
+    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
+    std::memcpy(msg.data.data(), flipped.data(), width * height);
+  }
+  
+  else if (load_parameters.mode == MapMode::Raw) {
+      Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result = 
+      gray_matrix.cast<int8_t>();
 
-    case MapMode::Scale: {
-      // Convert to normalized float (0.0-1.0)
-        cv::Mat normalized;
-        gray.convertTo(normalized, CV_32F, 1.0 / 255.0);
+      auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
+                      (result.array() > nav2_util::OCC_GRID_OCCUPIED);
 
-      // Apply negate parameter
-        if (!load_parameters.negate) {
-          normalized = 1.0 - normalized;
-        }
+      result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
 
-      // Create binary masks for occupied and free space
-        cv::Mat occupied, free;
-        cv::threshold(normalized, occupied, load_parameters.occupied_thresh, 1, cv::THRESH_BINARY);
-        cv::threshold(normalized, free, load_parameters.free_thresh, 1, cv::THRESH_BINARY_INV);
-
-      // Create result matrix
-        cv::Mat result(gray.size(), CV_8SC1);
-        result.setTo(nav2_util::OCC_GRID_UNKNOWN);
-        result.setTo(nav2_util::OCC_GRID_OCCUPIED, occupied > 0);
-        result.setTo(nav2_util::OCC_GRID_FREE, free > 0);
-
-      // Process in-between values
-        cv::Mat in_between_mask = (normalized > load_parameters.free_thresh) &
-          (normalized < load_parameters.occupied_thresh);
-
-        if (cv::countNonZero(in_between_mask) > 0) {
-        // Scale values between thresholds to 0-100
-          cv::Mat scaled = ((normalized - load_parameters.free_thresh) /
-            (load_parameters.occupied_thresh - load_parameters.free_thresh) * 100.0);
-
-          cv::Mat scaled_values;
-          scaled.convertTo(scaled_values, CV_8SC1);
-
-        // Apply only where in_between_mask is true
-          cv::Mat in_between_vals;
-          scaled_values.copyTo(in_between_vals, in_between_mask);
-          in_between_vals.copyTo(result, in_between_mask);
-        }
-
-      // Apply alpha mask if needed
-        if (has_alpha) {
-          cv::Mat transparent = alpha_channel < 255;
-          result.setTo(nav2_util::OCC_GRID_UNKNOWN, transparent);
-        }
-
-      // Copy to result with y-flip
-        for (int y = 0; y < result.rows; y++) {
-          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
-          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
-        }
-        break;
-      }
-
-    case MapMode::Raw: {
-      // Convert to 8-bit signed
-        cv::Mat result;
-        gray.convertTo(result, CV_8SC1);
-
-      // Apply valid range check
-        cv::Mat out_of_bounds = (result < nav2_util::OCC_GRID_FREE) |
-          (result > nav2_util::OCC_GRID_OCCUPIED);
-        result.setTo(nav2_util::OCC_GRID_UNKNOWN, out_of_bounds);
-
-      // Copy to result with y-flip
-        for (int y = 0; y < result.rows; y++) {
-          const int8_t * src_row = result.ptr<int8_t>(result.rows - y - 1);
-          std::memcpy(&msg.data[y * result.cols], src_row, result.cols);
-        }
-        break;
-      }
-
-    default:
-      throw std::runtime_error("Invalid map mode");
+      Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
+      std::memcpy(msg.data.data(), flipped.data(), width * height);
+    }
+    
+  else
+  {
+    throw std::runtime_error("Invalid map mode");
   }
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
