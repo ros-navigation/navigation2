@@ -22,14 +22,6 @@
 
 // Tests path handling
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 class PathHandlerWrapper : public PathHandler
@@ -246,4 +238,17 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   // Offset spatially + off angled but both within tolerances
   robot_pose.pose.position.x = 9.10;
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

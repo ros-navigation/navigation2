@@ -78,6 +78,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
@@ -86,6 +89,8 @@ public:
         BT::InputPort<std::string>("progress_checker_id", ""),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The follow path error msg"),
       });
   }
 };

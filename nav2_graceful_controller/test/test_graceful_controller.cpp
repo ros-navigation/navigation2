@@ -248,6 +248,8 @@ TEST(GracefulControllerTest, dynamicParameters) {
     node, "test.initial_rotation", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "test.allow_backward", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+    node, "test.use_collision_detection", rclcpp::ParameterValue(true));
 
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
@@ -282,6 +284,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.prefer_final_rotation", false),
       rclcpp::Parameter("test.rotation_scaling_factor", 13.0),
       rclcpp::Parameter("test.allow_backward", true),
+      rclcpp::Parameter("test.use_collision_detection", false),
       rclcpp::Parameter("test.in_place_collision_resolution", 15.0)});
 
   // Spin
@@ -305,6 +308,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.prefer_final_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.rotation_scaling_factor").as_double(), 13.0);
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("test.use_collision_detection").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.in_place_collision_resolution").as_double(), 15.0);
 
   // Set initial rotation to true

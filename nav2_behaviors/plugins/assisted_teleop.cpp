@@ -71,7 +71,7 @@ ResultStatus AssistedTeleop::onRun(const std::shared_ptr<const AssistedTeleopAct
   preempt_teleop_ = false;
   command_time_allowance_ = command->time_allowance;
   end_time_ = this->clock_->now() + command_time_allowance_;
-  return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
+  return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE, ""};
 }
 
 void AssistedTeleop::onActionCompletion(std::shared_ptr<AssistedTeleopActionResult>/*result*/)
@@ -88,17 +88,16 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
-    RCLCPP_WARN_STREAM(
-      logger_,
-      "Exceeded time allowance before reaching the " << behavior_name_.c_str() <<
-        "goal - Exiting " << behavior_name_.c_str());
-    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TIMEOUT};
+    std::string error_msg = "Exceeded time allowance before reaching the " + behavior_name_ +
+      "goal - Exiting " + behavior_name_;
+    RCLCPP_WARN_STREAM(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TIMEOUT, error_msg};
   }
 
   // user states that teleop was successful
   if (preempt_teleop_) {
     stopRobot();
-    return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE};
+    return ResultStatus{Status::SUCCEEDED, AssistedTeleopActionResult::NONE, ""};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -106,11 +105,9 @@ ResultStatus AssistedTeleop::onCycleUpdate()
       current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR_STREAM(
-      logger_,
-      "Current robot pose is not available for " <<
-        behavior_name_.c_str());
-    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR};
+    std::string error_msg = "Current robot pose is not available for " + behavior_name_;
+    RCLCPP_ERROR_STREAM(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};
   }
 
   geometry_msgs::msg::Pose2D projected_pose;
@@ -151,7 +148,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   }
   vel_pub_->publish(std::move(scaled_twist));
 
-  return ResultStatus{Status::RUNNING, AssistedTeleopActionResult::NONE};
+  return ResultStatus{Status::RUNNING, AssistedTeleopActionResult::NONE, ""};
 }
 
 geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(

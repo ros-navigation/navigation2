@@ -28,6 +28,9 @@ namespace nav2_behavior_tree
  */
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
+  using Action = nav2_msgs::action::Wait;
+  using ActionResult = Action::Result;
+
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::WaitAction
@@ -58,9 +61,28 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<double>("wait_duration", 1.0, "Wait time")
+        BT::InputPort<double>("wait_duration", 1.0, "Wait time"),
+        BT::OutputPort<ActionResult::_error_code_type>(
+          "error_code_id", "The wait behavior error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The wait behavior error msg"),
       });
   }
+
+  /**
+   * @brief Function to perform some user-defined operation upon successful completion of the action
+   */
+  BT::NodeStatus on_success() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon abortion of the action
+   */
+  BT::NodeStatus on_aborted() override;
+
+  /**
+   * @brief Function to perform some user-defined operation upon cancellation of the action
+   */
+  BT::NodeStatus on_cancelled() override;
 };
 
 }  // namespace nav2_behavior_tree

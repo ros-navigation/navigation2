@@ -29,19 +29,28 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   is_voltage_(false),
   is_battery_low_(false)
 {
+  initialize();
+
+  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
 }
 
 void IsBatteryLowCondition::initialize()
 {
   getInput("min_battery", min_battery_);
+  getInput("is_voltage", is_voltage_);
+
+  createROSInterfaces();
+}
+
+void IsBatteryLowCondition::createROSInterfaces()
+{
   std::string battery_topic_new;
   getInput("battery_topic", battery_topic_new);
-  getInput("is_voltage", is_voltage_);
 
   // Only create a new subscriber if the topic has changed or subscriber is empty
   if (battery_topic_new != battery_topic_ || !battery_sub_) {
     battery_topic_ = battery_topic_new;
-
     node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,

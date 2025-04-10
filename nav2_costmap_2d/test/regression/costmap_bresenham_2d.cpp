@@ -100,7 +100,7 @@ TEST(costmap_2d, bresenham2DBoundariesCheck)
   CostmapTest ct(sz_x, sz_y, 0.1, 0.0, 0.0);
   CostmapAction ca(ct.getCostmap(), ct.getSize());
 
-  // Initial point - some assymetrically standing point in order to cover most corner cases
+  // Initial point - some asymmetrically standing point in order to cover most corner cases
   const unsigned int x0 = 2;
   const unsigned int y0 = 4;
   // (x1, y1) point will move

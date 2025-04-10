@@ -6,14 +6,14 @@
   <BehaviorTree ID="MainTree">
     <Repeat num_cycles="3">
       <Sequence name="Drive in a square">
-        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12"/>
-        <Spin spin_dist="1.570796" is_recovery="false"/>
-        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12"/>
-        <Spin spin_dist="1.570796" is_recovery="false"/>
-        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12"/>
-        <Spin spin_dist="1.570796" is_recovery="false"/>
-        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12"/>
-        <Spin spin_dist="1.570796" is_recovery="false"/>
+        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12" error_code_id="{drive_on_heading_error_code}" error_msg="{drive_on_heading_error_msg}"/>
+        <Spin spin_dist="1.570796" is_recovery="false" error_code_id="{spin_error_code}" error_msg="{spin_error_msg}"/>
+        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12" error_code_id="{drive_on_heading_error_code}" error_msg="{drive_on_heading_error_msg}"/>
+        <Spin spin_dist="1.570796" is_recovery="false" error_code_id="{spin_error_code}" error_msg="{spin_error_msg}"/>
+        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12" error_code_id="{drive_on_heading_error_code}" error_msg="{drive_on_heading_error_msg}"/>
+        <Spin spin_dist="1.570796" is_recovery="false" error_code_id="{spin_error_code}" error_msg="{spin_error_msg}"/>
+        <DriveOnHeading dist_to_travel="2.0" speed="0.2" time_allowance="12" error_code_id="{drive_on_heading_error_code}" error_msg="{drive_on_heading_error_msg}"/>
+        <Spin spin_dist="1.570796" is_recovery="false" error_code_id="{spin_error_code}" error_msg="{spin_error_msg}"/>
       </Sequence>
     </Repeat>
   </BehaviorTree>

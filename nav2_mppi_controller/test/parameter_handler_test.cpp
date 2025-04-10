@@ -21,15 +21,6 @@
 
 // Tests parameter handler object
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 class ParametersHandlerWrapper : public ParametersHandler
@@ -267,13 +258,6 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   EXPECT_EQ(result.successful, true);
   EXPECT_TRUE(result.reason.empty());
 
-  // Try to access some parameters that have not been declared
-  int p1 = 0, p2 = 0;
-  EXPECT_THROW(getParameter(p1, "not_declared", 8, ParameterType::Dynamic),
-               rclcpp::exceptions::InvalidParameterValueException);
-  EXPECT_THROW(getParameter(p2, "not_declared2", 9, ParameterType::Static),
-               rclcpp::exceptions::InvalidParameterValueException);
-
   // Try to set some parameters that have not been declared via the service client
   result_future = rec_param->set_parameters_atomically({
     rclcpp::Parameter("static_int", 10),
@@ -292,7 +276,17 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   // The ParameterNotDeclaredException handler in rclcpp/parameter_service.cpp
   // overrides any other reasons and does not provide details to the service client.
   EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
+}
 
-  EXPECT_EQ(p1, 0);
-  EXPECT_EQ(p2, 0);
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

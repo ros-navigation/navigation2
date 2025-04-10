@@ -65,8 +65,7 @@ bool SimpleSmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool success = true, reversing_segment;
-  unsigned int segments_smoothed = 0;
+  bool reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
@@ -88,15 +87,9 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
-      bool segment_was_smoothed = smoothImpl(
-        curr_path_segment, reversing_segment, costmap.get(), time_remaining);
-
-      if (segment_was_smoothed) {
-        segments_smoothed++;
-      }
-
-      // Smooth path segment naively
-      success = success && segment_was_smoothed;
+      // Attempt to smooth the segment
+      // May throw SmootherTimedOut
+      smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
 
       // Assemble the path changes to the main path
       std::copy(
@@ -106,14 +99,10 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  if (segments_smoothed == 0) {
-    throw nav2_core::FailedToSmoothPath("No segments were smoothed");
-  }
-
-  return success;
+  return true;
 }
 
-bool SimpleSmoother::smoothImpl(
+void SimpleSmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
@@ -142,7 +131,7 @@ bool SimpleSmoother::smoothImpl(
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
       updateApproximatePathOrientations(path, reversing_segment);
-      return false;
+      return;
     }
 
     // Make sure still have time left to process
@@ -188,14 +177,14 @@ bool SimpleSmoother::smoothImpl(
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
         updateApproximatePathOrientations(path, reversing_segment);
-        return false;
+        return;
       }
     }
 
     last_path = new_path;
   }
 
-  // Lets do additional refinement, it shouldn't take more than a couple milliseconds
+  // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
@@ -204,7 +193,6 @@ bool SimpleSmoother::smoothImpl(
 
   updateApproximatePathOrientations(new_path, reversing_segment);
   path = new_path;
-  return true;
 }
 
 double SimpleSmoother::getFieldByDim(

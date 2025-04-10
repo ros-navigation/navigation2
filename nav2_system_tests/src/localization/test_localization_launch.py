@@ -19,10 +19,8 @@ from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import AppendEnvironmentVariable, ExecuteProcess
-from launch.actions import IncludeLaunchDescription
+from launch import LaunchDescription, LaunchService
+from launch.actions import AppendEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService

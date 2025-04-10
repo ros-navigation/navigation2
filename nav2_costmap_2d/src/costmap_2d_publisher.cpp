@@ -82,11 +82,13 @@ Costmap2DPublisher::Costmap2DPublisher(
     topic_name + "_raw_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
-  costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
-    "get_" + topic_name, std::bind(
-      &Costmap2DPublisher::costmap_service_callback,
-      this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+  costmap_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+    std::string("get_") + topic_name,
+    node,
+    std::bind(
+      &Costmap2DPublisher::costmap_service_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];
@@ -154,9 +156,8 @@ void Costmap2DPublisher::prepareGrid()
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < grid_->data.size(); i++) {
-    grid_->data[i] = cost_translation_table_[data[i]];
-  }
+  std::transform(data, data + grid_->data.size(), grid_->data.begin(),
+    [](unsigned char c) {return cost_translation_table_[c];});
 }
 
 void Costmap2DPublisher::prepareCostmap()
@@ -185,9 +186,7 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_->data.resize(costmap_raw_->metadata.size_x * costmap_raw_->metadata.size_y);
 
   unsigned char * data = costmap_->getCharMap();
-  for (unsigned int i = 0; i < costmap_raw_->data.size(); i++) {
-    costmap_raw_->data[i] = data[i];
-  }
+  memcpy(costmap_raw_->data.data(), data, costmap_raw_->data.size());
 }
 
 std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
@@ -201,12 +200,15 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
   update->width = xn_ - x0_;
   update->height = yn_ - y0_;
   update->data.resize(update->width * update->height);
-
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
-    for (std::uint32_t x = x0_; x < xn_; x++) {
-      update->data[i++] = cost_translation_table_[costmap_->getCost(x, y)];
-    }
+    std::uint32_t row_start = y * map_width + x0_;
+    std::transform(costmap_data + row_start, costmap_data + row_start + update->width,
+        update->data.begin() + i,
+      [](unsigned char c) {return cost_translation_table_[c];});
+    i += update->width;
   }
   return update;
 }
@@ -222,12 +224,14 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
   msg->size_x = xn_ - x0_;
   msg->size_y = yn_ - y0_;
   msg->data.resize(msg->size_x * msg->size_y);
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
 
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
-    for (std::uint32_t x = x0_; x < xn_; x++) {
-      msg->data[i++] = costmap_->getCost(x, y);
-    }
+    std::uint32_t row_start = y * map_width + x0_;
+    std::copy_n(costmap_data + row_start, msg->size_x, msg->data.begin() + i);
+    i += msg->size_x;
   }
   return msg;
 }

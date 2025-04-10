@@ -282,7 +282,7 @@ protected:
   double simulation_time_step_;
   /// @brief Whether polygon is enabled
   bool enabled_;
-  /// @brief Wether the subscription to polygon topic has transient local QoS durability
+  /// @brief Whether the subscription to polygon topic has transient local QoS durability
   bool polygon_subscribe_transient_local_;
   /// @brief Polygon subscription
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
@@ -298,6 +298,8 @@ protected:
   std::string base_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Collision monitor node's clock
+  rclcpp::Clock::SharedPtr node_clock_;
 
   // Visualization
   /// @brief Whether to publish the polygon

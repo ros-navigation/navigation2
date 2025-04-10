@@ -616,7 +616,7 @@ TEST(costmap, testStaticMap) {
   ASSERT_EQ(worldToIndex(map, 9.99, 9.99), (unsigned int)99);
   ASSERT_EQ(worldToIndex(map, 8.2, 3.4), (unsigned int)38);
 
-  // Ensure we hit the middle of the cell for world co-ordinates
+  // Ensure we hit the middle of the cell for world coordinates
   double wx, wy;
   indexToWorld(map, 99, wx, wy);
   ASSERT_EQ(wx, 9.5);
@@ -915,7 +915,7 @@ TEST(costmap, testInflation2) {
     ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS,
     10.0, MAX_Z, 10.0, 25, MAP_10_BY_10, THRESHOLD);
 
-  // Creat a small L-Shape all at once
+  // Create a small L-Shape all at once
   pcl::PointCloud<pcl::PointXYZ> c0;
   c0.points.resize(3);
   c0.points[0].x = 1;
@@ -1039,7 +1039,7 @@ TEST(costmap, testRaytracing2) {
     100.0, MAX_Z, 100.0, 1, MAP_10_BY_10, THRESHOLD);
 
   // The sensor origin will be <0,0>. So if we add an obstacle at 9,9, we would expect cells
-  // <0, 0> thru <8, 8> to be traced through
+  // <0, 0> through <8, 8> to be traced through
   pcl::PointCloud<pcl::PointXYZ> c0;
   c0.points.resize(1);
   c0.points[0].x = 9.5;

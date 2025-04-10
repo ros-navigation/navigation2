@@ -1,5 +1,5 @@
 # Keep Out Zones
-As a Robot user I want to be able to designate keep-out zones or areas on a map so that my robot will go around those areas instead of through them 
+As a Robot user I want to be able to designate keep-out zones or areas on a map so that my robot will go around those areas instead of through them
 
 ## More details
 - Why is this needed?
@@ -10,5 +10,3 @@ As a Robot user I want to be able to designate keep-out zones or areas on a map 
    - The user should be able to specify keep out zones for the robot to avoid
 
 - Are there any non-functional requirements? (build system, tools, performance, etc)
-
-

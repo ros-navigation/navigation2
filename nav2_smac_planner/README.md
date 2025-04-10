@@ -88,7 +88,7 @@ An example of the 3 planners can be seen below, planning a roughly 75 m path.
 
 ## Design
 
-The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the hueristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
+The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the heuristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
 
 We provide 3 nodes by default currently. The 2D node template (`Node2D`) which does 2D grid-search with either 4 or 8-connected neighborhoods. We also provide a Hybrid A\* node template (`NodeHybrid`) which does SE2 (X, Y, theta) search and collision checking on Dubin or Reeds-Shepp motion models. We also provide the Lattice (`NodeLattice`) node for state lattice planning making use of the wider range of velocity options available to differential and omnidirectional robots. Additional templates could be easily made and included for 3D grid search and non-grid base searching like routing.
 
@@ -169,7 +169,7 @@ So it is my recommendation in using this package, as well as all other cost-awar
 
 ### Hybrid-A* and State Lattice Turning Radius'
 
-A very reasonable and logical assumption would be to set the `minimum_turning_radius` to the kinematic limits of your vehicle. For an ackermann car, that's a physical quantity; while for differential or omni robots, its a bit of a dance around what kind of turns you'd like your robot to be able to make. Obviously setting this to something insanely small (like 20 cm) means you have alot of options, but also probably means the raw output plans won't be very straight and smooth when you have 2+ meter wide aisles to work in.
+A very reasonable and logical assumption would be to set the `minimum_turning_radius` to the kinematic limits of your vehicle. For an ackermann car, that's a physical quantity; while for differential or omni robots, its a bit of a dance around what kind of turns you'd like your robot to be able to make. Obviously setting this to something insanely small (like 20 cm) means you have a lot of options, but also probably means the raw output plans won't be very straight and smooth when you have 2+ meter wide aisles to work in.
 
 I assert that you should also consider the environment you operate within when setting this. While you should **absolutely not** set this to be any smaller than the actual limits of your vehicle, there are some useful side effects of increasing this value in practical use. If you work in an area wider than the turning circle of your robot, you have some options that will ultimately improve the performance of the planner (in terms of CPU and compute time) as well as generate paths that are more "smooth" directly out of the planner -- not requiring any explicit path smoothing.
 
@@ -205,9 +205,9 @@ In maps with small gaps or holes, you may see an issue planning to certain regio
 
 Seeing the figures below, you'll see an attempt to plan into a "U" shaped region across the map. The first figure shows the small gap in the map (from an imperfect SLAM session) which is nearly traversable, but not quite. From the starting location, that gap yields the shortest path to the goal, so the heuristics will attempt to route the paths in that direction. However, it is not possible to actually pass with a kinematically valid path with the footprint set. As a result, the planner expands all of its maximum 1,000,000 iterations attempting to fit through it (visualized in red). If an infinite number of iterations were allowed, eventually a valid path would be found, but might take significant time.
 
-By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassible), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
+By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassable), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
 
-As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you dont want your robot actually using B) probably isnt actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that.
+As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you don't want your robot actually using B) probably isn't actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that.
 
 ![](media/A.png)
 ![](media/B.png)

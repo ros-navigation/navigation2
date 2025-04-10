@@ -24,9 +24,9 @@
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav_msgs/msg/goals.hpp"
 
 namespace BT
 {
@@ -43,6 +43,13 @@ namespace BT
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Point>(new_key);
+  }
+
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 3) {
@@ -64,6 +71,13 @@ inline geometry_msgs::msg::Point convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Quaternion>(new_key);
+  }
+
   // four real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 4) {
@@ -86,6 +100,13 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::PoseStamped>(new_key);
+  }
+
   // 7 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 9) {
@@ -113,6 +134,13 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 template<>
 inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::vector<geometry_msgs::msg::PoseStamped>>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if (parts.size() % 9 != 0) {
     throw std::runtime_error("invalid number of fields for std::vector<PoseStamped> attribute)");
@@ -136,20 +164,27 @@ inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const Stri
 }
 
 /**
- * @brief Parse XML string to geometry_msgs::msg::PoseStampedArray
+ * @brief Parse XML string to nav_msgs::msg::Goals
  * @param key XML string
- * @return geometry_msgs::msg::PoseStampedArray
+ * @return nav_msgs::msg::Goals
  */
 template<>
-inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView key)
+inline nav_msgs::msg::Goals convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav_msgs::msg::Goals>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
-    throw std::runtime_error("invalid number of fields for PoseStampedArray attribute)");
+    throw std::runtime_error("invalid number of fields for Goals attribute)");
   } else {
-    geometry_msgs::msg::PoseStampedArray pose_stamped_array;
-    pose_stamped_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
-    pose_stamped_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
+    nav_msgs::msg::Goals goals_array;
+    goals_array.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[0]));
+    goals_array.header.frame_id = BT::convertFromString<std::string>(parts[1]);
     for (size_t i = 2; i < parts.size(); i += 9) {
       geometry_msgs::msg::PoseStamped pose_stamped;
       pose_stamped.header.stamp = rclcpp::Time(BT::convertFromString<int64_t>(parts[i]));
@@ -161,9 +196,9 @@ inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView k
       pose_stamped.pose.orientation.y = BT::convertFromString<double>(parts[i + 6]);
       pose_stamped.pose.orientation.z = BT::convertFromString<double>(parts[i + 7]);
       pose_stamped.pose.orientation.w = BT::convertFromString<double>(parts[i + 8]);
-      pose_stamped_array.poses.push_back(pose_stamped);
+      goals_array.goals.push_back(pose_stamped);
     }
-    return pose_stamped_array;
+    return goals_array;
   }
 }
 
@@ -175,6 +210,13 @@ inline geometry_msgs::msg::PoseStampedArray convertFromString(const StringView k
 template<>
 inline nav_msgs::msg::Path convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav_msgs::msg::Path>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Path attribute)");
@@ -207,25 +249,14 @@ inline nav_msgs::msg::Path convertFromString(const StringView key)
 template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
-  return std::chrono::milliseconds(std::stoul(key.data()));
-}
-
-/**
- * @brief Parse XML string to std::set<int>
- * @param key XML string
- * @return std::set<int>
- */
-template<>
-inline std::set<int> convertFromString(StringView key)
-{
-  // Real numbers separated by semicolons
-  auto parts = splitString(key, ';');
-
-  std::set<int> set;
-  for (const auto part : parts) {
-    set.insert(convertFromString<int>(part));
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::chrono::milliseconds>(new_key);
   }
-  return set;
+
+  return std::chrono::milliseconds(std::stoul(key.data()));
 }
 
 /**

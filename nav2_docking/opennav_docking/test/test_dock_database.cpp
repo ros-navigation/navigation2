@@ -22,14 +22,6 @@
 // Integration tests handle coverage more fully than the database lookups and population.
 // However, Utils unit tests already validate the key database population functions.
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace std::chrono_literals;
 
 namespace opennav_docking
@@ -137,3 +129,16 @@ TEST(DatabaseTests, reloadDbService)
 }
 
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

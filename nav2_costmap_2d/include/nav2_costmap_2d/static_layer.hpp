@@ -43,11 +43,10 @@
 #include <vector>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
-#include "message_filters/subscriber.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
@@ -163,6 +162,7 @@ protected:
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
+  bool restore_cleared_footprint_;
   /**
    * @brief Clear costmap layer info below the robot's footprint
    */

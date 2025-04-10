@@ -18,7 +18,6 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.duration import Duration
 
-
 """
 Basic recoveries demo. In this demonstration, the robot navigates
 to a dead-end where recoveries such as backup and spin are used
@@ -26,7 +25,7 @@ to get out of it.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -64,7 +63,7 @@ def main():
             )
 
     # Robot hit a dead end, back it up
-    print('Robot hit a dead end (lets pretend), backing up...')
+    print("Robot hit a dead end (let's pretend), backing up...")
     navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
@@ -91,7 +90,9 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Recovery was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        print('Recovering from dead end failed! Returning to start...')
+        (error_code, error_msg) = navigator.getTaskError()
+        print(f'Recovering from dead end failed!:{error_code}:{error_msg}')
+        print('Returning to start...')
 
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
     navigator.goToPose(initial_pose)

@@ -7,7 +7,7 @@ pull_request_rules:
       backport:
         branches:
           - jazzy
-  
+
   - name: backport to iron at reviewers discretion
     conditions:
       - base=main
@@ -16,7 +16,7 @@ pull_request_rules:
       backport:
         branches:
           - iron
-  
+
   - name: backport to humble at reviewers discretion
     conditions:
       - base=main
