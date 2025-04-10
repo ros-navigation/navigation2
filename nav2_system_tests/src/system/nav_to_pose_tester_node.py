@@ -15,8 +15,10 @@
 # limitations under the License.
 
 import argparse
+import json
 import math
 import os
+import struct
 import sys
 import time
 from typing import Optional
@@ -92,7 +94,7 @@ class NavTester(Node):
             self.info_msg("'NavigateToPose' action server not available, waiting...")
 
         if os.getenv('GROOT_MONITORING') == 'True':
-            if self.grootMonitoringGetStatus():
+            if not self.grootMonitoringGetStatus():
                 self.error_msg('Behavior Tree must not be running already!')
                 self.error_msg('Are you running multiple goals/bts..?')
                 return False
@@ -121,8 +123,8 @@ class NavTester(Node):
                 if not self.grootMonitoringReloadTree():
                     self.error_msg('Failed GROOT_BT - Reload Tree from ZMQ Server')
                     future_return = False
-                if not self.grootMonitoringGetStatus():
-                    self.error_msg('Failed GROOT_BT - Get Status from ZMQ Publisher')
+                if not self.grootMonitoringSetBreakpoint():
+                    self.error_msg('Failed GROOT_BT - Set Breakpoint from ZMQ Publisher')
                     future_return = False
             except Exception as e:  # noqa: B902
                 self.error_msg(f'Failed GROOT_BT - ZMQ Tests: {e}')
@@ -168,9 +170,10 @@ class NavTester(Node):
             self.info_msg('ZMQ Reload Tree Test 1/3: Check')
         try:
             # request tree from server
-            sock.send_string('')
+            request_header = struct.pack('!BBI', 2, ord('T'), 12345)
+            sock.send(request_header)
             # receive tree from server as flat_buffer
-            sock.recv()
+            sock.recv_multipart()
             self.info_msg('ZMQ Reload Tree Test 2/3: Check')
         except zmq.error.Again:
             self.info_msg('ZMQ Reload Tree Test 2/3 - Failed to load tree')
@@ -189,23 +192,84 @@ class NavTester(Node):
 
         return True
 
-    def grootMonitoringGetStatus(self):
+    def grootMonitoringSetBreakpoint(self):
         # ZeroMQ Context
         context = zmq.Context()
         # Define the socket using the 'Context'
-        sock = context.socket(zmq.SUB)
+        sock = context.socket(zmq.REQ)
         # Set a Timeout so we do not spin till infinity
         sock.setsockopt(zmq.RCVTIMEO, 2000)
         # sock.setsockopt(zmq.LINGER, 0)
 
-        # Define subscription and messages with prefix to accept.
-        sock.setsockopt_string(zmq.SUBSCRIBE, '')
-        port = 1666  # default publishing port for groot monitoring
+        port = 1667  # default publishing port for groot monitoring
         sock.connect(f'tcp://127.0.0.1:{port}')
+        self.info_msg(f'ZMQ Publisher Port:{port}')
+
+        # Create header for the request
+        request_header = struct.pack('!BBI', 2, ord('I'), 12345)  # HOOK_INSERT
+        # Create JSON for the hook
+        hook_data = {
+            'enabled': True,
+            'uid': 9,  # Node ID
+            'mode': 0,  # 0 = BREAKPOINT, 1 = REPLACE
+            'once': False,
+            'desired_status': 'SUCCESS',  # Desired status
+            'position': 0,  # 0 = PRE, 1 = POST
+        }
+        hook_json = json.dumps(hook_data)
+
+        # Send the request
+        try:
+            sock.send_multipart([request_header, hook_json.encode('utf-8')])
+            reply = sock.recv_multipart()
+            if len(reply[0]) < 2:
+                self.error_msg('ZMQ - Incomplete reply received')
+                sock.close()
+                return False
+        except Exception as e:
+            self.error_msg(f'ZMQ - Error during request: {e}')
+            sock.close()
+            return False
+        self.info_msg('ZMQ - HOOK_INSERT request sent')
+        return True
+
+    def grootMonitoringGetStatus(self):
+        # ZeroMQ Context
+        context = zmq.Context()
+
+        sock = context.socket(zmq.REQ)
+        port = 1667  # default server port for groot monitoring
+        # # Set a Timeout so we do not spin till infinity
+        sock.setsockopt(zmq.RCVTIMEO, 1000)
+        # sock.setsockopt(zmq.LINGER, 0)
+
+        sock.connect(f'tcp://localhost:{port}')
+        self.info_msg(f'ZMQ Server Port:{port}')
 
         for request in range(3):
             try:
-                sock.recv()
+                # request tree from server
+                request_header = struct.pack('!BBI', 2, ord('S'), 12345)
+                sock.send(request_header)
+                # receive tree from server as flat_buffer
+                reply = sock.recv_multipart()
+                if len(reply[0]) < 6:
+                    self.error_msg('ZMQ - Incomplete reply received')
+                    sock.close()
+                    return False
+                # Decoding payload
+                payload = reply[1]
+                node_states = []
+                offset = 0
+                while offset < len(payload):
+                    node_uid, node_status = struct.unpack_from('!HB', payload, offset)
+                    offset += 3  # 2 bytes for UID, 1 byte for status
+                    node_states.append((node_uid, node_status))
+                # Get the status of the first node
+                node_uid, node_status = node_states[0]
+                if node_status != 0:
+                    self.error_msg('ZMQ - BT Not running')
+                    return False
             except zmq.error.Again:
                 self.error_msg('ZMQ - Did not receive any status')
                 sock.close()
