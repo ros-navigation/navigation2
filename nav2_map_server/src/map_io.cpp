@@ -34,6 +34,9 @@
 #ifndef _WIN32
 #include <libgen.h>
 #endif
+
+#include <Eigen/Dense>
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -43,8 +46,6 @@
 
 #include "Magick++.h"
 #include "nav2_util/geometry_utils.hpp"
-
-#include <Eigen/Dense>
 
 #include "yaml-cpp/yaml.h"
 
