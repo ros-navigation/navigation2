@@ -176,12 +176,19 @@ TEST(SmootherTest, test_full_smoother)
   double max_no_time = 0.0;
   EXPECT_FALSE(smoother->smooth(plan, costmap, max_no_time));
 
-  // Failure mode: Path is in collision, do 2x to exercise overlapping point
-  // attempts to update orientation should also fail
-  pose.pose.position.x = 1.25;
-  pose.pose.position.y = 1.25;
-  plan.poses.push_back(pose);
-  plan.poses.push_back(pose);
+  // Failure mode: invalid path and invalid orientation
+  // make the end of the path invalid
+  geometry_msgs::msg::PoseStamped lastPose = plan.poses.back();
+  unsigned int mx, my;
+  costmap->worldToMap(lastPose.pose.position.x, lastPose.pose.position.y, mx, my);
+  for (unsigned int i = mx - 5; i <= mx + 5; ++i) {
+    for (unsigned int j = my - 5; j <= my + 5; ++j) {
+      costmap->setCost(i, j, 254);
+    }
+  }
+
+  // duplicate last pose to make the orientation update fail
+  plan.poses.push_back(lastPose);
   EXPECT_FALSE(smoother->smooth(plan, costmap, maxtime));
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.z, 1.0, 1e-3);
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.x, 0.0, 1e-3);
