@@ -245,10 +245,10 @@ bool BtActionServer<ActionT>::on_cleanup()
 }
 
 template<class ActionT>
-void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned publisher_port)
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned server_port)
 {
   enable_groot_monitoring_ = enable;
-  groot_publisher_port_ = publisher_port;
+  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -299,10 +299,10 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
 
   // Enable monitoring with Groot2
   if (enable_groot_monitoring_) {
-    bt_->addGrootMonitoring(&tree_, groot_publisher_port_);
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
     RCLCPP_DEBUG(
       logger_, "Enabling Groot2 monitoring for %s: %d",
-      action_name_.c_str(), groot_publisher_port_);
+      action_name_.c_str(), groot_server_port_);
   }
 
   return true;

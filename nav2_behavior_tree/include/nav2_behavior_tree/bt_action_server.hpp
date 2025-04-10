@@ -93,10 +93,10 @@ public:
 
   /**
    * @brief Enable (or disable) Groot2 monitoring of BT
-   * @param Enable Groot2 monitoring
-   * @param Publisher Publisher port
+   * @param enable Groot2 monitoring
+   * @param server_port Groot2 Server port, first of the pair (server_port, publisher_port)
    */
-  void setGrootMonitoring(const bool enable, const unsigned publisher_port);
+  void setGrootMonitoring(const bool enable, const unsigned server_port);
 
   /**
    * @brief Replace current BT with another one
@@ -286,7 +286,7 @@ protected:
 
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = true;
-  int groot_publisher_port_ = 1666;
+  int groot_server_port_ = 1667;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;
