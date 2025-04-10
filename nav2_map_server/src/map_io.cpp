@@ -238,81 +238,76 @@ void loadMapFromFile(
   std::vector<uint8_t> buffer(width * height);
   gray.write(0, 0, width, height, "I", Magick::CharPixel, buffer.data());
 
-  Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> 
-      gray_matrix(buffer.data(), height, width);
-  
-  bool has_alpha = img.matte(); 
+  Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  gray_matrix(buffer.data(), height, width);
+
+  bool has_alpha = img.matte();
   Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> alpha_matrix;
 
   if (has_alpha) {
     std::vector<uint8_t> alpha_buf(width * height);
     img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
 
-    Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> 
-        alpha(alpha_buf.data(), height, width);
+    Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+    alpha(alpha_buf.data(), height, width);
 
     alpha_matrix = alpha;
   }
 
-  if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale)
-  {
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
+  if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
     if (!load_parameters.negate) {
       normalized = (1.0f - normalized.array()).matrix();
     }
-    
+
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
       (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
 
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
       (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
-          
+
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
     result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
 
     result = (occupied.array() > 0).select(nav2_util::OCC_GRID_OCCUPIED, result);
     result = (free.array() > 0).select(nav2_util::OCC_GRID_FREE, result);
 
-    if (load_parameters.mode == MapMode::Scale) 
-    {
+    if (load_parameters.mode == MapMode::Scale) {
       // Create in-between mask
       auto in_between_mask = (normalized.array() > load_parameters.free_thresh) &&
-      (normalized.array() < load_parameters.occupied_thresh);
+        (normalized.array() < load_parameters.occupied_thresh);
 
-      if (in_between_mask.any()) 
-      {
+      if (in_between_mask.any()) {
         Eigen::ArrayXXf scaled_float = ((normalized.array() - load_parameters.free_thresh) /
-        (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
-        Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int = 
+          (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
+        Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int =
           scaled_float.array().round().cast<int8_t>();
         result = in_between_mask.select(scaled_int, result);
       }
     }
-    
+
     if (has_alpha) {
       auto transparent_mask = (alpha_matrix.array() < 255);
       result = transparent_mask.select(nav2_util::OCC_GRID_UNKNOWN, result);
     }
-    
-    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
+
+    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::RowMajor> flipped = result.colwise().reverse();
     std::memcpy(msg.data.data(), flipped.data(), width * height);
-  }
-  
-  else if (load_parameters.mode == MapMode::Raw) {
-      Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result = 
+  } else if (load_parameters.mode == MapMode::Raw) {
+    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result =
       gray_matrix.cast<int8_t>();
 
-      auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
-                      (result.array() > nav2_util::OCC_GRID_OCCUPIED);
+    auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
+      (result.array() > nav2_util::OCC_GRID_OCCUPIED);
 
-      result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
+    result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
 
-      Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
-      std::memcpy(msg.data.data(), flipped.data(), width * height);
-    }
-    
-  else
-  {
+    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::RowMajor> flipped = result.colwise().reverse();
+    std::memcpy(msg.data.data(), flipped.data(), width * height);
+  } else {
     throw std::runtime_error("Invalid map mode");
   }
 
