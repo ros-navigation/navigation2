@@ -49,6 +49,15 @@ public:
     std::string name = "collision_checker");
 
   /**
+   * @brief Alternative constructor with a footprint string instead of a subscriber. It needs to be
+   * defined relative to the robot frame
+   */
+  CostmapTopicCollisionChecker(
+    CostmapSubscriber & costmap_sub,
+    std::string footprint_string,
+    std::string name = "collision_checker");
+
+  /**
    * @brief A destructor
    */
   ~CostmapTopicCollisionChecker() = default;
@@ -90,10 +99,11 @@ protected:
   // Name used for logging
   std::string name_;
   CostmapSubscriber & costmap_sub_;
-  FootprintSubscriber & footprint_sub_;
+  FootprintSubscriber * footprint_sub_ = nullptr;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
   rclcpp::Clock::SharedPtr clock_;
   Footprint footprint_;
+  std::string footprint_string_;
 };
 
 }  // namespace nav2_costmap_2d
