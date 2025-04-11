@@ -232,16 +232,18 @@ void loadMapFromFile(
   Magick::Image gray = img;
   gray.type(Magick::GrayscaleType);
 
-  // Convert image data into occupancy grid data
+  // Prepare grayscale matrix from image
   size_t width = gray.columns();
   size_t height = gray.rows();
 
   std::vector<uint8_t> buffer(width * height);
   gray.write(0, 0, width, height, "I", Magick::CharPixel, buffer.data());
 
+  // Map the grayscale buffer to an Eigen matrix (row-major layout)
   Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   gray_matrix(buffer.data(), height, width);
 
+  // Prepare alpha (transparency) matrix, if present
   bool has_alpha = img.matte();
   Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> alpha_matrix;
 
@@ -249,64 +251,88 @@ void loadMapFromFile(
     std::vector<uint8_t> alpha_buf(width * height);
     img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
 
-    alpha_matrix = Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+    alpha_matrix = Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic,
+        Eigen::RowMajor>>(
       alpha_buf.data(), height, width);
   }
 
+  // Handle different map modes with if else condition
+  // Trinary and Scale modes are handled together
+  // because they share a lot of code
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
+    // Convert grayscale to float in range [0.0, 1.0]
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
       Eigen::RowMajor> normalized = gray_matrix.cast<float>() / 255.0f;
+
+    // Negate the image if specified (e.g. for black=occupied vs. white=occupied convention)
     if (!load_parameters.negate) {
       normalized = (1.0f - normalized.array()).matrix();
     }
 
+    // Compute binary occupancy masks
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
       (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
 
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
       (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
 
+    // Initialize occupancy grid with UNKNOWN values (-1)
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
     result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
 
+    // Apply occupied and free cell updates
     result = (occupied.array() > 0).select(nav2_util::OCC_GRID_OCCUPIED, result);
     result = (free.array() > 0).select(nav2_util::OCC_GRID_FREE, result);
 
+    // Handle intermediate (gray) values if in Scale mode
     if (load_parameters.mode == MapMode::Scale) {
       // Create in-between mask
       auto in_between_mask = (normalized.array() > load_parameters.free_thresh) &&
         (normalized.array() < load_parameters.occupied_thresh);
 
       if (in_between_mask.any()) {
+        // Scale in-between values to [0,100] range
         Eigen::ArrayXXf scaled_float = ((normalized.array() - load_parameters.free_thresh) /
           (load_parameters.occupied_thresh - load_parameters.free_thresh)) * 100.0f;
+
+        // Round and cast to int8_t
         Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> scaled_int =
           scaled_float.array().round().cast<int8_t>();
+
         result = in_between_mask.select(scaled_int, result);
       }
     }
 
+    // Apply alpha transparency mask: mark transparent cells as UNKNOWN
     if (has_alpha) {
       auto transparent_mask = (alpha_matrix.array() < 255);
       result = transparent_mask.select(nav2_util::OCC_GRID_UNKNOWN, result);
     }
 
+    // Flip image vertically (as ROS expects origin at bottom-left)
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
       Eigen::RowMajor> flipped = result.colwise().reverse();
     std::memcpy(msg.data.data(), flipped.data(), width * height);
-  } else if (load_parameters.mode == MapMode::Raw) {
+  }
+  // Raw mode is handled separately in else if block
+  else if (load_parameters.mode == MapMode::Raw) {
+      // Raw mode: interpret raw image pixel values directly as occupancy values
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result =
       gray_matrix.cast<int8_t>();
 
+      // Clamp out-of-bound values (outside [-1, 100]) to UNKNOWN (-1)
     auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
       (result.array() > nav2_util::OCC_GRID_OCCUPIED);
 
     result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
 
+      // Flip image vertically (as ROS expects origin at bottom-left)
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
       Eigen::RowMajor> flipped = result.colwise().reverse();
     std::memcpy(msg.data.data(), flipped.data(), width * height);
-  } else {
+  }
+  // If the map mode is not recognized, throw an error
+  else {
     throw std::runtime_error("Invalid map mode");
   }
 
