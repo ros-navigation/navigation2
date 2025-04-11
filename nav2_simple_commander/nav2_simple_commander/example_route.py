@@ -13,16 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, RunningTask, TaskResult
 import rclpy
+from std_msgs.msg import Header
 
 """
 Basic navigation demo to using the route server.
 """
 
 
-def toPoseStamped(pt, header):
+def toPoseStamped(pt: Pose, header: Header) -> PoseStamped:
     pose = PoseStamped()
     pose.pose.position.x = pt.x
     pose.pose.position.y = pt.y
@@ -30,7 +31,7 @@ def toPoseStamped(pt, header):
     return pose
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
