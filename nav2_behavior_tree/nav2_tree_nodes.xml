@@ -78,8 +78,8 @@
 
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="force_use_current_pose">Use current robot pose, even if `start` is provided (effectively ignoring it)</input_port>
+      <input_port name="start">Use as the planner start pose instead of the current robot pose, if use_start is not false (i.e. not provided or set to true)</input_port>
+      <input_port name="use_start">For using or not using (i.e. ignoring) the provided start pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
