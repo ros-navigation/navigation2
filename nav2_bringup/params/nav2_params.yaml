@@ -75,6 +75,7 @@ bt_navigator:
       - nav_to_pose
       - route
       - spin
+      - smoother
       - undock_robot
       - wait
 
@@ -319,11 +320,22 @@ planner_server:
 
 smoother_server:
   ros__parameters:
-    smoother_plugins: ["simple_smoother"]
+    smoother_plugins: ["simple_smoother", "route_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
       max_its: 1000
+      refinement_num: 2
+      # True for Hybrid A* or State Lattice to not smooth over directional changes
+      enforce_path_inversion: True
+      do_refinement: True
+    route_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      refinement_num: 5
+      # False for Route Server or others where smoothing out sharp corners is OK
+      enforce_path_inversion: False
       do_refinement: True
 
 behavior_server:
@@ -386,7 +398,7 @@ route_server:
       plugin: "nav2_route::AdjustSpeedLimit"
     CollisionMonitor:
       plugin: "nav2_route::CollisionMonitor"
-      max_collision_dist: 1.0
+      max_collision_dist: 3.0
     edge_cost_functions: ["DistanceScorer", "CostmapScorer"]
     DistanceScorer:
       plugin: "nav2_route::DistanceScorer"

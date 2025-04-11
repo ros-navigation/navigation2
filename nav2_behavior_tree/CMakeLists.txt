@@ -104,6 +104,9 @@ list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
 
+add_library(nav2_are_poses_near_condition_bt_node SHARED plugins/condition/are_poses_near_condition.cpp)
+list(APPEND plugin_libs nav2_are_poses_near_condition_bt_node)
+
 add_library(nav2_globally_updated_goal_condition_bt_node SHARED plugins/condition/globally_updated_goal_condition.cpp)
 list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
 
@@ -143,6 +146,9 @@ list(APPEND plugin_libs nav2_would_a_planner_recovery_help_condition_bt_node)
 add_library(nav2_would_a_smoother_recovery_help_condition_bt_node SHARED plugins/condition/would_a_smoother_recovery_help_condition.cpp)
 list(APPEND plugin_libs nav2_would_a_smoother_recovery_help_condition_bt_node)
 
+add_library(nav2_would_a_route_recovery_help_condition_bt_node SHARED plugins/condition/would_a_route_recovery_help_condition.cpp)
+list(APPEND plugin_libs nav2_would_a_route_recovery_help_condition_bt_node)
+
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
@@ -157,6 +163,9 @@ list(APPEND plugin_libs nav2_speed_controller_bt_node)
 
 add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
+
+add_library(nav2_concatenate_paths_action_bt_node SHARED plugins/action/concatenate_paths_action.cpp)
+list(APPEND plugin_libs nav2_concatenate_paths_action_bt_node)
 
 add_library(nav2_truncate_path_local_action_bt_node SHARED plugins/action/truncate_path_local_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_local_action_bt_node)
@@ -184,6 +193,9 @@ list(APPEND plugin_libs nav2_remove_in_collision_goals_action_bt_node)
 
 add_library(nav2_get_pose_from_path_action_bt_node SHARED plugins/action/get_pose_from_path_action.cpp)
 list(APPEND plugin_libs nav2_get_pose_from_path_action_bt_node)
+
+add_library(nav2_get_current_pose_action_bt_node SHARED plugins/action/get_current_pose_action.cpp)
+list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)

@@ -47,6 +47,8 @@ void SimpleSmoother::configure(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
+  declare_parameter_if_not_declared(
+    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
 
   node->get_parameter(name + ".tolerance", tolerance_);
   node->get_parameter(name + ".max_its", max_its_);
@@ -54,6 +56,7 @@ void SimpleSmoother::configure(
   node->get_parameter(name + ".w_smooth", smooth_w_);
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
+  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
 }
 
 bool SimpleSmoother::smooth(
@@ -69,7 +72,10 @@ bool SimpleSmoother::smooth(
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
-  std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+  std::vector<PathSegment> path_segments{PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
+  if (enforce_path_inversion_) {
+    path_segments = findDirectionalPathSegments(path);
+  }
 
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
