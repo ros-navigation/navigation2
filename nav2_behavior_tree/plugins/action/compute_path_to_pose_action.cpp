@@ -47,8 +47,8 @@ void ComputePathToPoseAction::on_tick()
         goal_.use_start = false;
         RCLCPP_ERROR(
           node_->get_logger(),
-          "use_start is set to true but no start pose was provided, falling back to default behavior"
-          ", i.e. using the current robot pose");
+          "use_start is set to true but no start pose was provided, falling back to default "
+          "behavior, i.e. using the current robot pose");
       }
     } else {
       goal_.use_start = false;
@@ -64,7 +64,6 @@ void ComputePathToPoseAction::on_tick()
       goal_.use_start = false;
     }
   }
-
 }
 
 BT::NodeStatus ComputePathToPoseAction::on_success()
