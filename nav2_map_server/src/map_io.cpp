@@ -249,10 +249,8 @@ void loadMapFromFile(
     std::vector<uint8_t> alpha_buf(width * height);
     img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
 
-    Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-    alpha(alpha_buf.data(), height, width);
-
-    alpha_matrix = alpha;
+    alpha_matrix = Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+      alpha_buf.data(), height, width);
   }
 
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
