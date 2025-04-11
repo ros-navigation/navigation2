@@ -25,6 +25,7 @@
 
 #include "nav2_util/lifecycle_service_client.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "nav2_util/service_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
@@ -74,8 +75,8 @@ protected:
   std::unique_ptr<nav2_util::NodeThread> service_thread_;
 
   // The services provided by this node
-  rclcpp::Service<ManageLifecycleNodes>::SharedPtr manager_srv_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
+  nav2_util::ServiceServer<ManageLifecycleNodes>::SharedPtr manager_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
   /**
    * @brief Lifecycle node manager callback function
    * @param request_header Header of the service request
@@ -147,6 +148,12 @@ protected:
    * @brief Support function for creating service clients
    */
   void createLifecycleServiceClients();
+
+  // Support function for creating service servers
+  /**
+   * @brief Support function for creating service servers
+   */
+  void createLifecycleServiceServers();
 
   // Support functions for shutdown
   /**

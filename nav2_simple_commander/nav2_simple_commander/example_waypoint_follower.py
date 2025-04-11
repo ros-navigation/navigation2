@@ -23,7 +23,7 @@ Basic navigation demo to go to poses.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -133,7 +133,8 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        (error_code, error_msg) = navigator.getTaskError()
+        print('Goal failed!{error_code}:{error_msg}')
     else:
         print('Goal has an invalid return status!')
 

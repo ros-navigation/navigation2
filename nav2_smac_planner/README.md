@@ -207,7 +207,7 @@ Seeing the figures below, you'll see an attempt to plan into a "U" shaped region
 
 By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassable), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
 
-As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you dont want your robot actually using B) probably isn't actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that.
+As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you don't want your robot actually using B) probably isn't actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that.
 
 ![](media/A.png)
 ![](media/B.png)

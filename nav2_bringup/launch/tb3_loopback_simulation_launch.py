@@ -17,28 +17,22 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    GroupAction,
-    IncludeLaunchDescription,
-)
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
 from launch_ros.descriptions import ParameterFile
-
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     loopback_sim_dir = get_package_share_directory('nav2_loopback_sim')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
+    sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
@@ -62,8 +56,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'depot.yaml'),  # Try warehouse.yaml!
-        description='Full path to map file to load',
+        default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
@@ -106,7 +99,10 @@ def generate_launch_description():
         'use_rviz', default_value='True', description='Whether to start RVIZ'
     )
 
-    sdf = os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
+    urdf = os.path.join(sim_dir, 'urdf', 'turtlebot3_waffle.urdf')
+    with open(urdf, 'r') as infp:
+        robot_description = infp.read()
+
     start_robot_state_publisher_cmd = Node(
         condition=IfCondition(use_robot_state_pub),
         package='robot_state_publisher',
@@ -115,7 +111,7 @@ def generate_launch_description():
         namespace=namespace,
         output='screen',
         parameters=[
-            {'use_sim_time': True, 'robot_description': Command(['xacro', ' ', sdf])}
+            {'use_sim_time': True, 'robot_description': robot_description}
         ],
         remappings=remappings,
     )
@@ -149,16 +145,7 @@ def generate_launch_description():
             os.path.join(loopback_sim_dir, 'loopback_simulation.launch.py')),
         launch_arguments={
             'params_file': params_file,
-            'scan_frame_id': 'rplidar_link',
         }.items(),
-    )
-
-    static_publisher_cmd = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        arguments=[
-            '0.0', '0.0', '0.0', '0', '0', '0',
-            'base_footprint', 'base_link']
     )
 
     configured_params = ParameterFile(
@@ -213,7 +200,6 @@ def generate_launch_description():
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)
-    ld.add_action(static_publisher_cmd)
     ld.add_action(start_map_server)
     ld.add_action(loopback_sim_cmd)
     ld.add_action(rviz_cmd)

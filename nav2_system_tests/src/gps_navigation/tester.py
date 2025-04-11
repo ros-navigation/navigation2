@@ -21,9 +21,7 @@ from geographic_msgs.msg import GeoPose
 from nav2_msgs.action import ComputePathToPose, FollowGPSWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.parameter import Parameter
@@ -190,6 +188,7 @@ def main(argv=sys.argv[1:]):
         test.action_result.missed_waypoints[0].error_code
         == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
     )
+    assert (test.action_result.missed_waypoints[0].error_msg != '')
 
     # stop on failure test with bogus waypoint
     test.setStopFailureParam(True)

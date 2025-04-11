@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::DriveOnHeading>
 {
@@ -61,7 +63,9 @@ public:
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading"),
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<Action::Result::_error_code_type>(
-          "error_code_id", "The drive on heading behavior server error code")
+          "error_code_id", "The drive on heading behavior server error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The drive on heading behavior server error msg"),
       });
   }
 
@@ -84,9 +88,6 @@ public:
    * @brief Function to perform some user-defined operation upon cancellation of the action
    */
   BT::NodeStatus on_cancelled() override;
-
-private:
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

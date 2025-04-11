@@ -17,23 +17,17 @@
 import argparse
 import sys
 import time
-
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
-
 import rclpy
-
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
 
 class NavTester(Node):
@@ -96,7 +90,7 @@ class NavTester(Node):
         goal_msg = NavigateThroughPoses.Goal()
         goal_msg.poses.header.frame_id = 'map'
         goal_msg.poses.header.stamp = self.get_clock().now().to_msg()
-        goal_msg.poses.poses = [
+        goal_msg.poses.goals = [
             self.getStampedPoseMsg(self.goal_pose),
             self.getStampedPoseMsg(self.goal_pose),
         ]
@@ -118,7 +112,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')
@@ -151,7 +148,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')
@@ -166,7 +166,7 @@ class NavTester(Node):
             )
 
         goal_msg = NavigateThroughPoses.Goal()
-        goal_msg.poses.poses = [self.getStampedPoseMsg(self.initial_pose)]
+        goal_msg.poses.goals = [self.getStampedPoseMsg(self.initial_pose)]
 
         self.info_msg('Sending goal request...')
         send_goal_future = self.action_client.send_goal_async(goal_msg)
@@ -188,7 +188,10 @@ class NavTester(Node):
         rclpy.spin_until_future_complete(self, get_result_future)
         status = get_result_future.result().status
         if status != GoalStatus.STATUS_SUCCEEDED:
-            self.info_msg(f'Goal failed with status code: {status}')
+            result = get_result_future.result().result
+            self.info_msg(f'Goal failed with status code: {status}'
+                          f' error code:{result.error_code}'
+                          f' error msg:{result.error_msg}')
             return False
 
         self.info_msg('Goal succeeded!')

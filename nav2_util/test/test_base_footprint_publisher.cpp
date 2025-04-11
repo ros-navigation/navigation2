@@ -19,14 +19,6 @@
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 {
   auto node = std::make_shared<nav2_util::BaseFootprintPublisher>();
@@ -69,4 +61,17 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   EXPECT_EQ(t.transform.translation.x, 1.0);
   EXPECT_EQ(t.transform.translation.y, 1.0);
   EXPECT_EQ(t.transform.translation.z, 0.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -1,0 +1,97 @@
+
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://github.com/pre-commit/pre-commit
+exclude: ".pgm$|.svg$"
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-xml
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: forbid-submodules
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+        exclude_types: [rst]
+      - id: fix-byte-order-marker
+-   repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: ["tools/pyproject.toml"]
+        name: isort (python)
+
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+    -   id: codespell
+        additional_dependencies:
+        -   tomli
+        args:
+            [--toml=./tools/pyproject.toml]
+-   repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.31.1
+    hooks:
+      - id: check-github-workflows
+        args: ["--verbose"]
+      - id: check-github-actions
+        args: ["--verbose"]
+      - id: check-dependabot
+        args: ["--verbose"]
+-   repo: local
+    hooks:
+    -   id: ament_lint_cmake
+        name: ament_lint_cmake
+        description: Check CMake code style using cmakelint.
+        language: system
+        types: [cmake]
+        entry: ament_lint_cmake
+    -   id: ament_cpplint
+        name: ament_cpplint
+        description: Code style checking using cpplint.
+        language: system
+        types: [c++]
+        entry: ament_cpplint
+    -   id: ament_uncrustify
+        name: ament_uncrustify
+        description: Code style checking using uncrustify.
+        language: system
+        types: [c++]
+        args: ["--reformat"]
+        entry: ament_uncrustify
+    -   id: ament_xmllint
+        name: ament_xmllint
+        description: Check XML markup using xmllint.
+        language: system
+        types: [xml]
+        entry: ament_xmllint
+    -   id: ament_flake8
+        name: ament_flake8
+        description: Check Python code style using flake8.
+        language: system
+        types: [python]
+        entry: ament_flake8
+    -   id: ament_pep257
+        name: ament_pep257
+        description: Check Python code style using pep257.
+        language: system
+        types: [python]
+        entry: ament_pep257

@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "nav_msgs/msg/goals.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
@@ -27,6 +27,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::NavigateThroughPoses
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class NavigateThroughPosesAction : public BtActionNode<nav2_msgs::action::NavigateThroughPoses>
 {
@@ -71,13 +73,18 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
+        BT::InputPort<nav_msgs::msg::Goals>(
           "goals", "Destinations to plan through"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The navigate through poses error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The navigate through poses error msg"),
       });
   }
 };

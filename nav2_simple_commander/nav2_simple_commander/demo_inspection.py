@@ -26,7 +26,7 @@ collecting information about stock quantity and location.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -98,7 +98,9 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Inspection of shelving was canceled. Returning to start...')
     elif result == TaskResult.FAILED:
-        print('Inspection of shelving failed! Returning to start...')
+        (error_code, error_msg) = navigator.getTaskError()
+        print(f'Inspection of shelving failed!:{error_code}:{error_msg}')
+        print('Returning to start...')
 
     # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()

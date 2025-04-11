@@ -28,6 +28,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathThroughPoses
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class ComputePathThroughPosesAction
   : public BtActionNode<nav2_msgs::action::ComputePathThroughPoses>
@@ -68,14 +70,23 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * \brief Override required by the a BT action. Cancel the action and set the path output
+   */
+  void halt() override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+
     return providedBasicPorts(
       {
-        BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
+        BT::InputPort<nav_msgs::msg::Goals>(
           "goals",
           "Destinations to plan through"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
@@ -86,6 +97,8 @@ public:
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathThroughPoses node"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The compute path through poses error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The compute path through poses error msg"),
       });
   }
 };

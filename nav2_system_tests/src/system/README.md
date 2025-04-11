@@ -1,6 +1,6 @@
 # Nav2 System Tests
 
-This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose. 
+This is a 'top level' system test which will use Gazebo to simulate a Robot moving from an known initial starting position to a goal pose.
 
 ## To run the test
 First, you must build Nav2 including this package:
@@ -13,10 +13,10 @@ colcon test --packages-select nav2_system_tests
 ```
 Output results will go to the screen, and will be logged to the "log/latest_test/nav2_system_tests/" path relative to where colcon test was run.
 
-To run just the bt_navigator test:
+To run just the bt_navigator error_msg test:
 ```
-cd build/nav2_system_tests
-ctest -V bt_navigator$
+colcon test --packages-select nav2_system_tests --event-handler=console_direct+ --ctest-args --output-on-failure -R _error_msg$
+
 ```
 
 To loop over the bt_navigator test, a script has been provided:

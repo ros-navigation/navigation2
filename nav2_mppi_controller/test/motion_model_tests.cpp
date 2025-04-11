@@ -24,14 +24,6 @@
 
 // Tests motion models
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 TEST(MotionModelTests, DiffDriveTest)
@@ -255,4 +247,17 @@ TEST(MotionModelTests, AckermannReversingTest)
 
   // Check it cleanly destructs
   model.reset();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

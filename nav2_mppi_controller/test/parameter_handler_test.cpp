@@ -21,15 +21,6 @@
 
 // Tests parameter handler object
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 class ParametersHandlerWrapper : public ParametersHandler
@@ -285,4 +276,17 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   // The ParameterNotDeclaredException handler in rclcpp/parameter_service.cpp
   // overrides any other reasons and does not provide details to the service client.
   EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

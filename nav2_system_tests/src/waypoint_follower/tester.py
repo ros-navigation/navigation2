@@ -21,13 +21,11 @@ from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav2_msgs.action import ComputePathToPose, FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
 
 class WaypointFollowerTest(Node):
@@ -241,6 +239,7 @@ def main(argv=sys.argv[1:]):
         test.action_result.missed_waypoints[0].error_code
         == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
     )
+    assert (test.action_result.missed_waypoints[0].error_msg != '')
 
     # stop on failure test with bogus waypoint
     test.setStopFailureParam(True)

@@ -31,6 +31,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "nav2_util/service_server.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -204,6 +205,7 @@ protected:
    * @param response from the service
    */
   void isPathValid(
+    const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
     std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response);
 
@@ -217,7 +219,8 @@ protected:
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
     const std::string & planner_id,
-    const std::exception & ex);
+    const std::exception & ex,
+    std::string & msg);
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -259,7 +262,8 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // Service to determine if the path is valid
-  rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr is_path_valid_service_;
 };
 
 }  // namespace nav2_planner

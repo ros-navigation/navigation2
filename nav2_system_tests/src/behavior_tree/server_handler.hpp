@@ -49,9 +49,9 @@ public:
   explicit DummyComputePathToPoseActionServer(const rclcpp::Node::SharedPtr & node)
   : DummyActionServer(node, "compute_path_to_pose")
   {
-    result_ = std::make_shared<nav2_msgs::action::ComputePathToPose::Result>();
     geometry_msgs::msg::PoseStamped pose;
-    pose.header = result_->path.header;
+    pose.header.stamp = node->get_clock()->now();
+    pose.header.frame_id = "map";
     pose.pose.position.x = 0.0;
     pose.pose.position.y = 0.0;
     pose.pose.position.z = 0.0;
@@ -59,14 +59,12 @@ public:
     pose.pose.orientation.y = 0.0;
     pose.pose.orientation.z = 0.0;
     pose.pose.orientation.w = 1.0;
+
+    result_->path.header.stamp = node->now();
+    result_->path.header.frame_id = pose.header.frame_id;
     for (int i = 0; i < 6; ++i) {
       result_->path.poses.push_back(pose);
     }
-  }
-
-  std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> fillResult() override
-  {
-    return result_;
   }
 
 protected:
@@ -75,10 +73,8 @@ protected:
     & result) override
   {
     result->error_code = nav2_msgs::action::ComputePathToPose::Result::TIMEOUT;
+    result->error_msg = "Timeout";
   }
-
-private:
-  std::shared_ptr<nav2_msgs::action::ComputePathToPose::Result> result_;
 };
 
 class DummyFollowPathActionServer : public DummyActionServer<nav2_msgs::action::FollowPath>
@@ -93,6 +89,7 @@ protected:
     & result) override
   {
     result->error_code = nav2_msgs::action::FollowPath::Result::NO_VALID_CONTROL;
+    result->error_msg = "No valid control";
   }
 };
 

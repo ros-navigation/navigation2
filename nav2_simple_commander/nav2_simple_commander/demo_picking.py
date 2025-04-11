@@ -15,10 +15,15 @@
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-
 import rclpy
 from rclpy.duration import Duration
 
+"""
+Basic item picking demo. In this demonstration, the expectation
+is that there is a person at the item shelf to put the item on the robot
+and at the pallet jack to remove it
+(probably with some kind of button for 'got item, robot go do next task').
+"""
 
 # Shelf positions for picking
 shelf_positions = {
@@ -35,15 +40,8 @@ shipping_destinations = {
     'frieght_bay_3': [-6.0, -5.0, 3.14],
 }
 
-"""
-Basic item picking demo. In this demonstration, the expectation
-is that there is a person at the item shelf to put the item on the robot
-and at the pallet jack to remove it
-(probably with some kind of button for 'got item, robot go do next task').
-"""
 
-
-def main():
+def main() -> None:
     # Received virtual request for picking item at Shelf A and bring to
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ('shelf_A') and shipping destination ('frieght_bay_3')
@@ -96,7 +94,7 @@ def main():
                 'Estimated time of arrival at '
                 + request_item_location
                 + ' for worker: '
-                + '{0:.0f}'.format(
+                + '{:.0f}'.format(
                     Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                     / 1e9
                 )
@@ -133,7 +131,9 @@ def main():
         navigator.goToPose(initial_pose)
 
     elif result == TaskResult.FAILED:
-        print(f'Task at {request_item_location} failed!')
+        (error_code, error_msg) = navigator.getTaskError()
+        print(f'Task at {request_item_location} failed!:'
+              f'{error_code}:{error_msg}')
         exit(-1)
 
     while not navigator.isTaskComplete():
