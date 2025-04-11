@@ -32,15 +32,39 @@ void ComputePathToPoseAction::on_tick()
 {
   getInput("goal", goal_.goal);
   getInput("planner_id", goal_.planner_id);
-  if (getInput("start", goal_.start)) {
-    bool force_use_current_pose = false;
-    getInput("force_use_current_pose", force_use_current_pose);
-    if (force_use_current_pose) {
-      goal_.use_start = false;
+
+  // if "use_start" is provided try to enforce it (true or false), but we cannot enforce true if
+  // start is not provided
+  bool bb_use_start;
+  if (getInput("use_start", bb_use_start)) {
+    if (bb_use_start) {
+      // check that we have a "start" pose
+      geometry_msgs::msg::PoseStamped bb_start;
+      if (getInput("start", bb_start)) {
+        goal_.start = bb_start;
+        goal_.use_start = true;
+      } else {
+        goal_.use_start = false;
+        RCLCPP_ERROR(
+          node_->get_logger(),
+          "use_start is set to true but no start pose was provided, falling back to default behavior"
+          ", i.e. using the current robot pose");
+      }
     } else {
+      goal_.use_start = false;
+    }
+  } else {
+    // else if "use_start" is not provided, but "start" is, then use it in order to not change
+    // the legacy behavior
+    geometry_msgs::msg::PoseStamped bb_start;
+    if (getInput("start", bb_start)) {
+      goal_.start = bb_start;
       goal_.use_start = true;
+    } else {
+      goal_.use_start = false;
     }
   }
+
 }
 
 BT::NodeStatus ComputePathToPoseAction::on_success()
