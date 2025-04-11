@@ -1,7 +1,9 @@
 from nav2_msgs.action._assisted_teleop import AssistedTeleop
 from nav2_msgs.action._back_up import BackUp
+from nav2_msgs.action._compute_and_track_route import ComputeAndTrackRoute
 from nav2_msgs.action._compute_path_through_poses import ComputePathThroughPoses
 from nav2_msgs.action._compute_path_to_pose import ComputePathToPose
+from nav2_msgs.action._compute_route import ComputeRoute
 from nav2_msgs.action._dock_robot import DockRobot
 from nav2_msgs.action._drive_on_heading import DriveOnHeading
 from nav2_msgs.action._dummy_behavior import DummyBehavior
@@ -18,8 +20,10 @@ from nav2_msgs.action._wait import Wait
 __all__ = [
     'AssistedTeleop',
     'BackUp',
+    'ComputeAndTrackRoute',
     'ComputePathThroughPoses',
     'ComputePathToPose',
+    'ComputeRoute',
     'DockRobot',
     'DriveOnHeading',
     'DummyBehavior',

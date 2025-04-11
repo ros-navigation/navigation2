@@ -17,7 +17,7 @@
 
 from enum import Enum
 import time
-from typing import Any, List, Optional
+from typing import Any, Optional, Union
 
 from action_msgs.msg import GoalStatus
 from builtin_interfaces.msg import Duration
@@ -28,6 +28,7 @@ from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
                               ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
                               DriveOnHeading, FollowGPSWaypoints, FollowPath, FollowWaypoints,
                               NavigateThroughPoses, NavigateToPose, SmoothPath, Spin, UndockRobot)
+from nav2_msgs.msg import Route
 from nav2_msgs.srv import (ClearCostmapAroundRobot, ClearCostmapExceptRegion, ClearEntireCostmap,
                            GetCostmap, LoadMap, ManageLifecycleNodes)
 from nav_msgs.msg import Goals, OccupancyGrid, Path
@@ -88,7 +89,7 @@ class BasicNavigator(Node):
         self.route_goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
         self.route_result_future: \
             Optional[Future[GetResultServiceResponse[Any]]] = None
-        self.route_feedback: List[Any] = []
+        self.route_feedback: list[Any] = []
 
         # Error code and messages from servers
         self.last_action_error_code = 0
@@ -190,7 +191,7 @@ class BasicNavigator(Node):
         self.initial_pose = initial_pose
         self._setInitialPose()
 
-    def goThroughPoses(self, poses: Goals, behavior_tree: str = '') -> bool:
+    def goThroughPoses(self, poses: Goals, behavior_tree: str = '') -> Optional[RunningTask]:
         """Send a `NavThroughPoses` action request."""
         self.clearTaskError()
         self.debug("Waiting for 'NavigateThroughPoses' action server")
@@ -217,7 +218,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.NAVIGATE_THROUGH_POSES
 
-    def goToPose(self, pose: PoseStamped, behavior_tree: str = '') -> bool:
+    def goToPose(self, pose: PoseStamped, behavior_tree: str = '') -> Optional[RunningTask]:
         """Send a `NavToPose` action request."""
         self.clearTaskError()
         self.debug("Waiting for 'NavigateToPose' action server")
@@ -256,7 +257,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.NAVIGATE_TO_POSE
 
-    def followWaypoints(self, poses: list[PoseStamped]) -> bool:
+    def followWaypoints(self, poses: list[PoseStamped]) -> Optional[RunningTask]:
         """Send a `FollowWaypoints` action request."""
         self.clearTaskError()
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -282,7 +283,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.FOLLOW_WAYPOINTS
 
-    def followGpsWaypoints(self, gps_poses: list[GeoPose]) -> bool:
+    def followGpsWaypoints(self, gps_poses: list[GeoPose]) -> Optional[RunningTask]:
         """Send a `FollowGPSWaypoints` action request."""
         self.clearTaskError()
         self.debug("Waiting for 'FollowWaypoints' action server")
@@ -310,7 +311,7 @@ class BasicNavigator(Node):
 
     def spin(
             self, spin_dist: float = 1.57, time_allowance: int = 10,
-            disable_collision_checks: bool = False) -> bool:
+            disable_collision_checks: bool = False) -> Optional[RunningTask]:
         self.clearTaskError()
         self.debug("Waiting for 'Spin' action server")
         while not self.spin_client.wait_for_server(timeout_sec=1.0):
@@ -338,7 +339,8 @@ class BasicNavigator(Node):
 
     def backup(
             self, backup_dist: float = 0.15, backup_speed: float = 0.025,
-            time_allowance: int = 10, disable_collision_checks: bool = False) -> bool:
+            time_allowance: int = 10,
+            disable_collision_checks: bool = False) -> Optional[RunningTask]:
         self.clearTaskError()
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
@@ -367,7 +369,8 @@ class BasicNavigator(Node):
 
     def driveOnHeading(
             self, dist: float = 0.15, speed: float = 0.025,
-            time_allowance: int = 10, disable_collision_checks: bool = False) -> bool:
+            time_allowance: int = 10,
+            disable_collision_checks: bool = False) -> Optional[RunningTask]:
         self.clearTaskError()
         self.debug("Waiting for 'DriveOnHeading' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
@@ -394,7 +397,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DRIVE_ON_HEADING
 
-    def assistedTeleop(self, time_allowance: int = 30) -> bool:
+    def assistedTeleop(self, time_allowance: int = 30) -> Optional[RunningTask]:
 
         self.clearTaskError()
         self.debug("Wanting for 'assisted_teleop' action server")
@@ -421,7 +424,7 @@ class BasicNavigator(Node):
         return RunningTask.ASSISTED_TELEOP
 
     def followPath(self, path: Path, controller_id: str = '',
-                   goal_checker_id: str = '') -> bool:
+                   goal_checker_id: str = '') -> Optional[RunningTask]:
         self.clearTaskError()
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
@@ -450,7 +453,7 @@ class BasicNavigator(Node):
         return RunningTask.FOLLOW_PATH
 
     def dockRobotByPose(self, dock_pose: PoseStamped,
-                        dock_type: str = '', nav_to_dock: bool = True) -> bool:
+                        dock_type: str = '', nav_to_dock: bool = True) -> Optional[RunningTask]:
         self.clearTaskError()
         """Send a `DockRobot` action request."""
         self.info("Waiting for 'DockRobot' action server")
@@ -478,7 +481,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DOCK_ROBOT
 
-    def dockRobotByID(self, dock_id: str, nav_to_dock: bool = True) -> bool:
+    def dockRobotByID(self, dock_id: str, nav_to_dock: bool = True) -> Optional[RunningTask]:
         """Send a `DockRobot` action request."""
         self.clearTaskError()
         self.info("Waiting for 'DockRobot' action server")
@@ -505,7 +508,7 @@ class BasicNavigator(Node):
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.DOCK_ROBOT
 
-    def undockRobot(self, dock_type: str = '') -> bool:
+    def undockRobot(self, dock_type: str = '') -> Optional[RunningTask]:
         """Send a `UndockRobot` action request."""
         self.clearTaskError()
         self.info("Waiting for 'UndockRobot' action server")
@@ -534,15 +537,25 @@ class BasicNavigator(Node):
         """Cancel pending task request of any type."""
         self.info('Canceling current task.')
         if self.result_future:
-            future = self.goal_handle.cancel_goal_async()
-            rclpy.spin_until_future_complete(self, future)
+            if self.goal_handle is not None:
+                future = self.goal_handle.cancel_goal_async()
+                rclpy.spin_until_future_complete(self, future)
+            else:
+                self.error('Cancel task failed, goal handle is None')
+                self.setTaskError(0, 'Cancel task failed, goal handle is None')
+                return
         if self.route_result_future:
-            future = self.route_goal_handle.cancel_goal_async()
-            rclpy.spin_until_future_complete(self, future)
+            if self.route_goal_handle is not None:
+                future = self.route_goal_handle.cancel_goal_async()
+                rclpy.spin_until_future_complete(self, future)
+            else:
+                self.error('Cancel route task failed, goal handle is None')
+                self.setTaskError(0, 'Cancel route task failed, goal handle is None')
+                return
         self.clearTaskError()
         return
 
-    def isTaskComplete(self, task=RunningTask.NONE) -> bool:
+    def isTaskComplete(self, task: RunningTask = RunningTask.NONE) -> bool:
         """Check if the task request of any type is complete yet."""
         # Find the result future to spin
         if task is None:
@@ -585,7 +598,7 @@ class BasicNavigator(Node):
         self.debug('Task succeeded!')
         return True
 
-    def getFeedback(self, task=RunningTask.NONE) -> str:
+    def getFeedback(self, task: RunningTask = RunningTask.NONE) -> Any:
         """Get the pending action feedback message."""
         if task != RunningTask.COMPUTE_AND_TRACK_ROUTE:
             return self.feedback
@@ -743,7 +756,10 @@ class BasicNavigator(Node):
                       f' error msg:{rtn.error_msg}')
             return None
 
-    def _getRouteImpl(self, start, goal, use_start=False):
+    def _getRouteImpl(
+        self, start: Union[int, PoseStamped],
+        goal: Union[int, PoseStamped], use_start: bool = False
+    ) -> ComputeRoute.Result:
         """
         Send a `ComputeRoute` action request.
 
@@ -777,7 +793,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Get route was rejected!')
             result = ComputeRoute.Result()
             result.error_code = ComputeRoute.UNKNOWN
@@ -786,26 +802,33 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         rclpy.spin_until_future_complete(self, self.result_future)
-        self.status = self.result_future.result().status
+        self.status = self.result_future.result().status  # type: ignore[union-attr]
 
-        return self.result_future.result().result
+        return self.result_future.result().result  # type: ignore[union-attr]
 
-    def getRoute(self, start, goal, use_start=False):
+    def getRoute(
+            self, start: Union[int, PoseStamped],
+            goal: Union[int, PoseStamped],
+            use_start: bool = False) -> Optional[list[Union[Path, Route]]]:
         """Send a `ComputeRoute` action request."""
         self.clearTaskError()
         rtn = self._getRouteImpl(start, goal, use_start=False)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
             self.setTaskError(rtn.error_code, rtn.error_msg)
-            self.warn('Getting route failed with'
-                      f' status code:{self.status}'
-                      f' error code:{rtn.error_code}'
-                      f' error msg:{rtn.error_msg}')
+            self.warn(
+                'Getting route failed with'
+                f' status code:{self.status}'
+                f' error code:{rtn.error_code}'
+                f' error msg:{rtn.error_msg}')
             return None
 
         return [rtn.path, rtn.route]
 
-    def getAndTrackRoute(self, start, goal, use_start=False):
+    def computeAndTrackRoute(
+        self, start: Union[int, PoseStamped],
+        goal: Union[int, PoseStamped], use_start: bool = False
+    ) -> Optional[RunningTask]:
         """Send a `ComputeAndTrackRoute` action request."""
         self.clearTaskError()
         self.debug("Waiting for 'ComputeAndTrackRoute' action server")
@@ -835,7 +858,7 @@ class BasicNavigator(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.route_goal_handle = send_goal_future.result()
 
-        if not self.route_goal_handle.accepted:
+        if not self.route_goal_handle or not self.route_goal_handle.accepted:
             msg = 'Compute and track route was rejected!'
             self.setTaskError(ComputeAndTrackRoute.UNKNOWN, msg)
             self.error(msg)
@@ -1086,7 +1109,7 @@ class BasicNavigator(Node):
         self.feedback = msg.feedback
         return
 
-    def _routeFeedbackCallback(self, msg) -> None:
+    def _routeFeedbackCallback(self, msg: ComputeAndTrackRoute.Feedback) -> None:
         self.debug('Received route action feedback message')
         self.route_feedback.append(msg.feedback)
         return
