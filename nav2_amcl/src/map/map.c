@@ -49,6 +49,9 @@ map_t * map_alloc(void)
   // Allocate storage for main map
   map->cells = (map_cell_t *) NULL;
 
+  // Initialize max_occ_dist to 0.0
+  map->max_occ_dist = 0.0;
+
   return map;
 }
 
