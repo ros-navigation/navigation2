@@ -52,16 +52,16 @@ This is not an exhaustive list, but enough to get users started thinking about h
   - Considering adding in the Smoother Server or spline fitting between the Route Server and Controller Server in a Behavior Tree to smooth out the edge transitions for following
 * 2. Route Server's output sparse route -> Planner Server to plan to the next node(s) -> Controller Server to track global path
   - This is useful when you want to follow the general route, but wish to have the flexibility to leave the route when obstacles are in the way and need the free-space planner to do so
-  - This is also useful in conjunction with (1) above as a fallback behavior to follow the route when possible, leave when blocked, and then track the route again in situations where you want to only leave the route when absolutely required
+  - This is also useful in conjunction with (1) above as a fallback behavior to follow the route when possible, leave when blocked (after some time, or proactively when it sees blocked in immediate future), and then track the route again. This is great in situations where you want to only leave the route when required but otherwise track the route closely
   - Consider using ComputePathToPose to plan to the next node in the route and change nodes as you approach the next
   - Consider using ComputePathThroughPoses to plan through several nodes in the future to have smooth interchange
 * 3.  Route Server's output sparse route -> Waypoint Follower or Navigate Through Poses to navigate with task
   - Similar to (2), this is useful to take the nodes and edges and navigate along the intended route using intelligent navigation
-  - This architecturally puts the route planning in the higher-level autonomy logic rather than with in the main navigation task, which could be useful separation of concerns for some applications.
+  - This architecturally puts the route planning in the higher-level application-autonomy logic rather than with in the main navigation-planning task logic, which could be useful separation of concerns for some applications.
 * 4. Create a behavior tree to NavigateToPose to the first node in the graph, then select (1) or (2) to track the route, finally NavigateToPose to get to the final goal pose off of the graph
   - This is useful when the start and/or goal poses are not on the navigation graph, and thus the robot needs to navigate to its starting node or final goal pose in a 'first-mile' and 'last-mile' style task
 * 5. Route Server's `ComputeAndTrackRoute` instead of `ComputeRoute` and send the dense path in (1) or sparse route in (2) or (3)
-  - This is useful to track the progress of the route in the Route Server while following the route as an application sees fit. This process allows for the triggering of spatial, graph, or contextual behaviors while executing the task like adjusting speeds, turning on lights, rerouting due to multi-robot coordination resource constraints, opening doors, etc.
+  - This is useful to track the progress of the route in the Route Server while following the route as an application sees fit. This process allows for the triggering of spatial, graph, or contextual behaviors while executing the task like adjusting speeds, turning on lights, rerouting due to multi-robot coordination resource constraints, opening doors, etc. This has a wide ranging set of applications.
 * 6. Teleoping a robot -> having a script which automatically stores new nodes and/or operator manually triggers a node capture -> saving this to file -> annotating file with operation plugin to do at each waypoint (if any) -> later using the graph to navigate the robot and perform tasks
   - This is one possible way to setup a Teach-and-Repeat behavior using the route server with custom behaviors at each node. There are likely many.
 
