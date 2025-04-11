@@ -36,7 +36,7 @@ LikelihoodFieldModel::LikelihoodFieldModel(
   z_rand_ = z_rand;
   sigma_hit_ = sigma_hit;
 
-  // recompute cpace only when nescessary, i.e. if:
+  // recompute cspace only when necessary, i.e. if:
   // - max_occ_dist changed
   // OR
   // - cspace was not computed yet, i.e. when map->max_occ_dist == 0.0
