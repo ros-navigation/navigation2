@@ -104,7 +104,7 @@ Footprint CostmapTopicCollisionChecker::getFootprint(
 
     // if footprint_sub_ was not initialized (alternative constructor), we are using the
     // footprint built from the footprint_string alternative constructor argument.
-    if (footprint_sub_) {
+    if (footprint_sub_ != nullptr) {
       if (!footprint_sub_->getFootprintInRobotFrame(footprint_, header)) {
         throw CollisionCheckerException("Current footprint not available.");
       }

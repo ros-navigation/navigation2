@@ -99,7 +99,7 @@ protected:
   // Name used for logging
   std::string name_;
   CostmapSubscriber & costmap_sub_;
-  std::shared_ptr<FootprintSubscriber> footprint_sub_;
+  FootprintSubscriber * footprint_sub_ = nullptr;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
   rclcpp::Clock::SharedPtr clock_;
   Footprint footprint_;
