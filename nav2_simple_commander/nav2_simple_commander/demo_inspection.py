@@ -76,14 +76,14 @@ def main() -> None:
             inspection_pose.pose.orientation.w = 0.707
         inspection_points.append(deepcopy(inspection_pose))
 
-    navigator.followWaypoints(inspection_points)
+    wpf_task = navigator.followWaypoints(inspection_points)
 
     # Do something during our route (e.x. AI to analyze stock information or upload to the cloud)
     # Simply the current waypoint ID for the demonstration
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=wpf_task):
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=wpf_task)
         if feedback and i % 5 == 0:
             print(
                 'Executing current waypoint: '
@@ -104,8 +104,8 @@ def main() -> None:
 
     # go back to start
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    navigator.goToPose(initial_pose)
-    while not navigator.isTaskComplete():
+    go_to_pose_task = navigator.goToPose(initial_pose)
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         pass
 
     exit(0)

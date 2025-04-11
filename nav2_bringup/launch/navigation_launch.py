@@ -31,6 +31,7 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
+    graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
@@ -42,6 +43,7 @@ def generate_launch_description() -> LaunchDescription:
         'controller_server',
         'smoother_server',
         'planner_server',
+        'route_server',
         'behavior_server',
         'velocity_smoother',
         'collision_monitor',
@@ -51,11 +53,6 @@ def generate_launch_description() -> LaunchDescription:
     ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
@@ -89,6 +86,11 @@ def generate_launch_description() -> LaunchDescription:
         'params_file',
         default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value='', description='Path to the graph file to load'
     )
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -155,6 +157,16 @@ def generate_launch_description() -> LaunchDescription:
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
+            Node(
+                package='nav2_route',
+                executable='route_server',
+                name='route_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params, {'graph_filepath': graph_filepath}],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
             Node(
                 package='nav2_behaviors',
                 executable='behavior_server',
@@ -262,6 +274,12 @@ def generate_launch_description() -> LaunchDescription:
                         remappings=remappings,
                     ),
                     ComposableNode(
+                        package='nav2_route',
+                        plugin='nav2_route::RouteServer',
+                        name='route_server',
+                        parameters=[configured_params, {'graph_filepath': graph_filepath}],
+                        remappings=remappings),
+                    ComposableNode(
                         package='nav2_behaviors',
                         plugin='behavior_server::BehaviorServer',
                         name='behavior_server',
@@ -328,6 +346,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)

@@ -27,6 +27,7 @@ setup(
             'example_nav_through_poses = nav2_simple_commander.example_nav_through_poses:main',
             'example_waypoint_follower = nav2_simple_commander.example_waypoint_follower:main',
             'example_follow_path = nav2_simple_commander.example_follow_path:main',
+            'example_route = nav2_simple_commander.example_route:main',
             'demo_picking = nav2_simple_commander.demo_picking:main',
             'demo_inspection = nav2_simple_commander.demo_inspection:main',
             'demo_security = nav2_simple_commander.demo_security:main',
