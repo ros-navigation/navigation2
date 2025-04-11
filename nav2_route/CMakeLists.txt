@@ -39,6 +39,7 @@ add_library(${library_name} SHARED
   src/node_spatial_tree.cpp
   src/path_converter.cpp
   src/graph_loader.cpp
+  src/graph_saver.cpp
   src/goal_intent_extractor.cpp
 )
 
@@ -187,6 +188,37 @@ target_link_libraries(graph_file_loaders PRIVATE
   tf2::tf2
 )
 
+add_library(graph_file_savers SHARED
+    src/plugins/graph_file_savers/geojson_graph_file_saver.cpp
+)
+target_include_directories(graph_file_savers
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(graph_file_savers PUBLIC
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  ${geometry_msgs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  nlohmann_json::nlohmann_json
+)
+target_link_libraries(graph_file_savers PRIVATE
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
+  tf2::tf2
+)
+
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 install(DIRECTORY include/
@@ -197,7 +229,8 @@ install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders
+install(TARGETS ${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -216,7 +249,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_dependencies(${dependencies})
 ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
@@ -232,5 +264,6 @@ ament_export_dependencies(
   nanoflann
   nlohmann_json
 )
-ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders)
+ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_package()
