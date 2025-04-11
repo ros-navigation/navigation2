@@ -39,6 +39,11 @@ public:
   {
     return geometry_msgs::msg::PoseStamped();
   }
+
+  std::optional<bool> getDockBackward()
+  {
+    return dock_backwards_;
+  }
 };
 
 TEST(DockingServerTests, ObjectLifecycle)
@@ -260,6 +265,49 @@ TEST(DockingServerTests, testDynamicParams)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
+TEST(DockingServerTests, testDockBackward)
+{
+  auto node = std::make_shared<DockingServerShim>();
+
+  // Setup 1 instance of the test failure dock & its plugin instance
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
+  node->on_configure(rclcpp_lifecycle::State());
+
+  EXPECT_FALSE(node->getDockBackward().has_value());
+
+  // Now, set the dock_backwards parameter to true
+  node->declare_parameter("dock_backwards", rclcpp::ParameterValue(true));
+  node->on_configure(rclcpp_lifecycle::State());
+  EXPECT_TRUE(node->getDockBackward().has_value());
+  EXPECT_TRUE(node->getDockBackward().value());
+  node->cleanup();
+
+  // Now, set the dock_backwards parameter to false
+  node->set_parameter(rclcpp::Parameter("dock_backwards", rclcpp::ParameterValue(false)));
+  node->on_configure(rclcpp_lifecycle::State());
+  EXPECT_TRUE(node->getDockBackward().has_value());
+  EXPECT_FALSE(node->getDockBackward().value());
+  node->cleanup();
+
+  node->shutdown();
   node.reset();
 }
 

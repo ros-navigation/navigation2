@@ -16,6 +16,7 @@
 
 #include "nav2_util/node_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
+#include "opennav_docking/utils.hpp"
 
 namespace opennav_docking
 {
@@ -309,14 +310,7 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
 
 opennav_docking_core::DockDirection SimpleChargingDock::getDockDirection()
 {
-  if (dock_direction_ == "forward") {
-    return opennav_docking_core::DockDirection::FORWARD;
-  } else if (dock_direction_ == "backward") {
-    return opennav_docking_core::DockDirection::BACKWARD;
-  } else {
-    RCLCPP_ERROR(node_->get_logger(), "Invalid dock direction: %s", dock_direction_.c_str());
-    return opennav_docking_core::DockDirection::UNKNOWN;
-  }
+  return utils::getDockDirectionFromString(dock_direction_);
 }
 
 }  // namespace opennav_docking
