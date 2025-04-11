@@ -28,6 +28,12 @@
 namespace nav2_behavior_tree
 {
 
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that removes goals that are in collision in on the global costmap
+ *        wraps nav2_msgs::srv::GetCosts
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
+ */
 class RemoveInCollisionGoals : public BtServiceNode<nav2_msgs::srv::GetCosts>
 {
 public:

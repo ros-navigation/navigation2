@@ -34,6 +34,8 @@ using namespace std::chrono_literals;  // NOLINT
 /**
  * @brief Abstract class representing an action based BT node
  * @tparam ActionT Type of action
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 template<class ActionT>
 class BtActionNode : public BT::ActionNodeBase
