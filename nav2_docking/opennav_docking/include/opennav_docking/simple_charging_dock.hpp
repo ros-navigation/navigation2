@@ -34,6 +34,8 @@ namespace opennav_docking
 class SimpleChargingDock : public opennav_docking_core::ChargingDock
 {
 public:
+  using DockDirection = opennav_docking_core::DockDirection;
+
   /**
    * @brief Constructor
    */
@@ -103,6 +105,13 @@ public:
    */
   virtual bool hasStoppedCharging();
 
+  /**
+   * @brief Indicates the direction of the dock. This is used to determine if the
+   * robot should drive forwards or backwards onto the dock.
+   * @return DockDirection The direction of the dock
+   */
+  virtual DockDirection getDockDirection();
+
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
 
@@ -146,6 +155,8 @@ protected:
   // Offset for staging pose relative to dock pose
   double staging_x_offset_;
   double staging_yaw_offset_;
+  // Does the robot drive backwards onto the dock? Default is forwards
+  std::string dock_direction_;
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;

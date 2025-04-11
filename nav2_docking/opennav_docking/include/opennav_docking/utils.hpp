@@ -24,6 +24,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
 #include "opennav_docking/types.hpp"
+#include "opennav_docking_core/charging_dock.hpp"
 #include "tf2/utils.hpp"
 
 namespace utils
@@ -33,6 +34,7 @@ using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
 using rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
 using nav2_util::geometry_utils::orientationAroundZAxis;
+using opennav_docking_core::DockDirection;
 
 /**
 * @brief Parse a yaml file to obtain docks
@@ -181,6 +183,17 @@ inline double l2Norm(const geometry_msgs::msg::Pose & a, const geometry_msgs::ms
     (a.position.x - b.position.x) * (a.position.x - b.position.x) +
     (a.position.y - b.position.y) * (a.position.y - b.position.y) +
     delta_angle * delta_angle);
+}
+
+inline DockDirection getDockDirectionFromString(const std::string & direction)
+{
+  if (direction == "forward") {
+    return DockDirection::FORWARD;
+  } else if (direction == "backward") {
+    return DockDirection::BACKWARD;
+  } else {
+    return DockDirection::UNKNOWN;
+  }
 }
 
 }  // namespace utils

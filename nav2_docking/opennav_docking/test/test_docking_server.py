@@ -62,7 +62,8 @@ def generate_test_description() -> LaunchDescription:
                          'dock_plugins': ['test_dock_plugin'],
                          'test_dock_plugin': {
                              'plugin': 'opennav_docking::SimpleChargingDock',
-                             'use_battery_status': True},
+                             'use_battery_status': True,
+                             'dock_direction': 'forward'},
                          'docks': ['test_dock'],
                          'test_dock': {
                              'type': 'test_dock_plugin',
@@ -210,7 +211,7 @@ class TestDockingServer(unittest.TestCase):
         # Test docking action
         self.action_result = []
         assert self.dock_action_client.wait_for_server(timeout_sec=5.0), \
-               'dock_robot service not available'
+            'dock_robot service not available'
 
         goal = DockRobot.Goal()
         goal.use_dock_id = True

@@ -41,6 +41,7 @@ TEST(SimpleChargingDockTests, ObjectLifecycle)
   EXPECT_TRUE(dock->disableCharging());
   EXPECT_TRUE(dock->hasStoppedCharging());
   EXPECT_TRUE(dock->isCharger());
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
 
   dock->deactivate();
   dock->cleanup();
@@ -228,6 +229,34 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.3, 0.01);  // Applies external_detection_translation_x, +0.2
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, GetDockDirection)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
+
+  dock->deactivate();
+
+  // Now set to BACKWARD
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward")));
+
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::BACKWARD);
 
   dock->deactivate();
   dock->cleanup();

@@ -100,6 +100,11 @@ public:
     return true;
   }
 
+  virtual opennav_docking_core::DockDirection getDockDirection()
+  {
+    return opennav_docking_core::DockDirection::FORWARD;
+  }
+
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };

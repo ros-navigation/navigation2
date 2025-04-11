@@ -27,6 +27,12 @@ namespace opennav_docking_core
 {
 
 /**
+ * @enum DockDirection
+ * @brief An enum class representing the direction of the dock
+ */
+enum class DockDirection { UNKNOWN, FORWARD, BACKWARD };
+
+/**
  * @class ChargingDock
  * @brief Abstract interface for a charging dock for the docking framework
  */
@@ -122,6 +128,13 @@ public:
    * @brief Gets if this is a charging-typed dock
    */
   virtual bool isCharger() {return true;}
+
+  /**
+   * @brief Indicates the direction of the dock. This is used to determine if the
+   * robot should drive forwards or backwards onto the dock.
+   * @return DockDirection The direction of the dock
+   */
+  virtual DockDirection getDockDirection() {return DockDirection::FORWARD;}
 
   std::string getName() {return name_;}
 

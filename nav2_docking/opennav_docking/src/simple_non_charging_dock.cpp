@@ -16,6 +16,7 @@
 
 #include "nav2_util/node_utils.hpp"
 #include "opennav_docking/simple_non_charging_dock.hpp"
+#include "opennav_docking/utils.hpp"
 
 namespace opennav_docking
 {
@@ -69,6 +70,10 @@ void SimpleNonChargingDock::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
 
+  // Direction of docking
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".dock_direction", rclcpp::ParameterValue(std::string("forward")));
+
   node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
   node_->get_parameter(
@@ -86,6 +91,7 @@ void SimpleNonChargingDock::configure(
   node_->get_parameter("base_frame", base_frame_id_);  // Get server base frame ID
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
+  node_->get_parameter(name + ".dock_direction", dock_direction_);
 
   // Setup filter
   double filter_coef;
@@ -266,6 +272,11 @@ void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointStat
   velocity /= stall_joint_names_.size();
 
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
+}
+
+opennav_docking_core::DockDirection SimpleNonChargingDock::getDockDirection()
+{
+  return utils::getDockDirectionFromString(dock_direction_);
 }
 
 }  // namespace opennav_docking

@@ -354,7 +354,6 @@ docking_server:
     max_retries: 3
     base_frame: "base_link"
     fixed_frame: "odom"
-    dock_backwards: false
     dock_prestaging_tolerance: 0.5
 
     # Types of docks
@@ -366,6 +365,7 @@ docking_server:
       use_external_detection_pose: true
       use_battery_status: false # true
       use_stall_detection: false # true
+      dock_direction: "forward"
 
       external_detection_timeout: 1.0
       external_detection_translation_x: -0.18
