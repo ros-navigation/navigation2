@@ -104,10 +104,10 @@ BehaviorTreeEngine::createTreeFromFile(
 void
 BehaviorTreeEngine::addGrootMonitoring(
   BT::Tree * tree,
-  uint16_t publisher_port)
+  uint16_t server_port)
 {
   // This logger publish status changes using Groot2
-  groot_monitor_ = std::make_unique<BT::Groot2Publisher>(*tree, publisher_port);
+  groot_monitor_ = std::make_unique<BT::Groot2Publisher>(*tree, server_port);
 
   // Register common types JSON definitions
   BT::RegisterJsonDefinition<builtin_interfaces::msg::Time>();
