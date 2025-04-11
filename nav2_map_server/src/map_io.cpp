@@ -259,6 +259,7 @@ void loadMapFromFile(
   // Handle different map modes with if else condition
   // Trinary and Scale modes are handled together
   // because they share a lot of code
+  // Raw mode is handled separately in else if block
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
     // Convert grayscale to float in range [0.0, 1.0]
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
@@ -313,9 +314,7 @@ void loadMapFromFile(
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
       Eigen::RowMajor> flipped = result.colwise().reverse();
     std::memcpy(msg.data.data(), flipped.data(), width * height);
-  }
-  // Raw mode is handled separately in else if block
-  else if (load_parameters.mode == MapMode::Raw) {
+  } else if (load_parameters.mode == MapMode::Raw) {
       // Raw mode: interpret raw image pixel values directly as occupancy values
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result =
       gray_matrix.cast<int8_t>();
@@ -330,9 +329,8 @@ void loadMapFromFile(
     Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
       Eigen::RowMajor> flipped = result.colwise().reverse();
     std::memcpy(msg.data.data(), flipped.data(), width * height);
-  }
-  // If the map mode is not recognized, throw an error
-  else {
+  } else {
+    // If the map mode is not recognized, throw an error
     throw std::runtime_error("Invalid map mode");
   }
 
