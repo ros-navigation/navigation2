@@ -40,6 +40,9 @@ module = [
     "builtin_interfaces.*",
     "lifecycle_msgs.*",
     "geographic_msgs.*",
+    "rcl_interfaces.*",
+    "std_msgs.*",
+    "zmq.*",
 ]
 
 ignore_missing_imports = true

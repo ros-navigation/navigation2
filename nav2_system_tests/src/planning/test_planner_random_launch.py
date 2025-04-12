@@ -22,7 +22,7 @@ from launch.actions import ExecuteProcess
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     testExecutable = os.getenv('TEST_EXECUTABLE')
 
     ld = LaunchDescription([])
