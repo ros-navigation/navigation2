@@ -47,7 +47,7 @@
           </Sequence>
         </RecoveryNode>
 
-        <!-- Compute a path through the next couple of route nodes to consider environmental conditions and behavioral constriants, with contextual recoveries -->
+        <!-- Compute a path through the next couple of route nodes to consider environmental conditions and behavioral constraints, with contextual recoveries -->
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence>
