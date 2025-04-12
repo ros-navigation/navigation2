@@ -43,6 +43,8 @@ module = [
     "rcl_interfaces.*",
     "std_msgs.*",
     "zmq.*",
+    "graphviz.*",
+    "transforms3d.*",
 ]
 
 ignore_missing_imports = true
