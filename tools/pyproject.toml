@@ -43,6 +43,7 @@ module = [
     "rcl_interfaces.*",
     "std_msgs.*",
     "zmq.*",
+    "std_srvs.*",
 ]
 
 ignore_missing_imports = true
