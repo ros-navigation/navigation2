@@ -60,7 +60,7 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_aborted()
 {
-  setOutput("execution_duration", 0.0);
+  setOutput("execution_duration", builtin_interfaces::msg::Duration());
   setOutput("error_code_id", result_.result->error_code);
   setOutput("error_msg", result_.result->error_msg);
   return BT::NodeStatus::FAILURE;
@@ -69,7 +69,7 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_aborted()
 BT::NodeStatus ComputeAndTrackRouteAction::on_cancelled()
 {
   // Set empty error code, action was cancelled
-  setOutput("execution_duration", 0.0);
+  setOutput("execution_duration", builtin_interfaces::msg::Duration());
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;

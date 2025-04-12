@@ -63,6 +63,18 @@ plugin_add_test(test_get_current_pose_action test_get_current_pose_action.cpp na
 
 plugin_add_test(test_remove_passed_goals_action test_remove_passed_goals_action.cpp nav2_remove_passed_goals_action_bt_node)
 
+plugin_add_test(test_get_next_few_goals_action test_get_next_few_goals_action.cpp nav2_get_next_few_goals_action_bt_node)
+
+plugin_add_test(
+  test_append_goal_pose_to_goals_action
+  test_append_goal_pose_to_goals_action.cpp
+  nav2_append_goal_pose_to_goals_action_bt_node)
+
+plugin_add_test(
+  test_extract_route_nodes_as_goals_action
+  test_extract_route_nodes_as_goals_action.cpp
+  nav2_extract_route_nodes_as_goals_action_bt_node)
+
 plugin_add_test(test_remove_in_collision_goals_action
   test_remove_in_collision_goals_action.cpp
   nav2_remove_in_collision_goals_action_bt_node)

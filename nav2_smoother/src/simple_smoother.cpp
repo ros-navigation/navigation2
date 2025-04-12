@@ -72,7 +72,8 @@ bool SimpleSmoother::smooth(
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
-  std::vector<PathSegment> path_segments{PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
+  std::vector<PathSegment> path_segments{PathSegment{
+      0u, static_cast<unsigned int>(path.poses.size() - 1)}};
   if (enforce_path_inversion_) {
     path_segments = findDirectionalPathSegments(path);
   }
