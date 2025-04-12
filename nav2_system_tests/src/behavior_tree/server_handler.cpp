@@ -45,6 +45,8 @@ ServerHandler::ServerHandler()
     node_, "backup");
   compute_route_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputeRoute>>(
     node_, "compute_route");
+  smoother_server = std::make_unique<DummyActionServer<nav2_msgs::action::SmoothPath>>(
+    node_, "smooth_path");
   drive_on_heading_server = std::make_unique<DummyActionServer<nav2_msgs::action::DriveOnHeading>>(
     node_, "drive_on_heading");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
