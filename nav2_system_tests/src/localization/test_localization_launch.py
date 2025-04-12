@@ -26,8 +26,8 @@ import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
