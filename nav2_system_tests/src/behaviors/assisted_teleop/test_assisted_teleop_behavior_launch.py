@@ -27,7 +27,7 @@ from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
@@ -43,7 +43,7 @@ def generate_launch_description():
     bt_navigator_xml = os.path.join(
         get_package_share_directory('nav2_bt_navigator'),
         'behavior_trees',
-        os.getenv('BT_NAVIGATOR_XML'),
+        os.getenv('BT_NAVIGATOR_XML', ''),
     )
 
     params_file = os.path.join(nav2_bringup_dir, 'params/nav2_params.yaml')
@@ -109,10 +109,10 @@ def generate_launch_description():
     )
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable], name='test_assisted_teleop_behavior_node', output='screen'

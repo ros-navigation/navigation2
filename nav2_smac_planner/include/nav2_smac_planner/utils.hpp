@@ -45,9 +45,9 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 {
   geometry_msgs::msg::Pose msg;
   msg.position.x =
-    static_cast<float>(costmap->getOriginX()) + (mx - 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginX()) + mx * costmap->getResolution();
   msg.position.y =
-    static_cast<float>(costmap->getOriginY()) + (my - 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginY()) + my * costmap->getResolution();
   return msg;
 }
 

@@ -92,6 +92,13 @@ public:
   bool on_cleanup();
 
   /**
+   * @brief Enable (or disable) Groot2 monitoring of BT
+   * @param enable Groot2 monitoring
+   * @param server_port Groot2 Server port, first of the pair (server_port, publisher_port)
+   */
+  void setGrootMonitoring(const bool enable, const unsigned server_port);
+
+  /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
@@ -276,6 +283,10 @@ protected:
 
   // should the BT be reloaded even if the same xml filename is requested?
   bool always_reload_bt_xml_ = false;
+
+  // Parameters for Groot2 monitoring
+  bool enable_groot_monitoring_ = true;
+  int groot_server_port_ = 1667;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;

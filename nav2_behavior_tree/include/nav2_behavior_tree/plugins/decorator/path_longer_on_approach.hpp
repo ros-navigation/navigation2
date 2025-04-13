@@ -19,9 +19,12 @@
 #include <memory>
 #include <limits>
 
+#include "behaviortree_cpp/decorator_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "behaviortree_cpp/decorator_node.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
@@ -49,6 +52,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Planned Path"),
       BT::InputPort<double>(

@@ -36,11 +36,11 @@ void RemovePassedGoals::initialize()
   getInput("radius", viapoint_achieved_radius_);
 
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  node->get_parameter("transform_tolerance", transform_tolerance_);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
 
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
-    node, "robot_base_frame", this);
+    node_, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus RemovePassedGoals::tick()
@@ -67,6 +67,13 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     return BT::NodeStatus::FAILURE;
   }
 
+  // get the `waypoint_statuses` vector
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
+  auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
+  if (!waypoint_statuses_get_res) {
+    RCLCPP_ERROR(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+  }
+
   double dist_to_goal;
   while (goal_poses.goals.size() > 1) {
     dist_to_goal = euclidean_distance(goal_poses.goals[0].pose, current_pose.pose);
@@ -75,10 +82,24 @@ inline BT::NodeStatus RemovePassedGoals::tick()
       break;
     }
 
+    // mark waypoint statuses before the goal is erased from goals
+    if (waypoint_statuses_get_res) {
+      auto cur_waypoint_index =
+        find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, goal_poses.goals[0]);
+      if (cur_waypoint_index == -1) {
+        RCLCPP_ERROR(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
+        return BT::NodeStatus::FAILURE;
+      }
+      waypoint_statuses[cur_waypoint_index].waypoint_status =
+        nav2_msgs::msg::WaypointStatus::COMPLETED;
+    }
+
     goal_poses.goals.erase(goal_poses.goals.begin());
   }
 
   setOutput("output_goals", goal_poses);
+  // set `waypoint_statuses` output
+  setOutput("output_waypoint_statuses", waypoint_statuses);
 
   return BT::NodeStatus::SUCCESS;
 }

@@ -27,6 +27,7 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_msgs/msg/goals.hpp"
+#include "nav2_msgs/msg/waypoint_status.hpp"
 
 namespace BT
 {
@@ -43,6 +44,13 @@ namespace BT
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Point>(new_key);
+  }
+
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 3) {
@@ -64,6 +72,13 @@ inline geometry_msgs::msg::Point convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Quaternion>(new_key);
+  }
+
   // four real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 4) {
@@ -86,6 +101,13 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::PoseStamped>(new_key);
+  }
+
   // 7 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 9) {
@@ -113,6 +135,13 @@ inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 template<>
 inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::vector<geometry_msgs::msg::PoseStamped>>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if (parts.size() % 9 != 0) {
     throw std::runtime_error("invalid number of fields for std::vector<PoseStamped> attribute)");
@@ -143,6 +172,13 @@ inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const Stri
 template<>
 inline nav_msgs::msg::Goals convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav_msgs::msg::Goals>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Goals attribute)");
@@ -175,6 +211,13 @@ inline nav_msgs::msg::Goals convertFromString(const StringView key)
 template<>
 inline nav_msgs::msg::Path convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav_msgs::msg::Path>(new_key);
+  }
+
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
     throw std::runtime_error("invalid number of fields for Path attribute)");
@@ -200,6 +243,86 @@ inline nav_msgs::msg::Path convertFromString(const StringView key)
 }
 
 /**
+ * @brief Parse XML string to nav2_msgs::msg::WaypointStatus
+ * @param key XML string
+ * @return nav2_msgs::msg::WaypointStatus
+ */
+template<>
+inline nav2_msgs::msg::WaypointStatus convertFromString(const StringView key)
+{
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav2_msgs::msg::WaypointStatus>(new_key);
+  }
+
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() != 13) {
+    throw std::runtime_error("invalid number of fields for WaypointStatus attribute)");
+  } else {
+    nav2_msgs::msg::WaypointStatus waypoint_status;
+    waypoint_status.waypoint_status = BT::convertFromString<uint8_t>(parts[0]);
+    waypoint_status.waypoint_index = BT::convertFromString<uint32_t>(parts[1]);
+    waypoint_status.waypoint_pose.header.stamp =
+      rclcpp::Time(BT::convertFromString<int64_t>(parts[2]));
+    waypoint_status.waypoint_pose.header.frame_id = BT::convertFromString<std::string>(parts[3]);
+    waypoint_status.waypoint_pose.pose.position.x = BT::convertFromString<double>(parts[4]);
+    waypoint_status.waypoint_pose.pose.position.y = BT::convertFromString<double>(parts[5]);
+    waypoint_status.waypoint_pose.pose.position.z = BT::convertFromString<double>(parts[6]);
+    waypoint_status.waypoint_pose.pose.orientation.x = BT::convertFromString<double>(parts[7]);
+    waypoint_status.waypoint_pose.pose.orientation.y = BT::convertFromString<double>(parts[8]);
+    waypoint_status.waypoint_pose.pose.orientation.z = BT::convertFromString<double>(parts[9]);
+    waypoint_status.waypoint_pose.pose.orientation.w = BT::convertFromString<double>(parts[10]);
+    waypoint_status.error_code = BT::convertFromString<uint16_t>(parts[11]);
+    waypoint_status.error_msg = BT::convertFromString<std::string>(parts[12]);
+    return waypoint_status;
+  }
+}
+
+/**
+ * @brief Parse XML string to nav2_msgs::msg::WaypointStatus
+ * @param key XML string
+ * @return nav2_msgs::msg::WaypointStatus
+ */
+template<>
+inline std::vector<nav2_msgs::msg::WaypointStatus> convertFromString(const StringView key)
+{
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::vector<nav2_msgs::msg::WaypointStatus>>(new_key);
+  }
+
+  auto parts = BT::splitString(key, ';');
+  if (parts.size() % 13 != 0) {
+    throw std::runtime_error("invalid number of fields for std::vector<WaypointStatus> attribute)");
+  } else {
+    std::vector<nav2_msgs::msg::WaypointStatus> wp_status_vector;
+    for (size_t i = 0; i < parts.size(); i += 13) {
+      nav2_msgs::msg::WaypointStatus wp_status;
+      wp_status.waypoint_status = BT::convertFromString<uint8_t>(parts[i]);
+      wp_status.waypoint_index = BT::convertFromString<uint32_t>(parts[i + 1]);
+      wp_status.waypoint_pose.header.stamp =
+        rclcpp::Time(BT::convertFromString<int64_t>(parts[i + 2]));
+      wp_status.waypoint_pose.header.frame_id = BT::convertFromString<std::string>(parts[i + 3]);
+      wp_status.waypoint_pose.pose.position.x = BT::convertFromString<double>(parts[i + 4]);
+      wp_status.waypoint_pose.pose.position.y = BT::convertFromString<double>(parts[i + 5]);
+      wp_status.waypoint_pose.pose.position.z = BT::convertFromString<double>(parts[i + 6]);
+      wp_status.waypoint_pose.pose.orientation.x = BT::convertFromString<double>(parts[i + 7]);
+      wp_status.waypoint_pose.pose.orientation.y = BT::convertFromString<double>(parts[i + 8]);
+      wp_status.waypoint_pose.pose.orientation.z = BT::convertFromString<double>(parts[i + 9]);
+      wp_status.waypoint_pose.pose.orientation.w = BT::convertFromString<double>(parts[i + 10]);
+      wp_status.error_code = BT::convertFromString<uint16_t>(parts[i + 11]);
+      wp_status.error_msg = BT::convertFromString<std::string>(parts[i + 12]);
+      wp_status_vector.push_back(wp_status);
+    }
+    return wp_status_vector;
+  }
+}
+
+/**
  * @brief Parse XML string to std::chrono::milliseconds
  * @param key XML string
  * @return std::chrono::milliseconds
@@ -207,6 +330,13 @@ inline nav_msgs::msg::Path convertFromString(const StringView key)
 template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::chrono::milliseconds>(new_key);
+  }
+
   return std::chrono::milliseconds(std::stoul(key.data()));
 }
 
