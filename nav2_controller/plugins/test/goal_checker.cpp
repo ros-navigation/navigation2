@@ -40,6 +40,7 @@
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "eigen3/Eigen/Geometry"
 
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
@@ -237,9 +238,117 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(pose_tol.position.y, 200.0);
 }
 
+TEST(StoppedGoalChecker, is_reached)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  SimpleGoalChecker gc;
+  StoppedGoalChecker sgc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  sgc.initialize(x, "test", costmap);
+  gc.initialize(x, "test2", costmap);
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Twist velocity;
+  geometry_msgs::msg::Pose current_pose;
+
+  // Current linear x position is tolerance away from goal
+  current_pose.position.x = 0.25;
+  velocity.linear.x = 0.25;
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear x speed exceeds tolerance
+  velocity.linear.x = 0.25 + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear x position is further than tolerance away from goal
+  current_pose.position.x = 0.25 + std::numeric_limits<double>::epsilon();
+  velocity.linear.x = 0.25;
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+  current_pose.position.x = 0.0;
+  velocity.linear.x = 0.0;
+
+  // Current linear position is tolerance away from goal
+  current_pose.position.x = 0.25 / std::sqrt(2);
+  current_pose.position.y = 0.25 / std::sqrt(2);
+  velocity.linear.x = 0.25 / std::sqrt(2);
+  velocity.linear.y = 0.25 / std::sqrt(2);
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear speed exceeds tolerance
+  velocity.linear.x = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  velocity.linear.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear position is further than tolerance away from goal
+  current_pose.position.x = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  current_pose.position.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  velocity.linear.x = 0.25 / std::sqrt(2);
+  velocity.linear.y = 0.25 / std::sqrt(2);
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  current_pose.position.x = 0.0;
+  velocity.linear.x = 0.0;
+
+
+  // Current angular position is tolerance away from goal
+  auto quat =
+    (Eigen::AngleAxisd::Identity() * Eigen::AngleAxisd(0.25, Eigen::Vector3d::UnitZ())).coeffs();
+  // epsilon for orientation is a lot bigger than double limit, probably from TF getYaw
+  auto quat_epsilon =
+    (Eigen::AngleAxisd::Identity() *
+    Eigen::AngleAxisd(0.25 + 1.0E-15, Eigen::Vector3d::UnitZ())).coeffs();
+
+  current_pose.orientation.z = quat[2];
+  current_pose.orientation.w = quat[3];
+  velocity.angular.z = 0.25;
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current angular speed exceeds tolerance
+  velocity.angular.z = 0.25 + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current angular position is further than tolerance away from goal
+  current_pose.orientation.z = quat_epsilon[2];
+  current_pose.orientation.w = quat_epsilon[3];
+  velocity.angular.z = 0.25;
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+}
+
 int main(int argc, char ** argv)
 {
+  ::testing::InitGoogleTest(&argc, argv);
+
   rclcpp::init(argc, argv);
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

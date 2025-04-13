@@ -18,18 +18,13 @@ import threading
 import time
 
 from geometry_msgs.msg import PoseStamped
-from nav2_msgs.action import (
-    ComputePathThroughPoses,
-    ComputePathToPose,
-    FollowPath,
-    SmoothPath,
-)
+from nav2_msgs.action import ComputePathThroughPoses, ComputePathToPose, FollowPath, SmoothPath
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from nav_msgs.msg import Path
 import rclpy
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -79,6 +74,9 @@ def main(argv=sys.argv[1:]):
             assert (
                 navigator.result_future.result().result.error_code == error_code
             ), 'Follow path error code does not match'
+            assert (
+                navigator.result_future.result().result.error_msg != ''
+            ), 'Follow path error_msg is empty'
 
         else:
             assert False, 'Follow path was rejected'
@@ -111,8 +109,11 @@ def main(argv=sys.argv[1:]):
         assert (
             result.error_code == error_code
         ), 'Compute path to pose error does not match'
+        assert (
+            result.error_msg != ''
+        ), 'Compute path to pose error_msg empty'
 
-    def cancel_task():
+    def cancel_task() -> None:
         time.sleep(1)
         navigator.goal_handle.cancel_goal_async()
 
@@ -145,6 +146,9 @@ def main(argv=sys.argv[1:]):
         assert (
             result.error_code == error_code
         ), 'Compute path through pose error does not match'
+        assert (
+            result.error_msg != ''
+        ), 'Compute path through pose error_msg is empty'
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
     result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'cancelled')
@@ -170,7 +174,7 @@ def main(argv=sys.argv[1:]):
     a_path.poses.append(pose1)
 
     navigator._waitForNodeToActivate('smoother_server')
-    smoother = {
+    smoother_errors = {
         'invalid_smoother': SmoothPath.Result().INVALID_SMOOTHER,
         'unknown': SmoothPath.Result().UNKNOWN,
         'timeout': SmoothPath.Result().TIMEOUT,
@@ -179,9 +183,10 @@ def main(argv=sys.argv[1:]):
         'invalid_path': SmoothPath.Result().INVALID_PATH,
     }
 
-    for smoother, error_code in smoother.items():
+    for smoother, error_code in smoother_errors.items():
         result = navigator._smoothPathImpl(a_path, smoother)
         assert result.error_code == error_code, 'Smoother error does not match'
+        assert result.error_msg != '', 'Smoother error_msg is empty'
 
     navigator.lifecycleShutdown()
     rclpy.shutdown()

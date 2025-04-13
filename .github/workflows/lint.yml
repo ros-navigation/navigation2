@@ -19,3 +19,48 @@ jobs:
         linter: ${{ matrix.linter }}
         distribution: rolling
         package-name: "*"
+
+  ament_lint_mypy:
+    name: ament_mypy
+    runs-on: ubuntu-latest
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install typeshed
+      run: sudo apt update && sudo apt install -y python3-typeshed
+
+    - uses: ros-tooling/action-ros-lint@v0.1
+      with:
+        linter: mypy
+        distribution: rolling
+        package-name: >-
+          nav2_smac_planner
+          nav2_common
+          nav2_bringup
+          nav2_collision_monitor
+          nav2_costmap_2d
+          opennav_docking
+          nav2_lifecycle_manager
+          nav2_loopback_sim
+          nav2_map_server
+          nav2_simple_commander
+          nav2_system_tests
+        arguments: --config tools/pyproject.toml
+
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: >-
+            ament_lint_cmake,
+            ament_cpplint,
+            ament_uncrustify,
+            ament_xmllint,
+            ament_flake8,
+            ament_pep257,

@@ -27,7 +27,7 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
-#include "nav2_msgs/msg/missed_waypoint.hpp"
+#include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/simple_action_server.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -56,6 +56,7 @@ struct GoalStatus
 {
   ActionStatus status;
   int error_code;
+  std::string error_msg;
 };
 
 /**
@@ -122,7 +123,7 @@ protected:
   /**
    * @brief Templated function to perform internal logic behind waypoint following,
    *        Both GPS and non GPS waypoint following callbacks makes use of this function when a client asked to do so.
-   *        Callbacks fills in appropriate types for the tempelated types, see followWaypointCallback functions for details.
+   *        Callbacks fills in appropriate types for the templated types, see followWaypointCallback functions for details.
    *
    * @tparam T action_server
    * @tparam V feedback

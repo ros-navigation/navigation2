@@ -23,7 +23,7 @@ Basic navigation demo to go to poses.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -102,7 +102,7 @@ def main():
         if feedback and i % 5 == 0:
             print(
                 'Estimated time of arrival: '
-                + '{0:.0f}'.format(
+                + '{:.0f}'.format(
                     Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                     / 1e9
                 )
@@ -131,7 +131,8 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        (error_code, error_msg) = navigator.getTaskError()
+        print('Goal failed!{error_code}:{error_msg}')
     else:
         print('Goal has an invalid return status!')
 

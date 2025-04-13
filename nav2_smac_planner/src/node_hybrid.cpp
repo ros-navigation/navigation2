@@ -41,7 +41,6 @@ HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> NodeHybrid::costmap_ros = nullptr;
-std::shared_ptr<nav2_costmap_2d::InflationLayer> NodeHybrid::inflation_layer = nullptr;
 
 ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 
@@ -52,7 +51,7 @@ ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 // cell. Though this could be later modified to project a certain
 // amount of time or particular distance forward.
 
-// http://planning.cs.uiuc.edu/node821.html
+// http://planning.cs.uiuc.edu/planning/node821.html
 // Model for ackermann style vehicle with minimum radius restriction
 void HybridMotionTable::initDubin(
   unsigned int & size_x_in,
@@ -178,7 +177,7 @@ void HybridMotionTable::initDubin(
   }
 }
 
-// http://planning.cs.uiuc.edu/node822.html
+// http://planning.cs.uiuc.edu/planning/node822.html
 // Same as Dubin model but now reverse is valid
 // See notes in Dubin for explanation
 void HybridMotionTable::initReedsShepp(
@@ -351,7 +350,8 @@ NodeHybrid::NodeHybrid(const uint64_t index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _motion_primitive_index(std::numeric_limits<unsigned int>::max())
+  _motion_primitive_index(std::numeric_limits<unsigned int>::max()),
+  _is_node_valid(false)
 {
 }
 
@@ -370,20 +370,22 @@ void NodeHybrid::reset()
   pose.x = 0.0f;
   pose.y = 0.0f;
   pose.theta = 0.0f;
+  _is_node_valid = false;
 }
 
 bool NodeHybrid::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  if (collision_checker->inCollision(
-      this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown))
-  {
-    return false;
+  // Already found, we can return the result
+  if (!std::isnan(_cell_cost)) {
+    return _is_node_valid;
   }
 
+  _is_node_valid = !collision_checker->inCollision(
+    this->pose.x, this->pose.y, this->pose.theta /*bin number*/, traverse_unknown);
   _cell_cost = collision_checker->getCost();
-  return true;
+  return _is_node_valid;
 }
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
@@ -492,7 +494,6 @@ void NodeHybrid::resetObstacleHeuristic(
   // erosion of path quality after even modest smoothing. The error would be no more
   // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
   costmap_ros = costmap_ros_i;
-  inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap_ros);
   auto costmap = costmap_ros->getCostmap();
 
   // Clear lookup table
@@ -539,29 +540,6 @@ void NodeHybrid::resetObstacleHeuristic(
   obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
 }
 
-float NodeHybrid::adjustedFootprintCost(const float & cost)
-{
-  if (!inflation_layer) {
-    return cost;
-  }
-
-  const auto layered_costmap = costmap_ros->getLayeredCostmap();
-  const float scale_factor = inflation_layer->getCostScalingFactor();
-  const float min_radius = layered_costmap->getInscribedRadius();
-  float dist_to_obj = (scale_factor * min_radius - log(cost) + log(253.0f)) / scale_factor;
-
-  // Subtract minimum radius for edge cost
-  dist_to_obj -= min_radius;
-  if (dist_to_obj < 0.0f) {
-    dist_to_obj = 0.0f;
-  }
-
-  // Compute cost at this value
-  return static_cast<float>(
-    inflation_layer->computeCost(dist_to_obj / layered_costmap->getCostmap()->getResolution()));
-}
-
-
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
   const Coordinates &,
@@ -569,7 +547,6 @@ float NodeHybrid::getObstacleHeuristic(
 {
   // If already expanded, return the cost
   auto costmap = costmap_ros->getCostmap();
-  const bool is_circular = costmap_ros->getUseRadius();
   unsigned int size_x = 0u;
   unsigned int size_y = 0u;
   if (motion_table.downsample_obstacle_heuristic) {
@@ -671,13 +648,7 @@ float NodeHybrid::getObstacleHeuristic(
           cost = static_cast<float>(costmap->getCost(new_idx));
         }
 
-        if (!is_circular) {
-          // Adjust cost value if using SE2 footprint checks
-          cost = adjustedFootprintCost(cost);
-          if (cost >= OCCUPIED_COST) {
-            continue;
-          }
-        } else if (cost >= INSCRIBED_COST) {
+        if (cost >= INSCRIBED_COST) {
           continue;
         }
 

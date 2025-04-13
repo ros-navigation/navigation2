@@ -18,11 +18,11 @@ repositories:
   # ros/diagnostics:
   #   type: git
   #   url: https://github.com/ros/diagnostics.git
-  #   version: ros2-devel   
+  #   version: ros2-devel
   # ros/geographic_info:
   #   type: git
   #   url: https://github.com/ros-geographic-info/geographic_info.git
-  #   version: ros2      
+  #   version: ros2
   # ompl/ompl:
   #   type: git
   #   url: https://github.com/ompl/ompl.git
@@ -35,3 +35,7 @@ repositories:
     type: git
     url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
     version: 091b5ff12436890a54de6325df3573ae110e912b
+  ros/common_interfaces:
+    type: git
+    url:  https://github.com/ros2/common_interfaces.git
+    version: rolling

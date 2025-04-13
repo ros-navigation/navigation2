@@ -21,8 +21,10 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "behaviortree_cpp/condition_node.h"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "behaviortree_cpp/json_export.h"
+#include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 
 
 namespace nav2_behavior_tree
@@ -58,8 +60,12 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
-      BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+      BT::InputPort<nav_msgs::msg::Goals>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "goal", "Navigation goal"),
@@ -70,7 +76,7 @@ private:
   bool first_time;
   rclcpp::Node::SharedPtr node_;
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  nav_msgs::msg::Goals goals_;
 };
 
 }  // namespace nav2_behavior_tree

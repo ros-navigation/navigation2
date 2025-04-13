@@ -15,36 +15,38 @@
 
 import sys
 import time
+from typing import Optional
 
 from action_msgs.msg import GoalStatus
 from geographic_msgs.msg import GeoPose
 from nav2_msgs.action import ComputePathToPose, FollowGPSWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-
 import rclpy
-
-from rclpy.action import ActionClient
+from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.action.client import ClientGoalHandle
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 
 
 class GpsWaypointFollowerTest(Node):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(node_name='nav2_gps_waypoint_tester', namespace='')
-        self.waypoints = None
+        self.waypoints: list[float] = []
         self.action_client = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints'
         )
-        self.goal_handle = None
-        self.action_result = None
+        self.goal_handle: Optional[ClientGoalHandle[
+                FollowGPSWaypoints.Goal, FollowGPSWaypoints.Result,
+                FollowGPSWaypoints.Feedback]] = None
+        self.action_result = FollowGPSWaypoints.Result()
 
         self.param_cli = self.create_client(
             SetParameters, '/waypoint_follower/set_parameters'
         )
 
-    def setWaypoints(self, waypoints):
+    def setWaypoints(self, waypoints: list[list[float]]) -> None:
         self.waypoints = []
         for wp in waypoints:
             msg = GeoPose()
@@ -53,7 +55,7 @@ class GpsWaypointFollowerTest(Node):
             msg.orientation.w = 1.0
             self.waypoints.append(msg)
 
-    def run(self, block, cancel):
+    def run(self, block: bool, cancel: bool) -> bool:
         # if not self.waypoints:
         #     rclpy.error_msg('Did not set valid waypoints before running test!')
         #     return False
@@ -74,7 +76,7 @@ class GpsWaypointFollowerTest(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -90,8 +92,8 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg("Waiting for 'follow_gps_waypoints' action to complete")
         try:
             rclpy.spin_until_future_complete(self, get_result_future)
-            status = get_result_future.result().status
-            result = get_result_future.result().result
+            status = get_result_future.result().status  # type: ignore[union-attr]
+            result = get_result_future.result().result  # type: ignore[union-attr]
             self.action_result = result
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
@@ -102,14 +104,14 @@ class GpsWaypointFollowerTest(Node):
         if len(result.missed_waypoints) > 0:
             self.info_msg(
                 'Goal failed to process all waypoints,'
-                ' missed {0} wps.'.format(len(result.missed_waypoints))
+                f' missed {len(result.missed_waypoints)} wps.'
             )
             return False
 
         self.info_msg('Goal succeeded!')
         return True
 
-    def setStopFailureParam(self, value):
+    def setStopFailureParam(self, value: bool) -> None:
         req = SetParameters.Request()
         req.parameters = [
             Parameter('stop_on_failure', Parameter.Type.BOOL, value).to_parameter_msg()
@@ -117,7 +119,7 @@ class GpsWaypointFollowerTest(Node):
         future = self.param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.info_msg('Shutting down')
 
         self.action_client.destroy()
@@ -139,21 +141,21 @@ class GpsWaypointFollowerTest(Node):
 
         self.info_msg(f'{transition_service} finished')
 
-    def cancel_goal(self):
-        cancel_future = self.goal_handle.cancel_goal_async()
+    def cancel_goal(self) -> None:
+        cancel_future = self.goal_handle.cancel_goal_async()  # type: ignore[union-attr]
         rclpy.spin_until_future_complete(self, cancel_future)
 
-    def info_msg(self, msg: str):
+    def info_msg(self, msg: str) -> None:
         self.get_logger().info(msg)
 
-    def warn_msg(self, msg: str):
+    def warn_msg(self, msg: str) -> None:
         self.get_logger().warn(msg)
 
-    def error_msg(self, msg: str):
+    def error_msg(self, msg: str) -> None:
         self.get_logger().error(msg)
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     rclpy.init()
 
     # wait a few seconds to make sure entire stacks are up
@@ -190,6 +192,7 @@ def main(argv=sys.argv[1:]):
         test.action_result.missed_waypoints[0].error_code
         == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
     )
+    assert (test.action_result.missed_waypoints[0].error_msg != '')
 
     # stop on failure test with bogus waypoint
     test.setStopFailureParam(True)

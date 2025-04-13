@@ -56,14 +56,6 @@ public:
   }
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WPTest, test_dynamic_parameters)
 {
   auto follower = std::make_shared<WPShim>();
@@ -88,4 +80,17 @@ TEST(WPTest, test_dynamic_parameters)
   follower->deactivate();
   follower->cleanup();
   follower.reset();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

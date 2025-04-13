@@ -28,8 +28,15 @@
 #include <utility>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
+// For compatibility with Jazzy
+#include "rclcpp/version.h"
+#if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "message_filters/subscriber.hpp"
+#else
+#include "message_filters/subscriber.h"
+#endif
+
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_amcl/motion_model/motion_model.hpp"
 #include "nav2_amcl/sensors/laser/laser.hpp"
@@ -40,6 +47,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "rclcpp/node_options.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav2_util/service_server.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_ros/message_filter.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -199,7 +207,8 @@ protected:
    * @brief Initialize state services
    */
   void initServices();
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr global_loc_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Empty,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr global_loc_srv_;
   /*
    * @brief Service callback for a global relocalization request
    */
@@ -209,7 +218,8 @@ protected:
     std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   // service server for providing an initial pose guess
-  rclcpp::Service<nav2_msgs::srv::SetInitialPose>::SharedPtr initial_guess_srv_;
+  nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr initial_guess_srv_;
   /*
    * @brief Service callback for an initial pose guess request
    */
@@ -219,7 +229,8 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetInitialPose::Response> response);
 
   // Let amcl update samples without requiring motion
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr nomotion_update_srv_;
+  nav2_util::ServiceServer<std_srvs::srv::Empty,
+    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr nomotion_update_srv_;
   /*
    * @brief Request an AMCL update even though the robot hasn't moved
    */

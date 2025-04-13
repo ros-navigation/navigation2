@@ -42,7 +42,7 @@ public:
     goal.header.stamp = node_->now();
     config_->blackboard->set("goal", goal);
 
-    std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
+    nav_msgs::msg::Goals fake_poses;
     config_->blackboard->set("goals", fake_poses);  // NOLINT
 
     config_->input_ports["min_rate"] = 0.1;

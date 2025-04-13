@@ -4,6 +4,7 @@ bt_navigator:
     robot_base_frame: base_link
     odom_topic: /odom
     bt_loop_duration: 10
+    filter_duration: 0.3
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     navigators: ["navigate_to_pose", "navigate_through_poses"]
@@ -20,9 +21,9 @@ bt_navigator:
     # Built-in plugins are added automatically
     # plugin_lib_names: []
 
-    error_code_names:
-      - compute_path_error_code
-      - follow_path_error_code
+    error_code_name_prefixes:
+      - compute_path
+      - follow_path
 
 controller_server:
   ros__parameters:
@@ -60,6 +61,7 @@ controller_server:
       ax_max: 3.0
       ax_min: -3.0
       ay_max: 3.0
+      ay_min: -3.0
       az_max: 3.5
       vx_std: 0.2
       vy_std: 0.2
@@ -108,8 +110,9 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 3.81
+        near_collision_cost: 253
         critical_cost: 300.0
-        consider_footprint: true
+        consider_footprint: false
         collision_cost: 1000000.0
         near_goal_distance: 1.0
         trajectory_point_step: 2
@@ -193,7 +196,7 @@ global_costmap:
       robot_radius: 0.22
       resolution: 0.1
       # When using GPS navigation you will potentially traverse huge environments which are not practical to
-      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to 
+      # fit on a big static costmap. Thus it is recommended to use a rolling global costmap large enough to
       # contain each pair of successive waypoints. See: https://github.com/ros-planning/navigation2/issues/2174
       rolling_window: True
       width: 50

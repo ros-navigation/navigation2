@@ -268,7 +268,7 @@ void SmootherServer::smoothPlan()
   try {
     auto goal = action_server_->get_current_goal();
     if (!goal) {
-      return;  //  if action_server_ is inactivate, goal would be a nullptr
+      return;  //  if action_server_ is deactivate, goal would be a nullptr
     }
 
     std::string c_name = goal->smoother_id;
@@ -332,37 +332,44 @@ void SmootherServer::smoothPlan()
 
     action_server_->succeeded_current(result);
   } catch (nav2_core::InvalidSmoother & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_SMOOTHER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherTimedOut & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::TIMEOUT;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmoothedPathInCollision & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::SMOOTHED_PATH_IN_COLLISION;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToSmoothPath & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::FAILED_TO_SMOOTH_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherException & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;

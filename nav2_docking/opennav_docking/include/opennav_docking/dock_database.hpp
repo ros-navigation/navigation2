@@ -23,7 +23,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-
+#include "nav2_util/service_server.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/simple_action_server.hpp"
@@ -124,6 +124,7 @@ protected:
    * @param response Service response
    */
   void reloadDbCb(
+    const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
     std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response);
 
@@ -132,7 +133,8 @@ protected:
   DockPluginMap dock_plugins_;
   DockMap dock_instances_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
-  rclcpp::Service<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
+  nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
+    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr reload_db_service_;
 };
 
 }  // namespace opennav_docking

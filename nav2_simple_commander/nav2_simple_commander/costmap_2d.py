@@ -23,7 +23,12 @@ It provides the basic conversion, get/set,
 and handling semantics found in the costmap 2d C++ API.
 """
 
+from typing import Optional
+
+from builtin_interfaces.msg import Time
+from nav_msgs.msg import OccupancyGrid
 import numpy as np
+from numpy.typing import NDArray
 
 
 class PyCostmap2D:
@@ -33,7 +38,7 @@ class PyCostmap2D:
     Costmap Python3 API for OccupancyGrids to populate from published messages
     """
 
-    def __init__(self, occupancy_map):
+    def __init__(self, occupancy_map: OccupancyGrid) -> None:
         """
         Initialize costmap2D.
 
@@ -46,49 +51,49 @@ class PyCostmap2D:
             None
 
         """
-        self.size_x = occupancy_map.info.width
-        self.size_y = occupancy_map.info.height
-        self.resolution = occupancy_map.info.resolution
-        self.origin_x = occupancy_map.info.origin.position.x
-        self.origin_y = occupancy_map.info.origin.position.y
-        self.global_frame_id = occupancy_map.header.frame_id
-        self.costmap_timestamp = occupancy_map.header.stamp
+        self.size_x: int = occupancy_map.info.width
+        self.size_y: int = occupancy_map.info.height
+        self.resolution: float = occupancy_map.info.resolution
+        self.origin_x: float = occupancy_map.info.origin.position.x
+        self.origin_y: float = occupancy_map.info.origin.position.y
+        self.global_frame_id: str = occupancy_map.header.frame_id
+        self.costmap_timestamp: Time = occupancy_map.header.stamp
         # Extract costmap
-        self.costmap = np.array(occupancy_map.data, dtype=np.uint8)
+        self.costmap: NDArray[np.uint8] = np.array(occupancy_map.data, dtype=np.uint8)
 
-    def getSizeInCellsX(self):
+    def getSizeInCellsX(self) -> int:
         """Get map width in cells."""
         return self.size_x
 
-    def getSizeInCellsY(self):
+    def getSizeInCellsY(self) -> int:
         """Get map height in cells."""
         return self.size_y
 
-    def getSizeInMetersX(self):
+    def getSizeInMetersX(self) -> float:
         """Get x axis map size in meters."""
         return (self.size_x - 1 + 0.5) * self.resolution
 
-    def getSizeInMetersY(self):
+    def getSizeInMetersY(self) -> float:
         """Get y axis map size in meters."""
         return (self.size_y - 1 + 0.5) * self.resolution
 
-    def getOriginX(self):
+    def getOriginX(self) -> float:
         """Get the origin x axis of the map [m]."""
         return self.origin_x
 
-    def getOriginY(self):
+    def getOriginY(self) -> float:
         """Get the origin y axis of the map [m]."""
         return self.origin_y
 
-    def getResolution(self):
+    def getResolution(self) -> float:
         """Get map resolution [m/cell]."""
         return self.resolution
 
-    def getGlobalFrameID(self):
+    def getGlobalFrameID(self) -> str:
         """Get global frame_id."""
         return self.global_frame_id
 
-    def getCostmapTimestamp(self):
+    def getCostmapTimestamp(self) -> Time:
         """Get costmap timestamp."""
         return self.costmap_timestamp
 
@@ -106,7 +111,7 @@ class PyCostmap2D:
             np.uint8: cost of a cell
 
         """
-        return self.costmap[self.getIndex(mx, my)]
+        return np.uint8(self.costmap[self.getIndex(mx, my)])
 
     def getCostIdx(self, index: int) -> np.uint8:
         """
@@ -121,7 +126,7 @@ class PyCostmap2D:
             np.uint8: cost of a cell
 
         """
-        return self.costmap[index]
+        return np.uint8(self.costmap[index])
 
     def setCost(self, mx: int, my: int, cost: np.uint8) -> None:
         """
@@ -160,7 +165,7 @@ class PyCostmap2D:
         wy = self.origin_y + (my + 0.5) * self.resolution
         return (wx, wy)
 
-    def worldToMapValidated(self, wx: float, wy: float):
+    def worldToMapValidated(self, wx: float, wy: float) -> tuple[Optional[int], Optional[int]]:
         """
         Get the map coordinate XY using world coordinate XY.
 

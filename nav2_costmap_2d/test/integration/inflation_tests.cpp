@@ -51,14 +51,6 @@
 using geometry_msgs::msg::Point;
 using nav2_costmap_2d::CellData;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class TestNode : public ::testing::Test
 {
 public:
@@ -543,7 +535,7 @@ TEST_F(TestNode, testInflation2)
 
   waitForMap(slayer);
 
-  // Creat a small L-Shape all at once
+  // Create a small L-Shape all at once
   addObservation(olayer, 1, 1, MAX_Z);
   addObservation(olayer, 2, 1, MAX_Z);
   addObservation(olayer, 2, 2, MAX_Z);
@@ -638,4 +630,17 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

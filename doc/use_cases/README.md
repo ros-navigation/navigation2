@@ -13,4 +13,3 @@ The Nav2 system is targeting the following use cases:
 
 ## Stretch Target
 3D Navigation - Drones
-

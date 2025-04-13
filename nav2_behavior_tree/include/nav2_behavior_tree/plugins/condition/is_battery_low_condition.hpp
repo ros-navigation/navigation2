@@ -30,6 +30,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is low and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class IsBatteryLowCondition : public BT::ConditionNode
 {
@@ -55,6 +57,11 @@ public:
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();
+
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
 
   /**
    * @brief Creates list of BT ports

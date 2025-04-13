@@ -25,14 +25,6 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
 static constexpr double RESOLUTION = 0.05;
 static constexpr double ORIGIN_X = 0.1;
@@ -119,4 +111,17 @@ TEST_F(TestNode, convertOccGridToCostmap)
 {
   createMaps();
   verifyCostmap();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
