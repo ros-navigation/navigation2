@@ -42,7 +42,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
-  declare_parameter("service_timeout", 5.0);
+  declare_parameter("service_timeout", rclcpp::PARAMETER_DOUBLE);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
 
@@ -56,7 +56,23 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
     std::chrono::duration<double>(bond_timeout_s));
 
   double service_timeout_s;
-  get_parameter("service_timeout", service_timeout_s);
+  // detect if service_timeout is not set to enforce the LEGACY behavior, i.e:
+  //
+  // - use LifecycleServiceClient::change_state(std::uint8_t transition) which internally calls:
+  //    - change_state_.wait_for_service(5s) => hardcoded 5 seconds timeout
+  //    - change_state_.invoke(request, response) => no timeout, will wait the answer forever
+  //
+  // - LifecycleServiceClient::get_state(), which has a default initialization of "timeout" to
+  //  2 seconds, and interally calls:
+  //    - change_state_.wait_for_service(timeout) => 2 seconds timeout
+  //    - get_state_.invoke(request, timeout) => 2 seconds timeout
+  non_default_timeout = get_parameter("service_timeout", service_timeout_s);
+  if (!non_default_timeout) {
+    // set service_timeout to 2.0 by default (when not explicitly set)
+    set_parameter(rclcpp::Parameter("service_timeout", 5.0));
+    get_parameter("service_timeout", service_timeout_s);
+  }
+
   service_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(service_timeout_s));
 
@@ -251,11 +267,21 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition, service_timeout_) ||
-    !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
-  {
-    RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
-    return false;
+  if (non_default_timeout) {
+    if (!node_map_[node_name]->change_state(transition, service_timeout_) ||
+      !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
+    {
+      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
+      return false;
+    }
+  } else {
+    // Legacy
+    if (!node_map_[node_name]->change_state(transition) ||
+      !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
+    {
+      RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
+      return false;
+    }
   }
 
   if (transition == Transition::TRANSITION_ACTIVATE) {

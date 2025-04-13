@@ -42,7 +42,10 @@ public:
    */
   bool change_state(
     const uint8_t transition,  // takes a lifecycle_msgs::msg::Transition id
-    const std::chrono::milliseconds timeout = std::chrono::milliseconds(5000));
+    const std::chrono::milliseconds timeout);
+
+  /// Trigger a state change, returning result
+  bool change_state(std::uint8_t transition);
 
   /// Get the current state as a lifecycle_msgs::msg::State id value
   /**
