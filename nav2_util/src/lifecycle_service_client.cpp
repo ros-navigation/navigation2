@@ -80,7 +80,7 @@ bool LifecycleServiceClient::change_state(
 }
 
 bool LifecycleServiceClient::change_state(
-    std::uint8_t transition)
+  std::uint8_t transition)
 {
   if (!change_state_.wait_for_service(5s)) {
     throw std::runtime_error("change_state service is not available!");
