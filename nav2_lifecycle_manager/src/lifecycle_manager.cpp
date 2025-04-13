@@ -63,7 +63,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   //    - change_state_.invoke(request, response) => no timeout, will wait the answer forever
   //
   // - LifecycleServiceClient::get_state(), which has a default initialization of "timeout" to
-  //  2 seconds, and interally calls:
+  //  2 seconds, and internally calls:
   //    - change_state_.wait_for_service(timeout) => 2 seconds timeout
   //    - get_state_.invoke(request, timeout) => 2 seconds timeout
   non_default_timeout = get_parameter("service_timeout", service_timeout_s);
