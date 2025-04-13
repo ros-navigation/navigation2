@@ -186,7 +186,7 @@ void SmacPlannerLattice::configure(
 
   if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
     std::string error_msg = "coarse iteration should be an increment of"
-    " the number of angular bins configured";
+      " the number of angular bins configured";
     throw nav2_core::PlannerException(error_msg);
   }
 

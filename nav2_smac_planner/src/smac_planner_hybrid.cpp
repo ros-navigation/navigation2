@@ -220,8 +220,8 @@ void SmacPlannerHybrid::configure(
 
   if (_angle_quantizations % _coarse_search_resolution != 0) {
     std::string error_msg = "coarse iteration should be an increment"
-    " of the number of angular bins configured";
-    throw nav2_core::PlannerException(error_msg);    
+      " of the number of angular bins configured";
+    throw nav2_core::PlannerException(error_msg);
   }
 
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
@@ -753,7 +753,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       }
     }
   }
-  
+
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
   if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
     // convert to grid coordinates
