@@ -25,7 +25,7 @@ from nav2_msgs.action import ComputeAndTrackRoute, ComputeRoute
 from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
-from rclpy.action import ActionClient
+from rclpy.action import ActionClient  # type: ignore[attr-defined]
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from std_srvs.srv import Trigger
@@ -55,11 +55,11 @@ class RouteTester(Node):
         self.compute_action_client = ActionClient(self, ComputeRoute, 'compute_route')
         self.compute_track_action_client = ActionClient(
             self, ComputeAndTrackRoute, 'compute_and_track_route')
-        self.feedback_msgs = []
+        self.feedback_msgs: list[ComputeAndTrackRoute.Feedback] = []
 
         self.navigator = BasicNavigator()
 
-    def runComputeRouteTest(self, use_poses: bool = True):
+    def runComputeRouteTest(self, use_poses: bool = True) -> bool:
         # Test 1: See if we can compute a route that is valid and correctly sized
         self.info_msg("Waiting for 'ComputeRoute' action server")
         while not self.compute_action_client.wait_for_server(timeout_sec=1.0):
@@ -84,7 +84,7 @@ class RouteTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if not goal_handle or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -93,8 +93,8 @@ class RouteTester(Node):
 
         self.info_msg("Waiting for 'ComputeRoute' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
-        status = get_result_future.result().status
-        result = get_result_future.result().result
+        status = get_result_future.result().status  # type: ignore[union-attr]
+        result = get_result_future.result().result  # type: ignore[union-attr]
         if status != GoalStatus.STATUS_SUCCEEDED:
             self.info_msg(f'Goal failed with status code: {status}')
             return False
@@ -113,7 +113,7 @@ class RouteTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
-    def runComputeRouteSamePoseTest(self):
+    def runComputeRouteSamePoseTest(self) -> bool:
         # Test 2: try with the same start and goal point edge case
         self.info_msg("Waiting for 'ComputeRoute' action server")
         while not self.compute_action_client.wait_for_server(timeout_sec=1.0):
@@ -131,7 +131,7 @@ class RouteTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if not goal_handle or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -140,8 +140,8 @@ class RouteTester(Node):
 
         self.info_msg("Waiting for 'ComputeRoute' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
-        status = get_result_future.result().status
-        result = get_result_future.result().result
+        status = get_result_future.result().status  # type: ignore[union-attr]
+        result = get_result_future.result().result  # type: ignore[union-attr]
         if status != GoalStatus.STATUS_SUCCEEDED:
             self.info_msg(f'Goal failed with status code: {status}')
             return False
@@ -158,7 +158,7 @@ class RouteTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
-    def runTrackRouteTest(self):
+    def runTrackRouteTest(self) -> bool:
         # Test 3: See if we can compute and track a route with proper state
         self.info_msg("Waiting for 'ComputeAndTrackRoute' action server")
         while not self.compute_track_action_client.wait_for_server(timeout_sec=1.0):
@@ -176,7 +176,7 @@ class RouteTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if not goal_handle or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -218,7 +218,7 @@ class RouteTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if not goal_handle or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -238,7 +238,7 @@ class RouteTester(Node):
         rclpy.spin_until_future_complete(self, send_goal_future)
         goal_handle = send_goal_future.result()
 
-        if not goal_handle.accepted:
+        if not goal_handle or not goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -253,7 +253,7 @@ class RouteTester(Node):
         while progressing:
             rclpy.spin_until_future_complete(self, get_result_future, timeout_sec=0.10)
             if get_result_future.result() is not None:
-                status = get_result_future.result().status
+                status = get_result_future.result().status  # type: ignore[union-attr]
                 if status == GoalStatus.STATUS_SUCCEEDED:
                     progressing = False
                 elif status == GoalStatus.STATUS_CANCELED or status == GoalStatus.STATUS_ABORTED:
@@ -279,6 +279,10 @@ class RouteTester(Node):
                 last_feedback_msg = feedback_msg
 
         # Validate the state of the final feedback message
+        if last_feedback_msg is None:
+            self.error_msg('No feedback message received!')
+            return False
+
         if int(last_feedback_msg.next_node_id) != 0:
             self.error_msg('Terminal feedback state of nodes is not correct!')
             return False
@@ -302,23 +306,23 @@ class RouteTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
-    def feedback_callback(self, feedback_msg):
+    def feedback_callback(self, feedback_msg: ComputeAndTrackRoute.Feedback) -> None:
         self.feedback_msgs.append(feedback_msg.feedback)
 
-    def distanceFromGoal(self):
+    def distanceFromGoal(self) -> float:
         d_x = self.current_pose.position.x - self.goal_pose.position.x
         d_y = self.current_pose.position.y - self.goal_pose.position.y
         distance = math.sqrt(d_x * d_x + d_y * d_y)
         self.info_msg(f'Distance from goal is: {distance}')
         return distance
 
-    def info_msg(self, msg: str):
+    def info_msg(self, msg: str) -> None:
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
-    def error_msg(self, msg: str):
+    def error_msg(self, msg: str) -> None:
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
 
-    def setInitialPose(self):
+    def setInitialPose(self) -> None:
         msg = PoseWithCovarianceStamped()
         msg.pose.pose = self.initial_pose
         msg.header.frame_id = 'map'
@@ -326,18 +330,18 @@ class RouteTester(Node):
         self.initial_pose_pub.publish(msg)
         self.currentPose = self.initial_pose
 
-    def getStampedPoseMsg(self, pose: Pose):
+    def getStampedPoseMsg(self, pose: Pose) -> PoseStamped:
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose = pose
         return msg
 
-    def poseCallback(self, msg):
+    def poseCallback(self, msg: PoseWithCovarianceStamped) -> None:
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
 
-    def wait_for_node_active(self, node_name: str):
+    def wait_for_node_active(self, node_name: str) -> None:
         # Waits for the node within the tester namespace to become active
         self.info_msg(f'Waiting for {node_name} to become active')
         node_service = f'{node_name}/get_state'
@@ -351,7 +355,7 @@ class RouteTester(Node):
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
-                state = future.result().current_state.label
+                state = future.result().current_state.label  # type: ignore[union-attr]
                 self.info_msg(f'Result of get_state: {state}')
             else:
                 self.error_msg(
@@ -359,7 +363,7 @@ class RouteTester(Node):
                 )
             time.sleep(5)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.info_msg('Shutting down')
         self.compute_action_client.destroy()
         self.compute_track_action_client.destroy()
@@ -395,7 +399,7 @@ class RouteTester(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-    def wait_for_initial_pose(self):
+    def wait_for_initial_pose(self) -> None:
         self.initial_pose_received = False
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
@@ -404,7 +408,7 @@ class RouteTester(Node):
             rclpy.spin_once(self, timeout_sec=1)
 
 
-def run_all_tests(robot_tester):
+def run_all_tests(robot_tester: RouteTester) -> bool:
     # set transforms to use_sim_time
     robot_tester.wait_for_node_active('amcl')
     robot_tester.wait_for_initial_pose()
@@ -421,7 +425,7 @@ def run_all_tests(robot_tester):
     return result
 
 
-def fwd_pose(x=0.0, y=0.0, z=0.01):
+def fwd_pose(x: float = 0.0, y: float = 0.0, z: float = 0.01) -> Pose:
     initial_pose = Pose()
     initial_pose.position.x = x
     initial_pose.position.y = y
@@ -433,7 +437,7 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
     return initial_pose
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     # The robot(s) positions from the input arguments
     parser = argparse.ArgumentParser(description='Route server tester node')
     group = parser.add_mutually_exclusive_group(required=True)
