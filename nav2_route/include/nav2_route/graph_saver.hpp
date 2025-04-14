@@ -36,7 +36,7 @@ namespace nav2_route
 
 /**
  * @class nav2_route::GraphSaver
- * @brief An action server to save graph objects to a file
+ * @brief An object to save graph objects to a file
  */
 class GraphSaver
 {
