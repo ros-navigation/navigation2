@@ -195,53 +195,56 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     // Else, fall through and see if we should follow control law longer
   }
 
-  // Calculate pose for reducing lookaheads
-  float lookahead = params_->max_lookahead;
+  // Find a valid target pose and its trajectory
+  bool valid_target_pose_found = false;
+  nav_msgs::msg::Path local_plan;
 
-  while (lookahead > params_->min_lookahead) {
-    // Underlying control law needs a single target pose, which should:
-    //  * Be as far away as possible from the robot (for smoothness)
-    //  * But no further than the max_lookahed_ distance
-    //  * Be feasible to reach in a collision free manner
-    geometry_msgs::msg::PoseStamped target_pose = getLookAheadPoint(
-      lookahead, transformed_plan, params_->interpolate_after_goal);
+  // Calculate target pose through lookahead interpolation
+  double dist_to_target = params_->max_lookahead;
+  geometry_msgs::msg::PoseStamped target_pose = getLookAheadPoint(
+    dist_to_target, transformed_plan, params_->interpolate_after_goal);
 
-    // Reduce lookahead
-    lookahead = lookahead - params_->lookahead_resolution;
+  if (!validateTargetPose(target_pose, dist_to_target, dist_to_goal,
+                          local_plan, costmap_transform, cmd_vel))
+  {
+    // If target pose through interpolation is not valid
+    // Work back from the end of plan to find valid target pose
+    // Precompute distance to candidate poses
+    std::vector<double> target_distances;
+    computeDistanceAlongPath(transformed_plan.poses, target_distances);
 
-    if (dist_to_goal < params_->max_lookahead) {
-      if (params_->prefer_final_rotation) {
-        // Avoid instability and big sweeping turns at the end of paths by
-        // ignoring final heading
-        double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-        target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+    for (int i = transformed_plan.poses.size() - 1; i >= 0; --i) {
+      // Underlying control law needs a single target pose, which should:
+      //  * Be as far away as possible from the robot (for smoothness)
+      //  * But no further than the max_lookahed_ distance
+      //  * Be feasible to reach in a collision free manner
+      target_pose = transformed_plan.poses[i];
+      dist_to_target = target_distances[i];
+
+      if(validateTargetPose(target_pose, dist_to_target, dist_to_goal,
+                            local_plan, costmap_transform, cmd_vel))
+      {
+        valid_target_pose_found = true;
+        break;
       }
     }
+  } else {
+    valid_target_pose_found = true;
+  }
 
-    // Flip the orientation of the motion target if the robot is moving backwards
-    bool reversing = false;
-    if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
-      reversing = true;
-      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        tf2::getYaw(target_pose.pose.orientation) + M_PI);
-    }
-
-    // Actually simulate our path
-    nav_msgs::msg::Path local_plan;
-    if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
-      // Successfully simulated to target_pose - compute velocity at this moment
-      // Publish the selected target_pose
-      motion_target_pub_->publish(target_pose);
-      // Publish marker for slowdown radius around motion target for debugging / visualization
-      auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
-        target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
-      // Publish the local plan
-      local_plan.header = transformed_plan.header;
-      local_plan_pub_->publish(local_plan);
-      // Successfully found velocity command
-      return cmd_vel;
-    }
+  // Compute velocity at this moment if valid target pose is found
+  if (valid_target_pose_found) {
+    // Publish the selected target_pose
+    motion_target_pub_->publish(target_pose);
+    // Publish marker for slowdown radius around motion target for debugging / visualization
+    auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
+      target_pose, params_->slowdown_radius);
+    slowdown_pub_->publish(slowdown_marker);
+    // Publish the local plan
+    local_plan.header = transformed_plan.header;
+    local_plan_pub_->publish(local_plan);
+    // Successfully found velocity command
+    return cmd_vel;
   }
 
   throw nav2_core::NoValidControl("Collision detected in trajectory");
@@ -276,6 +279,49 @@ void GracefulController::setSpeedLimit(
         speed_limit / params_->v_linear_max_initial;
     }
   }
+}
+
+bool GracefulController::validateTargetPose(
+  geometry_msgs::msg::PoseStamped & target_pose,
+  double dist_to_target,
+  double dist_to_goal,
+  nav_msgs::msg::Path & trajectory,
+  geometry_msgs::msg::TransformStamped & costmap_transform,
+  geometry_msgs::msg::TwistStamped & cmd_vel)
+{
+  // Continue if target_pose is too far away from robot
+  if (dist_to_target > params_->max_lookahead) {
+    return false;
+  }
+
+  if (dist_to_goal < params_->max_lookahead) {
+    if (params_->prefer_final_rotation) {
+      // Avoid instability and big sweeping turns at the end of paths by
+      // ignoring final heading
+      double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
+      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+    }
+  } else if (dist_to_target < params_->min_lookahead) {
+    // Make sure target is far enough away to avoid instability
+    return false;
+  }
+
+  // Flip the orientation of the motion target if the robot is moving backwards
+  bool reversing = false;
+  if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
+    reversing = true;
+    target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+      tf2::getYaw(target_pose.pose.orientation) + M_PI);
+  }
+
+  // Actually simulate the path
+  if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
+    // Successfully simulated to target_pose
+    return true;
+  }
+
+  // Validation not successful
+  return false;
 }
 
 geometry_msgs::msg::Point GracefulController::circleSegmentIntersection(

@@ -42,8 +42,6 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".lookahead_resolution", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".interpolate_after_goal", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
@@ -80,7 +78,6 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
   node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
-  node->get_parameter(plugin_name_ + ".lookahead_resolution", params_.lookahead_resolution);
   node->get_parameter(plugin_name_ + ".interpolate_after_goal", params_.interpolate_after_goal);
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
@@ -151,8 +148,6 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.min_lookahead = parameter.as_double();
       } else if (name == plugin_name_ + ".max_lookahead") {
         params_.max_lookahead = parameter.as_double();
-      } else if (name == plugin_name_ + ".lookahead_resolution") {
-        params_.lookahead_resolution = parameter.as_double();
       } else if (name == plugin_name_ + ".k_phi") {
         params_.k_phi = parameter.as_double();
       } else if (name == plugin_name_ + ".k_delta") {
