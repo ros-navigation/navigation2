@@ -76,7 +76,7 @@ void GeoJsonGraphFileSaver::loadNodesFromGraph(
       json_properties["metadata"] = json_metadata;
     }
     convertOperationsToJson(node.operations, json_operations);
-    if (json_operations.size()) {
+    if (json_operations.size() > 0) {
       json_properties["operations"] = json_operations;
     }
     json_feature["properties"] = json_properties;
