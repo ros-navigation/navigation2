@@ -418,6 +418,7 @@ NavfnPlanner::getPlanFromPotential(
     mapToWorld(x[i], y[i], world_x, world_y);
 
     geometry_msgs::msg::PoseStamped pose;
+    pose.header = plan.header;
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
     pose.pose.position.z = 0.0;
