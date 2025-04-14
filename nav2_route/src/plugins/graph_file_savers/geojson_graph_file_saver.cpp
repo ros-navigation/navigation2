@@ -101,7 +101,7 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
         json_properties["metadata"] = json_metadata;
       }
       convertOperationsToJson(edge.operations, json_operations);
-      if (json_operations.size()) {
+      if (json_operations.size() > 0) {
         json_properties["operations"] = json_operations;
       }
       json_properties["cost"] = edge.edge_cost.cost;
