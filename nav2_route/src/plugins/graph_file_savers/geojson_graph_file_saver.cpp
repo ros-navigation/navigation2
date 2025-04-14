@@ -72,11 +72,11 @@ void GeoJsonGraphFileSaver::loadNodesFromGraph(
     json_properties["id"] = node.nodeid;
     json_properties["frame"] = node.coords.frame_id;
     convertMetaDataToJson(node.metadata, json_metadata);
-    if (json_metadata.size()) {
+    if (json_metadata.size() > 0) {
       json_properties["metadata"] = json_metadata;
     }
     convertOperationsToJson(node.operations, json_operations);
-    if (json_operations.size()) {
+    if (json_operations.size() > 0) {
       json_properties["operations"] = json_operations;
     }
     json_feature["properties"] = json_properties;
@@ -97,11 +97,11 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
       json_properties["startid"] = edge.start->nodeid;
       json_properties["endid"] = edge.end->nodeid;
       convertMetaDataToJson(edge.metadata, json_metadata);
-      if (json_metadata.size()) {
+      if (json_metadata.size() > 0) {
         json_properties["metadata"] = json_metadata;
       }
       convertOperationsToJson(edge.operations, json_operations);
-      if (json_operations.size()) {
+      if (json_operations.size() > 0) {
         json_properties["operations"] = json_operations;
       }
       json_properties["cost"] = edge.edge_cost.cost;
