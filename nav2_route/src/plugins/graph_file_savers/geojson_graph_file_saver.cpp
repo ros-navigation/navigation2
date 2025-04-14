@@ -97,7 +97,7 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
       json_properties["startid"] = edge.start->nodeid;
       json_properties["endid"] = edge.end->nodeid;
       convertMetaDataToJson(edge.metadata, json_metadata);
-      if (json_metadata.size()) {
+      if (json_metadata.size() > 0) {
         json_properties["metadata"] = json_metadata;
       }
       convertOperationsToJson(edge.operations, json_operations);
