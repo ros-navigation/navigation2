@@ -35,6 +35,9 @@ target_link_libraries(test_odometry_utils ${library_name} ${nav_msgs_TARGETS} ${
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 target_link_libraries(test_robot_utils ${library_name} ${geometry_msgs_TARGETS})
 
+ament_add_gtest(test_interpolation_utils test_interpolation_utils.cpp)
+target_link_libraries(test_interpolation_utils ${library_name} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS})
+
 ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
 target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
 
