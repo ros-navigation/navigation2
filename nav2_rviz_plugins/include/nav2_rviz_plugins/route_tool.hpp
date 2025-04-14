@@ -16,6 +16,7 @@
 #define NAV2_RVIZ_PLUGINS__ROUTE_TOOL_HPP_
 
 #include <ui_route_tool.h>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>

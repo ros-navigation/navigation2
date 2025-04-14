@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <QFileDialog>
-#include <pwd.h>
 #include "rviz_common/display_context.hpp"
 
 
@@ -71,11 +70,6 @@ void RouteTool::on_load_button_clicked(void)
   edge_to_node_map_.clear();
   graph_to_incoming_edges_map_.clear();
   graph_.clear();
-  struct passwd pwd;
-  struct passwd *pw;
-  char buf[1024];
-  getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pw);
-  std::string homedir(pw->pw_dir);
   QString filename = QFileDialog::getOpenFileName(
     this,
     tr("Open Address Book"), "",
@@ -102,11 +96,6 @@ void RouteTool::on_load_button_clicked(void)
 
 void RouteTool::on_save_button_clicked(void)
 {
-  struct passwd pwd;
-  struct passwd *pw;
-  char buf[1024];
-  getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pw);
-  std::string homedir(pw->pw_dir);
   QString filename = QFileDialog::getSaveFileName(
     this,
     tr("Open Address Book"), "",
@@ -211,28 +200,8 @@ void RouteTool::on_delete_button_clicked(void)
       }
     }
     if (graph_[graph_to_id_map_[node_id]].nodeid == node_id) {
-      graph_.erase(graph_.begin() + graph_to_id_map_[node_id]);
-      // Need to adjust pointers and idx map since indices in the vector changed
-      for (auto idx = graph_to_id_map_[node_id]; idx < graph_.size(); idx++) {
-        auto & moved_node = graph_[idx];
-        graph_to_id_map_[moved_node.nodeid]--;
-      }
-      for (auto idx = graph_to_id_map_[node_id]; idx < graph_.size(); idx++) {
-        auto & moved_node = graph_[idx];
-        for (auto & edge : moved_node.neighbors) {
-          edge.start = &moved_node;
-        }
-        for (auto edge_id : graph_to_incoming_edges_map_[moved_node.nodeid]) {
-          auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
-          for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end();
-            itr++)
-          {
-            if (itr->edgeid == edge_id) {
-              itr->end = &moved_node;
-            }
-          }
-        }
-      }
+      // Use max int to mark the node as deleted
+      graph_[graph_to_id_map_[node_id]].nodeid = std::numeric_limits<int>::max();
       graph_to_id_map_.erase(node_id);
       graph_to_incoming_edges_map_.erase(node_id);
       RCLCPP_INFO(node_->get_logger(), "Removed node %d", node_id);
