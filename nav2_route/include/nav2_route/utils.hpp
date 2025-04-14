@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include <string>
 #include <vector>
 #include "std_msgs/msg/color_rgba.hpp"
@@ -89,6 +90,9 @@ inline visualization_msgs::msg::MarkerArray toMsg(
 
   unsigned int marker_idx = 1;
   for (unsigned int i = 0; i != graph.size(); i++) {
+    if (graph[i].nodeid == std::numeric_limits<int>::max()) {
+      continue;  // Skip "deleted" nodes
+    }
     curr_marker.ns = "route_graph";
     curr_marker.id = marker_idx++;
     curr_marker.type = visualization_msgs::msg::Marker::SPHERE;
