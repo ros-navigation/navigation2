@@ -44,6 +44,8 @@ module = [
     "std_msgs.*",
     "zmq.*",
     "std_srvs.*",
+    "graphviz.*",
+    "transforms3d.*",
 ]
 
 ignore_missing_imports = true
