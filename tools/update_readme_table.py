@@ -62,18 +62,18 @@ Packages = [
 Distros = ['humble', 'iron', 'jazzy']
 
 
-def getSrcPath(package, prefix, OS):
+def getSrcPath(package: str, prefix: str, OS: str) -> str:
     return f'https://build.ros2.org/job/{prefix}src_u{OS[0]}__{package}__ubuntu_{OS}__source/'
 
 
-def getBinPath(package, prefix, OS):
+def getBinPath(package: str, prefix: str, OS: str) -> str:
     return (
         f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_'
         'amd64__binary/'
     )
 
 
-def createPreamble(Distros):
+def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
@@ -84,7 +84,7 @@ def createPreamble(Distros):
     return table
 
 
-def main():
+def main() -> None:
     header = createPreamble(Distros)
 
     body = ''
