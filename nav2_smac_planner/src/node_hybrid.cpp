@@ -51,7 +51,7 @@ ObstacleHeuristicQueue NodeHybrid::obstacle_heuristic_queue;
 // cell. Though this could be later modified to project a certain
 // amount of time or particular distance forward.
 
-// http://planning.cs.uiuc.edu/node821.html
+// http://planning.cs.uiuc.edu/planning/node821.html
 // Model for ackermann style vehicle with minimum radius restriction
 void HybridMotionTable::initDubin(
   unsigned int & size_x_in,
@@ -177,7 +177,7 @@ void HybridMotionTable::initDubin(
   }
 }
 
-// http://planning.cs.uiuc.edu/node822.html
+// http://planning.cs.uiuc.edu/planning/node822.html
 // Same as Dubin model but now reverse is valid
 // See notes in Dubin for explanation
 void HybridMotionTable::initReedsShepp(

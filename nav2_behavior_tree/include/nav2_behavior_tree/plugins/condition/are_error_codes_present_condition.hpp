@@ -34,7 +34,12 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ConditionNode(condition_name, conf)
   {
-    getInput<std::set<uint16_t>>("error_codes_to_check", error_codes_to_check_); //NOLINT
+    std::vector<int> error_codes_to_check_vector;
+    getInput("error_codes_to_check", error_codes_to_check_vector); //NOLINT
+
+    error_codes_to_check_ = std::set<uint16_t>(
+      error_codes_to_check_vector.begin(),
+      error_codes_to_check_vector.end());
   }
 
   AreErrorCodesPresent() = delete;
@@ -55,7 +60,7 @@ public:
     return
       {
         BT::InputPort<uint16_t>("error_code", "The active error codes"), //NOLINT
-        BT::InputPort<std::set<uint16_t>>("error_codes_to_check", "Error codes to check")//NOLINT
+        BT::InputPort<std::vector<int>>("error_codes_to_check", "Error codes to check")//NOLINT
       };
   }
 
