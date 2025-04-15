@@ -250,7 +250,7 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | docking_threshold        | If not using stall detection, the pose threshold to the docking pose where `isDocked() = true`    | double |  0.05     |
 | staging_x_offset        | Staging pose offset forward (negative) of dock pose (m)    | double |  -0.7    |
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
-| dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"      |
+| dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
