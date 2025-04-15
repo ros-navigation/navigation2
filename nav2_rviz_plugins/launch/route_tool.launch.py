@@ -21,7 +21,7 @@ from launch.substitutions import LaunchConfiguration
 import launch_ros.actions
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
 
     # Nodes launching commands
     map_file = LaunchConfiguration('yaml_filename')
