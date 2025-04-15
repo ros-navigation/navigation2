@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>dwb_core</name>
-  <version>1.3.5</version>
+  <version>1.3.6</version>
   <description>DWB core interfaces package</description>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>BSD-3-Clause</license>

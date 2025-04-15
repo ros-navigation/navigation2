@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_velocity_smoother</name>
-  <version>1.3.5</version>
+  <version>1.3.6</version>
   <description>Nav2's Output velocity smoother</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
