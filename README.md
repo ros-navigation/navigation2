@@ -113,7 +113,7 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 
 ## Build Status
 
-| Package | humble Source | humble Debian | jazzy Source | jazzy Debian | 
+| Package | humble Source | humble Debian | jazzy Source | jazzy Debian |
 | :---: | :---: | :---: | :---: | :---: |
 | navigation2 | [![Build Status](https://build.ros2.org/job/Hsrc_uj__navigation2__ubuntu_jammy__source/badge/icon)](https://build.ros2.org/job/Hsrc_uj__navigation2__ubuntu_jammy__source/) | [![Build Status](https://build.ros2.org/job/Hbin_uj64__navigation2__ubuntu_jammy_amd64__binary/badge/icon)](https://build.ros2.org/job/Hbin_uj64__navigation2__ubuntu_jammy_amd64__binary/) | [![Build Status](https://build.ros2.org/job/Jsrc_un__navigation2__ubuntu_noble__source/badge/icon)](https://build.ros2.org/job/Jsrc_un__navigation2__ubuntu_noble__source/) | [![Build Status](https://build.ros2.org/job/Jbin_un64__navigation2__ubuntu_noble_amd64__binary/badge/icon)](https://build.ros2.org/job/Jbin_un64__navigation2__ubuntu_noble_amd64__binary/) |
 | nav2_amcl | [![Build Status](https://build.ros2.org/job/Hsrc_uj__nav2_amcl__ubuntu_jammy__source/badge/icon)](https://build.ros2.org/job/Hsrc_uj__nav2_amcl__ubuntu_jammy__source/) | [![Build Status](https://build.ros2.org/job/Hbin_uj64__nav2_amcl__ubuntu_jammy_amd64__binary/badge/icon)](https://build.ros2.org/job/Hbin_uj64__nav2_amcl__ubuntu_jammy_amd64__binary/) | [![Build Status](https://build.ros2.org/job/Jsrc_un__nav2_amcl__ubuntu_noble__source/badge/icon)](https://build.ros2.org/job/Jsrc_un__nav2_amcl__ubuntu_noble__source/) | [![Build Status](https://build.ros2.org/job/Jbin_un64__nav2_amcl__ubuntu_noble_amd64__binary/badge/icon)](https://build.ros2.org/job/Jbin_un64__nav2_amcl__ubuntu_noble_amd64__binary/) |
