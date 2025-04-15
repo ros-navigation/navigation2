@@ -221,13 +221,17 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
     const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
-        if (parameter.as_double() <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
-            "it should be >0. Ignoring parameter update.");
-          result.successful = false;
-        }
+      if (name == plugin_name_ + ".inflation_cost_scaling_factor" && parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+        "it should be >0. Ignoring parameter update.");
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        name.c_str(), parameter.as_double());
+        result.successful = false;
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".allow_reversing") {
