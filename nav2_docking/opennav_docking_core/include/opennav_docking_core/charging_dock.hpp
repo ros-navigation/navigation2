@@ -134,12 +134,13 @@ public:
    * robot should drive forwards or backwards onto the dock.
    * @return DockDirection The direction of the dock
    */
-  virtual DockDirection getDockDirection() {return DockDirection::FORWARD;}
+  DockDirection getDockDirection() {return dock_direction_;}
 
   std::string getName() {return name_;}
 
 protected:
   std::string name_;
+  DockDirection dock_direction_{DockDirection::UNKNOWN};
 };
 
 }  // namespace opennav_docking_core

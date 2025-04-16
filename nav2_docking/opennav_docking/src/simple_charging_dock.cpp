@@ -102,7 +102,13 @@ void SimpleChargingDock::configure(
   node_->get_parameter("base_frame", base_frame_id_);  // Get server base frame ID
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
-  node_->get_parameter(name + ".dock_direction", dock_direction_);
+
+  std::string dock_direction;
+  node_->get_parameter(name + ".dock_direction", dock_direction);
+  dock_direction_ = utils::getDockDirectionFromString(dock_direction);
+  if (dock_direction_ == opennav_docking_core::DockDirection::UNKNOWN) {
+    RCLCPP_ERROR(node_->get_logger(), "Dock direction is not valid");
+  }
 
   // Setup filter
   double filter_coef;
@@ -306,11 +312,6 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
   velocity /= stall_joint_names_.size();
 
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
-}
-
-opennav_docking_core::DockDirection SimpleChargingDock::getDockDirection()
-{
-  return utils::getDockDirectionFromString(dock_direction_);
 }
 
 }  // namespace opennav_docking

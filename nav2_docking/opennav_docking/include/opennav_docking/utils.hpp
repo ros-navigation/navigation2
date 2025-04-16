@@ -187,9 +187,13 @@ inline double l2Norm(const geometry_msgs::msg::Pose & a, const geometry_msgs::ms
 
 inline DockDirection getDockDirectionFromString(const std::string & direction)
 {
-  if (direction == "forward") {
+  auto upper_direction = direction;
+  std::transform(
+    upper_direction.begin(), upper_direction.end(), upper_direction.begin(), ::toupper);
+
+  if (upper_direction == "FORWARD") {
     return DockDirection::FORWARD;
-  } else if (direction == "backward") {
+  } else if (upper_direction == "BACKWARD") {
     return DockDirection::BACKWARD;
   } else {
     return DockDirection::UNKNOWN;

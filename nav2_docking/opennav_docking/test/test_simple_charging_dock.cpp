@@ -41,7 +41,6 @@ TEST(SimpleChargingDockTests, ObjectLifecycle)
   EXPECT_TRUE(dock->disableCharging());
   EXPECT_TRUE(dock->hasStoppedCharging());
   EXPECT_TRUE(dock->isCharger());
-  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
 
   dock->deactivate();
   dock->cleanup();
@@ -241,22 +240,25 @@ TEST(SimpleChargingDockTests, GetDockDirection)
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
-
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
-
   EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
-
   dock->deactivate();
 
   // Now set to BACKWARD
   node->set_parameter(
     rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward")));
-
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
-
   EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::BACKWARD);
+  dock->deactivate();
+
+  // Now set to UNKNOWN
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("other")));
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::UNKNOWN);
 
   dock->deactivate();
   dock->cleanup();

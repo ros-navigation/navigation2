@@ -41,7 +41,6 @@ TEST(SimpleNonChargingDockTests, ObjectLifecycle)
   EXPECT_THROW(dock->disableCharging(), std::runtime_error);
   EXPECT_THROW(dock->hasStoppedCharging(), std::runtime_error);
   EXPECT_FALSE(dock->isCharger());
-  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
 
   dock->deactivate();
   dock->cleanup();
@@ -195,28 +194,31 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
   dock.reset();
 }
 
-TEST(SimpleChargingDockTests, GetDockDirection)
+TEST(SimpleNonChargingDockTests, GetDockDirection)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
-
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
-
   EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
-
   dock->deactivate();
 
   // Now set to BACKWARD
   node->set_parameter(
     rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward")));
-
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
-
   EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::BACKWARD);
+  dock->deactivate();
+
+  // Now set to UNKNOWN
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("other")));
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::UNKNOWN);
 
   dock->deactivate();
   dock->cleanup();
