@@ -50,7 +50,9 @@ CostmapTopicCollisionChecker::CostmapTopicCollisionChecker(
   costmap_sub_(costmap_sub),
   collision_checker_(nullptr)
 {
-  makeFootprintFromString(footprint_string, footprint_);
+  if (!makeFootprintFromString(footprint_string, footprint_)) {
+    throw CollisionCheckerException("Failed to create footprint from string");
+  }
 }
 
 bool CostmapTopicCollisionChecker::isCollisionFree(
@@ -104,10 +106,8 @@ Footprint CostmapTopicCollisionChecker::getFootprint(
 
     // if footprint_sub_ was not initialized (alternative constructor), we are using the
     // footprint built from the footprint_string alternative constructor argument.
-    if (footprint_sub_ != nullptr) {
-      if (!footprint_sub_->getFootprintInRobotFrame(footprint_, header)) {
-        throw CollisionCheckerException("Current footprint not available.");
-      }
+    if (footprint_sub_ && !footprint_sub_->getFootprintInRobotFrame(footprint_, header)) {
+      throw CollisionCheckerException("Current footprint not available.");
     }
   }
   Footprint footprint;
