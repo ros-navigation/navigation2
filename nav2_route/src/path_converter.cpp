@@ -121,4 +121,14 @@ void PathConverter::interpolateEdge(
   }
 }
 
+double PathConverter::getEdgeLength(const EdgePtr edge){
+  const Coordinates & start = edge->start->coords;
+  const Coordinates & end = edge->end->coords;
+
+  float dx = end.x - start.x;
+  float dy = end.y - start.y;
+
+  return double(sqrt(dx*dx + dy*dy));
+}
+
 }  // namespace nav2_route
