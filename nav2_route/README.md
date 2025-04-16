@@ -64,6 +64,8 @@ This is not an exhaustive list, but enough to get users started thinking about h
   - This is useful to track the progress of the route in the Route Server while following the route as an application sees fit. This process allows for the triggering of spatial, graph, or contextual behaviors while executing the task like adjusting speeds, turning on lights, rerouting due to multi-robot coordination resource constraints, opening doors, etc. This has a wide ranging set of applications.
 * 6. Teleoping a robot -> having a script which automatically stores new nodes and/or operator manually triggers a node capture -> saving this to file -> annotating file with operation plugin to do at each waypoint (if any) -> later using the graph to navigate the robot and perform tasks
   - This is one possible way to setup a Teach-and-Repeat behavior using the route server with custom behaviors at each node. There are likely many.
+* 7. Multi-floor navigation using graph nodes as terminals for stairs, elevators, etc
+  - Then free-space planning can be used between on-floor nodes and graph connections for floor connectors to enact specific behaviors to call elevators, climb stairs, etc.
 
 ## Design
 
