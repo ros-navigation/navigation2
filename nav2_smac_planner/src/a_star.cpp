@@ -43,7 +43,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _y_size(0),
   _search_info(search_info),
   _start(nullptr),
-  _goal_manager(nullptr),
+  _goal_manager(GoalManager<NodeT>()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -209,7 +209,7 @@ void AStarAlgorithm<Node2D>::setGoal(
   CoordinateVector coords;
   coords.push_back(coord);
   goals.push_back(goal);
-  _goal_manager->populate(
+  _goal_manager.populate(
     goals, coords);
   _coarse_search_resolution = 1;
 }
@@ -225,7 +225,6 @@ void AStarAlgorithm<NodeT>::setGoal(
   _coarse_search_resolution = 1;
   unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
   unsigned int dim_3_half_bin = 0;
-  _goal_manager->clear();
   NodeVector goals;
   CoordinateVector goals_coordinates;
   switch (goal_heading_mode) {
@@ -272,7 +271,7 @@ void AStarAlgorithm<NodeT>::setGoal(
   }
 
   if (!_search_info.cache_obstacle_heuristic ||
-    goals_coordinates != _goal_manager->getGoalsCoordinates())
+    goals_coordinates != _goal_manager.getGoalsCoordinates())
   {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
@@ -283,37 +282,31 @@ void AStarAlgorithm<NodeT>::setGoal(
   }
 
   // Populate the goals
-  _goal_manager->populate(goals, goals_coordinates);
+  _goal_manager.populate(goals, goals_coordinates);
 }
 
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::areInputsValid()
 {
   // Check if graph was filled in
-
   if (_graph.empty()) {
     throw std::runtime_error("Failed to compute path, no costmap given.");
   }
 
   // Check if points were filled in
-  if (!_start || _goal_manager->goalsEmpty()) {
+  if (!_start || _goal_manager.goalsIsEmpty()) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
-
-  // i watn a lamda function that checks whether the goal is valid, And I want to pass
-  // this to the removeINvalidgoals
 
   auto goalIsvalid = [&](const NodePtr & node_ptr) {
       return node_ptr->isNodeValid(_traverse_unknown, _collision_checker);
     };
 
+  bool all_nodes_invalid = true;
+  _goal_manager.filterAndStoreValidGoals(goalIsvalid, all_nodes_invalid);
   // Check if ending point is valid
-  if (getToleranceHeuristic() < 0.001) {
-    bool all_nodes_occupied = true;
-    _goal_manager->removeInvalidGoals(goalIsvalid, all_nodes_occupied);
-    if (!all_nodes_occupied) {
-      throw nav2_core::GoalOccupied("Goal was in lethal cost");
-    }
+  if (getToleranceHeuristic() < 0.001 && all_nodes_invalid) {
+    throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
   // Note: We do not check the if the start is valid because it is cleared
@@ -337,7 +330,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_list, fine_list;
-  _goal_manager->prepareGoalsForExpansion(coarse_list, fine_list, _coarse_search_resolution);
+  _goal_manager.prepareGoalsForExpansion(coarse_list, fine_list, _coarse_search_resolution);
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
@@ -406,13 +399,13 @@ bool AStarAlgorithm<NodeT>::createPath(
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
       current_node, coarse_list, fine_list,
-      _goal_manager->getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
+      _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
 
     // 3) Check if we're at the goal, backtrace if required
-    if (_goal_manager->isGoal(current_node)) {
+    if (_goal_manager.isGoal(current_node)) {
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
@@ -481,7 +474,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
-  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager->getGoalsCoordinates());
+  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates());
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
   }

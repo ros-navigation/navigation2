@@ -31,9 +31,9 @@ GoalManager<NodeT>::~GoalManager()
 }
 
 template<typename NodeT>
-bool GoalManager<NodeT>::goalsEmpty()
+bool GoalManager<NodeT>::goalsIsEmpty()
 {
-  return _goals_set.empty();
+  return _goals_state.empty();
 }
 
 template<typename NodeT>
@@ -41,9 +41,7 @@ void GoalManager<NodeT>::populate(
   NodeVector & goals,
   CoordinateVector & goals_coordinates)
 {
-  _goals_coordinate.clear();
-  _goals_set.clear();
-  _goals_state.clear();
+  clear();
   for (unsigned int i = 0; i < goals.size(); i++) {
     goals[i]->setPose(goals_coordinates[i]);
     _goals_state.push_back({goals[i], true});
@@ -75,7 +73,7 @@ void GoalManager<NodeT>::prepareGoalsForExpansion(
 }
 
 template<typename NodeT>
-void GoalManager<NodeT>::removeInvalidGoals(
+void GoalManager<NodeT>::filterAndStoreValidGoals(
   const std::function<bool(const NodePtr &)> & isValidFn,
   bool & all_nodes_invalid)
 {
@@ -85,6 +83,7 @@ void GoalManager<NodeT>::removeInvalidGoals(
     if (!isValidFn(_goals_state[i].goal)) {
       _goals_state[i].is_valid = false;
     } else {
+      all_nodes_invalid = false;
       _goals_state[i].is_valid = true;
       _goals_set.insert(_goals_state[i].goal);
       _goals_coordinate.push_back(_goals_state[i].goal->pose);
@@ -92,33 +91,9 @@ void GoalManager<NodeT>::removeInvalidGoals(
   }
 }
 
-template<typename NodeT>
-bool GoalManager<NodeT>::isGoal(NodePtr & node)
-{
-  return _goals_set.find(node) != _goals_set.end();
-}
-
-template<typename NodeT>
-typename GoalManager<NodeT>::NodeSet & GoalManager<NodeT>::getGoals()
-{
-  return _goals_set;
-}
-
-template<typename NodeT>
-typename GoalManager<NodeT>::GoalStateVector & GoalManager<NodeT>::getGoalsState()
-{
-  return _goals_state;
-}
-
-template<typename NodeT>
-typename GoalManager<NodeT>::CoordinateVector & GoalManager<NodeT>::getGoalsCoordinates()
-{
-  return _goals_coordinate;
-}
-
+// Instantiate goalmanager for the supported template types
 template class GoalManager<Node2D>;
 template class GoalManager<NodeHybrid>;
 template class GoalManager<NodeLattice>;
-
 
 }  // namespace nav2_smac_planner

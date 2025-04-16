@@ -22,7 +22,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <unordered_set>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
@@ -56,7 +55,6 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
-  typedef GoalManager<NodeT> *GoalManagerPtr;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -271,9 +269,7 @@ protected:
   SearchInfo _search_info;
 
   NodePtr _start;
-  GoalManagerPtr _goal_manager;
-
-
+  GoalManager<NodeT> _goal_manager;
   Graph _graph;
   NodeQueue _queue;
 

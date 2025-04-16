@@ -18,6 +18,7 @@
 
 #include <unordered_set>
 #include <vector>
+#include <functional>
 
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
@@ -56,10 +57,10 @@ public:
    * @brief Checks if the goals set is empty
    * @return true if the goals set is empty
    */
-  bool goalsEmpty();
+  bool goalsIsEmpty();
 
   /**
-   * @brief Populates the goals set with the given goals and coordinates
+   * @brief Populates the goals state vector with the given goals and coordinates
    * @param goals Vector of goals to populate
    * @param goals_coordinates Vector of coordinates to populate
    */
@@ -83,40 +84,52 @@ public:
     int coarse_search_resolution);
 
   /**
-   * @brief Remove invalid goals from the goal set, goal coordinates, and goal state.
-   *        In addition, it sets the all_nodes_invalid flag to true if all goals are invalid.
-   * @param isValidFn Function to check if a node is valid
-   * @param all_nodes_invalid Returns true if all nodes are invalid.
+   * @brief Filters out invalid goals from the goals state, marks them as invalid,
+   *        and stores valid goals in the internal goal set and coordinates vector.
+   *
+   * @param isValidFn           Function used to determine if a goal node is valid.
+   * @param all_nodes_invalid   Output flag that is set to true if all goal nodes are invalid.
    */
-
-  void removeInvalidGoals(
+  void filterAndStoreValidGoals(
     const std::function<bool(const NodePtr &)> & isValidFn,
     bool & all_nodes_invalid);
 
   /**
-   * @brief Check if this node is the goal node
-   * @param node Node pointer to check if its the goal node
-   * @return if node is goal
+   * @brief Check if this node is the goals set
+   * @param node Node pointer to check
+   * @return if node matches any goal
    */
-  bool isGoal(NodePtr & node);
+  inline bool isGoal(NodePtr & node)
+  {
+    return _goals_set.find(node) != _goals_set.end();
+  }
 
   /**
-   * @brief Get pointer reference to goals node
+   * @brief Get pointer reference to goals set vector
    * @return unordered_set of node pointers reference to the goals nodes
    */
-  NodeSet & getGoals();
+  inline NodeSet & getGoalsSet()
+  {
+    return _goals_set;
+  }
 
   /**
    * @brief Get pointer reference to goals state
    * @return vector of node pointers reference to the goals state
    */
-  GoalStateVector & getGoalsState();
+  inline GoalStateVector & getGoalsState()
+  {
+    return _goals_state;
+  }
 
   /**
    * @brief Get pointer reference to goals coordinates
    * @return vector of goals coordinates reference to the goals coordinates
    */
-  CoordinateVector & getGoalsCoordinates();
+  inline CoordinateVector & getGoalsCoordinates()
+  {
+    return _goals_coordinate;
+  }
 
 protected:
   NodeSet _goals_set;
