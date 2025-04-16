@@ -363,6 +363,7 @@ NavfnPlanner::smoothApproachToGoal(
   }
   geometry_msgs::msg::PoseStamped goal_copy;
   goal_copy.pose = goal;
+  goal_copy.header = plan.header;
   plan.poses.push_back(goal_copy);
 }
 
