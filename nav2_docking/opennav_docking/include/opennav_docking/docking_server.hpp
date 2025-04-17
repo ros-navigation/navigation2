@@ -15,11 +15,12 @@
 #ifndef OPENNAV_DOCKING__DOCKING_SERVER_HPP_
 #define OPENNAV_DOCKING__DOCKING_SERVER_HPP_
 
-#include <vector>
-#include <memory>
-#include <string>
-#include <mutex>
 #include <functional>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -87,10 +88,11 @@ public:
    * @brief Use control law and dock perception to approach the charge dock.
    * @param dock Dock instance, gets queried for refined pose and docked state.
    * @param dock_pose Initial dock pose, will be refined by perception.
+   * @param backward If true, the robot will drive backwards.
    * @returns True if dock successfully approached, False if cancelled. For
    *          any internal error, will throw.
    */
-  bool approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose);
+  bool approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward);
 
   /**
    * @brief Wait for charging to begin.
@@ -102,9 +104,10 @@ public:
   /**
    * @brief Reset the robot for another approach by controlling back to staging pose.
    * @param staging_pose The target pose that will reset for another approach.
+   * @param backward If true, the robot will drive backwards.
    * @returns True if reset is successful.
    */
-  bool resetApproach(const geometry_msgs::msg::PoseStamped & staging_pose);
+  bool resetApproach(const geometry_msgs::msg::PoseStamped & staging_pose, bool backward);
 
   /**
    * @brief Run a single iteration of the control loop to approach a pose.
@@ -242,7 +245,7 @@ protected:
   // This is our fixed frame for controlling - typically "odom"
   std::string fixed_frame_;
   // Does the robot drive backwards onto the dock? Default is forwards
-  bool dock_backwards_;
+  std::optional<bool> dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
 
