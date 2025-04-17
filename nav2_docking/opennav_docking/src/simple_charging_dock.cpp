@@ -107,7 +107,7 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".dock_direction", dock_direction);
   dock_direction_ = utils::getDockDirectionFromString(dock_direction);
   if (dock_direction_ == opennav_docking_core::DockDirection::UNKNOWN) {
-    RCLCPP_ERROR(node_->get_logger(), "Dock direction is not valid");
+    throw std::runtime_error{"Dock direction is not valid. Valid options are: forward or backward"};
   }
 
   // Setup filter
