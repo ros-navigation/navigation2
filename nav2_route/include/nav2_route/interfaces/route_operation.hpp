@@ -24,6 +24,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 namespace nav2_route
 {
@@ -84,7 +85,9 @@ public:
    * to correlate an operation instance to the navigation graph operation calls
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr node, const std::string & name) = 0;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
+    const std::string & name) = 0;
 
   /**
    * @brief An API to get the name of a particular operation for triggering, query

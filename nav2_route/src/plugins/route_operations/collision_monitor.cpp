@@ -24,6 +24,7 @@ namespace nav2_route
 
 void CollisionMonitor::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & name)
 {
   name_ = name;
@@ -31,10 +32,20 @@ void CollisionMonitor::configure(
   logger_ = node->get_logger();
   last_check_time_ = clock_->now();
 
+  std::string server_costmap_topic = node->get_parameter("costmap_topic").as_string();
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".costmap_topic", rclcpp::ParameterValue("local_costmap/costmap_raw"));
-  topic_ = node->get_parameter(getName() + ".costmap_topic").as_string();
-  costmap_subscriber_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, topic_);
+  std::string costmap_topic = node->get_parameter(getName() + ".costmap_topic").as_string();
+  if (costmap_topic != server_costmap_topic) {
+    RCLCPP_INFO(node->get_logger(),
+      "Using costmap topic: %s instead of server costmap topic: %s for CollisionMonitor.",
+      costmap_topic.c_str(), server_costmap_topic.c_str());
+    costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+    topic_ = costmap_topic;
+  } else {
+    costmap_subscriber_ = costmap_subscriber;
+    topic_ = server_costmap_topic;
+  }
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".rate", rclcpp::ParameterValue(1.0));

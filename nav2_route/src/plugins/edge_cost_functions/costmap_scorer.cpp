@@ -23,6 +23,7 @@ namespace nav2_route
 void CostmapScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring costmap scorer.");
@@ -58,13 +59,22 @@ void CostmapScorer::configure(
   check_resolution_ = static_cast<unsigned int>(
     node->get_parameter(getName() + ".check_resolution").as_int());
 
-  // Create costmap subscriber
+  // Create costmap subscriber if not the same as the server costmap
+  std::string server_costmap_topic = node->get_parameter("costmap_topic").as_string();
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".costmap_topic",
     rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
   std::string costmap_topic =
     node->get_parameter(getName() + ".costmap_topic").as_string();
-  costmap_subscriber_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+  if (costmap_topic != server_costmap_topic) {
+    costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+      node, costmap_topic);
+    RCLCPP_INFO(node->get_logger(),
+      "Using costmap topic: %s instead of server costmap topic: %s for CostmapScorer.",
+      costmap_topic.c_str(), server_costmap_topic.c_str());
+  } else {
+    costmap_subscriber_ = costmap_subscriber;
+  }
 
   // Find the proportional weight to apply, if multiple cost functions
   nav2_util::declare_parameter_if_not_declared(

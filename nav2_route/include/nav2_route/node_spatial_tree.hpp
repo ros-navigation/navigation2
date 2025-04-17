@@ -89,14 +89,21 @@ public:
    * @param node_id The return ID of the node
    * @return if successfully found
    */
-  bool findNearestGraphNodeToPose(
+  bool findNearestGraphNodesToPose(
     const geometry_msgs::msg::PoseStamped & pose_in,
-    unsigned int & node_id);
+    std::vector<unsigned int> & node_ids);
+
+  /**
+    * @brief Set the number of nodes to search in local area for
+    * @param num Numbers of nearest nodes to return
+    */
+  void setNumOfNearestNodes(int num_of_nearest_nodes);
 
 protected:
   kd_tree_t * kdtree_;
   GraphAdaptor * adaptor_;
   Graph * graph_;
+  int num_of_nearest_nodes_{3};
 };
 
 }  // namespace nav2_route

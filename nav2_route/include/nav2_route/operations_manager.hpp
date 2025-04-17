@@ -14,6 +14,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <memory>
 #include <string>
 
 #include "pluginlib/class_loader.hpp"
@@ -43,7 +44,9 @@ public:
   /**
    * @brief A constructor for nav2_route::OperationsManager
    */
-  explicit OperationsManager(nav2_util::LifecycleNode::SharedPtr node);
+  explicit OperationsManager(
+    nav2_util::LifecycleNode::SharedPtr node,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
    * @brief A Destructor for nav2_route::OperationsManager

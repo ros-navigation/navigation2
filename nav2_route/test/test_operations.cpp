@@ -41,7 +41,8 @@ using namespace nav2_route;  // NOLINT
 TEST(OperationsManagerTest, test_lifecycle)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 }
 
 TEST(OperationsManagerTest, test_failed_plugins)
@@ -49,13 +50,15 @@ TEST(OperationsManagerTest, test_failed_plugins)
   // This plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
-  EXPECT_THROW(OperationsManager manager(node), std::runtime_error);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
 }
 
 TEST(OperationsManagerTest, test_find_operations)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   EdgePtr ent{nullptr}, exit{nullptr};
@@ -94,7 +97,8 @@ TEST(OperationsManagerTest, test_find_operations_failure2)
   // This plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
-  EXPECT_THROW(OperationsManager manager(node), std::runtime_error);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
 }
 
 TEST(OperationsManagerTest, test_processing_fail)
@@ -103,7 +107,8 @@ TEST(OperationsManagerTest, test_processing_fail)
 
   // No operation plugins to trigger
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   DirectionalEdge enter;
@@ -124,7 +129,8 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   bool got_msg = false;
   nav2_msgs::msg::SpeedLimit my_msg;
@@ -177,7 +183,8 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   nav2_util::declare_parameter_if_not_declared(
     node, "ReroutingService.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::ReroutingService"}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   DirectionalEdge enter;
@@ -231,7 +238,8 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   DirectionalEdge enter;
@@ -313,7 +321,8 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.service_name",
     rclcpp::ParameterValue(std::string{"hello_world"}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   DirectionalEdge enter;
@@ -377,7 +386,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   auto service2 = node_int->create_service<std_srvs::srv::Trigger>("hello_world", callback2);
 
-  OperationsManager manager2(node);
+  OperationsManager manager2(node, costmap_subscriber);
   result = manager2.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 1u);
   EXPECT_FALSE(result.reroute);
@@ -397,7 +406,8 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node2;
   DirectionalEdge enter;
@@ -441,7 +451,8 @@ TEST(OperationsManagerTest, test_time_marker)
   nav2_util::declare_parameter_if_not_declared(
     node, "TimeMarker.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeMarker"}));
-  OperationsManager manager(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
 
   Node node1, node2, node3, node4;
   DirectionalEdge exit, enter, last;
@@ -536,7 +547,13 @@ TEST(OperationsManagerTest, test_time_marker)
 class TestRouteOperations : public nav2_route::RouteOperation
 {
 public:
-  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr, const std::string &) override {}
+  void configure(
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
+    const std::string &) override
+  {
+  }
+
   std::string getName() override {return "TestRouteOperation";}
   OperationResult perform(
     NodePtr,

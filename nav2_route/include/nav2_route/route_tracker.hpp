@@ -59,6 +59,7 @@ public:
   void configure(
     nav2_util::LifecycleNode::SharedPtr node,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     std::shared_ptr<ActionServerTrack> action_server,
     const std::string & route_frame,
     const std::string & base_frame);

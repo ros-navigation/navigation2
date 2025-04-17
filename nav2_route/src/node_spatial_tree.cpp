@@ -34,6 +34,11 @@ NodeSpatialTree::~NodeSpatialTree()
   }
 }
 
+void NodeSpatialTree::setNumOfNearestNodes(int num_of_nearest_nodes)
+{
+  num_of_nearest_nodes_ = num_of_nearest_nodes;
+}
+
 void NodeSpatialTree::computeTree(Graph & graph)
 {
   if (kdtree_) {
@@ -52,10 +57,10 @@ void NodeSpatialTree::computeTree(Graph & graph)
   graph_ = &graph;
 }
 
-bool NodeSpatialTree::findNearestGraphNodeToPose(
-  const geometry_msgs::msg::PoseStamped & pose_in, unsigned int & node_id)
+bool NodeSpatialTree::findNearestGraphNodesToPose(
+  const geometry_msgs::msg::PoseStamped & pose_in, std::vector<unsigned int> & node_ids)
 {
-  size_t num_results = 1;
+  size_t num_results = static_cast<size_t>(num_of_nearest_nodes_);
   std::vector<unsigned int> ret_index(num_results);
   std::vector<double> out_dist_sqr(num_results);
   const double query_pt[2] = {pose_in.pose.position.x, pose_in.pose.position.y};
@@ -65,7 +70,9 @@ bool NodeSpatialTree::findNearestGraphNodeToPose(
     return false;
   }
 
-  node_id = ret_index[0];
+  for (int i = 0; i < static_cast<int>(ret_index.size()); ++i) {
+    node_ids.push_back(ret_index[i]);
+  }
   return true;
 }
 

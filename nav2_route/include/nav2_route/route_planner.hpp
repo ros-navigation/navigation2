@@ -52,10 +52,13 @@ public:
   /**
    * @brief Configure the route planner, get parameters
    * @param node Node object to get parametersfrom
+   * @param tf_buffer TF buffer to use for transformations
+   * @param costmap_subscriber Costmap subscriber to use for blocked nodes
    */
   void configure(
     nav2_util::LifecycleNode::SharedPtr node,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
    * @brief Find the route from start to goal on the graph

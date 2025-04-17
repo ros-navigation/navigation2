@@ -22,6 +22,8 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_msgs/msg/route.hpp"
 #include "nav2_route/types.hpp"
+#include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_util/line_iterator.hpp"
 
 #ifndef NAV2_ROUTE__UTILS_HPP_
 #define NAV2_ROUTE__UTILS_HPP_

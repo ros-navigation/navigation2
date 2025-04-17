@@ -66,7 +66,8 @@ TEST(GoalIntentExtractorTest, test_obj_lifecycle)
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
-  extractor.configure(node, graph, &id_map, nullptr, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
+  extractor.configure(node, graph, &id_map, nullptr, costmap_subscriber, "map", "base_link");
 }
 
 TEST(GoalIntentExtractorTest, test_transform_pose)
@@ -83,16 +84,17 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   tf->setCreateTimerInterface(timer_interface);
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
   tf2_ros::TransformBroadcaster broadcaster(node);
-  extractor.configure(node, graph, &id_map, tf, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
+  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
 
   // Test transformations same frame, should pass
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "map";
-  EXPECT_NO_THROW(extractor.transformPose(pose));
+  EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 
   // Test transformations when nothing on TF buffer of different frames
   pose.header.frame_id = "gps";
-  EXPECT_THROW(extractor.transformPose(pose), nav2_core::RouteTFError);
+  EXPECT_THROW(extractor.transformPose(pose, "map"), nav2_core::RouteTFError);
 
   // Now transforms are available, should work
   geometry_msgs::msg::TransformStamped transform;
@@ -100,12 +102,13 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
   broadcaster.sendTransform(transform);
-  EXPECT_NO_THROW(extractor.transformPose(pose));
+  EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 
 TEST(GoalIntentExtractorTest, test_start_goal_finder)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
+  node->declare_parameter("enable_nn_search", rclcpp::ParameterValue(false));
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   GoalIntentExtractorWrapper extractor;
   Graph graph;
@@ -130,7 +133,8 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
       ids++;
     }
   }
-  extractor.configure(node, graph, &id_map, tf, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
+  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
 
   // Test sending goal and start IDs to search
   nav2_msgs::action::ComputeRoute::Goal raw_goal;
@@ -188,7 +192,8 @@ TEST(GoalIntentExtractorTest, test_pruning)
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
-  extractor.configure(node, graph, &id_map, nullptr, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
+  extractor.configure(node, graph, &id_map, nullptr, costmap_subscriber, "map", "base_link");
 
   // Setup goal to use (only uses the use_poses field)
   nav2_msgs::action::ComputeRoute::Goal raw_goal;
@@ -368,7 +373,8 @@ TEST(GoalIntentExtractorTest, test_pruning)
   goal.pose.position.x = 2.6;
   goal.pose.position.y = -0.4;
   GoalIntentExtractorWrapper extractor2;
-  extractor2.configure(node, graph, &id_map, nullptr, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber2 = nullptr;
+  extractor2.configure(node, graph, &id_map, nullptr, costmap_subscriber2, "map", "base_link");
   extractor2.setStartAndGoal(start, goal);
   rtn = extractor2.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);

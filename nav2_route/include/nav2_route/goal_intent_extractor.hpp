@@ -25,10 +25,12 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/node_spatial_tree.hpp"
+#include "nav2_route/goal_intent_search.hpp"
 
 namespace nav2_route
 {
@@ -58,6 +60,7 @@ public:
    * @param graph Graph to populate kD tree using
    * @param id_to_graph_map Remapping vector to correlate nodeIDs
    * @param tf TF buffer for transformations
+   * @param costmap_subscriber Costmap subscriber to use for traversability
    * @param route_frame Planning frame
    * @param base_frame Robot reference frame
    */
@@ -66,6 +69,7 @@ public:
     Graph & graph,
     GraphToIDMap * id_to_graph_map,
     std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & route_frame,
     const std::string & base_frame);
 
@@ -79,8 +83,11 @@ public:
   /**
    * @brief Transforms a pose into the route frame
    * @param pose Pose to transform (e.g. start, goal)
+   * @param frame_id Frame to transform to
    */
-  geometry_msgs::msg::PoseStamped transformPose(geometry_msgs::msg::PoseStamped & pose);
+  geometry_msgs::msg::PoseStamped transformPose(
+    geometry_msgs::msg::PoseStamped & pose,
+    const std::string & frame_id);
   /**
    * @brief Main API to find the start and goal graph IDX (not IDs) for routing
    * @param goal Action request goal
@@ -123,10 +130,12 @@ protected:
   GraphToIDMap * id_to_graph_map_;
   Graph * graph_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;
   std::string base_frame_;
   geometry_msgs::msg::PoseStamped start_, goal_;
-  bool prune_goal_;
+  bool prune_goal_, enable_search_;
+  int max_nn_search_iterations_;
   float max_dist_from_edge_, min_dist_from_goal_, min_dist_from_start_;
 };
 

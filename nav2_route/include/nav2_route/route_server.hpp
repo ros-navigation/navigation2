@@ -222,6 +222,8 @@ protected:
   std::shared_ptr<PathConverter> path_converter_;
   std::shared_ptr<GoalIntentExtractor> goal_intent_extractor_;
 
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
+
   // State Data
   Graph graph_;
   GraphToIDMap id_to_graph_map_;

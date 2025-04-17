@@ -56,7 +56,8 @@ TEST(RouteTrackerTest, test_lifecycle)
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
 
   RouteTracker tracker;
-  tracker.configure(node, nullptr, nullptr, "map", "base_link");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  tracker.configure(node, nullptr, costmap_subscriber, nullptr, "map", "base_link");
 }
 
 TEST(RouteTrackerTest, test_get_robot_pose)
@@ -69,9 +70,10 @@ TEST(RouteTrackerTest, test_get_robot_pose)
   tf->setCreateTimerInterface(timer_interface);
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
   tf2_ros::TransformBroadcaster broadcaster(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   RouteTracker tracker;
-  tracker.configure(node, tf, nullptr, "map", "base_link");
+  tracker.configure(node, tf, costmap_subscriber, nullptr, "map", "base_link");
 
   EXPECT_THROW(tracker.getRobotPose(), nav2_core::RouteTFError);
 
@@ -87,8 +89,9 @@ TEST(RouteTrackerTest, test_route_start_end)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
 
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   RouteTrackerWrapper tracker;
-  tracker.configure(node, nullptr, nullptr, "map", "base_link");
+  tracker.configure(node, nullptr, costmap_subscriber, nullptr, "map", "base_link");
   Route route;
   route.edges.resize(7);
   DirectionalEdge edge;
@@ -119,9 +122,9 @@ TEST(RouteTrackerTest, test_route_start_end)
 TEST(RouteTrackerTest, test_feedback)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
-
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   RouteTrackerWrapper tracker;
-  tracker.configure(node, nullptr, nullptr, "map", "base_link");
+  tracker.configure(node, nullptr, costmap_subscriber, nullptr, "map", "base_link");
 
   Route route;
   tracker.setRouteMsgSize(7);
@@ -135,10 +138,11 @@ TEST(RouteTrackerTest, test_feedback)
 TEST(RouteTrackerTest, test_node_achievement_simple)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   // Test with straight line to do exact analysis easier. More realistic routes in the next test
   RouteTrackerWrapper tracker;
-  tracker.configure(node, nullptr, nullptr, "map", "base_link");
+  tracker.configure(node, nullptr, costmap_subscriber, nullptr, "map", "base_link");
 
   // Create a demo route to test upon
   Node node1, node2, node3;
@@ -214,10 +218,11 @@ TEST(RouteTrackerTest, test_node_achievement_simple)
 TEST(RouteTrackerTest, test_node_achievement)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   // Minimum threshold is 2m by default
   RouteTrackerWrapper tracker;
-  tracker.configure(node, nullptr, nullptr, "map", "base_link");
+  tracker.configure(node, nullptr, costmap_subscriber, nullptr, "map", "base_link");
 
   // Create a demo route to test upon
   Node node1, node2, node3, node4;

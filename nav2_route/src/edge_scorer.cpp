@@ -24,7 +24,8 @@ namespace nav2_route
 
 EdgeScorer::EdgeScorer(
   nav2_util::LifecycleNode::SharedPtr node,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
   // load plugins with a default of the DistanceScorer
@@ -51,7 +52,7 @@ EdgeScorer::EdgeScorer(
       RCLCPP_INFO(
         node->get_logger(), "Created edge cost function plugin %s of type %s",
         edge_cost_function_ids[i].c_str(), type.c_str());
-      scorer->configure(node, tf_buffer, edge_cost_function_ids[i]);
+      scorer->configure(node, tf_buffer, costmap_subscriber, edge_cost_function_ids[i]);
       plugins_.push_back(std::move(scorer));
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(

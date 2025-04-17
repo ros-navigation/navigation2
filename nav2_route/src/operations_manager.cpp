@@ -24,7 +24,9 @@
 namespace nav2_route
 {
 
-OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
+OperationsManager::OperationsManager(
+  nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 : plugin_loader_("nav2_route", "nav2_route::RouteOperation")
 {
   logger_ = node->get_logger();
@@ -54,7 +56,7 @@ OperationsManager::OperationsManager(nav2_util::LifecycleNode::SharedPtr node)
       RCLCPP_INFO(
         node->get_logger(), "Created route operation %s of type %s",
         operation_ids[i].c_str(), type.c_str());
-      operation->configure(node, operation_ids[i]);
+      operation->configure(node, costmap_subscriber, operation_ids[i]);
       RouteOperationType process_type = operation->processType();
       if (process_type == RouteOperationType::ON_QUERY) {
         query_operations_.push_back(std::move(operation));

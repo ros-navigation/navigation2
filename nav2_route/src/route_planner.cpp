@@ -26,7 +26,8 @@ namespace nav2_route
 
 void RoutePlanner::configure(
   nav2_util::LifecycleNode::SharedPtr node,
-  const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
+  const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 {
   nav2_util::declare_parameter_if_not_declared(
     node, "max_iterations", rclcpp::ParameterValue(0));
@@ -36,7 +37,7 @@ void RoutePlanner::configure(
     max_iterations_ = std::numeric_limits<int>::max();
   }
 
-  edge_scorer_ = std::make_unique<EdgeScorer>(node, tf_buffer);
+  edge_scorer_ = std::make_unique<EdgeScorer>(node, tf_buffer, costmap_subscriber);
 }
 
 Route RoutePlanner::findRoute(

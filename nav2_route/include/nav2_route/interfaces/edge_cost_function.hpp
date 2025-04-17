@@ -24,6 +24,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
 
 namespace nav2_route
 {
@@ -57,6 +58,7 @@ public:
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) = 0;
 
   /**

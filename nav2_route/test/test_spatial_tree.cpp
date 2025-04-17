@@ -45,12 +45,12 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
   // By checking for the idx in the Kd-tree and then brute force searching
   unsigned int num_tests = 50;
   for (unsigned int i = 0; i != num_tests; i++) {
-    unsigned int kd_tree_idx;
+    std::vector<unsigned int> kd_tree_idxs;
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = static_cast<float>((rand_r(&seed) % 6000000) + 1);
     pose.pose.position.y = static_cast<float>((rand_r(&seed) % 6000000) + 1);
 
-    if (!kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx)) {
+    if (!kd_tree->findNearestGraphNodesToPose(pose, kd_tree_idxs)) {
       EXPECT_TRUE(false);  // Unable to find nearest neighbor!
     }
 
@@ -66,6 +66,6 @@ TEST(NodeSpatialTreeTest, test_kd_tree)
       }
     }
 
-    EXPECT_EQ(kd_tree_idx, closest_via_brute_force);
+    EXPECT_EQ(kd_tree_idxs[0], closest_via_brute_force);
   }
 }

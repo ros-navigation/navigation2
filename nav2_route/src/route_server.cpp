@@ -71,6 +71,13 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   base_frame_ = node->get_parameter("base_frame").as_string();
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
+  // Create costmap subscriber
+  nav2_util::declare_parameter_if_not_declared(
+    node, "costmap_topic",
+    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
+  std::string costmap_topic = node->get_parameter("costmap_topic").as_string();
+  costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
+
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
@@ -79,14 +86,14 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     goal_intent_extractor_ = std::make_shared<GoalIntentExtractor>();
     goal_intent_extractor_->configure(
-      node, graph_, &id_to_graph_map_, tf_, route_frame_, base_frame_);
+      node, graph_, &id_to_graph_map_, tf_, costmap_subscriber_, route_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
-    route_planner_->configure(node, tf_);
+    route_planner_->configure(node, tf_, costmap_subscriber_);
 
     route_tracker_ = std::make_shared<RouteTracker>();
     route_tracker_->configure(
-      node, tf_, compute_and_track_route_server_, route_frame_, base_frame_);
+      node, tf_, costmap_subscriber_, compute_and_track_route_server_, route_frame_, base_frame_);
 
     path_converter_ = std::make_shared<PathConverter>();
     path_converter_->configure(node);

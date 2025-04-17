@@ -25,7 +25,7 @@ Note that plugins may also use outside information from topics, services, and ac
 
 - 98% Unit Test Coverage
 - Optimized Dikjstra's planning algorithm modeled off of the Smac Planner A* implementation
-- Use of Kd-trees for finding the nearest node to arbitrary start and goal poses in the graph for pose-based planning requests
+- Use of Kd-trees for finding the nearest node(s) to arbitrary start and goal poses in the graph for pose-based planning requests. Optional use of Breadth-First Search to refine those nearest node(s) from simply Euclidean distance to considering traversibility length in the costmap.
 - Highly efficient graph representation to maximize caching in a single data structure containing both edges' and nodes' objects and relationships with localized information
 - All edges are directional allowing for single-direction lanes or planning
 - Data in files may be with respect to any frame in the TF tree and are transformed to a centralized frame automatically
@@ -112,6 +112,7 @@ route_server:
     path_density: 0.05                            # Density of points for generating the dense nav_msgs/Path from route (m)
     max_iterations: 0                             # Maximum number of search iterations, if 0, uses maximum possible
     max_planning_time: 2.0                        # Maximum planning time (seconds)
+    costmap_topic: 'global_costmap/costmap_raw'   # Costmap topic when enable_nn_search is enabled. May also be used by the collision monitor operation and/or the costmap edge scorer if using the same topic to share resources.
 
     graph_file_loader: "GeoJsonGraphFileLoader"   # Name of default file loader
       plugin: nav2_route::GeoJsonGraphFileLoader  # file loader plugin to use
@@ -138,6 +139,9 @@ route_server:
     min_prune_dist_from_goal: 0.15                      # Min distance from goal node away from goal pose to consider goal node pruning as considering it as being passed (in case goal pose is very close to a goal node, but not exact)
     min_prune_dist_from_start: 0.10                     # Min distance from start node away from start pose to consider start node pruning as considering it as being passed (in case start pose is very close to a start node, but not exact)
     prune_goal: true                              # Whether pruning the goal nodes from the route due to being past the goal pose requested is possible (pose requests only)
+    enable_nn_search: true                        # Whether to enable breadth first search considering the costmap to find the node closest to the start and edge poses, rather than using the euclidean nearest neighbor alone.
+    max_nn_search_iterations: 10000               # Maximum number of iterations for breadth-first search.
+    num_nearest_nodes: 5                          # The number of nearest-neighbors to extract for breadth-first search to consider.
 ```
 
 #### `CostmapScorer`

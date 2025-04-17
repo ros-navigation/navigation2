@@ -23,6 +23,7 @@ namespace nav2_route
 void SemanticScorer::configure(
   const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring semantic scorer.");

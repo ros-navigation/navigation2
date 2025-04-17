@@ -50,7 +50,8 @@ public:
    */
   explicit EdgeScorer(
     nav2_util::LifecycleNode::SharedPtr node,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer);
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
    * @brief Destructor

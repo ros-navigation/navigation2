@@ -77,8 +77,10 @@ public:
 TEST(TestCollisionMonitor, test_lifecycle)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("test");
+  node->declare_parameter("costmap_topic", rclcpp::ParameterValue("dummy_topic"));
   CollisionMonitor monitor;
-  monitor.configure(node, "name");
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  monitor.configure(node, costmap_subscriber, "name");
   EXPECT_EQ(monitor.getName(), std::string("name"));
   EXPECT_EQ(monitor.processType(), RouteOperationType::ON_QUERY);
 }
@@ -86,9 +88,11 @@ TEST(TestCollisionMonitor, test_lifecycle)
 TEST(TestCollisionMonitor, test_geometric_backout_vector)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("test");
+  node->declare_parameter("costmap_topic", rclcpp::ParameterValue("local_costmap/costmap_raw"));
   node->declare_parameter("name.max_collision_dist", rclcpp::ParameterValue(-1.0));
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   CollisionMonitorWrapper monitor;
-  monitor.configure(node, "name");
+  monitor.configure(node, costmap_subscriber, "name");
 
   geometry_msgs::msg::PoseStamped pose;
   Coordinates start, end;
@@ -158,9 +162,11 @@ TEST(TestCollisionMonitor, test_geometric_backout_vector)
 TEST(TestCollisionMonitor, test_costmap_apis)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("test");
+  node->declare_parameter("costmap_topic", rclcpp::ParameterValue("dummy_topic"));
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   CollisionMonitorWrapper monitor;
-  monitor.configure(node, "name");
+  monitor.configure(node, costmap_subscriber, "name");
 
   // No costmap received yet
   EXPECT_THROW(monitor.getCostmapWrapper(), nav2_core::OperationFailed);

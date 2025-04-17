@@ -78,8 +78,9 @@ int main(int argc, char const * argv[])
   //   "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   // graph_vis_pub->publish(utils::toMsg(graph, "map", node->now()));
 
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   RoutePlanner planner;
-  planner.configure(node, tf_buffer);
+  planner.configure(node, tf_buffer, costmap_subscriber);
   std::vector<unsigned int> blocked_ids;
   Route route;
 
@@ -127,11 +128,11 @@ int main(int argc, char const * argv[])
   auto start = node->now();
   unsigned int seed = 1u;
   for (unsigned int i = 0; i != NUM_TESTS; i++) {
-    unsigned int kd_tree_idx;
+    std::vector<unsigned int> kd_tree_idxs;
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = static_cast<float>(rand_r(&seed) % DIM);
     pose.pose.position.y = static_cast<float>(rand_r(&seed) % DIM);
-    kd_tree->findNearestGraphNodeToPose(pose, kd_tree_idx);
+    kd_tree->findNearestGraphNodesToPose(pose, kd_tree_idxs);
   }
   auto end = node->now();
   RCLCPP_INFO(

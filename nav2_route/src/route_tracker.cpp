@@ -20,6 +20,7 @@ namespace nav2_route
 void RouteTracker::configure(
   nav2_util::LifecycleNode::SharedPtr node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   std::shared_ptr<ActionServerTrack> action_server,
   const std::string & route_frame,
   const std::string & base_frame)
@@ -44,7 +45,7 @@ void RouteTracker::configure(
     node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));
   aggregate_blocked_ids_ = node->get_parameter("aggregate_blocked_ids").as_bool();
 
-  operations_manager_ = std::make_unique<OperationsManager>(node);
+  operations_manager_ = std::make_unique<OperationsManager>(node, costmap_subscriber);
 }
 
 geometry_msgs::msg::PoseStamped RouteTracker::getRobotPose()

@@ -98,6 +98,7 @@ protected:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     const std::string & name) final
   {
     RCLCPP_INFO(node->get_logger(), "Configuring route operation client: %s.", name.c_str());

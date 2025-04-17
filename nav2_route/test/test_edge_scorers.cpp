@@ -44,7 +44,8 @@ TEST(EdgeScorersTest, test_lifecycle)
 {
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
 }
 
 TEST(EdgeScorersTest, test_api)
@@ -52,7 +53,8 @@ TEST(EdgeScorersTest, test_api)
   // Tests basic API and default behavior. Also covers the DistanceScorer plugin.
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 2);  // default DistanceScorer, AdjustEdgesScorer
 
   Node n1, n2;
@@ -93,7 +95,9 @@ TEST(EdgeScorersTest, test_failed_api)
   nav2_util::declare_parameter_if_not_declared(
     node, "FakeScorer.plugin", rclcpp::ParameterValue(std::string{"FakePluginPath"}));
 
-  EXPECT_THROW(EdgeScorer scorer(node, tf_buffer), pluginlib::PluginlibException);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EXPECT_THROW(
+    EdgeScorer scorer(node, tf_buffer, costmap_subscriber), pluginlib::PluginlibException);
 }
 
 TEST(EdgeScorersTest, test_invalid_edge_scoring)
@@ -111,7 +115,8 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
     node, "DynamicEdgesScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::DynamicEdgesScorer"}));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
   // Send service to set an edge as invalid
@@ -177,8 +182,8 @@ TEST(EdgeScorersTest, test_penalty_scoring)
   nav2_util::declare_parameter_if_not_declared(
     node, "PenaltyScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::PenaltyScorer"}));
-
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // PenaltyScorer
   const geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   RouteRequest route_request;
@@ -207,6 +212,7 @@ TEST(EdgeScorersTest, test_costmap_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  node->declare_parameter("costmap_topic", "dummy_topic");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
@@ -216,7 +222,8 @@ TEST(EdgeScorersTest, test_costmap_scoring)
     node, "CostmapScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::CostmapScorer"}));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // CostmapScorer
 
   // Create edge to score
@@ -320,6 +327,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
   auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  node->declare_parameter("costmap_topic", "dummy_costmap/costmap_raw");
   auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
@@ -335,7 +343,8 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   node->declare_parameter(
     "CostmapScorer.invalid_off_map", rclcpp::ParameterValue(false));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // CostmapScorer
 
   // Create edge to score
@@ -429,7 +438,8 @@ TEST(EdgeScorersTest, test_time_scoring)
     node, "TimeScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeScorer"}));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // TimeScorer
 
   // Create edge to score
@@ -500,7 +510,8 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
 
   const geometry_msgs::msg::PoseStamped start_pose, goal_pose;
@@ -575,7 +586,8 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // SemanticScorer
 
   // Create edge to score
@@ -643,7 +655,8 @@ TEST(EdgeScorersTest, test_goal_orientation_threshold)
     node, "GoalOrientationScorer.use_orientation_threshold",
     rclcpp::ParameterValue(true));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
@@ -717,7 +730,8 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
     rclcpp::ParameterValue(orientation_weight));
 
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
@@ -787,7 +801,8 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
     node, "StartPoseOrientationScorer.use_orientation_threshold",
     rclcpp::ParameterValue(true));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
   double yaw = 0.0;
@@ -877,7 +892,8 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
     node, "StartPoseOrientationScorer.orientation_weight",
     rclcpp::ParameterValue(orientation_weight));
 
-  EdgeScorer scorer(node, tf_buffer);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // GoalOrientationScorer
 
   double yaw = 0.0;

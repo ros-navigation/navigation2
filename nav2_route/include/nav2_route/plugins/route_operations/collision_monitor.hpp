@@ -63,6 +63,7 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 
   /**
@@ -147,7 +148,7 @@ protected:
   float max_collision_dist_, max_cost_;
   bool reroute_on_collision_;
   unsigned int check_resolution_{1u};
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
 };
 

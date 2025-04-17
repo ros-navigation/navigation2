@@ -132,8 +132,9 @@ TEST(RoutePlannerTest, test_route_planner_positive)
 
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
-  planner.configure(node, tf_buffer);
+  planner.configure(node, tf_buffer, collision_checker);
   std::vector<unsigned int> blocked_ids;
   unsigned int start, goal;
 
@@ -191,8 +192,9 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
-  planner.configure(node, tf_buffer);
+  planner.configure(node, tf_buffer, collision_checker);
   std::vector<unsigned int> blocked_ids;
   unsigned int start = 0;
   unsigned int goal = 15;

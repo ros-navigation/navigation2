@@ -52,6 +52,7 @@ public:
   void configure(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 
   /**
@@ -83,7 +84,7 @@ protected:
   std::string name_;
   bool use_max_, invalid_on_collision_, invalid_off_map_;
   float weight_, max_cost_;
-  std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_{nullptr};
   unsigned int check_resolution_ {1u};
 };
