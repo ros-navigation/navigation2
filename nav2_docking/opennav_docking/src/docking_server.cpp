@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "angles/angles.h"
-#include "nav2_util/node_utils.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
