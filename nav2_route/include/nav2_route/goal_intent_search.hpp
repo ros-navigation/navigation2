@@ -179,8 +179,8 @@ public:
   bool inCollision(const unsigned int id)
   {
     // Check if the node is in collision
-    unsigned char cost = costmap_->getCost(id);
-    return  cost >= nav2_costmap_2d::LETHAL_OBSTACLE && cost != nav2_costmap_2d::NO_INFORMATION;
+    float cost = static_cast<float>(costmap_->getCost(id));
+    return cost >= 253.0f && cost != 255.0f;
   }
 
   /**
