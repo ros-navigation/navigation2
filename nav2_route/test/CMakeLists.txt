@@ -119,3 +119,11 @@ ament_add_gtest(test_route_server
 target_link_libraries(test_route_server
   ${library_name}
 )
+
+# Test goal intent search
+ament_add_gtest(test_goal_intent_search
+  test_goal_intent_search.cpp
+)
+target_link_libraries(test_goal_intent_search
+  ${library_name}
+)

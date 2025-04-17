@@ -66,6 +66,8 @@ public:
     const std::vector<geometry_msgs::msg::PoseStamped> & candidate_nodes,
     const int max_iterations = std::numeric_limits<int>::max())
   {
+    closest_node_idx_ = 0u;
+
     // Convert target to costmap space
     unsigned int goal_x, goal_y;
     if (!costmap_->worldToMap(reference_node.pose.position.x, reference_node.pose.position.y,

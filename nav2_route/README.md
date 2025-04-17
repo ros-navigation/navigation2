@@ -46,10 +46,12 @@ Note that plugins may also use outside information from topics, services, and ac
 There are several practical architectures and designs for how this Route Serve can be assembled into a robotics solution.
 Which to use depends on the nature of an application's needs and behavior.
 This is not an exhaustive list, but enough to get users started thinking about how to fit this into their system.
+Architectures (1) and (2) are implemented and tested in `nav2_bt_navigator/behavior_trees` for immediate use!
 
 * 1. Route Server's output dense path -> Controller Server for direct route following
   - This is most useful when close or exact route following is required, fully replaces the Planner Server
   - Considering adding in the Smoother Server or spline fitting between the Route Server and Controller Server in a Behavior Tree to smooth out the edge transitions for following
+  - Consider ComputingPathToPose for first-mile and last-mile on and off the route if leaving the graph is desirable.
 * 2. Route Server's output sparse route -> Planner Server to plan to the next node(s) -> Controller Server to track global path
   - This is useful when you want to follow the general route, but wish to have the flexibility to leave the route when obstacles are in the way and need the free-space planner to do so
   - This is also useful in conjunction with (1) above as a fallback behavior to follow the route when possible, leave when blocked (after some time, or proactively when it sees blocked in immediate future), and then track the route again. This is great in situations where you want to only leave the route when required but otherwise track the route closely
