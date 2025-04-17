@@ -289,25 +289,26 @@ TEST(DockingServerTests, testDockBackward)
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
+  // The dock_backwards parameter should be declared but not set
   node->on_configure(rclcpp_lifecycle::State());
-
   EXPECT_FALSE(node->getDockBackward().has_value());
+  node->on_cleanup(rclcpp_lifecycle::State());
 
   // Now, set the dock_backwards parameter to true
-  node->declare_parameter("dock_backwards", rclcpp::ParameterValue(true));
+  node->set_parameter(rclcpp::Parameter("dock_backwards", rclcpp::ParameterValue(true)));
   node->on_configure(rclcpp_lifecycle::State());
   EXPECT_TRUE(node->getDockBackward().has_value());
   EXPECT_TRUE(node->getDockBackward().value());
-  node->cleanup();
+  node->on_cleanup(rclcpp_lifecycle::State());
 
   // Now, set the dock_backwards parameter to false
   node->set_parameter(rclcpp::Parameter("dock_backwards", rclcpp::ParameterValue(false)));
   node->on_configure(rclcpp_lifecycle::State());
   EXPECT_TRUE(node->getDockBackward().has_value());
   EXPECT_FALSE(node->getDockBackward().value());
-  node->cleanup();
+  node->on_cleanup(rclcpp_lifecycle::State());
 
-  node->shutdown();
+  node->on_shutdown(rclcpp_lifecycle::State());
   node.reset();
 }
 

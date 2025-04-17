@@ -25,32 +25,22 @@ using std::placeholders::_1;
 namespace opennav_docking
 {
 
-DockingServer::DockingServer(rclcpp::NodeOptions options)
-: nav2_util::LifecycleNode("docking_server", "",
-    options.automatically_declare_parameters_from_overrides(true))
+DockingServer::DockingServer(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("docking_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 
-  nav2_util::declare_parameter_if_not_declared(
-    this, "controller_frequency", rclcpp::ParameterValue(50.0));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "initial_perception_timeout", rclcpp::ParameterValue(5.0));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "wait_charge_timeout", rclcpp::ParameterValue(5.0));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "dock_approach_timeout", rclcpp::ParameterValue(30.0));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "undock_linear_tolerance", rclcpp::ParameterValue(0.05));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "undock_angular_tolerance", rclcpp::ParameterValue(0.05));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "max_retries", rclcpp::ParameterValue(3));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "base_frame", rclcpp::ParameterValue("base_link"));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "fixed_frame", rclcpp::ParameterValue("odom"));
-  nav2_util::declare_parameter_if_not_declared(
-    this, "dock_prestaging_tolerance", rclcpp::ParameterValue(0.5));
+  declare_parameter("controller_frequency", 50.0);
+  declare_parameter("initial_perception_timeout", 5.0);
+  declare_parameter("wait_charge_timeout", 5.0);
+  declare_parameter("dock_approach_timeout", 30.0);
+  declare_parameter("undock_linear_tolerance", 0.05);
+  declare_parameter("undock_angular_tolerance", 0.05);
+  declare_parameter("max_retries", 3);
+  declare_parameter("base_frame", "base_link");
+  declare_parameter("fixed_frame", "odom");
+  declare_parameter("dock_backwards", rclcpp::PARAMETER_BOOL);
+  declare_parameter("dock_prestaging_tolerance", 0.5);
 }
 
 nav2_util::CallbackReturn
@@ -71,11 +61,14 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  if (node->has_parameter("dock_backwards")) {
-    dock_backwards_ = std::make_optional<bool>();
-    get_parameter("dock_backwards", dock_backwards_.value());
-    RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
+  bool dock_backwards;
+  try {
+    if (get_parameter("dock_backwards", dock_backwards)) {
+      dock_backwards_ = dock_backwards;
+      RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
       "Please use the dock_direction parameter in your dock plugin instead.");
+    }
+  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
   }
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);

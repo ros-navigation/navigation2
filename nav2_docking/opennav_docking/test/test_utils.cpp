@@ -135,7 +135,7 @@ TEST(UtilsTests, testl2Norm)
   EXPECT_NEAR(utils::l2Norm(a, b), 0.734, 1e-3);
 }
 
-TEST(UtillsTest, testGetDockDirectionFromString) {
+TEST(UtilsTests, testGetDockDirectionFromString) {
   using opennav_docking_core::DockDirection;
   EXPECT_EQ(utils::getDockDirectionFromString("forward"), DockDirection::FORWARD);
   EXPECT_EQ(utils::getDockDirectionFromString("backward"), DockDirection::BACKWARD);
