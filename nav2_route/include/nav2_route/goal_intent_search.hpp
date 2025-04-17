@@ -97,7 +97,7 @@ public:
     visited.insert(goal_id);
     search_queue.push(goal_id);
     int iterations = 0;
-    while (!search_queue.empty() || iterations >= max_iterations) {
+    while (!search_queue.empty() && iterations < max_iterations) {
       unsigned int current_id = search_queue.front();
       search_queue.pop();
       iterations++;
