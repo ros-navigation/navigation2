@@ -9,6 +9,7 @@ from nav2_msgs.msg._costmap_update import CostmapUpdate
 from nav2_msgs.msg._missed_waypoint import MissedWaypoint
 from nav2_msgs.msg._particle import Particle
 from nav2_msgs.msg._particle_cloud import ParticleCloud
+from nav2_msgs.msg._route import Route
 from nav2_msgs.msg._speed_limit import SpeedLimit
 from nav2_msgs.msg._voxel_grid import VoxelGrid
 
@@ -24,6 +25,7 @@ __all__ = [
     'MissedWaypoint',
     'Particle',
     'ParticleCloud',
+    'Route',
     'SpeedLimit',
     'VoxelGrid',
 ]

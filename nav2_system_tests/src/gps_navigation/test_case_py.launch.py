@@ -46,7 +46,7 @@ def generate_launch_description() -> LaunchDescription:
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
-        param_rewrites='',
+        param_rewrites={},
         convert_types=True,
     )
 

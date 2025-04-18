@@ -104,6 +104,9 @@ list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
 
+add_library(nav2_are_poses_near_condition_bt_node SHARED plugins/condition/are_poses_near_condition.cpp)
+list(APPEND plugin_libs nav2_are_poses_near_condition_bt_node)
+
 add_library(nav2_globally_updated_goal_condition_bt_node SHARED plugins/condition/globally_updated_goal_condition.cpp)
 list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
 
@@ -143,6 +146,9 @@ list(APPEND plugin_libs nav2_would_a_planner_recovery_help_condition_bt_node)
 add_library(nav2_would_a_smoother_recovery_help_condition_bt_node SHARED plugins/condition/would_a_smoother_recovery_help_condition.cpp)
 list(APPEND plugin_libs nav2_would_a_smoother_recovery_help_condition_bt_node)
 
+add_library(nav2_would_a_route_recovery_help_condition_bt_node SHARED plugins/condition/would_a_route_recovery_help_condition.cpp)
+list(APPEND plugin_libs nav2_would_a_route_recovery_help_condition_bt_node)
+
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
@@ -157,6 +163,9 @@ list(APPEND plugin_libs nav2_speed_controller_bt_node)
 
 add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
+
+add_library(nav2_concatenate_paths_action_bt_node SHARED plugins/action/concatenate_paths_action.cpp)
+list(APPEND plugin_libs nav2_concatenate_paths_action_bt_node)
 
 add_library(nav2_truncate_path_local_action_bt_node SHARED plugins/action/truncate_path_local_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_local_action_bt_node)
@@ -182,8 +191,20 @@ list(APPEND plugin_libs nav2_remove_passed_goals_action_bt_node)
 add_library(nav2_remove_in_collision_goals_action_bt_node SHARED plugins/action/remove_in_collision_goals_action.cpp)
 list(APPEND plugin_libs nav2_remove_in_collision_goals_action_bt_node)
 
+add_library(nav2_append_goal_pose_to_goals_action_bt_node SHARED plugins/action/append_goal_pose_to_goals_action.cpp)
+list(APPEND plugin_libs nav2_append_goal_pose_to_goals_action_bt_node)
+
 add_library(nav2_get_pose_from_path_action_bt_node SHARED plugins/action/get_pose_from_path_action.cpp)
 list(APPEND plugin_libs nav2_get_pose_from_path_action_bt_node)
+
+add_library(nav2_extract_route_nodes_as_goals_action_bt_node SHARED plugins/action/extract_route_nodes_as_goals_action.cpp)
+list(APPEND plugin_libs nav2_extract_route_nodes_as_goals_action_bt_node)
+
+add_library(nav2_get_next_few_goals_action_bt_node SHARED plugins/action/get_next_few_goals_action.cpp)
+list(APPEND plugin_libs nav2_get_next_few_goals_action_bt_node)
+
+add_library(nav2_get_current_pose_action_bt_node SHARED plugins/action/get_current_pose_action.cpp)
+list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
@@ -211,6 +232,15 @@ list(APPEND plugin_libs nav2_progress_checker_selector_bt_node)
 
 add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
+
+add_library(nav2_compute_and_track_route_cancel_bt_node SHARED plugins/action/compute_and_track_route_cancel_node.cpp)
+list(APPEND plugin_libs nav2_compute_and_track_route_cancel_bt_node)
+
+add_library(nav2_compute_and_track_route_bt_node SHARED plugins/action/compute_and_track_route_action.cpp)
+list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
+
+add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
+list(APPEND plugin_libs nav2_compute_route_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}

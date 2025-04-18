@@ -66,10 +66,10 @@ def main() -> None:
     # sanity check a valid path exists
     # path = navigator.getPath(initial_pose, goal_pose)
 
-    navigator.goToPose(goal_pose)
+    go_to_pose_task = navigator.goToPose(goal_pose)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         ################################################
         #
         # Implement some code here for your application!
@@ -78,7 +78,7 @@ def main() -> None:
 
         # Do something with the feedback
         i = i + 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=go_to_pose_task)
         if feedback and i % 5 == 0:
             print(
                 'Estimated time of arrival: '
@@ -97,7 +97,7 @@ def main() -> None:
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
                 goal_pose.pose.position.x = 0.0
                 goal_pose.pose.position.y = 0.0
-                navigator.goToPose(goal_pose)
+                go_to_pose_task = navigator.goToPose(goal_pose)
 
     # Do something depending on the return code
     result = navigator.getResult()

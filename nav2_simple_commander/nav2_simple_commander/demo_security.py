@@ -67,14 +67,14 @@ def main() -> None:
             pose.pose.position.x = pt[0]
             pose.pose.position.y = pt[1]
             route_poses.append(deepcopy(pose))
-        navigator.goThroughPoses(route_poses)
+        go_through_poses_task = navigator.goThroughPoses(route_poses)
 
         # Do something during our route (e.x. AI detection on camera images for anomalies)
         # Simply print ETA for the demonstration
         i = 0
-        while not navigator.isTaskComplete():
+        while not navigator.isTaskComplete(task=go_through_poses_task):
             i += 1
-            feedback = navigator.getFeedback()
+            feedback = navigator.getFeedback(task=go_through_poses_task)
             if feedback and i % 5 == 0:
                 print(
                     'Estimated time to complete current route: '

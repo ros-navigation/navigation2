@@ -50,12 +50,12 @@ def main() -> None:
     goal_pose.pose.position.y = 1.3
     goal_pose.pose.orientation.w = 1.0
 
-    navigator.goToPose(goal_pose)
+    go_to_pose_task = navigator.goToPose(goal_pose)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=go_to_pose_task)
         if feedback and i % 5 == 0:
             print(
                 f'Estimated time of arrival to destination is: \
@@ -64,23 +64,23 @@ def main() -> None:
 
     # Robot hit a dead end, back it up
     print("Robot hit a dead end (let's pretend), backing up...")
-    navigator.backup(backup_dist=0.5, backup_speed=0.1)
+    backup_task = navigator.backup(backup_dist=0.5, backup_speed=0.1)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=backup_task):
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=backup_task)
         if feedback and i % 5 == 0:
             print(f'Distance traveled: {feedback.distance_traveled}')
 
     # Turn it around
     print('Spinning robot around...')
-    navigator.spin(spin_dist=3.14)
+    spin_task = navigator.spin(spin_dist=3.14)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=spin_task):
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=spin_task)
         if feedback and i % 5 == 0:
             print(f'Spin angle traveled: {feedback.angular_distance_traveled}')
 
@@ -95,8 +95,8 @@ def main() -> None:
         print('Returning to start...')
 
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    navigator.goToPose(initial_pose)
-    while not navigator.isTaskComplete():
+    go_to_pose_task = navigator.goToPose(initial_pose)
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         pass
 
     exit(0)
