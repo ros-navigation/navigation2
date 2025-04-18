@@ -31,7 +31,7 @@ namespace nav2_smac_planner
 
 /**
 * @class nav2_smac_planner::GoalManager
-* @brief Responsible for managing multiple varibales storing information on the goal
+* @brief Responsible for managing multiple variables storing information on the goal
 */
 template<typename NodeT>
 class GoalManager{

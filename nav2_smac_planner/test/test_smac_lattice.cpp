@@ -86,7 +86,7 @@ TEST(SmacTest, test_smac_lattice)
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
     nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
 
-    // Coarse search resolution will throw, not muiltiple of number of heading(16 default)
+    // Coarse search resolution will throw, not multiple of number of heading(16 default)
     nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
     EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
 
@@ -171,7 +171,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       results);
   } catch (...) {
   }
-  // test edge cases Goal heading mode, make sure we dont reset the goal when invalid
+  // test edge cases Goal heading mode, make sure we don't reset the goal when invalid
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
@@ -179,7 +179,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
 
   // test coarse resolution edge cases.
-  // Neagtive coarse search resolution
+  // Negative coarse search resolution
   parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", -1));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
@@ -203,7 +203,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
 
 
-  // So instead, lets call manually on a change
+  // So instead, let's call manually on a change
   parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
