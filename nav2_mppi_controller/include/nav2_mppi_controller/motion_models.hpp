@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,31 +76,40 @@ public:
     float max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
 
-    unsigned int n_rows = state.vx.rows();
     unsigned int n_cols = state.vx.cols();
 
-    // Default layout in eigen is column-major, hence accessing elements in
-    // column-major fashion to utilize L1 cache as much as possible
-    for (unsigned int i = 1; i != n_cols; i++) {
-      for (unsigned int j = 0; j != n_rows; j++) {
-        float vx_last = state.vx(j, i - 1);
-        float & cvx_curr = state.cvx(j, i - 1);
-        cvx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, cvx_curr);
-        state.vx(j, i) = cvx_curr;
+    for (unsigned int i = 1; i < n_cols; i++) {
+      auto lower_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + min_delta_vx,
+        state.vx.col(i - 1) - max_delta_vx);
+      auto upper_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + max_delta_vx,
+        state.vx.col(i - 1) - min_delta_vx);
 
-        float wz_last = state.wz(j, i - 1);
-        float & cwz_curr = state.cwz(j, i - 1);
-        cwz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, cwz_curr);
-        state.wz(j, i) = cwz_curr;
+      state.cvx.col(i - 1) = state.cvx.col(i - 1)
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
+      state.vx.col(i) = state.cvx.col(i - 1);
 
-        if (is_holo) {
-          float vy_last = state.vy(j, i - 1);
-          float & cvy_curr = state.cvy(j, i - 1);
-          cvy_curr = utils::clamp(vy_last - max_delta_vy, vy_last + max_delta_vy, cvy_curr);
-          state.vy(j, i) = cvy_curr;
-        }
+      state.cwz.col(i - 1) = state.cwz.col(i - 1)
+        .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+        .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+      state.wz.col(i) = state.cwz.col(i - 1);
+
+      if (is_holo) {
+        auto lower_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + min_delta_vy,
+          state.vy.col(i - 1) - max_delta_vy);
+        auto upper_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + max_delta_vy,
+          state.vy.col(i - 1) - min_delta_vy);
+        state.cvy.col(i - 1) = state.cvy.col(i - 1)
+          .cwiseMax(lower_bound_vy)
+          .cwiseMin(upper_bound_vy);
+        state.vy.col(i) = state.cvy.col(i - 1);
       }
     }
   }
@@ -119,7 +129,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f};
+    0.0f, 0.0f};
 };
 
 /**

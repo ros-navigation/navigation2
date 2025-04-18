@@ -62,3 +62,8 @@ ament_add_gtest(lifecycle_test lifecycle_test.cpp)
 target_link_libraries(lifecycle_test
   nav2_costmap_2d_core
 )
+
+ament_add_gtest(coordinate_transform_test coordinate_transform_test.cpp)
+target_link_libraries(coordinate_transform_test
+  nav2_costmap_2d_core
+)

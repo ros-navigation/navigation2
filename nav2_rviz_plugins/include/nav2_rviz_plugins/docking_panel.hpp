@@ -57,7 +57,6 @@ public:
 
 private Q_SLOTS:
   void startThread();
-  void onStartup();
   void onDockingButtonPressed();
   void onUndockingButtonPressed();
   void onCancelDocking();

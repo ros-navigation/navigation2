@@ -20,24 +20,17 @@ from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import (
-    AppendEnvironmentVariable,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
+from launch import LaunchDescription, LaunchService
+from launch.actions import (AppendEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
-
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     nav2_sys_test_dir = get_package_share_directory('nav2_system_tests')
@@ -50,12 +43,12 @@ def generate_launch_description():
         robot_description = infp.read()
 
     map_yaml_file = os.path.join(nav2_sys_test_dir, 'maps', 'map_circular.yaml')
-    filter_mask_file = os.getenv('TEST_MASK')
+    filter_mask_file = os.getenv('TEST_MASK', '')
 
     bt_navigator_xml = os.path.join(
         get_package_share_directory('nav2_bt_navigator'),
         'behavior_trees',
-        os.getenv('BT_NAVIGATOR_XML'),
+        os.getenv('BT_NAVIGATOR_XML', ''),
     )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -171,12 +164,12 @@ def generate_launch_description():
     )
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
         cmd=[
-            os.path.join(os.getenv('TEST_DIR'), 'tester_node.py'),
+            os.path.join(os.getenv('TEST_DIR', ''), 'tester_node.py'),
             '-t',
             'keepout',
             '-r',

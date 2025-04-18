@@ -17,10 +17,8 @@ from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-
 import rclpy
 from rclpy.duration import Duration
-
 
 """
 Basic security route patrol demo. In this demonstration, the expectation
@@ -29,7 +27,7 @@ watched live by security staff.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -58,7 +56,7 @@ def main():
     navigator.waitUntilNav2Active()
 
     # Do security route until dead
-    while rclpy.ok():
+    while rclpy.ok():  # type: ignore[attr-defined]
         # Send our route
         route_poses = []
         pose = PoseStamped()
@@ -80,7 +78,7 @@ def main():
             if feedback and i % 5 == 0:
                 print(
                     'Estimated time to complete current route: '
-                    + '{0:.0f}'.format(
+                    + '{:.0f}'.format(
                         Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                         / 1e9
                     )

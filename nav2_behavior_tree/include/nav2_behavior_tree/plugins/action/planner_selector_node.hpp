@@ -34,6 +34,7 @@ namespace nav2_behavior_tree
  * to get the decision about what planner must be used. It is usually used before of
  * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
  * input port of the ComputePathToPoseAction
+ * @note This is an Asynchronous node. It will re-initialize when halted.
  */
 class PlannerSelector : public BT::SyncActionNode
 {
@@ -71,6 +72,15 @@ public:
   }
 
 private:
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
   /**
    * @brief Function to perform some user-defined operation on tick
    */

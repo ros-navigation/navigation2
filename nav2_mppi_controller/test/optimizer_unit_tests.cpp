@@ -21,14 +21,6 @@
 
 // Tests main optimizer functions
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 using namespace mppi::utils;  // NOLINT
@@ -185,13 +177,14 @@ public:
     float max_delta_vx = settings_.constraints.ax_max * settings_.model_dt;
     float min_delta_vx = settings_.constraints.ax_min * settings_.model_dt;
     float max_delta_vy = settings_.constraints.ay_max * settings_.model_dt;
+    float min_delta_vy = settings_.constraints.ay_min * settings_.model_dt;
     float max_delta_wz = settings_.constraints.az_max * settings_.model_dt;
     propagateStateVelocitiesFromInitials(state);
     EXPECT_NEAR(state.vx(0, 0), 5.0, 1e-6);
     EXPECT_NEAR(state.vy(0, 0), 1.0, 1e-6);
     EXPECT_NEAR(state.wz(0, 0), 6.0, 1e-6);
     EXPECT_NEAR(state.vx(0, 1), std::clamp(0.75, 5.0 + min_delta_vx, 5.0 + max_delta_vx), 1e-6);
-    EXPECT_NEAR(state.vy(0, 1), std::clamp(0.5, 1.0 - max_delta_vy, 1.0 + max_delta_vy), 1e-6);
+    EXPECT_NEAR(state.vy(0, 1), std::clamp(0.5, 1.0 + min_delta_vy, 1.0 + max_delta_vy), 1e-6);
     EXPECT_NEAR(state.wz(0, 1), std::clamp(0.1, 6.0 - max_delta_wz, 6.0 + max_delta_wz), 1e-6);
 
     // Putting them together: updateStateVelocities
@@ -233,6 +226,7 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(3.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
@@ -240,9 +234,10 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
 
-  // Test value of ax_min, it should be negative
+  // Test value of ax_min, ay_min it should be negative
   auto & constraints = optimizer_tester.getControlConstraints();
   EXPECT_EQ(constraints.ax_min, -3.0);
+  EXPECT_EQ(constraints.ay_min, -3.0);
 
   // Should be empty of size batches x time steps
   // and tests getting set params: time_steps, batch_size, controller_frequency
@@ -538,6 +533,7 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(3.0));
   node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-3.0));
   node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(3.0));
+  node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(-3.0));
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -637,7 +633,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
     EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
-  // Lets add some angular motion to the mix
+  // Let's add some angular motion to the mix
   state.vy = Eigen::ArrayXXf::Zero(1000, 50);
   state.wz = 0.2 * Eigen::ArrayXXf::Ones(1000, 50);
   state.wz.col(0) = Eigen::ArrayXf::Zero(1000);
@@ -652,4 +648,37 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
     EXPECT_NEAR(traj.x(1, i), x, 1e-6);
     EXPECT_NEAR(traj.y(1, i), y, 1e-6);
   }
+}
+
+TEST(OptimizerTests, TestGetters)
+{
+  OptimizerTester optimizer_tester;
+  optimizer_tester.fillOptimizerWithGarbage();
+
+  auto control_seq = optimizer_tester.getOptimalControlSequence();
+  EXPECT_EQ(control_seq.vx(0), 342.0);
+  EXPECT_EQ(control_seq.vx.rows(), 30);
+
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
+  EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

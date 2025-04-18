@@ -20,12 +20,14 @@
 #include <memory>
 #include <string>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose_stamped_array.hpp"
-
 #include "behaviortree_cpp/decorator_node.h"
-
+#include "behaviortree_cpp/json_export.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/goals.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -33,6 +35,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
  * the current goal on the blackboard
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class GoalUpdater : public BT::DecoratorNode
 {
@@ -52,17 +56,29 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
-      BT::InputPort<geometry_msgs::msg::PoseStampedArray>("input_goals", "Original Goals"),
+      BT::InputPort<nav_msgs::msg::Goals>("input_goals", "Original Goals"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
           "Received Goal by subscription"),
-      BT::OutputPort<geometry_msgs::msg::PoseStampedArray>("output_goals",
+      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
           "Received Goals by subscription")
     };
   }
 
 private:
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
   /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
@@ -77,21 +93,23 @@ private:
 
   /**
    * @brief Callback function for goals update topic
-   * @param msg Shared pointer to geometry_msgs::msg::PoseStampedArray message
+   * @param msg Shared pointer to nav_msgs::msg::Goals message
    */
-  void callback_updated_goals(const geometry_msgs::msg::PoseStampedArray::SharedPtr msg);
+  void callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg);
 
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStampedArray>::SharedPtr goals_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
   bool last_goal_received_set_{false};
-  geometry_msgs::msg::PoseStampedArray last_goals_received_;
+  nav_msgs::msg::Goals last_goals_received_;
   bool last_goals_received_set_{false};
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  std::string goal_updater_topic_;
+  std::string goals_updater_topic_;
 };
 
 }  // namespace nav2_behavior_tree

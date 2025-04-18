@@ -31,7 +31,22 @@ using std::placeholders::_1;
 GoalUpdater::GoalUpdater(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::DecoratorNode(name, conf)
+: BT::DecoratorNode(name, conf),
+  goal_updater_topic_("goal_update"),
+  goals_updater_topic_("goals_update")
+{
+  initialize();
+
+    // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_all(std::chrono::milliseconds(1));
+}
+
+void GoalUpdater::initialize()
+{
+  createROSInterfaces();
+}
+
+void GoalUpdater::createROSInterfaces()
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
@@ -39,35 +54,47 @@ GoalUpdater::GoalUpdater(
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  std::string goal_updater_topic;
-  std::string goals_updater_topic;
-  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic, "goal_update");
-  node_->get_parameter_or<std::string>("goals_updater_topic", goals_updater_topic, "goals_update");
+  std::string goal_updater_topic_new;
+  std::string goals_updater_topic_new;
+  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic_new, "goal_update");
+  node_->get_parameter_or<std::string>("goals_updater_topic", goals_updater_topic_new,
+    "goals_update");
 
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    goal_updater_topic,
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&GoalUpdater::callback_updated_goal, this, _1),
-    sub_option);
-  goals_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStampedArray>(
-    goals_updater_topic,
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&GoalUpdater::callback_updated_goals, this, _1),
-    sub_option);
+  // Only create a new subscriber if the topic has changed or subscriber is empty
+  if (goal_updater_topic_new != goal_updater_topic_ || !goal_sub_) {
+    goal_updater_topic_ = goal_updater_topic_new;
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
+    goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      goal_updater_topic_,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&GoalUpdater::callback_updated_goal, this, _1),
+      sub_option);
+  }
+  if (goals_updater_topic_new != goals_updater_topic_ || !goals_sub_) {
+    goals_updater_topic_ = goals_updater_topic_new;
+    rclcpp::SubscriptionOptions sub_option;
+    sub_option.callback_group = callback_group_;
+    goals_sub_ = node_->create_subscription<nav_msgs::msg::Goals>(
+      goals_updater_topic_,
+      rclcpp::SystemDefaultsQoS(),
+      std::bind(&GoalUpdater::callback_updated_goals, this, _1),
+      sub_option);
+  }
 }
 
 inline BT::NodeStatus GoalUpdater::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
   geometry_msgs::msg::PoseStamped goal;
-  geometry_msgs::msg::PoseStampedArray goals;
+  nav_msgs::msg::Goals goals;
 
   getInput("input_goal", goal);
   getInput("input_goals", goals);
 
-  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
-  callback_group_executor_.spin_all(std::chrono::milliseconds(1));
   callback_group_executor_.spin_all(std::chrono::milliseconds(49));
 
   if (last_goal_received_set_) {
@@ -94,7 +121,7 @@ inline BT::NodeStatus GoalUpdater::tick()
   }
 
   if (last_goals_received_set_) {
-    if (last_goals_received_.poses.empty()) {
+    if (last_goals_received_.goals.empty()) {
       setOutput("output_goals", goals);
     } else if (last_goals_received_.header.stamp == rclcpp::Time(0)) {
       RCLCPP_WARN(
@@ -128,7 +155,7 @@ GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::Shared
 }
 
 void
-GoalUpdater::callback_updated_goals(const geometry_msgs::msg::PoseStampedArray::SharedPtr msg)
+GoalUpdater::callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg)
 {
   last_goals_received_ = *msg;
   last_goals_received_set_ = true;

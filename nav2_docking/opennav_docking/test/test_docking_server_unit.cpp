@@ -25,14 +25,6 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 namespace opennav_docking
 {
 
@@ -46,6 +38,11 @@ public:
   virtual geometry_msgs::msg::PoseStamped getRobotPoseInFrame(const std::string &)
   {
     return geometry_msgs::msg::PoseStamped();
+  }
+
+  std::optional<bool> getDockBackward()
+  {
+    return dock_backwards_;
   }
 };
 
@@ -271,4 +268,61 @@ TEST(DockingServerTests, testDynamicParams)
   node.reset();
 }
 
+TEST(DockingServerTests, testDockBackward)
+{
+  auto node = std::make_shared<DockingServerShim>();
+
+  // Setup 1 instance of the test failure dock & its plugin instance
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
+  // The dock_backwards parameter should be declared but not set
+  node->on_configure(rclcpp_lifecycle::State());
+  EXPECT_FALSE(node->getDockBackward().has_value());
+  node->on_cleanup(rclcpp_lifecycle::State());
+
+  // Now, set the dock_backwards parameter to true
+  node->set_parameter(rclcpp::Parameter("dock_backwards", rclcpp::ParameterValue(true)));
+  node->on_configure(rclcpp_lifecycle::State());
+  EXPECT_TRUE(node->getDockBackward().has_value());
+  EXPECT_TRUE(node->getDockBackward().value());
+  node->on_cleanup(rclcpp_lifecycle::State());
+
+  // Now, set the dock_backwards parameter to false
+  node->set_parameter(rclcpp::Parameter("dock_backwards", rclcpp::ParameterValue(false)));
+  node->on_configure(rclcpp_lifecycle::State());
+  EXPECT_TRUE(node->getDockBackward().has_value());
+  EXPECT_FALSE(node->getDockBackward().value());
+  node->on_cleanup(rclcpp_lifecycle::State());
+
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

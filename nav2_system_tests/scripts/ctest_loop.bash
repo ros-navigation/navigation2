@@ -47,4 +47,3 @@ for ((i=1; i<=$loopcount; i++))
   done
 echo $failcount " FAILURES / " $loopcount
 echo $failcount " FAILURES / " $loopcount >> $outfile
-

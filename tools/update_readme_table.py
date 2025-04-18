@@ -61,13 +61,19 @@ Packages = [
 # Set which distributions you care about
 Distros = ['humble', 'iron', 'jazzy']
 
-def getSrcPath(package, prefix, OS):
+
+def getSrcPath(package: str, prefix: str, OS: str) -> str:
     return f'https://build.ros2.org/job/{prefix}src_u{OS[0]}__{package}__ubuntu_{OS}__source/'
 
-def getBinPath(package, prefix, OS):
-    return f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_amd64__binary/'
 
-def createPreamble(Distros):
+def getBinPath(package: str, prefix: str, OS: str) -> str:
+    return (
+        f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_'
+        'amd64__binary/'
+    )
+
+
+def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
@@ -77,7 +83,8 @@ def createPreamble(Distros):
         table += ' :---: | :---: |'
     return table
 
-def main():
+
+def main() -> None:
     header = createPreamble(Distros)
 
     body = ''
@@ -98,13 +105,15 @@ def main():
                 entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
         entry += '\n'
         body += entry
-    
+
     # Special case for Opennav Docking for directory structure of Nav2
     body = body.replace('| opennav_docking |', '| nav2_docking |')
     # Special case for reducing the label length
-    body = body.replace('| nav2_regulated_pure_pursuit_controller |', '| nav2_regulated_pure_pursuit |')
-    
+    body = body.replace('| nav2_regulated_pure_pursuit_controller |',
+                        '| nav2_regulated_pure_pursuit |')
+
     print(header + '\n' + body)
+
 
 if __name__ == '__main__':
     main()

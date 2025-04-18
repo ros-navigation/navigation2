@@ -18,24 +18,17 @@ from pathlib import Path
 import sys
 
 from ament_index_python.packages import get_package_share_directory
-
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import (
-    AppendEnvironmentVariable,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    SetEnvironmentVariable,
-)
+from launch import LaunchDescription, LaunchService
+from launch.actions import (AppendEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
-
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
 
@@ -48,10 +41,11 @@ def generate_launch_description():
 
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
-
-    bt_navigator_xml = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                                    'behavior_trees',
-                                    os.getenv('BT_NAVIGATOR_XML'))
+    bt_navigator_xml = os.path.join(
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML', '')
+    )
 
     params_file = os.path.join(nav2_bringup_dir, 'params/nav2_params.yaml')
 
@@ -118,11 +112,11 @@ def generate_launch_description():
     ])
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'tester.py')],
+        cmd=[os.path.join(os.getenv('TEST_DIR', ''), 'tester.py')],
         name='tester_node',
         output='screen')
 

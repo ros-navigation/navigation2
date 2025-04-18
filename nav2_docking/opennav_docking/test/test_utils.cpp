@@ -19,14 +19,6 @@
 
 // Test parsing dock plugins and database files (see test_dock_file.yaml).
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 namespace opennav_docking
 {
 
@@ -143,4 +135,24 @@ TEST(UtilsTests, testl2Norm)
   EXPECT_NEAR(utils::l2Norm(a, b), 0.734, 1e-3);
 }
 
+TEST(UtilsTests, testGetDockDirectionFromString) {
+  using opennav_docking_core::DockDirection;
+  EXPECT_EQ(utils::getDockDirectionFromString("forward"), DockDirection::FORWARD);
+  EXPECT_EQ(utils::getDockDirectionFromString("backward"), DockDirection::BACKWARD);
+  EXPECT_EQ(utils::getDockDirectionFromString("other"), DockDirection::UNKNOWN);
+}
+
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

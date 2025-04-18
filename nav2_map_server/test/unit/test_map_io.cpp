@@ -52,15 +52,6 @@ using namespace std;  // NOLINT
 using namespace nav2_map_server;  // NOLINT
 using std::filesystem::path;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-
-RclCppFixture g_rclcppfixture;
-
 class MapIOTester : public ::testing::Test
 {
 protected:
@@ -337,4 +328,17 @@ TEST(HomeUserExpanderTestSuite, homeUserExpanderShouldExpandHomeSequenceWhenHome
   const std::string fileName{"~/valid_file.yaml"};
   const std::string expectedOutputFileName{"/home/user/valid_file.yaml"};
   ASSERT_EQ(expectedOutputFileName, expand_user_home_dir_if_needed(fileName, "/home/user"));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

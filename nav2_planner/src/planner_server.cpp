@@ -197,11 +197,12 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+  is_path_valid_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
-    std::bind(
-      &PlannerServer::isPathValid, this,
-      std::placeholders::_1, std::placeholders::_2));
+    node,
+    std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -249,6 +250,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -394,7 +396,7 @@ void PlannerServer::computePlanThroughPoses()
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
 
-    if (goal->goals.poses.empty()) {
+    if (goal->goals.goals.empty()) {
       throw nav2_core::NoViapointsGiven("No viapoints given");
     }
 
@@ -409,7 +411,7 @@ void PlannerServer::computePlanThroughPoses()
       };
 
     // Get consecutive paths through these points
-    for (unsigned int i = 0; i != goal->goals.poses.size(); i++) {
+    for (unsigned int i = 0; i != goal->goals.goals.size(); i++) {
       // Get starting point
       if (i == 0) {
         curr_start = start;
@@ -419,7 +421,7 @@ void PlannerServer::computePlanThroughPoses()
         curr_start = concat_path.poses.back();
         curr_start.header = concat_path.header;
       }
-      curr_goal = goal->goals.poses[i];
+      curr_goal = goal->goals.goals[i];
 
       // Transform them into the global frame
       if (!transformPosesToGlobalFrame(curr_start, curr_goal)) {
@@ -645,6 +647,7 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 }
 
 void PlannerServer::isPathValid(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {

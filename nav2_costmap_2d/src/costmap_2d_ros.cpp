@@ -248,10 +248,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Service to get the cost at a point
-  get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
-    "get_cost_" + getName(),
-    std::bind(
-      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+  get_cost_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    std::string("get_cost_") + get_name(),
+    shared_from_this(),
+    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -360,7 +361,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   executor_thread_.reset();
-
+  get_cost_service_.reset();
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
@@ -830,6 +831,7 @@ void Costmap2DROS::getCostsCallback(
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   response->success = true;
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;

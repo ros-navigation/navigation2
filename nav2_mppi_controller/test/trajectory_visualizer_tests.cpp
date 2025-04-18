@@ -21,14 +21,6 @@
 
 // Tests trajectory visualization
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 TEST(TrajectoryVisualizerTests, StateTransition)
@@ -53,7 +45,7 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
   pub_path.poses.resize(5);
 
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
-    "transformed_global_plan", 10,
+    "~/transformed_global_plan", 10,
     [&](const nav_msgs::msg::Path msg) {received_path = msg;});
 
   TrajectoryVisualizer vis;
@@ -73,7 +65,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "trajectories", 10,
+    "~/candidate_trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -90,7 +82,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   EXPECT_EQ(received_msg.markers.size(), 0u);
 
   // Now populated with content, should publish
-  optimal_trajectory = Eigen::ArrayXXf::Ones(20, 2);
+  optimal_trajectory = Eigen::ArrayXXf::Ones(20, 3);
   vis.add(optimal_trajectory, "Optimal Trajectory", bogus_stamp);
   vis.visualize(bogus_path);
 
@@ -135,7 +127,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "trajectories", 10,
+    "~/candidate_trajectories", 10,
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   models::Trajectories candidate_trajectories;
@@ -165,7 +157,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
 
   nav_msgs::msg::Path received_path;
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
-    "optimal_trajectory", 10,
+    "~/optimal_path", 10,
     [&](const nav_msgs::msg::Path msg) {received_path = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -216,4 +208,17 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
     EXPECT_EQ(received_path.poses[i].pose.orientation.z, expected_orientation.z);
     EXPECT_EQ(received_path.poses[i].pose.orientation.w, expected_orientation.w);
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -42,8 +42,27 @@ NavigateThroughPosesNavigator::configure(
 
   path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
 
+  if (!node->has_parameter("waypoint_statuses_blackboard_id")) {
+    node->declare_parameter("waypoint_statuses_blackboard_id", std::string("waypoint_statuses"));
+  }
+
+  waypoint_statuses_blackboard_id_ =
+    node->get_parameter("waypoint_statuses_blackboard_id").as_string();
+
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
+
+  if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
+    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
+  }
+
+  if (!node->has_parameter(getName() + ".groot_server_port")) {
+    node->declare_parameter(getName() + ".groot_server_port", 1669);
+  }
+
+  bt_action_server_->setGrootMonitoring(
+      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
+      node->get_parameter(getName() + ".groot_server_port").as_int());
 
   return true;
 }
@@ -86,7 +105,7 @@ NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 void
 NavigateThroughPosesNavigator::goalCompleted(
   typename ActionT::Result::SharedPtr result,
-  const nav2_behavior_tree::BtStatus /*final_bt_status*/)
+  const nav2_behavior_tree::BtStatus final_bt_status)
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
@@ -100,6 +119,22 @@ NavigateThroughPosesNavigator::goalCompleted(
       result->error_code,
       result->error_msg.c_str());
   }
+
+  // populate waypoint statuses in result
+  auto blackboard = bt_action_server_->getBlackboard();
+  auto waypoint_statuses =
+    blackboard->get<std::vector<nav2_msgs::msg::WaypointStatus>>(waypoint_statuses_blackboard_id_);
+
+  // populate remaining waypoint statuses based on final_bt_status
+  auto integrate_waypoint_status = final_bt_status == nav2_behavior_tree::BtStatus::SUCCEEDED ?
+    nav2_msgs::msg::WaypointStatus::COMPLETED : nav2_msgs::msg::WaypointStatus::FAILED;
+  for (auto & waypoint_status : waypoint_statuses) {
+    if (waypoint_status.waypoint_status == nav2_msgs::msg::WaypointStatus::PENDING) {
+      waypoint_status.waypoint_status = integrate_waypoint_status;
+    }
+  }
+
+  result->waypoint_statuses = std::move(waypoint_statuses);
 }
 
 void
@@ -113,10 +148,13 @@ NavigateThroughPosesNavigator::onLoop()
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  geometry_msgs::msg::PoseStampedArray goal_poses;
+  nav_msgs::msg::Goals goal_poses;
   [[maybe_unused]] auto res = blackboard->get(goals_blackboard_id_, goal_poses);
 
-  if (goal_poses.poses.size() == 0) {
+  feedback_msg->waypoint_statuses =
+    blackboard->get<std::vector<nav2_msgs::msg::WaypointStatus>>(waypoint_statuses_blackboard_id_);
+
+  if (goal_poses.goals.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
     return;
   }
@@ -178,7 +216,7 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
-  feedback_msg->number_of_poses_remaining = goal_poses.poses.size();
+  feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -228,9 +266,9 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     return false;
   }
 
-  geometry_msgs::msg::PoseStampedArray pose_stamped_array = goal->poses;
+  nav_msgs::msg::Goals goals_array = goal->poses;
   int i = 0;
-  for (auto & goal_pose : pose_stamped_array.poses) {
+  for (auto & goal_pose : goals_array.goals) {
     if (!nav2_util::transformPoseInTargetFrame(
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
@@ -246,11 +284,11 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     i++;
   }
 
-  if (pose_stamped_array.poses.size() > 0) {
+  if (goals_array.goals.size() > 0) {
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
-      pose_stamped_array.poses.size(), pose_stamped_array.poses.back().pose.position.x,
-        pose_stamped_array.poses.back().pose.position.y);
+      goals_array.goals.size(), goals_array.goals.back().pose.position.x,
+        goals_array.goals.back().pose.position.y);
   }
 
   // Reset state for new action feedback
@@ -259,8 +297,17 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<geometry_msgs::msg::PoseStampedArray>(goals_blackboard_id_,
-      std::move(pose_stamped_array));
+  blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
+      std::move(goals_array));
+
+  // Reset the waypoint states vector in the blackboard
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());
+  for (size_t waypoint_index = 0 ; waypoint_index < goals_array.goals.size() ; ++waypoint_index) {
+    waypoint_statuses[waypoint_index].waypoint_index = waypoint_index;
+    waypoint_statuses[waypoint_index].waypoint_pose = goals_array.goals[waypoint_index];
+  }
+  blackboard->set<decltype(waypoint_statuses)>(waypoint_statuses_blackboard_id_,
+      std::move(waypoint_statuses));
 
   return true;
 }
