@@ -43,7 +43,7 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _y_size(0),
   _search_info(search_info),
   _start(nullptr),
-  _goal_manager(GoalManager<NodeT>()),
+  _goal_manager(GoalManagerT()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -299,7 +299,8 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   auto goalIsvalid = [&](const NodePtr & node_ptr) {
-      return node_ptr->isNodeValid(_traverse_unknown, _collision_checker);
+      return  node_ptr->isNodeValid(_traverse_unknown, _collision_checker) ||
+             getToleranceHeuristic() > 0.001;
     };
 
   bool all_nodes_invalid = true;
@@ -543,6 +544,12 @@ template<typename NodeT>
 unsigned int AStarAlgorithm<NodeT>::getCoarseSearchResolution()
 {
   return _coarse_search_resolution;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::GoalManagerT AStarAlgorithm<NodeT>::getGoalManager()
+{
+  return _goal_manager;
 }
 
 // Instantiate algorithm for the supported template types

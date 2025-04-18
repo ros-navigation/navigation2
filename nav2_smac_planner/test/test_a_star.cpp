@@ -123,7 +123,7 @@ TEST(AStarTest, test_a_star_2d)
   }
 
   EXPECT_TRUE(a_star_2.getStart() != nullptr);
-  EXPECT_NE(a_star_2.getGoals().size(), 0);
+  EXPECT_NE(a_star_2.getGoalManager().size(), 0);
   EXPECT_EQ(a_star_2.getSizeX(), 100u);
   EXPECT_EQ(a_star_2.getSizeY(), 100u);
   EXPECT_EQ(a_star_2.getSizeDim3(), 1u);
@@ -486,11 +486,9 @@ TEST(AStarTest, test_goal_heading_mode)
   auto dummy_cancel_checker = []() {
       return false;
     };
-
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
-
-  EXPECT_EQ(a_star.getGoals().size(), 2);
-  EXPECT_EQ(a_star.getGoals().size(), a_star.getGoalsCoordinates().size());
+  EXPECT_EQ(a_star.getGoalManager().size(), 2);
+  EXPECT_EQ(a_star.getGoalManager().size(), a_star.getGoalManager().getGoalsCoordinates().size());
 
 
   // ALL_DIRECTION goal heading mode
@@ -505,15 +503,17 @@ TEST(AStarTest, test_goal_heading_mode)
 
   // get number of valid goal states
   unsigned int num_valid_goals = 0;
-  for (auto & goal_state : a_star.getGoalsState()) {
-    if(goal_state.is_valid) {
+  auto goals_state = a_star.getGoalManager().getGoalsState();
+  for (unsigned int i = 0; i < goals_state.size(); i++) {
+    if(goals_state[i].is_valid) {
       num_valid_goals++;
     }
   }
-  EXPECT_TRUE(a_star.getGoals().size() == num_bins);
-  EXPECT_TRUE(a_star.getGoals().size() == num_valid_goals);
-  EXPECT_TRUE(a_star.getGoals().size() == a_star.getGoalsCoordinates().size());
+  EXPECT_TRUE(a_star.getGoalManager().size() == num_bins);
+  EXPECT_TRUE(a_star.getGoalManager().size() == num_valid_goals);
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
+  EXPECT_TRUE(a_star.getGoalManager().size() ==
+    a_star.getGoalManager().getGoalsCoordinates().size());
 
   // UNKNOWN goal heading mode
   a_star.setCollisionChecker(checker.get());
@@ -566,6 +566,7 @@ TEST(AStarTest, test_constants)
   EXPECT_EQ(
     nav2_smac_planner::fromStringToGH("NONE"), nav2_smac_planner::GoalHeadingMode::UNKNOWN);
 }
+
 
 int main(int argc, char **argv)
 {

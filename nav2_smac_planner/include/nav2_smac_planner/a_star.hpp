@@ -55,6 +55,7 @@ public:
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
+  typedef GoalManager<NodeT> GoalManagerT;
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -197,6 +198,12 @@ public:
    */
   unsigned int getCoarseSearchResolution();
 
+  /**
+   * @brief Get the goals manager class
+   * @return Goal manager class
+   */
+  GoalManagerT getGoalManager();
+
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -269,7 +276,7 @@ protected:
   SearchInfo _search_info;
 
   NodePtr _start;
-  GoalManager<NodeT> _goal_manager;
+  GoalManagerT _goal_manager;
   Graph _graph;
   NodeQueue _queue;
 

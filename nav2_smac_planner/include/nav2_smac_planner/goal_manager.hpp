@@ -131,6 +131,15 @@ public:
     return _goals_coordinate;
   }
 
+  /**
+   * @brief Gets the size of the goals state
+   * @return size of the goals state
+   */
+  inline unsigned int size()
+  {
+    return _goals_state.size();
+  }
+
 protected:
   NodeSet _goals_set;
   GoalStateVector _goals_state;
