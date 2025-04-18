@@ -825,7 +825,7 @@ class BasicNavigator(Node):
 
         return [rtn.path, rtn.route]
 
-    def computeAndTrackRoute(
+    def getAndTrackRoute(
         self, start: Union[int, PoseStamped],
         goal: Union[int, PoseStamped], use_start: bool = False
     ) -> Optional[RunningTask]:
