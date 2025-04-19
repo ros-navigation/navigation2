@@ -73,17 +73,17 @@ void GoalManager<NodeT>::prepareGoalsForExpansion(
 }
 
 template<typename NodeT>
-void GoalManager<NodeT>::filterAndStoreValidGoals(
-  const std::function<bool(const NodePtr &)> & isValidFn,
-  bool & all_nodes_invalid)
+void GoalManager<NodeT>::filterAndStoreTryableGoals(
+  const std::function<bool(const NodePtr &)> & shouldTryGoal,
+  bool & no_tryable_goals)
 {
-  all_nodes_invalid = true;
+  no_tryable_goals = true;
 
   for (unsigned int i = 0; i < _goals_state.size(); i++) {
-    if (!isValidFn(_goals_state[i].goal)) {
+    if (!shouldTryGoal(_goals_state[i].goal)) {
       _goals_state[i].is_valid = false;
     } else {
-      all_nodes_invalid = false;
+      no_tryable_goals = false;
       _goals_state[i].is_valid = true;
       _goals_set.insert(_goals_state[i].goal);
       _goals_coordinate.push_back(_goals_state[i].goal->pose);

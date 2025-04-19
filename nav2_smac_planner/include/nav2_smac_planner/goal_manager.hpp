@@ -84,15 +84,18 @@ public:
     int coarse_search_resolution);
 
   /**
-   * @brief Filters out invalid goals from the goals state, marks them as invalid,
-   *        and stores valid goals in the internal goal set and coordinates vector.
+   * @brief Filters out non-tryable goals from the goals state, marks them as invalid
+   *        if needed, and stores tryable goals (valid or tolerable) in the internal
+   *        goal set and coordinates vector.
    *
-   * @param isValidFn           Function used to determine if a goal node is valid.
-   * @param all_nodes_invalid   Output flag that is set to true if all goal nodes are invalid.
+   * @param isValidFn Function used to determine if a goal node is tryable
+   *                          (valid or acceptable under tolerance).
+   * @param no_tryable_goals  Output flag that is set to true if no tryable goal nodes
+   *                          were found.
    */
-  void filterAndStoreValidGoals(
-    const std::function<bool(const NodePtr &)> & isValidFn,
-    bool & all_nodes_invalid);
+  void filterAndStoreTryableGoals(
+    const std::function<bool(const NodePtr &)> & shouldTryGoal,
+    bool & no_tryable_goals);
 
   /**
    * @brief Check if this node is the goals set

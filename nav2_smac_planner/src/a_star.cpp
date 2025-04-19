@@ -298,15 +298,20 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
-  auto goalIsvalid = [&](const NodePtr & node_ptr) {
-      return  node_ptr->isNodeValid(_traverse_unknown, _collision_checker) ||
-             getToleranceHeuristic() > 0.001;
+  const bool allow_infeasible = getToleranceHeuristic() > 0.001;
+
+  // Predicate: should we try this goal?
+  auto shouldTryGoal = [&](const NodePtr & node_ptr) {
+      return node_ptr->isNodeValid(_traverse_unknown, _collision_checker) || allow_infeasible;
     };
 
-  bool all_nodes_invalid = true;
-  _goal_manager.filterAndStoreValidGoals(goalIsvalid, all_nodes_invalid);
+  // Filter and store all tryable goals
+  bool no_tryable_goals = true;
+  _goal_manager.filterAndStoreTryableGoals(shouldTryGoal, no_tryable_goals);
+
+  // If we're *not* in tolerance mode and nothing was tryable → error
   // Check if ending point is valid
-  if (getToleranceHeuristic() < 0.001 && all_nodes_invalid) {
+  if (!allow_infeasible && no_tryable_goals) {
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 

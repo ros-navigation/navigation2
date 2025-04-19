@@ -47,7 +47,7 @@ TEST(GoalManagerTest, GoalManagerBehavior)
   // Filter: All valid
   bool all_invalid = true;
   auto validCheck = [](const NodePtr &) {return true;};
-  goal_manager.filterAndStoreValidGoals(validCheck, all_invalid);
+  goal_manager.filterAndStoreTryableGoals(validCheck, all_invalid);
 
   EXPECT_FALSE(all_invalid);
   EXPECT_EQ(goal_manager.getGoalsSet().size(), 2);
@@ -63,7 +63,7 @@ TEST(GoalManagerTest, GoalManagerBehavior)
 
   // Filter: All invalid
   auto invalidCheck = [](const NodePtr &) {return false;};
-  goal_manager.filterAndStoreValidGoals(invalidCheck, all_invalid);
+  goal_manager.filterAndStoreTryableGoals(invalidCheck, all_invalid);
 
   EXPECT_TRUE(all_invalid);
   EXPECT_EQ(goal_manager.getGoalsSet().size(), 0);
@@ -87,7 +87,7 @@ TEST(GoalManagerTest, GoalManagerBehavior)
   goal_manager.populate(test_nodes, test_coords);
 
   NodeVector coarse, fine;
-  goal_manager.filterAndStoreValidGoals(validCheck, all_invalid);  // ensure valid
+  goal_manager.filterAndStoreTryableGoals(validCheck, all_invalid);  // ensure valid
 
   // Test with resolution = 1 (everything coarse)
   goal_manager.prepareGoalsForExpansion(coarse, fine, 1);
@@ -126,7 +126,7 @@ TEST(GoalManagerTest, PartialValidGoals)
     };
 
   bool all_invalid = true;
-  goal_manager.filterAndStoreValidGoals(validFn, all_invalid);
+  goal_manager.filterAndStoreTryableGoals(validFn, all_invalid);
 
   EXPECT_FALSE(all_invalid);
   EXPECT_EQ(goal_manager.getGoalsState().size(), goal_count);
