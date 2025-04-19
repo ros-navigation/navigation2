@@ -56,13 +56,32 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 geometry_msgs::msg::PoseStamped getLookAheadPoint(
   const double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan,
-  bool interpolate_after_goal)
+  const bool interpolate_after_goal)
 {
   // Find the first pose which is at a distance greater than the lookahead distance
-  auto goal_pose_it = std::find_if(
-    transformed_plan.poses.begin(), transformed_plan.poses.end(), [&](const auto & ps) {
-      return hypot(ps.pose.position.x, ps.pose.position.y) >= lookahead_dist;
-    });
+  // Using distance along the path
+  const auto & poses = transformed_plan.poses;
+  auto goal_pose_it = poses.begin();
+  double d = 0.0;
+
+  if (!poses.empty()) {
+    bool pose_found = false;
+    for (size_t i = 1; i < poses.size(); i++) {
+      const auto & prev_pose = poses[i - 1].pose.position;
+      const auto & curr_pose = poses[i].pose.position;
+
+      d += std::hypot(curr_pose.x - prev_pose.x, curr_pose.y - prev_pose.y);
+      if (d >= lookahead_dist) {
+        goal_pose_it = poses.begin() + i;
+        pose_found = true;
+        break;
+      }
+    }
+
+    if (!pose_found) {
+      goal_pose_it = poses.end();
+    }
+  }
 
   // If the no pose is not far enough, take the last pose
   if (goal_pose_it == transformed_plan.poses.end()) {

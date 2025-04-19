@@ -47,7 +47,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 */
 geometry_msgs::msg::PoseStamped getLookAheadPoint(
   const double &, const nav_msgs::msg::Path &,
-  bool interpolate_after_goal = false);
+  const bool interpolate_after_goal = false);
 
 }  // namespace nav2_util
 
