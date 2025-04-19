@@ -131,18 +131,10 @@ TEST(GoalManagerTest, PartialValidGoals)
   EXPECT_FALSE(all_invalid);
   EXPECT_EQ(goal_manager.getGoalsState().size(), goal_count);
 
-  // Check flags and collect expected valid ones
-  std::set<NodePtr> expected_valid_set;
-  std::vector<NodeHybrid::Coordinates> expected_valid_coords;
-
+  // Check valid flags
   for (unsigned int i = 0; i < goal_count; ++i) {
     bool expected_valid = (i % 2 == 0);
     const auto & goal_state = goal_manager.getGoalsState()[i];
     EXPECT_EQ(goal_state.is_valid, expected_valid);
-
-    if (expected_valid) {
-      expected_valid_set.insert(goal_state.goal);
-      expected_valid_coords.push_back(goal_state.goal->pose);
-    }
   }
 }
