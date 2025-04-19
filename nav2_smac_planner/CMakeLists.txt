@@ -41,6 +41,7 @@ add_library(${library_name}_common SHARED
   src/node_hybrid.cpp
   src/node_lattice.cpp
   src/smoother.cpp
+  src/goal_manager.cpp
 )
 target_include_directories(${library_name}_common
   PUBLIC

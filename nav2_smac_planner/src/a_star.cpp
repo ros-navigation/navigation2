@@ -30,7 +30,6 @@ using namespace std::chrono;  // NOLINT
 
 namespace nav2_smac_planner
 {
-
 template<typename NodeT>
 AStarAlgorithm<NodeT>::AStarAlgorithm(
   const MotionModel & motion_model,
@@ -43,9 +42,8 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _x_size(0),
   _y_size(0),
   _search_info(search_info),
-  _goal_coordinates(Coordinates()),
   _start(nullptr),
-  _goal(nullptr),
+  _goal_manager(GoalManagerT()),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -192,35 +190,89 @@ template<>
 void AStarAlgorithm<Node2D>::setGoal(
   const float & mx,
   const float & my,
-  const unsigned int & dim_3)
+  const unsigned int & dim_3,
+  const GoalHeadingMode & /*goal_heading_mode*/,
+  const int & /*coarse_search_resolution*/)
 {
   if (dim_3 != 0) {
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
 
-  _goal = addToGraph(
+  Node2D::Coordinates coord(mx, my);
+  NodePtr goal = addToGraph(
     Node2D::getIndex(
       static_cast<unsigned int>(mx),
       static_cast<unsigned int>(my),
       getSizeX()));
-  _goal_coordinates = Node2D::Coordinates(mx, my);
+
+  NodeVector goals;
+  CoordinateVector coords;
+  coords.push_back(coord);
+  goals.push_back(goal);
+  _goal_manager.populate(
+    goals, coords);
+  _coarse_search_resolution = 1;
 }
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setGoal(
   const float & mx,
   const float & my,
-  const unsigned int & dim_3)
+  const unsigned int & dim_3,
+  const GoalHeadingMode & goal_heading_mode,
+  const int & coarse_search_resolution)
 {
-  _goal = addToGraph(
-    NodeT::getIndex(
-      static_cast<unsigned int>(mx),
-      static_cast<unsigned int>(my),
-      dim_3));
+  _coarse_search_resolution = 1;
+  unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
+  unsigned int dim_3_half_bin = 0;
+  NodeVector goals;
+  CoordinateVector goals_coordinates;
+  switch (goal_heading_mode) {
+    case GoalHeadingMode::DEFAULT:
+      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
+      goals_coordinates.push_back(
+        typename NodeT::Coordinates(
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3)));
+      break;
+    case GoalHeadingMode::BIDIRECTIONAL:
+      // Add two goals, one for each direction
+      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3)));
+      // 180 degrees
+      dim_3_half_bin = (dim_3 + (num_bins / 2)) % num_bins;
+      goals.push_back(addToGraph(NodeT::getIndex(mx, my, dim_3_half_bin)));
+      goals_coordinates.push_back(
+        typename NodeT::Coordinates(
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3)));
+      goals_coordinates.push_back(
+        typename NodeT::Coordinates(
+          static_cast<int>(mx),
+          static_cast<int>(my),
+          static_cast<int>(dim_3_half_bin)));
+      break;
+    case GoalHeadingMode::ALL_DIRECTION:
+      // Set the coarse search resolution only for all direction
+      _coarse_search_resolution = coarse_search_resolution;
+      // Add all goals for each direction
+      for (unsigned int i = 0; i < num_bins; ++i) {
+        goals.push_back(addToGraph(NodeT::getIndex(mx, my, i)));
+        goals_coordinates.push_back(
+          typename NodeT::Coordinates(
+            static_cast<float>(mx),
+            static_cast<float>(my),
+            static_cast<float>(i)));
+      }
+      break;
+    case GoalHeadingMode::UNKNOWN:
+      throw std::runtime_error("Goal heading is UNKNOWN.");
+  }
 
-  typename NodeT::Coordinates goal_coords(mx, my, dim_3);
-
-  if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
+  if (!_search_info.cache_obstacle_heuristic ||
+    goals_coordinates != _goal_manager.getGoalsCoordinates())
+  {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
     }
@@ -229,8 +281,8 @@ void AStarAlgorithm<NodeT>::setGoal(
       _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
   }
 
-  _goal_coordinates = goal_coords;
-  _goal->setPose(_goal_coordinates);
+  // Populate the goals
+  _goal_manager.populate(goals, goals_coordinates);
 }
 
 template<typename NodeT>
@@ -242,14 +294,24 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Check if points were filled in
-  if (!_start || !_goal) {
+  if (!_start || _goal_manager.goalsIsEmpty()) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
+  const bool allow_infeasible = getToleranceHeuristic() > 0.001;
+
+  // Predicate: should we try this goal?
+  auto shouldTryGoal = [&](const NodePtr & node_ptr) {
+      return node_ptr->isNodeValid(_traverse_unknown, _collision_checker) || allow_infeasible;
+    };
+
+  // Filter and store all tryable goals
+  bool no_tryable_goals = true;
+  _goal_manager.filterAndStoreTryableGoals(shouldTryGoal, no_tryable_goals);
+
+  // If we're *not* in tolerance mode and nothing was tryable → error
   // Check if ending point is valid
-  if (getToleranceHeuristic() < 0.001 &&
-    !_goal->isNodeValid(_traverse_unknown, _collision_checker))
-  {
+  if (!allow_infeasible && no_tryable_goals) {
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
@@ -272,6 +334,9 @@ bool AStarAlgorithm<NodeT>::createPath(
   if (!areInputsValid()) {
     return false;
   }
+
+  NodeVector coarse_list, fine_list;
+  _goal_manager.prepareGoalsForExpansion(coarse_list, fine_list, _coarse_search_resolution);
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
@@ -339,13 +404,14 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
-      current_node, getGoal(), neighborGetter, analytic_iterations, closest_distance);
+      current_node, coarse_list, fine_list,
+      _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
 
     // 3) Check if we're at the goal, backtrace if required
-    if (isGoal(current_node)) {
+    if (_goal_manager.isGoal(current_node)) {
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
@@ -387,21 +453,9 @@ bool AStarAlgorithm<NodeT>::createPath(
 }
 
 template<typename NodeT>
-bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
-{
-  return node == getGoal();
-}
-
-template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()
 {
   return _start;
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
-{
-  return _goal;
 }
 
 template<typename NodeT>
@@ -426,9 +480,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
-  float heuristic = NodeT::getHeuristicCost(
-    node_coords, _goal_coordinates);
-
+  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates());
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
   }
@@ -491,6 +543,18 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
+}
+
+template<typename NodeT>
+unsigned int AStarAlgorithm<NodeT>::getCoarseSearchResolution()
+{
+  return _coarse_search_resolution;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::GoalManagerT AStarAlgorithm<NodeT>::getGoalManager()
+{
+  return _goal_manager;
 }
 
 // Instantiate algorithm for the supported template types

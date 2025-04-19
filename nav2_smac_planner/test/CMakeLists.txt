@@ -135,3 +135,11 @@ target_link_libraries(test_lattice_node
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
+
+
+# Test Goal Manager
+ament_add_gtest(test_goal_manager test_goal_manager.cpp)
+target_link_libraries(test_goal_manager
+${library_name}
+# rclcpp::rclcpp
+)
