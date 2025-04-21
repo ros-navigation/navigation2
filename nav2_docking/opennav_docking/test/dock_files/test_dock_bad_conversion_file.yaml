@@ -1,5 +1,5 @@
 docks:
   dock1:
     type: "dockv3"
-    frame: 1map
+    frame: "map"
     pose: [0.3, map, 0.0]

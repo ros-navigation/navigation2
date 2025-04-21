@@ -104,7 +104,7 @@ TEST(DatabaseTests, getDockInstancesRightPathMalformedFile)
   node->declare_parameter(
     "dock_database",
     rclcpp::ParameterValue(ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/test_dock_database_file.yaml"));
+    "/dock_files/test_dock_bad_conversion_file.yaml"));
 
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
@@ -149,7 +149,7 @@ TEST(DatabaseTests, reloadDbService)
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/test_dock_file.yaml";
+    "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_send_request(request);
   EXPECT_EQ(
@@ -190,7 +190,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/test_dock_file.yaml";
+    "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_send_request(request);
   EXPECT_EQ(
