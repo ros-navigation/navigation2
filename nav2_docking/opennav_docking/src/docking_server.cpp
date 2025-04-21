@@ -455,13 +455,6 @@ bool DockingServer::approachDock(
     geometry_msgs::msg::PoseStamped target_pose = dock_pose;
     target_pose.header.stamp = rclcpp::Time(0);
 
-    // Make sure that the target pose is pointing at the robot when moving backwards
-    // This is to ensure that the robot doesn't try to dock from the wrong side
-    if (backward) {
-      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        tf2::getYaw(target_pose.pose.orientation) + M_PI);
-    }
-
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
     // dock so that the robot never gets to the end of the spiral before its in contact
@@ -471,6 +464,13 @@ bool DockingServer::approachDock(
     target_pose.pose.position.x += cos(yaw) * backward_projection;
     target_pose.pose.position.y += sin(yaw) * backward_projection;
     tf2_buffer_->transform(target_pose, target_pose, base_frame_);
+
+    // Make sure that the target pose is pointing at the robot when moving backwards
+    // This is to ensure that the robot doesn't try to dock from the wrong side
+    if (backward) {
+      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(target_pose.pose.orientation) + M_PI);
+    }
 
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
@@ -635,8 +635,18 @@ void DockingServer::undockRobot()
       return;
     }
 
+    bool dock_backward = dock_backwards_.has_value() ?
+      dock_backwards_.value() :
+      (dock->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
+
     // Get "dock pose" by finding the robot pose
     geometry_msgs::msg::PoseStamped dock_pose = getRobotPoseInFrame(fixed_frame_);
+
+    // Make sure that the staging pose is pointing in the same direction when moving backwards
+    if (dock_backward) {
+      dock_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(dock_pose.pose.orientation) + M_PI);
+    }
 
     // Get staging pose (in fixed frame)
     geometry_msgs::msg::PoseStamped staging_pose =
@@ -669,9 +679,6 @@ void DockingServer::undockRobot()
       // Get command to approach staging pose
       auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
       command->header.stamp = now();
-      bool dock_backward = dock_backwards_.has_value() ?
-        dock_backwards_.value() :
-        (dock->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
 
       if (getCommandToPose(
           command->twist, staging_pose, undock_linear_tolerance_, undock_angular_tolerance_, false,
