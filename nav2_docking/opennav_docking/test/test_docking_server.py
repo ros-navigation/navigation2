@@ -109,6 +109,7 @@ class TestDockingServer(unittest.TestCase):
 
     def setUp(self) -> None:
         # Create a ROS node for tests
+        self.period = 0.15  # 30Hz
         # Latest odom -> base_link
         self.x = 0.0
         self.y = 0.0
@@ -131,10 +132,9 @@ class TestDockingServer(unittest.TestCase):
 
     def timer_callback(self) -> None:
         # Propagate command
-        period = 0.05
-        self.x += cos(self.theta) * self.command.linear.x * period
-        self.y += sin(self.theta) * self.command.linear.x * period
-        self.theta += self.command.angular.z * period
+        self.x += cos(self.theta) * self.command.linear.x * self.period
+        self.y += sin(self.theta) * self.command.linear.x * self.period
+        self.theta += self.command.angular.z * self.period
         self.node.get_logger().info(f'Pose: {self.x:f} {self.y:f} {self.theta:f}')
         # Need to publish updated TF
         self.publish()
@@ -173,8 +173,8 @@ class TestDockingServer(unittest.TestCase):
                                       NavigateToPose.Result, NavigateToPose.Feedback]
     ) -> NavigateToPose.Result:
         goal = goal_handle.request
-        self.x = goal.pose.pose.position.x - 0.05
-        self.y = goal.pose.pose.position.y + 0.05
+        self.x = goal.pose.pose.position.x - self.period
+        self.y = goal.pose.pose.position.y + self.period
         self.theta = 2.0 * acos(goal.pose.pose.orientation.w)
         self.node.get_logger().info(f'Navigating to {self.x:f} {self.y:f} {self.theta:f}')
         goal_handle.succeed()
@@ -190,7 +190,7 @@ class TestDockingServer(unittest.TestCase):
         self.tf_broadcaster = TransformBroadcaster(self.node)
 
         # Create a timer to run "control loop" at 20hz
-        self.timer = self.node.create_timer(0.05, self.timer_callback)
+        self.timer = self.node.create_timer(0.033, self.timer_callback)
 
         # Create action client
         self.dock_action_client = ActionClient(self.node, DockRobot, 'dock_robot')
