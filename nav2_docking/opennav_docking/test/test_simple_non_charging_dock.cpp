@@ -71,8 +71,8 @@ TEST(SimpleNonChargingDockTests, StallDetection)
   node->declare_parameter("my_dock.stall_effort_threshold", rclcpp::ParameterValue(5.0));
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDockShim>();
-
   dock->configure(node, "my_dock", nullptr);
+  // Check that the joint names are empty, showing the error
   EXPECT_TRUE(dock->getStallJointNames().empty());
   dock->cleanup();
 
@@ -242,6 +242,8 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "other_frame";
+
+  // It can not find a transform between the two frames
   EXPECT_FALSE(dock->getRefinedPose(pose, ""));
 
   dock->deactivate();
@@ -285,6 +287,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
   transform.child_frame_id = "other_frame";
   tf_buffer->setTransform(transform, "test", true);
 
+  // It can find a transform between the two frames but it throws an exception in isDocked
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_FALSE(dock->isDocked());
 

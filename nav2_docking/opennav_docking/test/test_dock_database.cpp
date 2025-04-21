@@ -91,7 +91,7 @@ TEST(DatabaseTests, findTests)
   db.findDockPlugin("");
 }
 
-TEST(DatabaseTests, getDockInstancesRightPathMalformedFile)
+TEST(DatabaseTests, getDockInstancesBadConversionFile)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1"};
