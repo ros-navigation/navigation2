@@ -243,18 +243,7 @@ void loadMapFromFile(
   Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   gray_matrix(buffer.data(), height, width);
 
-  // Prepare alpha (transparency) matrix, if present
   bool has_alpha = img.matte();
-  Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> alpha_matrix;
-
-  if (has_alpha) {
-    std::vector<uint8_t> alpha_buf(width * height);
-    img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
-
-    alpha_matrix = Eigen::Map<Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic,
-        Eigen::RowMajor>>(
-      alpha_buf.data(), height, width);
-  }
 
   // Handle different map modes with if else condition
   // Trinary and Scale modes are handled together
@@ -306,8 +295,16 @@ void loadMapFromFile(
 
     // Apply alpha transparency mask: mark transparent cells as UNKNOWN
     if (has_alpha) {
-      auto transparent_mask = (alpha_matrix.array() < 255);
-      result = transparent_mask.select(nav2_util::OCC_GRID_UNKNOWN, result);
+      // Allocate buffer only once and map directly to Eigen without extra copy
+      std::vector<uint8_t> alpha_buf(width * height);
+      img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
+    
+      // Map alpha buffer as Eigen::Array for efficient elementwise ops
+      Eigen::Map<Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> alpha_array(
+        alpha_buf.data(), height, width);
+    
+      // Apply mask directly with Eigen::select
+      result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
     }
 
     // Flip image vertically (as ROS expects origin at bottom-left)
