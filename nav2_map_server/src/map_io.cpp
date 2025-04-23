@@ -298,11 +298,12 @@ void loadMapFromFile(
       // Allocate buffer only once and map directly to Eigen without extra copy
       std::vector<uint8_t> alpha_buf(width * height);
       img.write(0, 0, width, height, "A", Magick::CharPixel, alpha_buf.data());
-    
+
       // Map alpha buffer as Eigen::Array for efficient elementwise ops
-      Eigen::Map<Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> alpha_array(
+      Eigen::Map<Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic,
+        Eigen::RowMajor>> alpha_array(
         alpha_buf.data(), height, width);
-    
+
       // Apply mask directly with Eigen::select
       result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
     }
