@@ -135,7 +135,6 @@ class TestDockingServer(unittest.TestCase):
         self.x += cos(self.theta) * self.command.linear.x * period
         self.y += sin(self.theta) * self.command.linear.x * period
         self.theta += self.command.angular.z * period
-        self.node.get_logger().info(f'Pose: {self.x:f} {self.y:f} {self.theta:f}')
         # Need to publish updated TF
         self.publish()
 
