@@ -325,7 +325,8 @@ void loadMapFromFile(
   }
 
   // Flip image vertically (as ROS expects origin at bottom-left)
-  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
+  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
+    Eigen::RowMajor> flipped = result.colwise().reverse();
   std::memcpy(msg.data.data(), flipped.data(), width * height);
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
