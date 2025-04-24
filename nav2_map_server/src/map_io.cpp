@@ -249,6 +249,8 @@ void loadMapFromFile(
   // Trinary and Scale modes are handled together
   // because they share a lot of code
   // Raw mode is handled separately in else if block
+  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
+
   if (load_parameters.mode == MapMode::Trinary || load_parameters.mode == MapMode::Scale) {
     // Convert grayscale to float in range [0.0, 1.0]
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
@@ -267,7 +269,6 @@ void loadMapFromFile(
       (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
 
     // Initialize occupancy grid with UNKNOWN values (-1)
-    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result(height, width);
     result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
 
     // Apply occupied and free cell updates
@@ -308,29 +309,24 @@ void loadMapFromFile(
       result = (alpha_array < 255).select(nav2_util::OCC_GRID_UNKNOWN, result);
     }
 
-    // Flip image vertically (as ROS expects origin at bottom-left)
-    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
-      Eigen::RowMajor> flipped = result.colwise().reverse();
-    std::memcpy(msg.data.data(), flipped.data(), width * height);
   } else if (load_parameters.mode == MapMode::Raw) {
-      // Raw mode: interpret raw image pixel values directly as occupancy values
-    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> result =
-      gray_matrix.cast<int8_t>();
+    // Raw mode: interpret raw image pixel values directly as occupancy values
+    result = gray_matrix.cast<int8_t>();
 
-      // Clamp out-of-bound values (outside [-1, 100]) to UNKNOWN (-1)
+    // Clamp out-of-bound values (outside [-1, 100]) to UNKNOWN (-1)
     auto out_of_bounds = (result.array() < nav2_util::OCC_GRID_FREE) ||
       (result.array() > nav2_util::OCC_GRID_OCCUPIED);
 
     result = out_of_bounds.select(nav2_util::OCC_GRID_UNKNOWN, result);
 
-      // Flip image vertically (as ROS expects origin at bottom-left)
-    Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic,
-      Eigen::RowMajor> flipped = result.colwise().reverse();
-    std::memcpy(msg.data.data(), flipped.data(), width * height);
   } else {
     // If the map mode is not recognized, throw an error
     throw std::runtime_error("Invalid map mode");
   }
+
+  // Flip image vertically (as ROS expects origin at bottom-left)
+  Eigen::Matrix<int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flipped = result.colwise().reverse();
+  std::memcpy(msg.data.data(), flipped.data(), width * height);
 
   // Since loadMapFromFile() does not belong to any node, publishing in a system time.
   rclcpp::Clock clock(RCL_SYSTEM_TIME);
