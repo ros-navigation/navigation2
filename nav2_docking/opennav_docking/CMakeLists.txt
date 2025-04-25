@@ -134,7 +134,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(FILES test/test_dock_file.yaml
+install(DIRECTORY test/dock_files
   DESTINATION share/${PROJECT_NAME}/
 )
 
