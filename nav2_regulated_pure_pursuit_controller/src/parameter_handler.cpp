@@ -226,7 +226,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
         "it should be >0. Ignoring parameter update.");
         result.successful = false;
-      } else if (parameter.as_double() < 0.0) {
+      } else if (name.find(plugin_name_ + ".") == 0 && parameter.as_double() < 0.0) {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",
