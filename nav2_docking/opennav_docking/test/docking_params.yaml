@@ -1,0 +1,18 @@
+docking_server:
+  ros__parameters:
+    wait_charge_timeout: 1.0
+    controller:
+      use_collision_detection: False
+      transform_tolerance: 0.5
+    dock_plugins: [test_dock_plugin]
+    test_dock_plugin:
+      plugin: opennav_docking::SimpleChargingDock
+      use_battery_status: True
+      dock_direction: forward
+      staging_yaw_offset: 0.0
+    docks: [test_dock]
+    test_dock:
+      type: test_dock_plugin
+      frame: odom
+      pose: [10.0, 0.0, 0.0]
+      tolerance: 0.5
