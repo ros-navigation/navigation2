@@ -339,7 +339,7 @@ TEST(UtilsTests, SmootherTest)
   std::mt19937 engine;
   std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.2f);
   auto noises = Eigen::ArrayXf::NullaryExpr(
-    30, [&] () {return normal_dist(engine);});
+    30, [&]() {return normal_dist(engine);});
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
   noisey_sequence.wz += noises;
@@ -538,25 +538,29 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
   yaw_between_points.setZero(10);
 
   // Try with both angles 0
-  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with yaw between points as pi/4
   yaw_between_points.setConstant(M_PIF_2 / 2);
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with yaw between points as pi/2
   yaw_between_points.setConstant(M_PIF_2);
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with a few yaw between points  more than pi/2
   yaw_between_points[1] = 1.2 * M_PIF_2;
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
   EXPECT_NEAR(yaws_between_points_corrected[0], yaw_between_points[0], 1e-3);
@@ -564,7 +568,8 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
 
   // Try with goal angle 0
   float goal_angle = 0;
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_angle,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    goal_angle,
     yaw_between_points);
   EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
 }
@@ -628,7 +633,7 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

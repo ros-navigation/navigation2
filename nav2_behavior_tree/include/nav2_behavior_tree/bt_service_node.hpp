@@ -115,7 +115,7 @@ public:
       service_name_ = service_new;
       node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
       service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
-      service_name_, node_, true /*creates and spins an internal executor*/);
+        service_name_, node_, true /*creates and spins an internal executor*/);
     }
   }
 

@@ -116,7 +116,7 @@ bool GridCollisionChecker::inCollision(
 
   // Assumes setFootprint already set
   center_cost_ = static_cast<float>(costmap_->getCost(
-    static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
+      static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
 
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see

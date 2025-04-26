@@ -119,7 +119,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
 
   auto applyFilterOverAxes =
     [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
-    const std::vector<geometry_msgs::msg::PoseStamped> & init_plan_pts) -> void
+      const std::vector<geometry_msgs::msg::PoseStamped> & init_plan_pts) -> void
     {
       auto pt_m3 = init_plan_pts[0].pose.position;
       auto pt_m2 = init_plan_pts[0].pose.position;

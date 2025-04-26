@@ -33,7 +33,7 @@ class ServiceServer
 public:
   using RequestType = typename ServiceT::Request;
   using ResponseType = typename ServiceT::Response;
-  using CallbackType = std::function<void(const std::shared_ptr<rmw_request_id_t>,
+  using CallbackType = std::function<void (const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
   using SharedPtr = std::shared_ptr<ServiceServer<ServiceT, NodeT>>;
 
@@ -55,7 +55,7 @@ public:
       callback_group);
 
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if(!node->has_parameter("service_introspection_mode")) {
+    if (!node->has_parameter("service_introspection_mode")) {
       node->declare_parameter("service_introspection_mode", "disabled");
     }
     std::string service_introspection_mode =
@@ -67,7 +67,7 @@ public:
     }
 
     this->server_->configure_introspection(
-    node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
+      node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
   }
 
 protected:

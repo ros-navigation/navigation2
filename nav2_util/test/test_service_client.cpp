@@ -50,7 +50,7 @@ TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
   std::vector<std::string> introspection_modes = {
     "disabled", "metadata", "contents"
   };
-  for(const auto & mode : introspection_modes) {
+  for (const auto & mode : introspection_modes) {
     auto node = rclcpp::Node::make_shared("test_node" + mode);
     node->declare_parameter("service_introspection_mode", mode);
     TestServiceClient t("bar", node, true);
@@ -114,10 +114,10 @@ TEST(ServiceClient, can_ServiceClient_async_call) {
   // Define service server
   auto service_node = rclcpp::Node::make_shared("service_node");
   auto service = service_node->create_service<std_srvs::srv::Empty>(
-  "empty_srv",
+    "empty_srv",
     [&a](std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr) {
       a = 1;
-  });
+    });
   auto srv_thread = std::thread([&]() {rclcpp::spin(service_node);});
   // Define service client
   auto node = rclcpp::Node::make_shared("test_node");

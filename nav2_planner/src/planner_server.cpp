@@ -201,7 +201,8 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
       std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
     node,
-    std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add callback for dynamic parameters

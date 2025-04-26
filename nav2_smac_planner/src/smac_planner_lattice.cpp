@@ -288,10 +288,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!_costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -303,10 +303,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!_costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +

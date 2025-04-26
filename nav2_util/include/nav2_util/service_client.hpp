@@ -47,8 +47,9 @@ public:
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
       callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      callback_group_executor_->add_callback_group(callback_group_,
-          node_->get_node_base_interface());
+      callback_group_executor_->add_callback_group(
+        callback_group_,
+        node_->get_node_base_interface());
     }
     // When a nullptr is passed, the client will use the default callback group
     client_ = node_->template create_client<ServiceT>(
@@ -68,7 +69,7 @@ public:
     }
 
     this->client_->configure_introspection(
-        node_->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
+      node_->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
   }
 
   using RequestType = typename ServiceT::Request;

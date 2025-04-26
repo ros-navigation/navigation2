@@ -81,7 +81,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), -1.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

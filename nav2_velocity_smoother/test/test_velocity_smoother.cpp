@@ -708,7 +708,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   smoother.reset();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

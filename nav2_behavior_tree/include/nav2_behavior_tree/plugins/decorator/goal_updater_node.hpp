@@ -63,10 +63,12 @@ public:
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
       BT::InputPort<nav_msgs::msg::Goals>("input_goals", "Original Goals"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
-          "Received Goal by subscription"),
-      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
-          "Received Goals by subscription")
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
+        "output_goal",
+        "Received Goal by subscription"),
+      BT::OutputPort<nav_msgs::msg::Goals>(
+        "output_goals",
+        "Received Goals by subscription")
     };
   }
 

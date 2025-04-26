@@ -355,7 +355,7 @@ TEST_F(TestNode, CollisionSpace)
   ASSERT_EQ(collision_checker_->testPose(4.5, 4.5, 0), false);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

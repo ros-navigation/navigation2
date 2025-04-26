@@ -83,10 +83,12 @@ public:
 
     for (unsigned int i = 1; i < n_cols; i++) {
       auto lower_bound_vx = (state.vx.col(i - 1) >
-        0).select(state.vx.col(i - 1) + min_delta_vx,
+        0).select(
+        state.vx.col(i - 1) + min_delta_vx,
         state.vx.col(i - 1) - max_delta_vx);
       auto upper_bound_vx = (state.vx.col(i - 1) >
-        0).select(state.vx.col(i - 1) + max_delta_vx,
+        0).select(
+        state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
 
       state.cvx.col(i - 1) = state.cvx.col(i - 1)
@@ -101,10 +103,12 @@ public:
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
-          0).select(state.vy.col(i - 1) + min_delta_vy,
+          0).select(
+          state.vy.col(i - 1) + min_delta_vy,
           state.vy.col(i - 1) - max_delta_vy);
         auto upper_bound_vy = (state.vy.col(i - 1) >
-          0).select(state.vy.col(i - 1) + max_delta_vy,
+          0).select(
+          state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
         state.cvy.col(i - 1) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
@@ -166,7 +170,7 @@ public:
     const auto vx_ptr = control_sequence.vx.data();
     auto wz_ptr = control_sequence.wz.data();
     int steps = control_sequence.vx.size();
-    for(int i = 0; i < steps; i++) {
+    for (int i = 0; i < steps; i++) {
       float wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
       float & wz_curr = *(wz_ptr + i);
       wz_curr = utils::clamp(-1 * wz_constrained, wz_constrained, wz_curr);

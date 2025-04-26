@@ -171,7 +171,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
-   auto getParam = param_handler.getParamGetter("critic");
+  auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", true);
   costmap_ros->on_configure(lstate);
@@ -191,7 +191,7 @@ TEST(CriticTests, CostCriticAlignedParams) {
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
-   auto getParam = param_handler.getParamGetter("critic");
+  auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", false);
   costmap_ros->on_configure(lstate);
@@ -540,7 +540,7 @@ TEST(CriticTests, TwirlingCritic)
   // Now try again with some wiggling noise
   std::mt19937 engine;
   std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.5f);
-  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&] () {return normal_dist(engine);});
+  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&]() {return normal_dist(engine);});
   critic.score(data);
   EXPECT_NEAR(costs(0), 2.581, 4e-1);  // (mean of noise with mu=0, sigma=0.5 * 10.0 weight
 }

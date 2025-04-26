@@ -270,7 +270,7 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if(vx_last > 0) {
+    if (vx_last > 0) {
       vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     } else {
       vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
@@ -285,7 +285,7 @@ void Optimizer::applyControlSequenceConstraints()
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if(vy_last > 0) {
+      if (vy_last > 0) {
         vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
       } else {
         vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
@@ -337,7 +337,7 @@ void Optimizer::integrateStateVelocities(
   const size_t n_size = traj_yaws.size();
 
   float last_yaw = initial_yaw;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_yaw += wz(i) * settings_.model_dt;
     traj_yaws(i) = last_yaw;
   }
@@ -360,7 +360,7 @@ void Optimizer::integrateStateVelocities(
 
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_x += dx(i) * settings_.model_dt;
     last_y += dy(i) * settings_.model_dt;
     traj_x(i) = last_x;
@@ -396,9 +396,11 @@ void Optimizer::integrateStateVelocities(
     dy += state.vy * yaw_cos;
   }
 
-  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(trajectories.x.rows(),
+  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
+    trajectories.x.rows(),
     state.pose.pose.position.x);
-  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(trajectories.y.rows(),
+  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(
+    trajectories.y.rows(),
     state.pose.pose.position.y);
 
   for (size_t i = 0; i != n_cols; i++) {

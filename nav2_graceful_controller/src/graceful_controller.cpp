@@ -56,7 +56,7 @@ void GracefulController::configure(
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
-  if(params_->use_collision_detection) {
+  if (params_->use_collision_detection) {
     collision_checker_ = std::make_unique<nav2_costmap_2d::
         FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
   }
@@ -369,8 +369,9 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
   vel.angular.z = params_->rotation_scaling_factor * angle_to_target * params_->v_angular_max;
-  vel.angular.z = std::copysign(1.0, vel.angular.z) * std::max(abs(vel.angular.z),
-      params_->v_angular_min_in_place);
+  vel.angular.z = std::copysign(1.0, vel.angular.z) * std::max(
+    abs(vel.angular.z),
+    params_->v_angular_min_in_place);
   return vel;
 }
 

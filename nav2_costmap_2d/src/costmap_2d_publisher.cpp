@@ -156,7 +156,8 @@ void Costmap2DPublisher::prepareGrid()
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  std::transform(data, data + grid_->data.size(), grid_->data.begin(),
+  std::transform(
+    data, data + grid_->data.size(), grid_->data.begin(),
     [](unsigned char c) {return cost_translation_table_[c];});
 }
 
@@ -205,8 +206,9 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
     std::uint32_t row_start = y * map_width + x0_;
-    std::transform(costmap_data + row_start, costmap_data + row_start + update->width,
-        update->data.begin() + i,
+    std::transform(
+      costmap_data + row_start, costmap_data + row_start + update->width,
+      update->data.begin() + i,
       [](unsigned char c) {return cost_translation_table_[c];});
     i += update->width;
   }

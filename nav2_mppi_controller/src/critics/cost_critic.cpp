@@ -58,17 +58,17 @@ void CostCritic::initialize()
 
   if (costmap_ros_->getUseRadius() == consider_footprint_) {
     RCLCPP_WARN(
-    logger_,
-    "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
-    "in both the costmap and the cost critic.");
+      logger_,
+      "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+      "in both the costmap and the cost critic.");
     if (costmap_ros_->getUseRadius()) {
       throw nav2_core::ControllerException(
-      "Considering footprint in collision checking but no robot footprint provided in the "
-      "costmap.");
+              "Considering footprint in collision checking but no robot footprint provided in the "
+              "costmap.");
     }
   }
 
-  if(near_collision_cost_ > 253) {
+  if (near_collision_cost_ > 253) {
     RCLCPP_WARN(logger_, "Near collision cost is set higher than INSCRIBED_INFLATED_OBSTACLE");
   }
 
@@ -148,14 +148,17 @@ void CostCritic::score(CriticData & data)
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 
   const auto traj_x = Eigen::Map<const Eigen::ArrayXXf, 0,
-      Eigen::Stride<-1, -1>>(data.trajectories.x.data(), strided_traj_rows, strided_traj_cols,
-      Eigen::Stride<-1, -1>(outer_stride, 1));
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.x.data(), strided_traj_rows, strided_traj_cols,
+    Eigen::Stride<-1, -1>(outer_stride, 1));
   const auto traj_y = Eigen::Map<const Eigen::ArrayXXf, 0,
-      Eigen::Stride<-1, -1>>(data.trajectories.y.data(), strided_traj_rows, strided_traj_cols,
-      Eigen::Stride<-1, -1>(outer_stride, 1));
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.y.data(), strided_traj_rows, strided_traj_cols,
+    Eigen::Stride<-1, -1>(outer_stride, 1));
   const auto traj_yaw = Eigen::Map<const Eigen::ArrayXXf, 0,
-      Eigen::Stride<-1, -1>>(data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
-      Eigen::Stride<-1, -1>(outer_stride, 1));
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
+    Eigen::Stride<-1, -1>(outer_stride, 1));
 
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;

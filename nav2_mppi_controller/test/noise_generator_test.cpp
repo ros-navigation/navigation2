@@ -201,7 +201,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   generator.shutdown();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

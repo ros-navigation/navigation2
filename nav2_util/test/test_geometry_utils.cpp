@@ -136,15 +136,17 @@ TEST(GeometryUtils, find_next_matching_goal_in_waypoint_statuses)
   float distance_between_waypoints = 2.0;
 
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(nb_waypoints);
-  for (size_t i = 0 ; i < nb_waypoints ; ++i) {
+  for (size_t i = 0; i < nb_waypoints; ++i) {
     waypoint_statuses[i].waypoint_index = i;
     waypoint_statuses[i].waypoint_pose.pose.position.x = distance_between_waypoints * i;
   }
 
   // match success
   size_t matching_index = nb_waypoints / 2;
-  ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses,
-    waypoint_statuses[matching_index].waypoint_pose), matching_index);
+  ASSERT_EQ(
+    find_next_matching_goal_in_waypoint_statuses(
+      waypoint_statuses,
+      waypoint_statuses[matching_index].waypoint_pose), matching_index);
 
   // match failed due to mismatch of pose
   geometry_msgs::msg::PoseStamped fake_pose;
@@ -153,6 +155,8 @@ TEST(GeometryUtils, find_next_matching_goal_in_waypoint_statuses)
 
   // match failed due to waypoint_status is not PENDING
   waypoint_statuses[matching_index].waypoint_status = nav2_msgs::msg::WaypointStatus::COMPLETED;
-  ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses,
-    waypoint_statuses[matching_index].waypoint_pose), -1);
+  ASSERT_EQ(
+    find_next_matching_goal_in_waypoint_statuses(
+      waypoint_statuses,
+      waypoint_statuses[matching_index].waypoint_pose), -1);
 }

@@ -55,8 +55,8 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
     node->declare_parameter("service_introspection_mode", mode);
 
     auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
-      const std::shared_ptr<std_srvs::srv::Empty::Request>,
-      std::shared_ptr<std_srvs::srv::Empty::Response>) {
+        const std::shared_ptr<std_srvs::srv::Empty::Request>,
+        std::shared_ptr<std_srvs::srv::Empty::Response>) {
         a = 1;
       };
 
@@ -75,7 +75,7 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
   }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
