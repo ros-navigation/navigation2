@@ -160,12 +160,14 @@ inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
   const double & x = pose.position.x;
   const double & y = pose.position.y;
   const double & yaw = tf2::getYaw(pose.orientation);
+  const double sin_yaw = sin(yaw);
+  const double cos_yaw = cos(yaw);
 
   std::vector<geometry_msgs::msg::Point> out_footprint;
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
-    out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
-    out_footprint[2 * i].y = y + sin(yaw) * footprint[i].x + cos(yaw) * footprint[i].y;
+    out_footprint[2 * i].x = x + cos_yaw * footprint[i].x - sin_yaw * footprint[i].y;
+    out_footprint[2 * i].y = y + sin_yaw * footprint[i].x + cos_yaw * footprint[i].y;
     if (i == 0) {
       out_footprint.back().x = out_footprint[i].x;
       out_footprint.back().y = out_footprint[i].y;
