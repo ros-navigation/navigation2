@@ -18,8 +18,8 @@
 import requests
 
 # Global information about current distributions, shouldn't need to update
-OSs = {'humble': 'jammy', 'iron': 'jammy', 'jazzy': 'noble'}
-Prefixs = {'humble': 'H', 'iron': 'I', 'jazzy': 'J'}
+OSs = {'humble': 'jammy', 'jazzy': 'noble'}
+Prefixs = {'humble': 'H', 'jazzy': 'J'}
 
 # Set your packages here
 Packages = [
@@ -39,6 +39,7 @@ Packages = [
     'nav2_dwb_controller',  # Controller plugin for DWB packages
     'nav2_graceful_controller',
     'nav2_lifecycle_manager',
+    'nav2_loopback_sim',
     'nav2_map_server',
     'nav2_mppi_controller',
     'nav2_msgs',
@@ -59,7 +60,7 @@ Packages = [
 ]
 
 # Set which distributions you care about
-Distros = ['humble', 'iron', 'jazzy']
+Distros = ['humble', 'jazzy']
 
 
 def getSrcPath(package: str, prefix: str, OS: str) -> str:
@@ -103,6 +104,7 @@ def main() -> None:
             else:
                 entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
                 entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
+        entry = entry[:-1]
         entry += '\n'
         body += entry
 
