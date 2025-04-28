@@ -20,12 +20,14 @@
 #include <memory>
 #include <string>
 
+#include "behaviortree_cpp/decorator_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/goals.hpp"
-
-#include "behaviortree_cpp/decorator_node.h"
-
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -33,6 +35,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
  * the current goal on the blackboard
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class GoalUpdater : public BT::DecoratorNode
 {
@@ -52,13 +56,19 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
       BT::InputPort<nav_msgs::msg::Goals>("input_goals", "Original Goals"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
-          "Received Goal by subscription"),
-      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
-          "Received Goals by subscription")
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
+        "output_goal",
+        "Received Goal by subscription"),
+      BT::OutputPort<nav_msgs::msg::Goals>(
+        "output_goals",
+        "Received Goals by subscription")
     };
   }
 

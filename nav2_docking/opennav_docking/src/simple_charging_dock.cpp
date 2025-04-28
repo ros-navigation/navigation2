@@ -16,6 +16,7 @@
 
 #include "nav2_util/node_utils.hpp"
 #include "opennav_docking/simple_charging_dock.hpp"
+#include "opennav_docking/utils.hpp"
 
 namespace opennav_docking
 {
@@ -78,6 +79,10 @@ void SimpleChargingDock::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
 
+  // Direction of docking
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".dock_direction", rclcpp::ParameterValue(std::string("forward")));
+
   node_->get_parameter(name + ".use_battery_status", use_battery_status_);
   node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
@@ -97,6 +102,13 @@ void SimpleChargingDock::configure(
   node_->get_parameter("base_frame", base_frame_id_);  // Get server base frame ID
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
+
+  std::string dock_direction;
+  node_->get_parameter(name + ".dock_direction", dock_direction);
+  dock_direction_ = utils::getDockDirectionFromString(dock_direction);
+  if (dock_direction_ == opennav_docking_core::DockDirection::UNKNOWN) {
+    throw std::runtime_error{"Dock direction is not valid. Valid options are: forward or backward"};
+  }
 
   // Setup filter
   double filter_coef;

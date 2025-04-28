@@ -535,7 +535,7 @@ TEST_F(TestNode, testInflation2)
 
   waitForMap(slayer);
 
-  // Creat a small L-Shape all at once
+  // Create a small L-Shape all at once
   addObservation(olayer, 1, 1, MAX_Z);
   addObservation(olayer, 2, 1, MAX_Z);
   addObservation(olayer, 2, 2, MAX_Z);
@@ -632,7 +632,7 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

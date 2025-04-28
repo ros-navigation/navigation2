@@ -32,6 +32,7 @@
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -170,6 +171,34 @@ inline geometry_msgs::msg::TwistStamped toTwistStamped(
   return twist;
 }
 
+inline std::unique_ptr<nav2_msgs::msg::Trajectory> toTrajectoryMsg(
+  const Eigen::ArrayXXf & trajectory,
+  const models::ControlSequence & control_sequence,
+  const double & model_dt,
+  const std_msgs::msg::Header & header)
+{
+  auto trajectory_msg = std::make_unique<nav2_msgs::msg::Trajectory>();
+  trajectory_msg->header = header;
+  trajectory_msg->points.resize(trajectory.rows());
+
+  for (int i = 0; i < trajectory.rows(); ++i) {
+    auto & curr_pt = trajectory_msg->points[i];
+    curr_pt.time_from_start = rclcpp::Duration::from_seconds(i * model_dt);
+    curr_pt.pose.position.x = trajectory(i, 0);
+    curr_pt.pose.position.y = trajectory(i, 1);
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, trajectory(i, 2));
+    curr_pt.pose.orientation = tf2::toMsg(quat);
+    curr_pt.velocity.linear.x = control_sequence.vx(i);
+    curr_pt.velocity.angular.z = control_sequence.wz(i);
+    if (control_sequence.vy.size() > 0) {
+      curr_pt.velocity.linear.y = control_sequence.vy(i);
+    }
+  }
+
+  return trajectory_msg;
+}
+
 /**
  * @brief Convert path to a tensor
  * @param path Path to convert
@@ -256,10 +285,11 @@ inline bool withinPositionGoalTolerance(
 template<typename T>
 auto normalize_angles(const T & angles)
 {
-  return (angles + M_PIF).unaryExpr([&](const float x) {
-             float remainder = std::fmod(x, 2.0f * M_PIF);
-             return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
-             });
+  return (angles + M_PIF).unaryExpr(
+    [&](const float x) {
+      float remainder = std::fmod(x, 2.0f * M_PIF);
+      return remainder < 0.0f ? remainder + M_PIF : remainder - M_PIF;
+    });
 }
 
 /**
@@ -458,7 +488,7 @@ inline void savitskyGolayFilter(
 
   auto applyFilterOverAxis =
     [&](Eigen::ArrayXf & sequence, const Eigen::ArrayXf & initial_sequence,
-    const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
+      const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
     {
       float pt_m4 = hist_0;
       float pt_m3 = hist_1;
@@ -607,15 +637,15 @@ struct Pose2D
 inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
 {
   int size = e.size();
-  if(size == 1) {return;}
-  if(abs(direction) != 1) {
+  if (size == 1) {return;}
+  if (abs(direction) != 1) {
     throw std::logic_error("Invalid direction, only 1 and -1 are valid values.");
   }
 
-  if((e.cols() == 1 || e.rows() == 1) && size > 1) {
+  if ((e.cols() == 1 || e.rows() == 1) && size > 1) {
     auto start_ptr = direction == 1 ? e.data() + size - 2 : e.data() + 1;
     auto end_ptr = direction == 1 ? e.data() : e.data() + size - 1;
-    while(start_ptr != end_ptr) {
+    while (start_ptr != end_ptr) {
       *(start_ptr + direction) = *start_ptr;
       start_ptr -= direction;
     }
@@ -624,7 +654,7 @@ inline void shiftColumnsByOnePlace(Eigen::Ref<Eigen::ArrayXXf> e, int direction)
     auto start_ptr = direction == 1 ? e.data() + size - 2 * e.rows() : e.data() + e.rows();
     auto end_ptr = direction == 1 ? e.data() : e.data() + size - e.rows();
     auto span = e.rows();
-    while(start_ptr != end_ptr) {
+    while (start_ptr != end_ptr) {
       std::copy(start_ptr, start_ptr + span, start_ptr + direction * span);
       start_ptr -= (direction * span);
     }
@@ -644,10 +674,10 @@ inline auto normalize_yaws_between_points(
   const Eigen::Ref<const Eigen::ArrayXf> & yaw_between_points)
 {
   Eigen::ArrayXf yaws = utils::shortest_angular_distance(
-          last_yaws, yaw_between_points).abs();
+    last_yaws, yaw_between_points).abs();
   int size = yaws.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  for(int i = 0; i != size; i++) {
+  for (int i = 0; i != size; i++) {
     const float & yaw_between_point = yaw_between_points[i];
     yaws_between_points_corrected[i] = yaws[i] < M_PIF_2 ?
       yaw_between_point : angles::normalize_angle(yaw_between_point + M_PIF);
@@ -666,7 +696,7 @@ inline auto normalize_yaws_between_points(
 {
   int size = yaw_between_points.size();
   Eigen::ArrayXf yaws_between_points_corrected(size);
-  for(int i = 0; i != size; i++) {
+  for (int i = 0; i != size; i++) {
     const float & yaw_between_point = yaw_between_points[i];
     yaws_between_points_corrected[i] = fabs(
       angles::normalize_angle(yaw_between_point - goal_yaw)) < M_PIF_2 ?

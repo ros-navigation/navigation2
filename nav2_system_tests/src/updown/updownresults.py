@@ -28,7 +28,7 @@
 import sys
 
 
-def main():
+def main() -> None:
     log = sys.stdin
     test_count = 0
     fail_count = 0

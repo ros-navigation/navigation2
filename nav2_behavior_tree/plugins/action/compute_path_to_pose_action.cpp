@@ -32,8 +32,25 @@ void ComputePathToPoseAction::on_tick()
 {
   getInput("goal", goal_.goal);
   getInput("planner_id", goal_.planner_id);
-  if (getInput("start", goal_.start)) {
-    goal_.use_start = true;
+
+  // if "use_start" is provided try to enforce it (true or false), but we cannot enforce true if
+  // start is not provided
+  goal_.use_start = false;
+  if (getInput("use_start", goal_.use_start)) {
+    if (goal_.use_start && !getInput("start", goal_.start)) {
+      // in case we don't have a "start" pose
+      goal_.use_start = false;
+      RCLCPP_ERROR(
+        node_->get_logger(),
+        "use_start is set to true but no start pose was provided, falling back to default "
+        "behavior, i.e. using the current robot pose");
+    }
+  } else {
+    // else if "use_start" is not provided, but "start" is, then use it in order to not change
+    // the legacy behavior
+    if (getInput("start", goal_.start)) {
+      goal_.use_start = true;
+    }
   }
 }
 

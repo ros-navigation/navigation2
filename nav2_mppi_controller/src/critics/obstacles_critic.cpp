@@ -16,6 +16,8 @@
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_core/controller_exceptions.hpp"
+
 namespace mppi::critics
 {
 
@@ -42,6 +44,18 @@ void ObstaclesCritic::initialize()
       " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
       "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
       " for full instructions. This will substantially impact run-time performance.");
+  }
+
+  if (costmap_ros_->getUseRadius() == consider_footprint_) {
+    RCLCPP_WARN(
+      logger_,
+      "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+      "in both the costmap and the obstacle critic.");
+    if (costmap_ros_->getUseRadius()) {
+      throw nav2_core::ControllerException(
+              "Considering footprint in collision checking but no robot footprint provided in the "
+              "costmap.");
+    }
   }
 
   RCLCPP_INFO(
@@ -126,7 +140,7 @@ void ObstaclesCritic::score(CriticData & data)
   const unsigned int batch_size = data.trajectories.x.rows();
   bool all_trajectories_collide = true;
 
-  for(unsigned int i = 0; i != batch_size; i++) {
+  for (unsigned int i = 0; i != batch_size; i++) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
     const auto & traj = data.trajectories;
@@ -134,7 +148,7 @@ void ObstaclesCritic::score(CriticData & data)
     raw_cost(i) = 0.0f;
     repulsive_cost(i) = 0.0f;
 
-    for(unsigned int j = 0; j != traj_len; j++) {
+    for (unsigned int j = 0; j != traj_len; j++) {
       pose_cost = costAtPose(traj.x(i, j), traj.y(i, j), traj.yaws(i, j));
       if (pose_cost.cost < 1.0f) {continue;}  // In free space
 

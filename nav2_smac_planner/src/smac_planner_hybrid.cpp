@@ -166,6 +166,11 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+  // Note that we need to declare it here to prevent the parameter from being declared in the
+  // dynamic reconfigure callback
+  nav2_util::declare_parameter_if_not_declared(
+    node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+
   _motion_model = fromString(_motion_model_for_search);
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
@@ -361,10 +366,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -383,10 +388,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +

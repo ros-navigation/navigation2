@@ -16,14 +16,13 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
+from launch import LaunchDescription, LaunchService
 from launch.actions import ExecuteProcess
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     return LaunchDescription(
         [
             Node(
@@ -41,7 +40,7 @@ def generate_launch_description():
     )
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     testExecutable = os.getenv('TEST_EXECUTABLE')

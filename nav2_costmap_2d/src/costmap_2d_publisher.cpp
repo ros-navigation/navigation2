@@ -82,11 +82,13 @@ Costmap2DPublisher::Costmap2DPublisher(
     topic_name + "_raw_updates", custom_qos);
 
   // Create a service that will use the callback function to handle requests.
-  costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
-    "get_" + topic_name, std::bind(
-      &Costmap2DPublisher::costmap_service_callback,
-      this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+  costmap_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+    std::string("get_") + topic_name,
+    node,
+    std::bind(
+      &Costmap2DPublisher::costmap_service_callback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   if (cost_translation_table_ == NULL) {
     cost_translation_table_ = new char[256];
@@ -154,7 +156,8 @@ void Costmap2DPublisher::prepareGrid()
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  std::transform(data, data + grid_->data.size(), grid_->data.begin(),
+  std::transform(
+    data, data + grid_->data.size(), grid_->data.begin(),
     [](unsigned char c) {return cost_translation_table_[c];});
 }
 
@@ -203,8 +206,9 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
     std::uint32_t row_start = y * map_width + x0_;
-    std::transform(costmap_data + row_start, costmap_data + row_start + update->width,
-        update->data.begin() + i,
+    std::transform(
+      costmap_data + row_start, costmap_data + row_start + update->width,
+      update->data.begin() + i,
       [](unsigned char c) {return cost_translation_table_[c];});
     i += update->width;
   }

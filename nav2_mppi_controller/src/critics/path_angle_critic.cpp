@@ -70,7 +70,7 @@ void PathAngleCritic::score(CriticData & data)
   utils::setPathFurthestPointIfNotSet(data);
   auto offsetted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_,
-      static_cast<size_t>(data.path.x.size()) - 1);
+    static_cast<size_t>(data.path.x.size()) - 1);
 
   const float goal_x = data.path.x(offsetted_idx);
   const float goal_y = data.path.y(offsetted_idx);
@@ -101,7 +101,7 @@ void PathAngleCritic::score(CriticData & data)
   auto diff_y = goal_y - data.trajectories.y.col(last_idx);
   auto diff_x = goal_x - data.trajectories.x.col(last_idx);
   auto yaws_between_points = diff_y.binaryExpr(
-    diff_x, [&](const float & y, const float & x){return atan2f(y, x);}).eval();
+    diff_x, [&](const float & y, const float & x) {return atan2f(y, x);}).eval();
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
@@ -119,7 +119,8 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
         auto last_yaws = data.trajectories.yaws.col(last_idx);
-        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(
+          last_yaws,
           yaws_between_points);
         auto corrected_yaws = utils::shortest_angular_distance(
           last_yaws, yaws_between_points_corrected).abs();
@@ -133,7 +134,8 @@ void PathAngleCritic::score(CriticData & data)
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
         auto last_yaws = data.trajectories.yaws.col(last_idx);
-        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_yaw,
+        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(
+          goal_yaw,
           yaws_between_points);
         auto corrected_yaws = utils::shortest_angular_distance(
           last_yaws, yaws_between_points_corrected).abs();

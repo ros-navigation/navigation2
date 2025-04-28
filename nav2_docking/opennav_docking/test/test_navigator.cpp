@@ -81,6 +81,28 @@ protected:
   bool toggle_{false};
 };
 
+TEST(NavigatorTests, TestNavigatorReconfigure)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+  auto navigator = std::make_unique<Navigator>(node);
+  node->configure();
+  node->activate();
+  navigator->activate();
+  navigator->deactivate();
+  navigator.reset();
+
+  // Create and activate again
+  EXPECT_NO_THROW(navigator = std::make_unique<Navigator>(node));
+  navigator->activate();
+  navigator->deactivate();
+
+  // Reset the node
+  navigator.reset();
+  node->deactivate();
+  node->cleanup();
+  node->shutdown();
+}
+
 TEST(NavigatorTests, TestNavigator)
 {
   auto dummy_navigator_node = std::make_shared<DummyNavigationServer>();
@@ -94,32 +116,37 @@ TEST(NavigatorTests, TestNavigator)
   // Should succeed, action server set to succeed
   dummy_navigator_node->setReturn(true);
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+    navigator->goToPose(
+      geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
       is_preempted_false));
 
   // Should fail, timeout exceeded
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0),
+    navigator->goToPose(
+      geometry_msgs::msg::PoseStamped(), rclcpp::Duration(0.0, 0.0),
       is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // Should fail, action server set to succeed
   dummy_navigator_node->setReturn(false);
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+    navigator->goToPose(
+      geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
       is_preempted_false),
     opennav_docking_core::FailedToStage);
 
   // First should fail, recursion should succeed
   dummy_navigator_node->setToggle();
   EXPECT_NO_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+    navigator->goToPose(
+      geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
       is_preempted_false));
 
   // Should fail, preempted
   dummy_navigator_node->setReturn(true);
   EXPECT_THROW(
-    navigator->goToPose(geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
+    navigator->goToPose(
+      geometry_msgs::msg::PoseStamped(), rclcpp::Duration(10.0, 10.0),
       is_preempted_true),
     opennav_docking_core::FailedToStage);
 
@@ -130,7 +157,7 @@ TEST(NavigatorTests, TestNavigator)
 
 }  // namespace opennav_docking
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -227,7 +227,7 @@ TEST_F(MapServerTestFixture, NoInitialMap)
   verifyMapMsg(load_res->map);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

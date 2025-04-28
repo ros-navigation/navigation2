@@ -126,6 +126,81 @@ TEST(CriticTests, ConstraintsCritic)
   EXPECT_NEAR(costs(1), 0.48, 0.01);
 }
 
+TEST(CriticTests, ObstacleCriticMisalignedParams) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  auto getParam = param_handler.getParamGetter("critic");
+  bool consider_footprint;
+  getParam(consider_footprint, "consider_footprint", true);
+
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  ObstaclesCritic critic;
+  // Expect throw when settings mismatched
+  EXPECT_THROW(
+    critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
+    nav2_core::ControllerException
+  );
+}
+
+TEST(CriticTests, ObstacleCriticAlignedParams) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  auto getParam = param_handler.getParamGetter("critic");
+  bool consider_footprint;
+  getParam(consider_footprint, "consider_footprint", false);
+
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  ObstaclesCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+}
+
+
+TEST(CriticTests, CostCriticMisAlignedParams) {
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  auto getParam = param_handler.getParamGetter("critic");
+  bool consider_footprint;
+  getParam(consider_footprint, "consider_footprint", true);
+  costmap_ros->on_configure(lstate);
+
+  CostCritic critic;
+  // Expect throw when settings mismatched
+  EXPECT_THROW(
+    critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler),
+    nav2_core::ControllerException
+  );
+}
+
+TEST(CriticTests, CostCriticAlignedParams) {
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  auto getParam = param_handler.getParamGetter("critic");
+  bool consider_footprint;
+  getParam(consider_footprint, "consider_footprint", false);
+  costmap_ros->on_configure(lstate);
+
+  CostCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+}
+
 TEST(CriticTests, GoalAngleCritic)
 {
   // Standard preamble
@@ -168,7 +243,7 @@ TEST(CriticTests, GoalAngleCritic)
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 
-  // Lets move it even closer, just to be sure it still doesn't trigger
+  // Let's move it even closer, just to be sure it still doesn't trigger
   state.pose.pose.position.x = 9.2;
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
@@ -465,7 +540,7 @@ TEST(CriticTests, TwirlingCritic)
   // Now try again with some wiggling noise
   std::mt19937 engine;
   std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.5f);
-  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&] () {return normal_dist(engine);});
+  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&]() {return normal_dist(engine);});
   critic.score(data);
   EXPECT_NEAR(costs(0), 2.581, 4e-1);  // (mean of noise with mu=0, sigma=0.5 * 10.0 weight
 }

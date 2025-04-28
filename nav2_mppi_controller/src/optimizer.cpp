@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,6 +76,7 @@ void Optimizer::getParams()
   getParam(s.base_constraints.ax_max, "ax_max", 3.0f);
   getParam(s.base_constraints.ax_min, "ax_min", -3.0f);
   getParam(s.base_constraints.ay_max, "ay_max", 3.0f);
+  getParam(s.base_constraints.ay_min, "ay_min", -3.0f);
   getParam(s.base_constraints.az_max, "az_max", 3.5f);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
@@ -88,6 +90,14 @@ void Optimizer::getParams()
       logger_,
       "Sign of the parameter ax_min is incorrect, consider setting it negative.");
   }
+
+  if (s.base_constraints.ay_min > 0.0) {
+    s.base_constraints.ay_min = -1.0 * s.base_constraints.ay_min;
+    RCLCPP_WARN(
+      logger_,
+      "Sign of the parameter ay_min is incorrect, consider setting it negative.");
+  }
+
 
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
 
@@ -245,6 +255,7 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_vx = s.model_dt * s.constraints.ax_max;
   float min_delta_vx = s.model_dt * s.constraints.ax_min;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
+  float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
   float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
   float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
@@ -259,7 +270,11 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
+    if (vx_last > 0) {
+      vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
+    } else {
+      vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
+    }
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
@@ -270,7 +285,11 @@ void Optimizer::applyControlSequenceConstraints()
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last + max_delta_vy, vy_curr);
+      if (vy_last > 0) {
+        vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
+      } else {
+        vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
+      }
       vy_last = vy_curr;
     }
   }
@@ -318,7 +337,7 @@ void Optimizer::integrateStateVelocities(
   const size_t n_size = traj_yaws.size();
 
   float last_yaw = initial_yaw;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_yaw += wz(i) * settings_.model_dt;
     traj_yaws(i) = last_yaw;
   }
@@ -341,7 +360,7 @@ void Optimizer::integrateStateVelocities(
 
   float last_x = state_.pose.pose.position.x;
   float last_y = state_.pose.pose.position.y;
-  for(size_t i = 0; i != n_size; i++) {
+  for (size_t i = 0; i != n_size; i++) {
     last_x += dx(i) * settings_.model_dt;
     last_y += dy(i) * settings_.model_dt;
     traj_x(i) = last_x;
@@ -377,9 +396,11 @@ void Optimizer::integrateStateVelocities(
     dy += state.vy * yaw_cos;
   }
 
-  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(trajectories.x.rows(),
+  Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
+    trajectories.x.rows(),
     state.pose.pose.position.x);
-  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(trajectories.y.rows(),
+  Eigen::ArrayXf last_y = Eigen::ArrayXf::Constant(
+    trajectories.y.rows(),
     state.pose.pose.position.y);
 
   for (size_t i = 0; i != n_cols; i++) {
@@ -406,6 +427,11 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
 
   integrateStateVelocities(trajectories, sequence);
   return trajectories;
+}
+
+const models::ControlSequence & Optimizer::getOptimalControlSequence()
+{
+  return control_sequence_;
 }
 
 void Optimizer::updateControlSequence()

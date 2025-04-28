@@ -78,7 +78,8 @@
 
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
+      <input_port name="start">Use as the planner start pose instead of the current robot pose, if use_start is not false (i.e. not provided or set to true)</input_port>
+      <input_port name="use_start">For using or not using (i.e. ignoring) the provided start pose</input_port>
       <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
       <input_port name="server_name">Server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
@@ -102,7 +103,9 @@
       <input_port name="input_goals">Input goals to remove if passed</input_port>
       <input_port name="radius">Radius tolerance on a goal to consider it passed</input_port>
       <input_port name="robot_base_frame">Robot base frame</input_port>
+      <input_port name="input_waypoint_statuses">Original waypoint_statuses to mark waypoint status from</input_port>
       <output_port name="output_goals">Set of goals after removing any passed</output_port>
+      <output_port name="output_waypoint_statuses">Waypoint_statuses with passed waypoints marked</output_port>
     </Action>
 
     <Action ID="RemoveInCollisionGoals">
@@ -111,7 +114,9 @@
       <input_port name="use_footprint">Whether to use the footprint cost or the point cost.</input_port>
       <input_port name="cost_threshold">The cost threshold above which a waypoint is considered in collision and should be removed.</input_port>
       <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+      <input_port name="input_waypoint_statuses">Original waypoint_statuses to mark waypoint status from</input_port>
       <output_port name="output_goals">A vector of goals containing only those that are not in collision.</output_port>
+      <output_port name="output_waypoint_statuses">Waypoint_statuses with in-collision waypoints marked</output_port>
     </Action>
 
     <Action ID="SmoothPath">

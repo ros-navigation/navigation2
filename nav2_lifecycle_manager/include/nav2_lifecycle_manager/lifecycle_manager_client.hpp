@@ -108,8 +108,8 @@ protected:
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
 
-  std::shared_ptr<nav2_util::ServiceClient<ManageLifecycleNodes>> manager_client_;
-  std::shared_ptr<nav2_util::ServiceClient<std_srvs::srv::Trigger>> is_active_client_;
+  nav2_util::ServiceClient<ManageLifecycleNodes>::SharedPtr manager_client_;
+  nav2_util::ServiceClient<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
   std::string manage_service_name_;
   std::string active_service_name_;
 };

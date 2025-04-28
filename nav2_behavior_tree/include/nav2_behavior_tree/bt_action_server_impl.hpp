@@ -90,9 +90,10 @@ BtActionServer<ActionT>::BtActionServer(
   };
 
   if (node->has_parameter("error_code_names")) {
-    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
-      " 'error_code_name_prefixes' and MUST be removed.\n"
-      " Please review migration guide and update your configuration.");
+    throw std::runtime_error(
+            "parameter 'error_code_names' has been replaced by "
+            " 'error_code_name_prefixes' and MUST be removed.\n"
+            " Please review migration guide and update your configuration.");
   }
 
   if (!node->has_parameter("error_code_name_prefixes")) {
@@ -118,8 +119,9 @@ BtActionServer<ActionT>::BtActionServer(
       for (const auto & error_code_name_prefix : error_code_name_prefixes) {
         error_code_name_prefixes_str += " " + error_code_name_prefix;
       }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
-        << error_code_name_prefixes_str);
+      RCLCPP_INFO_STREAM(
+        logger_, "Error_code parameters were set to:"
+          << error_code_name_prefixes_str);
     }
   }
 }
@@ -239,8 +241,16 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_);
+  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned server_port)
+{
+  enable_groot_monitoring_ = enable;
+  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -255,11 +265,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return true;
   }
 
+  // if a new tree is created, than the Groot2 Publisher must be destroyed
+  bt_->resetGrootMonitor();
+
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
 
   if (!xml_file.good()) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       "Couldn't open input XML file: " + filename);
     return false;
   }
@@ -277,7 +291,8 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
         wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       std::string("Exception when loading BT: ") + e.what());
     return false;
   }
@@ -285,6 +300,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
+
+  // Enable monitoring with Groot2
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
+
   return true;
 }
 
@@ -344,7 +368,8 @@ void BtActionServer<ActionT>::executeCallback()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       action_server_->terminate_current(result);
-      RCLCPP_ERROR(logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+      RCLCPP_ERROR(
+        logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
         result->error_msg.c_str());
       break;
 
@@ -362,7 +387,8 @@ void BtActionServer<ActionT>::setInternalError(uint16_t error_code, const std::s
 {
   internal_error_code_ = error_code;
   internal_error_msg_ = error_msg;
-  RCLCPP_ERROR(logger_, "Setting internal error error_code:%d, error_msg:%s",
+  RCLCPP_ERROR(
+    logger_, "Setting internal error error_code:%d, error_msg:%s",
     internal_error_code_, internal_error_msg_.c_str());
 }
 

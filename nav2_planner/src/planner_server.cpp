@@ -197,11 +197,13 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+  is_path_valid_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
+    node,
     std::bind(
-      &PlannerServer::isPathValid, this,
-      std::placeholders::_1, std::placeholders::_2));
+      &PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -249,6 +251,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
+  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -645,6 +648,7 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
 }
 
 void PlannerServer::isPathValid(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {

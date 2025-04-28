@@ -20,24 +20,14 @@ import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    AppendEnvironmentVariable,
-    DeclareLaunchArgument,
-    ExecuteProcess,
-    ForEach,
-    GroupAction,
-    IncludeLaunchDescription,
-    LogInfo,
-    OpaqueFunction,
-    RegisterEventHandler,
-)
-
+from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess,
+                            ForEach, GroupAction, IncludeLaunchDescription, LogInfo,
+                            OpaqueFunction, RegisterEventHandler)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
-
 import yaml
 
 
@@ -59,7 +49,7 @@ def count_robots(context: LaunchContext) -> list[LogInfo]:
     return [LogInfo(msg=[log_msg])]
 
 
-def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]:
+def generate_robot_actions(name: str = '', pose: dict[str, float] = {}) -> list[GroupAction]:
     """Generate the actions to launch a robot with the given name and pose."""
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
@@ -114,7 +104,7 @@ def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]
     return [group]
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     """
     Bring up the multi-robots with given launch arguments.
 

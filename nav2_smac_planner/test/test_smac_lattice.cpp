@@ -144,13 +144,13 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   } catch (...) {
   }
 
-  // So instead, lets call manually on a change
+  // So instead, let's call manually on a change
   std::vector<rclcpp::Parameter> parameters;
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

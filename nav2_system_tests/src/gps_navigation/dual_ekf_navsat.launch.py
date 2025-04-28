@@ -18,7 +18,7 @@ import launch.actions
 import launch_ros.actions
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     launch_dir = os.path.dirname(os.path.realpath(__file__))
     params_file = os.path.join(launch_dir, 'dual_ekf_navsat_params.yaml')
     os.environ['FILE_PATH'] = str(launch_dir)

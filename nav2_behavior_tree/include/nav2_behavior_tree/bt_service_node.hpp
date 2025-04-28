@@ -20,9 +20,12 @@
 #include <chrono>
 
 #include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -32,6 +35,8 @@ using namespace std::chrono_literals;  // NOLINT
 /**
  * @brief Abstract class representing a service based BT node
  * @tparam ServiceT Type of service
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 template<class ServiceT>
 class BtServiceNode : public BT::ActionNodeBase
@@ -109,16 +114,8 @@ public:
     if (service_new != service_name_ || !service_client_) {
       service_name_ = service_new;
       node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
-      callback_group_ = node_->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive,
-        false);
-      callback_group_executor_.add_callback_group(callback_group_,
-          node_->get_node_base_interface());
-
-      service_client_ = node_->create_client<ServiceT>(
-        service_name_,
-        rclcpp::SystemDefaultsQoS(),
-        callback_group_);
+      service_client_ = std::make_shared<nav2_util::ServiceClient<ServiceT>>(
+        service_name_, node_, true /*creates and spins an internal executor*/);
     }
   }
 
@@ -173,7 +170,7 @@ public:
         return BT::NodeStatus::FAILURE;
       }
 
-      future_result_ = service_client_->async_send_request(request_).share();
+      future_result_ = service_client_->async_call(request_);
       sent_time_ = node_->now();
       request_sent_ = true;
     }
@@ -221,7 +218,7 @@ public:
       auto timeout = remaining > max_timeout_ ? max_timeout_ : remaining;
 
       rclcpp::FutureReturnCode rc;
-      rc = callback_group_executor_.spin_until_future_complete(future_result_, timeout);
+      rc = service_client_->spin_until_complete(future_result_, timeout);
       if (rc == rclcpp::FutureReturnCode::SUCCESS) {
         request_sent_ = false;
         BT::NodeStatus status = on_completion(future_result_.get());
@@ -265,13 +262,11 @@ protected:
   }
 
   std::string service_name_, service_node_name_;
-  typename std::shared_ptr<rclcpp::Client<ServiceT>> service_client_;
+  typename nav2_util::ServiceClient<ServiceT>::SharedPtr service_client_;
   std::shared_ptr<typename ServiceT::Request> request_;
 
   // The node that will be used for any ROS operations
   rclcpp::Node::SharedPtr node_;
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while to use in the tick loop while waiting for
   // a result from the server

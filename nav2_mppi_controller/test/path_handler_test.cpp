@@ -240,7 +240,7 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

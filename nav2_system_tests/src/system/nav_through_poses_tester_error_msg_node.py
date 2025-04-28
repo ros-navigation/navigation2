@@ -17,26 +17,19 @@
 import argparse
 import sys
 import time
-
 from typing import Optional
 
 from action_msgs.msg import GoalStatus
-from geometry_msgs.msg import Pose
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
-
 import rclpy
-
 from rclpy.action.client import ActionClient
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
-
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from std_msgs.msg import String
 
 
@@ -82,16 +75,16 @@ class NavTester(Node):
             SetParameters, '/controller_server/set_parameters'
         )
 
-    def info_msg(self, msg: str):
+    def info_msg(self, msg: str) -> None:
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
-    def warn_msg(self, msg: str):
+    def warn_msg(self, msg: str) -> None:
         self.get_logger().warning('\033[1;37;43m' + msg + '\033[0m')
 
-    def error_msg(self, msg: str):
+    def error_msg(self, msg: str) -> None:
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')
 
-    def setInitialPose(self):
+    def setInitialPose(self) -> None:
         msg = PoseWithCovarianceStamped()
         msg.pose.pose = self.initial_pose
         msg.header.frame_id = 'map'
@@ -99,17 +92,17 @@ class NavTester(Node):
         self.initial_pose_pub.publish(msg)
         self.currentPose = self.initial_pose
 
-    def setGoalChecker(self, name):
+    def setGoalChecker(self, name: str) -> None:
         msg = String()
         msg.data = name
         self.goal_checker_selector_pub.publish(msg)
 
-    def setProgressChecker(self, name):
+    def setProgressChecker(self, name: str) -> None:
         msg = String()
         msg.data = name
         self.progress_checker_selector_pub.publish(msg)
 
-    def setControllerParam(self, name, parameter_type, value):
+    def setControllerParam(self, name: str, parameter_type: Parameter.Type, value: float) -> None:
         req = SetParameters.Request()
         req.parameters = [
             Parameter(name, parameter_type, value).to_parameter_msg()
@@ -117,7 +110,7 @@ class NavTester(Node):
         future = self.controller_param_cli.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
-    def getStampedPoseMsg(self, pose: Pose):
+    def getStampedPoseMsg(self, pose: Pose) -> PoseStamped:
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.pose = pose
@@ -127,7 +120,7 @@ class NavTester(Node):
                           goal_pose: Optional[Pose] = None,
                           behavior_tree: Optional[str] = None,
                           expected_error_code: Optional[int] = None,
-                          expected_error_msg: Optional[str] = None):
+                          expected_error_msg: Optional[str] = None) -> bool:
         # Sends a `NavToPose` action request and waits for completion
         self.info_msg("Waiting for 'NavigateThroughPoses' action server")
         while not self.action_client.wait_for_server(timeout_sec=1.0):
@@ -160,9 +153,9 @@ class NavTester(Node):
 
         self.info_msg("Waiting for 'NavigateToPose' action to complete")
         rclpy.spin_until_future_complete(self, get_result_future)
-        status = get_result_future.result().status
+        status = get_result_future.result().status  # type: ignore[union-attr]
         if status != GoalStatus.STATUS_SUCCEEDED:
-            result = get_result_future.result().result
+            result = get_result_future.result().result  # type: ignore[union-attr]
             if (result.error_code == expected_error_code and
                result.error_msg == expected_error_msg):
                 self.info_msg(f'Goal failed as expected with status code: {status}'
@@ -180,12 +173,12 @@ class NavTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
-    def poseCallback(self, msg):
+    def poseCallback(self, msg: PoseWithCovarianceStamped) -> None:
         self.info_msg('Received amcl_pose')
         self.current_pose = msg.pose.pose
         self.initial_pose_received = True
 
-    def wait_for_node_active(self, node_name: str):
+    def wait_for_node_active(self, node_name: str) -> None:
         # Waits for the node within the tester namespace to become active
         self.info_msg(f'Waiting for {node_name} to become active')
         node_service = f'{node_name}/get_state'
@@ -199,7 +192,7 @@ class NavTester(Node):
             future = state_client.call_async(req)
             rclpy.spin_until_future_complete(self, future)
             if future.result() is not None:
-                state = future.result().current_state.label
+                state = future.result().current_state.label  # type: ignore[union-attr]
                 self.info_msg(f'Result of get_state: {state}')
             else:
                 self.error_msg(
@@ -207,7 +200,7 @@ class NavTester(Node):
                 )
             time.sleep(5)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.info_msg('Shutting down')
         self.action_client.destroy()
 
@@ -242,7 +235,7 @@ class NavTester(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-    def wait_for_initial_pose(self):
+    def wait_for_initial_pose(self) -> None:
         self.initial_pose_received = False
         while not self.initial_pose_received:
             self.info_msg('Setting initial pose')
@@ -251,7 +244,7 @@ class NavTester(Node):
             rclpy.spin_once(self, timeout_sec=1)
 
 
-def run_all_tests(robot_tester):
+def run_all_tests(robot_tester: NavTester) -> bool:
     pose_out_of_bounds = Pose()
     pose_out_of_bounds.position.x = 2000.0
     pose_out_of_bounds.position.y = 4000.0
@@ -348,7 +341,7 @@ def run_all_tests(robot_tester):
     return result
 
 
-def fwd_pose(x=0.0, y=0.0, z=0.01):
+def fwd_pose(x: float = 0.0, y: float = 0.0, z: float = 0.01) -> Pose:
     initial_pose = Pose()
     initial_pose.position.x = x
     initial_pose.position.y = y
@@ -360,7 +353,7 @@ def fwd_pose(x=0.0, y=0.0, z=0.01):
     return initial_pose
 
 
-def get_testers(args):
+def get_testers(args: argparse.Namespace) -> list[NavTester]:
     testers = []
 
     init_x, init_y, final_x, final_y = args.robot[0]
@@ -383,7 +376,7 @@ def get_testers(args):
     return testers
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     # The robot(s) positions from the input arguments
     parser = argparse.ArgumentParser(description='System-level navigation tester node')
     group = parser.add_mutually_exclusive_group(required=True)

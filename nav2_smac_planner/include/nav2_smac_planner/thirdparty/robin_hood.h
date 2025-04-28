@@ -575,7 +575,7 @@ struct nothrow {
 struct is_transparent_tag {};
 
 // A custom pair implementation is used in the map because std::pair is not is_trivially_copyable,
-// which means it would  not be allowed to be used in std::memcpy. This struct is copyable, which is
+// which means it would  not be allowed to be used in std::memcpy. This struct is copiable, which is
 // also tested.
 template <typename T1, typename T2>
 struct pair {

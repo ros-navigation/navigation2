@@ -178,11 +178,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     // TODO(mjeronimo): instead of get(), use a shared ptr
     try {
-      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-          shared_from_this(), callback_group_);
+      plugin->initialize(
+        layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+        shared_from_this(), callback_group_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
-          plugin_names_[i].c_str(), e.what());
+      RCLCPP_ERROR(
+        get_logger(), "Failed to initialize costmap plugin %s! %s.",
+        plugin_names_[i].c_str(), e.what());
       return nav2_util::CallbackReturn::FAILURE;
     }
 
@@ -248,8 +250,10 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Service to get the cost at a point
-  get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
-    "get_cost_" + getName(),
+  get_cost_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    std::string("get_cost_") + get_name(),
+    shared_from_this(),
     std::bind(
       &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
@@ -360,7 +364,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   executor_thread_.reset();
-
+  get_cost_service_.reset();
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
@@ -830,6 +834,7 @@ void Costmap2DROS::getCostsCallback(
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   response->success = true;
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;
@@ -858,7 +863,7 @@ void Costmap2DROS::getCostsCallback(
     } else {
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at point (%f, %f)",
-          pose_transformed.pose.position.x,
+        pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
       bool in_bounds = costmap->worldToMap(

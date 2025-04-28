@@ -1,0 +1,50 @@
+[tool.codespell]
+builtin = "clear,rare,informal,usage,code,names"
+check-filenames = true
+check-hidden = true
+ignore-words = "tools/.codespell_ignore_words"
+interactive = 0
+quiet = 34
+skip="*.pgm,./build/*,./install/*,./log*,./.venv/*,./.git*,*.toml"
+uri-ignore-words-list = "segue"
+write-changes = true
+[tool.isort]
+profile = "google"
+force_single_line = false
+line_length = 99
+
+[tool.mypy]
+explicit_package_bases = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "matplotlib.*",
+    "rtree.*",
+    "launch.*",
+    "ament_index_python.*",
+    "nav2_common.*",
+    "nav2_msgs.*",
+    "nav2_simple_commander.*",
+    "launch_testing.*",
+    "action_msgs.*",
+    "geometry_msgs.*",
+    "sensor_msgs.*",
+    "tf2_ros.*",
+    "nav_msgs.*",
+    "rosgraph_msgs.*",
+    "tf_transformations.*",
+    "ament_pep257.*",
+    "ament_flake8.*",
+    "ament_copyright.*",
+    "builtin_interfaces.*",
+    "lifecycle_msgs.*",
+    "geographic_msgs.*",
+    "rcl_interfaces.*",
+    "std_msgs.*",
+    "zmq.*",
+    "graphviz.*",
+    "transforms3d.*",
+]
+
+ignore_missing_imports = true

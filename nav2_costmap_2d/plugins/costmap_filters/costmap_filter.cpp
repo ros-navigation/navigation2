@@ -83,11 +83,13 @@ void CostmapFilter::onInitialize()
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
 
     // Costmap Filter enabling service
-    enable_service_ = node->create_service<std_srvs::srv::SetBool>(
+    enable_service_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::SetBool,
+        std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
       name_ + "/toggle_filter",
+      node,
       std::bind(
-        &CostmapFilter::enableCallback, this,
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        &CostmapFilter::enableCallback, this, std::placeholders::_1,
+        std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
     throw ex;

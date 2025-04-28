@@ -15,25 +15,24 @@
 
 import sys
 import time
+from typing import Optional
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Point32, PolygonStamped
 from nav2_msgs.action import Spin
 from nav2_msgs.msg import Costmap
 from nav2_msgs.srv import ManageLifecycleNodes
-
 import rclpy
-
-from rclpy.action import ActionClient
+from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.action.client import ClientGoalHandle
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolicy
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
 
 class SpinTest(Node):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(node_name='spin_tester', namespace='')
         self.costmap_qos = QoSProfile(
             durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
@@ -46,10 +45,11 @@ class SpinTest(Node):
             Costmap, 'local_costmap/costmap_raw', self.costmap_qos)
         self.footprint_pub = self.create_publisher(
             PolygonStamped, 'local_costmap/published_footprint', 10)
-        self.goal_handle = None
-        self.action_result = None
+        self.goal_handle: Optional[ClientGoalHandle[
+                Spin.Goal, Spin.Result, Spin.Feedback]] = None
+        self.action_result = Spin.Result()
 
-    def sendCommand(self, command):
+    def sendCommand(self, command: Spin.Goal) -> bool:
         self.info_msg('Sending goal request...')
         self.goal_future = self.action_client.send_goal_async(command)
         try:
@@ -58,7 +58,7 @@ class SpinTest(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -68,8 +68,8 @@ class SpinTest(Node):
         self.info_msg("Waiting for 'spin' action to complete")
         try:
             rclpy.spin_until_future_complete(self, self.result_future)
-            status = self.result_future.result().status
-            result = self.result_future.result().result
+            status = self.result_future.result().status  # type: ignore[union-attr]
+            result = self.result_future.result().result  # type: ignore[union-attr]
             self.action_result = result
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
@@ -83,7 +83,7 @@ class SpinTest(Node):
         self.info_msg('Spin failed to meet target!')
         return False
 
-    def sendAndPreemptWithInvertedCommand(self, command):
+    def sendAndPreemptWithInvertedCommand(self, command: Spin.Goal) -> bool:
         # Send initial goal
         self.info_msg('Sending goal request...')
         self.goal_future = self.action_client.send_goal_async(command)
@@ -93,7 +93,7 @@ class SpinTest(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -111,7 +111,7 @@ class SpinTest(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error_msg('Preemption rejected')
             return False
 
@@ -122,8 +122,8 @@ class SpinTest(Node):
         self.info_msg("Waiting for 'spin' action Preemption to complete")
         try:
             rclpy.spin_until_future_complete(self, self.result_future)
-            status = self.result_future.result().status
-            result = self.result_future.result().result
+            status = self.result_future.result().status  # type: ignore[union-attr]
+            result = self.result_future.result().result  # type: ignore[union-attr]
             self.action_result = result
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
@@ -137,7 +137,7 @@ class SpinTest(Node):
         self.info_msg('Spin failed to meet target!')
         return False
 
-    def sendAndCancelCommand(self, command):
+    def sendAndCancelCommand(self, command: Spin.Goal) -> bool:
         self.info_msg('Sending goal request...')
         self.goal_future = self.action_client.send_goal_async(command)
         try:
@@ -146,7 +146,7 @@ class SpinTest(Node):
         except Exception as e:  # noqa: B902
             self.error_msg(f'Service call failed {e!r}')
 
-        if not self.goal_handle.accepted:
+        if not self.goal_handle or not self.goal_handle.accepted:
             self.error_msg('Goal rejected')
             return False
 
@@ -158,7 +158,7 @@ class SpinTest(Node):
         cancel_future = self.goal_handle.cancel_goal_async()
         rclpy.spin_until_future_complete(self, cancel_future)
         rclpy.spin_until_future_complete(self, self.result_future)
-        status = self.result_future.result().status
+        status = self.result_future.result().status  # type: ignore[union-attr]
         if status != GoalStatus.STATUS_CANCELED:
             self.info_msg(f'Goal failed with status code: {status}')
             return False
@@ -166,7 +166,7 @@ class SpinTest(Node):
             self.info_msg('Goal was canceled successfully')
             return True
 
-    def sendFreeCostmap(self):
+    def sendFreeCostmap(self) -> None:
         costmap_msg = Costmap()
         costmap_msg.header.frame_id = 'odom'
         costmap_msg.header.stamp = self.get_clock().now().to_msg()
@@ -189,7 +189,7 @@ class SpinTest(Node):
         ]
         self.footprint_pub.publish(footprint_msg)
 
-    def sendOccupiedCostmap(self):
+    def sendOccupiedCostmap(self) -> None:
         costmap_msg = Costmap()
         costmap_msg.header.frame_id = 'odom'
         costmap_msg.header.stamp = self.get_clock().now().to_msg()
@@ -212,7 +212,7 @@ class SpinTest(Node):
         ]
         self.footprint_pub.publish(footprint_msg)
 
-    def run(self):
+    def run(self) -> bool:
         while not self.action_client.wait_for_server(timeout_sec=1.0):
             self.info_msg("'spin' action server not available, waiting...")
 
@@ -273,7 +273,7 @@ class SpinTest(Node):
             self.info_msg('Test D passed')
         return True
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.info_msg('Shutting down')
 
         self.action_client.destroy()
@@ -295,17 +295,17 @@ class SpinTest(Node):
 
         self.info_msg(f'{transition_service} finished')
 
-    def info_msg(self, msg: str):
+    def info_msg(self, msg: str) -> None:
         self.get_logger().info(msg)
 
-    def warn_msg(self, msg: str):
+    def warn_msg(self, msg: str) -> None:
         self.get_logger().warn(msg)
 
-    def error_msg(self, msg: str):
+    def error_msg(self, msg: str) -> None:
         self.get_logger().error(msg)
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     rclpy.init()
     time.sleep(10)
     test = SpinTest()
