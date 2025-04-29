@@ -51,23 +51,23 @@ public:
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
         this->callback_(request_header, request, response);
       },
-      qos,
+      qos.get_rmw_qos_profile(),
       callback_group);
 
-    rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if(!node->has_parameter("service_introspection_mode")) {
-      node->declare_parameter("service_introspection_mode", "disabled");
-    }
-    std::string service_introspection_mode =
-      node->get_parameter("service_introspection_mode").as_string();
-    if (service_introspection_mode == "metadata") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode == "contents") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
-    }
+    // rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
+    // if (!node->has_parameter("service_introspection_mode")) {
+    //   node->declare_parameter("service_introspection_mode", "disabled");
+    // }
+    // std::string service_introspection_mode =
+    //   node->get_parameter("service_introspection_mode").as_string();
+    // if (service_introspection_mode == "metadata") {
+    //   introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
+    // } else if (service_introspection_mode == "contents") {
+    //   introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
+    // }
 
-    this->server_->configure_introspection(
-    node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
+    // this->server_->configure_introspection(
+    //   node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
   }
 
 protected:

@@ -189,23 +189,23 @@ ParameterHandler::ParameterHandler(
     params_.use_cost_regulated_linear_velocity_scaling = false;
   }
 
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
+  // post_set_params_handler_ = node->add_post_set_parameters_callback(
+  //   std::bind(
+  //     &ParameterHandler::updateParametersCallback,
+  //     this, std::placeholders::_1));
   on_set_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
+      &ParameterHandler::updateParametersCallback,
       this, std::placeholders::_1));
 }
 
 ParameterHandler::~ParameterHandler()
 {
   auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
+  // if (post_set_params_handler_ && node) {
+  //   node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  // }
+  // post_set_params_handler_.reset();
   if (on_set_params_handler_ && node) {
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
@@ -246,18 +246,25 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
   }
   return result;
 }
-void
+rcl_interfaces::msg::SetParametersResult
 ParameterHandler::updateParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
+  rcl_interfaces::msg::SetParametersResult result;
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 
-  for (const auto & parameter : parameters) {
+  for (auto parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
+        if (parameter.as_double() <= 0.0) {
+          RCLCPP_WARN(
+            logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+            "it should be >0. Ignoring parameter update.");
+          continue;
+        }
         params_.inflation_cost_scaling_factor = parameter.as_double();
       } else if (name == plugin_name_ + ".desired_linear_vel") {
         params_.desired_linear_vel = parameter.as_double();
@@ -313,12 +320,21 @@ ParameterHandler::updateParametersCallback(
       } else if (name == plugin_name_ + ".use_cancel_deceleration") {
         params_.use_cancel_deceleration = parameter.as_bool();
       } else if (name == plugin_name_ + ".allow_reversing") {
+        if (params_.use_rotate_to_heading && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Both use_rotate_to_heading and allow_reversing "
+            "parameter cannot be set to true. Rejecting parameter update.");
+          continue;
+        }
         params_.allow_reversing = parameter.as_bool();
       } else if (name == plugin_name_ + ".interpolate_curvature_after_goal") {
         params_.interpolate_curvature_after_goal = parameter.as_bool();
       }
     }
   }
+
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller

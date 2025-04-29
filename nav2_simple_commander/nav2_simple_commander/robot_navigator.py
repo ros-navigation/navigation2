@@ -39,7 +39,7 @@ from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.task import Future
-from rclpy.type_support import GetResultServiceResponse
+# from rclpy.type_support import GetResultServiceResponse
 
 
 # Task Result enum for the result of the task being executed
@@ -77,9 +77,9 @@ class BasicNavigator(Node):
         self.initial_pose.header.frame_id = 'map'
 
         self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
-        self.result_future: \
-            Optional[Future[GetResultServiceResponse[Any]]] = None
-        self.feedback: Any = None
+        # self.result_future: \
+        #     Optional[Future[GetResultServiceResponse[Any]]] = None
+        self.feedback: str = ''
         self.status: Optional[int] = None
 
         # Since the route server's compute and track action server is likely

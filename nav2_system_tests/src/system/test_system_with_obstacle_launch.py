@@ -118,7 +118,7 @@ def generate_launch_description() -> LaunchDescription:
                     '-entity', 'cardboard_box',
                     '-file', cardbox_sdf,
                     '-x', '-1.0', '-y', '0.6', '-z', '0.15',
-                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0', ]
             ),
             Node(
                 package='robot_state_publisher',

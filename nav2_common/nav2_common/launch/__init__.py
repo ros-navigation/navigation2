@@ -20,4 +20,5 @@ __all__ = [
     'HasNodeParams',
     'RewrittenYaml',
     'ReplaceString',
+    'ParseMultiRobotPose',
 ]

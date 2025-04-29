@@ -65,7 +65,7 @@ def generate_robot_actions(name: str = '', pose: dict[str, float] = {}) -> list[
     group = GroupAction(
             [
                 LogInfo(
-                    msg=['Launching namespace=', name, ' init_pose=', str(pose),]
+                    msg=['Launching namespace=', name, ' init_pose=', str(pose), ]
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(

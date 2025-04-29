@@ -67,7 +67,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2_ros::tf2_ros
-  yaml-cpp::yaml-cpp
+  yaml-cpp
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
