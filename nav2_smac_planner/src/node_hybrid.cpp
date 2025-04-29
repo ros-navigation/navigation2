@@ -442,12 +442,18 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
 
 float NodeHybrid::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords)
+  const CoordinateVector & goals_coords)
 {
+  // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic =
-    getObstacleHeuristic(node_coords, goal_coords, motion_table.cost_penalty);
-  const float dist_heuristic = getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
-  return std::max(obstacle_heuristic, dist_heuristic);
+    getObstacleHeuristic(node_coords, goals_coords[0], motion_table.cost_penalty);
+  float distance_heuristic = std::numeric_limits<float>::max();
+  for (unsigned int i = 0; i < goals_coords.size(); i++) {
+    distance_heuristic = std::min(
+      distance_heuristic,
+      getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic));
+  }
+  return std::max(obstacle_heuristic, distance_heuristic);
 }
 
 void NodeHybrid::initMotionModel(
