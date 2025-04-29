@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>nav2_pose_saver</name>
+  <version>0.1.0</version>
+  <description>Pose persistence utility node for AMCL in ROS 2</description>
+
+  <maintainer email="pranavkolekar13@gmail.com">Pranav</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>yaml-cpp</depend>
+  <build_depend>ament_index_cpp</build_depend>
+  <exec_depend>ament_index_cpp</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
