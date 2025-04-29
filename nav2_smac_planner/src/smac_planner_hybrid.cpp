@@ -171,7 +171,24 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
 
+  std::string goal_heading_type;
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
+  node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+  _goal_heading_mode = fromStringToGH(goal_heading_type);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(1));
+  node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
+
+  if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+    std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
+      "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ";
+    throw nav2_core::PlannerException(error_msg);
+  }
+
   _motion_model = fromString(_motion_model_for_search);
+
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
       _logger,
@@ -192,6 +209,21 @@ void SmacPlannerHybrid::configure(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_coarse_search_resolution <= 0) {
+    RCLCPP_WARN(
+      _logger, "coarse iteration resolution selected as <= 0, "
+      "disabling coarse iteration resolution search for goal heading"
+    );
+
+    _coarse_search_resolution = 1;
+  }
+
+  if (_angle_quantizations % _coarse_search_resolution != 0) {
+    std::string error_msg = "coarse iteration should be an increment"
+      " of the number of angular bins configured";
+    throw nav2_core::PlannerException(error_msg);
   }
 
   if (_minimum_turning_radius_global_coords < _costmap->getResolution() * _downsampling_factor) {
@@ -413,7 +445,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin));
+  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
+    _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -700,6 +733,31 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
+
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the "
+            "number of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+      } else if (name == _name + ".coarse_search_resolution") {
+        _coarse_search_resolution = parameter.as_int();
+        if (_coarse_search_resolution <= 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration resolution selected as <= 0. "
+            "Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger,
+              "coarse iteration should be an increment of the "
+              "number of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == _name + ".motion_model_for_search") {
@@ -711,6 +769,22 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "Unable to get MotionModel search type. Given '%s', "
             "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
             _motion_model_for_search.c_str());
+        }
+      } else if (name == _name + ".goal_heading_mode") {
+        std::string goal_heading_type = parameter.as_string();
+        GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
+        RCLCPP_INFO(
+          _logger,
+          "GoalHeadingMode type set to '%s'.",
+          goal_heading_type.c_str());
+        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s', "
+            "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
+            goal_heading_type.c_str());
+        } else {
+          _goal_heading_mode = goal_heading_mode;
         }
       }
     }
