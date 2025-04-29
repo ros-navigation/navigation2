@@ -249,6 +249,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
   parameters.push_back(rclcpp::Parameter("test.angle_quantization_bins", 87));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
 
   // test invalid goal heading mode does not modify current
