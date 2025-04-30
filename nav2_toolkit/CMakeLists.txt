@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(nav2_pose_saver)
+project(nav2_toolkit)
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -12,7 +12,7 @@ find_package(std_srvs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 
-include_directories(include/nav2_pose_saver)
+include_directories(include)
 
 
 

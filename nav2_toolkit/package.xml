@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>nav2_pose_saver</name>
+  <name>nav2_toolkit</name>
   <version>0.1.0</version>
   <description>Pose persistence utility node for AMCL in ROS 2</description>
 

@@ -6,7 +6,7 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <yaml-cpp/yaml.h>
 
-namespace nav2_pose_saver
+namespace nav2_toolkit
 {
 
 class PoseSaverNode : public rclcpp::Node
@@ -71,6 +71,6 @@ private:
   // bool restore_done_ = false;
 };
 
-}  // namespace nav2_pose_saver
+}  // namespace nav2_toolkit
 
 #endif  // POSE_SAVER__POSE_SAVER_NODE_HPP_

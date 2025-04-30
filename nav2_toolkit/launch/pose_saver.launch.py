@@ -11,7 +11,7 @@ def generate_launch_description():
         DeclareLaunchArgument('save_interval_sec', default_value='5.0'),
 
         Node(
-            package='nav2_pose_saver',
+            package='nav2_toolkit',
             executable='pose_saver_node',
             name='pose_saver',
             output='screen',

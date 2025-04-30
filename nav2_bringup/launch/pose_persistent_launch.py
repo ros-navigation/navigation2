@@ -34,8 +34,15 @@ def generate_launch_description():
         description='Whether to automatically restore pose on startup')
 
     declare_pose_file_path_cmd = DeclareLaunchArgument(
-        'pose_file_path', default_value='/tmp/pose_saver.yaml',
-        description='File path to store and restore pose from')
+    'pose_file_path', 
+    default_value=os.path.join(
+        get_package_share_directory('nav2_toolkit'), 
+        'config', 
+        'last_known_pose.yaml'),
+    description='File path to store and restore pose from'
+    )
+
+
 
     declare_save_interval_sec_cmd = DeclareLaunchArgument(
         'save_interval_sec', default_value='5.0',
@@ -49,7 +56,7 @@ def generate_launch_description():
 
     # Node
     pose_saver_node = Node(
-        package='nav2_pose_saver',
+        package='nav2_toolkit',
         executable='pose_saver_node',
         name='pose_saver',
         output='screen',

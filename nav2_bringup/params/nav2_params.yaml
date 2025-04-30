@@ -494,5 +494,4 @@ pose_saver:
   ros__parameters:
     auto_start_saving: true
     auto_restore_pose: false
-    save_interval_sec: 5.0
-    pose_file_path: "/tmp/pose_saver.yaml"
+    save_interval_sec: 1.0

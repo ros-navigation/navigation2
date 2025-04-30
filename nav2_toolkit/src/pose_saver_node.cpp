@@ -7,18 +7,21 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <yaml-cpp/yaml.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include "nav2_pose_saver/pose_saver_node.hpp"
+#include "nav2_toolkit/pose_saver_node.hpp"
 
 using namespace std::chrono_literals;
 
-namespace nav2_pose_saver
+namespace nav2_toolkit
 {
 
 PoseSaverNode::PoseSaverNode()
 : Node("pose_saver_node"), saving_active_(false)
 {
   this->declare_parameter<double>("save_interval_sec", 5.0);
-  this->declare_parameter<std::string>("pose_file_path", std::string(std::getenv("HOME")) + "/.ros/last_known_pose.yaml");
+  this->declare_parameter<std::string>(
+    "pose_file_path", 
+    ament_index_cpp::get_package_share_directory("nav2_toolkit") + "/config/last_known_pose.yaml");
+  
   this->declare_parameter<bool>("auto_start_saving", true);
   this->declare_parameter<bool>("auto_restore_pose", true);
 
@@ -61,7 +64,7 @@ PoseSaverNode::PoseSaverNode()
   if (auto_start) {
     saving_active_ = true;
     timer_->reset();
-    RCLCPP_INFO(this->get_logger(), "Pose saving auto-started on launch.");
+    RCLCPP_INFO(this->get_logger(), "Pose saving auto-started.");
   }
 
   if (auto_restore_) {
@@ -82,12 +85,12 @@ PoseSaverNode::PoseSaverNode()
            (this->now() - start) < timeout)
     {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                           "Waiting for AMCL to subscribe to /initialpose...");
+                           "Waiting for AMCL");
       rclcpp::sleep_for(200ms);
     }
   
     if (initial_pose_pub_->get_subscription_count() == 0) {
-      RCLCPP_ERROR(this->get_logger(), "Timeout: AMCL did not subscribe to /initialpose.");
+      RCLCPP_ERROR(this->get_logger(), "Timeout: AMCL did not start.");
     } else {
       try {
         auto pose_msg = read_pose_from_file(pose_file_path_);
@@ -240,24 +243,25 @@ void PoseSaverNode::write_pose_to_file(const std::string &filepath)
 }
 void PoseSaverNode::amcl_monitor_callback()
 {
+  if (!auto_restore_) return;
+
   int current_count = initial_pose_pub_->get_subscription_count();
   if (last_sub_count_ > 0 && current_count == 0) {
-    RCLCPP_WARN(this->get_logger(), "Lost AMCL. Waiting to recover...");
+    RCLCPP_WARN(this->get_logger(), "Lost AMCL. Waiting...");
   }
   if (last_sub_count_ == 0 && current_count > 0) {
     RCLCPP_INFO(this->get_logger(), "AMCL reconnected! Publishing last known pose.");
-    if (auto_restore_) {
-      try {
-        auto pose_msg = read_pose_from_file(pose_file_path_);
-        rclcpp::sleep_for(500ms);
-        initial_pose_pub_->publish(pose_msg);
-      } catch (const std::exception &e) {
-        RCLCPP_WARN(this->get_logger(), "Failed to auto-restore after AMCL reconnect: %s", e.what());
-      }
+    try {
+      auto pose_msg = read_pose_from_file(pose_file_path_);
+      rclcpp::sleep_for(500ms);
+      initial_pose_pub_->publish(pose_msg);
+    } catch (const std::exception &e) {
+      RCLCPP_WARN(this->get_logger(), "Failed to auto-restore after AMCL reconnect: %s", e.what());
     }
   }
   last_sub_count_ = current_count;
 }
+
 
 geometry_msgs::msg::PoseWithCovarianceStamped PoseSaverNode::read_pose_from_file(const std::string &filepath)
 {
@@ -277,15 +281,15 @@ geometry_msgs::msg::PoseWithCovarianceStamped PoseSaverNode::read_pose_from_file
 
 std::string PoseSaverNode::get_package_config_path()
 {
-  return ament_index_cpp::get_package_share_directory("nav2_pose_saver") + "/config/last_known_pose.yaml";
+  return ament_index_cpp::get_package_share_directory("nav2_toolkit") + "/config/last_known_pose.yaml";
 }
 
-}  // namespace nav2_pose_saver
+}  // namespace nav2_toolkit
 
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_pose_saver::PoseSaverNode>();
+  auto node = std::make_shared<nav2_toolkit::PoseSaverNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;
