@@ -53,21 +53,6 @@ public:
       },
       qos.get_rmw_qos_profile(),
       callback_group);
-
-    // rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    // if (!node->has_parameter("service_introspection_mode")) {
-    //   node->declare_parameter("service_introspection_mode", "disabled");
-    // }
-    // std::string service_introspection_mode =
-    //   node->get_parameter("service_introspection_mode").as_string();
-    // if (service_introspection_mode == "metadata") {
-    //   introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    // } else if (service_introspection_mode == "contents") {
-    //   introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
-    // }
-
-    // this->server_->configure_introspection(
-    //   node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
   }
 
 protected:

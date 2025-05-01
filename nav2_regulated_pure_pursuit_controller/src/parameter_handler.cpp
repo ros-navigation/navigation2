@@ -189,10 +189,6 @@ ParameterHandler::ParameterHandler(
     params_.use_cost_regulated_linear_velocity_scaling = false;
   }
 
-  // post_set_params_handler_ = node->add_post_set_parameters_callback(
-  //   std::bind(
-  //     &ParameterHandler::updateParametersCallback,
-  //     this, std::placeholders::_1));
   on_set_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &ParameterHandler::updateParametersCallback,
@@ -202,10 +198,6 @@ ParameterHandler::ParameterHandler(
 ParameterHandler::~ParameterHandler()
 {
   auto node = node_.lock();
-  // if (post_set_params_handler_ && node) {
-  //   node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  // }
-  // post_set_params_handler_.reset();
   if (on_set_params_handler_ && node) {
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }

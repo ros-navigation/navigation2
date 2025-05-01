@@ -46,18 +46,6 @@ target_include_directories(nav2_costmap_2d_core
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-# target_link_libraries(nav2_costmap_2d_core PUBLIC
-#   ${geometry_msgs_TARGETS}
-#   ${map_msgs_TARGETS}
-#   ${nav_msgs_TARGETS}
-#   ${nav2_msgs_TARGETS}
-#   nav2_util::nav2_util_core
-#   pluginlib::pluginlib
-#   ${std_srvs_TARGETS}
-#   tf2::tf2
-#   tf2_ros::tf2_ros
-#   tf2_sensor_msgs::tf2_sensor_msgs
-# )
 ament_target_dependencies(nav2_costmap_2d_core
   geometry_msgs
   map_msgs
