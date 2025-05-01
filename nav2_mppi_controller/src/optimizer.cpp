@@ -442,7 +442,7 @@ void Optimizer::updateControlSequence()
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  if(s.sampling_std.wz) {
+  if (s.sampling_std.wz > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
     const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
