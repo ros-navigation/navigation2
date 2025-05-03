@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - jazzy
+      - humble
     paths:
       - '**/package.xml'
       - '**/*.repos'
