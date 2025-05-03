@@ -4,7 +4,7 @@
         "dockerfile": "../Dockerfile",
         "context": "..",
         "target": "visualizer",
-        "cacheFrom": "ghcr.io/ros-planning/navigation2:main"
+        "cacheFrom": "ghcr.io/ros-planning/navigation2:humble"
     },
     "runArgs": [
         // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
