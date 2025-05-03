@@ -35,14 +35,12 @@ void TwirlingCritic::initialize()
 
 void TwirlingCritic::score(CriticData & data)
 {
-  if (!enabled_)
-  {
+  if (!enabled_) {
     return;
   }
 
   geometry_msgs::msg::Pose active_goal;
-  if (enforce_path_inversion_)
-  {
+  if (enforce_path_inversion_) {
     active_goal = utils::getLastPathPose(data.path);
   } else {
     active_goal = data.goal;
