@@ -41,19 +41,17 @@ void PathFollowCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose active_goal_;
+  geometry_msgs::msg::Pose active_goal;
   if (enforce_path_inversion_)
   {
-    active_goal_ = utils::getLastPathPose(data.path);
-  }
-  else
-  {
-    active_goal_ = data.goal;
+    active_goal = utils::getLastPathPose(data.path);
+  } else {
+    active_goal = data.goal;
   }
 
   if (data.path.x.size() < 2 ||
     utils::withinPositionGoalTolerance(
-        threshold_to_consider_, data.state.pose.pose, active_goal_))
+        threshold_to_consider_, data.state.pose.pose, active_goal))
   {
     return;
   }

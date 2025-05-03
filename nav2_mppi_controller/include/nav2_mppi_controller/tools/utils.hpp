@@ -236,7 +236,7 @@ inline geometry_msgs::msg::Pose getLastPathPose(const models::Path & path)
   pathPose.position.x = path.x(path_last_idx);
   pathPose.position.y = path.y(path_last_idx);
   pathPose.orientation.x = pose_orientation.x();
-  pathPose.orientation.y = pose_orientation.y(); 
+  pathPose.orientation.y = pose_orientation.y();
   pathPose.orientation.z = pose_orientation.z();
   pathPose.orientation.w = pose_orientation.w();
 
