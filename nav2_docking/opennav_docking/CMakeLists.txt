@@ -169,7 +169,7 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-install(FILES test/test_dock_file.yaml
+install(DIRECTORY test/dock_files
   DESTINATION share/${PROJECT_NAME}/
 )
 

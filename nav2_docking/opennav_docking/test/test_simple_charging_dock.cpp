@@ -27,6 +27,18 @@
 namespace opennav_docking
 {
 
+class SimpleChargingDockShim : public opennav_docking::SimpleChargingDock
+{
+public:
+  SimpleChargingDockShim()
+  : opennav_docking::SimpleChargingDock() {}
+
+  std::vector<std::string> getStallJointNames()
+  {
+    return stall_joint_names_;
+  }
+};
+
 TEST(SimpleChargingDockTests, ObjectLifecycle)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
@@ -96,15 +108,23 @@ TEST(SimpleChargingDockTests, StallDetection)
     "joint_states", rclcpp::QoS(1));
   pub->on_activate();
   node->declare_parameter("my_dock.use_stall_detection", rclcpp::ParameterValue(true));
-  std::vector<std::string> names = {"left_motor", "right_motor"};
-  node->declare_parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names));
+  node->declare_parameter("my_dock.stall_joint_names", rclcpp::PARAMETER_STRING_ARRAY);
   node->declare_parameter("my_dock.stall_velocity_threshold", rclcpp::ParameterValue(0.1));
   node->declare_parameter("my_dock.stall_effort_threshold", rclcpp::ParameterValue(5.0));
 
-  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDockShim>();
+  dock->configure(node, "my_dock", nullptr);
+  // Check that the joint names are empty, showing the error
+  EXPECT_TRUE(dock->getStallJointNames().empty());
+  dock->cleanup();
 
+  // Now set the joint names
+  std::vector<std::string> names = {"left_motor", "right_motor"};
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names)));
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  EXPECT_EQ(dock->getStallJointNames(), names);
 
   // Stopped, but below effort threshold
   sensor_msgs::msg::JointState msg;
@@ -228,6 +248,87 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_NEAR(pose.pose.position.x, 0.1, 0.01);
   EXPECT_NEAR(pose.pose.position.y, -0.3, 0.01);  // Applies external_detection_translation_x, +0.2
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", rclcpp::QoS(1));
+  pub->on_activate();
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+
+  // Create the TF
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_buffer->setUsingDedicatedThread(true);
+
+  dock->configure(node, "my_dock", tf_buffer);
+  dock->activate();
+
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Create a pose with a different frame_id
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "other_frame";
+
+  // It can not find a transform between the two frames
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+  tf_buffer.reset();
+}
+
+TEST(SimpleChargingDockTests, IsDockedTransformException)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", rclcpp::QoS(1));
+  pub->on_activate();
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+
+  // Create the TF
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_buffer->setUsingDedicatedThread(true);
+
+  dock->configure(node, "my_dock", tf_buffer);
+  dock->activate();
+
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Create a pose with a different frame_id
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "other_frame";
+
+  // Set a transform between the two frames
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node->now();
+  transform.header.frame_id = "my_frame";
+  transform.child_frame_id = "other_frame";
+  tf_buffer->setTransform(transform, "test", true);
+
+  // It can find a transform between the two frames but it throws an exception in isDocked
+  EXPECT_TRUE(dock->getRefinedPose(pose, ""));
+  EXPECT_FALSE(dock->isDocked());
 
   dock->deactivate();
   dock->cleanup();

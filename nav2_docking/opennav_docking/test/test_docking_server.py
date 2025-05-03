@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from math import acos, cos, sin
+import os
 import time
 import unittest
 
@@ -20,12 +21,14 @@ from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import TransformStamped, Twist, TwistStamped
 from launch import LaunchDescription
 # from launch.actions import SetEnvironmentVariable
+from launch.launch_context import LaunchContext
 from launch_ros.actions import Node
 import launch_testing
 import launch_testing.actions
 import launch_testing.asserts
 import launch_testing.markers
 import launch_testing.util
+from nav2_common.launch import RewrittenYaml
 from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
 import pytest
 import rclpy
@@ -47,6 +50,31 @@ from tf2_ros import TransformBroadcaster
 # @pytest.mark.flaky(max_runs=5, min_passes=3)
 def generate_test_description() -> LaunchDescription:
 
+    # Use local param file
+    launch_dir = os.path.dirname(os.path.realpath(__file__))
+    params_file = os.path.join(launch_dir, 'docking_params.yaml')
+
+    # Replace the default parameter values for testing special features
+    # without having multiple params_files inside the nav2 stack
+    context = LaunchContext()
+    param_substitutions = {}
+
+    if os.getenv('NON_CHARGING_DOCK') == 'True':
+        param_substitutions.update({'plugin': 'opennav_docking::SimpleNonChargingDock'})
+
+    if os.getenv('BACKWARD') == 'True':
+        param_substitutions.update({'dock_direction': 'backward'})
+        param_substitutions.update({'staging_yaw_offset': '3.14'})
+
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        root_key='',
+        param_rewrites=param_substitutions,
+        convert_types=True,
+    )
+
+    new_yaml = configured_params.perform(context)
+
     return LaunchDescription([
         # SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         # SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
@@ -54,22 +82,7 @@ def generate_test_description() -> LaunchDescription:
             package='opennav_docking',
             executable='opennav_docking',
             name='docking_server',
-            parameters=[{'wait_charge_timeout': 1.0,
-                         'controller': {
-                             'use_collision_detection': False,
-                             'transform_tolerance': 0.5,
-                         },
-                         'dock_plugins': ['test_dock_plugin'],
-                         'test_dock_plugin': {
-                             'plugin': 'opennav_docking::SimpleChargingDock',
-                             'use_battery_status': True,
-                             'dock_direction': 'forward'},
-                         'docks': ['test_dock'],
-                         'test_dock': {
-                             'type': 'test_dock_plugin',
-                             'frame': 'odom',
-                             'pose': [10.0, 0.0, 0.0]
-                         }}],
+            parameters=[new_yaml],
             output='screen',
         ),
         Node(
@@ -100,6 +113,9 @@ class TestDockingServer(unittest.TestCase):
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
+        # If BACKWARD is set, start facing backward
+        if os.getenv('BACKWARD') == 'True':
+            self.theta = 3.14
         # Track charge state
         self.is_charging = False
         # Latest command velocity
@@ -133,13 +149,14 @@ class TestDockingServer(unittest.TestCase):
         t.transform.rotation.z = sin(self.theta / 2.0)
         t.transform.rotation.w = cos(self.theta / 2.0)
         self.tf_broadcaster.sendTransform(t)
-        # Publish battery state
-        b = BatteryState()
-        if self.is_charging:
-            b.current = 1.0
-        else:
-            b.current = -1.0
-        self.battery_state_pub.publish(b)
+        # Publish the battery state if we are using a charging dock
+        if os.getenv('NON_CHARGING_DOCK') == 'False':
+            b = BatteryState()
+            if self.is_charging:
+                b.current = 1.0
+            else:
+                b.current = -1.0
+            self.battery_state_pub.publish(b)
 
     def action_feedback_callback(self, msg: DockRobot.Feedback) -> None:
         # Force the docking action to run a full recovery loop and then
@@ -186,12 +203,13 @@ class TestDockingServer(unittest.TestCase):
             10
         )
 
-        # Create publisher for battery state message
-        self.battery_state_pub = self.node.create_publisher(
-            BatteryState,
-            'battery_state',
-            10
-        )
+        # Create publisher for battery state message if we are using a charging dock
+        if os.getenv('NON_CHARGING_DOCK') == 'False':
+            self.battery_state_pub = self.node.create_publisher(
+                BatteryState,
+                'battery_state',
+                10
+            )
 
         # Mock out navigation server (just teleport the robot)
         self.action_server = ActionServer(
@@ -278,7 +296,10 @@ class TestDockingServer(unittest.TestCase):
         if self.action_result[2] is not None:
             self.assertEqual(self.action_result[2].status, GoalStatus.STATUS_SUCCEEDED)
             self.assertTrue(self.action_result[2].result.success)
-            self.assertEqual(self.action_result[2].result.num_retries, 1)
+            if os.getenv('NON_CHARGING_DOCK') == 'False':
+                self.assertEqual(self.action_result[2].result.num_retries, 1)
+            else:
+                self.assertEqual(self.action_result[2].result.num_retries, 0)
 
         # Test undocking action
         self.is_charging = False

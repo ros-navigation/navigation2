@@ -38,8 +38,11 @@ void SavitzkyGolaySmoother::configure(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
+  declare_parameter_if_not_declared(
+    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
+  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
 }
 
 bool SavitzkyGolaySmoother::smooth(
@@ -53,7 +56,11 @@ bool SavitzkyGolaySmoother::smooth(
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
-  std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+  std::vector<PathSegment> path_segments{
+    PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
+  if (enforce_path_inversion_) {
+    path_segments = findDirectionalPathSegments(path);
+  }
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 9) {
