@@ -482,7 +482,7 @@ _environments:
 executors:
   release_exec:
     docker:
-      - image: osrf/ros:jazzy-desktop-full
+      - image: ghcr.io/ros-navigation/navigation2:jazzy
     resource_class: large
     working_directory: /opt/overlay_ws
     environment:
