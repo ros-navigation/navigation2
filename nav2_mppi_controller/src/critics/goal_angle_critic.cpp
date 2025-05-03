@@ -48,13 +48,13 @@ void GoalAngleCritic::score(CriticData & data)
   } else {
     active_goal = data.goal;
   }
-  
+
   if (!utils::withinPositionGoalTolerance(
       threshold_to_consider_, data.state.pose.pose, active_goal))
   {
     return;
   }
-  
+
   tf2::Quaternion goal_orientation_q;
   tf2::fromMsg(active_goal.orientation, goal_orientation_q);
   double goal_yaw = tf2::getYaw(goal_orientation_q);
