@@ -60,7 +60,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  bool dock_backwards;
+  bool dock_backwards{false};
   try {
     if (get_parameter("dock_backwards", dock_backwards)) {
       dock_backwards_ = dock_backwards;

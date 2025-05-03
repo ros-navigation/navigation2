@@ -219,6 +219,32 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
 }
 
 /**
+ * @brief Get the last pose from a path
+ * @param path Reference to the path
+ * @return geometry_msgs::msg::Pose Last pose in the path
+ */
+inline geometry_msgs::msg::Pose getLastPathPose(const models::Path & path)
+{
+  const unsigned int path_last_idx = path.x.size() - 1;
+
+  auto last_orientation = path.yaws(path_last_idx);
+
+  tf2::Quaternion pose_orientation;
+  pose_orientation.setRPY(0.0, 0.0, last_orientation);
+
+  geometry_msgs::msg::Pose pathPose;
+  pathPose.position.x = path.x(path_last_idx);
+  pathPose.position.y = path.y(path_last_idx);
+  pathPose.orientation.x = pose_orientation.x();
+  pathPose.orientation.y = pose_orientation.y(); 
+  pathPose.orientation.z = pose_orientation.z();
+  pathPose.orientation.w = pose_orientation.w();
+
+  return pathPose;
+}
+
+
+/**
  * @brief Check if the robot pose is within the Goal Checker's tolerances to goal
  * @param global_checker Pointer to the goal checker
  * @param robot Pose of robot

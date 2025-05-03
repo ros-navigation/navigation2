@@ -19,6 +19,9 @@ namespace mppi::critics
 
 void PathAlignCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 10.0f);
@@ -39,9 +42,24 @@ void PathAlignCritic::initialize()
 
 void PathAlignCritic::score(CriticData & data)
 {
+  if (!enabled_)
+  {
+    return;
+  }
+
+  geometry_msgs::msg::Pose active_goal_;
+  if (enforce_path_inversion_)
+  {
+    active_goal_ = utils::getLastPathPose(data.path);
+  }
+  else
+  {
+    active_goal_ = data.goal;
+  }
+
   // Don't apply close to goal, let the goal critics take over
-  if (!enabled_ || utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
+  if (utils::withinPositionGoalTolerance(
+      threshold_to_consider_, data.state.pose.pose, active_goal_))
   {
     return;
   }

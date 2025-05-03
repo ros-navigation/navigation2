@@ -22,6 +22,9 @@ namespace mppi::critics
 
 void CostCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
@@ -119,6 +122,16 @@ void CostCritic::score(CriticData & data)
     return;
   }
 
+  geometry_msgs::msg::Pose active_goal_;
+  if (enforce_path_inversion_)
+  {
+    active_goal_ = utils::getLastPathPose(data.path);
+  }
+  else
+  {
+    active_goal_ = data.goal;
+  }
+
   // Setup cost information for various parts of the critic
   is_tracking_unknown_ = costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
   auto * costmap = collision_checker_.getCostmap();
@@ -135,7 +148,7 @@ void CostCritic::score(CriticData & data)
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, data.goal)) {
+  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, active_goal_)) {
     near_goal = true;
   }
 

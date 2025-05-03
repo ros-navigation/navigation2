@@ -37,20 +37,29 @@ void GoalCritic::initialize()
 
 void GoalCritic::score(CriticData & data)
 {
-  if (!enabled_ || !utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
+  if (!enabled_)
   {
     return;
   }
 
-  auto goal_x = data.goal.position.x;
-  auto goal_y = data.goal.position.y;
-
-  if (enforce_path_inversion_) {
-    const unsigned int cusp_idx = data.path.x.size() - 1;
-    goal_x = data.path.x[cusp_idx];
-    goal_y = data.path.y[cusp_idx];
+  geometry_msgs::msg::Pose active_goal_;
+  if (enforce_path_inversion_)
+  {
+    active_goal_ = utils::getLastPathPose(data.path);
   }
+  else
+  {
+    active_goal_ = data.goal;
+  }
+
+  if (!utils::withinPositionGoalTolerance(
+      threshold_to_consider_, data.state.pose.pose, active_goal_))
+  {
+    return;
+  }
+
+  auto goal_x = active_goal_.position.x;
+  auto goal_y = active_goal_.position.y;
 
   const auto delta_x = data.trajectories.x - goal_x;
   const auto delta_y = data.trajectories.y - goal_y;

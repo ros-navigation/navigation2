@@ -19,11 +19,12 @@ namespace mppi::critics
 
 void GoalAngleCritic::initialize()
 {
-  auto getParam = parameters_handler_->getParamGetter(name_);
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
 
+  auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.0f);
-
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
 
   RCLCPP_INFO(
@@ -35,14 +36,30 @@ void GoalAngleCritic::initialize()
 
 void GoalAngleCritic::score(CriticData & data)
 {
-  if (!enabled_ || !utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
+  if (!enabled_)
   {
     return;
   }
 
-  const auto goal_idx = data.path.x.size() - 1;
-  const float goal_yaw = data.path.yaws(goal_idx);
+  geometry_msgs::msg::Pose active_goal_;
+  if (enforce_path_inversion_)
+  {
+    active_goal_ = utils::getLastPathPose(data.path);
+  }
+  else
+  {
+    active_goal_ = data.goal;
+  }
+  
+  if (!utils::withinPositionGoalTolerance(
+      threshold_to_consider_, data.state.pose.pose, active_goal_))
+  {
+    return;
+  }
+  
+  tf2::Quaternion goal_orientation_q;
+  tf2::fromMsg(active_goal_.orientation, goal_orientation_q);
+  double goal_yaw = tf2::getYaw(goal_orientation_q);
 
   if(power_ > 1u) {
     data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
