@@ -27,6 +27,19 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
+# Define local map types
+MAP_POSES_DICT = {
+    'depot': {
+        'x': -8.00, 'y': 0.00, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 0.00
+    },
+    'warehouse': {
+        'x': 2.12, 'y': -21.3, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 1.57
+    }
+}
+MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
+
 
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
@@ -57,12 +70,12 @@ def generate_launch_description() -> LaunchDescription:
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
     pose = {
-        'x': LaunchConfiguration('x_pose', default='-8.00'),  # Warehouse: 2.12
-        'y': LaunchConfiguration('y_pose', default='0.00'),  # Warehouse: -21.3
-        'z': LaunchConfiguration('z_pose', default='0.01'),
-        'R': LaunchConfiguration('roll', default='0.00'),
-        'P': LaunchConfiguration('pitch', default='0.00'),
-        'Y': LaunchConfiguration('yaw', default='0.00'),  # Warehouse: 1.57
+        'x': LaunchConfiguration('x_pose', default=MAP_POSES_DICT[MAP_TYPE]['x']),
+        'y': LaunchConfiguration('y_pose', default=MAP_POSES_DICT[MAP_TYPE]['y']),
+        'z': LaunchConfiguration('z_pose', default=MAP_POSES_DICT[MAP_TYPE]['z']),
+        'R': LaunchConfiguration('roll', default=MAP_POSES_DICT[MAP_TYPE]['R']),
+        'P': LaunchConfiguration('pitch', default=MAP_POSES_DICT[MAP_TYPE]['P']),
+        'Y': LaunchConfiguration('yaw', default=MAP_POSES_DICT[MAP_TYPE]['Y']),
     }
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
@@ -80,7 +93,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'depot.yaml'),  # Try warehouse.yaml!
+        default_value=os.path.join(bringup_dir, 'maps', f'{MAP_TYPE}.yaml'),
         description='Full path to map file to load',
     )
 
@@ -154,7 +167,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'depot.sdf'),  # Try warehouse.sdf!
+        default_value=os.path.join(sim_dir, 'worlds', f'{MAP_TYPE}.sdf'),
         description='Full path to world model file to load',
     )
 
