@@ -31,6 +31,7 @@ def generate_launch_description() -> LaunchDescription:
 
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
+    keepout_map_yaml_file = LaunchConfiguration('keepout_map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -40,7 +41,20 @@ def generate_launch_description() -> LaunchDescription:
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['map_server', 'amcl']
+    base_lifecycle_nodes = ['map_server', 'amcl']
+    keepout_lifecycle_nodes = base_lifecycle_nodes + [
+        'filter_mask_server', 'costmap_filter_info_server'
+    ]
+
+    keepout_condition = PythonExpression([
+        "not '", LaunchConfiguration('map'), "' == '' and not '",
+        LaunchConfiguration('keepout_map'), "' == ''"
+    ])
+
+    lifecycle_nodes = PythonExpression([
+        f'{str(keepout_lifecycle_nodes)} if ',
+        keepout_condition, f' else {str(base_lifecycle_nodes)}'
+    ])
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -65,6 +79,12 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map', default_value='', description='Full path to map yaml file to load'
+    )
+
+    declare_keepout_map_yaml_cmd = DeclareLaunchArgument(
+        'keepout_map',
+        default_value='',
+        description='Full path to map yaml file to load',
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -140,6 +160,30 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
+                condition=IfCondition(keepout_condition),
+                package='nav2_map_server',
+                executable='map_server',
+                name='filter_mask_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params, {'yaml_filename': keepout_map_yaml_file}],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                condition=IfCondition(keepout_condition),
+                package='nav2_map_server',
+                executable='costmap_filter_info_server',
+                name='costmap_filter_info_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
                 package='nav2_amcl',
                 executable='amcl',
                 name='amcl',
@@ -202,6 +246,31 @@ def generate_launch_description() -> LaunchDescription:
                     ),
                 ],
             ),
+
+            LoadComposableNodes(
+                target_container=container_name_full,
+                condition=IfCondition(keepout_condition),
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::MapServer',
+                        name='filter_mask_server',
+                        parameters=[
+                            configured_params,
+                            {'yaml_filename': keepout_map_yaml_file}
+                        ],
+                        remappings=remappings,
+                    ),
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::CostmapFilterInfoServer',
+                        name='costmap_filter_info_server',
+                        parameters=[configured_params],
+                        remappings=remappings,
+                    ),
+                ],
+            ),
+
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
@@ -234,6 +303,7 @@ def generate_launch_description() -> LaunchDescription:
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_keepout_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
