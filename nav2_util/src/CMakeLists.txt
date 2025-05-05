@@ -6,6 +6,7 @@ add_library(${library_name} SHARED
   lifecycle_utils.cpp
   lifecycle_node.cpp
   robot_utils.cpp
+  interpolation_utils.cpp
   node_thread.cpp
   odometry_utils.cpp
   array_parser.cpp
