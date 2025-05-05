@@ -188,7 +188,7 @@ def generate_launch_description():
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
     start_gazebo_cmd = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', '-s', world_sdf],
+        cmd=['ign', 'gazebo', '-r', '-s', world_sdf],
         output='screen',
     )
 
