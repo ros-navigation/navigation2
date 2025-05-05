@@ -49,12 +49,12 @@ please cite this work in your papers!
 
   ```bibtex
   @inproceedings{macenski2020marathon2,
-    title = {The Marathon 2: A Navigation System},
-    author = {Macenski, Steve and Martín, Francisco and White, Ruffin and Ginés Clavero, Jonatan},
-    year = {2020},
+    title     = {The Marathon 2: A Navigation System},
+    author    = {Macenski, Steve and Martín, Francisco and White, Ruffin and Ginés Clavero, Jonatan},
+    year      = {2020},
     booktitle = {2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-    url = {https://github.com/ros-planning/navigation2},
-    pdf = {https://arxiv.org/abs/2003.00368}
+    url       = {https://github.com/ros-planning/navigation2},
+    pdf       = {https://arxiv.org/abs/2003.00368}
   }
   ```
 
@@ -64,9 +64,9 @@ If you use **any** of the algorithms in Nav2 or the analysis of the algorithms i
 
   ```bibtex
   @article{macenski2023survey,
-    title={From the desks of ROS maintainers: A survey of modern & capable mobile robotics algorithms in the robot operating system 2},
-    author={S. Macenski, T. Moore, DV Lu, A. Merzlyakov, M. Ferguson},
-    year={2023},
+    title   = {From the desks of ROS maintainers: A survey of modern & capable mobile robotics algorithms in the robot operating system 2},
+    author  = {S. Macenski, T. Moore, DV Lu, A. Merzlyakov, M. Ferguson},
+    year    = {2023},
     journal = {Robotics and Autonomous Systems}
   }
   ```
@@ -77,9 +77,9 @@ If you use the Smac Planner (Hybrid A*, State Lattice, 2D), please cite this wor
 
   ```bibtex
   @article{macenski2024smac,
-    title={Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics},
-    author={Steve Macenski and Matthew Booker and Josh Wallace},
-    year={2024},
+    title   = {Open-Source, Cost-Aware Kinematically Feasible Planning for Mobile and Surface Robotics},
+    author  = {Steve Macenski and Matthew Booker and Josh Wallace},
+    year    = {2024},
     journal = {Arxiv}
   }
   ```
@@ -90,9 +90,9 @@ If you use the Regulated Pure Pursuit Controller algorithm or software from this
 
   ```bibtex
   @article{macenski2023regulated,
-    title={Regulated Pure Pursuit for Robot Path Tracking},
-    author={Steve Macenski and Shrijit Singh and Francisco Martin and Jonatan Gines},
-    year={2023},
+    title   = {Regulated Pure Pursuit for Robot Path Tracking},
+    author  = {Steve Macenski and Shrijit Singh and Francisco Martin and Jonatan Gines},
+    year    = {2023},
     journal = {Autonomous Robots}
   }
   ```
@@ -103,11 +103,11 @@ If you use our work on VSLAM and formal comparisons for service robot needs, ple
 
   ```bibtex
   @inproceedings{vslamComparison2021,
-    title = {A Comparison of Modern General-Purpose Visual SLAM Approaches},
-    author = {Merzlyakov, Alexey and Macenski, Steven},
-    year = {2021},
+    title     = {A Comparison of Modern General-Purpose Visual SLAM Approaches},
+    author    = {Merzlyakov, Alexey and Macenski, Steven},
+    year      = {2021},
     booktitle = {2021 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-    pdf = {https://arxiv.org/abs/2107.07589}
+    pdf       = {https://arxiv.org/abs/2107.07589}
   }
   ```
 
