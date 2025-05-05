@@ -1,0 +1,16 @@
+costmap_filter_info_server:
+  ros__parameters:
+    use_sim_time: false
+    type: 0
+    filter_info_topic: "/costmap_filter_info"
+    mask_topic: "/keepout_filter_mask"
+    base: 0.0
+    multiplier: 1.0
+filter_mask_server:
+  ros__parameters:
+    use_sim_time: false
+    frame_id: "map"
+    topic_name: "/keepout_filter_mask"
+    # TODO: Update this below line properly as relative path from package directory.
+    # yaml_filename: "/home/qsr/rohin/Test/Ultrasound/ros-2/src/qsr_2/maps/qb_clt_filter.yaml"
+    # Map File is added Dynamically in keepout_filter.launch.py
