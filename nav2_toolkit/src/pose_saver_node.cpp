@@ -39,26 +39,26 @@ PoseSaverNode::PoseSaverNode()
     "/amcl_pose", 10,
     std::bind(&PoseSaverNode::pose_callback, this, std::placeholders::_1));
 
-  initial_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
+  initial_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   last_sub_count_ = 0;
   amcl_monitor_timer_ = this->create_wall_timer(
       2s,  // check every 2 seconds
       std::bind(&PoseSaverNode::amcl_monitor_callback, this));
 
   start_service_ = this->create_service<std_srvs::srv::Trigger>(
-    "/start_pose_saver",
+    "start_pose_saver",
     std::bind(&PoseSaverNode::start_service_cb, this, std::placeholders::_1, std::placeholders::_2));
 
   stop_service_ = this->create_service<std_srvs::srv::Trigger>(
-    "/stop_pose_saver",
+    "stop_pose_saver",
     std::bind(&PoseSaverNode::stop_service_cb, this, std::placeholders::_1, std::placeholders::_2));
 
   restore_service_ = this->create_service<std_srvs::srv::Trigger>(
-    "/localise_at_last_known_position",
+    "localise_at_last_known_position",
     std::bind(&PoseSaverNode::restore_service_cb, this, std::placeholders::_1, std::placeholders::_2));
 
   reset_service_ = this->create_service<std_srvs::srv::Trigger>(
-    "/reset_last_known_pose",
+    "reset_last_known_pose",
     std::bind(&PoseSaverNode::reset_pose_file_cb, this, std::placeholders::_1, std::placeholders::_2));
 
   if (auto_start) {
@@ -109,7 +109,7 @@ PoseSaverNode::PoseSaverNode()
 
 void PoseSaverNode::pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-  last_pose_ = msg;
+  last_pose_ = *msg;
 }
 
 void PoseSaverNode::timer_callback()
