@@ -13,13 +13,6 @@
 
 ---
 
-## Description of testing performed
-<!--
-  For example: Linting validation using -> pre-commit run --all,
-    Package testing using -> colcon test --packages-select <modified package>,
-    or functional testing of changes on the robot or in simulation
--->
-
 ## Description of contribution in a few bullet points
 
 <!--
@@ -39,6 +32,7 @@
 <!--
 * I wrote unit tests that cover 90%+ of changes and extensively tested on my physical robot platform in production for 1 week
 * I wrote unit tests and tested in simulation for 10 minutes
+* Performed linting validation using pre-commit run --all or colcon test
 -->
 
 ---
