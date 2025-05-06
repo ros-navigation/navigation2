@@ -42,7 +42,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("dock_prestaging_tolerance", 0.5);
   declare_parameter("backward_blind", false);
   declare_parameter("odom_topic", "odom");
-  declare_parameter("backward_rotation_tolerance", 0.02);
+  declare_parameter("rotation_angular_tolerance", 0.05);
 }
 
 nav2_util::CallbackReturn
@@ -50,7 +50,6 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring %s", get_name());
   auto node = shared_from_this();
-  std::string odom_topic;
 
   get_parameter("controller_frequency", controller_frequency_);
   get_parameter("initial_perception_timeout", initial_perception_timeout_);
@@ -62,19 +61,12 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("base_frame", base_frame_);
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
-
   get_parameter("backward_blind", backward_blind_);
-  get_parameter("odom_topic", odom_topic);
-  get_parameter("backward_rotation_tolerance", backward_rotation_tolerance_);
-  if (backward_blind_ && !dock_backwards_) {
-    RCLCPP_ERROR(get_logger(), "backward_blind is enabled when dock_backwards is disabled.");
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-  if (odom_topic.empty()) {
-    odom_topic = "odom";
-  }
+  get_parameter("rotation_angular_tolerance", rotation_angular_tolerance_);
+
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
+  // Check the dock_backwards deprecated parameter
   bool dock_backwards = false;
   try {
     if (get_parameter("dock_backwards", dock_backwards)) {
@@ -87,7 +79,12 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
+
+  if (backward_blind_) {
+    std::string odom_topic;
+    get_parameter("odom_topic", odom_topic);
+    odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
+  }
 
   double action_server_result_timeout;
   nav2_util::declare_parameter_if_not_declared(
@@ -455,14 +452,14 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   double angular_distance_to_heading;
   const double dt = 1.0 / controller_frequency_;
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-    tf2::getYaw(target_pose.pose.orientation) + M_PI);
+      tf2::getYaw(target_pose.pose.orientation) + M_PI);
 
   while (rclcpp::ok()) {
     robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
     angular_distance_to_heading = angles::shortest_angular_distance(
     tf2::getYaw(robot_pose.pose.orientation),
     tf2::getYaw(target_pose.pose.orientation));
-    if (fabs(angular_distance_to_heading) < backward_rotation_tolerance_) {
+    if (fabs(angular_distance_to_heading) < rotation_angular_tolerance_) {
       break;
     }
     current_vel->twist.angular.z = odom_sub_->getTwist().theta;
@@ -825,8 +822,8 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         undock_linear_tolerance_ = parameter.as_double();
       } else if (name == "undock_angular_tolerance") {
         undock_angular_tolerance_ = parameter.as_double();
-      } else if (name == "backward_rotation_tolerance") {
-        backward_rotation_tolerance_ = parameter.as_double();
+      } else if (name == "rotation_angular_tolerance") {
+        rotation_angular_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == "base_frame") {

@@ -257,8 +257,8 @@ protected:
   double dock_prestaging_tolerance_;
   // Enable docking with initial detection only, without any update
   bool backward_blind_;
-  // Angle at which robot can stop initial rotation
-  double backward_rotation_tolerance_;
+  // Angular tolerance to exit the rotation loop when backward_blind is enable
+  double rotation_angular_tolerance_;
 
   // This is a class member so it can be accessed in publish feedback
   rclcpp::Time action_start_time_;
