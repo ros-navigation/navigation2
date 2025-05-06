@@ -38,7 +38,7 @@ MAP_POSES_DICT = {
         'R': 0.00, 'P': 0.00, 'Y': 1.57
     }
 }
-MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
+MAP_TYPE = 'warehouse'  # Change this to 'warehouse' for warehouse map
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -61,6 +61,7 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
+    use_keepout_filter = LaunchConfiguration('use_keepout_filter')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -99,8 +100,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_keepout_map_yaml_cmd = DeclareLaunchArgument(
         'keepout_map',
-        default_value='',
-        # default_value=os.path.join(bringup_dir, 'maps', 'warehouse_keepout.yaml'),
+        default_value=os.path.join(bringup_dir, 'maps', f'{MAP_TYPE}_keepout.yaml'),
         description='Full path to keepout map file to load',
     )
 
@@ -137,6 +137,11 @@ def generate_launch_description() -> LaunchDescription:
         'use_respawn',
         default_value='False',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.',
+    )
+
+    declare_use_keepout_filter_cmd = DeclareLaunchArgument(
+        'use_keepout_filter', default_value='True',
+        description='Whether to enable keepout filter or not'
     )
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
@@ -217,6 +222,7 @@ def generate_launch_description() -> LaunchDescription:
             'autostart': autostart,
             'use_composition': use_composition,
             'use_respawn': use_respawn,
+            'use_keepout_filter': use_keepout_filter,
         }.items(),
     )
 
@@ -291,6 +297,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_use_keepout_filter_cmd)
 
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)

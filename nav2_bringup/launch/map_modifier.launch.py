@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2025 Leander Stephen Desouza
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import (EqualsSubstitution, LaunchConfiguration, NotEqualsSubstitution,
-                                  PythonExpression)
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import LoadComposableNodes, Node, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
@@ -30,7 +29,7 @@ def generate_launch_description() -> LaunchDescription:
     bringup_dir = get_package_share_directory('nav2_bringup')
 
     namespace = LaunchConfiguration('namespace')
-    map_yaml_file = LaunchConfiguration('map')
+    keepout_map_yaml_file = LaunchConfiguration('keepout_map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -38,9 +37,10 @@ def generate_launch_description() -> LaunchDescription:
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
+    use_keepout_filter = LaunchConfiguration('use_keepout_filter')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['map_server', 'amcl']
+    lifecycle_nodes = ['filter_mask_server', 'costmap_filter_info_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -63,8 +63,10 @@ def generate_launch_description() -> LaunchDescription:
         'namespace', default_value='', description='Top-level namespace'
     )
 
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map', default_value='', description='Full path to map yaml file to load'
+    declare_keepout_map_yaml_cmd = DeclareLaunchArgument(
+        'keepout_map',
+        default_value='',
+        description='Full path to map yaml file to load',
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -77,12 +79,6 @@ def generate_launch_description() -> LaunchDescription:
         'params_file',
         default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
-    )
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart',
-        default_value='true',
-        description='Automatically startup the nav2 stack',
     )
 
     declare_use_composition_cmd = DeclareLaunchArgument(
@@ -103,6 +99,11 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to respawn if a node crashes. Applied when composition is disabled.',
     )
 
+    declare_use_keepout_filter_cmd = DeclareLaunchArgument(
+        'use_keepout_filter', default_value='True',
+        description='Whether to enable keepout filter or not'
+    )
+
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='log level'
     )
@@ -112,37 +113,22 @@ def generate_launch_description() -> LaunchDescription:
         actions=[
             SetParameter('use_sim_time', use_sim_time),
             Node(
-                condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
-                ),
+                condition=IfCondition(use_keepout_filter),
                 package='nav2_map_server',
                 executable='map_server',
-                name='map_server',
+                name='filter_mask_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[configured_params, {'yaml_filename': keepout_map_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
             Node(
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
-                ),
+                condition=IfCondition(use_keepout_filter),
                 package='nav2_map_server',
-                executable='map_server',
-                name='map_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': map_yaml_file}],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings,
-            ),
-            Node(
-                package='nav2_amcl',
-                executable='amcl',
-                name='amcl',
+                executable='costmap_filter_info_server',
+                name='costmap_filter_info_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
@@ -153,7 +139,7 @@ def generate_launch_description() -> LaunchDescription:
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
-                name='lifecycle_manager_localization',
+                name='lifecycle_manager_map_modifier',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
@@ -171,51 +157,35 @@ def generate_launch_description() -> LaunchDescription:
             SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
                 target_container=container_name_full,
-                condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration('map'), '')
-                ),
+                condition=IfCondition(use_keepout_filter),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
                         plugin='nav2_map_server::MapServer',
-                        name='map_server',
-                        parameters=[configured_params],
-                        remappings=remappings,
-                    ),
-                ],
-            ),
-            LoadComposableNodes(
-                target_container=container_name_full,
-                condition=IfCondition(
-                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
-                ),
-                composable_node_descriptions=[
-                    ComposableNode(
-                        package='nav2_map_server',
-                        plugin='nav2_map_server::MapServer',
-                        name='map_server',
+                        name='filter_mask_server',
                         parameters=[
                             configured_params,
-                            {'yaml_filename': map_yaml_file},
+                            {'yaml_filename': keepout_map_yaml_file}
                         ],
                         remappings=remappings,
                     ),
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::CostmapFilterInfoServer',
+                        name='costmap_filter_info_server',
+                        parameters=[configured_params],
+                        remappings=remappings,
+                    ),
                 ],
             ),
+
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
                     ComposableNode(
-                        package='nav2_amcl',
-                        plugin='nav2_amcl::AmclNode',
-                        name='amcl',
-                        parameters=[configured_params],
-                        remappings=remappings,
-                    ),
-                    ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_localization',
+                        name='lifecycle_manager_map_modifier',
                         parameters=[
                             {'autostart': autostart, 'node_names': lifecycle_nodes}
                         ],
@@ -233,16 +203,16 @@ def generate_launch_description() -> LaunchDescription:
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
-    ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_keepout_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
-    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_use_keepout_filter_cmd)
     ld.add_action(declare_log_level_cmd)
 
-    # Add the actions to launch all of the localiztion nodes
+    # Add the actions to launch all of the map modifier nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 

@@ -44,6 +44,7 @@ def generate_launch_description() -> LaunchDescription:
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     use_localization = LaunchConfiguration('use_localization')
+    use_keepout_filter = LaunchConfiguration('use_keepout_filter')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -87,6 +88,11 @@ def generate_launch_description() -> LaunchDescription:
     declare_use_localization_cmd = DeclareLaunchArgument(
         'use_localization', default_value='True',
         description='Whether to enable localization or not'
+    )
+
+    declare_use_keepout_filter_cmd = DeclareLaunchArgument(
+        'use_keepout_filter', default_value='True',
+        description='Whether to enable keepout filter or not'
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -158,7 +164,6 @@ def generate_launch_description() -> LaunchDescription:
                 launch_arguments={
                     'namespace': namespace,
                     'map': map_yaml_file,
-                    'keepout_map': keepout_map_yaml_file,
                     'use_sim_time': use_sim_time,
                     'autostart': autostart,
                     'params_file': params_file,
@@ -167,6 +172,23 @@ def generate_launch_description() -> LaunchDescription:
                     'container_name': 'nav2_container',
                 }.items(),
             ),
+
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(launch_dir, 'map_modifier.launch.py')
+                ),
+                condition=IfCondition(PythonExpression([use_keepout_filter])),
+                launch_arguments={
+                    'namespace': namespace,
+                    'keepout_map': keepout_map_yaml_file,
+                    'use_sim_time': use_sim_time,
+                    'params_file': params_file,
+                    'use_composition': use_composition,
+                    'use_respawn': use_respawn,
+                    'container_name': 'nav2_container',
+                }.items(),
+            ),
+
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'navigation_launch.py')
@@ -204,6 +226,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
     ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_use_keepout_filter_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(bringup_cmd_group)
