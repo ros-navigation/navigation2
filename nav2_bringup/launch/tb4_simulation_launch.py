@@ -38,7 +38,7 @@ MAP_POSES_DICT = {
         'R': 0.00, 'P': 0.00, 'Y': 1.57
     }
 }
-MAP_TYPE = 'warehouse'  # Change this to 'warehouse' for warehouse map
+MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
 
 
 def generate_launch_description() -> LaunchDescription:
