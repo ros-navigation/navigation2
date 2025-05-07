@@ -628,6 +628,28 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
 }
 
+TEST(UtilsTests, getLastPathPoseTest)
+{
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  path.poses[9].pose.position.x = 5.0;
+  path.poses[9].pose.position.y = 50.0;
+  path.poses[9].pose.orientation.x = 0.0;
+  path.poses[9].pose.orientation.y = 0.0;
+  path.poses[9].pose.orientation.z = 1.0;
+  path.poses[9].pose.orientation.w = 0.0;
+
+  models::Path path_t = toTensor(path);
+  geometry_msgs::msg::Pose last_path_pose = utils::getLastPathPose(path_t);
+
+  EXPECT_EQ(last_path_pose.position.x, 5);
+  EXPECT_EQ(last_path_pose.position.y, 50);
+  EXPECT_NEAR(last_path_pose.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.z, 1.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
