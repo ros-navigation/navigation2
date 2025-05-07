@@ -78,9 +78,6 @@ Controller::Controller(
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
-  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
-  node->get_parameter("controller.rotate_to_heading_max_angular_accel",
-    rotate_to_heading_max_angular_accel_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
     v_angular_max_);
@@ -101,6 +98,10 @@ Controller::Controller(
     node->get_parameter("controller.dock_collision_threshold", dock_collision_threshold_);
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
   }
+
+  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
+  node->get_parameter("controller.rotate_to_heading_max_angular_accel",
+    rotate_to_heading_max_angular_accel_);
 
   trajectory_pub_ =
     node->create_publisher<nav_msgs::msg::Path>("docking_trajectory", 1);

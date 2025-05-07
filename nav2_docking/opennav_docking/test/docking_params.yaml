@@ -1,6 +1,7 @@
 docking_server:
   ros__parameters:
     wait_charge_timeout: 1.0
+    backward_blind: False
     controller:
       use_collision_detection: False
       transform_tolerance: 0.5

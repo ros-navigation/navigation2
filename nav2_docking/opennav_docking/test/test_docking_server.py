@@ -66,6 +66,11 @@ def generate_test_description() -> LaunchDescription:
         param_substitutions.update({'dock_direction': 'backward'})
         param_substitutions.update({'staging_yaw_offset': '3.14'})
 
+    if os.getenv('BACKWARD_BLIND') == 'True':
+        param_substitutions.update({'dock_direction': 'backward'})
+        param_substitutions.update({'staging_yaw_offset': '3.14'})
+        param_substitutions.update({'backward_blind': 'True'})
+
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
@@ -114,7 +119,7 @@ class TestDockingServer(unittest.TestCase):
         self.y = 0.0
         self.theta = 0.0
         # If BACKWARD is set, start facing backward
-        if os.getenv('BACKWARD') == 'True':
+        if os.getenv('BACKWARD') == 'True' or os.getenv('BACKWARD_BLIND') == 'True':
             self.theta = 3.14
         # Track charge state
         self.is_charging = False
@@ -192,8 +197,13 @@ class TestDockingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.dock_action_client = ActionClient(self.node, DockRobot, 'dock_robot')
-        self.undock_action_client = ActionClient(self.node, UndockRobot, 'undock_robot')
+        self.dock_action_client: ActionClient[
+            DockRobot.Goal, DockRobot.Result, DockRobot.Feedback
+        ] = ActionClient(self.node, DockRobot, 'dock_robot')
+
+        self.undock_action_client: ActionClient[
+            UndockRobot.Goal, UndockRobot.Result, UndockRobot.Feedback
+        ] = ActionClient(self.node, UndockRobot, 'undock_robot')
 
         # Subscribe to command velocity
         self.node.create_subscription(
