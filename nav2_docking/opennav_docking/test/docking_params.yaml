@@ -1,7 +1,6 @@
 docking_server:
   ros__parameters:
     wait_charge_timeout: 1.0
-    backward_blind: False
     controller:
       use_collision_detection: False
       transform_tolerance: 0.5
@@ -10,6 +9,7 @@ docking_server:
       plugin: opennav_docking::SimpleChargingDock
       use_battery_status: True
       dock_direction: forward
+      backward_blind: False
       staging_yaw_offset: 0.0
     docks: [test_dock]
     test_dock:

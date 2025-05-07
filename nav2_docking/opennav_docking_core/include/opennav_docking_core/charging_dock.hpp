@@ -136,11 +136,18 @@ public:
    */
   DockDirection getDockDirection() {return dock_direction_;}
 
+  /**
+   * @brief Indicates if the dock is backward blind
+   * @return bool True if the dock is backward blind
+   */
+  bool isBackwardBlind() {return backward_blind_;}
+
   std::string getName() {return name_;}
 
 protected:
   std::string name_;
   DockDirection dock_direction_{DockDirection::UNKNOWN};
+  bool backward_blind_{false};
 };
 
 }  // namespace opennav_docking_core

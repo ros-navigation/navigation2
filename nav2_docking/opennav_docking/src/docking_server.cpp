@@ -40,7 +40,6 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", rclcpp::PARAMETER_BOOL);
   declare_parameter("dock_prestaging_tolerance", 0.5);
-  declare_parameter("backward_blind", false);
   declare_parameter("odom_topic", "odom");
   declare_parameter("rotation_angular_tolerance", 0.05);
 }
@@ -61,7 +60,6 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("base_frame", base_frame_);
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
-  get_parameter("backward_blind", backward_blind_);
   get_parameter("rotation_angular_tolerance", rotation_angular_tolerance_);
 
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
@@ -80,11 +78,10 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
-  if (backward_blind_) {
-    std::string odom_topic;
-    get_parameter("odom_topic", odom_topic);
-    odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
-  }
+  // Create odom subscriber for backward blind docking
+  std::string odom_topic;
+  get_parameter("odom_topic", odom_topic);
+  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
 
   double action_server_result_timeout;
   nav2_util::declare_parameter_if_not_declared(
@@ -298,17 +295,18 @@ void DockingServer::dockRobot()
     doInitialPerception(dock, dock_pose);
     RCLCPP_INFO(get_logger(), "Successful initial dock detection");
 
-    // Get the direction of the movement
+    // Get the direction of the movement and whether to drive backwards blindly
     bool dock_backward = dock_backwards_.has_value() ?
       dock_backwards_.value() :
       (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
+    bool backward_blind = dock->plugin->isBackwardBlind();
 
     // Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
         // Perform pure rotation to dock orientation
-        if (backward_blind_) {
+        if (backward_blind) {
           rotateToDock(dock_pose);
         }
         // Approach the dock using control law
@@ -494,7 +492,8 @@ bool DockingServer::approachDock(
     }
 
     // Update perception
-    if (!backward_blind_ && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    bool backward_blind = dock->plugin->isBackwardBlind();
+    if (!backward_blind && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
@@ -834,10 +833,6 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
     } else if (type == ParameterType::PARAMETER_INTEGER) {
       if (name == "max_retries") {
         max_retries_ = parameter.as_int();
-      }
-    } else if(type == ParameterType::PARAMETER_BOOL) {
-      if (name == "backward_blind") {
-        backward_blind_ = parameter.as_bool();
       }
     }
   }
