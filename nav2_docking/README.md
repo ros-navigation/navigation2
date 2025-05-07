@@ -207,6 +207,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | max_retries        | Maximum number of retries to attempt    | int |  3      |
 | base_frame        | Robot's base frame for control law   | string |  "base_link"      |
 | fixed_frame        | Fixed frame to use, recommended to be a smooth odometry frame **not** map   | string |  "odom"      |
+| backward_blind        | Initial forward detection, then dock in reverse | bool |  false      |
 | dock_prestaging_tolerance  |  L2 distance in X,Y,Theta from the staging pose to bypass navigation | double |  0.5      |
 | dock_plugins  | A set of dock plugins to load | vector<string> |  N/A      |
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |

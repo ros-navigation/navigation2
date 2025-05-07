@@ -50,6 +50,10 @@ Controller::Controller(
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
+      node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
+  nav2_util::declare_parameter_if_not_declared(
+      node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
+  nav2_util::declare_parameter_if_not_declared(
     node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
     node, "controller.costmap_topic",
@@ -74,6 +78,9 @@ Controller::Controller(
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
+  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
+  node->get_parameter("controller.rotate_to_heading_max_angular_accel",
+    rotate_to_heading_max_angular_accel_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
     v_angular_max_);
@@ -115,6 +122,23 @@ bool Controller::computeVelocityCommand(
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, backward);
   return isTrajectoryCollisionFree(pose, is_docking, backward);
+}
+
+geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
+  const double & angular_distance_to_heading,
+  const geometry_msgs::msg::Twist & current_velocity,
+  const double & dt)
+{
+  geometry_msgs::msg::Twist cmd_vel;
+  const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
+  const double angular_vel = sign * rotate_to_heading_angular_vel_;
+  const double min_feasible_angular_speed =
+    current_velocity.angular.z - rotate_to_heading_max_angular_accel_ * dt;
+  const double max_feasible_angular_speed =
+    current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
+  cmd_vel.angular.z =
+    std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+  return cmd_vel;
 }
 
 bool Controller::isTrajectoryCollisionFree(
@@ -228,6 +252,10 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
+      } else if (name == "controller.rotate_to_heading_angular_vel") {
+        rotate_to_heading_angular_vel_ = parameter.as_double();
+      } else if (name == "controller.rotate_to_heading_max_angular_accel") {
+        rotate_to_heading_max_angular_accel_ = parameter.as_double();
       } else if (name == "controller.projection_time") {
         projection_time_ = parameter.as_double();
       } else if (name == "controller.simulation_time_step") {

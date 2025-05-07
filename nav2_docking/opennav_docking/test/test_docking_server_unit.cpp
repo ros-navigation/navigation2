@@ -247,6 +247,8 @@ TEST(DockingServerTests, testDynamicParams)
       rclcpp::Parameter("undock_angular_tolerance", 0.125),
       rclcpp::Parameter("base_frame", std::string("hi")),
       rclcpp::Parameter("fixed_frame", std::string("hi")),
+      rclcpp::Parameter("backward_blind", true),
+      rclcpp::Parameter("dock_backwards", true),
       rclcpp::Parameter("max_retries", 7)});
 
   rclcpp::spin_until_future_complete(
@@ -261,6 +263,8 @@ TEST(DockingServerTests, testDynamicParams)
   EXPECT_EQ(node->get_parameter("base_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("fixed_frame").as_string(), std::string("hi"));
   EXPECT_EQ(node->get_parameter("max_retries").as_int(), 7);
+  EXPECT_EQ(node->get_parameter("backward_blind").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("dock_backwards").as_bool(), true);
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
