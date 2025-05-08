@@ -58,7 +58,7 @@ def generate_launch_description() -> LaunchDescription:
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch',
                          'gz_sim.launch.py')),
-        launch_arguments={'gz_args': ['-r -s ', world_sdf]}.items())
+        launch_arguments={'ign_args': ['-r -s ', world_sdf]}.items())
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
@@ -66,7 +66,7 @@ def generate_launch_description() -> LaunchDescription:
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             os.path.join(sim_dir, 'worlds'))
     start_gazebo_client_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -76,7 +76,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
         condition=IfCondition(PythonExpression(
             ['not ', headless])),
-        launch_arguments={'gz_args': ['-v4 -g ']}.items(),
+        launch_arguments={'ign_args': ['-v4 -g ']}.items(),
     )
 
     spawn_robot_cmd = IncludeLaunchDescription(
@@ -127,7 +127,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             str(Path(os.path.join(desc_dir)).parent.resolve()))
 
     ld = LaunchDescription()

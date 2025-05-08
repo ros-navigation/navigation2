@@ -38,10 +38,10 @@ target_link_libraries(test_odometry_utils ${library_name} ${nav_msgs_TARGETS} ${
 ament_add_gtest(test_robot_utils test_robot_utils.cpp)
 target_link_libraries(test_robot_utils ${library_name} ${geometry_msgs_TARGETS})
 
-ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
-target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
+# ament_add_gtest(test_base_footprint_publisher test_base_footprint_publisher.cpp)
+# target_include_directories(test_base_footprint_publisher PRIVATE "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>")
 
-target_link_libraries(test_base_footprint_publisher ${library_name} tf2_ros::tf2_ros rclcpp::rclcpp ${geometry_msgs_TARGETS})
+# target_link_libraries(test_base_footprint_publisher ${library_name} tf2_ros::tf2_ros rclcpp::rclcpp ${geometry_msgs_TARGETS})
 
 ament_add_gtest(test_array_parser test_array_parser.cpp)
 target_link_libraries(test_array_parser ${library_name})

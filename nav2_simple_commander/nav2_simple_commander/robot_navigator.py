@@ -36,8 +36,6 @@ from rclpy.action.client import ClientGoalHandle
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
-from rclpy.task import Future
-from rclpy.type_support import GetResultServiceResponse
 
 
 class TaskResult(Enum):
@@ -54,8 +52,7 @@ class BasicNavigator(Node):
         self.initial_pose = PoseStamped()
         self.initial_pose.header.frame_id = 'map'
         self.goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
-        self.result_future: \
-            Optional[Future[GetResultServiceResponse[Any]]] = None
+        self.result_future = None
         self.feedback: str = ''
         self.status: Optional[int] = None
         self.last_action_error_code = 0
