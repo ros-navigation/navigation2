@@ -175,7 +175,7 @@ def generate_launch_description() -> LaunchDescription:
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    os.path.join(launch_dir, 'map_modifier.launch.py')
+                    os.path.join(launch_dir, 'keepout_zone_launch.py')
                 ),
                 condition=IfCondition(PythonExpression([use_keepout_zones])),
                 launch_arguments={

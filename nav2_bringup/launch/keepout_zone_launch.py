@@ -139,7 +139,7 @@ def generate_launch_description() -> LaunchDescription:
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
-                name='lifecycle_manager_map_modifier',
+                name='lifecycle_manager_keepout_zone',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
@@ -185,7 +185,7 @@ def generate_launch_description() -> LaunchDescription:
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
-                        name='lifecycle_manager_map_modifier',
+                        name='lifecycle_manager_keepout_zone',
                         parameters=[
                             {'autostart': autostart, 'node_names': lifecycle_nodes}
                         ],
