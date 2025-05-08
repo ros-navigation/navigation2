@@ -240,7 +240,6 @@ protected:
   rclcpp::TimerBase::SharedPtr bond_respawn_timer_;
   std::chrono::milliseconds bond_timeout_;
   std::chrono::milliseconds service_timeout_;
-  bool non_default_timeout;
 
   // A map of all nodes to check bond connection
   std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;

@@ -24,6 +24,7 @@
 #include "nav2_util/service_client.hpp"
 #include "nav2_util/node_utils.hpp"
 
+
 namespace nav2_util
 {
 
@@ -43,10 +44,8 @@ public:
    */
   bool change_state(
     const uint8_t transition,  // takes a lifecycle_msgs::msg::Transition id
-    const std::chrono::milliseconds timeout);
-
-  /// Trigger a state change, returning result
-  bool change_state(std::uint8_t transition);
+    const std::chrono::milliseconds transition_timeout = std::chrono::milliseconds(-1),
+    const std::chrono::milliseconds wait_for_service_timeout = std::chrono::milliseconds(5000));
 
   /// Get the current state as a lifecycle_msgs::msg::State id value
   /**
