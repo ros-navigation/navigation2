@@ -246,7 +246,7 @@ def generate_launch_description() -> LaunchDescription:
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             os.path.join(sim_dir, 'worlds'))
     gazebo_client = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -256,7 +256,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
         condition=IfCondition(PythonExpression(
             [use_simulator, ' and not ', headless])),
-        launch_arguments={'gz_args': ['-v4 -g ']}.items(),
+        launch_arguments={'ign_args': ['-v4 -g ']}.items(),
     )
 
     gz_robot = IncludeLaunchDescription(

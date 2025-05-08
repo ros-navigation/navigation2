@@ -22,7 +22,7 @@ import subprocess
 
 
 def find_os_processes(name: str) -> list[tuple[str, str]]:
-    """Find all the processes that are running gz sim."""
+    """Find all the processes that are running ign gazebo."""
     ps_output = subprocess.check_output(['ps', 'aux'], text=True)
     ps_lines = ps_output.split('\n')
     gz_sim_processes = []

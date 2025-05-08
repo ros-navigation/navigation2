@@ -58,7 +58,7 @@ def generate_robot_actions(context, *args, **kwargs):
         group = GroupAction(
             [
                 LogInfo(
-                    msg=['Launching namespace=', robot_name, ' init_pose=', str(init_pose),]
+                    msg=['Launching namespace=', robot_name, ' init_pose=', str(init_pose), ]
                 ),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
@@ -198,9 +198,9 @@ def generate_launch_description():
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
-        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
+        'IGN_GAZEBO_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             str(Path(os.path.join(sim_dir)).parent.resolve()))
 
     # Create the launch description and populate
