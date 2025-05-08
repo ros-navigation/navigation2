@@ -37,7 +37,7 @@ def generate_launch_description() -> LaunchDescription:
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
-    use_keepout_filter = LaunchConfiguration('use_keepout_filter')
+    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
     log_level = LaunchConfiguration('log_level')
 
     lifecycle_nodes = ['filter_mask_server', 'costmap_filter_info_server']
@@ -99,9 +99,9 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to respawn if a node crashes. Applied when composition is disabled.',
     )
 
-    declare_use_keepout_filter_cmd = DeclareLaunchArgument(
-        'use_keepout_filter', default_value='True',
-        description='Whether to enable keepout filter or not'
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
     )
 
     declare_log_level_cmd = DeclareLaunchArgument(
@@ -113,7 +113,7 @@ def generate_launch_description() -> LaunchDescription:
         actions=[
             SetParameter('use_sim_time', use_sim_time),
             Node(
-                condition=IfCondition(use_keepout_filter),
+                condition=IfCondition(use_keepout_zones),
                 package='nav2_map_server',
                 executable='map_server',
                 name='filter_mask_server',
@@ -125,7 +125,7 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
-                condition=IfCondition(use_keepout_filter),
+                condition=IfCondition(use_keepout_zones),
                 package='nav2_map_server',
                 executable='costmap_filter_info_server',
                 name='costmap_filter_info_server',
@@ -157,7 +157,7 @@ def generate_launch_description() -> LaunchDescription:
             SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
                 target_container=container_name_full,
-                condition=IfCondition(use_keepout_filter),
+                condition=IfCondition(use_keepout_zones),
                 composable_node_descriptions=[
                     ComposableNode(
                         package='nav2_map_server',
@@ -209,7 +209,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
-    ld.add_action(declare_use_keepout_filter_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
     ld.add_action(declare_log_level_cmd)
 
     # Add the actions to launch all of the map modifier nodes

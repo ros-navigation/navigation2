@@ -61,7 +61,7 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
-    use_keepout_filter = LaunchConfiguration('use_keepout_filter')
+    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -139,9 +139,9 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to respawn if a node crashes. Applied when composition is disabled.',
     )
 
-    declare_use_keepout_filter_cmd = DeclareLaunchArgument(
-        'use_keepout_filter', default_value='True',
-        description='Whether to enable keepout filter or not'
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
     )
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
@@ -222,7 +222,7 @@ def generate_launch_description() -> LaunchDescription:
             'autostart': autostart,
             'use_composition': use_composition,
             'use_respawn': use_respawn,
-            'use_keepout_filter': use_keepout_filter,
+            'use_keepout_zones': use_keepout_zones,
         }.items(),
     )
 
@@ -297,7 +297,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
-    ld.add_action(declare_use_keepout_filter_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
 
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)
