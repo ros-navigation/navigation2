@@ -29,7 +29,7 @@ def generate_launch_description() -> LaunchDescription:
     bringup_dir = get_package_share_directory('nav2_bringup')
 
     namespace = LaunchConfiguration('namespace')
-    keepout_map_yaml_file = LaunchConfiguration('keepout_map')
+    keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -63,10 +63,10 @@ def generate_launch_description() -> LaunchDescription:
         'namespace', default_value='', description='Top-level namespace'
     )
 
-    declare_keepout_map_yaml_cmd = DeclareLaunchArgument(
-        'keepout_map',
+    declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
+        'keepout_mask',
         default_value='',
-        description='Full path to map yaml file to load',
+        description='Full path to keepout mask yaml file to load',
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -120,7 +120,7 @@ def generate_launch_description() -> LaunchDescription:
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params, {'yaml_filename': keepout_map_yaml_file}],
+                parameters=[configured_params, {'yaml_filename': keepout_mask_yaml_file}],
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
@@ -165,7 +165,7 @@ def generate_launch_description() -> LaunchDescription:
                         name='filter_mask_server',
                         parameters=[
                             configured_params,
-                            {'yaml_filename': keepout_map_yaml_file}
+                            {'yaml_filename': keepout_mask_yaml_file}
                         ],
                         remappings=remappings,
                     ),
@@ -203,7 +203,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
-    ld.add_action(declare_keepout_map_yaml_cmd)
+    ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_composition_cmd)

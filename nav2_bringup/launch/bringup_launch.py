@@ -35,7 +35,7 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
-    keepout_map_yaml_file = LaunchConfiguration('keepout_map')
+    keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     graph_filepath = LaunchConfiguration('graph')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
@@ -75,9 +75,9 @@ def generate_launch_description() -> LaunchDescription:
         'map', default_value='', description='Full path to map yaml file to load'
     )
 
-    declare_keepout_map_yaml_cmd = DeclareLaunchArgument(
-        'keepout_map', default_value='',
-        description='Full path to keepout map yaml file to load'
+    declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
+        'keepout_mask', default_value='',
+        description='Full path to keepout mask yaml file to load'
     )
 
     declare_graph_file_cmd = DeclareLaunchArgument(
@@ -180,7 +180,7 @@ def generate_launch_description() -> LaunchDescription:
                 condition=IfCondition(PythonExpression([use_keepout_zones])),
                 launch_arguments={
                     'namespace': namespace,
-                    'keepout_map': keepout_map_yaml_file,
+                    'keepout_mask': keepout_mask_yaml_file,
                     'use_sim_time': use_sim_time,
                     'params_file': params_file,
                     'use_composition': use_composition,
@@ -217,7 +217,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
-    ld.add_action(declare_keepout_map_yaml_cmd)
+    ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
