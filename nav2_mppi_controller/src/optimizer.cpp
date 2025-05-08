@@ -438,13 +438,16 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto wz_T = control_sequence_.wz.transpose();
   auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
-  auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
-  const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
-  costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+
+  if (s.sampling_std.wz > 0.0f) {
+    auto wz_T = control_sequence_.wz.transpose();
+    auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
+    const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
+    costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+  }
 
   if (is_holo) {
     auto vy_T = control_sequence_.vy.transpose();

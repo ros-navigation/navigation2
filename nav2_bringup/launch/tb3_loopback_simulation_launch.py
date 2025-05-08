@@ -37,6 +37,7 @@ def generate_launch_description() -> LaunchDescription:
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
+    graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
@@ -57,6 +58,11 @@ def generate_launch_description() -> LaunchDescription:
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot3_graph.geojson'),
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
@@ -131,6 +137,7 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'namespace': namespace,
             'map': map_yaml_file,
+            'graph': graph_filepath,
             'use_sim_time': 'True',
             'params_file': params_file,
             'autostart': autostart,
@@ -189,6 +196,7 @@ def generate_launch_description() -> LaunchDescription:
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)

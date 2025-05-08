@@ -384,6 +384,7 @@ void PlannerServer::computePlanThroughPoses()
   auto goal = action_server_poses_->get_current_goal();
   auto result = std::make_shared<ActionThroughPoses::Result>();
   nav_msgs::msg::Path concat_path;
+  RCLCPP_INFO(get_logger(), "Computing path through poses to goal.");
 
   geometry_msgs::msg::PoseStamped curr_start, curr_goal;
 
@@ -515,6 +516,7 @@ PlannerServer::computePlan()
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_pose_->get_current_goal();
   auto result = std::make_shared<ActionToPose::Result>();
+  RCLCPP_INFO(get_logger(), "Computing path to goal.");
 
   geometry_msgs::msg::PoseStamped start;
 

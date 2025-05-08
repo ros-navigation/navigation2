@@ -43,6 +43,11 @@ module = [
     "rcl_interfaces.*",
     "std_msgs.*",
     "zmq.*",
+    "std_srvs.*",
+    "graphviz.*",
+    "transforms3d.*",
+    "geopandas.*",
+    "pandas.*",
 ]
 
 ignore_missing_imports = true
