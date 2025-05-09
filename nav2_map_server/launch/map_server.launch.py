@@ -23,38 +23,38 @@ import launch_ros.actions
 
 def generate_launch_description() -> LaunchDescription:
     # Parameters
-    bringup_dir = get_package_share_directory("nav2_bringup")
-    map_yaml_file = os.path.join(bringup_dir, "maps", "depot.yaml")
+    bringup_dir = get_package_share_directory('nav2_bringup')
+    map_yaml_file = os.path.join(bringup_dir, 'maps', 'depot.yaml')
 
-    lifecycle_nodes = ["map_server"]
+    lifecycle_nodes = ['map_server']
     use_sim_time = True
     autostart = True
-    topic_name = "map"
-    frame_id = "map"
-    service_introspection_mode = "disabled"
+    topic_name = 'map'
+    frame_id = 'map'
+    service_introspection_mode = 'disabled'
 
     start_map_server_cmd = launch_ros.actions.Node(
-        package="nav2_map_server",
-        executable="map_server",
-        name="map_server",
-        output="screen",
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
+        output='screen',
         parameters=[
-            {"yaml_filename": map_yaml_file},
-            {"topic_name": topic_name},
-            {"frame_id": frame_id},
-            {"service_introspection_mode": service_introspection_mode},
+            {'yaml_filename': map_yaml_file},
+            {'topic_name': topic_name},
+            {'frame_id': frame_id},
+            {'service_introspection_mode': service_introspection_mode},
         ],
     )
 
     start_lifecycle_manager_cmd = launch_ros.actions.Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager",
-        output="screen",
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager',
+        output='screen',
         parameters=[
-            {"use_sim_time": use_sim_time},
-            {"autostart": autostart},
-            {"node_names": lifecycle_nodes},
+            {'use_sim_time': use_sim_time},
+            {'autostart': autostart},
+            {'node_names': lifecycle_nodes},
         ],
     )
 

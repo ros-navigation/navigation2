@@ -269,8 +269,7 @@ void loadMapFromFile(
     // occupied is always 1.0, free is always 0.00392157 ( = 1.0 - 254 / 255.0),
     // and unknown is always 0.196078431 ( = 1.0 - 205 / 255.0)
     // For Scale mode, the thresholds are set by the user in the yaml file
-    if (load_parameters.mode == MapMode::Trinary)
-    {
+    if (load_parameters.mode == MapMode::Trinary) {
       occupied_thresh = 254 / 255.0;
       free_thresh = 2 / 255.0;
     }
