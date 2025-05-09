@@ -261,12 +261,26 @@ void loadMapFromFile(
       normalized = (1.0f - normalized.array()).matrix();
     }
 
+    double occupied_thresh = load_parameters.occupied_thresh;
+    double free_thresh = load_parameters.free_thresh;
+
+    // For Trinary mode, the thresholds depend on the constants used when saving the map,
+    // not on the thresholds from the yaml file
+    // occupied is always 1.0, free is always 0.00392157 ( = 1.0 - 254 / 255.0),
+    // and unknown is always 0.196078431 ( = 1.0 - 205 / 255.0)
+    // For Scale mode, the thresholds are set by the user in the yaml file
+    if (load_parameters.mode == MapMode::Trinary)
+    {
+      occupied_thresh = 254 / 255.0;
+      free_thresh = 2 / 255.0;
+    }
+
     // Compute binary occupancy masks
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> occupied =
-      (normalized.array() >= load_parameters.occupied_thresh).cast<uint8_t>();
+      (normalized.array() >= occupied_thresh).cast<uint8_t>();
 
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> free =
-      (normalized.array() <= load_parameters.free_thresh).cast<uint8_t>();
+      (normalized.array() <= free_thresh).cast<uint8_t>();
 
     // Initialize occupancy grid with UNKNOWN values (-1)
     result.setConstant(nav2_util::OCC_GRID_UNKNOWN);
