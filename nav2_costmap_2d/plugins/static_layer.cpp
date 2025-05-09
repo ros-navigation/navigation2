@@ -46,6 +46,7 @@
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/validate_messages.hpp"
+#include "nav2_costmap_2d/costmap_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
@@ -150,7 +151,7 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "restore_cleared_footprint", restore_cleared_footprint_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
-  map_topic_ = joinWithParentNamespace(map_topic_);
+  map_topic_ = joinWithParentNamespace(node, map_topic_);
   node->get_parameter(
     name_ + "." + "map_subscribe_transient_local",
     map_subscribe_transient_local_);

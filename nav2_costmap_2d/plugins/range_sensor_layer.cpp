@@ -43,6 +43,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
+#include "nav2_costmap_2d/costmap_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::RangeSensorLayer, nav2_costmap_2d::Layer)
 
@@ -130,7 +131,7 @@ void RangeSensorLayer::onInitialize()
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
-    topic_name = joinWithParentNamespace(topic_name);
+    topic_name = joinWithParentNamespace(node_, topic_name);
     if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,
