@@ -36,26 +36,10 @@ inline bool withinPositionGoalTolerance(
   const geometry_msgs::msg::Pose & goal)
 {
   if (goal_checker){
-    // Use the goal checker's isGoalReached method which implements the stateful feature
-    geometry_msgs::msg::Twist velocity; // Zero velocity for position checking
+    geometry_msgs::msg::Twist velocity;
     return goal_checker->isGoalReached(robot, goal, velocity);
   }
-
-  geometry_msgs::msg::Pose pose_tolerance;
-  geometry_msgs::msg::Twist velocity_tolerance;
-  goal_checker->getTolerances(pose_tolerance, velocity_tolerance);
-
-  const auto pose_tolerance_sq = pose_tolerance.position.x * pose_tolerance.position.x;
-
-  auto dx = robot.position.x - goal.position.x;
-  auto dy = robot.position.y - goal.position.y;
-
-  auto dist_sq = dx * dx + dy * dy;
-
-  if (dist_sq < pose_tolerance_sq) {
-    return true;
-  }
-
+  
   return false;
 }
 
