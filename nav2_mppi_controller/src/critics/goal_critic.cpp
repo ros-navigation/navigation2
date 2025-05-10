@@ -21,6 +21,9 @@ namespace mppi::critics
 
 void GoalCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(power_, "cost_power", 1);
@@ -34,14 +37,25 @@ void GoalCritic::initialize()
 
 void GoalCritic::score(CriticData & data)
 {
-  if (!enabled_ || !utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
+  if (!enabled_) {
+    return;
+  }
+
+  geometry_msgs::msg::Pose active_goal;
+  if (enforce_path_inversion_) {
+    active_goal = utils::getLastPathPose(data.path);
+  } else {
+    active_goal = data.goal;
+  }
+
+  if (!utils::withinPositionGoalTolerance(
+      threshold_to_consider_, data.state.pose.pose, active_goal))
   {
     return;
   }
 
-  const auto & goal_x = data.goal.position.x;
-  const auto & goal_y = data.goal.position.y;
+  auto goal_x = active_goal.position.x;
+  auto goal_y = active_goal.position.y;
 
   const auto delta_x = data.trajectories.x - goal_x;
   const auto delta_y = data.trajectories.y - goal_y;
