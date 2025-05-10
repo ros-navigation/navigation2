@@ -40,6 +40,8 @@ void RotationShimController::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  position_goal_checker_ = std::make_unique<nav2_controller::PositionGoalChecker>();
+  position_goal_checker_->initialize(parent, plugin_name_ + ".position_checker", costmap_ros);
   plugin_name_ = name;
   node_ = parent;
   auto node = parent.lock();
@@ -69,6 +71,10 @@ void RotationShimController::configure(
     node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".closed_loop", rclcpp::ParameterValue(true));
+  nav2_util::declare_parameter_if_not_declared(
+      node, plugin_name_ + ".position_checker.xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+  nav2_util::declare_parameter_if_not_declared(
+      node, plugin_name_ + ".position_checker.stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
@@ -122,6 +128,10 @@ void RotationShimController::activate()
     std::bind(
       &RotationShimController::dynamicParametersCallback,
       this, std::placeholders::_1));
+  if (position_goal_checker_)
+  {
+    position_goal_checker_->reset();
+  }
 }
 
 void RotationShimController::deactivate()
@@ -147,6 +157,7 @@ void RotationShimController::cleanup()
 
   primary_controller_->cleanup();
   primary_controller_.reset();
+  position_goal_checker_.reset();
 }
 
 geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands(
@@ -168,10 +179,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         throw std::runtime_error("Failed to transform pose to base frame!");
       }
 
-      if (utils::withinPositionGoalTolerance(
-          goal_checker,
-          pose.pose,
-          sampled_pt_goal.pose))
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity))
       {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
