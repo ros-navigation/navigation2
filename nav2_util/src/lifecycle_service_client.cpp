@@ -76,7 +76,7 @@ bool LifecycleServiceClient::change_state(
 
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
-  if (transition_timeout > milliseconds(0)) {
+  if (transition_timeout > 0ms) {
     auto response = change_state_.invoke(request, transition_timeout);
     return response.get();
   } else {
