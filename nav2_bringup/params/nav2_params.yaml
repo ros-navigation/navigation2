@@ -228,7 +228,7 @@ local_costmap:
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: True
-        filter_info_topic: "costmap_filter_info"
+        filter_info_topic: "keepout_costmap_filter_info"
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
@@ -280,7 +280,7 @@ global_costmap:
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: True
-        filter_info_topic: "costmap_filter_info"
+        filter_info_topic: "keepout_costmap_filter_info"
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -319,15 +319,15 @@ map_server:
     # yaml_filename: ""
     service_introspection_mode: "disabled"
 
-filter_mask_server:
+keepout_filter_mask_server:
   ros__parameters:
     topic_name: "keepout_filter_mask"
     # yaml_filename: ""
 
-costmap_filter_info_server:
+keepout_costmap_filter_info_server:
   ros__parameters:
     type: 0
-    filter_info_topic: "costmap_filter_info"
+    filter_info_topic: "keepout_costmap_filter_info"
     mask_topic: "keepout_filter_mask"
     base: 0.0
     multiplier: 1.0
