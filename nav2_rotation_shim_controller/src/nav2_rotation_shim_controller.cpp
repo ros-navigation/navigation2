@@ -361,6 +361,9 @@ void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
   path_updated_ = true;
   current_path_ = path;
   primary_controller_->setPlan(path);
+  if (position_goal_checker_){
+    position_goal_checker_->reset();
+  }
 }
 
 void RotationShimController::setSpeedLimit(const double & speed_limit, const bool & percentage)
