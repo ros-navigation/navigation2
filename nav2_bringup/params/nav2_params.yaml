@@ -95,6 +95,7 @@ controller_server:
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
     use_realtime_priority: false
+    speed_limit_topic: "/speed_limit"
 
     # Progress checker parameters
     progress_checker:
@@ -276,11 +277,16 @@ global_costmap:
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-      filters: ["keepout_filter"]
+      filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: True
         filter_info_topic: "keepout_costmap_filter_info"
+      speed_filter:
+        plugin: "nav2_costmap_2d::SpeedFilter"
+        enabled: True
+        filter_info_topic: "speed_costmap_filter_info"
+        speed_limit_topic: "/speed_limit"
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -331,6 +337,19 @@ keepout_costmap_filter_info_server:
     mask_topic: "keepout_filter_mask"
     base: 0.0
     multiplier: 1.0
+
+speed_filter_mask_server:
+  ros__parameters:
+    topic_name: "speed_filter_mask"
+    # yaml_filename: ""
+
+speed_costmap_filter_info_server:
+  ros__parameters:
+    type: 1
+    filter_info_topic: "speed_costmap_filter_info"
+    mask_topic: "speed_filter_mask"
+    base: 100.0
+    multiplier: -1.0
 
 map_saver:
   ros__parameters:
