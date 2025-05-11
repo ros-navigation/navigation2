@@ -147,6 +147,7 @@ def generate_launch_description() -> LaunchDescription:
                     'namespace': '',
                     'map': map_yaml_file,
                     'use_keepout_zones': 'False',
+                    'use_speed_zones': 'False',
                     'use_sim_time': 'True',
                     'params_file': new_yaml,
                     'bt_xml_file': bt_navigator_xml,
