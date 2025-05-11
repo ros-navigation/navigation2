@@ -72,9 +72,9 @@ void RotationShimController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".closed_loop", rclcpp::ParameterValue(true));
   nav2_util::declare_parameter_if_not_declared(
-      node, plugin_name_ + ".position_checker.xy_goal_tolerance", rclcpp::ParameterValue(0.25));
+    node, plugin_name_ + ".position_checker.xy_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2_util::declare_parameter_if_not_declared(
-      node, plugin_name_ + ".position_checker.stateful", rclcpp::ParameterValue(true));
+    node, plugin_name_ + ".position_checker.stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
@@ -128,8 +128,7 @@ void RotationShimController::activate()
     std::bind(
       &RotationShimController::dynamicParametersCallback,
       this, std::placeholders::_1));
-  if (position_goal_checker_)
-  {
+  if (position_goal_checker_) {
     position_goal_checker_->reset();
   }
 }
@@ -179,8 +178,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         throw std::runtime_error("Failed to transform pose to base frame!");
       }
 
-      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity))
-      {
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
 
@@ -361,7 +359,7 @@ void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
   path_updated_ = true;
   current_path_ = path;
   primary_controller_->setPlan(path);
-  if (position_goal_checker_){
+  if (position_goal_checker_) {
     position_goal_checker_->reset();
   }
 }
