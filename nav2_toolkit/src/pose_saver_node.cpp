@@ -19,7 +19,7 @@ namespace nav2_toolkit
 PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
 : Node("pose_saver_node", options), saving_active_(false)
 {
-  this->declare_parameter<double>("save_interval_sec", 5.0);
+  this->declare_parameter<double>("save_interval_sec", 1.0);
   this->declare_parameter<std::string>("pose_file_path", std::string(std::getenv("HOME")) + "last_known_pose.yaml");
   this->declare_parameter<bool>("auto_start_saving", true);
   this->declare_parameter<bool>("auto_restore_pose", true);
@@ -32,7 +32,7 @@ PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
   timer_ = this->create_wall_timer(
     std::chrono::duration<double>(interval_sec),
     std::bind(&PoseSaverNode::timer_callback, this));
-  timer_->cancel();  // Disabled until service starts
+  timer_->cancel();
 
   sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", 10,
@@ -41,7 +41,7 @@ PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
   initial_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
   last_sub_count_ = 0;
   amcl_monitor_timer_ = this->create_wall_timer(
-      2s,  // check every 2 seconds
+      2s, 
       std::bind(&PoseSaverNode::amcl_monitor_callback, this));
 
   start_service_ = this->create_service<std_srvs::srv::Trigger>(
@@ -56,7 +56,6 @@ PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
     "localise_at_last_known_position",
     std::bind(&PoseSaverNode::restore_service_cb, this, std::placeholders::_1, std::placeholders::_2));
 
-
   if (auto_start) {
     saving_active_ = true;
     timer_->reset();
@@ -64,32 +63,27 @@ PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
   }
 
   if (auto_restore_) {
-    RCLCPP_INFO(this->get_logger(), "Auto-restore enabled. Waiting for AMCL...");
+    RCLCPP_INFO(this->get_logger(), "Auto-restore enabled. Waiting for AMCL to become active...");
   
-    // Wait for sim time to become active
     if (this->get_parameter_or("use_sim_time", false)) {
-      RCLCPP_INFO(this->get_logger(), "Waiting for /clock to start (sim time)...");
-
+      RCLCPP_INFO(this->get_logger(), "Waiting for /clock");
     }
   
-    // Wait for AMCL to subscribe to /initialpose
     rclcpp::Time start = this->now();
     rclcpp::Duration timeout = rclcpp::Duration::from_seconds(15.0);
     while (initial_pose_pub_->get_subscription_count() == 0 &&
            (this->now() - start) < timeout)
     {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                           "Waiting for AMCL to subscribe to /initialpose...");
+                           "Waiting for AMCL");
     }
   
     if (initial_pose_pub_->get_subscription_count() == 0) {
-      RCLCPP_ERROR(this->get_logger(), "Timeout: AMCL did not subscribe to /initialpose.");
+      RCLCPP_ERROR(this->get_logger(), "Timeout: AMCL did not become active.");
     } else {
       restore_pose_from_file_and_publish();
     }
   }
-  
-
   RCLCPP_INFO(this->get_logger(), "Pose Saver Node Initialized.");
 }
 
@@ -150,7 +144,6 @@ void PoseSaverNode::write_pose_to_file(const std::string &final_path_str)
   YAML::Emitter out;
   out << YAML::BeginMap;
 
-  // Header
   out << YAML::Key << "header" << YAML::BeginMap;
   out << YAML::Key << "frame_id" << YAML::Value << last_pose_->header.frame_id;
   out << YAML::Key << "stamp" << YAML::BeginMap;
@@ -158,8 +151,6 @@ void PoseSaverNode::write_pose_to_file(const std::string &final_path_str)
   out << YAML::Key << "nanosec" << YAML::Value << last_pose_->header.stamp.nanosec;
   out << YAML::EndMap;
   out << YAML::EndMap;
-
-  // Pose
   out << YAML::Key << "pose" << YAML::BeginMap;
   out << YAML::Key << "position" << YAML::BeginMap
       << YAML::Key << "x" << YAML::Value << last_pose_->pose.pose.position.x
@@ -195,9 +186,6 @@ void PoseSaverNode::write_pose_to_file(const std::string &final_path_str)
     throw std::runtime_error("Failed to atomically replace pose file: " + ec.message());
   }
 }
-
-
-
 
 void PoseSaverNode::amcl_monitor_callback()
 {

@@ -17,13 +17,11 @@ include_directories(include/nav2_pose_saver)
 add_library(pose_saver_component SHARED
   src/pose_saver_node.cpp
 )
-
 target_include_directories(pose_saver_component
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
-
 ament_target_dependencies(pose_saver_component
   rclcpp
   rclcpp_components
@@ -32,22 +30,18 @@ ament_target_dependencies(pose_saver_component
   yaml-cpp
   ament_index_cpp
 )
-
 target_link_libraries(pose_saver_component
   yaml-cpp
 )
 rclcpp_components_register_nodes(pose_saver_component
   "nav2_pose_saver::PoseSaverNode"
 )
-
 add_executable(pose_saver_node
   src/pose_saver_main.cpp
 )
-
 target_link_libraries(pose_saver_node
   pose_saver_component
 )
-
 ament_target_dependencies(pose_saver_node
   rclcpp
 )
