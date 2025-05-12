@@ -139,7 +139,8 @@ public:
   }
 
   /**
-   * @brief handle the goal requested: accept or reject. This implementation always accepts.
+   * @brief handle the goal requested: accept or reject.
+   * This implementation always accepts when the server is active.
    * @param uuid Goal ID
    * @param Goal A shared pointer to the specific goal
    * @return GoalResponse response of the goal processed
