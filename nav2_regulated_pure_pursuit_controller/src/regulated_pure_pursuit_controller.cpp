@@ -187,6 +187,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
+  double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
   // Check for reverse driving
   if (params_->allow_reversing) {
@@ -196,6 +197,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     // if the lookahead distance is further than the cusp, use the cusp distance instead
     if (dist_to_cusp < lookahead_dist) {
       lookahead_dist = dist_to_cusp;
+    }
+    if (dist_to_cusp < curv_lookahead_dist) {
+      curv_lookahead_dist = dist_to_cusp;
     }
   }
 
@@ -211,7 +215,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double regulation_curvature = lookahead_curvature;
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
-      params_->curvature_lookahead_dist,
+      curv_lookahead_dist,
       transformed_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);

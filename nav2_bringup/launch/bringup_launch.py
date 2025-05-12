@@ -35,6 +35,7 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
+    keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     graph_filepath = LaunchConfiguration('graph')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
@@ -43,6 +44,7 @@ def generate_launch_description() -> LaunchDescription:
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     use_localization = LaunchConfiguration('use_localization')
+    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -73,6 +75,11 @@ def generate_launch_description() -> LaunchDescription:
         'map', default_value='', description='Full path to map yaml file to load'
     )
 
+    declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
+        'keepout_mask', default_value='',
+        description='Full path to keepout mask yaml file to load'
+    )
+
     declare_graph_file_cmd = DeclareLaunchArgument(
         'graph',
         default_value='', description='Path to the graph file to load'
@@ -81,6 +88,11 @@ def generate_launch_description() -> LaunchDescription:
     declare_use_localization_cmd = DeclareLaunchArgument(
         'use_localization', default_value='True',
         description='Whether to enable localization or not'
+    )
+
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -160,6 +172,23 @@ def generate_launch_description() -> LaunchDescription:
                     'container_name': 'nav2_container',
                 }.items(),
             ),
+
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(launch_dir, 'keepout_zone_launch.py')
+                ),
+                condition=IfCondition(PythonExpression([use_keepout_zones])),
+                launch_arguments={
+                    'namespace': namespace,
+                    'keepout_mask': keepout_mask_yaml_file,
+                    'use_sim_time': use_sim_time,
+                    'params_file': params_file,
+                    'use_composition': use_composition,
+                    'use_respawn': use_respawn,
+                    'container_name': 'nav2_container',
+                }.items(),
+            ),
+
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'navigation_launch.py')
@@ -188,6 +217,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -196,6 +226,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
     ld.add_action(declare_use_localization_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(bringup_cmd_group)

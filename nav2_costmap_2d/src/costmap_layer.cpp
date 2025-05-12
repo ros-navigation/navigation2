@@ -273,20 +273,4 @@ CombinationMethod CostmapLayer::combination_method_from_int(const int value)
       return CombinationMethod::Max;
   }
 }
-
-std::string CostmapLayer::joinWithParentNamespace(const std::string & topic)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  if (topic[0] != '/') {
-    std::string node_namespace = node->get_namespace();
-    std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
-    return parent_namespace + "/" + topic;
-  }
-
-  return topic;
-}
 }  // namespace nav2_costmap_2d
