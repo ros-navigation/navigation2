@@ -12,62 +12,66 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Launch file for persistent pose saver/restorer node."""
-
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterFile
+from nav2_common.launch import RewrittenYaml
+
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
+    default_params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
+    default_pose_file = os.path.join(os.environ['HOME'], 'last_known_pose.yaml')
 
-    # Declare Launch Arguments
-    declare_auto_start_saving_cmd = DeclareLaunchArgument(
-        'auto_start_saving', default_value='true',
-        description='Whether to automatically start saving poses')
+    namespace = LaunchConfiguration('namespace')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    params_file = LaunchConfiguration('params_file')
+    pose_file_path = LaunchConfiguration('pose_file_path')
 
-    declare_auto_restore_pose_cmd = DeclareLaunchArgument(
-        'auto_restore_pose', default_value='true',
-        description='Whether to automatically restore pose on startup')
-
-    declare_pose_file_path_cmd = DeclareLaunchArgument(
-    'pose_file_path', 
-    default_value=os.path.join(
-        get_package_share_directory('nav2_toolkit'), 
-        'config', 
-        'last_known_pose.yaml'),
-    description='File path to store and restore pose from'
-    )
-
-
-
-    declare_save_interval_sec_cmd = DeclareLaunchArgument(
-        'save_interval_sec', default_value='5.0',
-        description='Interval in seconds to save pose')
-
-    declare_params_file_cmd = DeclareLaunchArgument(
+    declare_namespace = DeclareLaunchArgument(
+        'namespace', default_value='', description='Top-level namespace')
+    
+    declare_use_sim_time = DeclareLaunchArgument(
+        'use_sim_time', default_value='false', description='Use simulation time')
+    
+    declare_params_file = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes',
+        default_value=default_params_file,
+        description='Path to the parameters file')
+    
+    declare_pose_file_path = DeclareLaunchArgument(
+        'pose_file_path',
+        default_value=default_pose_file,
+        description='Full path to store the pose file')
+
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file,
+            root_key=namespace,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
     )
 
-    # Node
     pose_saver_node = Node(
         package='nav2_toolkit',
         executable='pose_saver_node',
         name='pose_saver',
         output='screen',
-        parameters=[LaunchConfiguration('params_file')],
+        parameters=[configured_params, {'pose_file_path': pose_file_path}],
     )
 
     return LaunchDescription([
-        declare_auto_start_saving_cmd,
-        declare_auto_restore_pose_cmd,
-        declare_pose_file_path_cmd,
-        declare_save_interval_sec_cmd,
-        declare_params_file_cmd,
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+        declare_namespace,
+        declare_use_sim_time,
+        declare_params_file,
+        declare_pose_file_path,
         pose_saver_node,
     ])

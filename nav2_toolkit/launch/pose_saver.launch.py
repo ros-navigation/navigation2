@@ -2,13 +2,20 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+import os
 
 def generate_launch_description():
+    default_pose_file = os.path.join(os.environ['HOME'], 'last_known_pose.yaml')
+
     return LaunchDescription([
         DeclareLaunchArgument('auto_start_saving', default_value='true'),
         DeclareLaunchArgument('auto_restore_pose', default_value='false'),
-        DeclareLaunchArgument('pose_file_path', default_value='/tmp/pose_saver.yaml'),
-        DeclareLaunchArgument('save_interval_sec', default_value='5.0'),
+        DeclareLaunchArgument(
+            'pose_file_path',
+            default_value=default_pose_file,
+            description='Full path to save the pose file'
+        ),
+        DeclareLaunchArgument('save_interval_sec', default_value='0.5'),
 
         Node(
             package='nav2_toolkit',

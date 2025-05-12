@@ -12,7 +12,7 @@ namespace nav2_toolkit
 class PoseSaverNode : public rclcpp::Node
 {
 public:
-  PoseSaverNode();
+    explicit PoseSaverNode(const rclcpp::NodeOptions & options);
 
 private:
   void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
@@ -31,9 +31,9 @@ private:
 
   void write_pose_to_file(const std::string &filepath);
   void amcl_monitor_callback();
+  bool restore_pose_from_file_and_publish();
 
   geometry_msgs::msg::PoseWithCovarianceStamped read_pose_from_file(const std::string &filepath);
-  std::string get_package_config_path();
 
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr amcl_monitor_timer_;

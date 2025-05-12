@@ -12,6 +12,9 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>nav2_common</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
+  <exec_depend>nav2_common</exec_depend>
 
   <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
