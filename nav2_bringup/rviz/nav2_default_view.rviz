@@ -224,13 +224,13 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /speed_filter_mask
+        Value: speed_filter_mask
       Update Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /speed_filter_mask_updates
+        Value: speed_filter_mask_updates
       Use Timestamp: false
       Value: true
     - Alpha: 1

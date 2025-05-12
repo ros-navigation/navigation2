@@ -95,7 +95,7 @@ controller_server:
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
     use_realtime_priority: false
-    speed_limit_topic: "/speed_limit"
+    speed_limit_topic: "global_costmap/speed_limit"
 
     # Progress checker parameters
     progress_checker:
@@ -286,7 +286,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::SpeedFilter"
         enabled: True
         filter_info_topic: "speed_costmap_filter_info"
-        speed_limit_topic: "/speed_limit"
+        speed_limit_topic: "speed_limit"
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
