@@ -61,7 +61,7 @@ def generate_launch_description() -> LaunchDescription:
         ]))
 
     set_env_vars_resources = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             os.path.join(sim_dir, 'worlds'))
     start_gazebo_client_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -117,7 +117,7 @@ def generate_launch_description() -> LaunchDescription:
         output='screen')
 
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             str(Path(os.path.join(desc_dir)).parent.resolve()))
 
     ld = LaunchDescription()
