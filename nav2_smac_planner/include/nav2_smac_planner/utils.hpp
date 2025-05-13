@@ -90,7 +90,7 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
         "If this is an SE2-collision checking plugin, it cannot use costmap potential "
         "field to speed up collision checking by only checking the full footprint "
         "when robot is within possibly-inscribed radius of an obstacle. This may "
-        "significantly slow down planning times!", 
+        "significantly slow down planning times!",
         inflation_radius, circum_radius);
       result = 0.0;
       return result;
