@@ -443,27 +443,27 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
 {
   rclcpp::Rate loop_rate(controller_frequency_);
-  geometry_msgs::msg::PoseStamped robot_pose;
-  geometry_msgs::msg::PoseStamped target_pose = dock_pose;
-  auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  double angular_distance_to_heading;
   const double dt = 1.0 / controller_frequency_;
+  auto target_pose = dock_pose;
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-      tf2::getYaw(target_pose.pose.orientation) + M_PI);
+    tf2::getYaw(target_pose.pose.orientation) + M_PI);
 
   while (rclcpp::ok()) {
-    robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
-    angular_distance_to_heading = angles::shortest_angular_distance(
-    tf2::getYaw(robot_pose.pose.orientation),
-    tf2::getYaw(target_pose.pose.orientation));
+    auto robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
+    auto angular_distance_to_heading = angles::shortest_angular_distance(
+      tf2::getYaw(robot_pose.pose.orientation), tf2::getYaw(target_pose.pose.orientation));
     if (fabs(angular_distance_to_heading) < rotation_angular_tolerance_) {
       break;
     }
+
+    auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
     current_vel->twist.angular.z = odom_sub_->getTwist().theta;
-    command->twist = controller_->computeRotateToHeadingCommand(angular_distance_to_heading,
-    current_vel->twist, dt);
+
+    auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header = robot_pose.header;
+    command->twist = controller_->computeRotateToHeadingCommand(
+      angular_distance_to_heading, current_vel->twist, dt);
+
     vel_publisher_->publish(std::move(command));
     loop_rate.sleep();
   }
