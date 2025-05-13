@@ -60,9 +60,7 @@ install(FILES theta_star_planner.xml
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
   set(gtest_disable_pthreads OFF)
-  ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
 
