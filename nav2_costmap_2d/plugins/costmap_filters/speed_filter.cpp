@@ -68,6 +68,7 @@ void SpeedFilter::initializeFilter(
   std::string speed_limit_topic;
   declareParameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
   node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic);
+  speed_limit_topic = joinWithParentNamespace(speed_limit_topic);
 
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
