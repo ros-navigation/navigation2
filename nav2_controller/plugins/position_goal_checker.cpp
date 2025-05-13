@@ -113,6 +113,12 @@ bool PositionGoalChecker::getTolerances(
   return true;
 }
 
+void nav2_controller::PositionGoalChecker::setXYGoalTolerance(double tolerance)
+{
+  xy_goal_tolerance_ = tolerance;
+  xy_goal_tolerance_sq_ = tolerance * tolerance;
+}
+
 rcl_interfaces::msg::SetParametersResult
 PositionGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {

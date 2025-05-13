@@ -71,10 +71,6 @@ void RotationShimController::configure(
     node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
   nav2_util::declare_parameter_if_not_declared(
     node, plugin_name_ + ".closed_loop", rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".position_checker.xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".position_checker.stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".angular_dist_threshold", angular_dist_threshold_);
   node->get_parameter(plugin_name_ + ".angular_disengage_threshold", angular_disengage_threshold_);
@@ -176,6 +172,15 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
           pose.header.frame_id))
       {
         throw std::runtime_error("Failed to transform pose to base frame!");
+      }
+
+      if (goal_checker) {
+        geometry_msgs::msg::Pose pose_tolerance;
+        geometry_msgs::msg::Twist vel_tolerance;
+        goal_checker->getTolerances(pose_tolerance, vel_tolerance);
+        if (position_goal_checker_) {
+          position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
+        }
       }
 
       if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {

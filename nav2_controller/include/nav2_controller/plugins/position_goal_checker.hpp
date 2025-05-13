@@ -51,6 +51,12 @@ public:
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
+  /**
+   * @brief Set the XY goal tolerance
+   * @param tolerance New tolerance value
+   */
+  void setXYGoalTolerance(double tolerance);
+
 protected:
   double xy_goal_tolerance_;
   double xy_goal_tolerance_sq_;
