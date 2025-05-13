@@ -48,13 +48,13 @@ void ObstaclesCritic::initialize()
 
   if (costmap_ros_->getUseRadius() == consider_footprint_) {
     RCLCPP_WARN(
-      logger_,
-      "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
-      "in both the costmap and the obstacle critic.");
+    logger_,
+    "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+    "in both the costmap and the obstacle critic.");
     if (costmap_ros_->getUseRadius()) {
       throw nav2_core::ControllerException(
-              "Considering footprint in collision checking but no robot footprint provided in the "
-              "costmap.");
+      "Considering footprint in collision checking but no robot footprint provided in the "
+      "costmap.");
     }
   }
 

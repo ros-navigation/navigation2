@@ -120,6 +120,8 @@ protected:
     _planned_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 

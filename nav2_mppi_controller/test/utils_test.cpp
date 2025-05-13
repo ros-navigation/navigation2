@@ -633,7 +633,7 @@ TEST(UtilsTests, toTrajectoryMsgTest)
   EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
 }
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

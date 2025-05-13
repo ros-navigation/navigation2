@@ -60,13 +60,12 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  bool dock_backwards;
+  bool dock_backwards = false;
   try {
     if (get_parameter("dock_backwards", dock_backwards)) {
       dock_backwards_ = dock_backwards;
-      RCLCPP_WARN(
-        get_logger(), "Parameter dock_backwards is deprecated. "
-        "Please use the dock_direction parameter in your dock plugin instead.");
+      RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
+      "Please use the dock_direction parameter in your dock plugin instead.");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
   }

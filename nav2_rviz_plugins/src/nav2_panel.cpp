@@ -320,9 +320,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
   paused_->assignProperty(pause_resume_button_, "enabled", true);
 
-  paused_->assignProperty(navigation_mode_button_, "text", "Start navigation");
-  paused_->assignProperty(navigation_mode_button_, "toolTip", resume_msg);
-  paused_->assignProperty(navigation_mode_button_, "enabled", true);
+  paused_->assignProperty(navigation_mode_button_, "text", "");
+  paused_->assignProperty(navigation_mode_button_, "enabled", false);
 
   paused_->assignProperty(save_waypoints_button_, "text", "Save WPs");
   paused_->assignProperty(save_waypoints_button_, "enabled", false);

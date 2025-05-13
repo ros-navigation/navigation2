@@ -61,8 +61,8 @@ NavigateThroughPosesNavigator::configure(
   }
 
   bt_action_server_->setGrootMonitoring(
-    node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
-    node->get_parameter(getName() + ".groot_server_port").as_int());
+      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
+      node->get_parameter(getName() + ".groot_server_port").as_int());
 
   return true;
 }

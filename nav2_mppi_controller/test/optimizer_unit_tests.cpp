@@ -670,7 +670,7 @@ TEST(OptimizerTests, TestGetters)
   EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
 }
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

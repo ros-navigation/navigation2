@@ -147,6 +147,8 @@ void Optimizer::reset()
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
+  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
 
@@ -270,7 +272,7 @@ void Optimizer::applyControlSequenceConstraints()
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    if (vx_last > 0) {
+    if(vx_last > 0) {
       vx_curr = utils::clamp(vx_last + min_delta_vx, vx_last + max_delta_vx, vx_curr);
     } else {
       vx_curr = utils::clamp(vx_last - max_delta_vx, vx_last - min_delta_vx, vx_curr);
@@ -285,7 +287,7 @@ void Optimizer::applyControlSequenceConstraints()
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      if (vy_last > 0) {
+      if(vy_last > 0) {
         vy_curr = utils::clamp(vy_last + min_delta_vy, vy_last + max_delta_vy, vy_curr);
       } else {
         vy_curr = utils::clamp(vy_last - max_delta_vy, vy_last - min_delta_vy, vy_curr);
@@ -440,13 +442,16 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto wz_T = control_sequence_.wz.transpose();
   auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
-  auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
-  const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
-  costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+
+  if (s.sampling_std.wz > 0.0f) {
+    auto wz_T = control_sequence_.wz.transpose();
+    auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
+    const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
+    costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+  }
 
   if (is_holo) {
     auto vy_T = control_sequence_.vy.transpose();

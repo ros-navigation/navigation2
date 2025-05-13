@@ -71,7 +71,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses;
   auto waypoint_statuses_get_res = getInput("input_waypoint_statuses", waypoint_statuses);
   if (!waypoint_statuses_get_res) {
-    RCLCPP_ERROR(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
+    RCLCPP_ERROR_ONCE(node_->get_logger(), "Missing [input_waypoint_statuses] port input!");
   }
 
   double dist_to_goal;
@@ -87,7 +87,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
       auto cur_waypoint_index =
         find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, goal_poses.goals[0]);
       if (cur_waypoint_index == -1) {
-        RCLCPP_ERROR(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
+        RCLCPP_ERROR_ONCE(node_->get_logger(), "Failed to find matching goal in waypoint_statuses");
         return BT::NodeStatus::FAILURE;
       }
       waypoint_statuses[cur_waypoint_index].waypoint_status =

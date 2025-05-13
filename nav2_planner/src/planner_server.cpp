@@ -201,8 +201,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
       std::shared_ptr<nav2_util::LifecycleNode>>>(
     "is_path_valid",
     node,
-    std::bind(
-      &PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add callback for dynamic parameters
@@ -385,6 +384,7 @@ void PlannerServer::computePlanThroughPoses()
   auto goal = action_server_poses_->get_current_goal();
   auto result = std::make_shared<ActionThroughPoses::Result>();
   nav_msgs::msg::Path concat_path;
+  RCLCPP_INFO(get_logger(), "Computing path through poses to goal.");
 
   geometry_msgs::msg::PoseStamped curr_start, curr_goal;
 
@@ -516,6 +516,7 @@ PlannerServer::computePlan()
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_pose_->get_current_goal();
   auto result = std::make_shared<ActionToPose::Result>();
+  RCLCPP_INFO(get_logger(), "Computing path to goal.");
 
   geometry_msgs::msg::PoseStamped start;
 
