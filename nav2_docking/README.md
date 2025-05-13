@@ -207,7 +207,6 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | max_retries        | Maximum number of retries to attempt    | int |  3      |
 | base_frame        | Robot's base frame for control law   | string |  "base_link"      |
 | fixed_frame        | Fixed frame to use, recommended to be a smooth odometry frame **not** map   | string |  "odom"      |
-| backward_blind        | Initial forward detection, then dock in reverse | bool |  false      |
 | odom_topic        | The topic to use for the odometry data | string |  "odom"      |
 | rotation_angular_tolerance  | Angular tolerance (rad) to exit the rotation loop when backward_blind is enable | double | 0.05      |
 | dock_prestaging_tolerance  |  L2 distance in X,Y,Theta from the staging pose to bypass navigation | double |  0.5      |
@@ -256,6 +255,7 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | staging_x_offset        | Staging pose offset forward (negative) of dock pose (m)    | double |  -0.7    |
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
 | dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
+| backward_blind        | Initial forward detection, then dock in reverse | bool |  false      |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
