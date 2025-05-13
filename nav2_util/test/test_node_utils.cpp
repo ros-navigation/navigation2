@@ -25,6 +25,7 @@ using nav2_util::generate_internal_node;
 using nav2_util::add_namespaces;
 using nav2_util::time_to_string;
 using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::declare_or_get_param;
 using nav2_util::get_plugin_type_param;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
@@ -76,6 +77,22 @@ TEST(DeclareParameterIfNotDeclared, DeclareParameterIfNotDeclared)
   declare_parameter_if_not_declared(node, "waldo", rclcpp::ParameterValue{"fred"});
   node->get_parameter("waldo", param);
   ASSERT_EQ(param, "fred");
+}
+
+TEST(DeclareOrGetParam, DeclareOrGetParam)
+{
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+
+  // test declared parameter
+  node->declare_parameter("foobar", "foo");
+  std::string param = declare_or_get_param(node, "foobar", std::string{"bar"});
+  ASSERT_EQ(param, "foo");
+  node->get_parameter("foobar", param);
+  ASSERT_EQ(param, "foo");
+
+  // test undeclared parameter
+  int int_param = declare_or_get_param(node, "waldo", 3);
+  ASSERT_EQ(int_param, 3);
 }
 
 TEST(GetPluginTypeParam, GetPluginTypeParam)
