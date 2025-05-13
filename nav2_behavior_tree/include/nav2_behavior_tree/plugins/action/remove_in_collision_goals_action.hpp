@@ -77,11 +77,9 @@ public:
         BT::OutputPort<nav_msgs::msg::Goals>(
           "output_goals",
           "Goals with in-collision goals removed"),
-        BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
-          "input_waypoint_statuses",
+        BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("input_waypoint_statuses",
           "Original waypoint_statuses to mark waypoint status from"),
-        BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
-          "output_waypoint_statuses",
+        BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("output_waypoint_statuses",
           "Waypoint_statuses with in-collision waypoints marked")
       });
   }

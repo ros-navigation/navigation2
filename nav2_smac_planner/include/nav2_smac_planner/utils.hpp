@@ -82,6 +82,19 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
   if (inflation_layer != nullptr) {
     double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     double resolution = costmap->getCostmap()->getResolution();
+    double inflation_radius = inflation_layer->getInflationRadius();
+    if (inflation_radius < circum_radius) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("computeCircumscribedCost"),
+        "The inflation radius (%f) is smaller than the circumscribed radius (%f) "
+        "If this is an SE2-collision checking plugin, it cannot use costmap potential "
+        "field to speed up collision checking by only checking the full footprint "
+        "when robot is within possibly-inscribed radius of an obstacle. This may "
+        "significantly slow down planning times!",
+        inflation_radius, circum_radius);
+      result = 0.0;
+      return result;
+    }
     result = static_cast<double>(inflation_layer->computeCost(circum_radius / resolution));
   } else {
     RCLCPP_WARN(
@@ -159,12 +172,14 @@ inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
   const double & x = pose.position.x;
   const double & y = pose.position.y;
   const double & yaw = tf2::getYaw(pose.orientation);
+  const double sin_yaw = sin(yaw);
+  const double cos_yaw = cos(yaw);
 
   std::vector<geometry_msgs::msg::Point> out_footprint;
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
-    out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
-    out_footprint[2 * i].y = y + sin(yaw) * footprint[i].x + cos(yaw) * footprint[i].y;
+    out_footprint[2 * i].x = x + cos_yaw * footprint[i].x - sin_yaw * footprint[i].y;
+    out_footprint[2 * i].y = y + sin_yaw * footprint[i].x + cos_yaw * footprint[i].y;
     if (i == 0) {
       out_footprint.back().x = out_footprint[i].x;
       out_footprint.back().y = out_footprint[i].y;

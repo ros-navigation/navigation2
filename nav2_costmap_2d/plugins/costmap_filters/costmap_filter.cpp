@@ -87,8 +87,7 @@ void CostmapFilter::onInitialize()
         std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
       name_ + "/toggle_filter",
       node,
-      std::bind(
-        &CostmapFilter::enableCallback, this, std::placeholders::_1,
+      std::bind(&CostmapFilter::enableCallback, this, std::placeholders::_1,
         std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());

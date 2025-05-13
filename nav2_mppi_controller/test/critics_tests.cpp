@@ -171,7 +171,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
-  auto getParam = param_handler.getParamGetter("critic");
+   auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", true);
   costmap_ros->on_configure(lstate);
@@ -191,7 +191,7 @@ TEST(CriticTests, CostCriticAlignedParams) {
     "dummy_costmap", "", true);
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
-  auto getParam = param_handler.getParamGetter("critic");
+   auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", false);
   costmap_ros->on_configure(lstate);

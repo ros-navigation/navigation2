@@ -27,6 +27,19 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
+# Define local map types
+MAP_POSES_DICT = {
+    'depot': {
+        'x': -8.00, 'y': 0.00, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 0.00
+    },
+    'warehouse': {
+        'x': 2.12, 'y': -21.3, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 1.57
+    }
+}
+MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
+
 
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
@@ -41,11 +54,14 @@ def generate_launch_description() -> LaunchDescription:
     slam = LaunchConfiguration('slam')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
+    keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
+    graph_filepath = LaunchConfiguration('graph')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
+    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -55,12 +71,12 @@ def generate_launch_description() -> LaunchDescription:
     headless = LaunchConfiguration('headless')
     world = LaunchConfiguration('world')
     pose = {
-        'x': LaunchConfiguration('x_pose', default='-8.00'),  # Warehouse: 2.12
-        'y': LaunchConfiguration('y_pose', default='0.00'),  # Warehouse: -21.3
-        'z': LaunchConfiguration('z_pose', default='0.01'),
-        'R': LaunchConfiguration('roll', default='0.00'),
-        'P': LaunchConfiguration('pitch', default='0.00'),
-        'Y': LaunchConfiguration('yaw', default='0.00'),  # Warehouse: 1.57
+        'x': LaunchConfiguration('x_pose', default=MAP_POSES_DICT[MAP_TYPE]['x']),
+        'y': LaunchConfiguration('y_pose', default=MAP_POSES_DICT[MAP_TYPE]['y']),
+        'z': LaunchConfiguration('z_pose', default=MAP_POSES_DICT[MAP_TYPE]['z']),
+        'R': LaunchConfiguration('roll', default=MAP_POSES_DICT[MAP_TYPE]['R']),
+        'P': LaunchConfiguration('pitch', default=MAP_POSES_DICT[MAP_TYPE]['P']),
+        'Y': LaunchConfiguration('yaw', default=MAP_POSES_DICT[MAP_TYPE]['Y']),
     }
     robot_name = LaunchConfiguration('robot_name')
     robot_sdf = LaunchConfiguration('robot_sdf')
@@ -78,8 +94,19 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir, 'maps', 'depot.yaml'),  # Try warehouse.yaml!
+        default_value=os.path.join(bringup_dir, 'maps', f'{MAP_TYPE}.yaml'),
         description='Full path to map file to load',
+    )
+
+    declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
+        'keepout_mask',
+        default_value=os.path.join(bringup_dir, 'maps', f'{MAP_TYPE}_keepout.yaml'),
+        description='Full path to keepout mask file to load',
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot4_graph.geojson'),
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -112,6 +139,11 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to respawn if a node crashes. Applied when composition is disabled.',
     )
 
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
+    )
+
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
         default_value=os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz'),
@@ -140,7 +172,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_world_cmd = DeclareLaunchArgument(
         'world',
-        default_value=os.path.join(sim_dir, 'worlds', 'depot.sdf'),  # Try warehouse.sdf!
+        default_value=os.path.join(sim_dir, 'worlds', f'{MAP_TYPE}.sdf'),
         description='Full path to world model file to load',
     )
 
@@ -183,11 +215,14 @@ def generate_launch_description() -> LaunchDescription:
             'namespace': namespace,
             'slam': slam,
             'map': map_yaml_file,
+            'keepout_mask': keepout_mask_yaml_file,
+            'graph': graph_filepath,
             'use_sim_time': use_sim_time,
             'params_file': params_file,
             'autostart': autostart,
             'use_composition': use_composition,
             'use_respawn': use_respawn,
+            'use_keepout_zones': use_keepout_zones,
         }.items(),
     )
 
@@ -246,6 +281,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_keepout_mask_yaml_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
@@ -260,6 +297,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_robot_name_cmd)
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
 
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)

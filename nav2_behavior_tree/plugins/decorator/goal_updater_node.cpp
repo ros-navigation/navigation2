@@ -37,7 +37,7 @@ GoalUpdater::GoalUpdater(
 {
   initialize();
 
-  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+    // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
   callback_group_executor_.spin_all(std::chrono::milliseconds(1));
 }
 

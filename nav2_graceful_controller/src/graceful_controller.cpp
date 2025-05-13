@@ -56,7 +56,7 @@ void GracefulController::configure(
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
-  if (params_->use_collision_detection) {
+  if(params_->use_collision_detection) {
     collision_checker_ = std::make_unique<nav2_costmap_2d::
         FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
   }

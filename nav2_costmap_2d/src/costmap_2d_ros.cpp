@@ -254,8 +254,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
       std::shared_ptr<nav2_util::LifecycleNode>>>(
     std::string("get_cost_") + get_name(),
     shared_from_this(),
-    std::bind(
-      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
