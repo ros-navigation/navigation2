@@ -123,7 +123,7 @@ void RotationShimController::activate()
     std::bind(
       &RotationShimController::dynamicParametersCallback,
       this, std::placeholders::_1));
-      position_goal_checker_->reset();
+    position_goal_checker_->reset();
 }
 
 void RotationShimController::deactivate()
