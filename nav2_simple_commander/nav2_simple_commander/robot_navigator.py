@@ -84,8 +84,7 @@ class BasicNavigator(Node):
         # we must track its futures and feedback separately. Additionally, the
         # route tracking feedback is uniquely important to be complete and ordered
         self.route_goal_handle: Optional[ClientGoalHandle[Any, Any, Any]] = None
-        self.route_result_future: \
-            Optional[Future[GetResultServiceResponse[Any]]] = None
+        self.route_result_future = None
         self.route_feedback: list[Any] = []
 
         # Error code and messages from servers
