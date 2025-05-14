@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
-#include "nav2_rotation_shim_controller/tools/utils.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -124,9 +123,7 @@ void RotationShimController::activate()
     std::bind(
       &RotationShimController::dynamicParametersCallback,
       this, std::placeholders::_1));
-  if (position_goal_checker_) {
-    position_goal_checker_->reset();
-  }
+      position_goal_checker_->reset();
 }
 
 void RotationShimController::deactivate()
@@ -174,14 +171,10 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         throw std::runtime_error("Failed to transform pose to base frame!");
       }
 
-      if (goal_checker) {
-        geometry_msgs::msg::Pose pose_tolerance;
-        geometry_msgs::msg::Twist vel_tolerance;
-        goal_checker->getTolerances(pose_tolerance, vel_tolerance);
-        if (position_goal_checker_) {
-          position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
-        }
-      }
+      geometry_msgs::msg::Pose pose_tolerance;
+      geometry_msgs::msg::Twist vel_tolerance;
+      goal_checker->getTolerances(pose_tolerance, vel_tolerance);
+      position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
       if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
@@ -364,9 +357,7 @@ void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
   path_updated_ = true;
   current_path_ = path;
   primary_controller_->setPlan(path);
-  if (position_goal_checker_) {
-    position_goal_checker_->reset();
-  }
+  position_goal_checker_->reset();
 }
 
 void RotationShimController::setSpeedLimit(const double & speed_limit, const bool & percentage)
