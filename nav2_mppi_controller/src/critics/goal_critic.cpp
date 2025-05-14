@@ -41,21 +41,16 @@ void GoalCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose active_goal;
-  if (enforce_path_inversion_) {
-    active_goal = utils::getLastPathPose(data.path);
-  } else {
-    active_goal = data.goal;
-  }
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
 
   if (!utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, active_goal))
+      threshold_to_consider_, data.state.pose.pose, goal))
   {
     return;
   }
 
-  auto goal_x = active_goal.position.x;
-  auto goal_y = active_goal.position.y;
+  auto goal_x = goal.position.x;
+  auto goal_y = goal.position.y;
 
   const auto delta_x = data.trajectories.x - goal_x;
   const auto delta_y = data.trajectories.y - goal_y;

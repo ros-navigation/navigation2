@@ -40,22 +40,15 @@ void GoalAngleCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose active_goal;
-  if (enforce_path_inversion_) {
-    active_goal = utils::getLastPathPose(data.path);
-  } else {
-    active_goal = data.goal;
-  }
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
 
   if (!utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, active_goal))
+      threshold_to_consider_, data.state.pose.pose, goal))
   {
     return;
   }
 
-  tf2::Quaternion goal_orientation_q;
-  tf2::fromMsg(active_goal.orientation, goal_orientation_q);
-  double goal_yaw = tf2::getYaw(goal_orientation_q);
+  double goal_yaw = tf2::getYaw(goal.orientation);
 
   if(power_ > 1u) {
     data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).

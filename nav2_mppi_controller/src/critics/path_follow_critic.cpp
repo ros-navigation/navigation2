@@ -40,16 +40,11 @@ void PathFollowCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose active_goal;
-  if (enforce_path_inversion_) {
-    active_goal = utils::getLastPathPose(data.path);
-  } else {
-    active_goal = data.goal;
-  }
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
 
   if (data.path.x.size() < 2 ||
     utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, active_goal))
+      threshold_to_consider_, data.state.pose.pose, goal))
   {
     return;
   }
