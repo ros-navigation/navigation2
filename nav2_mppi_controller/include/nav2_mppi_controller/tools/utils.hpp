@@ -246,12 +246,12 @@ inline geometry_msgs::msg::Pose getLastPathPose(const models::Path & path)
 /**
  * @brief Get the target pose to be evaluated by the critic
  * @param data Data to use
- * @param enforce_path_inversion True to return the cusp point (last pose of the path) 
+ * @param enforce_path_inversion True to return the cusp point (last pose of the path)
  * instead of the original goal
  * @return geometry_msgs::msg::Pose Target pose for the critic
  */
 inline geometry_msgs::msg::Pose getCriticGoal(
-  const CriticData & data, 
+  const CriticData & data,
   bool enforce_path_inversion)
 {
   if (enforce_path_inversion) {
