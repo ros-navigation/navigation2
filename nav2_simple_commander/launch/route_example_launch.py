@@ -49,7 +49,7 @@ def generate_launch_description() -> LaunchDescription:
     world = os.path.join(sim_dir, 'worlds', f'{MAP_TYPE}.sdf')
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', f'{MAP_TYPE}.yaml')
     graph_filepath = os.path.join(
-        nav2_bringup_dir, 'graphs', f'turtlebot4_graph_{MAP_TYPE}.geojson')
+        nav2_bringup_dir, 'graphs', f'{MAP_TYPE}_graph.geojson')
 
     # Launch configuration variables
     headless = LaunchConfiguration('headless')
