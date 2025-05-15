@@ -845,7 +845,7 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
-    if (name.find('.') != std::string::npos) {
+    if (param_name.find('.') != std::string::npos) {
       continue;
     }
 

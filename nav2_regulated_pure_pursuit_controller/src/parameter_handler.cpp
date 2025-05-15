@@ -219,7 +219,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if (name.find(plugin_name_ + ".") != 0) {
+    if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
