@@ -73,6 +73,6 @@ protected:
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
 
-} // namespace nav2_controller
+}  // namespace nav2_controller
 
-#endif // NAV2_CONTROLLER__PLUGINS__POSITION_GOAL_CHECKER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__POSITION_GOAL_CHECKER_HPP_

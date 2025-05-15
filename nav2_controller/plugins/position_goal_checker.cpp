@@ -142,6 +142,6 @@ PositionGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
   return result;
 }
 
-} // namespace nav2_controller
+}  // namespace nav2_controller
 
 PLUGINLIB_EXPORT_CLASS(nav2_controller::PositionGoalChecker, nav2_core::GoalChecker)
