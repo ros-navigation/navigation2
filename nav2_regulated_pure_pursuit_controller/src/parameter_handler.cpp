@@ -232,7 +232,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",
-        name.c_str(), parameter.as_double());
+        param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
