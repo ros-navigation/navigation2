@@ -677,11 +677,11 @@ TEST(UtilsTests, getCriticGoalTest)
   models::State state;
   state.pose.pose = pose;
   models::Trajectories generated_trajectories;
-  models::Path path_critic;
+  models::Path path_t = toTensor(path);
   Eigen::ArrayXf costs;
   float model_dt;
   CriticData data = {
-    state, generated_trajectories, path_critic, goal,
+    state, generated_trajectories, path_t, goal,
     costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
 
   bool enforce_path_inversion = true;
