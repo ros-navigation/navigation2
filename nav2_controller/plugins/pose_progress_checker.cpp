@@ -12,39 +12,106 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include <cmath>
 #include <string>
 #include <memory>
 #include <vector>
+
 #include "angles/angles.h"
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_controller/plugins/pose_progress_checker.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
 namespace nav2_controller
 {
+using nav2_util::declare_parameter_if_not_declared;
+using rcl_interfaces::msg::ParameterType;
+
+
+PoseProgressChecker::ParameterHandler::ParameterHandler(
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  std::string & plugin_name, rclcpp::Logger & logger)
+{
+  node_ = node;
+  plugin_name_ = plugin_name;
+  logger_ = logger;
+
+  declare_parameter_if_not_declared(node, plugin_name + ".required_movement_angle",
+    rclcpp::ParameterValue(0.5));
+  node->get_parameter(plugin_name + ".required_movement_angle",
+    params_.required_movement_angle);
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    [this](const auto & params) {
+      return this->validateParameterUpdatesCallback(params);
+    });
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    [this](const auto & params) {
+      return this->updateParametersCallback(params);
+      });
+}
+PoseProgressChecker::ParameterHandler::~ParameterHandler() = default;
+
+void PoseProgressChecker::ParameterHandler::updateParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  for (const auto & param : parameters) {
+    const auto & name = param.get_name();
+    const auto & type = param.get_type();
+    if (name == plugin_name_ + ".required_movement_angle" &&
+      type == ParameterType::PARAMETER_DOUBLE)
+    {
+      params_.required_movement_angle = param.as_double();
+    }
+  }
+}
+rcl_interfaces::msg::SetParametersResult
+PoseProgressChecker::ParameterHandler::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  for (auto parameter : parameters) {
+    const auto & type = parameter.get_type();
+    const auto & name = parameter.get_name();
+    {
+      if (name.find(plugin_name_ + ".") != 0) {
+        continue;
+      }
+      if (name == plugin_name_ + ".required_movement_angle" &&
+        type == ParameterType::PARAMETER_DOUBLE &&
+        (parameter.as_double() <= 0.0 || parameter.as_double() >= 2 * M_PI))
+      {
+        result.successful = false;
+        result.reason = "The value required_movement_angle is incorrectly set, "
+          "it should be 0 < required_movement_angle < 2PI. Ignoring parameter update.";
+        return result;
+      }
+    }
+  }
+  result.successful = true;
+  return result;
+}
 
 void PoseProgressChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
-  plugin_name_ = plugin_name;
-  SimpleProgressChecker::initialize(parent, plugin_name);
   auto node = parent.lock();
-
-  nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name + ".required_movement_angle", rclcpp::ParameterValue(0.5));
-  node->get_parameter_or(plugin_name + ".required_movement_angle", required_movement_angle_, 0.5);
-
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&PoseProgressChecker::dynamicParametersCallback, this, _1));
+  if (!node) {
+    throw nav2_core::ControllerException("Unable to lock node!");
+  }
+  node_ = parent;
+  plugin_name_ = plugin_name;
+  logger_ = node->get_logger();
+  param_handler_ = std::make_unique<ParameterHandler>(node, plugin_name_, logger_);
+  params_ = param_handler_->getParams();
+  SimpleProgressChecker::initialize(parent, plugin_name);
 }
 
 bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
@@ -64,7 +131,7 @@ bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_ ||
-         poseAngleDistance(pose, baseline_pose_) > required_movement_angle_;
+         poseAngleDistance(pose, baseline_pose_) > params_->required_movement_angle;
 }
 
 double PoseProgressChecker::poseAngleDistance(
@@ -74,23 +141,6 @@ double PoseProgressChecker::poseAngleDistance(
   return abs(angles::shortest_angular_distance(pose1.theta, pose2.theta));
 }
 
-rcl_interfaces::msg::SetParametersResult
-PoseProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
-{
-  rcl_interfaces::msg::SetParametersResult result;
-  for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".required_movement_angle") {
-        required_movement_angle_ = parameter.as_double();
-      }
-    }
-  }
-  result.successful = true;
-  return result;
-}
 
 }  // namespace nav2_controller
 
