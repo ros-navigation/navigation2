@@ -223,7 +223,9 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" && parameter.as_double() <= 0.0) {
+      if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" &&
+        parameter.as_double() <= 0.0)
+      {
         RCLCPP_WARN(
         logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
         "it should be >0. Ignoring parameter update.");

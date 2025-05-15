@@ -422,7 +422,8 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
     } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
       if (parameter.as_double_array().size() != 3) {
-        RCLCPP_WARN(get_logger(), "Invalid size of parameter %s. Must be size 3", param_name.c_str());
+        RCLCPP_WARN(get_logger(), "Invalid size of parameter %s. Must be size 3",
+            param_name.c_str());
         result.successful = false;
         break;
       }
