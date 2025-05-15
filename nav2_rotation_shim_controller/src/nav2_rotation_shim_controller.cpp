@@ -189,8 +189,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       goal_checker->getTolerances(pose_tolerance, vel_tolerance);
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
-      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity))
-      {
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
 
@@ -223,7 +222,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
           tf2::getYaw(sampled_pt.pose.orientation));
       } else {
         geometry_msgs::msg::Pose sampled_pt_base = transformPoseToBaseFrame(sampled_pt);
-        angular_distance_to_heading = std::atan2(sampled_pt_base.position.y,
+        angular_distance_to_heading = std::atan2(
+          sampled_pt_base.position.y,
           sampled_pt_base.position.x);
       }
 
