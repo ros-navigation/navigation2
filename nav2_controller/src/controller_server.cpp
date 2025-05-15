@@ -840,8 +840,8 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
@@ -859,16 +859,16 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       return result;
     }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller_frequency") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "controller_frequency") {
         controller_frequency_ = parameter.as_double();
-      } else if (name == "min_x_velocity_threshold") {
+      } else if (param_name == "min_x_velocity_threshold") {
         min_x_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_y_velocity_threshold") {
+      } else if (param_name == "min_y_velocity_threshold") {
         min_y_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_theta_velocity_threshold") {
+      } else if (param_name == "min_theta_velocity_threshold") {
         min_theta_velocity_threshold_ = parameter.as_double();
-      } else if (name == "failure_tolerance") {
+      } else if (param_name == "failure_tolerance") {
         failure_tolerance_ = parameter.as_double();
       }
     }

@@ -525,19 +525,19 @@ NavfnPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == name_ + ".tolerance") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + ".tolerance") {
         tolerance_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == name_ + ".use_astar") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + ".use_astar") {
         use_astar_ = parameter.as_bool();
-      } else if (name == name_ + ".allow_unknown") {
+      } else if (param_name == name_ + ".allow_unknown") {
         allow_unknown_ = parameter.as_bool();
-      } else if (name == name_ + ".use_final_approach_orientation") {
+      } else if (param_name == name_ + ".use_final_approach_orientation") {
         use_final_approach_orientation_ = parameter.as_bool();
       }
     }

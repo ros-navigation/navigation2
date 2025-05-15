@@ -208,31 +208,31 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
-    if (type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller.k_phi") {
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "controller.k_phi") {
         k_phi_ = parameter.as_double();
-      } else if (name == "controller.k_delta") {
+      } else if (param_name == "controller.k_delta") {
         k_delta_ = parameter.as_double();
-      } else if (name == "controller.beta") {
+      } else if (param_name == "controller.beta") {
         beta_ = parameter.as_double();
-      } else if (name == "controller.lambda") {
+      } else if (param_name == "controller.lambda") {
         lambda_ = parameter.as_double();
-      } else if (name == "controller.v_linear_min") {
+      } else if (param_name == "controller.v_linear_min") {
         v_linear_min_ = parameter.as_double();
-      } else if (name == "controller.v_linear_max") {
+      } else if (param_name == "controller.v_linear_max") {
         v_linear_max_ = parameter.as_double();
-      } else if (name == "controller.v_angular_max") {
+      } else if (param_name == "controller.v_angular_max") {
         v_angular_max_ = parameter.as_double();
-      } else if (name == "controller.slowdown_radius") {
+      } else if (param_name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
-      } else if (name == "controller.projection_time") {
+      } else if (param_name == "controller.projection_time") {
         projection_time_ = parameter.as_double();
-      } else if (name == "controller.simulation_time_step") {
+      } else if (param_name == "controller.simulation_time_step") {
         simulation_time_step_ = parameter.as_double();
-      } else if (name == "controller.dock_collision_threshold") {
+      } else if (param_name == "controller.dock_collision_threshold") {
         dock_collision_threshold_ = parameter.as_double();
       }
 

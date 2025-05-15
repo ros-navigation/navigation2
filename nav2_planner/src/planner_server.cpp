@@ -730,11 +730,11 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "expected_planner_frequency") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "expected_planner_frequency") {
         if (parameter.as_double() > 0) {
           max_planner_duration_ = 1 / parameter.as_double();
         } else {

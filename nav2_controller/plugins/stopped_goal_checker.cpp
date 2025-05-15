@@ -119,13 +119,13 @@ StoppedGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".rot_stopped_velocity") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".rot_stopped_velocity") {
         rot_stopped_velocity_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".trans_stopped_velocity") {
+      } else if (param_name == plugin_name_ + ".trans_stopped_velocity") {
         trans_stopped_velocity_ = parameter.as_double();
       }
     }
