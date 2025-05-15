@@ -603,7 +603,7 @@ TEST(ControllerTests, RotateToHeading) {
   cmd_vel =
     controller->computeRotateToHeadingCommand(angular_distance_to_heading, current_velocity, dt);
   EXPECT_DOUBLE_EQ(cmd_vel.linear.x, 0.0);
-  EXPECT_DOUBLE_EQ(cmd_vel.angular.z, -rotate_to_heading_max_angular_accel * dt);
+  EXPECT_DOUBLE_EQ(cmd_vel.angular.z, 0.0);
 
   controller.reset();
 }

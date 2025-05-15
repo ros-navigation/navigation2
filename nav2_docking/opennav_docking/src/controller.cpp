@@ -139,6 +139,14 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
     current_velocity.angular.z + rotate_to_heading_max_angular_accel_ * dt;
   cmd_vel.angular.z =
     std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+
+  // Check if we need to slow down to avoid overshooting
+  double max_vel_to_stop =
+    std::sqrt(2 * rotate_to_heading_max_angular_accel_ * fabs(angular_distance_to_heading));
+  if (fabs(cmd_vel.angular.z) > max_vel_to_stop) {
+    cmd_vel.angular.z = sign * max_vel_to_stop;
+  }
+
   return cmd_vel;
 }
 
