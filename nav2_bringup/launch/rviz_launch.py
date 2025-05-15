@@ -58,8 +58,8 @@ def generate_launch_description() -> LaunchDescription:
         package='rviz2',
         executable='rviz2',
         namespace=namespace,
-        arguments=['-d', rviz_config_file],
-        output='screen',
+        arguments=['-d', rviz_config_file, '--ros-args', '--log-level', 'warn'],
+        output='log',
         parameters=[{'use_sim_time': use_sim_time}],
         remappings=[
             ('/tf', 'tf'),
