@@ -68,8 +68,9 @@ void SpeedFilter::initializeFilter(
   std::string speed_limit_topic;
   declareParameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
   node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic);
+  speed_limit_topic = joinWithParentNamespace(speed_limit_topic);
 
-  filter_info_topic_ = filter_info_topic;
+  filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
     logger_,
@@ -139,7 +140,7 @@ void SpeedFilter::filterInfoCallback(
     return;
   }
 
-  mask_topic_ = msg->filter_mask_topic;
+  mask_topic_ = joinWithParentNamespace(msg->filter_mask_topic);
 
   // Setting new filter mask subscriber
   RCLCPP_INFO(
