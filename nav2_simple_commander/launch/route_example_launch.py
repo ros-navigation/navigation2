@@ -26,6 +26,19 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 
+# Define local map types
+MAP_POSES_DICT = {
+    'depot': {
+        'x': -8.00, 'y': 0.00, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 0.00
+    },
+    'warehouse': {
+        'x': 2.12, 'y': -21.3, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 1.57
+    }
+}
+MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
+
 
 def generate_launch_description() -> LaunchDescription:
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
@@ -33,9 +46,10 @@ def generate_launch_description() -> LaunchDescription:
     desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
 
     robot_sdf = os.path.join(desc_dir, 'urdf', 'standard', 'turtlebot4.urdf.xacro')
-    world = os.path.join(sim_dir, 'worlds', 'depot.sdf')
-    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'depot.yaml')
-    graph_filepath = os.path.join(nav2_bringup_dir, 'graphs', 'turtlebot4_graph.geojson')
+    world = os.path.join(sim_dir, 'worlds', f'{MAP_TYPE}.sdf')
+    map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', f'{MAP_TYPE}.yaml')
+    graph_filepath = os.path.join(
+        nav2_bringup_dir, 'graphs', f'turtlebot4_graph_{MAP_TYPE}.geojson')
 
     # Launch configuration variables
     headless = LaunchConfiguration('headless')
@@ -79,12 +93,13 @@ def generate_launch_description() -> LaunchDescription:
             os.path.join(sim_dir, 'launch', 'spawn_tb4.launch.py')),
         launch_arguments={'use_sim_time': 'True',
                           'robot_sdf': robot_sdf,
-                          'x_pose': '-8.0',
-                          'y_pose': '0.0',
-                          'z_pose': '0.0',
-                          'roll': '0.0',
-                          'pitch': '0.0',
-                          'yaw': '0.0'}.items())
+                          'x_pose': str(MAP_POSES_DICT[MAP_TYPE]['x']),
+                          'y_pose': str(MAP_POSES_DICT[MAP_TYPE]['y']),
+                          'z_pose': str(MAP_POSES_DICT[MAP_TYPE]['z']),
+                          'roll': str(MAP_POSES_DICT[MAP_TYPE]['R']),
+                          'pitch': str(MAP_POSES_DICT[MAP_TYPE]['P']),
+                          'yaw': str(MAP_POSES_DICT[MAP_TYPE]['Y']),
+                          }.items())
 
     start_robot_state_publisher_cmd = Node(
         package='robot_state_publisher',
