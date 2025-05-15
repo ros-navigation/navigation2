@@ -243,6 +243,8 @@ protected:
   double wait_charge_timeout_;
   // Timeout to approach into the dock and reset its approach is retrying
   double dock_approach_timeout_;
+  // Timeout to rotate to the dock
+  double rotate_to_dock_timeout_;
   // When undocking, these are the tolerances for arriving at the staging pose
   double undock_linear_tolerance_, undock_angular_tolerance_;
   // Maximum number of times the robot will return to staging pose and retry docking
@@ -255,8 +257,6 @@ protected:
   std::optional<bool> dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
-  // Enable docking with initial detection only, without any update
-  bool backward_blind_;
   // Angular tolerance to exit the rotation loop when backward_blind is enable
   double rotation_angular_tolerance_;
 

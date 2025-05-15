@@ -201,7 +201,8 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller_frequency         | Control frequency (Hz) for vision-control loop          | double | 50.0      |
 | initial_perception_timeout   | Timeout (s) to wait to obtain initial perception of the dock | double | 5.0   |
 | wait_charge_timeout          | Timeout (s) to wait to see if charging starts after docking  | double | 5.0  |
-| dock_approach_timeout        | timeout (s) to attempt vision-control approach loop    | double |  30.0      |
+| dock_approach_timeout        | Timeout (s) to attempt vision-control approach loop    | double |  30.0      |
+| rotate_to_dock_timeout       | Timeout (s) to attempt rotate-to-dock loop             | double |  10.0      |
 | undock_linear_tolerance      | Tolerance (m) to exit the undocking control loop at staging pose    | double |  0.05      |
 | undock_angular_tolerance     | Angular tolerance (rad) to exit undocking loop at staging pose    | double |  0.05      |
 | max_retries        | Maximum number of retries to attempt    | int |  3      |

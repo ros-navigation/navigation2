@@ -33,6 +33,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("initial_perception_timeout", 5.0);
   declare_parameter("wait_charge_timeout", 5.0);
   declare_parameter("dock_approach_timeout", 30.0);
+  declare_parameter("rotate_to_dock_timeout", 10.0);
   declare_parameter("undock_linear_tolerance", 0.05);
   declare_parameter("undock_angular_tolerance", 0.05);
   declare_parameter("max_retries", 3);
@@ -54,6 +55,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("initial_perception_timeout", initial_perception_timeout_);
   get_parameter("wait_charge_timeout", wait_charge_timeout_);
   get_parameter("dock_approach_timeout", dock_approach_timeout_);
+  get_parameter("rotate_to_dock_timeout", rotate_to_dock_timeout_);
   get_parameter("undock_linear_tolerance", undock_linear_tolerance_);
   get_parameter("undock_angular_tolerance", undock_angular_tolerance_);
   get_parameter("max_retries", max_retries_);
@@ -299,14 +301,13 @@ void DockingServer::dockRobot()
     bool dock_backward = dock_backwards_.has_value() ?
       dock_backwards_.value() :
       (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
-    bool backward_blind = dock->plugin->isBackwardBlind();
 
     // Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
         // Perform pure rotation to dock orientation
-        if (backward_blind) {
+        if (dock->plugin->isBackwardBlind()) {
           rotateToDock(dock_pose);
         }
         // Approach the dock using control law
@@ -442,11 +443,14 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 
 void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
 {
-  rclcpp::Rate loop_rate(controller_frequency_);
   const double dt = 1.0 / controller_frequency_;
   auto target_pose = dock_pose;
   target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
     tf2::getYaw(target_pose.pose.orientation) + M_PI);
+
+  rclcpp::Rate loop_rate(controller_frequency_);
+  auto start = this->now();
+  auto timeout = rclcpp::Duration::from_seconds(rotate_to_dock_timeout_);
 
   while (rclcpp::ok()) {
     auto robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
@@ -465,6 +469,11 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
       angular_distance_to_heading, current_vel->twist, dt);
 
     vel_publisher_->publish(std::move(command));
+
+    if (this->now() - start > timeout) {
+      throw opennav_docking_core::FailedToCharge("Timed out rotating to dock");
+    }
+
     loop_rate.sleep();
   }
 }
@@ -492,8 +501,7 @@ bool DockingServer::approachDock(
     }
 
     // Update perception
-    bool backward_blind = dock->plugin->isBackwardBlind();
-    if (!backward_blind && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!dock->plugin->isBackwardBlind() && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
