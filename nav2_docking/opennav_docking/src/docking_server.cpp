@@ -471,7 +471,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
     vel_publisher_->publish(std::move(command));
 
     if (this->now() - start > timeout) {
-      throw opennav_docking_core::FailedToCharge("Timed out rotating to dock");
+      throw opennav_docking_core::FailedToControl("Timed out rotating to dock");
     }
 
     loop_rate.sleep();
