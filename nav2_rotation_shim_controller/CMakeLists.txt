@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_controller REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -29,6 +30,7 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
+  nav2_controller::nav2_controller
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
   pluginlib::pluginlib
@@ -69,6 +71,7 @@ ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_core
+  nav2_controller
   nav2_costmap_2d
   pluginlib
   rclcpp
