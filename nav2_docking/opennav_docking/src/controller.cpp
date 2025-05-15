@@ -130,6 +130,8 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
   const geometry_msgs::msg::Twist & current_velocity,
   const double & dt)
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   geometry_msgs::msg::Twist cmd_vel;
   const double sign = angular_distance_to_heading > 0.0 ? 1.0 : -1.0;
   const double angular_vel = sign * rotate_to_heading_angular_vel_;
@@ -153,6 +155,8 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
 bool Controller::isTrajectoryCollisionFree(
   const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
 {
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
   // Visualization of the trajectory
   nav_msgs::msg::Path trajectory;
   trajectory.header.frame_id = base_frame_;
