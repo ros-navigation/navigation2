@@ -306,8 +306,8 @@ void DockingServer::dockRobot()
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
-        // Perform pure rotation to dock orientation
-        if (dock->plugin->isBackwardBlind()) {
+        // Perform a 180º to face away from the dock if needed
+        if (dock->plugin->shouldRotateToDock()) {
           rotateToDock(dock_pose);
         }
         // Approach the dock using control law
@@ -501,7 +501,7 @@ bool DockingServer::approachDock(
     }
 
     // Update perception
-    if (!dock->plugin->isBackwardBlind() && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!dock->plugin->shouldRotateToDock() && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 

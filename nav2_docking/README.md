@@ -209,7 +209,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | base_frame        | Robot's base frame for control law   | string |  "base_link"      |
 | fixed_frame        | Fixed frame to use, recommended to be a smooth odometry frame **not** map   | string |  "odom"      |
 | odom_topic        | The topic to use for the odometry data | string |  "odom"      |
-| rotation_angular_tolerance  | Angular tolerance (rad) to exit the rotation loop when backward_blind is enable | double | 0.05      |
+| rotation_angular_tolerance  | Angular tolerance (rad) to exit the rotation loop when rotate_to_dock is enabled | double | 0.05      |
 | dock_prestaging_tolerance  |  L2 distance in X,Y,Theta from the staging pose to bypass navigation | double |  0.5      |
 | dock_plugins  | A set of dock plugins to load | vector<string> |  N/A      |
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |
@@ -223,8 +223,8 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | controller.v_linear_max | Maximum linear velocity (m/s) | double | 0.25    |
 | controller.v_angular_max | Maximum angular velocity (rad/s) produced by the control law | double | 0.75    |
 | controller.slowdown_radius | Radius (m) around the goal pose in which the robot will start to slow down | double | 0.25     |
-| controller.rotate_to_heading_angular_vel | Angular velocity (rad/s) to rotate to the goal heading when backward_blind is enable | double | 1.0    |
-| controller.rotate_to_heading_max_angular_accel | Maximum angular acceleration (rad/s^2) to rotate to the goal heading when backward_blind is enable | double | 3.2    |
+| controller.rotate_to_heading_angular_vel | Angular velocity (rad/s) to rotate to the goal heading when rotate_to_dock is enabled | double | 1.0    |
+| controller.rotate_to_heading_max_angular_accel | Maximum angular acceleration (rad/s^2) to rotate to the goal heading when rotate_to_dock is enabled | double | 3.2    |
 | controller.use_collision_detection | Whether to use collision detection to avoid obstacles | bool | true     |
 | controller.costmap_topic | The topic to use for the costmap | string | "local_costmap/costmap_raw"     |
 | controller.footprint_topic | The topic to use for the robot's footprint | string | "local_costmap/published_footprint"     |
@@ -256,7 +256,7 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | staging_x_offset        | Staging pose offset forward (negative) of dock pose (m)    | double |  -0.7    |
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
 | dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
-| backward_blind        | Initial forward detection, then dock in reverse | bool |  false      |
+| rotate_to_dock        | Rotate the robot 180º before docking | bool |  false      |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 

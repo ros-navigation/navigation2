@@ -69,7 +69,7 @@ def generate_test_description() -> LaunchDescription:
 
     if os.getenv('BACKWARD_BLIND') == 'True':
         param_substitutions.update({'dock_direction': 'backward'})
-        param_substitutions.update({'backward_blind': 'True'})
+        param_substitutions.update({'rotate_to_dock': 'True'})
 
     configured_params = RewrittenYaml(
         source_file=params_file,

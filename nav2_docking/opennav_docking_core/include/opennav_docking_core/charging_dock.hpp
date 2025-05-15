@@ -137,17 +137,18 @@ public:
   DockDirection getDockDirection() {return dock_direction_;}
 
   /**
-   * @brief Indicates if the dock is backward blind
-   * @return bool True if the dock is backward blind
+   * @brief Determines whether the robot should rotate 180º to face away from the dock.
+   * For example, to perform a backward docking without detections.
+   * @return bool If the robot should rotate to face away from the dock.
    */
-  bool isBackwardBlind() {return backward_blind_;}
+  bool shouldRotateToDock() {return rotate_to_dock_;}
 
   std::string getName() {return name_;}
 
 protected:
   std::string name_;
   DockDirection dock_direction_{DockDirection::UNKNOWN};
-  bool backward_blind_{false};
+  bool rotate_to_dock_{false};
 };
 
 }  // namespace opennav_docking_core

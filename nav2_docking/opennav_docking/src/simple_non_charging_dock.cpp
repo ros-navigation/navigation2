@@ -74,7 +74,7 @@ void SimpleNonChargingDock::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".dock_direction", rclcpp::ParameterValue(std::string("forward")));
   nav2_util::declare_parameter_if_not_declared(
-    node_, name + ".backward_blind", rclcpp::ParameterValue(false));
+    node_, name + ".rotate_to_dock", rclcpp::ParameterValue(false));
 
   node_->get_parameter(name + ".use_external_detection_pose", use_external_detection_pose_);
   node_->get_parameter(name + ".external_detection_timeout", external_detection_timeout_);
@@ -101,9 +101,9 @@ void SimpleNonChargingDock::configure(
     throw std::runtime_error{"Dock direction is not valid. Valid options are: forward or backward"};
   }
 
-  node_->get_parameter(name + ".backward_blind", backward_blind_);
-  if (backward_blind_ && dock_direction_ != opennav_docking_core::DockDirection::BACKWARD) {
-    throw std::runtime_error{"Parameter backward_blind is enabled but dock direction is not "
+  node_->get_parameter(name + ".rotate_to_dock", rotate_to_dock_);
+  if (rotate_to_dock_ && dock_direction_ != opennav_docking_core::DockDirection::BACKWARD) {
+    throw std::runtime_error{"Parameter rotate_to_dock is enabled but dock direction is not "
             "backward. Please set dock direction to backward."};
   }
 

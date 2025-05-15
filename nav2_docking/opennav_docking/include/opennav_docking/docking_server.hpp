@@ -257,7 +257,7 @@ protected:
   std::optional<bool> dock_backwards_;
   // The tolerance to the dock's staging pose not requiring navigation
   double dock_prestaging_tolerance_;
-  // Angular tolerance to exit the rotation loop when backward_blind is enable
+  // Angular tolerance to exit the rotation loop when rotate_to_dock is enabled
   double rotation_angular_tolerance_;
 
   // This is a class member so it can be accessed in publish feedback
