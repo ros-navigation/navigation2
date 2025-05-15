@@ -85,7 +85,7 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
 
   // test declared parameter
   node->declare_parameter("foobar", "foo");
-  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"});
+  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"}, true);
   EXPECT_EQ(param, "foo");
   node->get_parameter("foobar", param);
   EXPECT_EQ(param, "foo");
