@@ -56,8 +56,18 @@ PoseProgressChecker::ParameterHandler::ParameterHandler(
       return this->updateParametersCallback(params);
       });
 }
-PoseProgressChecker::ParameterHandler::~ParameterHandler() = default;
-
+PoseProgressChecker::ParameterHandler::~ParameterHandler()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
 void PoseProgressChecker::ParameterHandler::updateParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
