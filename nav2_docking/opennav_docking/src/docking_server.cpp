@@ -297,10 +297,18 @@ void DockingServer::dockRobot()
     doInitialPerception(dock, dock_pose);
     RCLCPP_INFO(get_logger(), "Successful initial dock detection");
 
-    // Get the direction of the movement and whether to drive backwards blindly
+    // Get the direction of the movement
     bool dock_backward = dock_backwards_.has_value() ?
       dock_backwards_.value() :
       (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
+
+    // If we performed a rotation before docking backward, we must rotate the staging pose
+    // to match the robot orientation
+    auto staging_pose = dock->getStagingPose();
+    if (dock->plugin->shouldRotateToDock()) {
+      staging_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(staging_pose.pose.orientation) + M_PI);
+    }
 
     // Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
@@ -344,7 +352,7 @@ void DockingServer::dockRobot()
       }
 
       // Reset to staging pose to try again
-      if (!resetApproach(dock->getStagingPose(), dock_backward)) {
+      if (!resetApproach(staging_pose, dock_backward)) {
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
@@ -706,6 +714,13 @@ void DockingServer::undockRobot()
     geometry_msgs::msg::PoseStamped staging_pose =
       dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id);
 
+    // If we performed a rotation before docking backward, we must rotate the staging pose
+    // to match the robot orientation
+    if (dock->shouldRotateToDock()) {
+      staging_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(staging_pose.pose.orientation) + M_PI);
+    }
+
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();
     while (rclcpp::ok()) {
@@ -739,6 +754,12 @@ void DockingServer::undockRobot()
           !dock_backward))
       {
         RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
+
+        // Perform a 180º to the original staging pose
+        if (dock->shouldRotateToDock()) {
+          rotateToDock(staging_pose);
+        }
+
         // Have reached staging_pose
         vel_publisher_->publish(std::move(command));
         if (!dock->isCharger() || dock->hasStoppedCharging()) {
