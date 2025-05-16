@@ -30,7 +30,7 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
-  nav2_controller::nav2_controller
+  nav2_controller::position_goal_checker
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
   pluginlib::pluginlib
