@@ -1,4 +1,4 @@
-name: Build Main Against Released Distributions
+name: Build Against Released Distributions
 
 on:
   workflow_dispatch:
@@ -9,12 +9,12 @@ on:
 jobs:
   build-docker:
     runs-on: ubuntu-latest
-    name: Build Main Against Released Distributions
+    name: Build Against Released Distributions
 
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: [jazzy] 
+        ros_distro: [jazzy]
   
     steps:
     - name: Checkout repository
@@ -22,8 +22,8 @@ jobs:
 
     - name: Set up Docker build context
       run: |
-        mkdir -p /tmp/docker_context
-        cp -r . /tmp/docker_context/ws
+        mkdir -p /tmp/docker_context/src
+        cp -r . /tmp/docker_context/ws/src
         echo 'FROM osrf/ros:${{ matrix.ros_distro }}-desktop-full
 
         RUN apt-get update && apt-get install -y \
