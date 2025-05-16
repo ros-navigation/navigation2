@@ -11,6 +11,7 @@
 
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_controller</depend>
   <depend>nav2_util</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>rclcpp</depend>

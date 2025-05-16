@@ -19,7 +19,6 @@
 #include <utility>
 
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
-#include "nav2_rotation_shim_controller/tools/utils.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 
@@ -39,6 +38,8 @@ void RotationShimController::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  position_goal_checker_ = std::make_unique<nav2_controller::PositionGoalChecker>();
+  position_goal_checker_->initialize(parent, plugin_name_ + ".position_checker", costmap_ros);
   plugin_name_ = name;
   node_ = parent;
   auto node = parent.lock();
@@ -127,6 +128,7 @@ void RotationShimController::activate()
     std::bind(
       &RotationShimController::dynamicParametersCallback,
       this, std::placeholders::_1));
+  position_goal_checker_->reset();
 }
 
 void RotationShimController::deactivate()
@@ -155,6 +157,7 @@ void RotationShimController::cleanup()
 
   primary_controller_->cleanup();
   primary_controller_.reset();
+  position_goal_checker_.reset();
 }
 
 geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands(
@@ -176,11 +179,12 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
       }
 
-      if (utils::withinPositionGoalTolerance(
-          goal_checker,
-          pose.pose,
-          sampled_pt_goal.pose))
-      {
+      geometry_msgs::msg::Pose pose_tolerance;
+      geometry_msgs::msg::Twist vel_tolerance;
+      goal_checker->getTolerances(pose_tolerance, vel_tolerance);
+      position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
+
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
 
@@ -213,7 +217,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
           tf2::getYaw(sampled_pt.pose.orientation));
       } else {
         geometry_msgs::msg::Pose sampled_pt_base = transformPoseToBaseFrame(sampled_pt);
-        angular_distance_to_heading = std::atan2(sampled_pt_base.position.y,
+        angular_distance_to_heading = std::atan2(
+          sampled_pt_base.position.y,
           sampled_pt_base.position.x);
       }
 
@@ -386,6 +391,7 @@ void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
   path_updated_ = rotate_to_heading_once_ ? isGoalChanged(path) : true;
   current_path_ = path;
   primary_controller_->setPlan(path);
+  position_goal_checker_->reset();
 }
 
 void RotationShimController::setSpeedLimit(const double & speed_limit, const bool & percentage)
@@ -397,6 +403,7 @@ void RotationShimController::reset()
 {
   last_angular_vel_ = std::numeric_limits<double>::max();
   primary_controller_->reset();
+  position_goal_checker_->reset();
 }
 
 rcl_interfaces::msg::SetParametersResult
