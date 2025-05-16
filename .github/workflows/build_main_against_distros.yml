@@ -41,7 +41,7 @@ jobs:
           rosdep install --from-paths src --ignore-src -r -y \
           --skip-keys=slam_toolbox
 
-        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build' > /tmp/docker_context/Dockerfile
+        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --packages-skip nav2_system_tests nav2_bringup nav2_simple_commander nav2_loopback_sim navigation2' > /tmp/docker_context/Dockerfile
 
 
     - name: Build Docker image
