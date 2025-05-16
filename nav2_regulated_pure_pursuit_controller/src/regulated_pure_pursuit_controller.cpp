@@ -320,8 +320,17 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   const geometry_msgs::msg::PoseStamped & carrot_pose)
 {
   // Whether we should rotate robot to goal heading
-  double dist_to_goal = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  return params_->use_rotate_to_heading && dist_to_goal < goal_dist_tol_;
+  double dist_to_goal =
+    std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+
+  if (params_->stateful) {
+    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
+      has_reached_xy_tolerance_ = true;
+    }
+    return params_->use_rotate_to_heading && has_reached_xy_tolerance_;
+  } else {
+    return params_->use_rotate_to_heading && dist_to_goal < goal_dist_tol_;
+  }
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
@@ -493,6 +502,7 @@ void RegulatedPurePursuitController::reset()
 {
   cancelling_ = false;
   finished_cancelling_ = false;
+  has_reached_xy_tolerance_ = false;
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
