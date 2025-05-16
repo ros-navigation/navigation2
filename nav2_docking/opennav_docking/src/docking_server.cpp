@@ -509,7 +509,7 @@ bool DockingServer::approachDock(
     }
 
     // Update perception
-    if (!dock->plugin->shouldRotateToDock() && !dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!dock->plugin->getRefinedPose(dock_pose, dock->id) && !dock->plugin->shouldRotateToDock()) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 

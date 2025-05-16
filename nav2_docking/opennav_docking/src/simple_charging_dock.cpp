@@ -79,7 +79,7 @@ void SimpleChargingDock::configure(
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".staging_yaw_offset", rclcpp::ParameterValue(0.0));
 
-  // Direction of docking and backward blind
+  // Direction of docking and if we should rotate to dock
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".dock_direction", rclcpp::ParameterValue(std::string("forward")));
   nav2_util::declare_parameter_if_not_declared(

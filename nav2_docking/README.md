@@ -256,7 +256,7 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | staging_x_offset        | Staging pose offset forward (negative) of dock pose (m)    | double |  -0.7    |
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
 | dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
-| rotate_to_dock        | Rotate the robot 180º before docking | bool |  false      |
+| rotate_to_dock        | Enables backward docking without requiring a sensor for detection during the final approach. When enabled, the robot approaches the staging pose facing forward with sensor coverage for dock detection; after detection, it rotates and backs into the dock using only the initially detected pose for dead reckoning. | bool |  false      |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
