@@ -183,7 +183,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
-  node->get_parameter(plugin_name_ + ".stateful", params_.stateful_);
+  node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
