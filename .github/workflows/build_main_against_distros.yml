@@ -2,7 +2,7 @@ name: Build Main Against Released Distributions
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - main
 
