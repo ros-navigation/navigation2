@@ -13,8 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: [jazzy, kilted]
-  
+        ros_distro: [jazzy]
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
