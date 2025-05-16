@@ -9,7 +9,7 @@ on:
 jobs:
   build-docker:
     runs-on: ubuntu-latest
-    name: Build Against Released Distributions
+    name: Build Against
 
     strategy:
       fail-fast: false
@@ -22,7 +22,7 @@ jobs:
 
     - name: Set up Docker build context
       run: |
-        mkdir /tmp/docker_context/ws/src
+        mkdir -p /tmp/docker_context/ws/src
         cp -r . /tmp/docker_context/ws/src
         echo 'FROM osrf/ros:${{ matrix.ros_distro }}-desktop-full
 
