@@ -86,7 +86,7 @@ void MPPIController::deactivate()
 
 void MPPIController::reset()
 {
-  optimizer_.reset();
+  optimizer_.reset(false /*Don't reset zone-based speed limits between requests*/);
 }
 
 geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
