@@ -210,7 +210,9 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if (param_name.find("controller.") != 0) {
+      continue;
+    }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "controller.k_phi") {
         k_phi_ = parameter.as_double();

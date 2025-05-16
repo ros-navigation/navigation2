@@ -756,6 +756,9 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "controller_frequency") {
