@@ -294,6 +294,8 @@ void SmacPlannerHybrid::configure(
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints", 1);
+    _planned_footprints_smoothed_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "planned_footprints_smoothed", 1);
   }
 
   RCLCPP_INFO(
@@ -314,6 +316,7 @@ void SmacPlannerHybrid::activate()
   if (_debug_visualizations) {
     _expansions_publisher->on_activate();
     _planned_footprints_publisher->on_activate();
+    _planned_footprints_smoothed_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -342,6 +345,7 @@ void SmacPlannerHybrid::deactivate()
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_deactivate();
+    _planned_footprints_smoothed_publisher->on_deactivate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -367,8 +371,11 @@ void SmacPlannerHybrid::cleanup()
     _costmap_downsampler.reset();
   }
   _raw_plan_publisher.reset();
-  _expansions_publisher.reset();
-  _planned_footprints_publisher.reset();
+  if (_debug_visualizations) {
+    _expansions_publisher.reset();
+    _planned_footprints_publisher.reset();
+    _planned_footprints_smoothed_publisher.reset();
+  }
 }
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
@@ -573,6 +580,27 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   std::cout << "It took " << time_span2.count() * 1000 <<
     " milliseconds to smooth path." << std::endl;
 #endif
+
+  if (_debug_visualizations) {
+    // plot footprint path planned for debug
+    if (_planned_footprints_smoothed_publisher->get_subscription_count() > 0) {
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+
+      visualization_msgs::msg::Marker clear_all_marker;
+      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+      marker_array->markers.push_back(clear_all_marker);
+
+      _planned_footprints_smoothed_publisher->publish(std::move(marker_array));
+
+      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      for (size_t i = 0; i < plan.poses.size(); i++) {
+        const std::vector<geometry_msgs::msg::Point> edge =
+          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, _clock->now()));
+      }
+      _planned_footprints_smoothed_publisher->publish(std::move(marker_array));
+    }
+  }
 
   return plan;
 }
