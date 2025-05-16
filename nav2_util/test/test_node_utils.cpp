@@ -99,6 +99,9 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
   // test declaration by type of non existing param
   int_value = declare_or_get_parameter(node, "wololo", rclcpp::ParameterType::PARAMETER_INTEGER);
   EXPECT_EQ(int_value.get_type(), rclcpp::ParameterType::PARAMETER_NOT_SET);
+  // test that a subsequent call doesn't throw
+  int_value = declare_or_get_parameter(node, "wololo", rclcpp::ParameterType::PARAMETER_INTEGER);
+  EXPECT_EQ(int_value.get_type(), rclcpp::ParameterType::PARAMETER_NOT_SET);
 }
 
 TEST(GetPluginTypeParam, GetPluginTypeParam)

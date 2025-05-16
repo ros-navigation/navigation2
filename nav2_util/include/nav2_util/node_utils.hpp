@@ -142,9 +142,14 @@ rclcpp::ParameterValue declare_or_get_parameter(
   const rclcpp::ParameterType & param_type,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
-  return node->has_parameter(parameter_name) ?
-         node->get_parameter(parameter_name).get_parameter_value() :
-         node->declare_parameter(parameter_name, param_type, parameter_descriptor);
+  if (node->has_parameter(parameter_name)) {
+    try {
+      return node->get_parameter(parameter_name).get_parameter_value();
+    } catch (const std::exception & exception) {
+      return rclcpp::ParameterValue();
+    }
+  }
+  return node->declare_parameter(parameter_name, param_type, parameter_descriptor);
 }
 
 using NodeParamInterfacePtr = rclcpp::node_interfaces::NodeParametersInterface::SharedPtr;
@@ -210,8 +215,7 @@ ParamType declare_or_get_parameter(
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
-      parameter_name,
-      default_value, warn_if_no_override, parameter_descriptor);
+      parameter_name, default_value, warn_if_no_override, parameter_descriptor);
 }
 
 /// Gets the type of plugin for the selected node and its plugin
