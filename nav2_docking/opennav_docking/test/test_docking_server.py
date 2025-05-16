@@ -31,6 +31,7 @@ import launch_testing.markers
 import launch_testing.util
 from nav2_common.launch import RewrittenYaml
 from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
+from nav_msgs.msg import Odometry
 import pytest
 import rclpy
 from rclpy.action.client import ActionClient
@@ -66,6 +67,10 @@ def generate_test_description() -> LaunchDescription:
     if os.getenv('BACKWARD') == 'True':
         param_substitutions.update({'dock_direction': 'backward'})
         param_substitutions.update({'staging_yaw_offset': '3.14'})
+
+    if os.getenv('BACKWARD_BLIND') == 'True':
+        param_substitutions.update({'dock_direction': 'backward'})
+        param_substitutions.update({'rotate_to_dock': 'True'})
 
     configured_params = RewrittenYaml(
         source_file=params_file,
@@ -122,6 +127,8 @@ class TestDockingServer(unittest.TestCase):
         # Latest command velocity
         self.command = Twist()
         self.node = rclpy.create_node('test_docking_server')
+        # Publish odometry
+        self.odom_pub = self.node.create_publisher(Odometry, 'odom', 10)
 
     def tearDown(self) -> None:
         self.node.destroy_node()
@@ -150,6 +157,7 @@ class TestDockingServer(unittest.TestCase):
         t.transform.rotation.z = sin(self.theta / 2.0)
         t.transform.rotation.w = cos(self.theta / 2.0)
         self.tf_broadcaster.sendTransform(t)
+        self.publish_odometry(t)
         # Publish the battery state if we are using a charging dock
         if os.getenv('NON_CHARGING_DOCK') == 'False':
             b = BatteryState()
@@ -158,6 +166,17 @@ class TestDockingServer(unittest.TestCase):
             else:
                 b.current = -1.0
             self.battery_state_pub.publish(b)
+
+    def publish_odometry(self, odom_to_base_link: TransformStamped) -> None:
+        odom = Odometry()
+        odom.header.stamp = self.node.get_clock().now().to_msg()
+        odom.header.frame_id = 'odom'
+        odom.child_frame_id = 'base_link'
+        odom.pose.pose.position.x = odom_to_base_link.transform.translation.x
+        odom.pose.pose.position.y = odom_to_base_link.transform.translation.y
+        odom.pose.pose.orientation = odom_to_base_link.transform.rotation
+        odom.twist.twist = self.command
+        self.odom_pub.publish(odom)
 
     def action_feedback_callback(self, msg: DockRobot.Feedback) -> None:
         # Force the docking action to run a full recovery loop and then
@@ -193,8 +212,13 @@ class TestDockingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.dock_action_client = ActionClient(self.node, DockRobot, 'dock_robot')
-        self.undock_action_client = ActionClient(self.node, UndockRobot, 'undock_robot')
+        self.dock_action_client: ActionClient[
+            DockRobot.Goal, DockRobot.Result, DockRobot.Feedback
+        ] = ActionClient(self.node, DockRobot, 'dock_robot')
+
+        self.undock_action_client: ActionClient[
+            UndockRobot.Goal, UndockRobot.Result, UndockRobot.Feedback
+        ] = ActionClient(self.node, UndockRobot, 'undock_robot')
 
         # Subscribe to command velocity
         self.node.create_subscription(
