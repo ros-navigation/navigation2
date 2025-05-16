@@ -753,14 +753,13 @@ void DockingServer::undockRobot()
           command->twist, staging_pose, undock_linear_tolerance_, undock_angular_tolerance_, false,
           !dock_backward))
       {
-        RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
-
         // Perform a 180º to the original staging pose
         if (dock->shouldRotateToDock()) {
           rotateToDock(staging_pose);
         }
 
         // Have reached staging_pose
+        RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
         vel_publisher_->publish(std::move(command));
         if (!dock->isCharger() || dock->hasStoppedCharging()) {
           RCLCPP_INFO(get_logger(), "Robot has undocked!");
