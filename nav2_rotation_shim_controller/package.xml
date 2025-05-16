@@ -13,6 +13,7 @@
   <depend>angles</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_controller</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
