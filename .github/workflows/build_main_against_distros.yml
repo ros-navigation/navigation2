@@ -23,7 +23,7 @@ jobs:
       run: |
         mkdir -p /tmp/docker_context/ws/src
         cp -r . /tmp/docker_context/ws/src
-        echo 'FROM osrf/ros:${{ matrix.ros_distro }}-desktop-full
+        echo 'FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly
 
         RUN apt-get update && apt-get install -y \
           python3-pip \
