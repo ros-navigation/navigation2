@@ -67,6 +67,10 @@ def generate_test_description() -> LaunchDescription:
         param_substitutions.update({'dock_direction': 'backward'})
         param_substitutions.update({'staging_yaw_offset': '3.14'})
 
+    if os.getenv('BACKWARD_BLIND') == 'True':
+        param_substitutions.update({'dock_direction': 'backward'})
+        param_substitutions.update({'rotate_to_dock': 'True'})
+
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
@@ -152,6 +156,7 @@ class TestDockingServer(unittest.TestCase):
         t.transform.rotation.z = sin(self.theta / 2.0)
         t.transform.rotation.w = cos(self.theta / 2.0)
         self.tf_broadcaster.sendTransform(t)
+        self.publish_odometry(t)
         # Publish the battery state if we are using a charging dock
         if os.getenv('NON_CHARGING_DOCK') == 'False':
             b = BatteryState()
@@ -160,6 +165,17 @@ class TestDockingServer(unittest.TestCase):
             else:
                 b.current = -1.0
             self.battery_state_pub.publish(b)
+
+    def publish_odometry(self, odom_to_base_link: TransformStamped) -> None:
+        odom = Odometry()
+        odom.header.stamp = self.node.get_clock().now().to_msg()
+        odom.header.frame_id = 'odom'
+        odom.child_frame_id = 'base_link'
+        odom.pose.pose.position.x = odom_to_base_link.transform.translation.x
+        odom.pose.pose.position.y = odom_to_base_link.transform.translation.y
+        odom.pose.pose.orientation = odom_to_base_link.transform.rotation
+        odom.twist.twist = self.command
+        self.odom_pub.publish(odom)
 
     def action_feedback_callback(self, msg: DockRobot.Feedback) -> None:
         # Force the docking action to run a full recovery loop and then
