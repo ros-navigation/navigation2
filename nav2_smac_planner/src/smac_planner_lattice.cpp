@@ -440,28 +440,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     _raw_plan_publisher->publish(plan);
   }
 
-  // Find how much time we have left to do smoothing
-  steady_clock::time_point b = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(b - a);
-  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-
-  #ifdef BENCHMARK_TESTING
-    std::cout << "It took " << time_span.count() * 1000 <<
-      " milliseconds with " << num_iterations << " iterations." << std::endl;
-  #endif
-
-    // Smooth plan
-    if (_smoother && num_iterations > 1) {
-      _smoother->smooth(plan, _costmap, time_remaining);
-    }
-
-  #ifdef BENCHMARK_TESTING
-    steady_clock::time_point c = steady_clock::now();
-    duration<double> time_span2 = duration_cast<duration<double>>(c - b);
-    std::cout << "It took " << time_span2.count() * 1000 <<
-      " milliseconds to smooth path." << std::endl;
-  #endif
-
   if (_debug_visualizations) {
     // Publish expansions for debug
     geometry_msgs::msg::PoseArray msg;
@@ -493,6 +471,28 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
   }
+
+  // Find how much time we have left to do smoothing
+  steady_clock::time_point b = steady_clock::now();
+  duration<double> time_span = duration_cast<duration<double>>(b - a);
+  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
+
+#ifdef BENCHMARK_TESTING
+  std::cout << "It took " << time_span.count() * 1000 <<
+    " milliseconds with " << num_iterations << " iterations." << std::endl;
+#endif
+
+  // Smooth plan
+  if (_smoother && num_iterations > 1) {
+    _smoother->smooth(plan, _costmap, time_remaining);
+  }
+
+#ifdef BENCHMARK_TESTING
+  steady_clock::time_point c = steady_clock::now();
+  duration<double> time_span2 = duration_cast<duration<double>>(c - b);
+  std::cout << "It took " << time_span2.count() * 1000 <<
+    " milliseconds to smooth path." << std::endl;
+#endif
 
   return plan;
 }
