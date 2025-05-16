@@ -22,7 +22,7 @@ jobs:
 
     - name: Set up Docker build context
       run: |
-        mkdir -p /tmp/docker_context/src
+        mkdir /tmp/docker_context/ws/src
         cp -r . /tmp/docker_context/ws/src
         echo 'FROM osrf/ros:${{ matrix.ros_distro }}-desktop-full
 
