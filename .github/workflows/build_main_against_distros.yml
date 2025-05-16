@@ -9,12 +9,11 @@ on:
 jobs:
   build-docker:
     runs-on: ubuntu-latest
-    name: Build Against
 
     strategy:
       fail-fast: false
       matrix:
-        ros_distro: [jazzy]
+        ros_distro: [jazzy, kilted]
   
     steps:
     - name: Checkout repository
@@ -42,7 +41,7 @@ jobs:
           rosdep install --from-paths src --ignore-src -r -y \
           --skip-keys=slam_toolbox
 
-        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --event-handlers console_direct+' > /tmp/docker_context/Dockerfile
+        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build' > /tmp/docker_context/Dockerfile
 
 
     - name: Build Docker image
