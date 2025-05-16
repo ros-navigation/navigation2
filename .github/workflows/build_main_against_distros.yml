@@ -22,8 +22,8 @@ jobs:
 
     - name: Set up Docker build context
       run: |
-        mkdir docker_context
-        cp -r . docker_context/ws
+        mkdir -p /tmp/docker_context
+        cp -r . /tmp/docker_context/ws
         echo 'FROM osrf/ros:${{ matrix.ros_distro }}-desktop-full
 
         RUN apt-get update && apt-get install -y \
@@ -42,9 +42,9 @@ jobs:
           rosdep install --from-paths src --ignore-src -r -y \
           --skip-keys=slam_toolbox
 
-        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --event-handlers console_direct+' > docker_context/Dockerfile
+        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --event-handlers console_direct+' > /tmp/docker_context/Dockerfile
 
 
     - name: Build Docker image
       run: |
-        docker build -t nav2-${{ matrix.ros_distro }}-main-compatibility ./docker_context
+        docker build -t nav2-${{ matrix.ros_distro }}-main-compatibility /tmp/docker_context
