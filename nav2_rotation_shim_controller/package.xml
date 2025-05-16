@@ -11,6 +11,12 @@
 
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
+<<<<<<< HEAD
+=======
+  <depend>nav2_controller</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_msgs</depend>
+>>>>>>> bd8f422c (Addition of position goal checker, fix of rotation shim controller (#5162))
   <depend>nav2_util</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>rclcpp</depend>

@@ -31,7 +31,11 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+<<<<<<< HEAD
 #include "angles/angles.h"
+=======
+#include "nav2_controller/plugins/position_goal_checker.hpp"
+>>>>>>> bd8f422c (Addition of position goal checker, fix of rotation shim controller (#5162))
 
 namespace nav2_rotation_shim_controller
 {
@@ -195,6 +199,7 @@ protected:
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::unique_ptr<nav2_controller::PositionGoalChecker> position_goal_checker_;
 };
 
 }  // namespace nav2_rotation_shim_controller
