@@ -20,6 +20,7 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
+#include "pluginlib/exceptions.hpp"
 
 namespace nav2_util
 {
@@ -143,11 +144,11 @@ std::string get_plugin_type_param(
     if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
       RCLCPP_FATAL(
         node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
-      throw std::runtime_error("No 'plugin' param for param ns!");
+      throw pluginlib::PluginlibException("No 'plugin' param for param ns!");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
-    throw std::runtime_error("No 'plugin' param for param ns!");
+    throw pluginlib::PluginlibException("No 'plugin' param for param ns!");
   }
 
   return plugin_type;

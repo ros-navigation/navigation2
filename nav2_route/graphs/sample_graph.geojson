@@ -1,0 +1,121 @@
+{
+    "type": "FeatureCollection",
+    "name": "graph",
+    "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
+    "date_generated": "Tue Feb 28 07:48:03 PM EST 2025",
+    "features": [
+        {
+            "type": "Feature",
+            "properties":
+            {
+                "id": 0,
+                "frame": "map",
+                "metadata":
+                {
+                    "region":
+                    {
+                        "x_values": [1.0, -1.0, -1.0, 1.0],
+                        "y_values": [1.0, 1.0, -1.0, -1.0],
+                        "properties": {
+                            "class_type": "living_room",
+                            "number_of_lights": 10
+                        }
+                    }
+                },
+                "operations":
+                {
+                    "stop":
+                    {
+                        "type": "stop",
+                        "trigger": "NODE",
+                        "metadata":
+                        {
+                            "wait_for": 5.0
+                        }
+                    }
+                }
+            },
+            "geometry":
+            {
+                "type": "Point",
+                "coordinates": [ 0.0, 0.0 ]
+            }
+        },
+        { "type": "Feature", "properties": { "id": 1, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 1.0, 0.0 ] } },
+        { "type": "Feature", "properties": { "id": 2, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 2.0, 0.0 ] } },
+        { "type": "Feature", "properties": { "id": 3, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 0.0, 1.0 ] } },
+        { "type": "Feature", "properties": { "id": 4, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 1.0, 1.0 ] } },
+        { "type": "Feature", "properties": { "id": 5, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 2.0, 1.0 ] } },
+        { "type": "Feature", "properties": { "id": 6, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 0.0, 2.0 ] } },
+        { "type": "Feature", "properties": { "id": 7, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 1.0, 2.0 ] } },
+        { "type": "Feature", "properties": { "id": 8, "frame": "map" }, "geometry": { "type": "Point", "coordinates": [ 2.0, 2.0 ] } },
+        {
+            "type": "Feature",
+            "properties":
+            {
+                "id": 9,
+                "startid": 0,
+                "endid": 1,
+                "overridable": false,
+                "cost": 10.0,
+                "metadata":
+                {
+                    "speed_limit": 0.85,
+                    "aisle_number": 14
+                },
+                "operations":
+                {
+                    "open_door":
+                    {
+                        "type": "open_door",
+                        "trigger": "ON_ENTER",
+                        "metadata":
+                        {
+                            "door_id": 54,
+                            "service_name": "open_door"
+                        }
+                    },
+                    "take_picture":
+                    {
+                        "type": "take_picture",
+                        "trigger": "ON_EXIT",
+                        "metadata":
+                        {
+                            "type": "jpg",
+                            "resolution": [1080, 720]
+                        }
+                    }
+                }
+            },
+            "geometry":
+            {
+                "type": "MultiLineString",
+                "coordinates": [ [ [ 0.0, 0.0 ], [ 1.0, 0.0 ] ] ]
+            }
+        },
+        { "type": "Feature", "properties": { "id": 10, "startid": 1, "endid": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 0.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 11, "startid": 1, "endid": 2 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 2.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 12, "startid": 2, "endid": 1 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 0.0 ], [ 1.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 13, "startid": 0, "endid": 3 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 0.0 ], [ 0.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 14, "startid": 3, "endid": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 1.0 ], [ 0.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 15, "startid": 1, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 1.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 16, "startid": 4, "endid": 1 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 1.0 ], [ 1.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 17, "startid": 2, "endid": 5 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 0.0 ], [ 2.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 18, "startid": 5, "endid": 2 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 1.0 ], [ 2.0, 0.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 19, "startid": 3, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 1.0 ], [ 1.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 20, "startid": 4, "endid": 3 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 1.0 ], [ 0.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 21, "startid": 4, "endid": 5 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 1.0 ], [ 2.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 22, "startid": 5, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 1.0 ], [ 1.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 23, "startid": 3, "endid": 6 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 1.0 ], [ 0.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 24, "startid": 6, "endid": 3 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 2.0 ], [ 0.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 25, "startid": 4, "endid": 7 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 1.0 ], [ 1.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 26, "startid": 7, "endid": 4 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 2.0 ], [ 1.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 27, "startid": 5, "endid": 8 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 1.0 ], [ 2.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 28, "startid": 8, "endid": 5 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 2.0 ], [ 2.0, 1.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 29, "startid": 6, "endid": 7 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 0.0, 2.0 ], [ 1.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 30, "startid": 7, "endid": 6 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 2.0 ], [ 0.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 31, "startid": 7, "endid": 8 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 2.0 ], [ 2.0, 2.0 ] ] ] } },
+        { "type": "Feature", "properties": { "id": 32, "startid": 8, "endid": 7 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 2.0, 2.0 ], [ 1.0, 2.0 ] ] ] } }
+
+    ]
+}

@@ -28,13 +28,7 @@
 #include <utility>
 #include <vector>
 
-// For compatibility with Jazzy
-#include "rclcpp/version.h"
-#if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "message_filters/subscriber.hpp"
-#else
-#include "message_filters/subscriber.h"
-#endif
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"

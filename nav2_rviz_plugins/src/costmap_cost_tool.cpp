@@ -54,14 +54,14 @@ void CostmapCostTool::onInitialize()
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
   local_cost_client_ =
     std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
-      "/local_costmap/get_cost_local_costmap",
-      node,
-      false /* Does not create and spin an internal executor*/);
+    "/local_costmap/get_cost_local_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
   global_cost_client_ =
     std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
-      "/global_costmap/get_cost_global_costmap",
-      node,
-      false /* Does not create and spin an internal executor*/);
+    "/global_costmap/get_cost_global_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
 }
 
 void CostmapCostTool::activate() {}
