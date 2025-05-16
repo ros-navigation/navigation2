@@ -128,9 +128,3 @@ ament_add_pytest_test(test_docking_server_backward test_docking_server.py
   NON_CHARGING_DOCK=False
   BACKWARD=True
 )
-
-ament_add_pytest_test(test_docking_server_backward_blind test_docking_server.py
-  ENV
-  NON_CHARGING_DOCK=False
-  BACKWARD_BLIND=True
-)

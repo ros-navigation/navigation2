@@ -9,7 +9,6 @@ docking_server:
       plugin: opennav_docking::SimpleChargingDock
       use_battery_status: True
       dock_direction: forward
-      rotate_to_dock: False
       staging_yaw_offset: 0.0
     docks: [test_dock]
     test_dock:
