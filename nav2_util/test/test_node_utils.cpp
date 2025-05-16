@@ -90,7 +90,7 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
   node->get_parameter("foobar", param);
   EXPECT_EQ(param, "foo");
   // test undeclared parameter
-  int int_param = declare_or_get_parameter(node, "waldo", 3);
+  int int_param = declare_or_get_parameter(node, "waldo", 3, true);
   EXPECT_EQ(int_param, 3);
   // test declaration by type of existing param
   rclcpp::ParameterValue int_value = declare_or_get_parameter(node, "waldo",
