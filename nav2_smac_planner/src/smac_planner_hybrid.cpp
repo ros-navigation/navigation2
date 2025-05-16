@@ -295,7 +295,7 @@ void SmacPlannerHybrid::configure(
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints", 1);
     _planned_footprints_smoothed_publisher =
-     node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints_smoothed", 1);
   }
 
