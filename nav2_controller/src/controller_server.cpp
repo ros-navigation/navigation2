@@ -860,9 +860,7 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "controller_frequency") {
-        controller_frequency_ = parameter.as_double();
-      } else if (param_name == "min_x_velocity_threshold") {
+      if (param_name == "min_x_velocity_threshold") {
         min_x_velocity_threshold_ = parameter.as_double();
       } else if (param_name == "min_y_velocity_threshold") {
         min_y_velocity_threshold_ = parameter.as_double();

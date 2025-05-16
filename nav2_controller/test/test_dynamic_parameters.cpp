@@ -62,8 +62,7 @@ TEST(WPTest, test_dynamic_parameters)
     controller->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("controller_frequency", 100.0),
-      rclcpp::Parameter("min_x_velocity_threshold", 100.0),
+    {rclcpp::Parameter("min_x_velocity_threshold", 100.0),
       rclcpp::Parameter("min_y_velocity_threshold", 100.0),
       rclcpp::Parameter("min_theta_velocity_threshold", 100.0),
       rclcpp::Parameter("failure_tolerance", 5.0)});
@@ -72,7 +71,6 @@ TEST(WPTest, test_dynamic_parameters)
     controller->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(controller->get_parameter("controller_frequency").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_x_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_y_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_theta_velocity_threshold").as_double(), 100.0);
