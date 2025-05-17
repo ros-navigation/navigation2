@@ -705,7 +705,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
-      rclcpp::Parameter("test.use_rotate_to_heading", false)});
+      rclcpp::Parameter("test.use_rotate_to_heading", false),
+      rclcpp::Parameter("statefull", false)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -736,6 +737,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.statefull").as_bool(), false);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(

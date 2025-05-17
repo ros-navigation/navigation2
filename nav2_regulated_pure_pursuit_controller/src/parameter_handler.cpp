@@ -102,7 +102,7 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(false));
+      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
