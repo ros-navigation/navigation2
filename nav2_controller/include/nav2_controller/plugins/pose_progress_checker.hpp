@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -31,6 +32,41 @@ namespace nav2_controller
 
 class PoseProgressChecker : public SimpleProgressChecker
 {
+  struct Parameters
+  {
+    double required_movement_angle;
+  };
+
+/**
+ * @class nav2_controller::PoseProgressChecker::ParameterHandler
+ * @brief This class handls parameters and dynamic parameter updates for the nav2_controller.
+ */
+  class ParameterHandler
+  {
+public:
+    ParameterHandler(
+      rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+      std::string & plugin_name, rclcpp::Logger & logger);
+    ~ParameterHandler();
+    Parameters * getParams() {return &params_;}
+
+protected:
+    rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+
+    void
+    updateParametersCallback(
+      std::vector<rclcpp::Parameter> parameters);
+
+    rcl_interfaces::msg::SetParametersResult
+    validateParameterUpdatesCallback(
+      std::vector<rclcpp::Parameter> parameters);
+    rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
+    Parameters params_;
+    std::string plugin_name_;
+    rclcpp::Logger logger_ {rclcpp::get_logger("PoseProgressChecker")};
+  };
+
 public:
   void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
@@ -50,18 +86,15 @@ protected:
     const geometry_msgs::msg::Pose2D &);
 
   double required_movement_angle_;
-
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  Parameters * params_;
   std::string plugin_name_;
 
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param parameters list of changed parameters
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rclcpp::Logger logger_ {rclcpp::get_logger("PoseProgressChecker")};
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  std::unique_ptr<nav2_controller::PoseProgressChecker::ParameterHandler> param_handler_;
 };
+
+
 }  // namespace nav2_controller
 
 #endif  // NAV2_CONTROLLER__PLUGINS__POSE_PROGRESS_CHECKER_HPP_
