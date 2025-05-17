@@ -496,6 +496,9 @@ VoxelLayer::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "max_obstacle_height") {
