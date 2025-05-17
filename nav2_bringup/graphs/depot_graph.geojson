@@ -1,6 +1,6 @@
 {
     "type": "FeatureCollection",
-    "name": "turtlebot4_graph",
+    "name": "depot_graph",
     "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
     "features": [
     { "type": "Feature", "properties": { "id": 0 }, "geometry": { "type": "Point", "coordinates": [ 0.624282608695647, 12.880652173913044 ] } },
