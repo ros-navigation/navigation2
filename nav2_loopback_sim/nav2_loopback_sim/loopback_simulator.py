@@ -85,25 +85,31 @@ class LoopbackSimulator(Node):
 
         self.declare_parameter('publish_clock', True)
         self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
-        
+
         self.declare_parameter('scan_range_min',  0.05)
-        self.scan_range_min = self.get_parameter('scan_range_min').get_parameter_value().double_value
-        
+        self.scan_range_min = \
+            self.get_parameter('scan_range_min').get_parameter_value().double_value
+
         self.declare_parameter('scan_range_max',  30.0)
-        self.scan_range_max = self.get_parameter('scan_range_max').get_parameter_value().double_value
-        
+        self.scan_range_max = \
+            self.get_parameter('scan_range_max').get_parameter_value().double_value
+
         self.declare_parameter('scan_angle_min',  -math.pi)
-        self.scan_angle_min = self.get_parameter('scan_angle_min').get_parameter_value().double_value
-        
+        self.scan_angle_min = \
+            self.get_parameter('scan_angle_min').get_parameter_value().double_value
+
         self.declare_parameter('scan_angle_max',  -math.pi)
-        self.scan_angle_max = self.get_parameter('scan_angle_max').get_parameter_value().double_value
-        
+        self.scan_angle_max = \
+            self.get_parameter('scan_angle_max').get_parameter_value().double_value
+
         self.declare_parameter('scan_angle_increment',  0.026179900392889977)
-        self.scan_angle_increment = self.get_parameter('scan_angle_increment').get_parameter_value().double_value
-        
+        self.scan_angle_increment = \
+            self.get_parameter('scan_angle_increment').get_parameter_value().double_value
+
         self.declare_parameter('scan_use_inf', False)
-        self.use_inf = self.get_parameter('scan_use_inf').get_parameter_value().bool_value
-        
+        self.use_inf = \
+            self.get_parameter('scan_use_inf').get_parameter_value().bool_value
+
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
         self.t_map_to_odom.child_frame_id = self.odom_frame_id
@@ -354,7 +360,7 @@ class LoopbackSimulator(Node):
         if not 0 < mx0 < self.map.info.width or not 0 < my0 < self.map.info.height:
             # outside map
             if self.use_inf:
-                self.scan_msg.ranges =  [float('inf')] * num_samples
+                self.scan_msg.ranges = [float('inf')] * num_samples
             else:
                 self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
@@ -386,8 +392,7 @@ class LoopbackSimulator(Node):
 
                 line_iterator.advance()
             if self.scan_msg.ranges[i] == 0.0 and self.use_inf:
-                    self.scan_msg.ranges[i] = float('inf')
-    
+                self.scan_msg.ranges[i] = float('inf')
 
 
 def main() -> None:
