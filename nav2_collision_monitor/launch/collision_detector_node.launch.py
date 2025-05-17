@@ -21,7 +21,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, NotEqualsSubstitution, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
+from launch_ros.actions import LoadComposableNodes, Node, PushRosNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
@@ -87,7 +87,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
+            PushRosNamespace(
                 condition=IfCondition(
                     NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
                 ),
@@ -117,7 +117,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushROSNamespace(
+            PushRosNamespace(
                 condition=IfCondition(
                     NotEqualsSubstitution(LaunchConfiguration('namespace'), '')
                 ),

@@ -136,12 +136,6 @@ install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_find_gtest()

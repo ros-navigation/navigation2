@@ -10,6 +10,7 @@ on:
       - main
       - jazzy
       - humble
+      - humble_main
     paths:
       - '**/package.xml'
       - '**/*.repos'

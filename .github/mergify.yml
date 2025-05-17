@@ -26,6 +26,15 @@ pull_request_rules:
         branches:
           - humble
 
+  - name: backport to humble_main at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-humble-main"
+    actions:
+      backport:
+        branches:
+          - humble_main
+
   - name: delete head branch after merge
     conditions:
       - merged

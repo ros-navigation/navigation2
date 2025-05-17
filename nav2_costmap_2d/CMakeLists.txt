@@ -46,17 +46,17 @@ target_include_directories(nav2_costmap_2d_core
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(nav2_costmap_2d_core PUBLIC
-  ${geometry_msgs_TARGETS}
-  ${map_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
-  ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  pluginlib::pluginlib
-  ${std_srvs_TARGETS}
-  tf2::tf2
-  tf2_ros::tf2_ros
-  tf2_sensor_msgs::tf2_sensor_msgs
+ament_target_dependencies(nav2_costmap_2d_core
+  geometry_msgs
+  map_msgs
+  nav_msgs
+  nav2_msgs
+  nav2_util
+  pluginlib
+  std_srvs
+  tf2
+  tf2_ros
+  tf2_sensor_msgs
 )
 
 add_library(layers SHARED
@@ -168,11 +168,6 @@ install(DIRECTORY include/
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
   ament_find_gtest()

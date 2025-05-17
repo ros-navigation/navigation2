@@ -57,9 +57,7 @@ install(DIRECTORY include/
 install(DIRECTORY behavior_trees DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  ament_lint_auto_find_test_dependencies()
   add_subdirectory(test)
 endif()
 

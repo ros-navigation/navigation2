@@ -145,9 +145,7 @@ install(DIRECTORY include/
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  ament_lint_auto_find_test_dependencies()
 
   ament_find_gtest()
   add_subdirectory(test)

@@ -31,11 +31,7 @@ install(DIRECTORY include/
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
-  # skip copyright linting
-  set(ament_cmake_copyright_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
   add_subdirectory(test)
