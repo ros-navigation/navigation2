@@ -852,7 +852,7 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
         undock_linear_tolerance_ = parameter.as_double();
       } else if (param_name == "undock_angular_tolerance") {
         undock_angular_tolerance_ = parameter.as_double();
-      } else if (name == "rotation_angular_tolerance") {
+      } else if (param_name == "rotation_angular_tolerance") {
         rotation_angular_tolerance_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_STRING) {

@@ -710,7 +710,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           );
           _coarse_search_resolution = 1;
         }
-      } else if (name == _name + ".coarse_search_resolution") {
+      } else if (param_name == _name + ".coarse_search_resolution") {
         _coarse_search_resolution = parameter.as_int();
         if (_coarse_search_resolution <= 0) {
           RCLCPP_WARN(
@@ -739,7 +739,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
             _motion_model_for_search.c_str());
         }
-      } else if (name == _name + ".goal_heading_mode") {
+      } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
         RCLCPP_INFO(

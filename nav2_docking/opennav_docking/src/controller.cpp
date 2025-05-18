@@ -263,11 +263,11 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (param_name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
-      } else if (name == "controller.rotate_to_heading_angular_vel") {
+      } else if (param_name == "controller.rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
-      } else if (name == "controller.rotate_to_heading_max_angular_accel") {
+      } else if (param_name == "controller.rotate_to_heading_max_angular_accel") {
         rotate_to_heading_max_angular_accel_ = parameter.as_double();
-      } else if (name == "controller.projection_time") {
+      } else if (param_name == "controller.projection_time") {
         projection_time_ = parameter.as_double();
       } else if (param_name == "controller.simulation_time_step") {
         simulation_time_step_ = parameter.as_double();
