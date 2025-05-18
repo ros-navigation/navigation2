@@ -591,7 +591,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0 && param_name != "resulution"){
+    if(param_name.find(_name + ".") != 0 && param_name != "resolution"){
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
