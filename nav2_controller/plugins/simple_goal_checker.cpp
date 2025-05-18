@@ -147,7 +147,9 @@ SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   for (auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = parameter.as_double();
