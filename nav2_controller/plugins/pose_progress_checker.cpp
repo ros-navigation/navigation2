@@ -31,9 +31,9 @@ using std::placeholders::_1;
 
 namespace nav2_controller
 {
+
 using nav2_util::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
-
 
 PoseProgressChecker::ParameterHandler::ParameterHandler(
   rclcpp_lifecycle::LifecycleNode::SharedPtr node,
@@ -54,7 +54,7 @@ PoseProgressChecker::ParameterHandler::ParameterHandler(
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     [this](const auto & params) {
       return this->updateParametersCallback(params);
-      });
+    });
 }
 PoseProgressChecker::ParameterHandler::~ParameterHandler()
 {

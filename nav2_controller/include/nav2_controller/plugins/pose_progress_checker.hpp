@@ -43,14 +43,14 @@ class PoseProgressChecker : public SimpleProgressChecker
  */
   class ParameterHandler
   {
-public:
+  public:
     ParameterHandler(
       rclcpp_lifecycle::LifecycleNode::SharedPtr node,
       std::string & plugin_name, rclcpp::Logger & logger);
     ~ParameterHandler();
     Parameters * getParams() {return &params_;}
 
-protected:
+  protected:
     rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 
     void
@@ -93,7 +93,6 @@ protected:
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::unique_ptr<nav2_controller::PoseProgressChecker::ParameterHandler> param_handler_;
 };
-
 
 }  // namespace nav2_controller
 
