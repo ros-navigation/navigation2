@@ -38,7 +38,7 @@ repositories:
   ros/common_interfaces:
     type: git
     url:  https://github.com/ros2/common_interfaces.git
-    version: rolling
+    version: humble
   ros2/launch:
     type: git
     url:  https://github.com/ros2/launch.git
