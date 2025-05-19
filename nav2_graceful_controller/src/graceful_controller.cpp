@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <mutex>
+#include <memory>
 
 #include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
