@@ -91,7 +91,7 @@ target_link_libraries(${library_name} PUBLIC
 target_link_libraries(${library_name} PRIVATE
   ament_index_cpp::ament_index_cpp
   pluginlib::pluginlib
-  yaml-cpp::yaml-cpp
+  yaml-cpp
 )
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
@@ -117,8 +117,6 @@ install(
 install(DIRECTORY rviz launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})

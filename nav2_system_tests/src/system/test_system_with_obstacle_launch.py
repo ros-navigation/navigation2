@@ -85,14 +85,14 @@ def generate_launch_description() -> LaunchDescription:
             SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
             SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
             AppendEnvironmentVariable(
-                'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
+                'IGN_GAZEBO_RESOURCE_PATH', os.path.join(sim_dir, 'models')
             ),
             AppendEnvironmentVariable(
-                'GZ_SIM_RESOURCE_PATH',
+                'IGN_GAZEBO_RESOURCE_PATH',
                 str(Path(os.path.join(sim_dir)).parent.resolve())
             ),
             ExecuteProcess(
-                cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+                cmd=['ign', 'gazebo', '-r', '-s', world_sdf_xacro],
                 output='screen',
             ),
             IncludeLaunchDescription(
@@ -118,7 +118,7 @@ def generate_launch_description() -> LaunchDescription:
                     '-entity', 'cardboard_box',
                     '-file', cardbox_sdf,
                     '-x', '-1.0', '-y', '0.6', '-z', '0.15',
-                    '-R', '0.0', '-P', '0.0', '-Y', '0.0',]
+                    '-R', '0.0', '-P', '0.0', '-Y', '0.0', ]
             ),
             Node(
                 package='robot_state_publisher',

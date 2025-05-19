@@ -41,15 +41,15 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     map_yaml_file = os.path.join(nav2_bringup_dir, 'maps', 'tb3_sandbox.yaml')
 
     set_env_vars_resources = AppendEnvironmentVariable(
-        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models')
+        'IGN_GAZEBO_RESOURCE_PATH', os.path.join(sim_dir, 'models')
     )
     set_env_vars_resources2 = AppendEnvironmentVariable(
-        'GZ_SIM_RESOURCE_PATH',
+        'IGN_GAZEBO_RESOURCE_PATH',
         str(Path(os.path.join(sim_dir)).parent.resolve())
     )
 
     start_gazebo_server = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+        cmd=['ign', 'gazebo', '-r', '-s', world_sdf_xacro],
         output='screen',
     )
 

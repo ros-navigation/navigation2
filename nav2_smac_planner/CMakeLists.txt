@@ -171,9 +171,6 @@ install(DIRECTORY include/
 install(DIRECTORY lattice_primitives/sample_primitives DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  set(AMENT_LINT_AUTO_FILE_EXCLUDE include/nav2_smac_planner/thirdparty/robin_hood.h)
-  ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gtest REQUIRED)
   ament_find_gtest()
   add_subdirectory(test)

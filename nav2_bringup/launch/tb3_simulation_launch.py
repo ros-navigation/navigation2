@@ -206,7 +206,7 @@ def generate_launch_description() -> LaunchDescription:
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', headless], world])
     gazebo_server = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', '-s', world_sdf],
+        cmd=['ign', 'gazebo', '-r', '-s', world_sdf],
         output='screen',
         condition=IfCondition(use_simulator)
     )
@@ -224,7 +224,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
         condition=IfCondition(PythonExpression(
             [use_simulator, ' and not ', headless])),
-        launch_arguments={'gz_args': ['-v4 -g ']}.items(),
+        launch_arguments={'ign_args': ['-v4 -g ']}.items(),
     )
 
     gz_robot = IncludeLaunchDescription(

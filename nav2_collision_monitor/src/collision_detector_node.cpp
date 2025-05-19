@@ -82,7 +82,7 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Creating timer
-  timer_ = this->create_timer(
+  timer_ = this->create_wall_timer(
     std::chrono::duration<double>{1.0 / frequency_},
     std::bind(&CollisionDetector::process, this));
 

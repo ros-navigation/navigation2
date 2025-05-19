@@ -137,7 +137,7 @@ def generate_launch_description() -> LaunchDescription:
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
     start_gazebo_cmd = ExecuteProcess(
-        cmd=['gz', 'sim', '-r', '-s', world_sdf],
+        cmd=['ign', 'gazebo', '-r', '-s', world_sdf],
         output='screen',
     )
 
@@ -221,9 +221,9 @@ def generate_launch_description() -> LaunchDescription:
         nav_instances_cmds.append(group)
 
     set_env_vars_resources = AppendEnvironmentVariable(
-        'GZ_SIM_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
+        'IGN_GAZEBO_RESOURCE_PATH', os.path.join(sim_dir, 'models'))
     set_env_vars_resources2 = AppendEnvironmentVariable(
-            'GZ_SIM_RESOURCE_PATH',
+            'IGN_GAZEBO_RESOURCE_PATH',
             str(Path(os.path.join(sim_dir)).parent.resolve()))
 
     # Create the launch description and populate
