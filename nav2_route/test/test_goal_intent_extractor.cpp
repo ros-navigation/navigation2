@@ -114,6 +114,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   Graph graph;
   GraphToIDMap id_map;
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf->setUsingDedicatedThread(true);
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     node->get_node_base_interface(),
     node->get_node_timers_interface());
