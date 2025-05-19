@@ -243,6 +243,11 @@ TEST(CriticTests, GoalAngleCritic)
   path.y(9) = 0.0;
   path.yaws(9) = 3.14;
   goal.position.x = 10.0;
+  goal.position.y = 0.0;
+  goal.orientation.x = 0.0;
+  goal.orientation.y = 0.0;
+  goal.orientation.z = 1.0;
+  goal.orientation.w = 0.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
 

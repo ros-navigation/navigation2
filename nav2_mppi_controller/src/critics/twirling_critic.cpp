@@ -19,6 +19,9 @@ namespace mppi::critics
 
 void TwirlingCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(power_, "cost_power", 1);
@@ -30,9 +33,20 @@ void TwirlingCritic::initialize()
 
 void TwirlingCritic::score(CriticData & data)
 {
+<<<<<<< HEAD
   using xt::evaluation_strategy::immediate;
   if (!enabled_ ||
     utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.goal))
+=======
+  if (!enabled_) {
+    return;
+  }
+
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+
+  if (utils::withinPositionGoalTolerance(
+      data.goal_checker, data.state.pose.pose, goal))
+>>>>>>> 6f57e824 (fix MPPI goal critic inversion (#5088) (#5105))
   {
     return;
   }

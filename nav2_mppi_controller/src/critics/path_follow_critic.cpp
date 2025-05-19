@@ -22,6 +22,9 @@ namespace mppi::critics
 
 void PathFollowCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(
@@ -34,8 +37,20 @@ void PathFollowCritic::initialize()
 
 void PathFollowCritic::score(CriticData & data)
 {
+<<<<<<< HEAD
   if (!enabled_ || data.path.x.shape(0) < 2 ||
     utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.goal))
+=======
+  if (!enabled_) {
+    return;
+  }
+
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+
+  if (data.path.x.size() < 2 ||
+    utils::withinPositionGoalTolerance(
+      threshold_to_consider_, data.state.pose.pose, goal))
+>>>>>>> 6f57e824 (fix MPPI goal critic inversion (#5088) (#5105))
   {
     return;
   }

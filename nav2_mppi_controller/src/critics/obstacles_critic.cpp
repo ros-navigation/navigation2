@@ -23,6 +23,9 @@ namespace mppi::critics
 
 void ObstaclesCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion1", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
@@ -128,9 +131,11 @@ void ObstaclesCritic::score(CriticData & data)
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, data.goal)) {
+  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, goal)) {
     near_goal = true;
   }
 
