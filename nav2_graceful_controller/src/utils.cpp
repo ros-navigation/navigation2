@@ -20,7 +20,9 @@ namespace nav2_graceful_controller
 std::unique_ptr<geometry_msgs::msg::PoseStamped> createMotionTargetMsg(
   const geometry_msgs::msg::PoseStamped & motion_target)
 {
-  return std::make_unique<geometry_msgs::msg::PoseStamped>(motion_target);
+  auto motion_target_point = std::make_unique<geometry_msgs::msg::PoseStamped>(motion_target);
+  motion_target_point->pose.position.z = 0.01;
+  return motion_target_point;
 }
 
 std::unique_ptr<visualization_msgs::msg::Marker> createSlowdownMarker(
