@@ -127,29 +127,31 @@ void declare_parameter_if_not_declared(
 /// Declares a parameter with the specified type if it was not already declared
 /// and returns its value if available.
 /* Declares a parameter with the specified type if it was not already declared.
- * If the parameter was overridden, its value is returned, otherwise a
- * parameter not set type is returned.
+ * If the parameter was overridden, its value is returned, otherwise an
+ * rclcpp::exceptions::InvalidParameterValueException is thrown
  *
  * \param[in] node A node in which given parameter to be declared
  * \param[in] parameter_name Name of the parameter
  * \param[in] param_type The type of parameter
  * \param[in] parameter_descriptor Parameter descriptor (optional)
+ * \return The value of the parameter or an exception
  */
-template<typename NodeT>
-rclcpp::ParameterValue declare_or_get_parameter(
+template<typename ParameterT, typename NodeT>
+ParameterT declare_or_get_parameter(
   NodeT node,
   const std::string & parameter_name,
   const rclcpp::ParameterType & param_type,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   if (node->has_parameter(parameter_name)) {
-    try {
-      return node->get_parameter(parameter_name).get_parameter_value();
-    } catch (const std::exception & exception) {
-      return rclcpp::ParameterValue();
-    }
+    return node->get_parameter(parameter_name).template get_value<ParameterT>();
   }
-  return node->declare_parameter(parameter_name, param_type, parameter_descriptor);
+  auto parameter = node->declare_parameter(parameter_name, param_type, parameter_descriptor);
+  if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET) {
+    std::string description = "Parameter " + parameter_name + " not in overrides";
+    throw rclcpp::exceptions::InvalidParameterValueException(description.c_str());
+  }
+  return parameter.template get<ParameterT>();
 }
 
 using NodeParamInterfacePtr = rclcpp::node_interfaces::NodeParametersInterface::SharedPtr;
@@ -215,7 +217,7 @@ ParamType declare_or_get_parameter(
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
-      parameter_name, default_value, warn_if_no_override, parameter_descriptor);
+    parameter_name, default_value, warn_if_no_override, parameter_descriptor);
 }
 
 /// Gets the type of plugin for the selected node and its plugin
