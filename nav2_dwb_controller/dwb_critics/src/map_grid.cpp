@@ -60,7 +60,7 @@ void MapGridCritic::onInit()
   costmap_ = costmap_ros_->getCostmap();
   queue_ = std::make_shared<MapGridQueue>(*costmap_, *this);
 
-  // Always set to true, but can be overriden by subclasses
+  // Always set to true, but can be overridden by subclasses
   stop_on_failure_ = true;
 
   auto node = node_.lock();
@@ -105,7 +105,7 @@ void MapGridCritic::reset()
   std::fill(cell_values_.begin(), cell_values_.end(), unreachable_score_);
 }
 
-void MapGridCritic::propogateManhattanDistances()
+void MapGridCritic::propagateManhattanDistances()
 {
   while (!queue_->isEmpty()) {
     costmap_queue::CellData cell = queue_->getNextCell();

@@ -71,6 +71,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("unsmoothed_path", "Path to be smoothed"),
@@ -87,6 +90,8 @@ public:
           "was_completed", "True if smoothing was not interrupted by time limit"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The smooth path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The smooth path error msg"),
       });
   }
 };

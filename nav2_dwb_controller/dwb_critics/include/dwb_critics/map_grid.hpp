@@ -121,14 +121,14 @@ protected:
   };
 
   /**
-   * @brief Clear the queuDWB_CRITICS_MAP_GRID_He and set cell_values_ to the appropriate number of unreachableCellScore
+   * @brief Clear the queueDWB_CRITICS_MAP_GRID_He and set cell_values_ to the appropriate number of unreachableCellScore
    */
   void reset() override;
 
   /**
    * @brief Go through the queue and set the cells to the Manhattan distance from their parents
    */
-  void propogateManhattanDistances();
+  void propagateManhattanDistances();
 
   std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;

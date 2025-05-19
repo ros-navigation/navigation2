@@ -24,14 +24,6 @@
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(Node2DTest, test_node_2d)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
@@ -75,8 +67,10 @@ TEST(Node2DTest, test_node_2d)
 
   // check heuristic cost computation
   nav2_smac_planner::Node2D::Coordinates A(0.0, 0.0);
+  nav2_smac_planner::Node2D::CoordinateVector B_vec;
   nav2_smac_planner::Node2D::Coordinates B(10.0, 5.0);
-  EXPECT_NEAR(testB.getHeuristicCost(A, B), 11.18, 0.02);
+  B_vec.push_back(B);
+  EXPECT_NEAR(testB.getHeuristicCost(A, B_vec), 11.18, 0.02);
 
   // check operator== works on index
   unsigned char costC = '2';
@@ -154,4 +148,17 @@ TEST(Node2DTest, test_node_2d_neighbors)
 
   // should be empty since totally invalid
   EXPECT_EQ(neighbors.size(), 0u);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

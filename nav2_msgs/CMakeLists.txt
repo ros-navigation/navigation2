@@ -13,8 +13,10 @@ find_package(action_msgs REQUIRED)
 
 nav2_package()
 
-# TODO(jwallace42): This is a work around for https://github.com/ros2/rosidl_typesupport_fastrtps/issues/28
-add_compile_options(-Wno-error=deprecated)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # TODO(jwallace42): This is a work around for https://github.com/ros2/rosidl_typesupport_fastrtps/issues/28
+  add_compile_options(-Wno-error=deprecated)
+endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CollisionMonitorState.msg"
@@ -29,7 +31,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BehaviorTreeLog.msg"
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
-  "msg/MissedWaypoint.msg"
+  "msg/WaypointStatus.msg"
+  "msg/Route.msg"
+  "msg/RouteNode.msg"
+  "msg/RouteEdge.msg"
+  "msg/EdgeCost.msg"
+  "msg/Trajectory.msg"
+  "msg/TrajectoryPoint.msg"
   "srv/GetCosts.srv"
   "srv/GetCostmap.srv"
   "srv/IsPathValid.srv"
@@ -41,6 +49,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
   "srv/SetInitialPose.srv"
   "srv/ReloadDockDatabase.srv"
+  "srv/SetRouteGraph.srv"
+  "srv/DynamicEdges.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
@@ -57,6 +67,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/FollowGPSWaypoints.action"
   "action/DockRobot.action"
   "action/UndockRobot.action"
+  "action/ComputeRoute.action"
+  "action/ComputeAndTrackRoute.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs
 )
 

@@ -168,7 +168,7 @@ RUN mkdir -p $ROOT_SRV
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
-      ros-$ROS_DISTRO-rviz2 
+      ros-$ROS_DISTRO-rviz2
 
 # install gzweb dependacies
 RUN apt-get install -y --no-install-recommends \

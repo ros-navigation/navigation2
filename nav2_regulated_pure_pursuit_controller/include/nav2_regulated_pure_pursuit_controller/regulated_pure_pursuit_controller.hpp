@@ -135,7 +135,7 @@ protected:
   /**
    * @brief Whether robot should rotate to rough path heading
    * @param carrot_pose current lookahead point
-   * @param angle_to_path Angle of robot output relatie to carrot marker
+   * @param angle_to_path Angle of robot output relative to carrot marker
    * @param x_vel_sign Velocoty sign (forward or backward)
    * @return Whether should rotate to path heading
    */
@@ -154,7 +154,7 @@ protected:
    * @brief Create a smooth and kinematically smoothed rotation command
    * @param linear_vel linear velocity
    * @param angular_vel angular velocity
-   * @param angle_to_path Angle of robot output relatie to carrot marker
+   * @param angle_to_path Angle of robot output relative to carrot marker
    * @param curr_speed the current robot speed
    */
   void rotateToHeading(
@@ -220,6 +220,7 @@ protected:
   bool cancelling_ = false;
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
+  bool has_reached_xy_tolerance_ = false;
 
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>

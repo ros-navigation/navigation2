@@ -27,15 +27,6 @@
 #include "nav2_waypoint_follower/plugins/wait_at_waypoint.hpp"
 #include "nav2_waypoint_follower/plugins/input_at_waypoint.hpp"
 
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WaypointFollowerTest, WaitAtWaypoint)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
@@ -161,4 +152,17 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(paw->processAtWaypoint(pose, 0));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

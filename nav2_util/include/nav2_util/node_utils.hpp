@@ -21,6 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/qos.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
+#include "pluginlib/exceptions.hpp"
 
 namespace nav2_util
 {
@@ -32,7 +33,7 @@ namespace nav2_util
  * purpose. However, only alphanumeric characters and '_' are allowed in node
  * names. This function replaces any invalid character with a '_'
  *
- * \param[in] potential_node_name Potential name but possibly with invalid charaters.
+ * \param[in] potential_node_name Potential name but possibly with invalid characters.
  * \return A copy of the input string but with non-alphanumeric characters replaced with '_'
  */
 std::string sanitize_node_name(const std::string & potential_node_name);
@@ -144,11 +145,11 @@ std::string get_plugin_type_param(
     if (!node->get_parameter(plugin_name + ".plugin", plugin_type)) {
       RCLCPP_FATAL(
         node->get_logger(), "Can not get 'plugin' param value for %s", plugin_name.c_str());
-      throw std::runtime_error("No 'plugin' param for param ns!");
+      throw pluginlib::PluginlibException("No 'plugin' param for param ns!");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     RCLCPP_FATAL(node->get_logger(), "'plugin' param not defined for %s", plugin_name.c_str());
-    throw std::runtime_error("No 'plugin' param for param ns!");
+    throw pluginlib::PluginlibException("No 'plugin' param for param ns!");
   }
 
   return plugin_type;

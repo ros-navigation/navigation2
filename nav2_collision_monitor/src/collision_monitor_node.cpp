@@ -188,7 +188,7 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
   // If message contains NaN or Inf, ignore
-  if (!nav2_util::validateTwist(*msg)) {
+  if (!nav2_util::validateTwist(msg->twist)) {
     RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
     return;
   }
@@ -582,7 +582,7 @@ bool CollisionMonitor::processApproach(
   // Obtain time before a collision
   const double collision_time = polygon->getCollisionTime(sources_collision_points_map, velocity);
   if (collision_time >= 0.0) {
-    // If collision will occurr, reduce robot speed
+    // If collision will occur, reduce robot speed
     const double change_ratio = collision_time / polygon->getTimeBeforeCollision();
     const Velocity safe_vel = velocity * change_ratio;
     // Check that currently calculated velocity is safer than

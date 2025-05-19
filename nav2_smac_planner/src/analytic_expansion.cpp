@@ -48,7 +48,10 @@ void AnalyticExpansion<NodeT>::setCollisionChecker(
 
 template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalyticExpansion(
-  const NodePtr & current_node, const NodePtr & goal_node,
+  const NodePtr & current_node,
+  const NodeVector & coarse_check_goals,
+  const NodeVector & fine_check_goals,
+  const CoordinateVector & goals_coords,
   const NodeGetter & getter, int & analytic_iterations,
   int & closest_distance)
 {
@@ -60,10 +63,14 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     const Coordinates node_coords =
       NodeT::getCoords(
       current_node->getIndex(), _collision_checker->getCostmap()->getSizeInCellsX(), _dim_3_size);
+
+    AnalyticExpansionNodes current_best_analytic_nodes = {};
+    NodePtr current_best_goal = nullptr;
+    float current_best_score = std::numeric_limits<float>::max();
+
     closest_distance = std::min(
       closest_distance,
-      static_cast<int>(NodeT::getHeuristicCost(node_coords, goal_node->pose)));
-
+      static_cast<int>(NodeT::getHeuristicCost(node_coords, goals_coords)));
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration
     // If so, limit it to the expansion ratio (rounded up)
@@ -80,81 +87,53 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     if (analytic_iterations <= 0) {
       // Reset the counter and try the analytic path expansion
       analytic_iterations = desired_iterations;
-      AnalyticExpansionNodes analytic_nodes =
-        getAnalyticPath(current_node, goal_node, getter, current_node->motion_table.state_space);
-      if (!analytic_nodes.empty()) {
-        // If we have a valid path, attempt to refine it
-        NodePtr node = current_node;
-        NodePtr test_node = current_node;
-        AnalyticExpansionNodes refined_analytic_nodes;
-        for (int i = 0; i < 8; i++) {
-          // Attempt to create better paths in 5 node increments, need to make sure
-          // they exist for each in order to do so (maximum of 40 points back).
-          if (test_node->parent && test_node->parent->parent && test_node->parent->parent->parent &&
-            test_node->parent->parent->parent->parent &&
-            test_node->parent->parent->parent->parent->parent)
-          {
-            test_node = test_node->parent->parent->parent->parent->parent;
-            refined_analytic_nodes =
-              getAnalyticPath(test_node, goal_node, getter, test_node->motion_table.state_space);
-            if (refined_analytic_nodes.empty()) {
-              break;
-            }
-            analytic_nodes = refined_analytic_nodes;
-            node = test_node;
-          } else {
-            break;
+      bool found_valid_expansion = false;
+
+      // First check the coarse search resolution goals
+      for (auto & current_goal_node : coarse_check_goals) {
+        AnalyticExpansionNodes analytic_nodes =
+          getAnalyticPath(
+          current_node, current_goal_node, getter,
+          current_node->motion_table.state_space);
+        if (!analytic_nodes.empty()) {
+          found_valid_expansion = true;
+          bool score = refineAnalyticPath(
+            current_node, current_goal_node, getter, analytic_nodes);
+          // Update the best score if we found a better path
+          if (score < current_best_score) {
+            current_best_analytic_nodes = analytic_nodes;
+            current_best_goal = current_goal_node;
+            current_best_score = score;
           }
         }
+      }
 
-        // The analytic expansion can short-cut near obstacles when closer to a goal
-        // So, we can attempt to refine it more by increasing the possible radius
-        // higher than the minimum turning radius and use the best solution based on
-        // a scoring function similar to that used in traveral cost estimation.
-        auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
-            if (expansion.size() < 2) {
-              return std::numeric_limits<float>::max();
+      // perform a final search if we found a goal
+      if (found_valid_expansion) {
+        for (auto & current_goal_node : fine_check_goals) {
+          AnalyticExpansionNodes analytic_nodes =
+            getAnalyticPath(
+            current_node, current_goal_node, getter,
+            current_node->motion_table.state_space);
+          if (!analytic_nodes.empty()) {
+            bool score = refineAnalyticPath(
+              current_node, current_goal_node, getter, analytic_nodes);
+            // Update the best score if we found a better path
+            if (score < current_best_score) {
+              current_best_analytic_nodes = analytic_nodes;
+              current_best_goal = current_goal_node;
+              current_best_score = score;
             }
-
-            float score = 0.0;
-            float normalized_cost = 0.0;
-            // Analytic expansions are consistently spaced
-            const float distance = hypotf(
-              expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
-              expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
-            const float & weight = expansion[0].node->motion_table.cost_penalty;
-            for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
-              normalized_cost = iter->node->getCost() / 252.0f;
-              // Search's Traversal Cost Function
-              score += distance * (1.0 + weight * normalized_cost);
-            }
-            return score;
-          };
-
-        float best_score = scoringFn(analytic_nodes);
-        float score = std::numeric_limits<float>::max();
-        float min_turn_rad = node->motion_table.min_turning_radius;
-        const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
-        while (min_turn_rad < max_min_turn_rad) {
-          min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
-          ompl::base::StateSpacePtr state_space;
-          if (node->motion_table.motion_model == MotionModel::DUBIN) {
-            state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);
-          } else {
-            state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
-          }
-          refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
-          score = scoringFn(refined_analytic_nodes);
-          if (score <= best_score) {
-            analytic_nodes = refined_analytic_nodes;
-            best_score = score;
           }
         }
-
-        return setAnalyticPath(node, goal_node, analytic_nodes);
       }
     }
 
+    if (!current_best_analytic_nodes.empty()) {
+      return setAnalyticPath(
+        current_node, current_best_goal,
+        current_best_analytic_nodes);
+    }
     analytic_iterations--;
   }
 
@@ -293,6 +272,87 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 }
 
 template<typename NodeT>
+float AnalyticExpansion<NodeT>::refineAnalyticPath(
+  const NodePtr & current_node,
+  const NodePtr & goal_node,
+  const NodeGetter & getter,
+  AnalyticExpansionNodes & analytic_nodes)
+{
+  NodePtr node = current_node;
+  NodePtr test_node = node;
+  AnalyticExpansionNodes refined_analytic_nodes;
+  for (int i = 0; i < 8; i++) {
+    // Attempt to create better paths in 5 node increments, need to make sure
+    // they exist for each in order to do so (maximum of 40 points back).
+    if (test_node->parent && test_node->parent->parent &&
+      test_node->parent->parent->parent &&
+      test_node->parent->parent->parent->parent &&
+      test_node->parent->parent->parent->parent->parent)
+    {
+      test_node = test_node->parent->parent->parent->parent->parent;
+      // print the goals pose
+      refined_analytic_nodes =
+        getAnalyticPath(
+        test_node, goal_node, getter,
+        test_node->motion_table.state_space);
+      if (refined_analytic_nodes.empty()) {
+        break;
+      }
+      analytic_nodes = refined_analytic_nodes;
+      node = test_node;
+    } else {
+      break;
+    }
+  }
+
+  // The analytic expansion can short-cut near obstacles when closer to a goal
+  // So, we can attempt to refine it more by increasing the possible radius
+  // higher than the minimum turning radius and use the best solution based on
+  // a scoring function similar to that used in traversal cost estimation.
+  auto scoringFn = [&](const AnalyticExpansionNodes & expansion) {
+      if (expansion.size() < 2) {
+        return std::numeric_limits<float>::max();
+      }
+
+      float score = 0.0;
+      float normalized_cost = 0.0;
+    // Analytic expansions are consistently spaced
+      const float distance = hypotf(
+      expansion[1].proposed_coords.x - expansion[0].proposed_coords.x,
+      expansion[1].proposed_coords.y - expansion[0].proposed_coords.y);
+      const float & weight = expansion[0].node->motion_table.cost_penalty;
+      for (auto iter = expansion.begin(); iter != expansion.end(); ++iter) {
+        normalized_cost = iter->node->getCost() / 252.0f;
+      // Search's Traversal Cost Function
+        score += distance * (1.0 + weight * normalized_cost);
+      }
+      return score;
+    };
+
+  float best_score = scoringFn(analytic_nodes);
+  float score = std::numeric_limits<float>::max();
+  float min_turn_rad = node->motion_table.min_turning_radius;
+  const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
+  while (min_turn_rad < max_min_turn_rad) {
+    min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
+    ompl::base::StateSpacePtr state_space;
+    if (node->motion_table.motion_model == MotionModel::DUBIN) {
+      state_space = std::make_shared<ompl::base::DubinsStateSpace>(min_turn_rad);
+    } else {
+      state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(min_turn_rad);
+    }
+    refined_analytic_nodes = getAnalyticPath(node, goal_node, getter, state_space);
+    score = scoringFn(refined_analytic_nodes);
+    if (score <= best_score) {
+      analytic_nodes = refined_analytic_nodes;
+      best_score = score;
+    }
+  }
+
+  return best_score;
+}
+
+template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::setAnalyticPath(
   const NodePtr & node,
   const NodePtr & goal_node,
@@ -346,6 +406,16 @@ getAnalyticPath(
 }
 
 template<>
+float AnalyticExpansion<Node2D>::refineAnalyticPath(
+  const NodePtr &,
+  const NodePtr &,
+  const NodeGetter &,
+  AnalyticExpansionNodes &)
+{
+  return std::numeric_limits<float>::max();
+}
+
+template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyticPath(
   const NodePtr &,
   const NodePtr &,
@@ -356,7 +426,10 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::setAnalyt
 
 template<>
 typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyticExpansion(
-  const NodePtr &, const NodePtr &,
+  const NodePtr &,
+  const NodeVector &,
+  const NodeVector &,
+  const CoordinateVector &,
   const NodeGetter &, int &,
   int &)
 {

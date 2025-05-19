@@ -152,7 +152,7 @@ DockingPanel::DockingPanel(QWidget * parent)
 
   // ROSAction Transitions: So when actions are updated remotely (failing, succeeding, etc)
   // the state of the application will also update. This means that if in the processing
-  // states and then goes inactive, move back to the idle state. Vise versa as well.
+  // states and then goes inactive, move back to the idle state. Vice versa as well.
   ROSActionQTransition * idleDockTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleDockTransition->setTargetState(docking_);
   idle_->addTransition(idleDockTransition);
@@ -252,12 +252,12 @@ DockingPanel::DockingPanel(QWidget * parent)
       if (!plugins_loaded_) {
         RCLCPP_INFO(client_node_->get_logger(), "Loading dock plugins");
         nav2_rviz_plugins::pluginLoader(
-        client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_);
+          client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_);
         plugins_loaded_ = true;
       }
     });
 
-  // Conect buttons with functions
+  // Connect buttons with functions
   QObject::connect(
     use_dock_id_checkbox_, &QCheckBox::stateChanged, this, &DockingPanel::dockIdCheckbox);
 }

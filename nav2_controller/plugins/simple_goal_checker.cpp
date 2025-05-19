@@ -43,7 +43,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 using rcl_interfaces::msg::ParameterType;
@@ -114,7 +114,7 @@ bool SimpleGoalChecker::isGoalReached(
   double dyaw = angles::shortest_angular_distance(
     tf2::getYaw(query_pose.orientation),
     tf2::getYaw(goal_pose.orientation));
-  return fabs(dyaw) < yaw_goal_tolerance_;
+  return fabs(dyaw) <= yaw_goal_tolerance_;
 }
 
 bool SimpleGoalChecker::getTolerances(

@@ -69,7 +69,7 @@ TEST(voxel_grid, bresenham3DBoundariesCheck)
   nav2_voxel_grid::VoxelGrid vg(sz_x, sz_y, sz_z);
   TestVoxel tv(vg.getData(), sz_x, sz_y);
 
-  // Initial point - some assymetrically standing point in order to cover most corner cases
+  // Initial point - some asymmetrically standing point in order to cover most corner cases
   const double x0 = 2.2;
   const double y0 = 3.8;
   const double z0 = 0.4;

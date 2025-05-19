@@ -30,7 +30,7 @@ CostmapCostTool::CostmapCostTool()
   auto_deactivate_property_ = new rviz_common::properties::BoolProperty(
     "Single click", true,
     "Switch away from this tool after one click.",
-    getPropertyContainer(), SLOT(updateAutoDeactivate()), this);
+    getPropertyContainer(), nullptr, this);
 }
 
 CostmapCostTool::~CostmapCostTool() {}
@@ -52,11 +52,16 @@ void CostmapCostTool::onInitialize()
     return;
   }
   rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
-
   local_cost_client_ =
-    node->create_client<nav2_msgs::srv::GetCosts>("/local_costmap/get_cost_local_costmap");
+    std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
+    "/local_costmap/get_cost_local_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
   global_cost_client_ =
-    node->create_client<nav2_msgs::srv::GetCosts>("/global_costmap/get_cost_global_costmap");
+    std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
+    "/global_costmap/get_cost_global_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
 }
 
 void CostmapCostTool::activate() {}
@@ -107,14 +112,14 @@ void CostmapCostTool::callCostService(float x, float y)
 
   // Call local costmap service
   if (local_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    local_cost_client_->async_send_request(
+    local_cost_client_->async_call(
       request,
       std::bind(&CostmapCostTool::handleLocalCostResponse, this, std::placeholders::_1));
   }
 
   // Call global costmap service
   if (global_cost_client_->wait_for_service(std::chrono::seconds(1))) {
-    global_cost_client_->async_send_request(
+    global_cost_client_->async_call(
       request,
       std::bind(&CostmapCostTool::handleGlobalCostResponse, this, std::placeholders::_1));
   }

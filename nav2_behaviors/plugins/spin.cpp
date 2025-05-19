@@ -19,7 +19,7 @@
 #include <utility>
 
 #include "nav2_behaviors/plugins/spin.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/node_utils.hpp"
 
@@ -78,8 +78,9 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
       current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR};
+    std::string error_msg = "Current robot pose is not available.";
+    RCLCPP_ERROR(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
   }
 
   prev_yaw_ = tf2::getYaw(current_pose.pose.orientation);
@@ -94,7 +95,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
   cmd_disable_collision_checks_ = command->disable_collision_checks;
   end_time_ = this->clock_->now() + command_time_allowance_;
 
-  return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
+  return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE, ""};
 }
 
 ResultStatus Spin::onCycleUpdate()
@@ -102,10 +103,9 @@ ResultStatus Spin::onCycleUpdate()
   rclcpp::Duration time_remaining = end_time_ - this->clock_->now();
   if (time_remaining.seconds() < 0.0 && command_time_allowance_.seconds() > 0.0) {
     stopRobot();
-    RCLCPP_WARN(
-      logger_,
-      "Exceeded time allowance before reaching the Spin goal - Exiting Spin");
-    return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT};
+    std::string error_msg = "Exceeded time allowance before reaching the Spin goal - Exiting Spin";
+    RCLCPP_WARN(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, SpinActionResult::TIMEOUT, error_msg};
   }
 
   geometry_msgs::msg::PoseStamped current_pose;
@@ -113,8 +113,9 @@ ResultStatus Spin::onCycleUpdate()
       current_pose, *tf_, local_frame_, robot_base_frame_,
       transform_tolerance_))
   {
-    RCLCPP_ERROR(logger_, "Current robot pose is not available.");
-    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR};
+    std::string error_msg = "Current robot pose is not available.";
+    RCLCPP_ERROR(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
   }
 
   const double current_yaw = tf2::getYaw(current_pose.pose.orientation);
@@ -133,7 +134,7 @@ ResultStatus Spin::onCycleUpdate()
   double remaining_yaw = abs(cmd_yaw_) - abs(relative_yaw_);
   if (remaining_yaw < 1e-6) {
     stopRobot();
-    return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE};
+    return ResultStatus{Status::SUCCEEDED, SpinActionResult::NONE, ""};
   }
 
   double vel = sqrt(2 * rotational_acc_lim_ * remaining_yaw);
@@ -151,13 +152,14 @@ ResultStatus Spin::onCycleUpdate()
 
   if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose2d)) {
     stopRobot();
-    RCLCPP_WARN(logger_, "Collision Ahead - Exiting Spin");
-    return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD};
+    std::string error_msg = "Collision Ahead - Exiting Spin";
+    RCLCPP_WARN(logger_, error_msg.c_str());
+    return ResultStatus{Status::FAILED, SpinActionResult::COLLISION_AHEAD, error_msg};
   }
 
   vel_pub_->publish(std::move(cmd_vel));
 
-  return ResultStatus{Status::RUNNING, SpinActionResult::NONE};
+  return ResultStatus{Status::RUNNING, SpinActionResult::NONE, ""};
 }
 
 bool Spin::isCollisionFree(

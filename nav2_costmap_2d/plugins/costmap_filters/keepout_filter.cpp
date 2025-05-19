@@ -38,7 +38,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
@@ -63,7 +63,7 @@ void KeepoutFilter::initializeFilter(
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  filter_info_topic_ = filter_info_topic;
+  filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
     logger_,
@@ -108,7 +108,7 @@ void KeepoutFilter::filterInfoCallback(
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
 
-  mask_topic_ = msg->filter_mask_topic;
+  mask_topic_ = joinWithParentNamespace(msg->filter_mask_topic);
 
   // Setting new filter mask subscriber
   RCLCPP_INFO(

@@ -314,11 +314,12 @@ void VelocitySmoother::smootherTimer()
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (now() - last_command_time_ > velocity_timeout_) {
-    if (last_cmd_ == geometry_msgs::msg::TwistStamped() || stopped_) {
+    if (last_cmd_.twist == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
     }
     *command_ = geometry_msgs::msg::TwistStamped();
+    command_->header.stamp = now();
   }
 
   stopped_ = false;

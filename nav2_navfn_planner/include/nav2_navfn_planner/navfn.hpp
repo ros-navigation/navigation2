@@ -259,9 +259,9 @@ public:
   float last_path_cost_;  /**< Holds the cost of the path found the last time A* was called */
 
   /**
-   * @brief  Calculates the path for at mose <n> cycles
+   * @brief  Calculates the path for at most <n> cycles
    * @param n The maximum number of cycles to run for
-   * @return The lenght of the path found, 0 if none
+   * @return The length of the path found, 0 if none
    */
   int calcPath(int n, int * st = NULL);
 

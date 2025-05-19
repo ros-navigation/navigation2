@@ -14,11 +14,7 @@
 
 #include <chrono>
 #include <thread>
-
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xrandom.hpp>
-#pragma GCC diagnostic pop
+#include <random>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
@@ -26,14 +22,6 @@
 #include "nav2_mppi_controller/models/path.hpp"
 
 // Tests noise generator object
-
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
 
 using namespace mppi::utils;  // NOLINT
 using namespace mppi;  // NOLINT
@@ -120,9 +108,9 @@ TEST(UtilsTests, ConversionTests)
   models::Path path_t = toTensor(path);
 
   // Check population is correct
-  EXPECT_EQ(path_t.x.shape(0), 5u);
-  EXPECT_EQ(path_t.y.shape(0), 5u);
-  EXPECT_EQ(path_t.yaws.shape(0), 5u);
+  EXPECT_EQ(path_t.x.rows(), 5u);
+  EXPECT_EQ(path_t.y.rows(), 5u);
+  EXPECT_EQ(path_t.yaws.rows(), 5u);
   EXPECT_EQ(path_t.x(2), 5);
   EXPECT_EQ(path_t.y(2), 50);
   EXPECT_NEAR(path_t.yaws(2), 0.0, 1e-6);
@@ -136,61 +124,72 @@ TEST(UtilsTests, WithTolTests)
 
   nav2_core::GoalChecker * goal_checker = new TestGoalChecker;
 
-  // Test not in tolerance
   nav_msgs::msg::Path path;
   path.poses.resize(2);
-  path.poses[1].pose.position.x = 0.0;
-  path.poses[1].pose.position.y = 0.0;
-  models::Path path_t = toTensor(path);
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_FALSE(withinPositionGoalTolerance(0.25, pose, path_t));
+  geometry_msgs::msg::Pose & goal = path.poses.back().pose;
+
+  // Create CriticData with state and goal initialized
+  models::State state;
+  state.pose.pose = pose;
+  models::Trajectories generated_trajectories;
+  models::Path path_critic;
+  Eigen::ArrayXf costs;
+  float model_dt;
+  CriticData data = {
+    state, generated_trajectories, path_critic, goal,
+    costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
+
+  // Test not in tolerance
+  goal.position.x = 0.0;
+  goal.position.y = 0.0;
+  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_FALSE(withinPositionGoalTolerance(0.25, pose, goal));
 
   // Test in tolerance
-  path.poses[1].pose.position.x = 9.8;
-  path.poses[1].pose.position.y = 0.95;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
+  goal.position.x = 9.8;
+  goal.position.y = 0.95;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
-  path.poses[1].pose.position.x = 10.0;
-  path.poses[1].pose.position.y = 0.76;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
+  goal.position.x = 10.0;
+  goal.position.y = 0.76;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
-  path.poses[1].pose.position.x = 9.76;
-  path.poses[1].pose.position.y = 1.0;
-  path_t = toTensor(path);
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, path_t));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, path_t));
+  goal.position.x = 9.76;
+  goal.position.y = 1.0;
+  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
+  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
 
   delete goal_checker;
   goal_checker = nullptr;
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, path_t));
+  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
 }
 
 TEST(UtilsTests, AnglesTests)
 {
   // Test angle normalization by creating insane angles
-  xt::xtensor<float, 1> angles, zero_angles;
-  angles = xt::ones<float>({100});
-  for (unsigned int i = 0; i != angles.shape(0); i++) {
+  Eigen::ArrayXf angles(100);
+  angles.setConstant(1.0f);
+
+  for (unsigned int i = 0; i != angles.size(); i++) {
     angles(i) = i * i;
     if (i % 2 == 0) {
       angles(i) *= -1;
     }
   }
 
-  auto norm_ang = normalize_angles(angles);
-  for (unsigned int i = 0; i != norm_ang.shape(0); i++) {
-    EXPECT_TRUE((norm_ang(i) >= -M_PI) && (norm_ang(i) <= M_PI));
+  auto norm_ang = normalize_angles(angles).eval();
+  for (unsigned int i = 0; i != norm_ang.size(); i++) {
+    EXPECT_TRUE((norm_ang(i) >= -M_PIF) && (norm_ang(i) <= M_PIF));
   }
 
   // Test shortest angular distance
-  zero_angles = xt::zeros<float>({100});
-  auto ang_dist = shortest_angular_distance(angles, zero_angles);
-  for (unsigned int i = 0; i != ang_dist.shape(0); i++) {
-    EXPECT_TRUE((ang_dist(i) >= -M_PI) && (ang_dist(i) <= M_PI));
+  Eigen::ArrayXf zero_angles(100);
+  zero_angles.setZero();
+  auto ang_dist = shortest_angular_distance(angles, zero_angles).eval();
+  for (unsigned int i = 0; i != ang_dist.size(); i++) {
+    EXPECT_TRUE((ang_dist(i) >= -M_PIF) && (ang_dist(i) <= M_PIF));
   }
 
   // Test point-pose angle
@@ -224,12 +223,15 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 {
   models::State state;
   models::Trajectories generated_trajectories;
+  generated_trajectories.reset(100, 2);
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  geometry_msgs::msg::Pose goal;
+  path.reset(10);
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   // Attempt to set furthest point if notionally set, should not change
@@ -239,15 +241,15 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   // Attempt to set if not set already with no other information, should fail
   CriticData data2 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
   setPathFurthestPointIfNotSet(data2);
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
 
   // Test the actual computation of the path point reached
-  generated_trajectories.x = xt::ones<float>({100, 2});
-  generated_trajectories.y = xt::zeros<float>({100, 2});
-  generated_trajectories.yaws = xt::zeros<float>({100, 2});
+  generated_trajectories.x = Eigen::ArrayXXf::Ones(100, 2);
+  generated_trajectories.y = Eigen::ArrayXXf::Zero(100, 2);
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(100, 2);
 
   nav_msgs::msg::Path plan;
   plan.poses.resize(10);
@@ -258,9 +260,9 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   path = toTensor(plan);
 
   CriticData data3 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
-  EXPECT_EQ(findPathFurthestReachedPoint(data3), 5u);
+  EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
 }
 
 TEST(UtilsTests, findPathCosts)
@@ -268,11 +270,13 @@ TEST(UtilsTests, findPathCosts)
   models::State state;
   models::Trajectories generated_trajectories;
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  geometry_msgs::msg::Pose goal;
+  path.reset(50);
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   // Test not set if already set, should not change
@@ -285,7 +289,7 @@ TEST(UtilsTests, findPathCosts)
   EXPECT_EQ(data.path_pts_valid->size(), 10u);
 
   CriticData data3 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -305,7 +309,6 @@ TEST(UtilsTests, findPathCosts)
     }
   }
 
-  path.reset(50);
   path.x(1) = 999999999;  // OFF COSTMAP
   path.y(1) = 999999999;
   path.x(10) = 1.5;  // IN LETHAL
@@ -316,7 +319,7 @@ TEST(UtilsTests, findPathCosts)
   // This should be evaluated and have real outputs now
   setPathCostsIfNotSet(data3, costmap_ros);
   EXPECT_TRUE(data3.path_pts_valid.has_value());
-  for (unsigned int i = 0; i != path.x.shape(0) - 1; i++) {
+  for (unsigned int i = 0; i != path.x.size() - 1; i++) {
     if (i == 1 || i == 10) {
       EXPECT_FALSE((*data3.path_pts_valid)[i]);
     } else {
@@ -328,12 +331,15 @@ TEST(UtilsTests, findPathCosts)
 TEST(UtilsTests, SmootherTest)
 {
   models::ControlSequence noisey_sequence, sequence_init;
-  noisey_sequence.vx = 0.2 * xt::ones<float>({30});
-  noisey_sequence.vy = 0.0 * xt::ones<float>({30});
-  noisey_sequence.wz = 0.3 * xt::ones<float>({30});
+  noisey_sequence.vx = 0.2 * Eigen::ArrayXf::Ones(30);
+  noisey_sequence.vy = 0.0 * Eigen::ArrayXf::Ones(30);
+  noisey_sequence.wz = 0.3 * Eigen::ArrayXf::Ones(30);
 
   // Make the sequence noisy
-  auto noises = xt::random::randn<float>({30}, 0.0, 0.2);
+  std::mt19937 engine;
+  std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.2f);
+  auto noises = Eigen::ArrayXf::NullaryExpr(
+    30, [&] () {return normal_dist(engine);});
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
   noisey_sequence.wz += noises;
@@ -359,7 +365,7 @@ TEST(UtilsTests, SmootherTest)
 
   savitskyGolayFilter(noisey_sequence, history, settings);
 
-  // Check history is propogated backward
+  // Check history is propagated backward
   EXPECT_NEAR(history_init[3].vx, history[2].vx, 0.02);
   EXPECT_NEAR(history_init[3].vy, history[2].vy, 0.02);
   EXPECT_NEAR(history_init[3].wz, history[2].wz, 0.02);
@@ -371,7 +377,7 @@ TEST(UtilsTests, SmootherTest)
 
   // Check that path is smoother
   float smoothed_val{0}, original_val{0};
-  for (unsigned int i = 1; i != noisey_sequence.vx.shape(0) - 1; i++) {
+  for (unsigned int i = 1; i != noisey_sequence.vx.size() - 1; i++) {
     smoothed_val += fabs(noisey_sequence.vx(i) - 0.2);
     smoothed_val += fabs(noisey_sequence.vy(i) - 0.0);
     smoothed_val += fabs(noisey_sequence.wz(i) - 0.3);
@@ -445,4 +451,269 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
   // Check to see if removed
   EXPECT_EQ(path.poses.size(), 11u);
   EXPECT_EQ(path.poses.back().pose.position.x, 10);
+}
+
+TEST(UtilsTests, ShiftColumnsByOnePlaceTest)
+{
+  // Try with scalar value
+  Eigen::ArrayXf scalar_val(1);
+  scalar_val(0) = 5;
+  utils::shiftColumnsByOnePlace(scalar_val, 1);
+  EXPECT_EQ(scalar_val.size(), 1);
+  EXPECT_EQ(scalar_val(0), 5);
+
+  // Try with one dimensional array, shift right
+  Eigen::ArrayXf array_1d(4);
+  array_1d << 1, 2, 3, 4;
+  utils::shiftColumnsByOnePlace(array_1d, 1);
+  EXPECT_EQ(array_1d.size(), 4);
+  EXPECT_EQ(array_1d(0), 1);
+  EXPECT_EQ(array_1d(1), 1);
+  EXPECT_EQ(array_1d(2), 2);
+  EXPECT_EQ(array_1d(3), 3);
+
+  // Try with one dimensional array, shift left
+  array_1d(1) = 5;
+  utils::shiftColumnsByOnePlace(array_1d, -1);
+  EXPECT_EQ(array_1d.size(), 4);
+  EXPECT_EQ(array_1d(0), 5);
+  EXPECT_EQ(array_1d(1), 2);
+  EXPECT_EQ(array_1d(2), 3);
+  EXPECT_EQ(array_1d(2), 3);
+
+  // Try with two dimensional array, shift right
+  // 1 2 3 4        1 1 2 3
+  // 5 6 7 8    ->  5 5 6 7
+  // 9 10 11 12     9 9 10 11
+  Eigen::ArrayXXf array_2d(3, 4);
+  array_2d << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
+  utils::shiftColumnsByOnePlace(array_2d, 1);
+  EXPECT_EQ(array_2d.rows(), 3);
+  EXPECT_EQ(array_2d.cols(), 4);
+  EXPECT_EQ(array_2d(0, 0), 1);
+  EXPECT_EQ(array_2d(1, 0), 5);
+  EXPECT_EQ(array_2d(2, 0), 9);
+  EXPECT_EQ(array_2d(0, 1), 1);
+  EXPECT_EQ(array_2d(1, 1), 5);
+  EXPECT_EQ(array_2d(2, 1), 9);
+  EXPECT_EQ(array_2d(0, 2), 2);
+  EXPECT_EQ(array_2d(1, 2), 6);
+  EXPECT_EQ(array_2d(2, 2), 10);
+  EXPECT_EQ(array_2d(0, 3), 3);
+  EXPECT_EQ(array_2d(1, 3), 7);
+  EXPECT_EQ(array_2d(2, 3), 11);
+
+  array_2d.col(0).setZero();
+
+  // Try with two dimensional array, shift left
+  // 0 1 2 3      1 2 3 3
+  // 0 5 6 7   -> 5 6 7 7
+  // 0 9 10 11    9 10 11 11
+  utils::shiftColumnsByOnePlace(array_2d, -1);
+  EXPECT_EQ(array_2d.rows(), 3);
+  EXPECT_EQ(array_2d.cols(), 4);
+  EXPECT_EQ(array_2d(0, 0), 1);
+  EXPECT_EQ(array_2d(1, 0), 5);
+  EXPECT_EQ(array_2d(2, 0), 9);
+  EXPECT_EQ(array_2d(0, 1), 2);
+  EXPECT_EQ(array_2d(1, 1), 6);
+  EXPECT_EQ(array_2d(2, 1), 10);
+  EXPECT_EQ(array_2d(0, 2), 3);
+  EXPECT_EQ(array_2d(1, 2), 7);
+  EXPECT_EQ(array_2d(2, 2), 11);
+  EXPECT_EQ(array_2d(0, 3), 3);
+  EXPECT_EQ(array_2d(1, 3), 7);
+  EXPECT_EQ(array_2d(2, 3), 11);
+
+  // Try with invalid direction value.
+  EXPECT_THROW(utils::shiftColumnsByOnePlace(array_2d, -2), std::logic_error);
+}
+
+TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
+{
+  Eigen::ArrayXf last_yaws(10);
+  last_yaws.setZero();
+
+  Eigen::ArrayXf yaw_between_points(10);
+  yaw_between_points.setZero(10);
+
+  // Try with both angles 0
+  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with yaw between points as pi/4
+  yaw_between_points.setConstant(M_PIF_2 / 2);
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with yaw between points as pi/2
+  yaw_between_points.setConstant(M_PIF_2);
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
+
+  // Try with a few yaw between points  more than pi/2
+  yaw_between_points[1] = 1.2 * M_PIF_2;
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+    yaw_between_points);
+  EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
+  EXPECT_NEAR(yaws_between_points_corrected[0], yaw_between_points[0], 1e-3);
+  EXPECT_NEAR(yaws_between_points_corrected[9], yaw_between_points[9], 1e-3);
+
+  // Try with goal angle 0
+  float goal_angle = 0;
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_angle,
+    yaw_between_points);
+  EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
+}
+
+TEST(UtilsTests, toTrajectoryMsgTest)
+{
+  Eigen::ArrayXXf trajectory(5, 3);
+  trajectory <<
+    0.0, 0.0, 0.0,
+    1.0, 1.0, 1.0,
+    2.0, 2.0, 2.0,
+    3.0, 3.0, 3.0,
+    4.0, 4.0, 4.0;
+
+  models::ControlSequence control_sequence;
+  control_sequence.vx = Eigen::ArrayXf::Ones(5);
+  control_sequence.wz = Eigen::ArrayXf::Ones(5);
+  control_sequence.vy = Eigen::ArrayXf::Zero(5);
+
+  std_msgs::msg::Header header;
+  header.frame_id = "map";
+  header.stamp = rclcpp::Time(100, 0, RCL_ROS_TIME);
+
+  auto trajectory_msg = utils::toTrajectoryMsg(
+    trajectory, control_sequence, 1.0, header);
+
+  EXPECT_EQ(trajectory_msg->header.frame_id, "map");
+  EXPECT_EQ(trajectory_msg->header.stamp, header.stamp);
+  EXPECT_EQ(trajectory_msg->points.size(), 5u);
+  EXPECT_EQ(trajectory_msg->points[0].pose.position.x, 0.0);
+  EXPECT_EQ(trajectory_msg->points[0].pose.position.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[1].pose.position.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].pose.position.y, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].pose.position.x, 2.0);
+  EXPECT_EQ(trajectory_msg->points[2].pose.position.y, 2.0);
+  EXPECT_EQ(trajectory_msg->points[3].pose.position.x, 3.0);
+  EXPECT_EQ(trajectory_msg->points[3].pose.position.y, 3.0);
+  EXPECT_EQ(trajectory_msg->points[4].pose.position.x, 4.0);
+  EXPECT_EQ(trajectory_msg->points[4].pose.position.y, 4.0);
+
+  EXPECT_EQ(trajectory_msg->points[0].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[0].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[0].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.angular.z, 1.0);
+
+  EXPECT_EQ(trajectory_msg->points[0].time_from_start, rclcpp::Duration(0, 0));
+  EXPECT_EQ(trajectory_msg->points[1].time_from_start, rclcpp::Duration(1, 0));
+  EXPECT_EQ(trajectory_msg->points[2].time_from_start, rclcpp::Duration(2, 0));
+  EXPECT_EQ(trajectory_msg->points[3].time_from_start, rclcpp::Duration(3, 0));
+  EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
+}
+
+TEST(UtilsTests, getLastPathPoseTest)
+{
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  path.poses[9].pose.position.x = 5.0;
+  path.poses[9].pose.position.y = 50.0;
+  path.poses[9].pose.orientation.x = 0.0;
+  path.poses[9].pose.orientation.y = 0.0;
+  path.poses[9].pose.orientation.z = 1.0;
+  path.poses[9].pose.orientation.w = 0.0;
+
+  models::Path path_t = toTensor(path);
+  geometry_msgs::msg::Pose last_path_pose = utils::getLastPathPose(path_t);
+
+  EXPECT_EQ(last_path_pose.position.x, 5);
+  EXPECT_EQ(last_path_pose.position.y, 50);
+  EXPECT_NEAR(last_path_pose.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.z, 1.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
+}
+
+TEST(UtilsTests, getCriticGoalTest)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 10.0;
+  pose.position.y = 1.0;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  path.poses[9].pose.position.x = 5.0;
+  path.poses[9].pose.position.y = 50.0;
+  path.poses[9].pose.orientation.x = 0.0;
+  path.poses[9].pose.orientation.y = 0.0;
+  path.poses[9].pose.orientation.z = 1.0;
+  path.poses[9].pose.orientation.w = 0.0;
+
+  geometry_msgs::msg::Pose goal;
+  goal.position.x = 6.0;
+  goal.position.y = 60.0;
+  goal.orientation.x = 0.0;
+  goal.orientation.y = 0.0;
+  goal.orientation.z = 0.0;
+  goal.orientation.w = 1.0;
+
+  // Create CriticData with state and goal initialized
+  models::State state;
+  state.pose.pose = pose;
+  models::Trajectories generated_trajectories;
+  models::Path path_t = toTensor(path);
+  Eigen::ArrayXf costs;
+  float model_dt;
+  CriticData data = {
+    state, generated_trajectories, path_t, goal,
+    costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
+
+  bool enforce_path_inversion = true;
+  geometry_msgs::msg::Pose target_goal = utils::getCriticGoal(data, enforce_path_inversion);
+
+  EXPECT_EQ(target_goal.position.x, 5);
+  EXPECT_EQ(target_goal.position.y, 50);
+  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.z, 1.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.w, 0.0, 1e-3);
+
+  enforce_path_inversion = false;
+  target_goal = utils::getCriticGoal(data, enforce_path_inversion);
+
+  EXPECT_EQ(target_goal.position.x, 6);
+  EXPECT_EQ(target_goal.position.y, 60);
+  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.z, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.w, 1.0, 1e-3);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

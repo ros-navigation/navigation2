@@ -5,6 +5,9 @@ builtin_interfaces/Duration time
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code
 string error_msg
+
+uint16 NONE=0
+uint16 UNKNOWN=740
 ---
 #feedback definition
 builtin_interfaces/Duration time_left

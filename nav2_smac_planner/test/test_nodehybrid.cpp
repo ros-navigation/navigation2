@@ -27,14 +27,6 @@
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/types.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(NodeHybridTest, test_node_hybrid)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
@@ -417,4 +409,17 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

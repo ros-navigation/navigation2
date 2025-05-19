@@ -21,6 +21,7 @@
 
 using nav2_util::geometry_utils::euclidean_distance;
 using nav2_util::geometry_utils::calculate_path_length;
+using nav2_util::geometry_utils::find_next_matching_goal_in_waypoint_statuses;
 
 TEST(GeometryUtils, euclidean_distance_point_3d)
 {
@@ -127,4 +128,31 @@ TEST(GeometryUtils, calculate_path_length)
   ASSERT_NEAR(
     calculate_path_length(circle_path),
     2 * pi * polar_distance, 1e-1);
+}
+
+TEST(GeometryUtils, find_next_matching_goal_in_waypoint_statuses)
+{
+  size_t nb_waypoints = 10;
+  float distance_between_waypoints = 2.0;
+
+  std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(nb_waypoints);
+  for (size_t i = 0 ; i < nb_waypoints ; ++i) {
+    waypoint_statuses[i].waypoint_index = i;
+    waypoint_statuses[i].waypoint_pose.pose.position.x = distance_between_waypoints * i;
+  }
+
+  // match success
+  size_t matching_index = nb_waypoints / 2;
+  ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses,
+    waypoint_statuses[matching_index].waypoint_pose), matching_index);
+
+  // match failed due to mismatch of pose
+  geometry_msgs::msg::PoseStamped fake_pose;
+  fake_pose.pose.position.x = -1.0;
+  ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses, fake_pose), -1);
+
+  // match failed due to waypoint_status is not PENDING
+  waypoint_statuses[matching_index].waypoint_status = nav2_msgs::msg::WaypointStatus::COMPLETED;
+  ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses,
+    waypoint_statuses[matching_index].waypoint_pose), -1);
 }

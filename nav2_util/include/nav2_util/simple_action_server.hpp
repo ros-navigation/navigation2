@@ -21,6 +21,7 @@
 #include <thread>
 #include <future>
 #include <chrono>
+#include <type_traits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -138,7 +139,8 @@ public:
   }
 
   /**
-   * @brief handle the goal requested: accept or reject. This implementation always accepts.
+   * @brief handle the goal requested: accept or reject.
+   * This implementation always accepts when the server is active.
    * @param uuid Goal ID
    * @param Goal A shared pointer to the specific goal
    * @return GoalResponse response of the goal processed
@@ -150,6 +152,9 @@ public:
     std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
     if (!server_active_) {
+      RCLCPP_INFO(
+        node_logging_interface_->get_logger(),
+        "Action server is inactive. Rejecting the goal.");
       return rclcpp_action::GoalResponse::REJECT;
     }
 
@@ -286,7 +291,7 @@ public:
   }
 
   /**
-   * @brief Deactive action server
+   * @brief Deactivate action server
    */
   void deactivate()
   {
@@ -569,6 +574,36 @@ protected:
   }
 
   /**
+   * @brief SFINAE (Substitution Failure Is Not An Error) to check
+   *        for existence of error_code and error_msg in ActionT::Result
+   *        This allows for ActionT::Result messages that do not contain
+   *        an error_code or error_msg such as test_msgs::action::Fibonacci
+   */
+  template<typename T, typename = void>
+  struct has_error_msg : std::false_type {};
+  template<typename T>
+  struct has_error_msg<T, std::void_t<decltype(T::error_msg)>>: std::true_type {};
+  template<typename T, typename = void>
+  struct has_error_code : std::false_type {};
+  template<typename T>
+  struct has_error_code<T, std::void_t<decltype(T::error_code)>>: std::true_type {};
+
+  template<typename T>
+  void log_error_details_if_available(const T & result)
+  {
+    if constexpr (has_error_code<typename ActionT::Result>::value &&
+      has_error_msg<typename ActionT::Result>::value)
+    {
+      warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) +
+             ", error_msg:'" + result->error_msg + "'.");
+    } else if constexpr (has_error_code<typename ActionT::Result>::value) {
+      warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) + ".");
+    } else {
+      warn_msg("Aborting handle.");
+    }
+  }
+
+  /**
    * @brief Terminate a particular action with a result
    * @param handle goal handle to terminate
    * @param the Results object to terminate the action with
@@ -585,7 +620,7 @@ protected:
         info_msg("Client requested to cancel the goal. Cancelling.");
         handle->canceled(result);
       } else {
-        warn_msg("Aborting handle.");
+        log_error_details_if_available(result);
         handle->abort(result);
       }
       handle.reset();

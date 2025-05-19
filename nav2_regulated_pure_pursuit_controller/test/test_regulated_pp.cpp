@@ -27,14 +27,6 @@
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
 public:
@@ -260,7 +252,7 @@ INSTANTIATE_TEST_SUITE_P(
   1.0,
   {1.0, 0.0}
 },
-    // Origin to hte negative X axis
+    // Origin to the negative X axis
     CircleSegmentIntersectionParam{
   {0.0, 0.0},
   {-2.0, 0.0},
@@ -405,7 +397,7 @@ TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
   EXPECT_NEAR(pt.pose.position.x, cos(135.0 * M_PI / 180) * 10.0, EPSILON);
   EXPECT_NEAR(pt.pose.position.y, sin(135.0 * M_PI / 180) * 10.0, EPSILON);
 
-  // 2 poses bck
+  // 2 poses back
   path.poses.clear();
   path.poses.resize(2);
   path.poses[0].pose.position.x = -2.0;
@@ -506,8 +498,14 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 
 TEST(RegulatedPurePursuitTest, rotateTests)
 {
+  // --------------------------
+  // Non-Stateful Configuration
+  // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  nav2_util::declare_parameter_if_not_declared(
+    node, "PathFollower.stateful", rclcpp::ParameterValue(false));
+
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -573,6 +571,27 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   curr_speed.angular.z = 1.0;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_NEAR(ang_v, 0.84, 0.01);
+
+  // -----------------------
+  // Stateful Configuration
+  // -----------------------
+  node->set_parameter(
+    rclcpp::Parameter("PathFollower.stateful", true));
+
+  ctrl->configure(node, name, tf, costmap);
+
+  // Start just outside tolerance
+  carrot.pose.position.x = 0.0;
+  carrot.pose.position.y = 0.26;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+
+  // Enter tolerance (should set internal flag)
+  carrot.pose.position.y = 0.24;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+
+  // Move outside tolerance again - still expect true (due to persistent state)
+  carrot.pose.position.y = 0.26;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)
@@ -646,7 +665,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // ctrl->resetVelocityRegulationScaling();
   // curvature = 0.0;
 
-  // min changable cost
+  // min changeable cost
   // pose_cost = 1;
   // linear_vel = 0.5;
   // curr_speed.linear.x = 0.5;
@@ -713,7 +732,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
-      rclcpp::Parameter("test.use_rotate_to_heading", false)});
+      rclcpp::Parameter("test.use_rotate_to_heading", false),
+      rclcpp::Parameter("test.stateful", false)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -744,6 +764,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(
@@ -1122,4 +1143,17 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
   EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
   EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

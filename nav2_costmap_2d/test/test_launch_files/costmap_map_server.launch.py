@@ -20,7 +20,7 @@ from launch import LaunchDescription
 import launch_ros.actions
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     mapFile = os.getenv('TEST_MAP')
     return LaunchDescription(
         [

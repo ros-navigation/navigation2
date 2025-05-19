@@ -57,10 +57,10 @@ public:
     // The output is defined by the tester class on the command string.
     if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;
-      return ResultStatus{Status::SUCCEEDED, 0};
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return ResultStatus{Status::FAILED, 0};
+    return ResultStatus{Status::FAILED, 0, "failed"};
   }
 
   ResultStatus onCycleUpdate() override
@@ -70,7 +70,7 @@ public:
     // was completed.
 
     if (command_ != "Testing success" || !initialized_) {
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, 0, "failed"};
     }
 
     // For testing, pretend the robot takes some fixed
@@ -80,10 +80,10 @@ public:
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
-      return ResultStatus{Status::SUCCEEDED, 0};
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return ResultStatus{Status::RUNNING, 0};
+    return ResultStatus{Status::RUNNING, 0, ""};
   }
 
   /**

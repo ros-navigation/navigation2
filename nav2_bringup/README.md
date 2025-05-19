@@ -14,7 +14,7 @@ To use, please see the Nav2 [Getting Started Page](https://docs.nav2.org/getting
 
 Note:
 * gazebo should be started with both libgazebo_ros_init.so and libgazebo_ros_factory.so to work correctly.
-* spawn_entity node could not remap /tf and /tf_static to tf and tf_static in the launch file yet, used only for multi-robot situations. Instead it should be done as remapping argument <remapping>/tf:=tf</remapping>  <remapping>/tf_static:=tf_static</remapping> under ros2 tag in each plugin which publishs transforms in the SDF file. It is essential to differentiate the tf's of the different robot.
+* spawn_entity node could not remap /tf and /tf_static to tf and tf_static in the launch file yet, used only for multi-robot situations. Instead it should be done as remapping argument <remapping>/tf:=tf</remapping>  <remapping>/tf_static:=tf_static</remapping> under ros2 tag in each plugin which publishes transforms in the SDF file. It is essential to differentiate the tf's of the different robot.
 
 ## Launch
 
@@ -25,17 +25,20 @@ This is how to launch multi-robot simulation with simple command line. Please se
 #### Cloned
 
 This allows to bring up multiple robots, cloning a single robot N times at different positions in the map. The parameter are loaded from `nav2_multirobot_params_all.yaml` file by default.
-The multiple robots that consists of name and initial pose in YAML format will be set on the command-line. The format for each robot is `robot_name={x: 0.0, y: 0.0, yaw: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}`.
+The multiple robots that consists of name and initial pose in YAML format will be set on the command-line. The format for each robot is `{name: 'robot_name', pose: {x: 0.0, y: 0.0, z: 0.0, roll: 0.0, pitch: 0.0, yaw: 0.0}}`.
 
 Please refer to below examples.
 
 ```shell
-ros2 launch nav2_bringup cloned_multi_tb3_simulation_launch.py robots:="robot1={x: 1.0, y: 1.0, yaw: 1.5707}; robot2={x: 1.0, y: 1.0, yaw: 1.5707}"
+ros2 launch nav2_bringup cloned_multi_tb3_simulation_launch.py \
+  robots:="\
+  {name: 'robot1', pose: {x: 1.0, y: 1.0, yaw: 1.5707}}; \
+  {name: 'robot2', pose: {x: 1.0, y: 1.0, yaw: 1.5707}}"
 ```
 
 #### Unique
 
-There are two robots including name and intitial pose are hard-coded in the launch script. Two separated unique robots are required params file (`nav2_multirobot_params_1.yaml`, `nav2_multirobot_params_2.yaml`) for each robot to bring up.
+There are two robots including name and initial pose are hard-coded in the launch script. Two separated unique robots are required params file (`nav2_multirobot_params_1.yaml`, `nav2_multirobot_params_2.yaml`) for each robot to bring up.
 
 If you want to bringup more than two robots, you should modify the `unique_multi_tb3_simulation_launch.py` script.
 

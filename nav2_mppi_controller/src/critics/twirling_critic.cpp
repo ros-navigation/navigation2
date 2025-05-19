@@ -14,11 +14,16 @@
 
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 
+#include <Eigen/Dense>
+
 namespace mppi::critics
 {
 
 void TwirlingCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
 
   getParam(power_, "cost_power", 1);
@@ -30,17 +35,22 @@ void TwirlingCritic::initialize()
 
 void TwirlingCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
-  if (!enabled_ ||
-    utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
+  if (!enabled_) {
+    return;
+  }
+
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+
+  if (utils::withinPositionGoalTolerance(
+      data.goal_checker, data.state.pose.pose, goal))
   {
     return;
   }
 
   if (power_ > 1u) {
-    data.costs += xt::pow(xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_, power_);
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).pow(power_).eval();
   } else {
-    data.costs += xt::mean(xt::fabs(data.state.wz), {1}, immediate) * weight_;
+    data.costs += ((data.state.wz.abs().rowwise().mean()) * weight_).eval();
   }
 }
 

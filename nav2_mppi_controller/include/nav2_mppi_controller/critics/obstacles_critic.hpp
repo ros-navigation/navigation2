@@ -97,6 +97,7 @@ protected:
 
   unsigned int power_{0};
   float repulsion_weight_, critical_weight_{0};
+  bool enforce_path_inversion_{false};
   std::string inflation_layer_name_;
 };
 

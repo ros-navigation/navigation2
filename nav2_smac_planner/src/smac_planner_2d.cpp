@@ -93,6 +93,10 @@ void SmacPlanner2D::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
+  // Note that we need to declare it here to prevent the parameter from being declared in the
+  // dynamic reconfigure callback
+  nav2_util::declare_parameter_if_not_declared(
+    node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
 
   _motion_model = MotionModel::TWOD;
 
@@ -115,7 +119,7 @@ void SmacPlanner2D::configure(
   _collision_checker.setFootprint(
     costmap_ros->getRobotFootprint(),
     true /*for 2D, most use radius*/,
-    0.0 /*for 2D cost at inscribed isn't relevent*/);
+    0.0 /*for 2D cost at inscribed isn't relevant*/);
 
   // Initialize A* template
   _a_star = std::make_unique<AStarAlgorithm<Node2D>>(_motion_model, _search_info);
@@ -258,7 +262,7 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  // Corner case of start and goal beeing on the same cell
+  // Corner case of start and goal being on the same cell
   if (std::floor(mx_start) == std::floor(mx_goal) && std::floor(my_start) == std::floor(my_goal)) {
     pose.pose = start.pose;
     // if we have a different start and goal orientation, set the unique path pose to the goal
@@ -268,6 +272,12 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
       pose.pose.orientation = goal.pose.orientation;
     }
     plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
     return plan;
   }
 

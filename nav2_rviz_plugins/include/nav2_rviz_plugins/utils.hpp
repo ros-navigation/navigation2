@@ -27,7 +27,7 @@ namespace nav2_rviz_plugins
 {
 
 /**
-   * @brief Load the avaialble plugins into the combo box
+   * @brief Load the available plugins into the combo box
    * @param node The node to use for loading the plugins
    * @param server_failed if the server failed to load the plugins, false otherwise
    * @param server_name The name of the server to load plugins for

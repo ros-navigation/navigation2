@@ -27,6 +27,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::NavigateToPose
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class NavigateToPoseAction : public BtActionNode<nav2_msgs::action::NavigateToPose>
 {
@@ -71,12 +73,17 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+
     return providedBasicPorts(
       {
         BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
         BT::InputPort<std::string>("behavior_tree", "Behavior tree to run"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "Navigate to pose error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "Navigate to pose error msg"),
       });
   }
 };

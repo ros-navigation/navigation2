@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::BackUp
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class BackUpAction : public BtActionNode<nav2_msgs::action::BackUp>
 {
@@ -82,7 +84,9 @@ public:
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for reversing"),
         BT::InputPort<bool>("disable_collision_checks", false, "Disable collision checking"),
         BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The back up behavior server error code")
+          "error_code_id", "The back up behavior server error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The back up behavior server error msg"),
       });
   }
 };

@@ -16,16 +16,14 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import ExecuteProcess
-from launch.actions import GroupAction
+from launch import LaunchDescription, LaunchService
+from launch.actions import ExecuteProcess, GroupAction
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 
 
-def generate_launch_description():
-    params_file = os.path.join(os.getenv('TEST_DIR'), 'error_code_param.yaml')
+def generate_launch_description() -> LaunchDescription:
+    params_file = os.path.join(os.getenv('TEST_DIR', ''), 'error_code_param.yaml')
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
@@ -105,11 +103,11 @@ def generate_launch_description():
     return ld
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     test_error_codes_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), 'test_error_codes.py')],
+        cmd=[os.path.join(os.getenv('TEST_DIR', ''), 'test_error_codes.py')],
         name='test_error_codes',
         output='screen',
     )

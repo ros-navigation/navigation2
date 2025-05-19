@@ -69,12 +69,6 @@ ParametersHandler::dynamicParamsCallback(
       callback != get_param_callbacks_.end())
     {
       callback->second(param, result);
-    } else {
-      result.successful = false;
-      if (!result.reason.empty()) {
-        result.reason += "\n";
-      }
-      result.reason += "get_param_callback func for '" + param_name + "' not found.\n";
     }
   }
 

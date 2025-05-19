@@ -40,7 +40,7 @@ void startup_lifecycle_nodes(
 
 /// Transition the given lifecycle nodes to the ACTIVATED state in order.
 /**
- * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
+ * \param[in] nodes A ':' separated list of node names. eg. "/node1:/node2"
  */
 void startup_lifecycle_nodes(
   const std::string & nodes,
@@ -67,7 +67,7 @@ void reset_lifecycle_nodes(
 
 /// Transition the given lifecycle nodes to the UNCONFIGURED state in order.
 /**
- * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
+ * \param[in] nodes A ':' separated list of node names. eg. "/node1:/node2"
  */
 void reset_lifecycle_nodes(
   const std::string & nodes,

@@ -75,7 +75,7 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
 
   unsigned int mx, my;
-  // Find the furthest relevent pose on the path to consider within costmap
+  // Find the furthest relevant pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
   for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
@@ -120,7 +120,7 @@ geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
 nav_msgs::msg::Path PathHandler::transformPath(
   const geometry_msgs::msg::PoseStamped & robot_pose)
 {
-  // Find relevent bounds of path to use
+  // Find relevant bounds of path to use
   geometry_msgs::msg::PoseStamped global_pose =
     transformToGlobalPlanFrame(robot_pose);
   auto [transformed_plan, lower_bound] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
@@ -184,6 +184,22 @@ nav_msgs::msg::Path & PathHandler::getPath() {return global_plan_;}
 void PathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
 {
   plan.poses.erase(plan.poses.begin(), end);
+}
+
+geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
+{
+  auto goal = global_plan_.poses.back();
+  goal.header.frame_id = global_plan_.header.frame_id;
+  goal.header.stamp = stamp;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!transformPose(costmap_->getGlobalFrameID(), goal, transformed_goal)) {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
 }
 
 bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose)

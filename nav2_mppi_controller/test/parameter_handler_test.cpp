@@ -21,15 +21,6 @@
 
 // Tests parameter handler object
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 
 class ParametersHandlerWrapper : public ParametersHandler
@@ -131,18 +122,18 @@ TEST(ParameterHandlerTest, GetSystemParamsTest)
 
   // Get parameters in global namespace and in subnamespaces
   ParametersHandler handler(node);
-  auto getParamer = handler.getParamGetter("");
+  auto getParameter = handler.getParamGetter("");
   bool p1 = false;
   int p2 = 0;
-  getParamer(p1, "param1", false);
-  getParamer(p2, "ns.param2", 0);
+  getParameter(p1, "param1", false);
+  getParameter(p2, "ns.param2", 0);
   EXPECT_EQ(p1, true);
   EXPECT_EQ(p2, 7);
 
   // Get parameters in subnamespaces using name semantics of getter
-  auto getParamer2 = handler.getParamGetter("ns");
+  auto getParameter2 = handler.getParamGetter("ns");
   p2 = 0;
-  getParamer2(p2, "param2", 0);
+  getParameter2(p2, "param2", 0);
   EXPECT_EQ(p2, 7);
 }
 
@@ -156,10 +147,10 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
   handler.start();
 
   // Get parameters and check they have initial values
-  auto getParamer = handler.getParamGetter("");
+  auto getParameter = handler.getParamGetter("");
   int p1 = 0, p2 = 0;
-  getParamer(p1, "dynamic_int", 0, ParameterType::Dynamic);
-  getParamer(p2, "static_int", 0, ParameterType::Static);
+  getParameter(p1, "dynamic_int", 0, ParameterType::Dynamic);
+  getParameter(p2, "static_int", 0, ParameterType::Static);
   EXPECT_EQ(p1, 7);
   EXPECT_EQ(p2, 7);
 
@@ -201,10 +192,10 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
   handler.start();
 
   // Get parameters and check they have initial values
-  auto getParamer = handler.getParamGetter("");
+  auto getParameter = handler.getParamGetter("");
   int p1 = 0, p2 = 0;
-  getParamer(p1, "dynamic_int", 0, ParameterType::Dynamic);
-  getParamer(p2, "static_int", 0, ParameterType::Static);
+  getParameter(p1, "dynamic_int", 0, ParameterType::Dynamic);
+  getParameter(p2, "static_int", 0, ParameterType::Static);
   EXPECT_EQ(p1, 7);
   EXPECT_EQ(p2, 7);
 
@@ -247,7 +238,7 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   handler.start();
 
   // Set verbose true to get more information about bad parameter usage
-  auto getParamer = handler.getParamGetter("");
+  auto getParameter = handler.getParamGetter("");
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     node->get_node_base_interface(), node->get_node_topics_interface(),
     node->get_node_graph_interface(),
@@ -267,13 +258,6 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   EXPECT_EQ(result.successful, true);
   EXPECT_TRUE(result.reason.empty());
 
-  // Try to access some parameters that have not been declared
-  int p1 = 0, p2 = 0;
-  EXPECT_THROW(getParamer(p1, "not_declared", 8, ParameterType::Dynamic),
-               rclcpp::exceptions::InvalidParameterValueException);
-  EXPECT_THROW(getParamer(p2, "not_declared2", 9, ParameterType::Static),
-               rclcpp::exceptions::InvalidParameterValueException);
-
   // Try to set some parameters that have not been declared via the service client
   result_future = rec_param->set_parameters_atomically({
     rclcpp::Parameter("static_int", 10),
@@ -292,7 +276,17 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
   // The ParameterNotDeclaredException handler in rclcpp/parameter_service.cpp
   // overrides any other reasons and does not provide details to the service client.
   EXPECT_EQ(result.reason, std::string("One or more parameters were not declared before setting"));
+}
 
-  EXPECT_EQ(p1, 0);
-  EXPECT_EQ(p2, 0);
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -32,6 +32,7 @@
   <test_depend>nav2_util</test_depend>
   <test_depend>nav_msgs</test_depend>
   <test_depend>navigation2</test_depend>
+  <test_depend>python3-zmq</test_depend>
   <test_depend>rclcpp</test_depend>
   <test_depend>rclcpp_lifecycle</test_depend>
   <test_depend>rclpy</test_depend>

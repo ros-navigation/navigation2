@@ -50,7 +50,9 @@ BtActionServer<ActionT>::BtActionServer(
   on_goal_received_callback_(on_goal_received_callback),
   on_loop_callback_(on_loop_callback),
   on_preempt_callback_(on_preempt_callback),
-  on_completion_callback_(on_completion_callback)
+  on_completion_callback_(on_completion_callback),
+  internal_error_code_(0),
+  internal_error_msg_()
 {
   auto node = node_.lock();
   logger_ = node->get_logger();
@@ -73,34 +75,51 @@ BtActionServer<ActionT>::BtActionServer(
     node->declare_parameter("wait_for_service_timeout", 1000);
   }
 
-  std::vector<std::string> error_code_names = {
-    "follow_path_error_code",
-    "compute_path_error_code"
+  std::vector<std::string> error_code_name_prefixes = {
+    "assisted_teleop",
+    "backup",
+    "compute_path",
+    "dock_robot",
+    "drive_on_heading",
+    "follow_path",
+    "nav_thru_poses",
+    "nav_to_pose",
+    "spin",
+    "undock_robot",
+    "wait",
   };
 
-  if (!node->has_parameter("error_code_names")) {
+  if (node->has_parameter("error_code_names")) {
+    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
+      " 'error_code_name_prefixes' and MUST be removed.\n"
+      " Please review migration guide and update your configuration.");
+  }
+
+  if (!node->has_parameter("error_code_name_prefixes")) {
     const rclcpp::ParameterValue value = node->declare_parameter(
-      "error_code_names",
+      "error_code_name_prefixes",
       rclcpp::PARAMETER_STRING_ARRAY);
     if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      std::string error_codes_str;
-      for (const auto & error_code : error_code_names) {
-        error_codes_str += " " + error_code;
+      std::string error_code_name_prefixes_str;
+      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
+        error_code_name_prefixes_str += " " + error_code_name_prefix;
       }
       RCLCPP_WARN_STREAM(
-        logger_, "Error_code parameters were not set. Using default values of:"
-          << error_codes_str + "\n"
+        logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
+          << error_code_name_prefixes_str + "\n"
           << "Make sure these match your BT and there are not other sources of error codes you"
           "reported to your application");
-      rclcpp::Parameter error_code_names_param("error_code_names", error_code_names);
-      node->set_parameter(error_code_names_param);
+      rclcpp::Parameter error_code_name_prefixes_param("error_code_name_prefixes",
+        error_code_name_prefixes);
+      node->set_parameter(error_code_name_prefixes_param);
     } else {
-      error_code_names = value.get<std::vector<std::string>>();
-      std::string error_codes_str;
-      for (const auto & error_code : error_code_names) {
-        error_codes_str += " " + error_code;
+      error_code_name_prefixes = value.get<std::vector<std::string>>();
+      std::string error_code_name_prefixes_str;
+      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
+        error_code_name_prefixes_str += " " + error_code_name_prefix;
       }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:" << error_codes_str);
+      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
+        << error_code_name_prefixes_str);
     }
   }
 }
@@ -172,7 +191,7 @@ bool BtActionServer<ActionT>::on_configure()
   node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
 
   // Get error code id names to grab off of the blackboard
-  error_code_names_ = node->get_parameter("error_code_names").as_string_array();
+  error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_, client_node_);
@@ -194,6 +213,7 @@ bool BtActionServer<ActionT>::on_configure()
 template<class ActionT>
 bool BtActionServer<ActionT>::on_activate()
 {
+  resetInternalError();
   if (!loadBehaviorTree(default_bt_xml_filename_)) {
     RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
     return false;
@@ -219,8 +239,16 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_);
+  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned server_port)
+{
+  enable_groot_monitoring_ = enable;
+  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -235,11 +263,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return true;
   }
 
+  // if a new tree is created, than the Groot2 Publisher must be destroyed
+  bt_->resetGrootMonitor();
+
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
 
   if (!xml_file.good()) {
-    RCLCPP_ERROR(logger_, "Couldn't open input XML file: %s", filename.c_str());
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Couldn't open input XML file: " + filename);
     return false;
   }
 
@@ -256,13 +288,23 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
         wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    RCLCPP_ERROR(logger_, "Exception when loading BT: %s", e.what());
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when loading BT: ") + e.what());
     return false;
   }
 
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
+
+  // Enable monitoring with Groot2
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
+
   return true;
 }
 
@@ -270,7 +312,11 @@ template<class ActionT>
 void BtActionServer<ActionT>::executeCallback()
 {
   if (!on_goal_received_callback_(action_server_->get_current_goal())) {
-    action_server_->terminate_current();
+    // Give server an opportunity to populate the result message
+    // if the goal is not accepted
+    auto result = std::make_shared<typename ActionT::Result>();
+    populateErrorCode(result);
+    action_server_->terminate_current(result);
     cleanErrorCodes();
     return;
   }
@@ -318,7 +364,8 @@ void BtActionServer<ActionT>::executeCallback()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       action_server_->terminate_current(result);
-      RCLCPP_ERROR(logger_, "Goal failed");
+      RCLCPP_ERROR(logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+        result->error_msg.c_str());
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
@@ -331,35 +378,80 @@ void BtActionServer<ActionT>::executeCallback()
 }
 
 template<class ActionT>
+void BtActionServer<ActionT>::setInternalError(uint16_t error_code, const std::string & error_msg)
+{
+  internal_error_code_ = error_code;
+  internal_error_msg_ = error_msg;
+  RCLCPP_ERROR(logger_, "Setting internal error error_code:%d, error_msg:%s",
+    internal_error_code_, internal_error_msg_.c_str());
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::resetInternalError(void)
+{
+  internal_error_code_ = ActionT::Result::NONE;
+  internal_error_msg_ = "";
+}
+
+template<class ActionT>
+bool BtActionServer<ActionT>::populateInternalError(
+  typename std::shared_ptr<typename ActionT::Result> result)
+{
+  if (internal_error_code_ != ActionT::Result::NONE) {
+    result->error_code = internal_error_code_;
+    result->error_msg = internal_error_msg_;
+    return true;
+  }
+  return false;
+}
+
+template<class ActionT>
 void BtActionServer<ActionT>::populateErrorCode(
   typename std::shared_ptr<typename ActionT::Result> result)
 {
   int highest_priority_error_code = std::numeric_limits<int>::max();
-  for (const auto & error_code : error_code_names_) {
+  std::string highest_priority_error_msg = "";
+  std::string name;
+
+  if (internal_error_code_ != 0) {
+    highest_priority_error_code = internal_error_code_;
+    highest_priority_error_msg = internal_error_msg_;
+  }
+
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
     try {
-      int current_error_code = blackboard_->get<int>(error_code);
+      name = error_code_name_prefix + "_error_code";
+      int current_error_code = blackboard_->get<int>(name);
       if (current_error_code != 0 && current_error_code < highest_priority_error_code) {
         highest_priority_error_code = current_error_code;
+        name = error_code_name_prefix + "_error_msg";
+        highest_priority_error_msg = blackboard_->get<std::string>(name);
       }
     } catch (...) {
       RCLCPP_DEBUG(
         logger_,
-        "Failed to get error code: %s from blackboard",
-        error_code.c_str());
+        "Failed to get error code name: %s from blackboard",
+        name.c_str());
     }
   }
 
   if (highest_priority_error_code != std::numeric_limits<int>::max()) {
     result->error_code = highest_priority_error_code;
+    result->error_msg = highest_priority_error_msg;
   }
 }
 
 template<class ActionT>
 void BtActionServer<ActionT>::cleanErrorCodes()
 {
-  for (const auto & error_code : error_code_names_) {
-    blackboard_->set<unsigned short>(error_code, 0);  //NOLINT
+  std::string name;
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
+    name = error_code_name_prefix + "_error_code";
+    blackboard_->set<unsigned short>(name, 0);  //NOLINT
+    name = error_code_name_prefix + "_error_msg";
+    blackboard_->set<std::string>(name, "");
   }
+  resetInternalError();
 }
 
 }  // namespace nav2_behavior_tree

@@ -1,6 +1,6 @@
 
 #goal definition
-geometry_msgs/PoseStamped[] poses
+nav_msgs/Goals poses
 string behavior_tree
 ---
 #result definition
@@ -8,9 +8,13 @@ string behavior_tree
 # Error codes
 # Note: The expected priority order of the errors should match the message order
 uint16 NONE=0
+uint16 UNKNOWN=9100
+uint16 FAILED_TO_LOAD_BEHAVIOR_TREE=9101
+uint16 TF_ERROR=9102
 
 uint16 error_code
 string error_msg
+WaypointStatus[] waypoint_statuses
 ---
 #feedback definition
 geometry_msgs/PoseStamped current_pose
@@ -19,3 +23,4 @@ builtin_interfaces/Duration estimated_time_remaining
 int16 number_of_recoveries
 float32 distance_remaining
 int16 number_of_poses_remaining
+WaypointStatus[] waypoint_statuses

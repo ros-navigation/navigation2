@@ -90,6 +90,8 @@ public:
           "success", "If the action was successful"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "Error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "Error message"),
       });
   }
 };

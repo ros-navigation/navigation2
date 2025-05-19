@@ -30,14 +30,6 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 // SMAC smoke tests for plugin-level issues rather than algorithms
 // (covered by more extensively testing in other files)
 // System tests in nav2_system_tests will actually plan with this work
@@ -76,6 +68,13 @@ TEST(SmacTest, test_smac_2d) {
     planner_2d->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner_2d->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner_2d->deactivate();
   planner_2d->cleanup();
@@ -142,4 +141,17 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   rclcpp::spin_until_future_complete(
     node2D->get_node_base_interface(),
     results);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -35,8 +35,10 @@ class AnalyticExpansion
 {
 public:
   typedef NodeT * NodePtr;
+  typedef std::vector<NodePtr> NodeVector;
   typedef typename NodeT::Coordinates Coordinates;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
+  typedef typename NodeT::CoordinateVector CoordinateVector;
 
   /**
    * @struct nav2_smac_planner::AnalyticExpansion::AnalyticExpansionNodes
@@ -79,17 +81,22 @@ public:
   /**
    * @brief Attempt an analytic path completion
    * @param node The node to start the analytic path from
-   * @param goal The goal node to plan to
+   * @param coarse_check_goals Coarse list of goals nodes to plan to
+   * @param fine_check_goals Fine list of goals nodes to plan to
+   * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
-   * @param best_cost Best heuristic cost to propertionally expand more closer to the goal
-   * @return Node pointer reference to goal node if successful, else
-   * return nullptr
+   * @param closest_distance Closest distance to goal
+   * @return Node pointer reference to goal node with the best score out of the goals node if
+   * successful, else return nullptr
    */
   NodePtr tryAnalyticExpansion(
     const NodePtr & current_node,
-    const NodePtr & goal_node,
-    const NodeGetter & getter, int & iterations, int & best_cost);
+    const NodeVector & coarse_check_goals,
+    const NodeVector & fine_check_goals,
+    const CoordinateVector & goals_coords,
+    const NodeGetter & getter, int & iterations,
+    int & closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -104,6 +111,20 @@ public:
     const NodeGetter & getter, const ompl::base::StateSpacePtr & state_space);
 
   /**
+   * @brief Refined analytic path from the current node to the goal
+   * @param current_node The node to start the analytic path from
+   * @param goal_node The goal node to plan to
+   * @param getter The function object that gets valid nodes from the graph
+   * @param analytic_nodes The set of analytic nodes to refine
+   * @return The score of the refined path
+   */
+  float refineAnalyticPath(
+    const NodePtr & current_node,
+    const NodePtr & goal_node,
+    const NodeGetter & getter,
+    AnalyticExpansionNodes & analytic_nodes);
+
+  /**
    * @brief Takes final analytic expansion and appends to current expanded node
    * @param node The node to start the analytic path from
    * @param goal The goal node to plan to
@@ -116,7 +137,7 @@ public:
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state
-   * information that may be poluting it from a prior search iteration
+   * information that may be polluting it from a prior search iteration
    * @param expanded_nodes Expanded node to clean up from search
    */
   void cleanNode(const NodePtr & nodes);

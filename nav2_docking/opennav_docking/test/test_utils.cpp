@@ -19,14 +19,6 @@
 
 // Test parsing dock plugins and database files (see test_dock_file.yaml).
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 namespace opennav_docking
 {
 
@@ -100,7 +92,7 @@ TEST(UtilsTests, parseDockFile)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test4");
   DockMap db;
   std::string filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/test_dock_file.yaml";
+    "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
   EXPECT_EQ(db.size(), 2u);
   EXPECT_EQ(db["dock1"].frame, std::string("mapA"));
@@ -115,6 +107,32 @@ TEST(UtilsTests, parseDockFile)
   EXPECT_NE(db["dock2"].pose.orientation.w, 1.0);
   EXPECT_EQ(db["dock1"].id, std::string(""));
   EXPECT_EQ(db["dock2"].id, std::string("2"));
+}
+
+TEST(UtilsTests, parseDockFile2)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test4");
+  DockMap db;
+
+  // Test with a file that has no docks
+  std::string filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_no_docks_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+
+  // Test with a file that has no type
+  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_no_type_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+
+  // Test with a file that has no pose
+  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_no_pose_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+
+  // Test with a file that has wring pose array size
+  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_bad_pose_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
 }
 
 TEST(UtilsTests, testgetDockPoseStamped)
@@ -143,4 +161,24 @@ TEST(UtilsTests, testl2Norm)
   EXPECT_NEAR(utils::l2Norm(a, b), 0.734, 1e-3);
 }
 
+TEST(UtilsTests, testGetDockDirectionFromString) {
+  using opennav_docking_core::DockDirection;
+  EXPECT_EQ(utils::getDockDirectionFromString("forward"), DockDirection::FORWARD);
+  EXPECT_EQ(utils::getDockDirectionFromString("backward"), DockDirection::BACKWARD);
+  EXPECT_EQ(utils::getDockDirectionFromString("other"), DockDirection::UNKNOWN);
+}
+
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

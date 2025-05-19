@@ -27,14 +27,6 @@
 
 using namespace std::chrono_literals;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class VelSmootherShim : public nav2_velocity_smoother::VelocitySmoother
 {
 public:
@@ -458,7 +450,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDecel)
   smoother->configure(state);
   double no_eta = 1.0;
 
-  // Test asymetric accel/decel use cases
+  // Test asymmetric accel/decel use cases
   double accel = 0.1;
   double decel = -1.0;
   double dv_decel = -decel / 20.0;
@@ -714,4 +706,17 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   smoother->cleanup(state);
   smoother->shutdown(state);
   smoother.reset();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

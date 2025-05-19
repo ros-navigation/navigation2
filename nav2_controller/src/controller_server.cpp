@@ -234,7 +234,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
-  // This may throw due to real-time prioritzation if user doesn't have real-time permissions
+  // This may throw due to real-time prioritization if user doesn't have real-time permissions
   try {
     action_server_ = std::make_unique<ActionServer>(
       shared_from_this(),
@@ -249,7 +249,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
-  // Set subscribtion to the speed limiting topic
+  // Set subscription to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
     speed_limit_topic, rclcpp::QoS(10),
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
@@ -438,7 +438,7 @@ void ControllerServer::computeControl()
   try {
     auto goal = action_server_->get_current_goal();
     if (!goal) {
-      return;  //  goal would be nullptr if action_server_ is inactivate.
+      return;  //  goal would be nullptr if action_server_ is deactivate.
     }
 
     std::string c_name = goal->controller_id;
@@ -522,6 +522,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
@@ -529,6 +530,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
@@ -536,6 +538,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
@@ -543,6 +546,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
@@ -550,6 +554,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
@@ -557,6 +562,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
@@ -564,6 +570,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
@@ -571,6 +578,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
@@ -578,6 +586,7 @@ void ControllerServer::computeControl()
     onGoalExit();
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   }
@@ -659,18 +668,31 @@ void ControllerServer::computeAndPublishVelocity()
     }
   }
 
+  RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+  publishVelocity(cmd_vel_2d);
+
+  // Find the closest pose to current pose on global path
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
+  if (!nav_2d_utils::transformPose(
+          costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
+          robot_pose_in_path_frame, tolerance))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
+  }
+
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
-  // Find the closest pose to current pose on global path
   nav_msgs::msg::Path & current_path = current_path_;
-  auto find_closest_pose_idx =
-    [&pose, &current_path]() {
+  auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path]()
+    {
       size_t closest_pose_idx = 0;
       double curr_min_dist = std::numeric_limits<double>::max();
       for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-          pose, current_path.poses[curr_idx]);
+        double curr_dist =
+          nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
+          current_path.poses[curr_idx]);
         if (curr_dist < curr_min_dist) {
           curr_min_dist = curr_dist;
           closest_pose_idx = curr_idx;
@@ -679,12 +701,10 @@ void ControllerServer::computeAndPublishVelocity()
       return closest_pose_idx;
     };
 
-  feedback->distance_to_goal =
-    nav2_util::geometry_utils::calculate_path_length(current_path_, find_closest_pose_idx());
+  const std::size_t closest_pose_idx = find_closest_pose_idx();
+  feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
+      closest_pose_idx);
   action_server_->publish_feedback(feedback);
-
-  RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
-  publishVelocity(cmd_vel_2d);
 }
 
 void ControllerServer::updateGlobalPath()
@@ -696,20 +716,22 @@ void ControllerServer::updateGlobalPath()
     if (findControllerId(goal->controller_id, current_controller)) {
       current_controller_ = current_controller;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid controller %s requested.",
-        goal->controller_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid controller " +
+        goal->controller_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_goal_checker;
     if (findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
       current_goal_checker_ = current_goal_checker;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid goal checker %s requested.",
-        goal->goal_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid goal checker " +
+        goal->goal_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_progress_checker;
@@ -722,10 +744,11 @@ void ControllerServer::updateGlobalPath()
         progress_checkers_[current_progress_checker_]->reset();
       }
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid progress checker %s requested.",
-        goal->progress_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid progress checker " +
+        goal->progress_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     setPlannerPath(goal->path);
@@ -735,6 +758,10 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>(velocity);
+  if (!nav2_util::validateTwist(cmd_vel->twist)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
   if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
     vel_publisher_->publish(std::move(cmd_vel));
   }

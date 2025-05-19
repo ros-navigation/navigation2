@@ -36,7 +36,7 @@ The zones around the robot can take the following shapes:
 * Arbitrary user-defined polygon relative to the robot base frame, which can be static in a configuration file or dynamically changing via a topic interface.
 * Robot footprint polygon, which is used in the approach behavior model only. Will use the static user-defined polygon or the footprint topic to allow it to be dynamically adjusted over time.
 * Circle: is made for the best performance and could be used in the cases where the zone or robot footprint could be approximated by round shape.
-* VelocityPolygon: allow switching of polygons based on the command velocity. When the velocity is covered by multiple sub polygons, the first sub polygon in the `velocity_polygons` list will be used. This is useful for robots to set different safety zones based on their velocity (e.g. a robot that has a larger safety zone when moving at 1.0 m/s than when moving at 0.5 m/s). 
+* VelocityPolygon: allow switching of polygons based on the command velocity. When the velocity is covered by multiple sub polygons, the first sub polygon in the `velocity_polygons` list will be used. This is useful for robots to set different safety zones based on their velocity (e.g. a robot that has a larger safety zone when moving at 1.0 m/s than when moving at 0.5 m/s).
 
 
 The data may be obtained from different data sources:

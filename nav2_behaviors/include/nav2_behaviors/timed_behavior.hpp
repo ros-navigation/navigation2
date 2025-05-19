@@ -35,7 +35,7 @@
 #include "nav2_core/behavior.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 
@@ -53,6 +53,7 @@ struct ResultStatus
 {
   Status status;
   uint16_t error_code{0};
+  std::string error_msg;
 };
 
 using namespace std::chrono_literals;  //NOLINT
@@ -198,7 +199,7 @@ protected:
   std::string global_frame_;
   std::string robot_base_frame_;
   double transform_tolerance_;
-  rclcpp::Duration elasped_time_{0, 0};
+  rclcpp::Duration elapsed_time_{0, 0};
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;
@@ -224,10 +225,10 @@ protected:
 
     ResultStatus on_run_result = onRun(action_server_->get_current_goal());
     if (on_run_result.status != Status::SUCCEEDED) {
-      RCLCPP_INFO(
-        logger_,
-        "Initial checks failed for %s", behavior_name_.c_str());
       result->error_code = on_run_result.error_code;
+      result->error_msg = on_run_result.error_msg;
+      RCLCPP_INFO(logger_, "Initial checks failed for %s - %s", behavior_name_.c_str(),
+        on_run_result.error_msg.c_str());
       action_server_->terminate_current(result);
       return;
     }
@@ -236,7 +237,7 @@ protected:
     rclcpp::WallRate loop_rate(cycle_frequency_);
 
     while (rclcpp::ok()) {
-      elasped_time_ = clock_->now() - start_time;
+      elapsed_time_ = clock_->now() - start_time;
       // TODO(orduno) #868 Enable preempting a Behavior on-the-fly without stopping
       if (action_server_->is_preempt_requested()) {
         RCLCPP_ERROR(
@@ -253,7 +254,7 @@ protected:
       if (action_server_->is_cancel_requested()) {
         RCLCPP_INFO(logger_, "Canceling %s", behavior_name_.c_str());
         stopRobot();
-        result->total_elapsed_time = elasped_time_;
+        result->total_elapsed_time = elapsed_time_;
         onActionCompletion(result);
         action_server_->terminate_all(result);
         return;
@@ -271,9 +272,10 @@ protected:
           return;
 
         case Status::FAILED:
-          RCLCPP_WARN(logger_, "%s failed", behavior_name_.c_str());
-          result->total_elapsed_time = clock_->now() - start_time;
           result->error_code = on_cycle_update_result.error_code;
+          result->error_msg = behavior_name_ + " failed:" + on_cycle_update_result.error_msg;
+          RCLCPP_WARN(logger_, result->error_msg.c_str());
+          result->total_elapsed_time = clock_->now() - start_time;
           onActionCompletion(result);
           action_server_->terminate_current(result);
           return;

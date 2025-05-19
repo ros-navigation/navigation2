@@ -140,7 +140,7 @@ public:
   /**
    * @brief operator== for comparisons
    * @param NodeLattice right hand side node reference
-   * @return If cell indicies are equal
+   * @return If cell indices are equal
    */
   bool operator==(const NodeLattice & rhs)
   {
@@ -314,7 +314,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize motion models
@@ -402,14 +402,14 @@ public:
 
   /**
    * @brief Set the starting pose for planning, as a node index
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(CoordinateVector & path);
 
   /**
-   * \brief add node to the path
-   * \param current_node
+   * @brief add node to the path
+   * @param current_node
    */
   void addNodeToPath(NodePtr current_node, CoordinateVector & path);
 
@@ -427,6 +427,7 @@ private:
   bool _was_visited;
   MotionPrimitive * _motion_primitive;
   bool _backwards;
+  bool _is_node_valid{false};
 };
 
 }  // namespace nav2_smac_planner

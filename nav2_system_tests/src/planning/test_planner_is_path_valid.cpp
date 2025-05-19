@@ -32,9 +32,11 @@ TEST(testIsPathValid, testIsPathValid)
   planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle);
 
   nav_msgs::msg::Path path;
+  unsigned int max_cost = 253;
+  bool consider_unknown_as_obstacle = false;
 
   // empty path
-  bool is_path_valid = planner_tester->isPathValid(path);
+  bool is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   EXPECT_FALSE(is_path_valid);
 
   // invalid path
@@ -46,7 +48,7 @@ TEST(testIsPathValid, testIsPathValid)
       path.poses.push_back(pose);
     }
   }
-  is_path_valid = planner_tester->isPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   EXPECT_FALSE(is_path_valid);
 
   // valid path
@@ -57,8 +59,25 @@ TEST(testIsPathValid, testIsPathValid)
     pose.pose.position.y = i;
     path.poses.push_back(pose);
   }
-  is_path_valid = planner_tester->isPathValid(path);
+  is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   EXPECT_TRUE(is_path_valid);
+
+  // valid path, but contains NO_INFORMATION(255)
+  path.poses.clear();
+  consider_unknown_as_obstacle = true;
+  for (float i = 0; i < 10; i += 1.0) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 1.0;
+    pose.pose.position.y = i;
+    path.poses.push_back(pose);
+  }
+  is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
+  EXPECT_FALSE(is_path_valid);
+
+  // valid path but higher than max cost
+  max_cost = 0;
+  is_path_valid = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
+  EXPECT_FALSE(is_path_valid);
 }
 
 int main(int argc, char ** argv)

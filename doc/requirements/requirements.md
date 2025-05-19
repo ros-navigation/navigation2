@@ -156,7 +156,7 @@ Id | Handle | Priority | Description | Notes
 TP001 | Target Platforms.Operating Systems.Ubuntu | 1 | The Navigation System MUST support Ubuntu Desktop 16.04 and Ubuntu Desktop 18.04
 TP002 | Target Platforms.Operating Systems.MacOS | 1 | The Navigation System MUST support MacOS 10.13 (High Sierra) and MacOS 10.14 (Mohave)
 TP003 | Target Platforms.Operating Systems.Windows | 1 | The Navigation System MUST support Windows 10 Professional
-TP004 | Target Platforms.Operating Systems.Clear Linux | 1 | The Navigation System SHOULD support the Intel's Clear Linux distribution | Clear Linux uses a continuous deployment model. 
+TP004 | Target Platforms.Operating Systems.Clear Linux | 1 | The Navigation System SHOULD support the Intel's Clear Linux distribution | Clear Linux uses a continuous deployment model.
 TP005 | Target Platforms.CPU.Word Size | 1 | The Navigation System SHALL support 64-bit processors | Don't assume a specific pointer size
 TP006 | Target Platforms.Minimum Platform | 1 | *TODO: Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?*
 
@@ -178,7 +178,7 @@ MP005 | Mission Planning.Navigation Commands.Enqueue | 2 | The Mission Plan SHOU
 MP006 | Mission Planning.Navigation Commands.Follow | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to be able to follow another specified robot. | This one doesn't have a completion state (reaching the goal), unless it specifies additional information such as "follow until destination reached."
 MP007 | Mission Planning.Navigation Commands.Maintain Pose | 1 | The Mission Plan SHOULD be able to convey the information required for a robot to maintain its current pose. | Could be indefinite or time-based.
 MP008 | Mission Planning.Navigation Commands.Park | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to park itself. | The implementation of the parking command could interact with the robot to cause it, for example, to shut down or enter a low-power state.
-MP009 | Mission Planning.Navigation Commands.Dock to Charger | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to dock to a specific charging station. 
+MP009 | Mission Planning.Navigation Commands.Dock to Charger | 2 | The Mission Plan SHOULD be able to convey the information required for a robot to dock to a specific charging station.
 MP010 | Mission Planning.Policy | 1 | The Mission Plan SHOULD be able to express information about how and when the navigation commands are to be carried out. | Time and safety constraints.
 MP011 | Mission Planning.Policy.Time.Initiation | 1 | The Mission Plan SHOULD be able to convey when a mission should begin.
 MP012 | Mission Planning.Policy.Time.Completion | 1 | The Mission Plan SHOULD be able to convey by when a mission should end.
@@ -199,7 +199,7 @@ ME005 | Mission Execution.Command Sequencing | 1 | The Mission Execution module 
 ME006 | Mission Execution.Logging | 1 | The Mission Execution module SHOULD log its activity. | In case of forensic analysis of a safety event, for example.
 ME007 | Mission Execution.Feedback.Inputs.Error Recovery | 1 | Upon receipt of a downstream failure (unable to execute the Navigation Command), the Mission Execution module SHOULD attempt to recover and continue execution of the mission.
 ME008 | Mission Execution.Feedback.Outputs.Progress Notification | 1 | The Mission Execution module SHALL provide progress notifications on the execution of the mission. | Intermediate steps of interest.
-ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successfull completion of the mission, the Mission Execution module SHALL output a corresponding notification.
+ME009 | Mission Execution.Feedback.Outputs.Mission Completed | 1 | Upon successful completion of the mission, the Mission Execution module SHALL output a corresponding notification.
 ME010 | Mission Execution.Feedback.Outputs.Mission Canceled | 1 | Upon receiving a cancellation command and cancelling the mission, the Mission Execution module SHALL output a corresponding notification.
 ME011 | Mission Execution.Feedback.Outputs.Mission Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST output a failure notification. | This would be received by the user-level interface and could necessitate user intervention, such as having a remote operating center where the remote operator "rescues" the robot.
 ME012 | Mission Execution.Safe State Upon Failure | 1 | If the Mission Execution module is unable to execute the mission, it MUST direct the robot to a safe state. | The failure could be for a variety of reasons - sensor failures, algorithmic failure, a collision, etc.
@@ -216,7 +216,7 @@ PLN002 | Planning.Inputs.Navigation Command | 1 | The Planning Module SHALL rece
 PLN003 | Planning.Inputs.Policy | 1 | The Planning Module SHALL receive policy information associated with the Navigation Command to execute. | This could be global policy and/or per-command policy. Policy could contain, for example, a list of conventions for the robot to follow (navigate on the right side of a path, for example).
 PLN004 | Planning.Inputs.Mapping.Maps | 1 | The Planning Module MUST have access to one or more maps available that describe the robot's environment.
 PLN005 | Planning.Inputs.Perception.Sensory Input | 1 | The Planning Module MUST have access to data from the Perception Subsystem.
-PLN006 | Planning.Inputs.Prediction.Predicted Trajectories | 1 | The Planning Module MAY have access to predicted trajectories of objects detected by the Perception Subsystem. | In simple planners, there is no prediction of moving objects, but in more complex planners, this may be considered. 
+PLN006 | Planning.Inputs.Prediction.Predicted Trajectories | 1 | The Planning Module MAY have access to predicted trajectories of objects detected by the Perception Subsystem. | In simple planners, there is no prediction of moving objects, but in more complex planners, this may be considered.
 PLN007 | Planning.Inputs.Localization.Current Pose | 1 | The Planning Module MUST have access to the robot's current pose. | The pose could be be provided manually or automatically determined (outside of this module).
 PLN008 | Planning.Outputs.Path | 1 | The Planning Module SHOULD output the Path for the robot to follow to execute the input Navigation Command and MUST respect any associated policy.
 PLN009 | Planning.Feedback.Inputs | 1 | The Planning Module MAY receive error input from the downstream Execution Module. | So that it can attempt to recover from execution failures.
@@ -267,7 +267,7 @@ There are a few support modules and subsystems that are not part of the Navigati
 
 ### 2.4.1 Mapping
 
-The map data format should be capable of describing typical indoor and outdoor environments encoutered by the robots.
+The map data format should be capable of describing typical indoor and outdoor environments encountered by the robots.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
@@ -278,7 +278,7 @@ MAP004 | Mapping.Data Model.Unknown Space | 1 | Maps provided by the Mapping Sub
 MAP005 | Mapping.Data Model.Surface Planarity | 1 | The map data format SHALL be capable of describing the planarity of traversable surfaces. | Can describe uneven ground.
 MAP006 | Mapping.Data Model.Safety Zone | 1 | The map data format SHALL be capable of defining regions where the robot may have to adjust its operations according to specified constraints.
 MAP007 | Mapping.Data Model.Safety Zone.Name | 1 | The map data format SHOULD allow for naming each safety zone. | *TODO: Does it need to be a unique name?*
-MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for re-use of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
+MAP008 | Mapping.Data Model.Safety Zone.Type | 1 | The map data format SHOULD allow for defining types of safety zones. | To allow for reuse of a safety zone type without redefining policy. Could be an "intersection" type, for example. May want to slot down at all intersections, for example.
 MAP009 | Mapping.Data Model.Safety Zone.Policy | 1 | The map data format SHALL be capable of expressing policy associated with each safety zone and safety zone type. | Maximum speed, (increased) distance to people, etc.
 MAP010 | Mapping.Data Model.Safety Zone.Policy.Keep Out Zone | 1 | The map data format SHALL be capable of expressing that a robot must not navigate through this zone.
 MAP011 | Mapping.Data Model.Lanes | 1 | The map data format SHALL be able to specify virtual lanes. | May prefer specified lanes in a warehouse, for example.
@@ -303,7 +303,7 @@ PER002 | Perception.Latency | 1 | *TODO*
 
 ### 2.4.3 Prediction
 
-The Prediction Subsystem uses input from the Perception Subsystem and predicts the trajectories of the detected objects over time. 
+The Prediction Subsystem uses input from the Perception Subsystem and predicts the trajectories of the detected objects over time.
 
 Id | Handle | Priority | Description | Notes
 -- | ------ | -------- | ----------- | -----
@@ -322,11 +322,11 @@ LOC002 | Localization.Robot Pose.Accuracy | 1 | The Localization Module MUST pro
 ## 2.5 Open Issues
 
 * What are the performance goals for the ROS2 Navigation System?
-* What are the scalability for the ROS2 Navigaton System?
+* What are the scalability for the ROS2 Navigation System?
 * Any other important design goals to call out?
 * Should we specify a minimum target platform? Or, should this be expressed as minimum platform requirements?
-* What is the right latency value for detecting a collision? 
-* Should we add any safety-related functionality at the robot interface level? 
-* Do safety zones need unique names? 
+* What is the right latency value for detecting a collision?
+* Should we add any safety-related functionality at the robot interface level?
+* Do safety zones need unique names?
 * What is the target latency for the perception subsystem?
-* How far into the future should the object prediction work? 
+* How far into the future should the object prediction work?

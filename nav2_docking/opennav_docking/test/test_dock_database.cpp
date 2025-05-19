@@ -22,14 +22,6 @@
 // Integration tests handle coverage more fully than the database lookups and population.
 // However, Utils unit tests already validate the key database population functions.
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace std::chrono_literals;
 
 namespace opennav_docking
@@ -99,6 +91,47 @@ TEST(DatabaseTests, findTests)
   db.findDockPlugin("");
 }
 
+TEST(DatabaseTests, getDockInstancesBadConversionFile)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  std::vector<std::string> plugins{"dockv1"};
+  node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
+  node->declare_parameter(
+    "dockv1.plugin",
+    rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
+
+  // Set a valid path with a malformed file
+  node->declare_parameter(
+    "dock_database",
+    rclcpp::ParameterValue(ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_bad_conversion_file.yaml"));
+
+  opennav_docking::DockDatabase db;
+  db.initialize(node, nullptr);
+
+  EXPECT_EQ(db.plugin_size(), 1u);
+  EXPECT_EQ(db.instance_size(), 0u);
+}
+
+TEST(DatabaseTests, getDockInstancesWrongPath)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  std::vector<std::string> plugins{"dockv1"};
+  node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
+  node->declare_parameter(
+    "dockv1.plugin",
+    rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
+
+  // Set a wrong path
+  node->declare_parameter("dock_database", rclcpp::ParameterValue("file_does_not_exist.yaml"));
+
+  opennav_docking::DockDatabase db;
+  db.initialize(node, nullptr);
+
+  EXPECT_EQ(db.plugin_size(), 1u);
+  EXPECT_EQ(db.instance_size(), 0u);
+}
+
 TEST(DatabaseTests, reloadDbService)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
@@ -116,7 +149,7 @@ TEST(DatabaseTests, reloadDbService)
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/test_dock_file.yaml";
+    "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_send_request(request);
   EXPECT_EQ(
@@ -136,4 +169,49 @@ TEST(DatabaseTests, reloadDbService)
   EXPECT_FALSE(result2.get()->success);
 }
 
+TEST(DatabaseTests, reloadDbMutexLocked)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  std::vector<std::string> plugins{"dockv1"};
+  node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
+  node->declare_parameter(
+    "dockv1.plugin",
+    rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
+
+  // This mutex is locked when dock / undock is called
+  auto mutex = std::make_shared<std::mutex>();
+  mutex->lock();
+  opennav_docking::DockDatabase db(mutex);
+  db.initialize(node, nullptr);
+
+  // Call service with a filepath
+  auto client =
+    node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
+
+  auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
+  request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
+    "/dock_files/test_dock_file.yaml";
+  EXPECT_TRUE(client->wait_for_service(1s));
+  auto result = client->async_send_request(request);
+  EXPECT_EQ(
+    rclcpp::spin_until_future_complete(node, result, 2s),
+    rclcpp::FutureReturnCode::SUCCESS);
+  EXPECT_FALSE(result.get()->success);
+
+  mutex->unlock();
+}
+
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

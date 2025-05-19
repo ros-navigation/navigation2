@@ -17,20 +17,16 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
-from launch_ros.actions import LoadComposableNodes, SetParameter
-from launch_ros.actions import Node
-from launch_ros.actions import PushROSNamespace
+from launch.substitutions import LaunchConfiguration, NotEqualsSubstitution, PythonExpression
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Environment
     package_dir = get_package_share_directory('nav2_collision_monitor')
 
@@ -76,7 +72,7 @@ def generate_launch_description():
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name',
         default_value='nav2_container',
-        description='the name of conatiner that nodes will load in if use composition',
+        description='the name of container that nodes will load in if use composition',
     )
 
     configured_params = ParameterFile(

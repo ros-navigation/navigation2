@@ -109,8 +109,10 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   const std::string service_prefix = get_name() + std::string("/");
 
   // Create a service that provides the occupancy grid
-  occ_service_ = create_service<nav_msgs::srv::GetMap>(
+  occ_service_ = std::make_shared<nav2_util::ServiceServer<nav_msgs::srv::GetMap,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
     service_prefix + std::string(service_name_),
+    shared_from_this(),
     std::bind(&MapServer::getMapCallback, this, _1, _2, _3));
 
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
@@ -119,8 +121,10 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   // Create a service that loads the occupancy grid from a file
-  load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(
+  load_map_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::LoadMap,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
     service_prefix + std::string(load_map_service_name_),
+    shared_from_this(),
     std::bind(&MapServer::loadMapCallback, this, _1, _2, _3));
 
   return nav2_util::CallbackReturn::SUCCESS;

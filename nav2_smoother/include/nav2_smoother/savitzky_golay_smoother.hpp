@@ -31,7 +31,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace nav2_smoother
 {
@@ -98,7 +98,7 @@ protected:
     nav_msgs::msg::Path & path,
     bool & reversing_segment);
 
-  bool do_refinement_;
+  bool do_refinement_, enforce_path_inversion_;
   int refinement_num_;
   rclcpp::Logger logger_{rclcpp::get_logger("SGSmoother")};
 };

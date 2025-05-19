@@ -35,21 +35,13 @@
 #include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
 using nav2_util::geometry_utils::orientationAroundZAxis;
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
@@ -361,4 +353,17 @@ TEST_F(TestNode, CollisionSpace)
 
   // Partially in obstacle
   ASSERT_EQ(collision_checker_->testPose(4.5, 4.5, 0), false);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

@@ -187,6 +187,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
+  double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
   // Check for reverse driving
   if (params_->allow_reversing) {
@@ -196,6 +197,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     // if the lookahead distance is further than the cusp, use the cusp distance instead
     if (dist_to_cusp < lookahead_dist) {
       lookahead_dist = dist_to_cusp;
+    }
+    if (dist_to_cusp < curv_lookahead_dist) {
+      curv_lookahead_dist = dist_to_cusp;
     }
   }
 
@@ -211,7 +215,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double regulation_curvature = lookahead_curvature;
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
-      params_->curvature_lookahead_dist,
+      curv_lookahead_dist,
       transformed_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
@@ -316,8 +320,21 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   const geometry_msgs::msg::PoseStamped & carrot_pose)
 {
   // Whether we should rotate robot to goal heading
-  double dist_to_goal = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  return params_->use_rotate_to_heading && dist_to_goal < goal_dist_tol_;
+  if (!params_->use_rotate_to_heading) {
+    return false;
+  }
+
+  double dist_to_goal = std::hypot(
+    carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+
+  if (params_->stateful) {
+    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
+      has_reached_xy_tolerance_ = true;
+    }
+    return has_reached_xy_tolerance_;
+  }
+
+  return dist_to_goal < goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
@@ -462,6 +479,7 @@ void RegulatedPurePursuitController::applyConstraints(
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
+  has_reached_xy_tolerance_ = false;
   path_handler_->setPlan(path);
 }
 
@@ -489,6 +507,7 @@ void RegulatedPurePursuitController::reset()
 {
   cancelling_ = false;
   finished_cancelling_ = false;
+  has_reached_xy_tolerance_ = false;
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
@@ -506,7 +525,7 @@ double RegulatedPurePursuitController::findVelocitySignChange(
     double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
       transformed_plan.poses[pose_id].pose.position.y;
 
-    /* Checking for the existance of cusp, in the path, using the dot product
+    /* Checking for the existence of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     const double dot_prod = (oa_x * ab_x) + (oa_y * ab_y);

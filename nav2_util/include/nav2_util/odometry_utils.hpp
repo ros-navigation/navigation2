@@ -35,7 +35,7 @@ namespace nav2_util
 
 /**
  * @class OdomSmoother
- * Wrapper for getting smooth odometry readings using a simple moving avergae.
+ * Wrapper for getting smooth odometry readings using a simple moving average.
  * Subscribes to the topic with a mutex.
  */
 class OdomSmoother

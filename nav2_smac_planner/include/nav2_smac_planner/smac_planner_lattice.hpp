@@ -31,7 +31,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/node_utils.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace nav2_smac_planner
 {
@@ -90,7 +90,7 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult
@@ -120,6 +120,8 @@ protected:
     _planned_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 

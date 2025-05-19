@@ -50,6 +50,16 @@ public:
     : x(x_in), y(y_in)
     {}
 
+    inline bool operator==(const Coordinates & rhs) const
+    {
+      return this->x == rhs.x && this->y == rhs.y;
+    }
+
+    inline bool operator!=(const Coordinates & rhs) const
+    {
+      return !(*this == rhs);
+    }
+
     float x, y;
   };
   typedef std::vector<Coordinates> CoordinateVector;
@@ -68,11 +78,20 @@ public:
   /**
    * @brief operator== for comparisons
    * @param Node2D right hand side node reference
-   * @return If cell indicies are equal
+   * @return If cell indices are equal
    */
   bool operator==(const Node2D & rhs)
   {
     return this->_index == rhs._index;
+  }
+
+  /**
+   * @brief setting continuous coordinate search poses (in partial-cells)
+   * @param Pose pose
+   */
+  inline void setPose(const Coordinates & pose_in)
+  {
+    pose = pose_in;
   }
 
   /**
@@ -224,7 +243,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize the neighborhood to be used in A*
@@ -258,12 +277,13 @@ public:
 
   /**
    * @brief Set the starting pose for planning, as a node index
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(CoordinateVector & path);
 
   Node2D * parent;
+  Coordinates pose;
   static float cost_travel_multiplier;
   static std::vector<int> _neighbors_grid_offsets;
 
@@ -273,6 +293,7 @@ private:
   uint64_t _index;
   bool _was_visited;
   bool _is_queued;
+  bool _in_collision{false};
 };
 
 }  // namespace nav2_smac_planner
