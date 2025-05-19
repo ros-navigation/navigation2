@@ -462,7 +462,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -481,18 +482,18 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       path, num_iterations,
       _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get()))
   {
-    if (_debug_visualizations) {
-      geometry_msgs::msg::PoseArray msg;
+    if (_debug_visualizations && _expansions_publisher->get_subscription_count() > 0) {
+      auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
       geometry_msgs::msg::Pose msg_pose;
-      msg.header.stamp = _clock->now();
-      msg.header.frame_id = _global_frame;
+      msg->header.stamp = _clock->now();
+      msg->header.frame_id = _global_frame;
       for (auto & e : *expansions) {
         msg_pose.position.x = std::get<0>(e);
         msg_pose.position.y = std::get<1>(e);
         msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-        msg.poses.push_back(msg_pose);
+        msg->poses.push_back(msg_pose);
       }
-      _expansions_publisher->publish(msg);
+      _expansions_publisher->publish(std::move(msg));
     }
 
     // Note: If the start is blocked only one iteration will occur before failure
@@ -517,22 +518,25 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   if (_debug_visualizations) {
     // Publish expansions for debug
-    geometry_msgs::msg::PoseArray msg;
-    geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = _clock->now();
-    msg.header.frame_id = _global_frame;
-    for (auto & e : *expansions) {
-      msg_pose.position.x = std::get<0>(e);
-      msg_pose.position.y = std::get<1>(e);
-      msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-      msg.poses.push_back(msg_pose);
+    if (_expansions_publisher->get_subscription_count() > 0) {
+      auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
+      geometry_msgs::msg::Pose msg_pose;
+      msg->header.stamp = _clock->now();
+      msg->header.frame_id = _global_frame;
+      for (auto & e : *expansions) {
+        msg_pose.position.x = std::get<0>(e);
+        msg_pose.position.y = std::get<1>(e);
+        msg_pose.orientation = getWorldOrientation(std::get<2>(e));
+        msg->poses.push_back(msg_pose);
+      }
+      _expansions_publisher->publish(std::move(msg));
     }
-    _expansions_publisher->publish(msg);
 
     // plot footprint path planned for debug
     if (_planned_footprints_publisher->get_subscription_count() > 0) {

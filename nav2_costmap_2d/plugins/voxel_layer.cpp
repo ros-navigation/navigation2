@@ -237,7 +237,7 @@ void VoxelLayer::updateBounds(
     }
   }
 
-  if (publish_voxel_) {
+  if (publish_voxel_ && voxel_pub_->get_subscription_count() > 0) {
     auto grid_msg = std::make_unique<nav2_msgs::msg::VoxelGrid>();
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
     grid_msg->size_x = voxel_grid_.sizeX();
@@ -406,7 +406,7 @@ void VoxelLayer::raytraceFreespace(
     }
   }
 
-  if (publish_clearing_points) {
+  if (publish_clearing_points && clearing_endpoints_pub_->get_subscription_count() > 0) {
     clearing_endpoints_->header.frame_id = global_frame_;
     clearing_endpoints_->header.stamp = clearing_observation.cloud_->header.stamp;
 

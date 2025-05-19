@@ -89,10 +89,12 @@ public:
   void flush() override
   {
     if (!event_log_.empty()) {
-      auto log_msg = std::make_unique<nav2_msgs::msg::BehaviorTreeLog>();
-      log_msg->timestamp = clock_->now();
-      log_msg->event_log = event_log_;
-      log_pub_->publish(std::move(log_msg));
+      if (log_pub_->get_subscription_count() > 0) {
+        auto log_msg = std::make_unique<nav2_msgs::msg::BehaviorTreeLog>();
+        log_msg->timestamp = clock_->now();
+        log_msg->event_log = event_log_;
+        log_pub_->publish(std::move(log_msg));
+      }
       event_log_.clear();
     }
   }

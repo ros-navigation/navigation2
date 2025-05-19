@@ -95,7 +95,7 @@ bool Polygon::configure()
     }
 
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      polygon_pub_topic, nav2_util::DefaultPublisherQoS());
+      polygon_pub_topic, rclcpp::SystemDefaultsQoS());
   }
 
   // Add callback for dynamic parameters
@@ -313,8 +313,9 @@ void Polygon::publish()
 
   // Actualize the time to current and publish the polygon
   polygon_.header.stamp = node->now();
-  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_);
-  polygon_pub_->publish(std::move(msg));
+  if (polygon_pub_->get_subscription_count() > 0) {
+    polygon_pub_->publish(std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_));
+  }
 }
 
 bool Polygon::getCommonParameters(

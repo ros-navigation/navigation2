@@ -104,10 +104,14 @@ public:
   void publish(std::unique_ptr<geometry_msgs::msg::TwistStamped> velocity)
   {
     if (is_stamped_) {
-      twist_stamped_pub_->publish(std::move(velocity));
+      if (twist_stamped_pub_->get_subscription_count() > 0) {
+        twist_stamped_pub_->publish(std::move(velocity));
+      }
     } else {
-      auto twist_msg = std::make_unique<geometry_msgs::msg::Twist>(velocity->twist);
-      twist_pub_->publish(std::move(twist_msg));
+      if (twist_pub_->get_subscription_count() > 0) {
+        auto twist_msg = std::make_unique<geometry_msgs::msg::Twist>(velocity->twist);
+        twist_pub_->publish(std::move(twist_msg));
+      }
     }
   }
 

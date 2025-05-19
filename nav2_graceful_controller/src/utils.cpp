@@ -17,24 +17,30 @@
 namespace nav2_graceful_controller
 {
 
-visualization_msgs::msg::Marker createSlowdownMarker(
+std::unique_ptr<geometry_msgs::msg::PoseStamped> createMotionTargetMsg(
+  const geometry_msgs::msg::PoseStamped & motion_target)
+{
+  return std::make_unique<geometry_msgs::msg::PoseStamped>(motion_target);
+}
+
+std::unique_ptr<visualization_msgs::msg::Marker> createSlowdownMarker(
   const geometry_msgs::msg::PoseStamped & motion_target, const double & slowdown_radius)
 {
-  visualization_msgs::msg::Marker slowdown_marker;
-  slowdown_marker.header = motion_target.header;
-  slowdown_marker.ns = "slowdown";
-  slowdown_marker.id = 0;
-  slowdown_marker.type = visualization_msgs::msg::Marker::SPHERE;
-  slowdown_marker.action = visualization_msgs::msg::Marker::ADD;
-  slowdown_marker.pose = motion_target.pose;
-  slowdown_marker.pose.position.z = 0.01;
-  slowdown_marker.scale.x = slowdown_radius * 2.0;
-  slowdown_marker.scale.y = slowdown_radius * 2.0;
-  slowdown_marker.scale.z = 0.02;
-  slowdown_marker.color.a = 0.2;
-  slowdown_marker.color.r = 0.0;
-  slowdown_marker.color.g = 1.0;
-  slowdown_marker.color.b = 0.0;
+  auto slowdown_marker = std::make_unique<visualization_msgs::msg::Marker>();
+  slowdown_marker->header = motion_target.header;
+  slowdown_marker->ns = "slowdown";
+  slowdown_marker->id = 0;
+  slowdown_marker->type = visualization_msgs::msg::Marker::SPHERE;
+  slowdown_marker->action = visualization_msgs::msg::Marker::ADD;
+  slowdown_marker->pose = motion_target.pose;
+  slowdown_marker->pose.position.z = 0.01;
+  slowdown_marker->scale.x = slowdown_radius * 2.0;
+  slowdown_marker->scale.y = slowdown_radius * 2.0;
+  slowdown_marker->scale.z = 0.02;
+  slowdown_marker->color.a = 0.2;
+  slowdown_marker->color.r = 0.0;
+  slowdown_marker->color.g = 1.0;
+  slowdown_marker->color.b = 0.0;
   return slowdown_marker;
 }
 

@@ -138,7 +138,9 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     p.z = c.z;
   }
 
-  pub->publish(std::move(m));
+  if (pub->get_subscription_count() > 0) {
+    pub->publish(std::move(m));
+  }
 
   timer.end();
   RCLCPP_INFO(
@@ -154,7 +156,7 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
   pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
-    "visualization_marker", nav2_util::DefaultPublisherQoS());
+    "visualization_marker", rclcpp::SystemDefaultsQoS());
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);

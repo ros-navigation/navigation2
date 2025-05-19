@@ -21,6 +21,16 @@
 namespace nav2_graceful_controller
 {
 /**
+   * @brief Create a PoseStamped message of the motion target for
+   * debugging / visualization porpuses.
+   *
+   * @param motion_target Motion target in PoseStamped format
+   * @return geometry_msgs::msg::PoseStamped Motion target in PoseStamped format
+   */
+std::unique_ptr<geometry_msgs::msg::PoseStamped> createMotionTargetMsg(
+  const geometry_msgs::msg::PoseStamped & motion_target);
+
+/**
    * @brief Create a flat circle marker of radius slowdown_radius around the motion target for
    * debugging / visualization porpuses.
    *
@@ -28,7 +38,7 @@ namespace nav2_graceful_controller
    * @param slowdown_radius Radius of the slowdown circle
    * @return visualization_msgs::msg::Marker Slowdown marker
    */
-visualization_msgs::msg::Marker createSlowdownMarker(
+std::unique_ptr<visualization_msgs::msg::Marker> createSlowdownMarker(
   const geometry_msgs::msg::PoseStamped & motion_target, const double & slowdown_radius);
 
 }  // namespace nav2_graceful_controller

@@ -183,7 +183,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Transform path to robot base frame
   auto transformed_plan = path_handler_->transformGlobalPlan(
     pose, params_->max_robot_pose_search_dist, params_->interpolate_curvature_after_goal);
-  global_path_pub_->publish(transformed_plan);
+  if (global_path_pub_->get_subscription_count() > 0) {
+    global_path_pub_->publish(std::make_unique<nav_msgs::msg::Path>(transformed_plan));
+  }
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
@@ -206,7 +208,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Get the particular point on the path at the lookahead distance
   auto carrot_pose = getLookAheadPoint(lookahead_dist, transformed_plan);
   auto rotate_to_path_carrot_pose = carrot_pose;
-  carrot_pub_->publish(createCarrotMsg(carrot_pose));
+  if (carrot_pub_->get_subscription_count() > 0) {
+    carrot_pub_->publish(createCarrotMsg(carrot_pose));
+  }
 
   double linear_vel, angular_vel;
 
@@ -219,7 +223,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       transformed_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
-    curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
+    if (curvature_carrot_pub_->get_subscription_count() > 0) {
+      curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
+    }
   }
 
   // Setting the velocity direction
@@ -280,9 +286,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Publish whether we are rotating to goal heading
-  std_msgs::msg::Bool is_rotating_to_heading_msg;
-  is_rotating_to_heading_msg.data = is_rotating_to_heading_;
-  is_rotating_to_heading_pub_->publish(is_rotating_to_heading_msg);
+  if (is_rotating_to_heading_pub_->get_subscription_count() > 0) {
+    auto is_rotating_to_heading_msg = std::make_unique<std_msgs::msg::Bool>();
+    is_rotating_to_heading_msg->data = is_rotating_to_heading_;
+    is_rotating_to_heading_pub_->publish(std::move(is_rotating_to_heading_msg));
+  }
 
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;

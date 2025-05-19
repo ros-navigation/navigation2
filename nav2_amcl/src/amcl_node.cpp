@@ -872,7 +872,7 @@ void
 AmclNode::publishParticleCloud(const pf_sample_set_t * set)
 {
   // If initial pose is not known, AMCL does not know the current pose
-  if (!initial_pose_is_known_) {return;}
+  if (!initial_pose_is_known_ || particle_cloud_pub_->get_subscription_count() < 1) {return;}
   auto cloud_with_weights_msg = std::make_unique<nav2_msgs::msg::ParticleCloud>();
   cloud_with_weights_msg->header.stamp = this->now();
   cloud_with_weights_msg->header.frame_id = global_frame_id_;

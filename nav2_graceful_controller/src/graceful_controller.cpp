@@ -143,7 +143,9 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   validateOrientations(transformed_plan.poses);
 
   // Publish plan for visualization
-  transformed_plan_pub_->publish(transformed_plan);
+  if (transformed_plan_pub_->get_subscription_count() > 0) {
+    transformed_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(transformed_plan));
+  }
 
   // Transform local frame to global frame to use in collision checking
   geometry_msgs::msg::TransformStamped costmap_transform;
@@ -236,14 +238,20 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
       // Successfully simulated to target_pose - compute velocity at this moment
       // Publish the selected target_pose
-      motion_target_pub_->publish(target_pose);
+      if (motion_target_pub_->get_subscription_count() > 0) {
+        motion_target_pub_->publish(nav2_graceful_controller::createMotionTargetMsg(target_pose));
+      }
+
       // Publish marker for slowdown radius around motion target for debugging / visualization
-      auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
-        target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
+      if (slowdown_pub_->get_subscription_count() > 0) {
+        slowdown_pub_->publish(nav2_graceful_controller::createSlowdownMarker(
+          target_pose, params_->slowdown_radius));
+      }
       // Publish the local plan
       local_plan.header = transformed_plan.header;
-      local_plan_pub_->publish(local_plan);
+      if (local_plan_pub_->get_subscription_count() > 0) {
+        local_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(local_plan));
+      }
       // Successfully found velocity command
       return cmd_vel;
     }

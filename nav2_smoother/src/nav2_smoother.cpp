@@ -300,7 +300,10 @@ void SmootherServer::smoothPlan()
         rclcpp::Duration(result->smoothing_duration).seconds());
     }
 
-    plan_publisher_->publish(result->path);
+    if (plan_publisher_->get_subscription_count() > 0) {
+      auto msg = std::make_unique<nav_msgs::msg::Path>(result->path);
+      plan_publisher_->publish(std::move(msg));
+    }
 
     // Check for collisions
     if (goal->check_for_collisions) {

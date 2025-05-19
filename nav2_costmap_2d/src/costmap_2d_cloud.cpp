@@ -193,12 +193,14 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
   pcl_header.frame_id = frame_id;
   pcl_header.stamp = stamp;
 
+  if (pub_marked->get_subscription_count() > 0)
   {
     auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
     pointCloud2Helper(cloud, num_marked, pcl_header, g_marked);
     pub_marked->publish(std::move(cloud));
   }
 
+  if (pub_unknown->get_subscription_count() > 0)
   {
     auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
     pointCloud2Helper(cloud, num_unknown, pcl_header, g_unknown);
@@ -219,9 +221,9 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(g_node->get_logger(), "Starting up costmap_2d_cloud");
 
   pub_marked = g_node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "voxel_marked_cloud", nav2_util::DefaultPublisherQoS());
+    "voxel_marked_cloud", rclcpp::SystemDefaultsQoS());
   pub_unknown = g_node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "voxel_unknown_cloud", nav2_util::DefaultPublisherQoS());
+    "voxel_unknown_cloud", rclcpp::SystemDefaultsQoS());
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
     "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
 

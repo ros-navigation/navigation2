@@ -154,20 +154,20 @@ bool Controller::isTrajectoryCollisionFree(
   const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
 {
   // Visualization of the trajectory
-  nav_msgs::msg::Path trajectory;
-  trajectory.header.frame_id = base_frame_;
-  trajectory.header.stamp = clock_->now();
+  auto trajectory = std::make_unique<nav_msgs::msg::Path>();
+  trajectory->header.frame_id = base_frame_;
+  trajectory->header.stamp = clock_->now();
 
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
-  trajectory.poses.push_back(next_pose);
+  trajectory->poses.push_back(next_pose);
 
   // Get the transform from base_frame to fixed_frame
   geometry_msgs::msg::TransformStamped base_to_fixed_transform;
   try {
     base_to_fixed_transform = tf2_buffer_->lookupTransform(
-      fixed_frame_, base_frame_, trajectory.header.stamp,
+      fixed_frame_, base_frame_, trajectory->header.stamp,
       tf2::durationFromSec(transform_tolerance_));
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
@@ -186,11 +186,11 @@ bool Controller::isTrajectoryCollisionFree(
       simulation_time_step_, target_pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
-    trajectory.poses.push_back(next_pose);
+    trajectory->poses.push_back(next_pose);
 
     // Transform pose from base_frame into fixed_frame
     geometry_msgs::msg::PoseStamped local_pose = next_pose;
-    local_pose.header.stamp = trajectory.header.stamp;
+    local_pose.header.stamp = trajectory->header.stamp;
     tf2::doTransform(local_pose, local_pose, base_to_fixed_transform);
 
     // Determine the distance at which to check for collisions
@@ -210,16 +210,19 @@ bool Controller::isTrajectoryCollisionFree(
         logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",
         local_pose.pose.position.x, local_pose.pose.position.y, local_pose.pose.position.z,
         local_pose.header.frame_id.c_str());
-      trajectory_pub_->publish(trajectory);
+      if (trajectory_pub_->get_subscription_count() > 0) {
+        trajectory_pub_->publish(std::move(trajectory));
+      }
       return false;
     }
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
-  }while(distance > 1e-2 && trajectory.poses.size() < max_iter);
+  }while(distance > 1e-2 && trajectory->poses.size() < max_iter);
 
-  trajectory_pub_->publish(trajectory);
-
+  if (trajectory_pub_->get_subscription_count() > 0) {
+    trajectory_pub_->publish(std::move(trajectory));
+  }
   return true;
 }
 

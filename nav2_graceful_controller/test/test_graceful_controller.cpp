@@ -59,7 +59,13 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  visualization_msgs::msg::Marker createSlowdownMarker(
+  std::unique_ptr<geometry_msgs::msg::PoseStamped> createMotionTargetMsg(
+    const geometry_msgs::msg::PoseStamped & motion_target)
+  {
+    return nav2_graceful_controller::createMotionTargetMsg(motion_target);
+  }
+
+  std::unique_ptr<visualization_msgs::msg::Marker> createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
     return nav2_graceful_controller::createSlowdownMarker(
@@ -343,6 +349,34 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(controller->getAllowBackward(), false);
 }
 
+TEST(GracefulControllerTest, createMotionTargetMsg) {
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+
+  // Create motion target
+  geometry_msgs::msg::PoseStamped motion_target;
+  motion_target.header.frame_id = "map";
+  motion_target.pose.position.x = 1.0;
+  motion_target.pose.position.y = 2.0;
+  motion_target.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+
+  // Create motion target message
+  auto motion_target_msg = controller->createMotionTargetMsg(motion_target);
+
+  // Check results
+  EXPECT_EQ(motion_target_msg->header.frame_id, "map");
+  EXPECT_EQ(motion_target_msg->pose.position.x, 1.0);
+  EXPECT_EQ(motion_target_msg->pose.position.y, 2.0);
+  EXPECT_EQ(motion_target_msg->pose.position.z, 0.01);
+}
+
 TEST(GracefulControllerTest, createSlowdownMsg) {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
@@ -375,24 +409,24 @@ TEST(GracefulControllerTest, createSlowdownMsg) {
   auto slowdown_msg = controller->createSlowdownMarker(motion_target);
 
   // Check results
-  EXPECT_EQ(slowdown_msg.header.frame_id, "map");
-  EXPECT_EQ(slowdown_msg.ns, "slowdown");
-  EXPECT_EQ(slowdown_msg.id, 0);
-  EXPECT_EQ(slowdown_msg.type, visualization_msgs::msg::Marker::SPHERE);
-  EXPECT_EQ(slowdown_msg.action, visualization_msgs::msg::Marker::ADD);
-  EXPECT_EQ(slowdown_msg.pose.position.x, 1.0);
-  EXPECT_EQ(slowdown_msg.pose.position.y, 2.0);
-  EXPECT_EQ(slowdown_msg.pose.position.z, 0.01);
-  EXPECT_EQ(slowdown_msg.pose.orientation.x, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.y, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.z, 0.0);
-  EXPECT_EQ(slowdown_msg.pose.orientation.w, 1.0);
-  EXPECT_EQ(slowdown_msg.scale.x, 0.4);
-  EXPECT_EQ(slowdown_msg.scale.y, 0.4);
-  EXPECT_EQ(slowdown_msg.scale.z, 0.02);
-  EXPECT_EQ(slowdown_msg.color.r, 0.0);
-  EXPECT_EQ(slowdown_msg.color.g, 1.0);
-  EXPECT_EQ(slowdown_msg.color.b, 0.0);
+  EXPECT_EQ(slowdown_msg->header.frame_id, "map");
+  EXPECT_EQ(slowdown_msg->ns, "slowdown");
+  EXPECT_EQ(slowdown_msg->id, 0);
+  EXPECT_EQ(slowdown_msg->type, visualization_msgs::msg::Marker::SPHERE);
+  EXPECT_EQ(slowdown_msg->action, visualization_msgs::msg::Marker::ADD);
+  EXPECT_EQ(slowdown_msg->pose.position.x, 1.0);
+  EXPECT_EQ(slowdown_msg->pose.position.y, 2.0);
+  EXPECT_EQ(slowdown_msg->pose.position.z, 0.01);
+  EXPECT_EQ(slowdown_msg->pose.orientation.x, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.y, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.z, 0.0);
+  EXPECT_EQ(slowdown_msg->pose.orientation.w, 1.0);
+  EXPECT_EQ(slowdown_msg->scale.x, 0.4);
+  EXPECT_EQ(slowdown_msg->scale.y, 0.4);
+  EXPECT_EQ(slowdown_msg->scale.z, 0.02);
+  EXPECT_EQ(slowdown_msg->color.r, 0.0);
+  EXPECT_EQ(slowdown_msg->color.g, 1.0);
+  EXPECT_EQ(slowdown_msg->color.b, 0.0);
 }
 
 TEST(GracefulControllerTest, rotateToTarget) {

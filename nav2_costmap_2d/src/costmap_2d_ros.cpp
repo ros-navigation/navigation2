@@ -215,7 +215,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
-    "published_footprint", nav2_util::DefaultPublisherQoS());
+    "published_footprint", rclcpp::SystemDefaultsQoS());
 
   costmap_publisher_ = std::make_unique<Costmap2DPublisher>(
     shared_from_this(),
@@ -584,7 +584,9 @@ Costmap2DROS::updateMap()
       transformFootprint(x, y, yaw, padded_footprint_, *footprint);
 
       RCLCPP_DEBUG(get_logger(), "Publishing footprint");
-      footprint_pub_->publish(std::move(footprint));
+      if (footprint_pub_->get_subscription_count() > 0) {
+        footprint_pub_->publish(std::move(footprint));
+      }
       initialized_ = true;
     }
   }
