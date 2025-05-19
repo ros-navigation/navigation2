@@ -101,6 +101,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
@@ -181,6 +183,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
+  node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
@@ -307,6 +310,8 @@ ParameterHandler::updateParametersCallback(
         params_.use_cost_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_collision_detection") {
         params_.use_collision_detection = parameter.as_bool();
+      } else if (name == plugin_name_ + ".stateful") {
+        params_.stateful = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_rotate_to_heading") {
         params_.use_rotate_to_heading = parameter.as_bool();
       } else if (name == plugin_name_ + ".use_cancel_deceleration") {
