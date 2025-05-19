@@ -68,19 +68,6 @@ PoseProgressChecker::ParameterHandler::~ParameterHandler()
   }
   on_set_params_handler_.reset();
 }
-void PoseProgressChecker::ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
-{
-  for (const auto & param : parameters) {
-    const auto & name = param.get_name();
-    const auto & type = param.get_type();
-    if (name == plugin_name_ + ".required_movement_angle" &&
-      type == ParameterType::PARAMETER_DOUBLE)
-    {
-      params_.required_movement_angle = param.as_double();
-    }
-  }
-}
 rcl_interfaces::msg::SetParametersResult
 PoseProgressChecker::ParameterHandler::validateParameterUpdatesCallback(
   std::vector<rclcpp::Parameter> parameters)
@@ -107,7 +94,19 @@ PoseProgressChecker::ParameterHandler::validateParameterUpdatesCallback(
   result.successful = true;
   return result;
 }
-
+void PoseProgressChecker::ParameterHandler::updateParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  for (const auto & param : parameters) {
+    const auto & name = param.get_name();
+    const auto & type = param.get_type();
+    if (name == plugin_name_ + ".required_movement_angle" &&
+      type == ParameterType::PARAMETER_DOUBLE)
+    {
+      params_.required_movement_angle = param.as_double();
+    }
+  }
+}
 void PoseProgressChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
