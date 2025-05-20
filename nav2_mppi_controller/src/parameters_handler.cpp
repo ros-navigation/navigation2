@@ -18,12 +18,13 @@ namespace mppi
 {
 
 ParametersHandler::ParametersHandler(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent)
+  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string & name)
 {
   node_ = parent;
   auto node = node_.lock();
   node_name_ = node->get_name();
   logger_ = node->get_logger();
+  name_ = name;
 }
 
 ParametersHandler::~ParametersHandler()
@@ -64,7 +65,9 @@ ParametersHandler::dynamicParamsCallback(
 
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
-
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
     if (auto callback = get_param_callbacks_.find(param_name);
       callback != get_param_callbacks_.end())
     {

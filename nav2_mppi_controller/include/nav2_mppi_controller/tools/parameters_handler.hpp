@@ -45,7 +45,7 @@ public:
     rcl_interfaces::msg::SetParametersResult & result);
   using post_callback_t = void ();
   using pre_callback_t = void ();
-
+  std::string name_;
   /**
     * @brief Constructor for mppi::ParametersHandler
     */
@@ -56,7 +56,7 @@ public:
     * @param parent Weak ptr to node
     */
   explicit ParametersHandler(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent);
+    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string & name);
 
   /**
     * @brief Destructor for mppi::ParametersHandler
