@@ -119,7 +119,7 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    _planned_footprints_smoothed_publisher;
+    _smoothed_footprints_publisher;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   GoalHeadingMode _goal_heading_mode;
