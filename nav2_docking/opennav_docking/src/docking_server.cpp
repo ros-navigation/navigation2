@@ -85,25 +85,18 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("odom_topic", odom_topic);
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
 
-  double action_server_result_timeout;
-  nav2_util::declare_parameter_if_not_declared(
-    node, "action_server_result_timeout", rclcpp::ParameterValue(10.0));
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   // Create the action servers for dock / undock
   docking_action_server_ = std::make_unique<DockingActionServer>(
     node, "dock_robot",
     std::bind(&DockingServer::dockRobot, this),
     nullptr, std::chrono::milliseconds(500),
-    true, server_options);
+    true);
 
   undocking_action_server_ = std::make_unique<UndockingActionServer>(
     node, "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
     nullptr, std::chrono::milliseconds(500),
-    true, server_options);
+    true);
 
   // Create composed utilities
   mutex_ = std::make_shared<std::mutex>();

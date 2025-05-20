@@ -65,9 +65,6 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
-  if (!node->has_parameter("action_server_result_timeout")) {
-    node->declare_parameter("action_server_result_timeout", 900.0);
-  }
   if (!node->has_parameter("always_reload_bt_xml")) {
     node->declare_parameter("always_reload_bt_xml", false);
   }
@@ -164,19 +161,13 @@ bool BtActionServer<ActionT>::on_configure()
     node, "transform_tolerance", rclcpp::ParameterValue(0.1));
   rclcpp::copy_all_parameter_values(node, client_node_);
 
-  // set the timeout in seconds for the action server to discard goal handles if not finished
-  double action_server_result_timeout =
-    node->get_parameter("action_server_result_timeout").as_double();
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
     node->get_node_clock_interface(),
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this),
-    nullptr, std::chrono::milliseconds(500), false, server_options);
+    nullptr, std::chrono::milliseconds(500), false);
 
   // Get parameters for BT timeouts
   int bt_loop_duration;
