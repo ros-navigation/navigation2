@@ -26,7 +26,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "angles/angles.h"
 
 namespace nav2_route
