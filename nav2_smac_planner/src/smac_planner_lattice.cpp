@@ -477,7 +477,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
       // Publish smoothed footprints for debug
       marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-      auto now = _clock->now();
       for (size_t i = 0; i < plan.poses.size(); i++) {
         const std::vector<geometry_msgs::msg::Point> edge =
           transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
