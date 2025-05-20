@@ -467,19 +467,21 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     }
     _expansions_publisher->publish(msg);
 
-    // plot footprint path planned for debug
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      // Clear all markers first
       auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      visualization_msgs::msg::Marker clear_all_marker;
+      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+      marker_array->markers.push_back(clear_all_marker);
+      _planned_footprints_publisher->publish(std::move(marker_array));
+
+      // Publish smoothed footprints for debug
+      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      auto now = _clock->now();
       for (size_t i = 0; i < plan.poses.size(); i++) {
         const std::vector<geometry_msgs::msg::Point> edge =
           transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
         marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
-      }
-
-      if (marker_array->markers.empty()) {
-        visualization_msgs::msg::Marker clear_all_marker;
-        clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-        marker_array->markers.push_back(clear_all_marker);
       }
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
@@ -508,16 +510,15 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 #endif
 
   if (_debug_visualizations) {
-    // plot footprint path planned for debug
     if (_smoothed_footprints_publisher->get_subscription_count() > 0) {
+      // Clear all markers first
       auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-
       visualization_msgs::msg::Marker clear_all_marker;
       clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
       marker_array->markers.push_back(clear_all_marker);
-
       _smoothed_footprints_publisher->publish(std::move(marker_array));
 
+      // Publish smoothed footprints for debug
       marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
       auto now = _clock->now();
       for (size_t i = 0; i < plan.poses.size(); i++) {
