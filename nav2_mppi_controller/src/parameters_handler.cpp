@@ -64,7 +64,7 @@ ParametersHandler::dynamicParamsCallback(
 
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
-    if(param_name.find(node_name_ + ".") != 0) {
+    if(param_name.find(node_name_ + ".") != 0){
       continue;
     }
     if (auto callback = get_param_callbacks_.find(param_name);
