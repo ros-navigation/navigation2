@@ -65,6 +65,12 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
    * \brief Override required by the a BT action. Cancel the action and set the path output
    */
   void halt() override;

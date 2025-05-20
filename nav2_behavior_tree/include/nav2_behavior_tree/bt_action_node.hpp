@@ -188,6 +188,15 @@ public:
   }
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  virtual void on_timeout()
+  {
+    return;
+  }
+
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
@@ -231,6 +240,7 @@ public:
             "Timed out while waiting for action server to acknowledge goal request for %s",
             action_name_.c_str());
           future_goal_handle_.reset();
+          on_timeout();
           return BT::NodeStatus::FAILURE;
         }
       }
@@ -261,6 +271,7 @@ public:
               "Timed out while waiting for action server to acknowledge goal request for %s",
               action_name_.c_str());
             future_goal_handle_.reset();
+            on_timeout();
             return BT::NodeStatus::FAILURE;
           }
         }
