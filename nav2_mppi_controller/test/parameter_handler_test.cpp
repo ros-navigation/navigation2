@@ -137,7 +137,6 @@ TEST(ParameterHandlerTest, GetSystemParamsTest)
   EXPECT_EQ(p2, 7);
 }
 
-
 TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
