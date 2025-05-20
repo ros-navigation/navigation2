@@ -102,7 +102,7 @@ class LoopbackSimulator(Node):
         self.scan_angle_max = \
             self.get_parameter('scan_angle_max').get_parameter_value().double_value
 
-        self.declare_parameter('scan_angle_increment',  0.026179900392889977)
+        self.declare_parameter('scan_angle_increment',  0.0261)  # 0.0261 rad = 1.5 degrees
         self.scan_angle_increment = \
             self.get_parameter('scan_angle_increment').get_parameter_value().double_value
 
