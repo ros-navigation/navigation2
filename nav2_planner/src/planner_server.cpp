@@ -52,7 +52,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Declare this node's parameters
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
-  declare_parameter("action_server_result_timeout", 10.0);
   declare_parameter("costmap_update_timeout", 1.0);
 
   get_parameter("planner_plugins", planner_ids_);
@@ -148,11 +147,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
@@ -164,7 +158,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&PlannerServer::computePlan, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true, server_options);
+    true);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     shared_from_this(),
@@ -172,7 +166,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&PlannerServer::computePlanThroughPoses, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true, server_options);
+    true);
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
