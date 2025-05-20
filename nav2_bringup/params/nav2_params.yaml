@@ -437,3 +437,9 @@ loopback_simulator:
     map_frame_id: "map"
     scan_frame_id: "base_scan"  # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
     update_duration: 0.02
+    scan_range_min: 0.05
+    scan_range_max: 30.0
+    scan_angle_min: -3.1415
+    scan_angle_max: 3.1415
+    scan_angle_increment: 0.02617
+    scan_use_inf: true
