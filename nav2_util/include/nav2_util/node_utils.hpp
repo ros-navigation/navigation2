@@ -80,25 +80,26 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix = "");
  */
 std::string time_to_string(size_t len);
 
+using ParameterDescriptor = rcl_interfaces::msg::ParameterDescriptor;
+
 /// Declares static ROS2 parameter and sets it to a given value if it was not already declared
 /* Declares static ROS2 parameter and sets it to a given value
  * if it was not already declared.
  *
  * \param[in] node A node in which given parameter to be declared
- * \param[in] param_name The name of parameter
+ * \param[in] parameter_name The name of parameter
  * \param[in] default_value Parameter value to initialize with
  * \param[in] parameter_descriptor Parameter descriptor (optional)
  */
 template<typename NodeT>
 void declare_parameter_if_not_declared(
   NodeT node,
-  const std::string & param_name,
+  const std::string & parameter_name,
   const rclcpp::ParameterValue & default_value,
-  const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
-  rcl_interfaces::msg::ParameterDescriptor())
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
-  if (!node->has_parameter(param_name)) {
-    node->declare_parameter(param_name, default_value, parameter_descriptor);
+  if (!node->has_parameter(parameter_name)) {
+    node->declare_parameter(parameter_name, default_value, parameter_descriptor);
   }
 }
 
@@ -106,21 +107,116 @@ void declare_parameter_if_not_declared(
 /* Declares static ROS2 parameter with given type if it was not already declared.
  *
  * \param[in] node A node in which given parameter to be declared
+ * \param[in] parameter_name Name of the parameter
  * \param[in] param_type The type of parameter
- * \param[in] default_value Parameter value to initialize with
  * \param[in] parameter_descriptor Parameter descriptor (optional)
  */
 template<typename NodeT>
 void declare_parameter_if_not_declared(
   NodeT node,
-  const std::string & param_name,
+  const std::string & parameter_name,
   const rclcpp::ParameterType & param_type,
-  const rcl_interfaces::msg::ParameterDescriptor & parameter_descriptor =
-  rcl_interfaces::msg::ParameterDescriptor())
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
-  if (!node->has_parameter(param_name)) {
-    node->declare_parameter(param_name, param_type, parameter_descriptor);
+  if (!node->has_parameter(parameter_name)) {
+    node->declare_parameter(parameter_name, param_type, parameter_descriptor);
   }
+}
+
+/// Declares a parameter with the specified type if it was not already declared
+/// and returns its value if available.
+/* Declares a parameter with the specified type if it was not already declared.
+ * If the parameter was overridden, its value is returned, otherwise an
+ * rclcpp::exceptions::InvalidParameterValueException is thrown
+ *
+ * \param[in] node A node in which given parameter to be declared
+ * \param[in] parameter_name Name of the parameter
+ * \param[in] param_type The type of parameter
+ * \param[in] parameter_descriptor Parameter descriptor (optional)
+ * \return The value of the parameter or an exception
+ */
+template<typename ParameterT, typename NodeT>
+ParameterT declare_or_get_parameter(
+  NodeT node,
+  const std::string & parameter_name,
+  const rclcpp::ParameterType & param_type,
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+{
+  if (node->has_parameter(parameter_name)) {
+    return node->get_parameter(parameter_name).template get_value<ParameterT>();
+  }
+  auto parameter = node->declare_parameter(parameter_name, param_type, parameter_descriptor);
+  if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET) {
+    std::string description = "Parameter " + parameter_name + " not in overrides";
+    throw rclcpp::exceptions::InvalidParameterValueException(description.c_str());
+  }
+  return parameter.template get<ParameterT>();
+}
+
+using NodeParamInterfacePtr = rclcpp::node_interfaces::NodeParametersInterface::SharedPtr;
+
+/// If the parameter is already declared, returns its value,
+/// otherwise declares it and returns the default value
+/**
+ * If the parameter is already declared, returns its value,
+ * otherwise declares it and returns the default value.
+ * The method will by default print a warning when the override is missing.
+ *
+ * \param[in] logger Node logging interface
+ * \param[in] param_interface Node parameter interface
+ * \param[in] parameter_name Name of the parameter
+ * \param[in] default_value Default value of the parameter
+ * \param[in] warn_if_no_override If true, prints a warning whenever the parameter override is missing
+ * \param[in] parameter_descriptor Optional parameter descriptor
+ * \return The value of the param from the override if existent, otherwise the default value
+ */
+template<typename ParamType>
+ParamType declare_or_get_parameter(
+  const rclcpp::Logger & logger, NodeParamInterfacePtr param_interface,
+  const std::string & parameter_name, const ParamType & default_value,
+  bool warn_if_no_override = false,
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+{
+  if (param_interface->has_parameter(parameter_name)) {
+    rclcpp::Parameter param(parameter_name, default_value);
+    param_interface->get_parameter(parameter_name, param);
+    return param.get_value<ParamType>();
+  }
+  if (warn_if_no_override && param_interface->get_parameter_overrides().find(parameter_name) ==
+    param_interface->get_parameter_overrides().end())
+  {
+    RCLCPP_WARN_STREAM(
+        logger,
+        "Failed to get param " << parameter_name << " from overrides, using default value.");
+  }
+  return param_interface
+         ->declare_parameter(parameter_name, rclcpp::ParameterValue{default_value},
+      parameter_descriptor)
+         .get<ParamType>();
+}
+
+/// If the parameter is already declared, returns its value,
+/// otherwise declares it and returns the default value
+/**
+ * If the parameter is already declared, returns its value,
+ * otherwise declares it and returns the default value.
+ * The method will by default print a warning when the override is missing.
+ *
+ * \param[in] node Pointer to a node object
+ * \param[in] parameter_name Name of the parameter
+ * \param[in] default_value Default value of the parameter
+ * \param[in] warn_if_no_override If true, prints a warning whenever the parameter override is missing
+ * \param[in] parameter_descriptor Optional parameter descriptor
+ * \return The value of the param from the override if existent, otherwise the default value
+ */
+template<typename ParamType, typename NodeT>
+ParamType declare_or_get_parameter(
+  NodeT node, const std::string & parameter_name,
+  const ParamType & default_value, bool warn_if_no_override = false,
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+{
+  return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
+    parameter_name, default_value, warn_if_no_override, parameter_descriptor);
 }
 
 /// Gets the type of plugin for the selected node and its plugin
