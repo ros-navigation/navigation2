@@ -53,10 +53,22 @@ def generate_launch_description() -> LaunchDescription:
 
     # Launch configuration variables
     headless = LaunchConfiguration('headless')
+    keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
+    speed_mask_yaml_file = LaunchConfiguration('speed_mask')
 
     # Declare the launch arguments
     declare_headless_cmd = DeclareLaunchArgument(
         'headless', default_value='False', description='Whether to execute gzclient)'
+    )
+    declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
+        'keepout_mask',
+        default_value=os.path.join(nav2_bringup_dir, 'maps', f'{MAP_TYPE}_keepout.yaml'),
+        description='Full path to keepout mask file to load',
+    )
+    declare_speed_mask_yaml_cmd = DeclareLaunchArgument(
+        'speed_mask',
+        default_value=os.path.join(nav2_bringup_dir, 'maps', f'{MAP_TYPE}_speed.yaml'),
+        description='Full path to speed mask file to load',
     )
 
     # start the simulation
@@ -122,7 +134,12 @@ def generate_launch_description() -> LaunchDescription:
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={'map': map_yaml_file, 'graph': graph_filepath}.items())
+        launch_arguments={
+            'map': map_yaml_file,
+            'graph': graph_filepath,
+            'keepout_mask': keepout_mask_yaml_file,
+            'speed_mask': speed_mask_yaml_file,
+        }.items())
 
     # start the demo autonomy task
     demo_cmd = Node(
@@ -137,6 +154,8 @@ def generate_launch_description() -> LaunchDescription:
 
     ld = LaunchDescription()
     ld.add_action(declare_headless_cmd)
+    ld.add_action(declare_keepout_mask_yaml_cmd)
+    ld.add_action(declare_speed_mask_yaml_cmd)
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)
     ld.add_action(remove_temp_sdf_file)
