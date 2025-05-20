@@ -55,6 +55,7 @@ def generate_launch_description() -> LaunchDescription:
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
+    speed_mask_yaml_file = LaunchConfiguration('speed_mask')
     graph_filepath = LaunchConfiguration('graph')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
@@ -62,6 +63,7 @@ def generate_launch_description() -> LaunchDescription:
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
     use_keepout_zones = LaunchConfiguration('use_keepout_zones')
+    use_speed_zones = LaunchConfiguration('use_speed_zones')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -104,6 +106,12 @@ def generate_launch_description() -> LaunchDescription:
         description='Full path to keepout mask file to load',
     )
 
+    declare_speed_mask_yaml_cmd = DeclareLaunchArgument(
+        'speed_mask',
+        default_value=os.path.join(bringup_dir, 'maps', f'{MAP_TYPE}_speed.yaml'),
+        description='Full path to speed mask file to load',
+    )
+
     declare_graph_file_cmd = DeclareLaunchArgument(
         'graph',
         default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot4_graph.geojson'),
@@ -142,6 +150,11 @@ def generate_launch_description() -> LaunchDescription:
     declare_use_keepout_zones_cmd = DeclareLaunchArgument(
         'use_keepout_zones', default_value='True',
         description='Whether to enable keepout zones or not'
+    )
+
+    declare_use_speed_zones_cmd = DeclareLaunchArgument(
+        'use_speed_zones', default_value='True',
+        description='Whether to enable speed zones or not'
     )
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
@@ -216,6 +229,7 @@ def generate_launch_description() -> LaunchDescription:
             'slam': slam,
             'map': map_yaml_file,
             'keepout_mask': keepout_mask_yaml_file,
+            'speed_mask': speed_mask_yaml_file,
             'graph': graph_filepath,
             'use_sim_time': use_sim_time,
             'params_file': params_file,
@@ -223,6 +237,7 @@ def generate_launch_description() -> LaunchDescription:
             'use_composition': use_composition,
             'use_respawn': use_respawn,
             'use_keepout_zones': use_keepout_zones,
+            'use_speed_zones': use_speed_zones,
         }.items(),
     )
 
@@ -282,6 +297,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_keepout_mask_yaml_cmd)
+    ld.add_action(declare_speed_mask_yaml_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
@@ -298,6 +314,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_robot_sdf_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_use_keepout_zones_cmd)
+    ld.add_action(declare_use_speed_zones_cmd)
 
     ld.add_action(set_env_vars_resources)
     ld.add_action(world_sdf_xacro)

@@ -324,6 +324,44 @@ TEST(SimpleNonChargingDockTests, GetDockDirection)
   dock.reset();
 }
 
+TEST(SimpleChargingDockTests, ShouldRotateToDock)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Case 1: Direction to BACKWARD and rotate_to_dock to true
+  node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward"));
+  node->declare_parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(true));
+
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), true);
+  dock->cleanup();
+
+  // Case 2: Direction to BACKWARD and rotate_to_dock to false
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(false)));
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), false);
+
+  // Case 3: Direction to FORWARD and rotate_to_dock to true
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward")));
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(true)));
+  EXPECT_THROW(dock->configure(node, "my_dock", nullptr), std::runtime_error);
+  EXPECT_EQ(dock->shouldRotateToDock(), true);
+  dock->cleanup();
+
+  // Case 4: Direction to FORWARD and rotate_to_dock to false
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(false)));
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), false);
+
+  dock->cleanup();
+  dock.reset();
+}
+
 }  // namespace opennav_docking
 
 int main(int argc, char **argv)
