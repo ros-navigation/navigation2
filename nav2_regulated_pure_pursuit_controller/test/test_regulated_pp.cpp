@@ -498,8 +498,14 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 
 TEST(RegulatedPurePursuitTest, rotateTests)
 {
+  // --------------------------
+  // Non-Stateful Configuration
+  // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  nav2_util::declare_parameter_if_not_declared(
+    node, "PathFollower.stateful", rclcpp::ParameterValue(false));
+
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -565,6 +571,27 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   curr_speed.angular.z = 1.0;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_NEAR(ang_v, 0.84, 0.01);
+
+  // -----------------------
+  // Stateful Configuration
+  // -----------------------
+  node->set_parameter(
+    rclcpp::Parameter("PathFollower.stateful", true));
+
+  ctrl->configure(node, name, tf, costmap);
+
+  // Start just outside tolerance
+  carrot.pose.position.x = 0.0;
+  carrot.pose.position.y = 0.26;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), false);
+
+  // Enter tolerance (should set internal flag)
+  carrot.pose.position.y = 0.24;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
+
+  // Move outside tolerance again - still expect true (due to persistent state)
+  carrot.pose.position.y = 0.26;
+  EXPECT_EQ(ctrl->shouldRotateToGoalHeadingWrapper(carrot), true);
 }
 
 TEST(RegulatedPurePursuitTest, applyConstraints)
@@ -705,7 +732,8 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.use_cost_regulated_linear_velocity_scaling", false),
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
-      rclcpp::Parameter("test.use_rotate_to_heading", false)});
+      rclcpp::Parameter("test.use_rotate_to_heading", false),
+      rclcpp::Parameter("test.stateful", false)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -736,6 +764,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(
