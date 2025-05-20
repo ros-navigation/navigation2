@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, RunningTask, TaskResult
+from nav2_simple_commander.utils import euler_to_quaternion
 import rclpy
 from std_msgs.msg import Header
 
@@ -31,26 +30,6 @@ def toPoseStamped(pt: Pose, header: Header) -> PoseStamped:
     pose.pose.position.y = pt.y
     pose.header = header
     return pose
-
-
-def euler_to_quaternion(
-    roll: float = 0.0, pitch: float = 0.0,
-        yaw: float = 0.0) -> Quaternion:
-    """Convert euler angles to quaternion."""
-    cy = math.cos(yaw * 0.5)
-    sy = math.sin(yaw * 0.5)
-    cp = math.cos(pitch * 0.5)
-    sp = math.sin(pitch * 0.5)
-    cr = math.cos(roll * 0.5)
-    sr = math.sin(roll * 0.5)
-
-    q = Quaternion()
-    q.w = cr * cp * cy + sr * sp * sy
-    q.x = sr * cp * cy - cr * sp * sy
-    q.y = cr * sp * cy + sr * cp * sy
-    q.z = cr * cp * sy - sr * sp * cy
-
-    return q
 
 
 def main() -> None:
