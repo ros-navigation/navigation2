@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import Pose, PoseStamped
+import math
+
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 from nav2_simple_commander.robot_navigator import BasicNavigator, RunningTask, TaskResult
 import rclpy
 from std_msgs.msg import Header
@@ -31,8 +33,48 @@ def toPoseStamped(pt: Pose, header: Header) -> PoseStamped:
     return pose
 
 
+def euler_to_quaternion(
+    roll: float = 0.0, pitch: float = 0.0,
+        yaw: float = 0.0) -> Quaternion:
+    """Convert euler angles to quaternion."""
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+
+    q = Quaternion()
+    q.w = cr * cp * cy + sr * sp * sy
+    q.x = sr * cp * cy - cr * sp * sy
+    q.y = cr * sp * cy + sr * cp * sy
+    q.z = cr * cp * sy - sr * sp * cy
+
+    return q
+
+
 def main() -> None:
     rclpy.init()
+
+    node = rclpy.create_node('route_example')
+
+    node.declare_parameter('start_pose.x', 0.0)
+    node.declare_parameter('start_pose.y', 0.0)
+    node.declare_parameter('start_pose.yaw', 0.0)
+
+    node.declare_parameter('goal_pose.x', 0.0)
+    node.declare_parameter('goal_pose.y', 0.0)
+    node.declare_parameter('goal_pose.yaw', 0.0)
+
+    start_x = node.get_parameter('start_pose.x').value
+    start_y = node.get_parameter('start_pose.y').value
+    start_yaw = node.get_parameter('start_pose.yaw').value
+
+    goal_x = node.get_parameter('goal_pose.x').value
+    goal_y = node.get_parameter('goal_pose.y').value
+    goal_yaw = node.get_parameter('goal_pose.yaw').value
+
+    node.destroy_node()
 
     navigator = BasicNavigator()
 
@@ -40,10 +82,9 @@ def main() -> None:
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 7.5
-    initial_pose.pose.position.y = 7.5
-    initial_pose.pose.orientation.z = 0.0
-    initial_pose.pose.orientation.w = 1.0
+    initial_pose.pose.position.x = start_x
+    initial_pose.pose.position.y = start_y
+    initial_pose.pose.orientation = euler_to_quaternion(0.0, 0.0, start_yaw)
     navigator.setInitialPose(initial_pose)
 
     # Activate navigation, if not autostarted. This should be called after setInitialPose()
@@ -66,9 +107,9 @@ def main() -> None:
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = 20.12
-    goal_pose.pose.position.y = 11.83
-    goal_pose.pose.orientation.w = 1.0
+    goal_pose.pose.position.x = goal_x
+    goal_pose.pose.position.y = goal_y
+    goal_pose.pose.orientation = euler_to_quaternion(0.0, 0.0, goal_yaw)
 
     # Sanity check a valid route exists using PoseStamped.
     # May also use NodeIDs on the graph if they are known by passing them instead as `int`

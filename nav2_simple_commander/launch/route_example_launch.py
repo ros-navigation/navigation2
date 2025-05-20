@@ -33,8 +33,27 @@ MAP_POSES_DICT = {
         'R': 0.00, 'P': 0.00, 'Y': 0.00
     },
     'warehouse': {
-        'x': 2.12, 'y': -21.3, 'z': 0.01,
-        'R': 0.00, 'P': 0.00, 'Y': 1.57
+        'x': 2.00, 'y': -19.65, 'z': 0.01,
+        'R': 0.00, 'P': 0.00, 'Y': 0.00
+    }
+}
+
+ROUTE_POSES_DICT = {
+    'start': {
+        'depot': {
+            'x': 7.5, 'y': 7.5, 'yaw': 0.00
+        },
+        'warehouse': {
+            'x': 2.00, 'y': -19.65, 'yaw': 0.00
+        }
+    },
+    'goal': {
+        'depot': {
+            'x': 20.12, 'y': 11.83, 'yaw': 0.00
+        },
+        'warehouse': {
+            'x': -13.5, 'y': -3.15, 'yaw': 0.00
+        }
     }
 }
 MAP_TYPE = 'depot'  # Change this to 'warehouse' for warehouse map
@@ -145,6 +164,18 @@ def generate_launch_description() -> LaunchDescription:
     demo_cmd = Node(
         package='nav2_simple_commander',
         executable='example_route',
+        parameters=[{
+            'start_pose': {
+                'x': ROUTE_POSES_DICT['start'][MAP_TYPE]['x'],
+                'y': ROUTE_POSES_DICT['start'][MAP_TYPE]['y'],
+                'yaw': ROUTE_POSES_DICT['start'][MAP_TYPE]['yaw']
+            },
+            'goal_pose': {
+                'x': ROUTE_POSES_DICT['goal'][MAP_TYPE]['x'],
+                'y': ROUTE_POSES_DICT['goal'][MAP_TYPE]['y'],
+                'yaw': ROUTE_POSES_DICT['goal'][MAP_TYPE]['yaw']
+            },
+        }],
         emulate_tty=True,
         output='screen')
 
