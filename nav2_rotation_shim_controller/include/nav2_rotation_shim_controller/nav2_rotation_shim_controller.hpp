@@ -189,6 +189,7 @@ protected:
   bool closed_loop_;
   bool use_path_orientations_;
   double last_angular_vel_ = std::numeric_limits<double>::max();
+
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
