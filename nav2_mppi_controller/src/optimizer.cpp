@@ -62,7 +62,7 @@ void Optimizer::getParams()
 
   auto & s = settings_;
   auto getParam = parameters_handler_->getParamGetter(name_);
-  auto getParentParam = parameters_handler_->getParamGetter("test");
+  auto getParentParam = parameters_handler_->getParamGetter("");
   getParam(s.model_dt, "model_dt", 0.05f);
   getParam(s.time_steps, "time_steps", 56);
   getParam(s.batch_size, "batch_size", 1000);
