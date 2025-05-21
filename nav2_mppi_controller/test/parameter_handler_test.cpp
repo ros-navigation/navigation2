@@ -129,7 +129,7 @@ TEST(ParameterHandlerTest, GetSystemParamsTest)
   bool p1 = false;
   int p2 = 0;
   getParameter(p1, "test.param1", false);
-  getParameter(p2, "ns.param2", 0);
+  getParameter(p2, "ns.test.param2", 0);
   EXPECT_EQ(p1, true);
   EXPECT_EQ(p2, 7);
 
@@ -166,7 +166,7 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
 
   std::shared_future<rcl_interfaces::msg::SetParametersResult> result_future =
     rec_param->set_parameters_atomically({
-    rclcpp::Parameter("test.verbose", true),
+    rclcpp::Parameter("my_node.verbose", true),
     rclcpp::Parameter("test.dynamic_int", 10),
     rclcpp::Parameter("test.static_int", 10)
   });
