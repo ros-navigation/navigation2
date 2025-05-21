@@ -8,6 +8,7 @@ string error_msg
 
 uint16 NONE=0
 uint16 UNKNOWN=740
+uint16 TIMEOUT=741
 ---
 #feedback definition
 builtin_interfaces/Duration time_left
