@@ -62,7 +62,7 @@ ParametersHandler::dynamicParamsCallback(
   for (auto & pre_cb : pre_callbacks_) {
     pre_cb();
   }
-
+  bool parameter_updated = false;
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
     if (param_name.find(name_ + ".") != 0) {
@@ -72,11 +72,13 @@ ParametersHandler::dynamicParamsCallback(
       callback != get_param_callbacks_.end())
     {
       callback->second(param, result);
+      parameter_updated = true;
     }
   }
-
-  for (auto & post_cb : post_callbacks_) {
-    post_cb();
+  if (parameter_updated) {
+    for (auto & post_cb : post_callbacks_) {
+      post_cb();
+    }
   }
 
   if (!result.successful) {
