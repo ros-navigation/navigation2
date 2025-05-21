@@ -96,7 +96,7 @@ TEST(CriticManagerTests, BasicCriticOperations)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -136,7 +136,7 @@ TEST(CriticManagerTests, CriticLoadingTest)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 

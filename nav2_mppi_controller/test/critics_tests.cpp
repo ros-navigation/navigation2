@@ -63,7 +63,7 @@ TEST(CriticTests, ConstraintsCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -132,7 +132,7 @@ TEST(CriticTests, ObstacleCriticMisalignedParams) {
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", true);
@@ -153,7 +153,7 @@ TEST(CriticTests, ObstacleCriticAlignedParams) {
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", false);
@@ -173,7 +173,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
    auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
@@ -194,7 +194,7 @@ TEST(CriticTests, CostCriticAlignedParams) {
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
    auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
@@ -213,7 +213,7 @@ TEST(CriticTests, GoalAngleCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -273,7 +273,7 @@ TEST(CriticTests, GoalCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -326,7 +326,7 @@ TEST(CriticTests, PathAngleCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -445,7 +445,7 @@ TEST(CriticTests, PreferForwardCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -502,7 +502,7 @@ TEST(CriticTests, TwirlingCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -567,7 +567,7 @@ TEST(CriticTests, PathFollowCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -619,7 +619,7 @@ TEST(CriticTests, PathAlignCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -730,7 +730,7 @@ TEST(CriticTests, VelocityDeadbandCritic)
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
-ParametersHandler param_handler(node, name);
+  ParametersHandler param_handler(node, name);
   auto getParam = param_handler.getParamGetter("critic");
   std::vector<double> deadband_velocities_;
   getParam(deadband_velocities_, "deadband_velocities", std::vector<double>{0.08, 0.08, 0.08});
