@@ -41,18 +41,18 @@ MAP_POSES_DICT = {
 ROUTE_POSES_DICT = {
     'start': {
         'depot': {
-            'x': 7.5, 'y': 7.5, 'yaw': 0.00
+            'x': 7.5, 'y': 7.5, 'yaw': 0.00  # 3rd node
         },
         'warehouse': {
-            'x': 2.00, 'y': -19.65, 'yaw': 0.00
+            'x': 2.00, 'y': -19.65, 'yaw': 0.00  # 0th node
         }
     },
     'goal': {
         'depot': {
-            'x': 20.12, 'y': 11.83, 'yaw': 0.00
+            'x': 20.12, 'y': 11.83, 'yaw': 0.00  # 13th node
         },
         'warehouse': {
-            'x': -13.5, 'y': -3.15, 'yaw': 0.00
+            'x': -13.5, 'y': -3.15, 'yaw': 0.00  # 61st node
         }
     }
 }
