@@ -72,12 +72,23 @@ def generate_launch_description() -> LaunchDescription:
 
     # Launch configuration variables
     headless = LaunchConfiguration('headless')
+    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
+    use_speed_zones = LaunchConfiguration('use_speed_zones')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
 
     # Declare the launch arguments
     declare_headless_cmd = DeclareLaunchArgument(
         'headless', default_value='False', description='Whether to execute gzclient)'
+    )
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
+    )
+
+    declare_use_speed_zones_cmd = DeclareLaunchArgument(
+        'use_speed_zones', default_value='True',
+        description='Whether to enable speed zones or not'
     )
     declare_keepout_mask_yaml_cmd = DeclareLaunchArgument(
         'keepout_mask',
@@ -156,6 +167,8 @@ def generate_launch_description() -> LaunchDescription:
         launch_arguments={
             'map': map_yaml_file,
             'graph': graph_filepath,
+            'use_keepout_zones': use_keepout_zones,
+            'use_speed_zones': use_speed_zones,
             'keepout_mask': keepout_mask_yaml_file,
             'speed_mask': speed_mask_yaml_file,
         }.items())
@@ -185,6 +198,8 @@ def generate_launch_description() -> LaunchDescription:
 
     ld = LaunchDescription()
     ld.add_action(declare_headless_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
+    ld.add_action(declare_use_speed_zones_cmd)
     ld.add_action(declare_keepout_mask_yaml_cmd)
     ld.add_action(declare_speed_mask_yaml_cmd)
     ld.add_action(set_env_vars_resources)
