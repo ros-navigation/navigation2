@@ -51,6 +51,12 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
    * @brief Function to read parameters and initialize class variables
    */
   void initialize();

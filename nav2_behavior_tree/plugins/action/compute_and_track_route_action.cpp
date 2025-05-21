@@ -75,6 +75,12 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
+void ComputeAndTrackRouteAction::on_timeout()
+{
+  setOutput("error_code_id", ActionResult::TIMEOUT);
+  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
+}
+
 void ComputeAndTrackRouteAction::on_wait_for_result(
   std::shared_ptr<const Action::Feedback>/*feedback*/)
 {
