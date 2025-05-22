@@ -83,6 +83,7 @@ ParametersHandler::dynamicParamsCallback(
       post_cb();
     }
   }
+
   if (!result.successful) {
     RCLCPP_ERROR(logger_, result.reason.c_str());
   }
