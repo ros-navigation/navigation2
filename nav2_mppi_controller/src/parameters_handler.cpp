@@ -80,6 +80,7 @@ ParametersHandler::dynamicParamsCallback(
         callback->second(param, result);
       }
     }
+
     for (auto & post_cb : post_callbacks_) {
       post_cb();
     }
