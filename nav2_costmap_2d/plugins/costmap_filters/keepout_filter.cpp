@@ -270,9 +270,7 @@ void KeepoutFilter::process(
         }
       }
     }
-  }
 
-  if (override_lethal_cost_) {
     // If in lethal space or just exited lethal space,
     // we need to update all possible spaces touched during this state
     if (is_pose_lethal || (last_pose_lethal_ && !is_pose_lethal)) {
