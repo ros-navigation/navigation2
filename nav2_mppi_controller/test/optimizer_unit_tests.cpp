@@ -229,7 +229,8 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(3.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -266,7 +267,8 @@ TEST(OptimizerTests, TestOptimizerMotionModels)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -298,7 +300,8 @@ TEST(OptimizerTests, setOffsetTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -321,7 +324,8 @@ TEST(OptimizerTests, resetTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -341,7 +345,8 @@ TEST(OptimizerTests, FallbackTests)
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -365,7 +370,8 @@ TEST(OptimizerTests, PrepareTests)
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -393,7 +399,8 @@ TEST(OptimizerTests, shiftControlSequenceTests)
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -436,7 +443,8 @@ TEST(OptimizerTests, SpeedLimitTests)
   node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(2));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -476,7 +484,8 @@ TEST(OptimizerTests, applyControlSequenceConstraintsTests)
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -537,7 +546,8 @@ TEST(OptimizerTests, updateStateVelocitiesTests)
   node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(3.5));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -562,7 +572,8 @@ TEST(OptimizerTests, getControlFromSequenceAsTwistTests)
   node->declare_parameter("mppic.wz_max", rclcpp::ParameterValue(2.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -597,7 +608,8 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
@@ -663,7 +675,8 @@ TEST(OptimizerTests, TestGetters)
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  ParametersHandler param_handler(node);
+  std::string test = "test";
+  ParametersHandler param_handler(node, test);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
   optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
