@@ -261,8 +261,8 @@ void KeepoutFilter::process(
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
       unsigned int mask_robot_i, mask_robot_j;
       if (worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
-        auto keepout_mask_data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
-        is_pose_lethal = (keepout_mask_data == 253 || keepout_mask_data == 254);
+        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
+        is_pose_lethal = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
         if (is_pose_lethal) {
           RCLCPP_WARN_THROTTLE(
             logger_, *(clock_), 2000,
