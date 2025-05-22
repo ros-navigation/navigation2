@@ -468,15 +468,18 @@ WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == "loop_rate") {
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == "loop_rate") {
         loop_rate_ = parameter.as_int();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == "stop_on_failure") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "stop_on_failure") {
         stop_on_failure_ = parameter.as_bool();
       }
     }

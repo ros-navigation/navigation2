@@ -79,11 +79,14 @@ PoseProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".required_movement_angle") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".required_movement_angle") {
         required_movement_angle_ = parameter.as_double();
       }
     }

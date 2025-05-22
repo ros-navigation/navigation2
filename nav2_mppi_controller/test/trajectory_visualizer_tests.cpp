@@ -26,7 +26,8 @@ using namespace mppi;  // NOLINT
 TEST(TrajectoryVisualizerTests, StateTransition)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "map", parameters_handler.get());
@@ -38,7 +39,8 @@ TEST(TrajectoryVisualizerTests, StateTransition)
 TEST(TrajectoryVisualizerTests, VisPathRepub)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
   nav_msgs::msg::Path received_path;
   nav_msgs::msg::Path pub_path;
   pub_path.header.frame_id = "fake_frame";
@@ -61,7 +63,8 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
 TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -123,7 +126,8 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -150,7 +154,8 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 TEST(TrajectoryVisualizerTests, VisOptimalPath)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  auto parameters_handler = std::make_unique<ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
   builtin_interfaces::msg::Time cmd_stamp;
   cmd_stamp.sec = 5;
   cmd_stamp.nanosec = 10;

@@ -362,34 +362,36 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
   bool reinit_downsampler = false;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == _name + ".tolerance") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(_name + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == _name + ".tolerance") {
         _tolerance = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".cost_travel_multiplier") {
+      } else if (param_name == _name + ".cost_travel_multiplier") {
         reinit_a_star = true;
         _search_info.cost_penalty = parameter.as_double();
-      } else if (name == _name + ".max_planning_time") {
+      } else if (param_name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == _name + ".downsample_costmap") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == _name + ".downsample_costmap") {
         reinit_downsampler = true;
         _downsample_costmap = parameter.as_bool();
-      } else if (name == _name + ".allow_unknown") {
+      } else if (param_name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = parameter.as_bool();
-      } else if (name == _name + ".use_final_approach_orientation") {
+      } else if (param_name == _name + ".use_final_approach_orientation") {
         _use_final_approach_orientation = parameter.as_bool();
       }
-    } else if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == _name + ".downsampling_factor") {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == _name + ".downsampling_factor") {
         reinit_downsampler = true;
         _downsampling_factor = parameter.as_int();
-      } else if (name == _name + ".max_iterations") {
+      } else if (param_name == _name + ".max_iterations") {
         reinit_a_star = true;
         _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
@@ -398,7 +400,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".max_on_approach_iterations") {
+      } else if (param_name == _name + ".max_on_approach_iterations") {
         reinit_a_star = true;
         _max_on_approach_iterations = parameter.as_int();
         if (_max_on_approach_iterations <= 0) {
@@ -407,7 +409,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             "disabling tolerance and on approach iterations.");
           _max_on_approach_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".terminal_checking_interval") {
+      } else if (param_name == _name + ".terminal_checking_interval") {
         reinit_a_star = true;
         _terminal_checking_interval = parameter.as_int();
       }
