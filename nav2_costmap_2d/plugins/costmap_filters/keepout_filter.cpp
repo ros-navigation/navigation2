@@ -254,7 +254,7 @@ void KeepoutFilter::process(
   unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
   unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
 
-  // Lets find the pose's cost if we are allowed to override the lethal cost
+  // Let's find the pose's cost if we are allowed to override the lethal cost
   bool is_pose_lethal = false;
   if (override_lethal_cost_) {
     geometry_msgs::msg::Pose2D mask_pose;
