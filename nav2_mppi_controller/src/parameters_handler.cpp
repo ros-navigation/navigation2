@@ -66,6 +66,7 @@ ParametersHandler::dynamicParamsCallback(
     }
     plugin_params.push_back(param);
   }
+
   if (!plugin_params.empty()) {
     for (auto & pre_cb : pre_callbacks_) {
       pre_cb();
