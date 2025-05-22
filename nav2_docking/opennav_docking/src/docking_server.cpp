@@ -844,7 +844,9 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "initial_perception_timeout") {
+      if (param_name == "controller_frequency") {
+        controller_frequency_ = parameter.as_double();
+      } else if (param_name == "initial_perception_timeout") {
         initial_perception_timeout_ = parameter.as_double();
       } else if (param_name == "wait_charge_timeout") {
         wait_charge_timeout_ = parameter.as_double();

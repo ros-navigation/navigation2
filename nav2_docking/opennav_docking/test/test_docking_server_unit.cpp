@@ -240,7 +240,8 @@ TEST(DockingServerTests, testDynamicParams)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("initial_perception_timeout", 1.0),
+    {rclcpp::Parameter("controller_frequency", 0.2),
+      rclcpp::Parameter("initial_perception_timeout", 1.0),
       rclcpp::Parameter("wait_charge_timeout", 1.2),
       rclcpp::Parameter("undock_linear_tolerance", 0.25),
       rclcpp::Parameter("undock_angular_tolerance", 0.125),

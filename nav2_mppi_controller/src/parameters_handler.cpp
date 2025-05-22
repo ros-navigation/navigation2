@@ -58,29 +58,31 @@ ParametersHandler::dynamicParamsCallback(
   result.reason = "";
 
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
-
-  for (auto & pre_cb : pre_callbacks_) {
-    pre_cb();
-  }
-  bool parameter_updated = false;
+  std::vector<rclcpp::Parameter> plugin_params;
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
     if (param_name.find(name_ + ".") != 0) {
       continue;
     }
-    if (auto callback = get_param_callbacks_.find(param_name);
-      callback != get_param_callbacks_.end())
-    {
-      callback->second(param, result);
-      parameter_updated = true;
-    }
+    plugin_params.push_back(param);
   }
-  if (parameter_updated) {
+  if (!plugin_params.empty()) {
+    for (auto & pre_cb : pre_callbacks_) {
+      pre_cb();
+    }
+
+    for (auto & param : plugin_params) {
+      const std::string & param_name = param.get_name();
+      if (auto callback = get_param_callbacks_.find(param_name);
+        callback != get_param_callbacks_.end())
+      {
+        callback->second(param, result);
+      }
+    }
     for (auto & post_cb : post_callbacks_) {
       post_cb();
     }
   }
-
   if (!result.successful) {
     RCLCPP_ERROR(logger_, result.reason.c_str());
   }

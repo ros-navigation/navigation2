@@ -45,7 +45,6 @@ public:
     rcl_interfaces::msg::SetParametersResult & result);
   using post_callback_t = void ();
   using pre_callback_t = void ();
-  std::string name_;
   /**
     * @brief Constructor for mppi::ParametersHandler
     */
@@ -168,10 +167,12 @@ protected:
     on_set_param_handler_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::string node_name_;
+  std::string name_;
 
   bool verbose_{false};
 
   std::unordered_map<std::string, std::function<get_param_func_t>> get_param_callbacks_;
+  std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
 
   std::vector<std::function<pre_callback_t>> pre_callbacks_;
   std::vector<std::function<post_callback_t>> post_callbacks_;
