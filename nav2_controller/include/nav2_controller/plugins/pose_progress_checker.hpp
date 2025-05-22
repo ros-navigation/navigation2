@@ -48,7 +48,7 @@ public:
       rclcpp_lifecycle::LifecycleNode::SharedPtr node,
       std::string & plugin_name, rclcpp::Logger & logger);
     ~ParameterHandler();
-    Parameters * getParams() {return &params_;}
+    std::shared_ptr<Parameters> getParams() {return std::make_shared<Parameters>(params_);}
 
 protected:
     rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
@@ -86,7 +86,7 @@ protected:
     const geometry_msgs::msg::Pose2D &);
 
   double required_movement_angle_;
-  Parameters * params_;
+  std::shared_ptr<Parameters> params_;
   std::string plugin_name_;
 
   rclcpp::Logger logger_ {rclcpp::get_logger("PoseProgressChecker")};
