@@ -75,7 +75,7 @@ void KeepoutFilter::initializeFilter(
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  declareParameter("override_lethal_cost", rclcpp::ParameterValue(true));
+  declareParameter("override_lethal_cost", rclcpp::ParameterValue(false));
   node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
   declareParameter("lethal_override_cost", rclcpp::ParameterValue(252));
   node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
