@@ -86,7 +86,7 @@ protected:
     const geometry_msgs::msg::Pose2D &);
 
   double required_movement_angle_;
-  std::shared_ptr<const Parameters> params_;
+  std::unique_ptr<const Parameters> params_;
   std::string plugin_name_;
 
   rclcpp::Logger logger_ {rclcpp::get_logger("PoseProgressChecker")};
