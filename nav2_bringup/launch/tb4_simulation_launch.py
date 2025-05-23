@@ -34,7 +34,7 @@ MAP_POSES_DICT = {
         'R': 0.00, 'P': 0.00, 'Y': 0.00
     },
     'warehouse': {
-        'x': 2.12, 'y': -21.3, 'z': 0.01,
+        'x': 2.00, 'y': -19.65, 'z': 0.01,
         'R': 0.00, 'P': 0.00, 'Y': 1.57
     }
 }
@@ -114,7 +114,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_graph_file_cmd = DeclareLaunchArgument(
         'graph',
-        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot4_graph.geojson'),
+        default_value=os.path.join(bringup_dir, 'graphs', f'{MAP_TYPE}_graph.geojson'),
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
