@@ -119,24 +119,24 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
 TEST(ParameterHandlerTest, GetSystemParamsTest)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
-  node->declare_parameter("test.param1", rclcpp::ParameterValue(true));
-  node->declare_parameter("ns.test.param2", rclcpp::ParameterValue(7));
+  std::string name = "test";
+  node->declare_parameter("param1", rclcpp::ParameterValue(true));
+  node->declare_parameter(name + ".param2", rclcpp::ParameterValue(7));
 
   // Get parameters in global namespace and in subnamespaces
-  std::string name = "test";
   ParametersHandler handler(node, name);
   auto getParameter = handler.getParamGetter("");
   bool p1 = false;
   int p2 = 0;
-  getParameter(p1, "test.param1", false);
-  getParameter(p2, "ns.test.param2", 0);
+  getParameter(p1, "param1", false);
+  getParameter(p2, name + ".param2", 0);
   EXPECT_EQ(p1, true);
   EXPECT_EQ(p2, 7);
 
   // Get parameters in subnamespaces using name semantics of getter
-  auto getParameter2 = handler.getParamGetter("ns");
+  auto getParameter2 = handler.getParamGetter(name);
   p2 = 0;
-  getParameter2(p2, "test.param2", 0);
+  getParameter2(p2, "param2", 0);
   EXPECT_EQ(p2, 7);
 }
 
