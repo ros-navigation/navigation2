@@ -206,16 +206,21 @@ ParamType declare_or_get_parameter(
  * \param[in] node Pointer to a node object
  * \param[in] parameter_name Name of the parameter
  * \param[in] default_value Default value of the parameter
- * \param[in] warn_if_no_override If true, prints a warning whenever the parameter override is missing
  * \param[in] parameter_descriptor Optional parameter descriptor
  * \return The value of the param from the override if existent, otherwise the default value
  */
 template<typename ParamType, typename NodeT>
 ParamType declare_or_get_parameter(
   NodeT node, const std::string & parameter_name,
-  const ParamType & default_value, bool warn_if_no_override = false,
+  const ParamType & default_value,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
+  bool warn_if_no_override{false};
+  try {
+    warn_if_no_override = declare_or_get_parameter<bool>(node, "warn_when_defaulting_parameters",
+        rclcpp::ParameterType::PARAMETER_BOOL);
+  } catch (const std::exception & exc) {
+  }
   return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
     parameter_name, default_value, warn_if_no_override, parameter_descriptor);
 }

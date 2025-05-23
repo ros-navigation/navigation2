@@ -85,12 +85,13 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
 
   // test declared parameter
   node->declare_parameter("foobar", "foo");
-  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"}, true);
+  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"});
   EXPECT_EQ(param, "foo");
   node->get_parameter("foobar", param);
   EXPECT_EQ(param, "foo");
   // test undeclared parameter
-  int int_param = declare_or_get_parameter(node, "waldo", 3, true);
+  declare_or_get_parameter(node, "warn_when_defaulting_parameters", true);
+  int int_param = declare_or_get_parameter(node, "waldo", 3);
   EXPECT_EQ(int_param, 3);
   // test declaration by type of existing param
   int_param = declare_or_get_parameter<int>(node, "waldo",
