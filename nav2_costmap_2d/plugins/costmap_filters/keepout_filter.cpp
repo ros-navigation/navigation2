@@ -79,7 +79,7 @@ void KeepoutFilter::initializeFilter(
   node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
   declareParameter("lethal_override_cost", rclcpp::ParameterValue(MAX_NON_OBSTACLE));
   node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
-  
+
   // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
   lethal_override_cost_ = \
     std::clamp<unsigned int>(lethal_override_cost_, FREE_SPACE, MAX_NON_OBSTACLE);
