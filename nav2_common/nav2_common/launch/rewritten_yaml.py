@@ -95,7 +95,10 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         yaml_filename = launch.utilities.perform_substitutions(context, self.name)
         rewritten_yaml = tempfile.NamedTemporaryFile(mode='w', delete=False)
         param_rewrites, keys_rewrites = self.resolve_rewrites(context)
-        data = yaml.safe_load(open(yaml_filename))
+
+        with open(yaml_filename, 'r') as yaml_file:
+            data = yaml.safe_load(yaml_file)
+
         self.substitute_params(data, param_rewrites)
         self.add_params(data, param_rewrites)
         self.substitute_keys(data, keys_rewrites)
