@@ -50,6 +50,7 @@ def generate_launch_description() -> LaunchDescription:
             source_file=params_file,
             root_key=namespace,
             param_rewrites={},
+            value_rewrites={'KEEPOUT_ZONE_ENABLED': use_keepout_zones},
             convert_types=True,
         ),
         allow_substs=True,
