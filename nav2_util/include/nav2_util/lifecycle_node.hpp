@@ -25,7 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
-#include "nav2_util/qos_profiles.hpp"
+#include "nav2_util/interface_factories.hpp"
 
 namespace nav2_util
 {
@@ -146,6 +146,14 @@ public:
     declare_parameter(descriptor.name, default_value, descriptor);
   }
 
+  /**
+   * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
+   * @param topic_name Name of topic
+   * @param callback Callback function to handle incoming messages
+   * @param qos QoS settings for the subscription (default is nav2_qos::StandardTopicQoS())
+   * @param callback_group The callback group to use (if provided)
+   * @return A shared pointer to the created subscription
+   */
   template<
     typename MessageT,
     typename CallbackT,
@@ -162,6 +170,13 @@ public:
       std::forward<CallbackT>(callback), qos, callback_group);
   }
 
+  /**
+   * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
+   * @param topic_name Name of topic
+   * @param qos QoS settings for the publisher (default is nav2_qos::StandardTopicQoS())
+   * @param callback_group The callback group to use (if provided)
+   * @return A shared pointer to the created publisher
+   */
   template<
     typename MessageT,
     typename CallbackT,
@@ -176,6 +191,12 @@ public:
       *this, topic_name, qos, callback_group);
   }
 
+  /**
+   * @brief Create a ServiceClient to interface with a service
+   * @param service_name Name of service
+   * @param use_internal_executor Whether to use the internal executor (default is false)
+   * @return A shared pointer to the created nav2_util::ServiceClient
+   */
   template<typename ServiceT>
   std::shared_ptr<nav2_util::ServiceClient<ServiceT, LifecycleNode::SharedPtr>>
   create_client(
@@ -186,6 +207,13 @@ public:
       shared_from_this(), service_name, use_internal_executor);
   }
 
+  /**
+   * @brief Create a ServiceServer to host with a service
+   * @param service_name Name of service
+   * @param callback Callback function to handle service requests
+   * @param callback_group The callback group to use (if provided)
+   * @return A shared pointer to the created nav2_util::ServiceServer
+   */
   template<typename ServiceT>
   std::shared_ptr<nav2_util::ServiceServer<ServiceT, LifecycleNode::SharedPtr>>
   create_service(
@@ -197,6 +225,16 @@ public:
       shared_from_this(), service_name, callback, callback_group);
   }
 
+  /**
+   * @brief Create a SimpleActionServer to host with an action
+   * @param action_name Name of action
+   * @param execute_callback Callback function to handle action execution
+   * @param completion_callback Callback function to handle action completion (optional)
+   * @param server_timeout Timeout for the action server (default is 500ms)
+   * @param spin_thread Whether to spin with a dedicated thread internally (default is false)
+   * @param realtime Whether the action server's worker thread should have elevated
+   * @return A shared pointer to the created nav2_util::SimpleActionServer
+   */
   template<typename ActionT>
   std::shared_ptr<nav2_util::SimpleActionServer<ActionT>>
   create_server(
@@ -211,6 +249,10 @@ public:
       shared_from_this(), action_name, execute_callback,
       completion_callback, server_timeout, spin_thread, realtime);
   }
+
+  // Note: There is no need to override create_client for Action Clients.
+  // The existing rclcpp_action implementation is sufficient and doesn't expose QoS options
+  // we may want to constrain for compatibility.
 
   /**
    * @brief Get a shared pointer of this
