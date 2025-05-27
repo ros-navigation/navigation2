@@ -41,7 +41,6 @@ public:
     const std::string & service_name,
     const NodeT & node,
     CallbackType callback,
-    const rclcpp::QoS & qos = rclcpp::ServicesQoS(),
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name), callback_(callback)
   {
@@ -51,7 +50,7 @@ public:
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
         this->callback_(request_header, request, response);
       },
-      qos,
+      rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group);
 
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
@@ -67,7 +66,7 @@ public:
     }
 
     this->server_->configure_introspection(
-    node->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
+    node->get_clock(), rclcpp::ServicesQoS(), introspection_state);
   }
 
 protected:

@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
+#include "nav2_util/qos_profiles.hpp"
 
 namespace nav2_util
 {
@@ -143,6 +144,72 @@ public:
     descriptor.integer_range[0].step = int_range.step;
 
     declare_parameter(descriptor.name, default_value, descriptor);
+  }
+
+  template<
+    typename MessageT,
+    typename CallbackT,
+    typename SubscriptionT>
+  std::shared_ptr<SubscriptionT>
+  create_subscription(
+    const std::string & topic_name,
+    CallbackT && callback,
+    const rclcpp::QoS & qos = nav2_qos::StandardTopicQoS(),
+    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+  {
+    return nav2_qos::create_subscription<MessageT>(
+      *this, topic_name,
+      std::forward<CallbackT>(callback), qos, callback_group);
+  }
+
+  template<
+    typename MessageT,
+    typename CallbackT,
+    typename PublisherT>
+  std::shared_ptr<PublisherT>
+  create_publisher(
+    const std::string & topic_name,
+    const rclcpp::QoS & qos = nav2_qos::StandardTopicQoS(),
+    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+  {
+    return nav2_qos::create_publisher<MessageT>(
+      *this, topic_name, qos, callback_group);
+  }
+
+  template<typename ServiceT>
+  std::shared_ptr<nav2_util::ServiceClient<ServiceT, LifecycleNode::SharedPtr>>
+  create_client(
+    const std::string & service_name,
+    bool use_internal_executor = false)
+  {
+    return nav2_qos::create_client<ServiceT, LifecycleNode::SharedPtr>(
+      shared_from_this(), service_name, use_internal_executor);
+  }
+
+  template<typename ServiceT>
+  std::shared_ptr<nav2_util::ServiceServer<ServiceT, LifecycleNode::SharedPtr>>
+  create_service(
+    const std::string & service_name,
+    typename nav2_util::ServiceServer<ServiceT, LifecycleNode::SharedPtr>::CallbackType callback,
+    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+  {
+    return nav2_qos::create_service<ServiceT, LifecycleNode::SharedPtr>(
+      shared_from_this(), service_name, callback, callback_group);
+  }
+
+  template<typename ActionT>
+  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>>
+  create_server(
+    const std::string & action_name,
+    typename nav2_util::SimpleActionServer<ActionT>::ExecuteCallback execute_callback,
+    typename nav2_util::SimpleActionServer<ActionT>::CompletionCallback completion_callback = nullptr,
+    std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
+    bool spin_thread = false,
+    const bool realtime = false)
+  {
+    return nav2_qos::create_server<ActionT, LifecycleNode::SharedPtr>(
+      shared_from_this(), action_name, execute_callback,
+      completion_callback, server_timeout, spin_thread, realtime);
   }
 
   /**

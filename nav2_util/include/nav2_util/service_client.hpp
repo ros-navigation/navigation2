@@ -53,7 +53,7 @@ public:
     // When a nullptr is passed, the client will use the default callback group
     client_ = node_->template create_client<ServiceT>(
       service_name,
-      rclcpp::SystemDefaultsQoS(),
+      rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group_);
     rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
     if (!node_->has_parameter("service_introspection_mode")) {
@@ -68,7 +68,7 @@ public:
     }
 
     this->client_->configure_introspection(
-        node_->get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
+        node_->get_clock(), rclcpp::ServicesQoS(), introspection_state);
   }
 
   using RequestType = typename ServiceT::Request;
@@ -83,8 +83,10 @@ public:
   */
   typename ResponseType::SharedPtr invoke(
     typename RequestType::SharedPtr & request,
-    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1),
+    const std::chrono::nanoseconds wait_for_service_timeout = std::chrono::seconds(10))
   {
+    auto now = node_->now();
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
@@ -93,6 +95,11 @@ public:
       RCLCPP_INFO(
         node_->get_logger(), "%s service client: waiting for service to appear...",
         service_name_.c_str());
+
+      if (node_->now() - now > wait_for_service_timeout) {
+        throw std::runtime_error(
+                service_name_ + " service client: timed out waiting for service");
+      }
     }
 
     RCLCPP_DEBUG(
@@ -116,8 +123,10 @@ public:
   */
   bool invoke(
     typename RequestType::SharedPtr & request,
-    typename ResponseType::SharedPtr & response)
+    typename ResponseType::SharedPtr & response,
+    const std::chrono::nanoseconds wait_for_service_timeout = std::chrono::seconds(10))
   {
+    auto now = node_->now();
     while (!client_->wait_for_service(std::chrono::seconds(1))) {
       if (!rclcpp::ok()) {
         throw std::runtime_error(
@@ -126,6 +135,11 @@ public:
       RCLCPP_INFO(
         node_->get_logger(), "%s service client: waiting for service to appear...",
         service_name_.c_str());
+
+      if (node_->now() - now > wait_for_service_timeout) {
+        throw std::runtime_error(
+                service_name_ + " service client: timed out waiting for service");
+      }
     }
 
     RCLCPP_DEBUG(

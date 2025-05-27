@@ -235,8 +235,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, rcl_action_server_get_default_options(),
-      use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);

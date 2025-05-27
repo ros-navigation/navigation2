@@ -30,16 +30,19 @@ void DynamicEdgesScorer::configure(
   name_ = name;
   logger_ = node->get_logger();
   service_ =
-    node->create_service<nav2_msgs::srv::DynamicEdges>(
-    std::string(node->get_name()) + "/" + getName() + "/adjust_edges", std::bind(
-      &DynamicEdgesScorer::closedEdgesCb, this,
-      std::placeholders::_1, std::placeholders::_2));
+    std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::DynamicEdges,
+      nav2_util::LifecycleNode::SharedPtr>>(
+      std::string(node->get_name()) + "/" + getName() + "/adjust_edges",
+      node,
+      std::bind(&DynamicEdgesScorer::closedEdgesCb, this,
+        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   dynamic_penalties_.clear();
   closed_edges_.clear();
 }
 
 void DynamicEdgesScorer::closedEdgesCb(
+  const std::shared_ptr<rmw_request_id_t>,
   const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,
   std::shared_ptr<nav2_msgs::srv::DynamicEdges::Response> response)
 {

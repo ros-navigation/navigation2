@@ -58,7 +58,6 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
-   * @param options Options to pass to the underlying rcl_action_server_t
    * @param realtime Whether the action server's worker thread should have elevated
    * prioritization (soft realtime)
    */
@@ -70,7 +69,6 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
     const bool realtime = false)
   : SimpleActionServer(
       node->get_node_base_interface(),
@@ -78,7 +76,7 @@ public:
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
       action_name, execute_callback, completion_callback,
-      server_timeout, spin_thread, options, realtime)
+      server_timeout, spin_thread, realtime)
   {}
 
   /**
@@ -88,7 +86,6 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
-   * @param options Options to pass to the underlying rcl_action_server_t
    * @param realtime Whether the action server's worker thread should have elevated
    * prioritization (soft realtime)
    */
@@ -102,7 +99,6 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
     const bool realtime = false)
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
@@ -129,7 +125,7 @@ public:
       std::bind(&SimpleActionServer::handle_goal, this, _1, _2),
       std::bind(&SimpleActionServer::handle_cancel, this, _1),
       std::bind(&SimpleActionServer::handle_accepted, this, _1),
-      options,
+      rcl_action_server_get_default_options(),  // Use consistent QoS settings
       callback_group_);
     if (spin_thread_) {
       executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
