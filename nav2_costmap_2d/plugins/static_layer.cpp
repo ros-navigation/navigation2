@@ -363,15 +363,53 @@ StaticLayer::updateBounds(
 
   useExtraBounds(min_x, min_y, max_x, max_y);
 
-  double wx, wy;
+  // Might even be in a different frame
+  if (map_frame_ == global_frame_) {
+    double wx, wy;
 
-  mapToWorld(x_, y_, wx, wy);
-  *min_x = std::min(wx, *min_x);
-  *min_y = std::min(wy, *min_y);
+    mapToWorld(x_, y_, wx, wy);
+    *min_x = std::min(wx, *min_x);
+    *min_y = std::min(wy, *min_y);
 
-  mapToWorld(x_ + width_, y_ + height_, wx, wy);
-  *max_x = std::max(wx, *max_x);
-  *max_y = std::max(wy, *max_y);
+    mapToWorld(x_ + width_, y_ + height_, wx, wy);
+    *max_x = std::max(wx, *max_x);
+    *max_y = std::max(wy, *max_y);
+  } else {
+    geometry_msgs::msg::TransformStamped transform;
+    try {
+      transform = tf_->lookupTransform(
+        global_frame_, map_frame_, tf2::TimePointZero,
+        transform_tolerance_);
+    } catch (tf2::TransformException & ex) {
+      RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
+      return;
+    }
+    tf2::Transform tf2_transform;
+    tf2::fromMsg(transform.transform, tf2_transform);
+
+    double wx, wy;
+    mapToWorld(x_, y_, wx, wy);
+    tf2::Vector3 down_left(wx, wy, 0);
+
+    mapToWorld(x_ + width_, y_, wx, wy);
+    tf2::Vector3 down_right(wx, wy, 0);
+
+    mapToWorld(x_, y_ + height_, wx, wy);
+    tf2::Vector3 up_left(wx, wy, 0);
+
+    mapToWorld(x_ + width_, y_ + height_, wx, wy);
+    tf2::Vector3 up_right(wx, wy, 0);
+
+    down_left = tf2_transform * down_left;
+    down_right = tf2_transform * down_right;
+    up_left = tf2_transform * up_left;
+    up_right = tf2_transform * up_right;
+
+    *min_x = std::min({*min_x, down_left.x(), down_right.x(), up_left.x(), up_right.x()});
+    *min_y = std::min({*min_y, down_left.y(), down_right.y(), up_left.y(), up_right.y()});
+    *max_x = std::max({*max_x, down_left.x(), down_right.x(), up_left.x(), up_right.x()});
+    *max_y = std::max({*max_y, down_left.y(), down_right.y(), up_left.y(), up_right.y()});
+  }
 
   has_updated_data_ = false;
 
