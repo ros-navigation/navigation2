@@ -44,6 +44,8 @@
 #include <vector>
 #include <utility>
 
+#include "rclcpp/qos.hpp"
+#include "rclcpp/subscription_options.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -210,11 +212,18 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     RCLCPP_INFO(get_logger(), "Initialized costmap filter \"%s\"", filter_names_[i].c_str());
   }
 
+  // Allowing the user to reconfigure the qos through parameters (ex to latch the topic)
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.qos_overriding_options =
+    rclcpp::QosOverridingOptions({rclcpp::QosPolicyKind::Depth, rclcpp::QosPolicyKind::Durability,
+        rclcpp::QosPolicyKind::Reliability});
+
   // Create the publishers and subscribers
   footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
     "footprint",
     rclcpp::SystemDefaultsQoS(),
-    std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
+    std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1),
+    sub_options);
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint", rclcpp::SystemDefaultsQoS());
