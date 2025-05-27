@@ -45,12 +45,16 @@ def generate_launch_description() -> LaunchDescription:
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
+    yaml_substitutions = {
+        'KEEPOUT_ZONE_ENABLED': use_keepout_zones,
+    }
+
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites={},
-            value_rewrites={'KEEPOUT_ZONE_ENABLED': use_keepout_zones},
+            value_rewrites=yaml_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
