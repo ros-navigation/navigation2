@@ -45,6 +45,7 @@ install
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints
+.pytest_cache/
 
 sphinx_doc/_build
 

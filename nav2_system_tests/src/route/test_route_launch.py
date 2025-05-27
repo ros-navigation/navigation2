@@ -73,6 +73,10 @@ def generate_launch_description() -> LaunchDescription:
         source_file=params_file,
         root_key='',
         param_rewrites=param_substitutions,
+        value_rewrites={
+            'KEEPOUT_ZONE_ENABLED': 'False',
+            'SPEED_ZONE_ENABLED': 'False',
+        },
         convert_types=True,
     )
 
