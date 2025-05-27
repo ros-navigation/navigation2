@@ -119,7 +119,7 @@ public:
    * @return The score of the refined path
    */
   float refineAnalyticPath(
-    const NodePtr & current_node,
+    NodePtr & node,
     const NodePtr & goal_node,
     const NodeGetter & getter,
     AnalyticExpansionNodes & analytic_nodes);
