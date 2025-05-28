@@ -25,7 +25,7 @@ pull_request_rules:
       backport:
         branches:
           - humble
-  
+
   - name: backport to kilted at reviewers discretion
     conditions:
       - base=main
