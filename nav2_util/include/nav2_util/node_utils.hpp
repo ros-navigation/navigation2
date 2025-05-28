@@ -229,18 +229,12 @@ ParamType declare_or_get_parameter(
   const ParamType & default_value,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
+  declare_parameter_if_not_declared(node, "warn_on_missing_params", rclcpp::ParameterValue(false));
   bool warn_if_no_override{false};
-  try {
-    warn_if_no_override = declare_or_get_parameter<bool>(node, "warn_on_missing_params",
-        rclcpp::ParameterType::PARAMETER_BOOL);
-  } catch (const std::exception & exc) {
-  }
+  node->get_parameter("warn_on_missing_params", warn_if_no_override);
+  declare_parameter_if_not_declared(node, "strict_param_loading", rclcpp::ParameterValue(false));
   bool strict_param_loading{false};
-  try {
-    strict_param_loading = declare_or_get_parameter<bool>(node, "strict_param_loading",
-        rclcpp::ParameterType::PARAMETER_BOOL);
-  } catch (const std::exception & exc) {
-  }
+  node->get_parameter("strict_param_loading", strict_param_loading);
   return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
     parameter_name, default_value, warn_if_no_override, strict_param_loading, parameter_descriptor);
 }
