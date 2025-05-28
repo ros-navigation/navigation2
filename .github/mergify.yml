@@ -25,6 +25,15 @@ pull_request_rules:
       backport:
         branches:
           - humble
+  
+  - name: backport to kilted at reviewers discretion
+    conditions:
+      - base=main
+      - "label=backport-kilted"
+    actions:
+      backport:
+        branches:
+          - kilted
 
   - name: delete head branch after merge
     conditions:
