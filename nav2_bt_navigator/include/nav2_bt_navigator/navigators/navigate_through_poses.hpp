@@ -111,6 +111,7 @@ protected:
   std::string goals_blackboard_id_;
   std::string path_blackboard_id_;
   std::string waypoint_statuses_blackboard_id_;
+  double orient_angle_rad_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;

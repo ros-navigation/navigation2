@@ -35,6 +35,7 @@ NavigateThroughPosesNavigator::configure(
   }
 
   goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
+  orient_angle_rad_ = node->get_parameter("orient_angle_rad", orient_angle_rad_);
 
   if (!node->has_parameter("path_blackboard_id")) {
     node->declare_parameter("path_blackboard_id", std::string("path"));
@@ -51,6 +52,12 @@ NavigateThroughPosesNavigator::configure(
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
+
+  if (!node->has_parameter("orient_angle_rad")) {
+    node->declare_parameter("orient_angle_rad", rclcpp::ParameterValue(1.57));
+  }
+
+  node->get_parameter("orient_angle_rad", orient_angle_rad_);
 
   if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
     node->declare_parameter(getName() + ".enable_groot_monitoring", false);
@@ -137,6 +144,15 @@ NavigateThroughPosesNavigator::goalCompleted(
   result->waypoint_statuses = std::move(waypoint_statuses);
 }
 
+inline double createYawFromQuat(const geometry_msgs::msg::Quaternion & orientation)
+{
+  tf2::Quaternion q(orientation.x, orientation.y, orientation.z, orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  return yaw;
+}
+
 void
 NavigateThroughPosesNavigator::onLoop()
 {
@@ -169,19 +185,24 @@ NavigateThroughPosesNavigator::onLoop()
     return;
   }
 
-  // Get current path points
+  // Get current path points and orientation angle
   nav_msgs::msg::Path current_path;
+  double orient_angle_rad = orient_angle_rad_;
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
-      [&current_pose, &current_path]() {
+      [&current_pose, &current_path, &orient_angle_rad]() {
         size_t closest_pose_idx = 0;
         double curr_min_dist = std::numeric_limits<double>::max();
         for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
           double curr_dist = nav2_util::geometry_utils::euclidean_distance(
             current_pose, current_path.poses[curr_idx]);
-          if (curr_dist < curr_min_dist) {
+          double orient_diff = createYawFromQuat(current_pose.pose.orientation) -
+            createYawFromQuat(current_path.poses[curr_idx].pose.orientation);
+          if (curr_dist < curr_min_dist &&
+            abs(orient_diff) < orient_angle_rad)
+          {
             curr_min_dist = curr_dist;
             closest_pose_idx = curr_idx;
           }

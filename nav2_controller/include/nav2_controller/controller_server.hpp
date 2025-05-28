@@ -268,6 +268,7 @@ protected:
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
+  double orient_angle_rad_;
 
   double failure_tolerance_;
   bool use_realtime_priority_;
