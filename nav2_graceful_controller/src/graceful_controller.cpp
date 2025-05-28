@@ -18,7 +18,7 @@
 #include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/interpolation_utils.hpp"
+#include "nav2_util/controller_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -200,13 +200,16 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   bool valid_target_pose_found = false;
   nav_msgs::msg::Path local_plan;
 
-  // Calculate target pose through lookahead interpolation
+  // Calculate target pose through lookahead interpolation to get most accurate 
+  // lookahead point, if possible
   double dist_to_target = params_->max_lookahead;
   geometry_msgs::msg::PoseStamped target_pose = nav2_util::getLookAheadPoint(
     dist_to_target, transformed_plan, params_->interpolate_after_goal);
+  
+  valid_target_pose_found = validateTargetPose(
+    target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel);
 
-  if (!validateTargetPose(target_pose, dist_to_target, dist_to_goal,
-                          local_plan, costmap_transform, cmd_vel))
+  if (!valid_target_pose_found)
   {
     // If target pose through interpolation is not valid
     // Work back from the end of plan to find valid target pose
@@ -222,10 +225,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       target_pose = transformed_plan.poses[i];
       dist_to_target = target_distances[i];
 
-      if(validateTargetPose(target_pose, dist_to_target, dist_to_goal,
-                            local_plan, costmap_transform, cmd_vel))
+      valid_target_pose_found = validateTargetPose(
+        target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel);
+      if(valid_target_pose_found)
       {
-        valid_target_pose_found = true;
         break;
       }
     }

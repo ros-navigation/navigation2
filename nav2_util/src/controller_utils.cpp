@@ -14,7 +14,7 @@
 // limitations under the License.
 
 #include <cmath>
-#include "nav2_util/interpolation_utils.hpp"
+#include "nav2_util/controller_utils.hpp"
 
 namespace nav2_util
 {
