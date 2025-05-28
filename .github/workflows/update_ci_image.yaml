@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - kilted
       - jazzy
       - humble
     paths:
