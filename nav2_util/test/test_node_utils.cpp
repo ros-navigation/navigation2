@@ -93,19 +93,35 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
 
   // test declared parameter
   node->declare_parameter("foobar", "foo");
-  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"}, true);
+  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"});
   EXPECT_EQ(param, "foo");
   node->get_parameter("foobar", param);
   EXPECT_EQ(param, "foo");
+
   // test undeclared parameter
-  int int_param = declare_or_get_parameter(node, "waldo", 3, true);
+  node->set_parameter(rclcpp::Parameter("warn_on_missing_params", true));
+  int int_param = declare_or_get_parameter(node, "waldo", 3);
   EXPECT_EQ(int_param, 3);
+
+  // test unknown parameter with strict_param_loading enabled
+  bool got_exception{false};
+  node->set_parameter(rclcpp::Parameter("strict_param_loading", true));
+  try {
+    declare_or_get_parameter(node, "burpy", true);
+  } catch (const rclcpp::exceptions::InvalidParameterValueException & exc) {
+    got_exception = true;
+  }
+  EXPECT_TRUE(got_exception);
+  // The parameter is anyway declared with the default val and subsequent calls won't fail
+  EXPECT_TRUE(declare_or_get_parameter(node, "burpy", true));
+
   // test declaration by type of existing param
   int_param = declare_or_get_parameter<int>(node, "waldo",
     rclcpp::ParameterType::PARAMETER_INTEGER);
   EXPECT_EQ(int_param, 3);
+
   // test declaration by type of non existing param
-  bool got_exception{false};
+  got_exception = false;
   try {
     int_param = declare_or_get_parameter<int>(node, "wololo",
       rclcpp::ParameterType::PARAMETER_INTEGER);

@@ -160,13 +160,14 @@ using NodeParamInterfacePtr = rclcpp::node_interfaces::NodeParametersInterface::
 /**
  * If the parameter is already declared, returns its value,
  * otherwise declares it and returns the default value.
- * The method will by default print a warning when the override is missing.
+ * The method can optionally print a warning or throw when the override is missing.
  *
  * \param[in] logger Node logging interface
  * \param[in] param_interface Node parameter interface
  * \param[in] parameter_name Name of the parameter
  * \param[in] default_value Default value of the parameter
  * \param[in] warn_if_no_override If true, prints a warning whenever the parameter override is missing
+ * \param[in] strict_param_loading If true, throws an InvalidParameterValueException if the parameter override is missing
  * \param[in] parameter_descriptor Optional parameter descriptor
  * \return The value of the param from the override if existent, otherwise the default value
  */
@@ -174,7 +175,7 @@ template<typename ParamType>
 ParamType declare_or_get_parameter(
   const rclcpp::Logger & logger, NodeParamInterfacePtr param_interface,
   const std::string & parameter_name, const ParamType & default_value,
-  bool warn_if_no_override = false,
+  bool warn_if_no_override = false, bool strict_param_loading = false,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   if (param_interface->has_parameter(parameter_name)) {
@@ -182,17 +183,28 @@ ParamType declare_or_get_parameter(
     param_interface->get_parameter(parameter_name, param);
     return param.get_value<ParamType>();
   }
-  if (warn_if_no_override && param_interface->get_parameter_overrides().find(parameter_name) ==
-    param_interface->get_parameter_overrides().end())
-  {
-    RCLCPP_WARN_STREAM(
-        logger,
-        "Failed to get param " << parameter_name << " from overrides, using default value.");
-  }
-  return param_interface
-         ->declare_parameter(parameter_name, rclcpp::ParameterValue{default_value},
+
+  auto return_value = param_interface
+    ->declare_parameter(parameter_name, rclcpp::ParameterValue{default_value},
       parameter_descriptor)
-         .get<ParamType>();
+    .get<ParamType>();
+
+  const bool no_param_override = param_interface->get_parameter_overrides().find(parameter_name) ==
+    param_interface->get_parameter_overrides().end();
+  if (no_param_override) {
+    if (warn_if_no_override) {
+      RCLCPP_WARN_STREAM(
+            logger,
+            "Failed to get param " << parameter_name << " from overrides, using default value.");
+    }
+    if (strict_param_loading) {
+      std::string description = "Parameter " + parameter_name +
+        " not in overrides and strict_param_loading is True";
+      throw rclcpp::exceptions::InvalidParameterValueException(description.c_str());
+    }
+  }
+
+  return return_value;
 }
 
 /// If the parameter is already declared, returns its value,
@@ -200,23 +212,30 @@ ParamType declare_or_get_parameter(
 /**
  * If the parameter is already declared, returns its value,
  * otherwise declares it and returns the default value.
- * The method will by default print a warning when the override is missing.
+ * The method can be configured to print a warn message or throw an InvalidParameterValueException
+ * when the override is missing by enabling the parameters warn_on_missing_params
+ * or strict_param_loading respectively.
  *
  * \param[in] node Pointer to a node object
  * \param[in] parameter_name Name of the parameter
  * \param[in] default_value Default value of the parameter
- * \param[in] warn_if_no_override If true, prints a warning whenever the parameter override is missing
  * \param[in] parameter_descriptor Optional parameter descriptor
  * \return The value of the param from the override if existent, otherwise the default value
  */
 template<typename ParamType, typename NodeT>
 ParamType declare_or_get_parameter(
   NodeT node, const std::string & parameter_name,
-  const ParamType & default_value, bool warn_if_no_override = false,
+  const ParamType & default_value,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
+  declare_parameter_if_not_declared(node, "warn_on_missing_params", rclcpp::ParameterValue(false));
+  bool warn_if_no_override{false};
+  node->get_parameter("warn_on_missing_params", warn_if_no_override);
+  declare_parameter_if_not_declared(node, "strict_param_loading", rclcpp::ParameterValue(false));
+  bool strict_param_loading{false};
+  node->get_parameter("strict_param_loading", strict_param_loading);
   return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
-    parameter_name, default_value, warn_if_no_override, parameter_descriptor);
+    parameter_name, default_value, warn_if_no_override, strict_param_loading, parameter_descriptor);
 }
 
 /// Gets the type of plugin for the selected node and its plugin
