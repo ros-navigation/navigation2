@@ -18,17 +18,22 @@ import math
 import os
 import pickle
 from random import randint, seed, uniform
+from typing import Optional
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
+from numpy.typing import NDArray
 import rclpy
+from rclpy.time import Time
 from transforms3d.euler import euler2quat
 
 # Note: Map origin is assumed to be (0,0)
 
 
-def getPlannerResults(navigator, initial_pose, goal_pose, planner):
+def getPlannerResults(
+        navigator: BasicNavigator, initial_pose: PoseStamped,
+        goal_pose: PoseStamped, planner: str) -> PoseStamped:
     result = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
     if result is None or result.error_code != 0:
         print(planner, 'planner failed to produce the path')
@@ -36,7 +41,9 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planner):
     return result
 
 
-def getSmootherResults(navigator, path, smoothers):
+def getSmootherResults(
+        navigator: BasicNavigator, path: PoseStamped,
+        smoothers: list[str]) -> Optional[list[PoseStamped]]:
     smoothed_results = []
     for smoother in smoothers:
         smoothed_result = navigator._smoothPathImpl(path, smoother)
@@ -48,7 +55,8 @@ def getSmootherResults(navigator, path, smoothers):
     return smoothed_results
 
 
-def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
+def getRandomStart(costmap: NDArray[np.float32], max_cost: int,
+                   side_buffer: int, time_stamp: Time, res: float) -> PoseStamped:
     start = PoseStamped()
     start.header.frame_id = 'map'
     start.header.stamp = time_stamp
@@ -70,7 +78,10 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     return start
 
 
-def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
+def getRandomGoal(
+        costmap: NDArray[np.float32], start: PoseStamped,
+        max_cost: int, side_buffer: int,
+        time_stamp: Time, res: float) -> PoseStamped:
     goal = PoseStamped()
     goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
@@ -100,7 +111,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     return goal
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()

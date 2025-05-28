@@ -32,6 +32,7 @@
 
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/trajectory.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "rclcpp/rclcpp.hpp"
@@ -170,6 +171,34 @@ inline geometry_msgs::msg::TwistStamped toTwistStamped(
   return twist;
 }
 
+inline std::unique_ptr<nav2_msgs::msg::Trajectory> toTrajectoryMsg(
+  const Eigen::ArrayXXf & trajectory,
+  const models::ControlSequence & control_sequence,
+  const double & model_dt,
+  const std_msgs::msg::Header & header)
+{
+  auto trajectory_msg = std::make_unique<nav2_msgs::msg::Trajectory>();
+  trajectory_msg->header = header;
+  trajectory_msg->points.resize(trajectory.rows());
+
+  for (int i = 0; i < trajectory.rows(); ++i) {
+    auto & curr_pt = trajectory_msg->points[i];
+    curr_pt.time_from_start = rclcpp::Duration::from_seconds(i * model_dt);
+    curr_pt.pose.position.x = trajectory(i, 0);
+    curr_pt.pose.position.y = trajectory(i, 1);
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, trajectory(i, 2));
+    curr_pt.pose.orientation = tf2::toMsg(quat);
+    curr_pt.velocity.linear.x = control_sequence.vx(i);
+    curr_pt.velocity.angular.z = control_sequence.wz(i);
+    if (control_sequence.vy.size() > 0) {
+      curr_pt.velocity.linear.y = control_sequence.vy(i);
+    }
+  }
+
+  return trajectory_msg;
+}
+
 /**
  * @brief Convert path to a tensor
  * @param path Path to convert
@@ -187,6 +216,49 @@ inline models::Path toTensor(const nav_msgs::msg::Path & path)
   }
 
   return result;
+}
+
+/**
+ * @brief Get the last pose from a path
+ * @param path Reference to the path
+ * @return geometry_msgs::msg::Pose Last pose in the path
+ */
+inline geometry_msgs::msg::Pose getLastPathPose(const models::Path & path)
+{
+  const unsigned int path_last_idx = path.x.size() - 1;
+
+  auto last_orientation = path.yaws(path_last_idx);
+
+  tf2::Quaternion pose_orientation;
+  pose_orientation.setRPY(0.0, 0.0, last_orientation);
+
+  geometry_msgs::msg::Pose pathPose;
+  pathPose.position.x = path.x(path_last_idx);
+  pathPose.position.y = path.y(path_last_idx);
+  pathPose.orientation.x = pose_orientation.x();
+  pathPose.orientation.y = pose_orientation.y();
+  pathPose.orientation.z = pose_orientation.z();
+  pathPose.orientation.w = pose_orientation.w();
+
+  return pathPose;
+}
+
+/**
+ * @brief Get the target pose to be evaluated by the critic
+ * @param data Data to use
+ * @param enforce_path_inversion True to return the cusp point (last pose of the path)
+ * instead of the original goal
+ * @return geometry_msgs::msg::Pose Target pose for the critic
+ */
+inline geometry_msgs::msg::Pose getCriticGoal(
+  const CriticData & data,
+  bool enforce_path_inversion)
+{
+  if (enforce_path_inversion) {
+    return getLastPathPose(data.path);
+  } else {
+    return data.goal;
+  }
 }
 
 /**

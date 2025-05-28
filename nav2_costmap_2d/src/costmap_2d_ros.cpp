@@ -248,10 +248,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Service to get the cost at a point
-  get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
-    "get_cost_" + getName(),
-    std::bind(
-      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+  get_cost_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
+      std::shared_ptr<nav2_util::LifecycleNode>>>(
+    std::string("get_cost_") + get_name(),
+    shared_from_this(),
+    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -360,7 +361,7 @@ Costmap2DROS::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   executor_thread_.reset();
-
+  get_cost_service_.reset();
   costmap_publisher_.reset();
   clear_costmap_service_.reset();
 
@@ -722,42 +723,46 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
   std::lock_guard<std::mutex> lock_reinit(_dynamic_parameter_mutex);
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "robot_radius") {
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "robot_radius") {
         robot_radius_ = parameter.as_double();
         // Set the footprint
         if (use_radius_) {
           setRobotFootprint(makeFootprintFromRadius(robot_radius_));
         }
-      } else if (name == "footprint_padding") {
+      } else if (param_name == "footprint_padding") {
         footprint_padding_ = parameter.as_double();
         padded_footprint_ = unpadded_footprint_;
         padFootprint(padded_footprint_, footprint_padding_);
         layered_costmap_->setFootprint(padded_footprint_);
-      } else if (name == "transform_tolerance") {
+      } else if (param_name == "transform_tolerance") {
         transform_tolerance_ = parameter.as_double();
-      } else if (name == "publish_frequency") {
+      } else if (param_name == "publish_frequency") {
         map_publish_frequency_ = parameter.as_double();
         if (map_publish_frequency_ > 0) {
           publish_cycle_ = rclcpp::Duration::from_seconds(1 / map_publish_frequency_);
         } else {
           publish_cycle_ = rclcpp::Duration(-1s);
         }
-      } else if (name == "resolution") {
+      } else if (param_name == "resolution") {
         resize_map = true;
         resolution_ = parameter.as_double();
-      } else if (name == "origin_x") {
+      } else if (param_name == "origin_x") {
         resize_map = true;
         origin_x_ = parameter.as_double();
-      } else if (name == "origin_y") {
+      } else if (param_name == "origin_y") {
         resize_map = true;
         origin_y_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == "width") {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == "width") {
         if (parameter.as_int() > 0) {
           resize_map = true;
           map_width_meters_ = parameter.as_int();
@@ -768,7 +773,7 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           result.successful = false;
           return result;
         }
-      } else if (name == "height") {
+      } else if (param_name == "height") {
         if (parameter.as_int() > 0) {
           resize_map = true;
           map_height_meters_ = parameter.as_int();
@@ -780,14 +785,14 @@ Costmap2DROS::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
           return result;
         }
       }
-    } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == "footprint") {
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == "footprint") {
         footprint_ = parameter.as_string();
         std::vector<geometry_msgs::msg::Point> new_footprint;
         if (makeFootprintFromString(footprint_, new_footprint)) {
           setRobotFootprint(new_footprint);
         }
-      } else if (name == "robot_base_frame") {
+      } else if (param_name == "robot_base_frame") {
         // First, make sure that the transform between the robot base frame
         // and the global frame is available
         std::string tf_error;
@@ -830,6 +835,7 @@ void Costmap2DROS::getCostsCallback(
   unsigned int mx, my;
 
   Costmap2D * costmap = layered_costmap_->getCostmap();
+  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap->getMutex()));
   response->success = true;
   for (const auto & pose : request->poses) {
     geometry_msgs::msg::PoseStamped pose_transformed;

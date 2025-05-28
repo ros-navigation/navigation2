@@ -10,6 +10,9 @@ find_package(test_msgs REQUIRED)
 ament_add_gtest(test_service_client test_service_client.cpp)
 target_link_libraries(test_service_client ${library_name} ${std_srvs_TARGETS})
 
+ament_add_gtest(test_service_server test_service_server.cpp)
+target_link_libraries(test_service_server ${library_name} ${std_srvs_TARGETS})
+
 ament_add_gtest(test_string_utils test_string_utils.cpp)
 target_link_libraries(test_string_utils ${library_name})
 

@@ -24,8 +24,7 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf),
-  initialized_(false)
+: BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf)
 {
 }
 
@@ -47,12 +46,11 @@ void DriveOnHeadingAction::initialize()
   goal_.speed = speed;
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
   goal_.disable_collision_checks = disable_collision_checks;
-  initialized_ = true;
 }
 
 void DriveOnHeadingAction::on_tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 }
@@ -76,6 +74,12 @@ BT::NodeStatus DriveOnHeadingAction::on_cancelled()
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
+}
+
+void DriveOnHeadingAction::on_timeout()
+{
+  setOutput("error_code_id", ActionResult::TIMEOUT);
+  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
 }
 
 }  // namespace nav2_behavior_tree

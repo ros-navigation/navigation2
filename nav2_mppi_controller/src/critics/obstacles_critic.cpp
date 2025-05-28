@@ -16,11 +16,16 @@
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_core/controller_exceptions.hpp"
+
 namespace mppi::critics
 {
 
 void ObstaclesCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
+  getParentParam(enforce_path_inversion_, "enforce_path_inversion1", false);
+
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(consider_footprint_, "consider_footprint", false);
   getParam(power_, "cost_power", 1);
@@ -42,6 +47,18 @@ void ObstaclesCritic::initialize()
       " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
       "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
       " for full instructions. This will substantially impact run-time performance.");
+  }
+
+  if (costmap_ros_->getUseRadius() == consider_footprint_) {
+    RCLCPP_WARN(
+    logger_,
+    "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+    "in both the costmap and the obstacle critic.");
+    if (costmap_ros_->getUseRadius()) {
+      throw nav2_core::ControllerException(
+      "Considering footprint in collision checking but no robot footprint provided in the "
+      "costmap.");
+    }
   }
 
   RCLCPP_INFO(
@@ -113,9 +130,11 @@ void ObstaclesCritic::score(CriticData & data)
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
+  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, data.goal)) {
+  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, goal)) {
     near_goal = true;
   }
 

@@ -21,9 +21,9 @@ from launch.actions import ExecuteProcess
 import launch_ros.actions
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     map_publisher = (
-        f"{os.path.dirname(os.getenv('TEST_EXECUTABLE'))}/test_map_saver_publisher"
+        f"{os.path.dirname(os.getenv('TEST_EXECUTABLE', ''))}/test_map_saver_publisher"
     )
 
     ld = LaunchDescription()
@@ -32,7 +32,7 @@ def generate_launch_description():
         package='nav2_map_server',
         executable='map_saver_server',
         output='screen',
-        parameters=[os.path.join(os.getenv('TEST_DIR'), 'map_saver_params.yaml')],
+        parameters=[os.path.join(os.getenv('TEST_DIR', ''), 'map_saver_params.yaml')],
     )
 
     map_publisher_cmd = ExecuteProcess(cmd=[map_publisher])

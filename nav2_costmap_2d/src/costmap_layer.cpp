@@ -66,10 +66,19 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
 {
   current_ = false;
   unsigned char * grid = getCharMap();
-  for (int x = 0; x < static_cast<int>(getSizeInCellsX()); x++) {
+
+  int size_x = getSizeInCellsX();
+  int size_y = getSizeInCellsY();
+
+  start_x = std::clamp(start_x, 0, size_x);
+  start_y = std::clamp(start_y, 0, size_y);
+  end_x = std::clamp(end_x, 0, size_x);
+  end_y = std::clamp(end_y, 0, size_y);
+
+  for (int x = 0; x < size_x; x++) {
     bool xrange = x > start_x && x < end_x;
 
-    for (int y = 0; y < static_cast<int>(getSizeInCellsY()); y++) {
+    for (int y = 0; y < size_y; y++) {
       if ((xrange && y > start_y && y < end_y) == invert) {
         continue;
       }
@@ -263,21 +272,5 @@ CombinationMethod CostmapLayer::combination_method_from_int(const int value)
         "The default value 1 will be used", value);
       return CombinationMethod::Max;
   }
-}
-
-std::string CostmapLayer::joinWithParentNamespace(const std::string & topic)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  if (topic[0] != '/') {
-    std::string node_namespace = node->get_namespace();
-    std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
-    return parent_namespace + "/" + topic;
-  }
-
-  return topic;
 }
 }  // namespace nav2_costmap_2d

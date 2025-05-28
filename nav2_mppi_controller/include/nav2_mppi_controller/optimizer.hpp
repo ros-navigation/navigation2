@@ -106,6 +106,12 @@ public:
   Eigen::ArrayXXf getOptimizedTrajectory();
 
   /**
+   * @brief Get the optimal control sequence for a cycle for visualization
+   * @return Optimal control sequence
+   */
+  const models::ControlSequence & getOptimalControlSequence();
+
+  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative
@@ -114,8 +120,18 @@ public:
 
   /**
    * @brief Reset the optimization problem to initial conditions
+   * @param Whether to reset the constraints to its base values
    */
-  void reset();
+  void reset(bool reset_dynamic_speed_limits = true);
+
+  /**
+   * @brief Get the motion model time step
+   * @return Time step of the model
+   */
+  const models::OptimizerSettings & getSettings() const
+  {
+    return settings_;
+  }
 
 protected:
   /**

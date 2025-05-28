@@ -20,10 +20,13 @@
 #include <string>
 #include <limits>
 
-#include "nav_msgs/msg/path.hpp"
-
 #include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
+#include "nav_msgs/msg/path.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "tf2_ros/buffer.h"
+
 
 namespace nav2_behavior_tree
 {
@@ -49,6 +52,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
       BT::OutputPort<nav_msgs::msg::Path>(

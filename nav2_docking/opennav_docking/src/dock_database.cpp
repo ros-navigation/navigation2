@@ -26,6 +26,7 @@ DockDatabase::~DockDatabase()
 {
   dock_instances_.clear();
   dock_plugins_.clear();
+  reload_db_service_.reset();
 }
 
 bool DockDatabase::initialize(
@@ -54,11 +55,13 @@ bool DockDatabase::initialize(
     "Docking Server has %u dock types and %u dock instances available.",
     this->plugin_size(), this->instance_size());
 
-  reload_db_service_ = node->create_service<nav2_msgs::srv::ReloadDockDatabase>(
+  reload_db_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
     "~/reload_database",
+    node,
     std::bind(
       &DockDatabase::reloadDbCb, this,
-      std::placeholders::_1, std::placeholders::_2));
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   return true;
 }
@@ -80,6 +83,7 @@ void DockDatabase::deactivate()
 }
 
 void DockDatabase::reloadDbCb(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
   std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response)
 {
@@ -199,7 +203,7 @@ bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::Share
       node->get_logger(), "Loading dock from database file  %s.", dock_filepath.c_str());
     try {
       return utils::parseDockFile(dock_filepath, node, dock_instances_);
-    } catch (YAML::ParserException & e) {
+    } catch (YAML::BadConversion & e) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock database (%s) is malformed: %s.", dock_filepath.c_str(), e.what());

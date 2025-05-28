@@ -63,8 +63,11 @@ target_link_libraries(test_simple_charging_dock
 ament_add_gtest(test_simple_non_charging_dock
   test_simple_non_charging_dock.cpp
 )
-ament_target_dependencies(test_simple_non_charging_dock
-  ${dependencies}
+target_link_libraries(test_simple_non_charging_dock
+  ${geometry_msgs_TARGETS}
+  ${library_name}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
 )
 target_link_libraries(test_simple_non_charging_dock
   ${library_name} simple_non_charging_dock
@@ -111,4 +114,26 @@ target_link_libraries(test_docking_server_unit
 )
 
 # Test docking server (smoke)
-ament_add_pytest_test("test_docking_server" test_docking_server.py)
+ament_add_pytest_test(test_docking_server_with_charging_dock test_docking_server.py
+  ENV
+  NON_CHARGING_DOCK=False
+  BACKWARD=False
+)
+
+ament_add_pytest_test(test_docking_server_with_non_charging_dock test_docking_server.py
+  ENV
+  NON_CHARGING_DOCK=True
+  BACKWARD=False
+)
+
+ament_add_pytest_test(test_docking_server_backward test_docking_server.py
+  ENV
+  NON_CHARGING_DOCK=False
+  BACKWARD=True
+)
+
+ament_add_pytest_test(test_docking_server_backward_blind test_docking_server.py
+  ENV
+  NON_CHARGING_DOCK=False
+  BACKWARD_BLIND=True
+)

@@ -22,7 +22,7 @@
 #include "lifecycle_msgs/srv/get_state.hpp"
 
 using nav2_util::generate_internal_node;
-using std::chrono::seconds;
+using std::chrono::milliseconds;
 using std::make_shared;
 using std::string;
 using namespace std::chrono_literals;
@@ -30,10 +30,13 @@ using namespace std::chrono_literals;
 namespace nav2_util
 {
 
-LifecycleServiceClient::LifecycleServiceClient(const string & lifecycle_node_name)
+LifecycleServiceClient::LifecycleServiceClient(
+  const string & lifecycle_node_name)
 : node_(generate_internal_node(lifecycle_node_name + "_lifecycle_client")),
-  change_state_(lifecycle_node_name + "/change_state", node_),
-  get_state_(lifecycle_node_name + "/get_state", node_)
+  change_state_(lifecycle_node_name + "/change_state", node_,
+    true /*creates and spins an internal executor*/),
+  get_state_(lifecycle_node_name + "/get_state", node_,
+    true /*creates and spins an internal executor*/)
 {
   // Block until server is up
   rclcpp::Rate r(20);
@@ -48,8 +51,10 @@ LifecycleServiceClient::LifecycleServiceClient(
   const string & lifecycle_node_name,
   rclcpp::Node::SharedPtr parent_node)
 : node_(parent_node),
-  change_state_(lifecycle_node_name + "/change_state", node_),
-  get_state_(lifecycle_node_name + "/get_state", node_)
+  change_state_(lifecycle_node_name + "/change_state", node_,
+    true /*creates and spins an internal executor*/),
+  get_state_(lifecycle_node_name + "/get_state", node_,
+    true /*creates and spins an internal executor*/)
 {
   // Block until server is up
   rclcpp::Rate r(20);
@@ -62,33 +67,26 @@ LifecycleServiceClient::LifecycleServiceClient(
 
 bool LifecycleServiceClient::change_state(
   const uint8_t transition,
-  const seconds timeout)
+  const milliseconds transition_timeout,
+  const milliseconds wait_for_service_timeout)
 {
-  if (!change_state_.wait_for_service(timeout)) {
+  if (!change_state_.wait_for_service(wait_for_service_timeout)) {
     throw std::runtime_error("change_state service is not available!");
   }
 
   auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   request->transition.id = transition;
-  auto response = change_state_.invoke(request, timeout);
-  return response.get();
-}
-
-bool LifecycleServiceClient::change_state(
-  std::uint8_t transition)
-{
-  if (!change_state_.wait_for_service(5s)) {
-    throw std::runtime_error("change_state service is not available!");
+  if (transition_timeout > 0ms) {
+    auto response = change_state_.invoke(request, transition_timeout);
+    return response.get();
+  } else {
+    auto response = std::make_shared<lifecycle_msgs::srv::ChangeState::Response>();
+    return change_state_.invoke(request, response);
   }
-
-  auto request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
-  auto response = std::make_shared<lifecycle_msgs::srv::ChangeState::Response>();
-  request->transition.id = transition;
-  return change_state_.invoke(request, response);
 }
 
 uint8_t LifecycleServiceClient::get_state(
-  const seconds timeout)
+  const milliseconds timeout)
 {
   if (!get_state_.wait_for_service(timeout)) {
     throw std::runtime_error("get_state service is not available!");

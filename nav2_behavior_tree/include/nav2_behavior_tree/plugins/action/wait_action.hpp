@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::Wait
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class WaitAction : public BtActionNode<nav2_msgs::action::Wait>
 {
@@ -47,6 +49,12 @@ public:
    * @brief Function to perform some user-defined operation on tick
    */
   void on_tick() override;
+
+  /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
 
   /**
    * @brief Function to read parameters and initialize class variables

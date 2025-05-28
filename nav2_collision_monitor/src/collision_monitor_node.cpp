@@ -188,7 +188,7 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg)
 {
   // If message contains NaN or Inf, ignore
-  if (!nav2_util::validateTwist(*msg)) {
+  if (!nav2_util::validateTwist(msg->twist)) {
     RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
     return;
   }

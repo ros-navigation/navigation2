@@ -21,6 +21,7 @@ uint16 FAILED_TO_STAGE=903
 uint16 FAILED_TO_DETECT_DOCK=904
 uint16 FAILED_TO_CONTROL=905
 uint16 FAILED_TO_CHARGE=906
+uint16 TIMEOUT=907
 uint16 UNKNOWN=999
 
 bool success True  # docking success status

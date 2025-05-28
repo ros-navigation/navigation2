@@ -174,6 +174,15 @@ public:
   void mapToWorld(unsigned int mx, unsigned int my, double & wx, double & wy) const;
 
   /**
+  * @brief  Convert from map coordinates to world coordinates with no bounds checking
+  * @param  wx The x world coordinate
+  * @param  wy The y world coordinate
+  * @param  mx Will be set to the associated map x coordinate
+  * @param  my Will be set to the associated map y coordinate
+  */
+  void mapToWorldNoBounds(int mx, int my, double & wx, double & wy) const;
+
+  /**
    * @brief  Convert from world coordinates to map coordinates
    * @param  wx The x world coordinate
    * @param  wy The y world coordinate

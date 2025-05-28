@@ -116,4 +116,22 @@ Layer::getFullName(const std::string & param_name)
   return std::string(name_ + "." + param_name);
 }
 
+
+std::string
+Layer::joinWithParentNamespace(const std::string & topic)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (topic[0] != '/') {
+    std::string node_namespace = node->get_namespace();
+    std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
+    return parent_namespace + "/" + topic;
+  }
+
+  return topic;
+}
+
 }  // end namespace nav2_costmap_2d

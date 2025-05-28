@@ -133,6 +133,7 @@ protected:
   float circumscribed_cost_{0.0f};
   float collision_cost_{0.0f};
   float critical_cost_{0.0f};
+  unsigned int near_collision_cost_{253};
   float weight_{0};
   unsigned int trajectory_point_step_;
 
@@ -143,6 +144,7 @@ protected:
   std::string inflation_layer_name_;
 
   unsigned int power_{0};
+  bool enforce_path_inversion_{false};
 };
 
 }  // namespace mppi::critics

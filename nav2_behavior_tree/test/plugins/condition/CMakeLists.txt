@@ -6,6 +6,8 @@ plugin_add_test(test_condition_path_expiring_timer test_path_expiring_timer.cpp 
 
 plugin_add_test(test_condition_goal_reached test_goal_reached.cpp nav2_goal_reached_condition_bt_node)
 
+plugin_add_test(test_condition_are_poses_near test_are_poses_near.cpp nav2_are_poses_near_condition_bt_node)
+
 plugin_add_test(test_condition_goal_updated test_goal_updated.cpp nav2_goal_updated_condition_bt_node)
 
 plugin_add_test(test_condition_globally_updated_goal test_globally_updated_goal.cpp nav2_globally_updated_goal_condition_bt_node)
@@ -37,3 +39,7 @@ plugin_add_test(test_would_a_planner_recovery_help
 plugin_add_test(test_would_a_smoother_recovery_help
   test_would_a_smoother_recovery_help.cpp
   nav2_would_a_smoother_recovery_help_condition_bt_node)
+
+plugin_add_test(test_would_a_route_recovery_help
+  test_would_a_route_recovery_help.cpp
+  nav2_would_a_route_recovery_help_condition_bt_node)

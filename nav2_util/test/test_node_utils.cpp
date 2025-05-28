@@ -25,6 +25,7 @@ using nav2_util::generate_internal_node;
 using nav2_util::add_namespaces;
 using nav2_util::time_to_string;
 using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::declare_or_get_parameter;
 using nav2_util::get_plugin_type_param;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
@@ -76,6 +77,34 @@ TEST(DeclareParameterIfNotDeclared, DeclareParameterIfNotDeclared)
   declare_parameter_if_not_declared(node, "waldo", rclcpp::ParameterValue{"fred"});
   node->get_parameter("waldo", param);
   ASSERT_EQ(param, "fred");
+}
+
+TEST(DeclareOrGetParam, DeclareOrGetParam)
+{
+  auto node = std::make_shared<rclcpp::Node>("test_node");
+
+  // test declared parameter
+  node->declare_parameter("foobar", "foo");
+  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"}, true);
+  EXPECT_EQ(param, "foo");
+  node->get_parameter("foobar", param);
+  EXPECT_EQ(param, "foo");
+  // test undeclared parameter
+  int int_param = declare_or_get_parameter(node, "waldo", 3, true);
+  EXPECT_EQ(int_param, 3);
+  // test declaration by type of existing param
+  int_param = declare_or_get_parameter<int>(node, "waldo",
+    rclcpp::ParameterType::PARAMETER_INTEGER);
+  EXPECT_EQ(int_param, 3);
+  // test declaration by type of non existing param
+  bool got_exception{false};
+  try {
+    int_param = declare_or_get_parameter<int>(node, "wololo",
+      rclcpp::ParameterType::PARAMETER_INTEGER);
+  } catch (const rclcpp::exceptions::InvalidParameterValueException & exc) {
+    got_exception = true;
+  }
+  EXPECT_TRUE(got_exception);
 }
 
 TEST(GetPluginTypeParam, GetPluginTypeParam)

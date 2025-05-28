@@ -49,7 +49,7 @@ def count_robots(context: LaunchContext) -> list[LogInfo]:
     return [LogInfo(msg=[log_msg])]
 
 
-def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]:
+def generate_robot_actions(name: str = '', pose: dict[str, float] = {}) -> list[GroupAction]:
     """Generate the actions to launch a robot with the given name and pose."""
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
@@ -58,6 +58,7 @@ def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]
     autostart = LaunchConfiguration('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     map_yaml_file = LaunchConfiguration('map')
+    graph_filepath = LaunchConfiguration('graph')
     use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
 
     # Define commands for launching the navigation instances
@@ -83,6 +84,7 @@ def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]
                     launch_arguments={
                         'namespace': name,
                         'map': map_yaml_file,
+                        'graph': graph_filepath,
                         'use_sim_time': 'True',
                         'params_file': params_file,
                         'autostart': autostart,
@@ -104,7 +106,7 @@ def generate_robot_actions(name: str = '', pose: dict = {}) -> list[GroupAction]
     return [group]
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     """
     Bring up the multi-robots with given launch arguments.
 
@@ -153,6 +155,11 @@ def generate_launch_description():
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'tb3_sandbox.yaml'),
         description='Full path to map file to load',
+    )
+
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot3_graph.geojson'),
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(
@@ -215,6 +222,7 @@ def generate_launch_description():
     ld.add_action(declare_world_cmd)
     ld.add_action(declare_robots_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_autostart_cmd)

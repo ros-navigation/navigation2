@@ -41,7 +41,7 @@ shipping_destinations = {
 }
 
 
-def main():
+def main() -> None:
     # Received virtual request for picking item at Shelf A and bring to
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ('shelf_A') and shipping destination ('frieght_bay_3')
@@ -80,21 +80,21 @@ def main():
         shelf_item_pose.pose.orientation.z = -0.707
         shelf_item_pose.pose.orientation.w = 0.707
     print(f'Received request for item picking at {request_item_location}.')
-    navigator.goToPose(shelf_item_pose)
+    go_to_pose_task = navigator.goToPose(shelf_item_pose)
 
     # Do something during our route
     # (e.x. queue up future tasks or detect person for fine-tuned positioning)
     # Simply print information for workers on the robot's ETA for the demonstration
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         i += 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=go_to_pose_task)
         if feedback and i % 5 == 0:
             print(
                 'Estimated time of arrival at '
                 + request_item_location
                 + ' for worker: '
-                + '{0:.0f}'.format(
+                + '{:.0f}'.format(
                     Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                     / 1e9
                 )
@@ -121,7 +121,7 @@ def main():
         ][1]
         shipping_destination.pose.orientation.z = 1.0
         shipping_destination.pose.orientation.w = 0.0
-        navigator.goToPose(shipping_destination)
+        go_to_pose_task = navigator.goToPose(shipping_destination)
 
     elif result == TaskResult.CANCELED:
         print(
@@ -136,7 +136,7 @@ def main():
               f'{error_code}:{error_msg}')
         exit(-1)
 
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         pass
 
     exit(0)

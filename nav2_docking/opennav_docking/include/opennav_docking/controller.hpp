@@ -67,6 +67,18 @@ public:
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
     bool backward = false);
 
+  /**
+   * @brief Perform a command for in-place rotation.
+   * @param angular_distance_to_heading Angular distance to goal.
+   * @param current_velocity Current angular velocity.
+   * @param dt Control loop duration [s].
+   * @returns TwistStamped command for in-place rotation.
+   */
+  geometry_msgs::msg::Twist computeRotateToHeadingCommand(
+    const double & angular_distance_to_heading,
+    const geometry_msgs::msg::Twist & current_velocity,
+    const double & dt);
+
 protected:
   /**
    * @brief Check if a trajectory is collision free.
@@ -110,6 +122,7 @@ protected:
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
   double k_phi_, k_delta_, beta_, lambda_;
   double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_;
+  double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr trajectory_pub_;

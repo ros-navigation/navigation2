@@ -73,6 +73,7 @@ void CostmapSubscriber::costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr
   {
     std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
     costmap_msg_ = msg;
+    frame_id_ = costmap_msg_->header.frame_id;
   }
   if (!isCostmapReceived()) {
     costmap_ = std::make_shared<Costmap2D>(

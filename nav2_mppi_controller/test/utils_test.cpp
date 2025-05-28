@@ -569,6 +569,142 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
   EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
 }
 
+TEST(UtilsTests, toTrajectoryMsgTest)
+{
+  Eigen::ArrayXXf trajectory(5, 3);
+  trajectory <<
+    0.0, 0.0, 0.0,
+    1.0, 1.0, 1.0,
+    2.0, 2.0, 2.0,
+    3.0, 3.0, 3.0,
+    4.0, 4.0, 4.0;
+
+  models::ControlSequence control_sequence;
+  control_sequence.vx = Eigen::ArrayXf::Ones(5);
+  control_sequence.wz = Eigen::ArrayXf::Ones(5);
+  control_sequence.vy = Eigen::ArrayXf::Zero(5);
+
+  std_msgs::msg::Header header;
+  header.frame_id = "map";
+  header.stamp = rclcpp::Time(100, 0, RCL_ROS_TIME);
+
+  auto trajectory_msg = utils::toTrajectoryMsg(
+    trajectory, control_sequence, 1.0, header);
+
+  EXPECT_EQ(trajectory_msg->header.frame_id, "map");
+  EXPECT_EQ(trajectory_msg->header.stamp, header.stamp);
+  EXPECT_EQ(trajectory_msg->points.size(), 5u);
+  EXPECT_EQ(trajectory_msg->points[0].pose.position.x, 0.0);
+  EXPECT_EQ(trajectory_msg->points[0].pose.position.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[1].pose.position.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].pose.position.y, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].pose.position.x, 2.0);
+  EXPECT_EQ(trajectory_msg->points[2].pose.position.y, 2.0);
+  EXPECT_EQ(trajectory_msg->points[3].pose.position.x, 3.0);
+  EXPECT_EQ(trajectory_msg->points[3].pose.position.y, 3.0);
+  EXPECT_EQ(trajectory_msg->points[4].pose.position.x, 4.0);
+  EXPECT_EQ(trajectory_msg->points[4].pose.position.y, 4.0);
+
+  EXPECT_EQ(trajectory_msg->points[0].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[0].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[0].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[1].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[2].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[3].velocity.angular.z, 1.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.linear.x, 1.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.linear.y, 0.0);
+  EXPECT_EQ(trajectory_msg->points[4].velocity.angular.z, 1.0);
+
+  EXPECT_EQ(trajectory_msg->points[0].time_from_start, rclcpp::Duration(0, 0));
+  EXPECT_EQ(trajectory_msg->points[1].time_from_start, rclcpp::Duration(1, 0));
+  EXPECT_EQ(trajectory_msg->points[2].time_from_start, rclcpp::Duration(2, 0));
+  EXPECT_EQ(trajectory_msg->points[3].time_from_start, rclcpp::Duration(3, 0));
+  EXPECT_EQ(trajectory_msg->points[4].time_from_start, rclcpp::Duration(4, 0));
+}
+
+TEST(UtilsTests, getLastPathPoseTest)
+{
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  path.poses[9].pose.position.x = 5.0;
+  path.poses[9].pose.position.y = 50.0;
+  path.poses[9].pose.orientation.x = 0.0;
+  path.poses[9].pose.orientation.y = 0.0;
+  path.poses[9].pose.orientation.z = 1.0;
+  path.poses[9].pose.orientation.w = 0.0;
+
+  models::Path path_t = toTensor(path);
+  geometry_msgs::msg::Pose last_path_pose = utils::getLastPathPose(path_t);
+
+  EXPECT_EQ(last_path_pose.position.x, 5);
+  EXPECT_EQ(last_path_pose.position.y, 50);
+  EXPECT_NEAR(last_path_pose.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.z, 1.0, 1e-3);
+  EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
+}
+
+TEST(UtilsTests, getCriticGoalTest)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 10.0;
+  pose.position.y = 1.0;
+
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  path.poses[9].pose.position.x = 5.0;
+  path.poses[9].pose.position.y = 50.0;
+  path.poses[9].pose.orientation.x = 0.0;
+  path.poses[9].pose.orientation.y = 0.0;
+  path.poses[9].pose.orientation.z = 1.0;
+  path.poses[9].pose.orientation.w = 0.0;
+
+  geometry_msgs::msg::Pose goal;
+  goal.position.x = 6.0;
+  goal.position.y = 60.0;
+  goal.orientation.x = 0.0;
+  goal.orientation.y = 0.0;
+  goal.orientation.z = 0.0;
+  goal.orientation.w = 1.0;
+
+  // Create CriticData with state and goal initialized
+  models::State state;
+  state.pose.pose = pose;
+  models::Trajectories generated_trajectories;
+  models::Path path_t = toTensor(path);
+  Eigen::ArrayXf costs;
+  float model_dt;
+  CriticData data = {
+    state, generated_trajectories, path_t, goal,
+    costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
+
+  bool enforce_path_inversion = true;
+  geometry_msgs::msg::Pose target_goal = utils::getCriticGoal(data, enforce_path_inversion);
+
+  EXPECT_EQ(target_goal.position.x, 5);
+  EXPECT_EQ(target_goal.position.y, 50);
+  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.z, 1.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.w, 0.0, 1e-3);
+
+  enforce_path_inversion = false;
+  target_goal = utils::getCriticGoal(data, enforce_path_inversion);
+
+  EXPECT_EQ(target_goal.position.x, 6);
+  EXPECT_EQ(target_goal.position.y, 60);
+  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.z, 0.0, 1e-3);
+  EXPECT_NEAR(target_goal.orientation.w, 1.0, 1e-3);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

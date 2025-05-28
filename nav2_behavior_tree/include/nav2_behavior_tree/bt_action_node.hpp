@@ -20,9 +20,11 @@
 #include <chrono>
 
 #include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_util/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -32,6 +34,8 @@ using namespace std::chrono_literals;  // NOLINT
 /**
  * @brief Abstract class representing an action based BT node
  * @tparam ActionT Type of action
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 template<class ActionT>
 class BtActionNode : public BT::ActionNodeBase
@@ -184,6 +188,15 @@ public:
   }
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  virtual void on_timeout()
+  {
+    return;
+  }
+
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
@@ -227,6 +240,7 @@ public:
             "Timed out while waiting for action server to acknowledge goal request for %s",
             action_name_.c_str());
           future_goal_handle_.reset();
+          on_timeout();
           return BT::NodeStatus::FAILURE;
         }
       }
@@ -257,6 +271,7 @@ public:
               "Timed out while waiting for action server to acknowledge goal request for %s",
               action_name_.c_str());
             future_goal_handle_.reset();
+            on_timeout();
             return BT::NodeStatus::FAILURE;
           }
         }

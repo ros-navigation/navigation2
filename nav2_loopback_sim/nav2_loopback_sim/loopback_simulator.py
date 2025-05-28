@@ -14,16 +14,19 @@
 
 
 import math
+from typing import Optional
 
 from geometry_msgs.msg import (PoseWithCovarianceStamped, Quaternion, TransformStamped, Twist,
                                TwistStamped, Vector3)
 from nav2_simple_commander.line_iterator import LineIterator
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetMap
+import numpy as np
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.timer import Timer
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import LaserScan
 from tf2_ros import Buffer, TransformBroadcaster, TransformListener
@@ -44,15 +47,15 @@ to place anywhere.
 
 class LoopbackSimulator(Node):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(node_name='loopback_simulator')
         self.curr_cmd_vel = None
         self.curr_cmd_vel_time = self.get_clock().now()
-        self.initial_pose = None
-        self.timer = None
+        self.initial_pose: PoseWithCovarianceStamped = None
+        self.timer: Optional[Timer] = None
         self.setupTimer = None
         self.map = None
-        self.mat_base_to_laser = None
+        self.mat_base_to_laser: Optional[np.ndarray[np.float64, np.dtype[np.float64]]] = None
 
         self.declare_parameter('update_duration', 0.01)
         self.update_dur = self.get_parameter('update_duration').get_parameter_value().double_value
@@ -82,6 +85,30 @@ class LoopbackSimulator(Node):
 
         self.declare_parameter('publish_clock', True)
         self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
+
+        self.declare_parameter('scan_range_min',  0.05)
+        self.scan_range_min = \
+            self.get_parameter('scan_range_min').get_parameter_value().double_value
+
+        self.declare_parameter('scan_range_max',  30.0)
+        self.scan_range_max = \
+            self.get_parameter('scan_range_max').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_min',  -math.pi)
+        self.scan_angle_min = \
+            self.get_parameter('scan_angle_min').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_max',  math.pi)
+        self.scan_angle_max = \
+            self.get_parameter('scan_angle_max').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_increment',  0.0261)  # 0.0261 rad = 1.5 degrees
+        self.scan_angle_increment = \
+            self.get_parameter('scan_angle_increment').get_parameter_value().double_value
+
+        self.declare_parameter('scan_use_inf', True)
+        self.use_inf = \
+            self.get_parameter('scan_use_inf').get_parameter_value().bool_value
 
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
@@ -126,7 +153,7 @@ class LoopbackSimulator(Node):
 
         self.info('Loopback simulator initialized')
 
-    def getBaseToLaserTf(self):
+    def getBaseToLaserTf(self) -> None:
         try:
             # Wait for transform and lookup
             transform = self.tf_buffer.lookup_transform(
@@ -134,20 +161,20 @@ class LoopbackSimulator(Node):
             self.mat_base_to_laser = transformStampedToMatrix(transform)
 
         except Exception as ex:
-            self.get_logger().error('Transform lookup failed: %s' % str(ex))
+            self.get_logger().error(f'Transform lookup failed: {str(ex)}')
 
-    def setupTimerCallback(self):
+    def setupTimerCallback(self) -> None:
         # Publish initial identity odom transform & laser scan to warm up system
         self.tf_broadcaster.sendTransform(self.t_odom_to_base_link)
         if self.mat_base_to_laser is None:
             self.getBaseToLaserTf()
 
-    def clockTimerCallback(self):
+    def clockTimerCallback(self) -> None:
         msg = Clock()
         msg.clock = self.get_clock().now().to_msg()
         self.clock_pub.publish(msg)
 
-    def cmdVelCallback(self, msg):
+    def cmdVelCallback(self, msg: Twist) -> None:
         self.debug('Received cmd_vel')
         if self.initial_pose is None:
             # Don't consider velocities before the initial pose is set
@@ -155,7 +182,7 @@ class LoopbackSimulator(Node):
         self.curr_cmd_vel = msg
         self.curr_cmd_vel_time = self.get_clock().now()
 
-    def cmdVelStampedCallback(self, msg):
+    def cmdVelStampedCallback(self, msg: TwistStamped) -> None:
         self.debug('Received cmd_vel')
         if self.initial_pose is None:
             # Don't consider velocities before the initial pose is set
@@ -163,7 +190,7 @@ class LoopbackSimulator(Node):
         self.curr_cmd_vel = msg.twist
         self.curr_cmd_vel_time = rclpy.time.Time.from_msg(msg.header.stamp)
 
-    def initialPoseCallback(self, msg):
+    def initialPoseCallback(self, msg: PoseWithCovarianceStamped) -> None:
         self.info('Received initial pose!')
         if self.initial_pose is None:
             # Initialize transforms (map->odom as input pose, odom->base_link start from identity)
@@ -202,7 +229,7 @@ class LoopbackSimulator(Node):
             tf_transformations.concatenate_matrices(mat_map_to_base_link, mat_base_link_to_odom)
         self.t_map_to_odom.transform = matrixToTransform(mat_map_to_odom)
 
-    def timerCallback(self):
+    def timerCallback(self) -> None:
         # If no data, just republish existing transforms without change
         one_sec = Duration(seconds=1)
         if self.curr_cmd_vel is None or self.get_clock().now() - self.curr_cmd_vel_time > one_sec:
@@ -227,19 +254,19 @@ class LoopbackSimulator(Node):
         self.publishTransforms(self.t_map_to_odom, self.t_odom_to_base_link)
         self.publishOdometry(self.t_odom_to_base_link)
 
-    def publishLaserScan(self):
+    def publishLaserScan(self) -> None:
         # Publish a bogus laser scan for collision monitor
         self.scan_msg = LaserScan()
         self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
         self.scan_msg.header.frame_id = self.scan_frame_id
-        self.scan_msg.angle_min = -math.pi
-        self.scan_msg.angle_max = math.pi
+        self.scan_msg.angle_min = self.scan_angle_min
+        self.scan_msg.angle_max = self.scan_angle_max
         # 1.5 degrees
-        self.scan_msg.angle_increment = 0.0261799
+        self.scan_msg.angle_increment = self.scan_angle_increment
         self.scan_msg.time_increment = 0.0
         self.scan_msg.scan_time = 0.1
-        self.scan_msg.range_min = 0.05
-        self.scan_msg.range_max = 30.0
+        self.scan_msg.range_min = self.scan_range_min
+        self.scan_msg.range_max = self.scan_range_max
         num_samples = int(
             (self.scan_msg.angle_max - self.scan_msg.angle_min) /
             self.scan_msg.angle_increment)
@@ -247,7 +274,8 @@ class LoopbackSimulator(Node):
         self.getLaserScan(num_samples)
         self.scan_pub.publish(self.scan_msg)
 
-    def publishTransforms(self, map_to_odom, odom_to_base_link):
+    def publishTransforms(self, map_to_odom: TransformStamped,
+                          odom_to_base_link: TransformStamped) -> None:
         map_to_odom.header.stamp = \
             (self.get_clock().now() + Duration(seconds=self.update_dur)).to_msg()
         odom_to_base_link.header.stamp = self.get_clock().now().to_msg()
@@ -255,7 +283,7 @@ class LoopbackSimulator(Node):
             self.tf_broadcaster.sendTransform(map_to_odom)
         self.tf_broadcaster.sendTransform(odom_to_base_link)
 
-    def publishOdometry(self, odom_to_base_link):
+    def publishOdometry(self, odom_to_base_link: TransformStamped) -> None:
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
         odom.header.frame_id = 'odom'
@@ -266,22 +294,23 @@ class LoopbackSimulator(Node):
         odom.twist.twist = self.curr_cmd_vel
         self.odom_pub.publish(odom)
 
-    def info(self, msg):
+    def info(self, msg: str) -> None:
         self.get_logger().info(msg)
         return
 
-    def debug(self, msg):
+    def debug(self, msg: str) -> None:
         self.get_logger().debug(msg)
         return
 
-    def getMap(self):
+    def getMap(self) -> None:
         request = GetMap.Request()
         if self.map_client.wait_for_service(timeout_sec=5.0):
             # Request to get map
             future = self.map_client.call_async(request)
             rclpy.spin_until_future_complete(self, future)
-            if future.result() is not None:
-                self.map = future.result().map
+            result = future.result()
+            if result is not None:
+                self.map = result.map
                 self.get_logger().info('Laser scan will be populated using map data')
             else:
                 self.get_logger().warn(
@@ -294,7 +323,7 @@ class LoopbackSimulator(Node):
                 'Laser scan will be populated using max range'
             )
 
-    def getLaserPose(self):
+    def getLaserPose(self) -> tuple[float, float, float]:
         mat_map_to_odom = transformStampedToMatrix(self.t_map_to_odom)
         mat_odom_to_base = transformStampedToMatrix(self.t_odom_to_base_link)
 
@@ -316,9 +345,12 @@ class LoopbackSimulator(Node):
 
         return x, y, theta
 
-    def getLaserScan(self, num_samples):
+    def getLaserScan(self, num_samples: int) -> None:
         if self.map is None or self.initial_pose is None or self.mat_base_to_laser is None:
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            if self.use_inf:
+                self.scan_msg.ranges = [float('inf')] * num_samples
+            else:
+                self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         x0, y0, theta = self.getLaserPose()
@@ -327,7 +359,10 @@ class LoopbackSimulator(Node):
 
         if not 0 < mx0 < self.map.info.width or not 0 < my0 < self.map.info.height:
             # outside map
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            if self.use_inf:
+                self.scan_msg.ranges = [float('inf')] * num_samples
+            else:
+                self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         for i in range(num_samples):
@@ -356,9 +391,11 @@ class LoopbackSimulator(Node):
                     break
 
                 line_iterator.advance()
+            if self.scan_msg.ranges[i] == 0.0 and self.use_inf:
+                self.scan_msg.ranges[i] = float('inf')
 
 
-def main():
+def main() -> None:
     rclpy.init()
     loopback_simulator = LoopbackSimulator()
     rclpy.spin(loopback_simulator)

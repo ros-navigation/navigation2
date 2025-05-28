@@ -16,6 +16,7 @@ float32 max_undocking_time 30.0 # Maximum time to undock
 uint16 NONE=0
 uint16 DOCK_NOT_VALID=902
 uint16 FAILED_TO_CONTROL=905
+uint16 TIMEOUT=907
 uint16 UNKNOWN=999
 
 bool success True  # docking success status

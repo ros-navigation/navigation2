@@ -146,7 +146,6 @@ bool getTransform(
  * @return True if valid, false if contains unactionable values
  */
 [[nodiscard]] bool validateTwist(const geometry_msgs::msg::Twist & msg);
-[[nodiscard]] bool validateTwist(const geometry_msgs::msg::TwistStamped & msg);
 
 }  // end namespace nav2_util
 

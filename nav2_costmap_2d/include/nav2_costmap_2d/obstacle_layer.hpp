@@ -49,13 +49,7 @@
 #include "tf2_ros/message_filter.h"
 #pragma GCC diagnostic pop
 
-// For compatibility with Jazzy
-#include "rclcpp/version.h"
-#if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "message_filters/subscriber.hpp"
-#else
-#include "message_filters/subscriber.h"
-#endif
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"

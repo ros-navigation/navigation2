@@ -51,8 +51,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
-  declare_parameter("action_server_result_timeout", 10.0);
-
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -224,11 +222,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
 
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
@@ -242,7 +235,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, rcl_action_server_get_default_options(),
+      use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);
@@ -758,6 +752,10 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>(velocity);
+  if (!nav2_util::validateTwist(cmd_vel->twist)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
   if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
     vel_publisher_->publish(std::move(cmd_vel));
   }
@@ -836,12 +834,12 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
-    if (name.find('.') != std::string::npos) {
+    if (param_name.find('.') != std::string::npos) {
       continue;
     }
 
@@ -855,16 +853,14 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       return result;
     }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller_frequency") {
-        controller_frequency_ = parameter.as_double();
-      } else if (name == "min_x_velocity_threshold") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "min_x_velocity_threshold") {
         min_x_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_y_velocity_threshold") {
+      } else if (param_name == "min_y_velocity_threshold") {
         min_y_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_theta_velocity_threshold") {
+      } else if (param_name == "min_theta_velocity_threshold") {
         min_theta_velocity_threshold_ = parameter.as_double();
-      } else if (name == "failure_tolerance") {
+      } else if (param_name == "failure_tolerance") {
         failure_tolerance_ = parameter.as_double();
       }
     }

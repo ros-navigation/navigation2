@@ -38,6 +38,7 @@ public:
     if (!node_) {
       throw std::runtime_error{"Failed to lock node"};
     }
+    dock_direction_ = opennav_docking_core::DockDirection::FORWARD;
   }
 
   virtual void cleanup() {}

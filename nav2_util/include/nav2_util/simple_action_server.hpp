@@ -139,7 +139,8 @@ public:
   }
 
   /**
-   * @brief handle the goal requested: accept or reject. This implementation always accepts.
+   * @brief handle the goal requested: accept or reject.
+   * This implementation always accepts when the server is active.
    * @param uuid Goal ID
    * @param Goal A shared pointer to the specific goal
    * @return GoalResponse response of the goal processed
@@ -588,17 +589,17 @@ protected:
   struct has_error_code<T, std::void_t<decltype(T::error_code)>>: std::true_type {};
 
   template<typename T>
-  std::string get_error_details_if_available(const T & result)
+  void log_error_details_if_available(const T & result)
   {
     if constexpr (has_error_code<typename ActionT::Result>::value &&
       has_error_msg<typename ActionT::Result>::value)
     {
-      return " error_code:" + std::to_string(result->error_code) +
-             ", error_msg:'" + result->error_msg + "'.";
+      warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) +
+             ", error_msg:'" + result->error_msg + "'.");
     } else if constexpr (has_error_code<typename ActionT::Result>::value) {
-      return " error_code:" + std::to_string(result->error_code) + ".";
+      warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) + ".");
     } else {
-      return ".";
+      warn_msg("Aborting handle.");
     }
   }
 
@@ -619,7 +620,7 @@ protected:
         info_msg("Client requested to cancel the goal. Cancelling.");
         handle->canceled(result);
       } else {
-        warn_msg("Aborting handle" + get_error_details_if_available(result));
+        log_error_details_if_available(result);
         handle->abort(result);
       }
       handle.reset();

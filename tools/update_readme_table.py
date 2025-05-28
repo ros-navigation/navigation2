@@ -18,8 +18,8 @@
 import requests
 
 # Global information about current distributions, shouldn't need to update
-OSs = {'humble': 'jammy', 'iron': 'jammy', 'jazzy': 'noble'}
-Prefixs = {'humble': 'H', 'iron': 'I', 'jazzy': 'J'}
+OSs = {'humble': 'jammy', 'jazzy': 'noble'}
+Prefixs = {'humble': 'H', 'jazzy': 'J'}
 
 # Set your packages here
 Packages = [
@@ -39,6 +39,7 @@ Packages = [
     'nav2_dwb_controller',  # Controller plugin for DWB packages
     'nav2_graceful_controller',
     'nav2_lifecycle_manager',
+    'nav2_loopback_sim',
     'nav2_map_server',
     'nav2_mppi_controller',
     'nav2_msgs',
@@ -59,21 +60,21 @@ Packages = [
 ]
 
 # Set which distributions you care about
-Distros = ['humble', 'iron', 'jazzy']
+Distros = ['humble', 'jazzy']
 
 
-def getSrcPath(package, prefix, OS):
+def getSrcPath(package: str, prefix: str, OS: str) -> str:
     return f'https://build.ros2.org/job/{prefix}src_u{OS[0]}__{package}__ubuntu_{OS}__source/'
 
 
-def getBinPath(package, prefix, OS):
+def getBinPath(package: str, prefix: str, OS: str) -> str:
     return (
         f'https://build.ros2.org/job/{prefix}bin_u{OS[0]}64__{package}__ubuntu_{OS}_'
         'amd64__binary/'
     )
 
 
-def createPreamble(Distros):
+def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
@@ -84,7 +85,7 @@ def createPreamble(Distros):
     return table
 
 
-def main():
+def main() -> None:
     header = createPreamble(Distros)
 
     body = ''
@@ -103,6 +104,7 @@ def main():
             else:
                 entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
                 entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
+        entry = entry[:-1]
         entry += '\n'
         body += entry
 

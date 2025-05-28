@@ -16,15 +16,15 @@
 #define NAV2_BEHAVIOR_TREE__PLUGINS__CONDITION__IS_STOPPED_CONDITION_HPP_
 
 #include <string>
-#include <atomic>
-#include <deque>
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 
 
 using namespace std::chrono_literals; // NOLINT
@@ -67,6 +67,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<std::chrono::milliseconds>();
+
     return {
       BT::InputPort<double>("velocity_threshold", 0.01,
           "Velocity threshold below which robot is considered stopped"),

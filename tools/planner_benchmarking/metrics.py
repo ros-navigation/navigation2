@@ -23,11 +23,15 @@ import time
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
+from numpy.typing import NDArray
 import rclpy
+from rclpy.time import Time
 from transforms3d.euler import euler2quat
 
 
-def getPlannerResults(navigator, initial_pose, goal_pose, planners):
+def getPlannerResults(
+        navigator: BasicNavigator, initial_pose: PoseStamped,
+        goal_pose: PoseStamped, planners: list[str]) -> list[PoseStamped]:
     results = []
     for planner in planners:
         path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
@@ -39,7 +43,9 @@ def getPlannerResults(navigator, initial_pose, goal_pose, planners):
     return results
 
 
-def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
+def getRandomStart(
+        costmap: NDArray[np.float32], max_cost: int,
+        side_buffer: int, time_stamp: Time, res: float) -> PoseStamped:
     start = PoseStamped()
     start.header.frame_id = 'map'
     start.header.stamp = time_stamp
@@ -61,7 +67,9 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     return start
 
 
-def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
+def getRandomGoal(
+        costmap: NDArray[np.float32], start: PoseStamped,
+        max_cost: int, side_buffer: int, time_stamp: Time, res: float) -> PoseStamped:
     goal = PoseStamped()
     goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
@@ -91,7 +99,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     return goal
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -110,7 +118,7 @@ def main():
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
-    results = []
+    results: list[PoseStamped] = []
     seed(33)
 
     random_pairs = 100

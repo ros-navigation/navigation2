@@ -65,9 +65,6 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
-  if (!node->has_parameter("action_server_result_timeout")) {
-    node->declare_parameter("action_server_result_timeout", 900.0);
-  }
   if (!node->has_parameter("always_reload_bt_xml")) {
     node->declare_parameter("always_reload_bt_xml", false);
   }
@@ -164,19 +161,13 @@ bool BtActionServer<ActionT>::on_configure()
     node, "transform_tolerance", rclcpp::ParameterValue(0.1));
   rclcpp::copy_all_parameter_values(node, client_node_);
 
-  // set the timeout in seconds for the action server to discard goal handles if not finished
-  double action_server_result_timeout =
-    node->get_parameter("action_server_result_timeout").as_double();
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   action_server_ = std::make_shared<ActionServer>(
     node->get_node_base_interface(),
     node->get_node_clock_interface(),
     node->get_node_logging_interface(),
     node->get_node_waitables_interface(),
     action_name_, std::bind(&BtActionServer<ActionT>::executeCallback, this),
-    nullptr, std::chrono::milliseconds(500), false, server_options);
+    nullptr, std::chrono::milliseconds(500), false);
 
   // Get parameters for BT timeouts
   int bt_loop_duration;
@@ -239,8 +230,16 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_);
+  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned server_port)
+{
+  enable_groot_monitoring_ = enable;
+  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -254,6 +253,9 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
+
+  // if a new tree is created, than the Groot2 Publisher must be destroyed
+  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
@@ -285,6 +287,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
+
+  // Enable monitoring with Groot2
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
+
   return true;
 }
 

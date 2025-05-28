@@ -28,7 +28,7 @@ from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     bringup_dir = get_package_share_directory('nav2_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     params_file = LaunchConfiguration('params_file')
@@ -44,6 +44,10 @@ def generate_launch_description():
         source_file=params_file,
         root_key='',
         param_rewrites=param_substitutions,
+        value_rewrites={
+            'KEEPOUT_ZONE_ENABLED': 'False',
+            'SPEED_ZONE_ENABLED': 'False',
+        },
         convert_types=True,
     )
 
@@ -133,12 +137,13 @@ def generate_launch_description():
     )
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     test1_action = ExecuteProcess(
         cmd=[os.path.join(
-            os.getenv('TEST_DIR'), 'backup_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
+            os.getenv('TEST_DIR', ''),
+            'backup_tester.py'), '--ros-args', '-p', 'use_sim_time:=True'],
         name='tester_node',
         output='screen',
     )
