@@ -66,6 +66,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
     AnalyticExpansionNodes current_best_analytic_nodes = {};
     NodePtr current_best_goal = nullptr;
+    NodePtr current_best_node = nullptr;
     float current_best_score = std::numeric_limits<float>::max();
 
     closest_distance = std::min(
@@ -97,13 +98,15 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
           current_node->motion_table.state_space);
         if (!analytic_nodes.empty()) {
           found_valid_expansion = true;
-          bool score = refineAnalyticPath(
-            current_node, current_goal_node, getter, analytic_nodes);
+          NodePtr node = current_node;
+          float score = refineAnalyticPath(
+            node, current_goal_node, getter, analytic_nodes);
           // Update the best score if we found a better path
           if (score < current_best_score) {
             current_best_analytic_nodes = analytic_nodes;
             current_best_goal = current_goal_node;
             current_best_score = score;
+            current_best_node = node;
           }
         }
       }
@@ -116,13 +119,15 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             current_node, current_goal_node, getter,
             current_node->motion_table.state_space);
           if (!analytic_nodes.empty()) {
-            bool score = refineAnalyticPath(
-              current_node, current_goal_node, getter, analytic_nodes);
+            NodePtr node = current_node;
+            float score = refineAnalyticPath(
+              node, current_goal_node, getter, analytic_nodes);
             // Update the best score if we found a better path
             if (score < current_best_score) {
               current_best_analytic_nodes = analytic_nodes;
               current_best_goal = current_goal_node;
               current_best_score = score;
+              current_best_node = node;
             }
           }
         }
@@ -131,7 +136,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 
     if (!current_best_analytic_nodes.empty()) {
       return setAnalyticPath(
-        current_node, current_best_goal,
+        current_best_node, current_best_goal,
         current_best_analytic_nodes);
     }
     analytic_iterations--;
@@ -273,12 +278,11 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
 
 template<typename NodeT>
 float AnalyticExpansion<NodeT>::refineAnalyticPath(
-  const NodePtr & current_node,
+  NodePtr & node,
   const NodePtr & goal_node,
   const NodeGetter & getter,
   AnalyticExpansionNodes & analytic_nodes)
 {
-  NodePtr node = current_node;
   NodePtr test_node = node;
   AnalyticExpansionNodes refined_analytic_nodes;
   for (int i = 0; i < 8; i++) {
@@ -407,7 +411,7 @@ getAnalyticPath(
 
 template<>
 float AnalyticExpansion<Node2D>::refineAnalyticPath(
-  const NodePtr &,
+  NodePtr &,
   const NodePtr &,
   const NodeGetter &,
   AnalyticExpansionNodes &)
