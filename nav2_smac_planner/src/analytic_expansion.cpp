@@ -112,7 +112,11 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             getAnalyticPath(
             current_node, current_goal_node, getter,
             current_node->motion_table.state_space);
+<<<<<<< HEAD
           if (!analytic_nodes.nodes.empty()) {
+=======
+          if (!analytic_nodes.empty()) {
+>>>>>>> 6a74ba61 (include bug fix for nav2_smac_planner (#5198))
             NodePtr node = current_node;
             float score = refineAnalyticPath(
               node, current_goal_node, getter, analytic_nodes);
@@ -499,6 +503,16 @@ getAnalyticPath(
   const ompl::base::StateSpacePtr &)
 {
   return AnalyticExpansionNodes();
+}
+
+template<>
+float AnalyticExpansion<Node2D>::refineAnalyticPath(
+  NodePtr &,
+  const NodePtr &,
+  const NodeGetter &,
+  AnalyticExpansionNodes &)
+{
+  return std::numeric_limits<float>::max();
 }
 
 template<>
