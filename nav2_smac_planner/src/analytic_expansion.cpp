@@ -310,8 +310,6 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
 {
   NodePtr test_node = node;
   AnalyticExpansionNodes refined_analytic_nodes;
-  int initial_direction_changes = analytic_nodes.direction_changes;
-
   for (int i = 0; i < 8; i++) {
     // Attempt to create better paths in 5 node increments, need to make sure
     // they exist for each in order to do so (maximum of 40 points back).
@@ -329,13 +327,12 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
       if (refined_analytic_nodes.nodes.empty()) {
         break;
       }
-      if (refined_analytic_nodes.direction_changes > initial_direction_changes) {
+      if (refined_analytic_nodes.direction_changes > analytic_nodes.direction_changes) {
         // If the direction changes are worse, we don't want to use this path
         continue;
       }
       analytic_nodes = refined_analytic_nodes;
       node = test_node;
-      initial_direction_changes = analytic_nodes.direction_changes;  // New bar to clear
     } else {
       break;
     }
@@ -383,22 +380,20 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
 
     // Normal scoring: prioritize lower cost as long as not more directional changes
     if (score <= best_score &&
-      refined_analytic_nodes.direction_changes <= initial_direction_changes)
+      refined_analytic_nodes.direction_changes <= analytic_nodes.direction_changes)
     {
       analytic_nodes = refined_analytic_nodes;
       best_score = score;
-      initial_direction_changes = analytic_nodes.direction_changes;  // New bar to clear
       continue;
     }
 
     // Special case: If we have a better score than original (only) and less directional changes
     // the path quality is still better than the original and is less operationally complex
     if (score <= original_score &&
-      refined_analytic_nodes.direction_changes < initial_direction_changes)
+      refined_analytic_nodes.direction_changes < analytic_nodes.direction_changes)
     {
       analytic_nodes = refined_analytic_nodes;
       best_score = score;
-      initial_direction_changes = analytic_nodes.direction_changes;  // New bar to clear
     }
   }
 
