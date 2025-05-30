@@ -64,7 +64,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
   declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
   declare_parameter("costmap_update_timeout", 0.30);  // 300ms
-
+  declare_parameter("orient_angle_rad", rclcpp::ParameterValue(1.57));
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()},
@@ -130,6 +130,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
+  get_parameter("orient_angle_rad", orient_angle_rad_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -249,6 +250,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
   return nav2_util::CallbackReturn::SUCCESS;
+}
+
+inline double createYawFromQuat(const geometry_msgs::msg::Quaternion & orientation)
+{
+  tf2::Quaternion q(orientation.x, orientation.y, orientation.z, orientation.w);
+  tf2::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  return yaw;
 }
 
 nav2_util::CallbackReturn
@@ -679,7 +689,9 @@ void ControllerServer::computeAndPublishVelocity()
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
   nav_msgs::msg::Path & current_path = current_path_;
-  auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path]()
+  double orient_angle_rad = orient_angle_rad_;
+  auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path,
+      &orient_angle_rad]()
     {
       size_t closest_pose_idx = 0;
       double curr_min_dist = std::numeric_limits<double>::max();
@@ -687,7 +699,9 @@ void ControllerServer::computeAndPublishVelocity()
         double curr_dist =
           nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
           current_path.poses[curr_idx]);
-        if (curr_dist < curr_min_dist) {
+        double orient_diff = createYawFromQuat(robot_pose_in_path_frame.pose.orientation) -
+          createYawFromQuat(current_path.poses[curr_idx].pose.orientation);
+        if (curr_dist < curr_min_dist && abs(orient_diff) < orient_angle_rad) {
           curr_min_dist = curr_dist;
           closest_pose_idx = curr_idx;
         }
