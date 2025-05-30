@@ -14,8 +14,8 @@
 // limitations under the License.
 
 
-#ifndef NAV2_UTIL__INTERPOLATION_UTILS_HPP_
-#define NAV2_UTIL__INTERPOLATION_UTILS_HPP_
+#ifndef NAV2_UTIL__CONTROLLER_UTILS_HPP_
+#define NAV2_UTIL__CONTROLLER_UTILS_HPP_
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
@@ -51,4 +51,4 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
 
 }  // namespace nav2_util
 
-#endif  // NAV2_UTIL__INTERPOLATION_UTILS_HPP_
+#endif  // NAV2_UTIL__CONTROLLER_UTILS_HPP_
