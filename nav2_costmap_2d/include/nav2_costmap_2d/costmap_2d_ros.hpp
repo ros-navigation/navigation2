@@ -91,7 +91,8 @@ public:
   explicit Costmap2DROS(
     const std::string & name,
     const std::string & parent_namespace = "/",
-    const bool & use_sim_time = false);
+    const bool & use_sim_time = false,
+    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   /**
    * @brief Common initialization for constructors
@@ -429,6 +430,27 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
+
+// free functions
+
+/**
+  * @brief Given a specified argument name, replaces it with the specified
+  * new value. If the argument is not in the existing list, a new argument
+  * is created with the specified option.
+  */
+void replaceOrAddArgument(
+  std::vector<std::string> & arguments, const std::string & option,
+  const std::string & arg_name, const std::string & new_argument);
+
+/**
+  * @brief Given the node options of a parent node, expands of replaces
+  *         the fields for the node name, namespace and use_sim_time
+  */
+rclcpp::NodeOptions getChildNodeOptions(
+  const std::string & name,
+  const std::string & parent_namespace,
+  const bool & use_sim_time,
+  const rclcpp::NodeOptions & parent_options);
 
 }  // namespace nav2_costmap_2d
 
