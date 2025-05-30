@@ -1,0 +1,133 @@
+// Copyright (c) 2025, Polymath Robotics
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "nav2_route/corner_arc.hpp"
+#include <iostream>
+
+namespace nav2_route
+{
+
+CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius)
+{
+  start_edge_ = start_edge;
+  end_edge_ = end_edge;
+
+  double angle = getAngleBetweenEdges(start_edge, end_edge);
+
+  double tangent_length = minimum_radius/(std::tan(angle/2));
+
+  start_edge_length_ = getEdgeLength(start_edge);
+  end_edge_length_ = getEdgeLength(end_edge);
+
+  if(tangent_length < start_edge_length_ && tangent_length < end_edge_length_){
+    std::vector<double> start_edge_unit_tangent;
+    std::vector<double> end_edge_unit_tangent;
+    std::vector<double> unit_bisector;
+
+    start_edge_unit_tangent.push_back((start_edge->end->coords.x -start_edge->start->coords.x)/start_edge_length_);
+    start_edge_unit_tangent.push_back((start_edge->end->coords.y -start_edge->start->coords.y)/start_edge_length_);
+    end_edge_unit_tangent.push_back((end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length_);
+    end_edge_unit_tangent.push_back((end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length_);
+
+    double bisector_x = start_edge_unit_tangent[0]+end_edge_unit_tangent[0];
+    double bisector_y = start_edge_unit_tangent[1]+end_edge_unit_tangent[1];
+    double bisector_magnitude = std::sqrt(bisector_x*bisector_x + bisector_y*bisector_y);
+
+    unit_bisector.push_back(bisector_x/bisector_magnitude);
+    unit_bisector.push_back(bisector_y/bisector_magnitude);
+
+    start_point_.push_back(start_edge->end->coords.x - start_edge_unit_tangent[0]*tangent_length);
+    start_point_.push_back(start_edge->end->coords.y - start_edge_unit_tangent[1]*tangent_length);
+
+    end_point_.push_back(end_edge->start->coords.x + end_edge_unit_tangent[0]*tangent_length);
+    end_point_.push_back(end_edge->start->coords.y + end_edge_unit_tangent[1]*tangent_length);
+
+    double signed_angle = getSignedAngleBetweenEdges(start_edge, end_edge);
+
+    double bisector_length = minimum_radius/std::sin(signed_angle/2);
+
+    circle_center_.push_back(end_edge->start->coords.x + unit_bisector[0]*bisector_length);
+    circle_center_.push_back(end_edge->start->coords.y + unit_bisector[1]*bisector_length);
+
+    minimum_radius_ = minimum_radius;
+
+  }
+}
+
+void CornerArc::interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & poses)
+{
+
+  std::vector<double> r_start{ start_point_[0]-circle_center_[0], start_point_[1]-circle_center_[1] };
+  std::vector<double> r_end{ end_point_[0]-circle_center_[0],  end_point_[1]-circle_center_[1] };
+  double cross = r_start[0]*r_end[1] - r_start[1]*r_end[0];
+  double dot = r_start[0]*r_end[0] + r_start[1]*r_end[1];
+  signed_angle_ = std::atan2(cross, dot);
+  double max_angle_resolution = 0.1; //[rads]
+  int N = std::ceil(std::abs(signed_angle_)/max_angle_resolution);
+  double angle_resolution = signed_angle_/N;
+
+  float x, y;
+
+  for(int i = 0; i <= N; i++){
+    double angle = i*angle_resolution;
+    x = circle_center_[0] + (r_start[0]*std::cos(angle) - r_start[1]*std::sin(angle));
+    y = circle_center_[1] + (r_start[0]*std::sin(angle) + r_start[1]*std::cos(angle));
+    poses.push_back(utils::toMsg(x, y));
+  }
+}
+
+double CornerArc::getEdgeLength(const EdgePtr edge){
+    const Coordinates & start = edge->start->coords;
+    const Coordinates & end = edge->end->coords;
+
+    float dx = end.x - start.x;
+    float dy = end.y - start.y;
+
+    return double(sqrt(dx*dx + dy*dy));
+  }
+
+double CornerArc::getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
+
+    double start_dx = start_edge->start->coords.x - start_edge->end->coords.x;
+    double start_dy = start_edge->start->coords.y - start_edge->end->coords.y;
+
+    double end_dx = end_edge->end->coords.x - end_edge->start->coords.x;
+    double end_dy = end_edge->end->coords.y - end_edge->start->coords.y;
+
+    double angle = acos((start_dx*end_dx + start_dy*end_dy)/(getEdgeLength(start_edge)*getEdgeLength(end_edge)));
+
+    return angle;
+}
+
+double CornerArc::getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
+
+  double start_edge_length = getEdgeLength(start_edge);
+  double end_edge_length = getEdgeLength(end_edge);
+
+  double start_dx = (start_edge->start->coords.x - start_edge->end->coords.x)/start_edge_length;
+  double start_dy = (start_edge->start->coords.y - start_edge->end->coords.y)/start_edge_length;
+
+  double end_dx = (end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length;
+  double end_dy = (end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length;
+
+  double dot = start_dx*end_dx + start_dy*end_dy;
+  dot = std::clamp(dot, -1.0, 1.0);
+
+  double angle = std::acos(dot);
+
+  return angle;
+}
+
+
+}  // namespace nav2_route

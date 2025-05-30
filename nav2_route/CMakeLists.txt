@@ -34,6 +34,7 @@ add_library(${library_name} SHARED
   src/route_server.cpp
   src/route_planner.cpp
   src/route_tracker.cpp
+  src/corner_arc.cpp
   src/edge_scorer.cpp
   src/operations_manager.cpp
   src/node_spatial_tree.cpp
