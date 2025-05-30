@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "nav2_route/path_converter.hpp"
-
 namespace nav2_route
 {
 
@@ -33,6 +32,7 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
 
   path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
   path_pub_->on_activate();
+  logger_ = node->get_logger();
 }
 
 nav_msgs::msg::Path PathConverter::densify(
@@ -54,12 +54,28 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
+  Coordinates start = route.edges[0]->start->coords;
+  Coordinates end;
+
   // Fill in path via route edges
   for (unsigned int i = 0; i != route.edges.size(); i++) {
+
     const EdgePtr edge = route.edges[i];
-    const Coordinates & start = edge->start->coords;
-    const Coordinates & end = edge->end->coords;
-    interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+    const EdgePtr next_edge = route.edges[i+1];
+
+    end = edge->end->coords;
+
+    CornerArc corner_arc(edge, next_edge, 1.0);
+
+    if(corner_arc.isCornerValid()){
+      end = corner_arc.getCornerStart();
+      interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+      corner_arc.interpolateArc(path.poses);
+      start = corner_arc.getCornerEnd();
+    }else{
+      interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+      start = end;
+    }
   }
 
   if (route.edges.empty()) {
