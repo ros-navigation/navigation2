@@ -26,6 +26,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
+#include "nav2_route/corner_arc.hpp"
 
 namespace nav2_route
 {
@@ -82,6 +83,7 @@ public:
 
 protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+  rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
 };
 
