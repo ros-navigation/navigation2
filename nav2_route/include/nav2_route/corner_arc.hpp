@@ -41,6 +41,12 @@ public:
 
   double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
+  bool isCornerValid(){ return valid_corner_; }
+
+  Coordinates getCornerStart(){ return start_coordinate_; }
+
+  Coordinates getCornerEnd(){ return end_coordinate_; }
+
 private:
   EdgePtr start_edge_;
   EdgePtr end_edge_;
@@ -48,9 +54,10 @@ private:
   double end_edge_length_;
   double minimum_radius_;
   double signed_angle_;
-  std::vector<double> start_point_;
-  std::vector<double> end_point_;
-  std::vector<double> circle_center_;
+  bool valid_corner_{false};
+  Coordinates start_coordinate_;
+  Coordinates end_coordinate_;
+  Coordinates circle_center_coordinate_;
 };
 
 }  // namespace nav2_route
