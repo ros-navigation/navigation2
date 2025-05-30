@@ -71,21 +71,48 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
   init();
 }
 
+void replaceOrAddArgument(
+  std::vector<std::string> & arguments, const std::string & option,
+  const std::string & arg_name, const std::string & new_argument)
+{
+  auto argument = std::find_if(arguments.begin(), arguments.end(),
+      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  if (argument != arguments.end()) {
+    *argument = new_argument;
+  } else {
+    arguments.push_back("--ros-args");
+    arguments.push_back(option);
+    arguments.push_back(new_argument);
+  }
+}
+
+rclcpp::NodeOptions getChildNodeOptions(
+  const std::string & name,
+  const std::string & parent_namespace,
+  const bool & use_sim_time,
+  const rclcpp::NodeOptions & parent_options)
+{
+  std::vector<std::string> new_arguments = parent_options.arguments();
+  replaceOrAddArgument(new_arguments, "-r", "__ns",
+      "__ns:=" + nav2_util::add_namespaces(parent_namespace, name));
+  replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
+  replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
+      "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
+  return rclcpp::NodeOptions().arguments(new_arguments);
+}
+
 Costmap2DROS::Costmap2DROS(
   const std::string & name,
   const std::string & parent_namespace,
-  const bool & use_sim_time)
+  const bool & use_sim_time,
+  const rclcpp::NodeOptions & options)
 : nav2_util::LifecycleNode(name, "",
     // NodeOption arguments take precedence over the ones provided on the command line
     // use this to make sure the node is placed on the provided namespace
     // TODO(orduno) Pass a sub-node instead of creating a new node for better handling
     //              of the namespaces
-    rclcpp::NodeOptions().arguments({
-    "--ros-args", "-r", std::string("__ns:=") +
-    nav2_util::add_namespaces(parent_namespace, name),
-    "--ros-args", "-r", name + ":" + std::string("__node:=") + name,
-    "--ros-args", "-p", "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"),
-  })),
+    getChildNodeOptions(name, parent_namespace, use_sim_time, options)
+),
   name_(name),
   default_plugins_{"static_layer", "obstacle_layer", "inflation_layer"},
   default_types_{
