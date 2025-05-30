@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>dwb_critics</name>
-  <version>1.3.6</version>
+  <version>1.3.7</version>
   <description>The dwb_critics package</description>
   <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>

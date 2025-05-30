@@ -42,6 +42,13 @@ ros2 launch nav2_bringup tb4_loopback_simulation.launch.py  # Nav2 integrated na
 - `scan_publish_dur`: : The duration between publishing scan (default 0.1s -- 10hz)
 - `publish_map_odom_tf`: Whether or not to publish tf from `map_frame_id` to `odom_frame_id` (default `true`)
 - `publish_clock`: Whether or not to publish simulated clock to `/clock` (default `true`)
+- `scan_range_min`: Minimum measurable distance from the scan in meters. Values below this are considered invalid (default: `0.05`)
+- `scan_range_max`: Maximum measurable distance from the scan in meters. Values beyond this are out of range (default: `30.0`)
+- `scan_angle_min`: Starting angle of the scan in radians (leftmost angle) (default: `-π` / `-3.1415`)
+- `scan_angle_max`: Ending angle of the scan in radians (rightmost angle) (default: `π` / `3.1415`)
+- `scan_angle_increment`: Angular resolution of the scan in radians (angle between consecutive measurements) (default: `0.02617`)
+- `scan_use_inf`: Whether to use `inf` for out-of-range values. If `false`, uses `scan_range_max - 0.1` instead (default: `True`)
+
 
 ### Topics
 

@@ -119,8 +119,9 @@ public:
 
   /**
    * @brief Reset the optimization problem to initial conditions
+   * @param Whether to reset the constraints to its base values
    */
-  void reset();
+  void reset(bool reset_dynamic_speed_limits = true);
 
 protected:
   /**

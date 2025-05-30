@@ -242,6 +242,8 @@ void DockingServer::dockRobot()
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
       RCLCPP_INFO(
         get_logger(), "Robot is already docked and/or charging (if applicable), no need to dock");
+      result->success = true;
+      docking_action_server_->succeeded_current(result);
       return;
     }
 
