@@ -35,8 +35,8 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
     std::vector<double> end_edge_unit_tangent;
     std::vector<double> unit_bisector;
 
-    start_edge_unit_tangent.push_back((start_edge->end->coords.x -start_edge->start->coords.x)/start_edge_length_);
-    start_edge_unit_tangent.push_back((start_edge->end->coords.y -start_edge->start->coords.y)/start_edge_length_);
+    start_edge_unit_tangent.push_back((start_edge->start->coords.x -start_edge->end->coords.x)/start_edge_length_);
+    start_edge_unit_tangent.push_back((start_edge->start->coords.y -start_edge->end->coords.y)/start_edge_length_);
     end_edge_unit_tangent.push_back((end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length_);
     end_edge_unit_tangent.push_back((end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length_);
 
@@ -47,20 +47,21 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
     unit_bisector.push_back(bisector_x/bisector_magnitude);
     unit_bisector.push_back(bisector_y/bisector_magnitude);
 
-    start_point_.push_back(start_edge->end->coords.x - start_edge_unit_tangent[0]*tangent_length);
-    start_point_.push_back(start_edge->end->coords.y - start_edge_unit_tangent[1]*tangent_length);
+    start_coordinate_.x = start_edge->end->coords.x + start_edge_unit_tangent[0]*tangent_length;
+    start_coordinate_.y = start_edge->end->coords.y + start_edge_unit_tangent[1]*tangent_length;
 
-    end_point_.push_back(end_edge->start->coords.x + end_edge_unit_tangent[0]*tangent_length);
-    end_point_.push_back(end_edge->start->coords.y + end_edge_unit_tangent[1]*tangent_length);
+    end_coordinate_.x = end_edge->start->coords.x + end_edge_unit_tangent[0]*tangent_length;
+    end_coordinate_.y = end_edge->start->coords.y + end_edge_unit_tangent[1]*tangent_length;
 
     double signed_angle = getSignedAngleBetweenEdges(start_edge, end_edge);
 
     double bisector_length = minimum_radius/std::sin(signed_angle/2);
 
-    circle_center_.push_back(end_edge->start->coords.x + unit_bisector[0]*bisector_length);
-    circle_center_.push_back(end_edge->start->coords.y + unit_bisector[1]*bisector_length);
+    circle_center_coordinate_.x = end_edge->start->coords.x + unit_bisector[0]*bisector_length;
+    circle_center_coordinate_.y = end_edge->start->coords.y + unit_bisector[1]*bisector_length;
 
     minimum_radius_ = minimum_radius;
+    valid_corner_ = true;
 
   }
 }
@@ -68,8 +69,8 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
 void CornerArc::interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & poses)
 {
 
-  std::vector<double> r_start{ start_point_[0]-circle_center_[0], start_point_[1]-circle_center_[1] };
-  std::vector<double> r_end{ end_point_[0]-circle_center_[0],  end_point_[1]-circle_center_[1] };
+  std::vector<double> r_start{ start_coordinate_.x-circle_center_coordinate_.x, start_coordinate_.y-circle_center_coordinate_.y };
+  std::vector<double> r_end{ end_coordinate_.x-circle_center_coordinate_.x,  end_coordinate_.y-circle_center_coordinate_.y };
   double cross = r_start[0]*r_end[1] - r_start[1]*r_end[0];
   double dot = r_start[0]*r_end[0] + r_start[1]*r_end[1];
   signed_angle_ = std::atan2(cross, dot);
@@ -81,8 +82,8 @@ void CornerArc::interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & po
 
   for(int i = 0; i <= N; i++){
     double angle = i*angle_resolution;
-    x = circle_center_[0] + (r_start[0]*std::cos(angle) - r_start[1]*std::sin(angle));
-    y = circle_center_[1] + (r_start[0]*std::sin(angle) + r_start[1]*std::cos(angle));
+    x = circle_center_coordinate_.x + (r_start[0]*std::cos(angle) - r_start[1]*std::sin(angle));
+    y = circle_center_coordinate_.y + (r_start[0]*std::sin(angle) + r_start[1]*std::cos(angle));
     poses.push_back(utils::toMsg(x, y));
   }
 }
