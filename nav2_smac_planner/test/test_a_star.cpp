@@ -130,6 +130,25 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(a_star_2.getToleranceHeuristic(), 20.0);
   EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
 
+  // test unused functions
+  nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D> expander(
+    nav2_smac_planner::MotionModel::TWOD, info, false, 1);
+
+  auto analytic_expansion_nodes =
+    nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes();
+  EXPECT_EQ(expander.setAnalyticPath(nullptr, nullptr, analytic_expansion_nodes), nullptr);
+  int dummy_int1 = 0;
+  int dummy_int2 = 0;
+  EXPECT_EQ(expander.tryAnalyticExpansion(nullptr, {}, {}, {},
+  nullptr, dummy_int1, dummy_int2), nullptr);
+
+  nav2_smac_planner::Node2D * start = nullptr;
+  EXPECT_EQ(expander.refineAnalyticPath(start, nullptr, nullptr,
+    analytic_expansion_nodes), std::numeric_limits<float>::max());
+  nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes
+    expected_nodes = expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr);
+  EXPECT_EQ(expected_nodes.nodes.size(), 0);
+
   delete costmapA;
 }
 
