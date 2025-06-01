@@ -182,7 +182,6 @@ protected:
   NodeSet _goals_set;
   GoalStateVector _goals_state;
   CoordinateVector _goals_coordinate;
-  NodePtr primary_goal;
 };
 
 }  // namespace nav2_smac_planner
