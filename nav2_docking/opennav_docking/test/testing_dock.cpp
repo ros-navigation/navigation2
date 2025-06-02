@@ -101,6 +101,10 @@ public:
     return true;
   }
 
+  virtual void startDetectionProcess() {}
+
+  virtual void stopDetectionProcess() {}
+
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 };
