@@ -102,6 +102,10 @@ public:
     return true;
   }
 
+  virtual void startDetectionProcess() {}
+
+  virtual void stopDetectionProcess() {}
+
 protected:
   nav2::LifecycleNode::SharedPtr node_;
 };
