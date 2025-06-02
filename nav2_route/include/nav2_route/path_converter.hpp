@@ -87,6 +87,7 @@ protected:
   float density_;
   double smoothing_radius_;
   double angle_of_interpolation_;
+  bool smooth_corners_;
 };
 
 }  // namespace nav2_route

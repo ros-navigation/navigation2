@@ -74,7 +74,6 @@ void CornerArc::interpolateArc(const double & max_angle_resolution, std::vector<
   double cross = r_start[0]*r_end[1] - r_start[1]*r_end[0];
   double dot = r_start[0]*r_end[0] + r_start[1]*r_end[1];
   signed_angle_ = std::atan2(cross, dot);
-  // double max_angle_resolution = 0.1; //[rads]
   int N = std::ceil(std::abs(signed_angle_)/max_angle_resolution);
   double angle_resolution = signed_angle_/N;
 

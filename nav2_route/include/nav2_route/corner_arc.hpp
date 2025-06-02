@@ -41,11 +41,11 @@ public:
 
   double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
-  bool isCornerValid(){ return valid_corner_; }
+  bool isCornerValid() const { return valid_corner_; }
 
-  Coordinates getCornerStart(){ return start_coordinate_; }
+  Coordinates getCornerStart() const { return start_coordinate_; }
 
-  Coordinates getCornerEnd(){ return end_coordinate_; }
+  Coordinates getCornerEnd() const { return end_coordinate_; }
 
 private:
   EdgePtr start_edge_;
