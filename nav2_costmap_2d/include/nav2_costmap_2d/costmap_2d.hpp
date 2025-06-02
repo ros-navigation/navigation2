@@ -184,6 +184,16 @@ public:
   bool worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my) const;
 
   /**
+   * @brief  Convert from world coordinates to map coordinates without casting to integers
+   * @param  wx The x world coordinate
+   * @param  wy The y world coordinate
+   * @param  mx Will be set to the associated map x coordinate
+   * @param  my Will be set to the associated map y coordinate
+   * @return True if the conversion was successful (legal bounds) false otherwise
+   */
+  bool worldToMapContinuous(double wx, double wy, float & mx, float & my) const;
+
+  /**
    * @brief  Convert from world coordinates to map coordinates without checking for legal bounds
    * @param  wx The x world coordinate
    * @param  wy The y world coordinate
