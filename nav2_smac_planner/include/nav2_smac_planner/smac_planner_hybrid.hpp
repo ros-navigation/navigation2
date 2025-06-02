@@ -87,7 +87,7 @@ public:
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal,
-    std::function<bool()> cancel_checker)  override;
+    std::function<bool()> cancel_checker) override;
 
 protected:
   /**

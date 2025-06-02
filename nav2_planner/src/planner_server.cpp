@@ -520,14 +520,14 @@ PlannerServer::getPlan(
     goal.pose.position.x, goal.pose.position.y);
 
   if (planners_.find(planner_id) != planners_.end()) {
-    return planners_[planner_id]->createPlan(start, goal);
+    return planners_[planner_id]->createPlan(start, goal, [](){ return false; });
   } else {
     if (planners_.size() == 1 && planner_id.empty()) {
       RCLCPP_WARN_ONCE(
         get_logger(), "No planners specified in action call. "
         "Server will use only plugin %s in server."
         " This warning will appear once.", planner_ids_concat_.c_str());
-      return planners_[planners_.begin()->first]->createPlan(start, goal);
+      return planners_[planners_.begin()->first]->createPlan(start, goal, [](){ return false; });
     } else {
       RCLCPP_ERROR(
         get_logger(), "planner %s is not a valid planner. "
