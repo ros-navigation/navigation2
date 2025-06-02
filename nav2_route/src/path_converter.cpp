@@ -45,6 +45,10 @@ nav_msgs::msg::Path PathConverter::densify(
   path.header.stamp = now;
   path.header.frame_id = frame;
 
+  // Make a copy of all the edges as we'll modify the edges during smoothing and we don't want to modify the
+  // original edges on the route
+  std::vector<EdgePtr> edges{route.edges.begin(), route.edges.end()};
+
   // If we're rerouting and covering the same previous edge to start,
   // the path should contain the relevant partial information along edge
   // to avoid unnecessary free-space planning where state is retained
@@ -54,35 +58,46 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
-  Coordinates start = route.edges[0]->start->coords;
+  Coordinates start = edges[0]->start->coords;
   Coordinates end;
 
   // Fill in path via route edges
-  for (unsigned int i = 0; i != route.edges.size(); i++) {
 
-    const EdgePtr edge = route.edges[i];
-    const EdgePtr next_edge = route.edges[i+1];
+  for (unsigned int i = 0; i < edges.size() - 1; i++) {
+
+    const EdgePtr edge = edges[i];
+    const EdgePtr next_edge = edges[i+1];
 
     end = edge->end->coords;
 
-    CornerArc corner_arc(edge, next_edge, 1.0);
+    CornerArc corner_arc(edge, next_edge, 1.5);
 
     if(corner_arc.isCornerValid()){
       end = corner_arc.getCornerStart();
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
       corner_arc.interpolateArc(path.poses);
+      auto new_start_node = new Node(*next_edge->start);
+      new_start_node->coords = corner_arc.getCornerEnd();
+      auto new_next_edge   = new DirectionalEdge(*next_edge);
+      new_next_edge->start = new_start_node;
+      edges[i+1] = new_next_edge;
       start = corner_arc.getCornerEnd();
+
     }else{
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
       start = end;
     }
   }
 
-  if (route.edges.empty()) {
+  if (edges.empty()) {
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
   } else {
+
+    interpolateEdge(edges.back()->start->coords.x, edges.back()->start->coords.y,
+                    edges.back()->end->coords.x, edges.back()->end->coords.y, path.poses);
+
     path.poses.push_back(
-      utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
+      utils::toMsg(edges.back()->end->coords.x, edges.back()->end->coords.y));
   }
 
   // Set path poses orientations for each point
