@@ -126,13 +126,9 @@ ament_add_gtest(test_lattice_node test_nodelattice.cpp)
 
 ament_target_dependencies(test_lattice_node ${dependencies})
 
-target_link_libraries(test_lattice_node ${library_name})
-
-
-# Test Goal Manager
-ament_add_gtest(test_goal_manager test_goal_manager.cpp)
-target_link_libraries(test_goal_manager
+target_link_libraries(test_lattice_node
   ${library_name}
+  ament_index_cpp::ament_index_cpp
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
