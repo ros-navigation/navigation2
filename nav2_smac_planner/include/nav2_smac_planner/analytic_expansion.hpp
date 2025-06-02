@@ -19,11 +19,10 @@
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 
-#include <functional>
-#include <list>
-#include <memory>
 #include <string>
 #include <vector>
+#include <list>
+#include <memory>
 
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"

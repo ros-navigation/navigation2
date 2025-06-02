@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include <algorithm>
+#include <math.h>
 #include <chrono>
-#include <cmath>
-#include <fstream>
-#include <limits>
-#include <memory>
-#include <queue>
-#include <string>
 #include <vector>
-
-#include "angles/angles.h"
+#include <memory>
+#include <algorithm>
+#include <queue>
+#include <limits>
+#include <string>
+#include <fstream>
+#include <cmath>
 
 #include "ompl/base/ScopedState.h"
 #include "ompl/base/spaces/DubinsStateSpace.h"

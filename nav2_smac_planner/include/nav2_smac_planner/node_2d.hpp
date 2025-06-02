@@ -15,10 +15,14 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_2D_HPP_
 #define NAV2_SMAC_PLANNER__NODE_2D_HPP_
 
-#include <functional>
-#include <memory>
-#include <stdexcept>
+#include <math.h>
 #include <vector>
+#include <iostream>
+#include <memory>
+#include <queue>
+#include <limits>
+#include <utility>
+#include <functional>
 
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"

@@ -15,12 +15,21 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 #define NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
+#include <math.h>
 
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <functional>
+#include <queue>
+#include <memory>
+#include <utility>
+#include <limits>
+#include <string>
+
+#include "nlohmann/json.hpp"
 #include "ompl/base/StateSpace.h"
+#include "angles/angles.h"
 
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"

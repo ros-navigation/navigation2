@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "Eigen/Core"
 #include "nav2_smac_planner/smac_planner_hybrid.hpp"
 
 // #define BENCHMARK_TESTING
