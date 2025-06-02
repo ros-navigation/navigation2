@@ -307,14 +307,6 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
 
-  geometry_msgs::msg::PoseStamped detected_pose;
-  detected_pose.header.stamp = node->now();
-  detected_pose.header.frame_id = "my_frame";
-  detected_pose.pose.position.x = 1.0;
-  detected_pose.pose.position.y = 1.0;
-  pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
-
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "other_frame";
@@ -326,7 +318,19 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   transform.child_frame_id = "other_frame";
   tf_buffer->setTransform(transform, "test", true);
 
-  // It can find a transform between the two frames but it throws an exception in isDocked
+  // First call to getRefinedPose will start detection
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
+
+  // NOW publish the detection after subscription is created
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Second call should succeed with the detected pose
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_FALSE(dock->isDocked());
 
@@ -397,6 +401,155 @@ TEST(SimpleChargingDockTests, ShouldRotateToDock)
   EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
   EXPECT_EQ(dock->shouldRotateToDock(), false);
 
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, DetectorLifecycle)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Test with detector service configured
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name",
+      rclcpp::ParameterValue("test_detector_service"));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+
+  // Verify detector starts in deactivate() and cleanup()
+  dock->activate();
+  dock->deactivate();  // Should call stopDetection()
+
+  dock->cleanup();  // Should also call stopDetection()
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, DetectorAutoStart)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", rclcpp::QoS(1));
+  pub->on_activate();
+
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue(""));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  // First call to getRefinedPose should start detection
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "test_frame";
+
+  // Should return false (no detection yet)
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
+
+  // Publish a detection
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "test_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 2.0;
+  pub->publish(detected_pose);
+
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Now should get the detected pose
+  EXPECT_TRUE(dock->getRefinedPose(pose, ""));
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, ServiceDetectorControl)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Create a mock service to verify it gets called
+  bool service_called = false;
+  auto service = node->create_service<std_srvs::srv::Trigger>(
+    "test_detector_service",
+    [&service_called](
+      const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+      service_called = true;
+      response->success = true;
+    });
+
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name",
+      rclcpp::ParameterValue("test_detector_service"));
+  node->declare_parameter("my_dock.detector_service_timeout", rclcpp::ParameterValue(1.0));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  // First getRefinedPose should trigger service call
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "test_frame";
+  dock->getRefinedPose(pose, "");
+
+  // Spin to process service call
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Service should have been called
+  EXPECT_TRUE(service_called);
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, DetectorServiceTimeout)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Configure with a service that doesn't exist
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name",
+      rclcpp::ParameterValue("non_existent_service"));
+  node->declare_parameter("my_dock.detector_service_timeout",
+                        rclcpp::ParameterValue(0.1));  // Short timeout
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  // Should handle timeout gracefully and continue with subscription only
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "test_frame";
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));  // No detection available
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, NoDetectorService)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Configure without detector service (default behavior)
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue(""));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(false));
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  // Should work without service or subscription
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "test_frame";
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));  // No detection available
+
+  dock->deactivate();
   dock->cleanup();
   dock.reset();
 }

@@ -22,6 +22,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(std_srvs REQUIRED)
 
 nav2_package()
 
@@ -152,6 +153,9 @@ target_link_libraries(simple_non_charging_dock PRIVATE
   tf2::tf2
 )
 
+ament_target_dependencies(simple_charging_dock PUBLIC std_srvs)
+ament_target_dependencies(simple_non_charging_dock PUBLIC std_srvs)
+
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 
 install(TARGETS ${library_name} controller pose_filter simple_charging_dock simple_non_charging_dock
@@ -191,6 +195,7 @@ ament_export_dependencies(
   nav2_graceful_controller
   nav2_msgs
   nav2_util
+  std_srvs
   opennav_docking_core
   pluginlib
   rclcpp

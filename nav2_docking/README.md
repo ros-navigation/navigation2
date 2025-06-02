@@ -257,7 +257,9 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
 | dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
 | rotate_to_dock        | Enables backward docking without requiring a sensor for detection during the final approach. When enabled, the robot approaches the staging pose facing forward with sensor coverage for dock detection; after detection, it rotates and backs into the dock using only the initially detected pose for dead reckoning. | bool |  false      |
-
+| detector_service_name      | Trigger service name to start/stop the detector. Leave empty to disable service calls.                       | string | ""    |
+| detector_service_timeout   | Timeout (seconds) to wait for the detector service to become available.                                       | double | 5.0   |
+| subscribe_toggle           | If true, dynamically subscribe/unsubscribe to `detected_dock_pose` topic; if false, keep subscription alive. | bool   | true  |
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
 ## Etc

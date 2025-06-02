@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 
+#include <std_srvs/srv/trigger.hpp>
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -51,19 +52,23 @@ public:
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
 
   /**
-   * @brief Method to cleanup resources used on shutdown.
+   * @brief Final cleanup, in case deactivate() was skipped.
+   *        Belt-and-suspenders to avoid dangling subscriptions or clients.
    */
-  virtual void cleanup() {}
+  void cleanup() override;
 
   /**
-   * @brief Method to active Behavior and any threads involved in execution.
+   * @brief Called when the plugin transitions to the ACTIVE state.
+   *        We don't start the detector here (on-demand in getRefinedPose()),
+   *        but log for debug visibility.
    */
-  virtual void activate() {}
+  void activate() override;
 
   /**
-   * @brief Method to deactivate Behavior and any threads involved in execution.
+   * @brief Called when leaving the ACTIVE state (always invoked).
+   *        Ensure any heavy detector is stopped to free resources.
    */
-  virtual void deactivate() {}
+  void deactivate() override;
 
   /**
    * @brief Method to obtain the dock's staging pose. This method should likely
@@ -149,6 +154,27 @@ protected:
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+
+  // Detector control parameters
+  std::string detector_service_name_;
+  double detector_service_timeout_{5.0};
+  bool subscribe_toggle_{true};
+
+  // Client used to call the Trigger service
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr detector_client_;
+
+  // Dynamic subscription pointer (can be reset to release CPU/GPU)
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
+
+  // Simple finite-state machine for detector status
+  enum class DetectorState { OFF, WAITING_START, ON };
+  DetectorState detector_state_{DetectorState::OFF};
+
+  // Internally enable detector (service + subscribe)
+  void startDetection();
+
+  // Internally disable detector (service + unsubscribe)
+  void stopDetection();
 };
 
 }  // namespace opennav_docking
