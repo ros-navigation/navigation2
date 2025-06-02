@@ -45,10 +45,6 @@ nav_msgs::msg::Path PathConverter::densify(
   path.header.stamp = now;
   path.header.frame_id = frame;
 
-  // Make a copy of all the edges as we'll modify the edges during smoothing and we don't want to modify the
-  // original edges on the route
-  std::vector<EdgePtr> edges{route.edges.begin(), route.edges.end()};
-
   // If we're rerouting and covering the same previous edge to start,
   // the path should contain the relevant partial information along edge
   // to avoid unnecessary free-space planning where state is retained
@@ -57,6 +53,16 @@ nav_msgs::msg::Path PathConverter::densify(
     const Coordinates & end = rerouting_info.curr_edge->end->coords;
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
+
+  // Make a copy of all the edges as we'll modify the edges during
+  // smoothing and we don't want to modify the original edges on the route
+  std::vector<EdgePtr> edges{route.edges.begin(), route.edges.end()};
+
+  // Make new edges and new nodes as end points will change depending
+  // On presence of smoothed corner. However we also do not want to
+  // modify the original route
+  std::vector<std::unique_ptr<DirectionalEdge>> new_edges;
+  std::vector<std::unique_ptr<Node>>            new_nodes;
 
   Coordinates start = edges[0]->start->coords;
   Coordinates end;
@@ -73,15 +79,26 @@ nav_msgs::msg::Path PathConverter::densify(
     CornerArc corner_arc(edge, next_edge, 1.5);
 
     if(corner_arc.isCornerValid()){
+      //if an arc exists, end of the first edge is the start of the arc
       end = corner_arc.getCornerStart();
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+
+
       corner_arc.interpolateArc(path.poses);
-      auto new_start_node = new Node(*next_edge->start);
+
+      //if an arc exists, start of the subsequent edge is end of the arc
+      auto new_start_node = std::make_unique<Node>(*next_edge->start);
       new_start_node->coords = corner_arc.getCornerEnd();
-      auto new_next_edge   = new DirectionalEdge(*next_edge);
-      new_next_edge->start = new_start_node;
-      edges[i+1] = new_next_edge;
+      auto new_next_edge   = std::make_unique<DirectionalEdge>(*next_edge);
+      new_next_edge->start = new_start_node.get();
+
+      //reassign the next edge to have the modified start coordinate
+      edges[i+1] = new_next_edge.get();
       start = corner_arc.getCornerEnd();
+
+      //Store pointer to edges to keep them alive in this method
+      new_nodes.emplace_back(std::move(new_start_node));
+      new_edges.emplace_back(std::move(new_next_edge));
 
     }else{
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
