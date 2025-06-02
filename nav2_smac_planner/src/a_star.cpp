@@ -43,8 +43,9 @@ AStarAlgorithm<NodeT>::AStarAlgorithm(
   _x_size(0),
   _y_size(0),
   _search_info(search_info),
+  _goal_coordinates(Coordinates()),
   _start(nullptr),
-  _goal_manager(GoalManagerT()),
+  _goal(nullptr),
   _motion_model(motion_model)
 {
   _graph.reserve(100000);
@@ -191,102 +192,35 @@ template<>
 void AStarAlgorithm<Node2D>::setGoal(
   const float & mx,
   const float & my,
-  const unsigned int & dim_3,
-  const GoalHeadingMode & /*goal_heading_mode*/,
-  const int & /*coarse_search_resolution*/)
+  const unsigned int & dim_3)
 {
   if (dim_3 != 0) {
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
 
-  NodePtr goal = addToGraph(
+  _goal = addToGraph(
     Node2D::getIndex(
       static_cast<unsigned int>(mx),
       static_cast<unsigned int>(my),
       getSizeX()));
-
-  goal->setPose(Node2D::Coordinates(mx, my));
-  GoalStateVector goals_state;
-  goals_state.push_back({goal, true});
-  _goal_manager.setGoalStates(goals_state);
-  _coarse_search_resolution = 1;
+  _goal_coordinates = Node2D::Coordinates(mx, my);
 }
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setGoal(
   const float & mx,
   const float & my,
-  const unsigned int & dim_3,
-  const GoalHeadingMode & goal_heading_mode,
-  const int & coarse_search_resolution)
+  const unsigned int & dim_3)
 {
-  // Default to minimal resolution unless overridden for ALL_DIRECTION
-  _coarse_search_resolution = 1;
+  _goal = addToGraph(
+    NodeT::getIndex(
+      static_cast<unsigned int>(mx),
+      static_cast<unsigned int>(my),
+      dim_3));
 
-  unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
-  GoalStateVector goals_state;
+  typename NodeT::Coordinates goal_coords(mx, my, dim_3);
 
-  // set goal based on heading mode
-  switch (goal_heading_mode) {
-    case GoalHeadingMode::DEFAULT: {
-        // add a single goal node with single heading
-        auto goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
-        goal->setPose(typename NodeT::Coordinates(
-          static_cast<int>(mx), static_cast<int>(my), static_cast<int>(dim_3)));
-        goals_state.push_back({goal, true});
-        break;
-      }
-
-    case GoalHeadingMode::BIDIRECTIONAL: {
-        // Add two goals, one for each direction
-        // add goal in original direction
-        auto goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
-        goal->setPose(typename NodeT::Coordinates(
-          static_cast<int>(mx), static_cast<int>(my), static_cast<int>(dim_3)));
-        goals_state.push_back({goal, true});
-
-        // Add goal node in opposite (180°) direction
-        unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
-        auto opposite_goal = addToGraph(NodeT::getIndex(mx, my, opposite_heading));
-        opposite_goal->setPose(typename NodeT::Coordinates(
-          static_cast<int>(mx), static_cast<int>(my), static_cast<int>(opposite_heading)));
-        goals_state.push_back({opposite_goal, true});
-        break;
-      }
-
-    case GoalHeadingMode::ALL_DIRECTION: {
-        // Set the coarse search resolution only for all direction
-        _coarse_search_resolution = coarse_search_resolution;
-
-        // Add goal nodes for all headings
-        for (unsigned int i = 0; i < num_bins; ++i) {
-          auto goal = addToGraph(NodeT::getIndex(mx, my, i));
-          goal->setPose(typename NodeT::Coordinates(
-            static_cast<float>(mx), static_cast<float>(my), static_cast<float>(i)));
-          goals_state.push_back({goal, true});
-        }
-        break;
-      }
-    case GoalHeadingMode::UNKNOWN:
-      throw std::runtime_error("Goal heading is UNKNOWN.");
-  }
-
-  // check if we need to reset the obstacle heuristic, we only need to
-  // check that the x and y component has changed
-  const auto & previous_goals = _goal_manager.getGoalsState();
-
-  // Lambda to check if goal has changed
-  auto goalHasChanged = [&]() -> bool {
-      if (previous_goals.empty()) {
-        return true;
-      }
-
-      const auto & prev = previous_goals.front().goal;
-      const auto & curr = goals_state.front().goal;
-      return (prev->pose.x != curr->pose.x) || (prev->pose.y != curr->pose.y);
-    };
-
-  if (!_search_info.cache_obstacle_heuristic || goalHasChanged()) {
+  if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
     }
@@ -295,8 +229,8 @@ void AStarAlgorithm<NodeT>::setGoal(
       _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
   }
 
-  // assign the goals state
-  _goal_manager.setGoalStates(goals_state);
+  _goal_coordinates = goal_coords;
+  _goal->setPose(_goal_coordinates);
 }
 
 template<typename NodeT>
@@ -308,15 +242,14 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
   }
 
   // Check if points were filled in
-  if (!_start || _goal_manager.goalsIsEmpty()) {
+  if (!_start || !_goal) {
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
-  // remove invalid goals
-  _goal_manager.removeInvalidGoals(getToleranceHeuristic(), _collision_checker, _traverse_unknown);
-
   // Check if ending point is valid
-  if (_goal_manager.getGoalsSet().empty()) {
+  if (getToleranceHeuristic() < 0.001 &&
+    !_goal->isNodeValid(_traverse_unknown, _collision_checker))
+  {
     throw nav2_core::GoalOccupied("Goal was in lethal cost");
   }
 
@@ -339,10 +272,6 @@ bool AStarAlgorithm<NodeT>::createPath(
   if (!areInputsValid()) {
     return false;
   }
-
-  NodeVector coarse_check_goals, fine_check_goals;
-  _goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals,
-    _coarse_search_resolution);
 
   // 0) Add starting point to the open set
   addNode(0.0, getStart());
@@ -410,14 +339,13 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
-      current_node, coarse_check_goals, fine_check_goals,
-      _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
+      current_node, getGoal(), neighborGetter, analytic_iterations, closest_distance);
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
 
     // 3) Check if we're at the goal, backtrace if required
-    if (_goal_manager.isGoal(current_node)) {
+    if (isGoal(current_node)) {
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
@@ -459,9 +387,21 @@ bool AStarAlgorithm<NodeT>::createPath(
 }
 
 template<typename NodeT>
+bool AStarAlgorithm<NodeT>::isGoal(NodePtr & node)
+{
+  return node == getGoal();
+}
+
+template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getStart()
 {
   return _start;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
+{
+  return _goal;
 }
 
 template<typename NodeT>
@@ -486,7 +426,9 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
-  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates());
+  float heuristic = NodeT::getHeuristicCost(
+    node_coords, _goal_coordinates);
+
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
   }
@@ -549,18 +491,6 @@ template<typename NodeT>
 unsigned int & AStarAlgorithm<NodeT>::getSizeDim3()
 {
   return _dim3_size;
-}
-
-template<typename NodeT>
-unsigned int AStarAlgorithm<NodeT>::getCoarseSearchResolution()
-{
-  return _coarse_search_resolution;
-}
-
-template<typename NodeT>
-typename AStarAlgorithm<NodeT>::GoalManagerT AStarAlgorithm<NodeT>::getGoalManager()
-{
-  return _goal_manager;
 }
 
 // Instantiate algorithm for the supported template types
