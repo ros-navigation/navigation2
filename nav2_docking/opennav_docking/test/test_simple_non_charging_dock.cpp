@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "gtest/gtest.h"
+#include "std_srvs/srv/trigger.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
@@ -47,6 +48,8 @@ TEST(SimpleNonChargingDockTests, ObjectLifecycle)
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  dock->startDetectionProcess();
+  dock->stopDetectionProcess();
 
   // Check initial states
   EXPECT_THROW(dock->isCharging(), std::runtime_error);
@@ -190,6 +193,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  dock->startDetectionProcess();
 
   geometry_msgs::msg::PoseStamped pose;
 
@@ -204,6 +208,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
   detected_pose.pose.position.y = -0.5;
   pub->publish(detected_pose);
   rclcpp::spin_some(node->get_node_base_interface());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   pose.header.frame_id = "my_frame";
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
@@ -211,6 +216,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
   EXPECT_NEAR(pose.pose.position.y, -0.3, 0.01);  // Applies external_detection_translation_x, +0.2
 
   dock->deactivate();
+  dock->stopDetectionProcess();
   dock->cleanup();
   dock.reset();
 }
@@ -267,14 +273,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
-
-  geometry_msgs::msg::PoseStamped detected_pose;
-  detected_pose.header.stamp = node->now();
-  detected_pose.header.frame_id = "my_frame";
-  detected_pose.pose.position.x = 1.0;
-  detected_pose.pose.position.y = 1.0;
-  pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  dock->startDetectionProcess();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
@@ -287,11 +286,24 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
   transform.child_frame_id = "other_frame";
   tf_buffer->setTransform(transform, "test", true);
 
-  // It can find a transform between the two frames but it throws an exception in isDocked
+  // First call to getRefinedPose starts detection
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
+
+  // Now publish the detection after subscription is created
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Second call should succeed
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
   EXPECT_FALSE(dock->isDocked());
 
   dock->deactivate();
+  dock->stopDetectionProcess();
   dock->cleanup();
   dock.reset();
 }
@@ -357,6 +369,48 @@ TEST(SimpleChargingDockTests, ShouldRotateToDock)
     rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(false)));
   EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
   EXPECT_EQ(dock->shouldRotateToDock(), false);
+
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleNonChargingDockTests, DetectorLifecycle)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+
+  // Test with detector service configured
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.detector_service_name",
+      rclcpp::ParameterValue("test_detector_service"));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+
+  // Create a mock service to prevent timeout
+  bool service_called = false;
+  auto service = node->create_service<std_srvs::srv::Trigger>(
+    "test_detector_service",
+    [&service_called](
+      const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+      std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+      service_called = true;
+      response->success = true;
+    });
+
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+  dock->configure(node, "my_dock", nullptr);
+
+  dock->activate();
+  dock->startDetectionProcess();
+  // Spin to process async service call
+  auto start_time = std::chrono::steady_clock::now();
+  while (!service_called &&
+    std::chrono::steady_clock::now() - start_time < std::chrono::seconds(2))
+  {
+    rclcpp::spin_some(node->get_node_base_interface());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(service_called);
+  dock->stopDetectionProcess();
+  dock->deactivate();
 
   dock->cleanup();
   dock.reset();

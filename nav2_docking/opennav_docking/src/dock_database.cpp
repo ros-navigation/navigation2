@@ -78,6 +78,7 @@ void DockDatabase::deactivate()
 {
   DockPluginMap::iterator it;
   for (it = dock_plugins_.begin(); it != dock_plugins_.end(); ++it) {
+    it->second->stopDetectionProcess();
     it->second->deactivate();
   }
 }
