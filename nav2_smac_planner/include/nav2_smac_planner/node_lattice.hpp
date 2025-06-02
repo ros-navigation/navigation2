@@ -15,21 +15,12 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 #define NAV2_SMAC_PLANNER__NODE_LATTICE_HPP_
 
-#include <math.h>
-
-#include <vector>
-#include <cmath>
-#include <iostream>
 #include <functional>
-#include <queue>
 #include <memory>
-#include <utility>
-#include <limits>
 #include <string>
+#include <vector>
 
-#include "nlohmann/json.hpp"
 #include "ompl/base/StateSpace.h"
-#include "angles/angles.h"
 
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
@@ -67,9 +58,12 @@ struct LatticeMotionTable
   /**
    * @brief Get projections of motion models
    * @param node Ptr to NodeLattice
+   * @param Reference direction change index
    * @return A set of motion poses
    */
-  MotionPrimitivePtrs getMotionPrimitives(const NodeLattice * node);
+  MotionPrimitivePtrs getMotionPrimitives(
+    const NodeLattice * node,
+    unsigned int & direction_change_index);
 
   /**
    * @brief Get file metadata needed
@@ -94,6 +88,13 @@ struct LatticeMotionTable
    */
   float & getAngleFromBin(const unsigned int & bin_idx);
 
+  /**
+   * @brief Get the angular bin to use from a raw orientation
+   * @param theta Angle in radians
+   * @return bin index of closest angle to request
+   */
+  double getAngle(const double & theta);
+
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float change_penalty;
@@ -102,12 +103,14 @@ struct LatticeMotionTable
   float reverse_penalty;
   float travel_distance_reward;
   float rotation_penalty;
+  float min_turning_radius;
   bool allow_reverse_expansion;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
   std::string current_lattice_filepath;
   LatticeMetadata lattice_metadata;
+  MotionModel motion_model = MotionModel::UNKNOWN;
 };
 
 /**
@@ -127,7 +130,7 @@ public:
    * @brief A constructor for nav2_smac_planner::NodeLattice
    * @param index The index of this node for self-reference
    */
-  explicit NodeLattice(const unsigned int index);
+  explicit NodeLattice(const uint64_t index);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeLattice
@@ -137,7 +140,7 @@ public:
   /**
    * @brief operator== for comparisons
    * @param NodeLattice right hand side node reference
-   * @return If cell indicies are equal
+   * @return If cell indices are equal
    */
   bool operator==(const NodeLattice & rhs)
   {
@@ -180,7 +183,7 @@ public:
    * @brief Gets the accumulated cost at this node
    * @return accumulated cost
    */
-  inline float & getAccumulatedCost()
+  inline float getAccumulatedCost()
   {
     return _accumulated_cost;
   }
@@ -198,7 +201,7 @@ public:
    * @brief Gets the costmap cost at this node
    * @return costmap cost
    */
-  inline float & getCost()
+  inline float getCost()
   {
     return _cell_cost;
   }
@@ -207,7 +210,7 @@ public:
    * @brief Gets if cell has been visited in search
    * @param If cell was visited
    */
-  inline bool & wasVisited()
+  inline bool wasVisited()
   {
     return _was_visited;
   }
@@ -224,7 +227,7 @@ public:
    * @brief Gets cell index
    * @return Reference to cell index
    */
-  inline unsigned int & getIndex()
+  inline uint64_t getIndex()
   {
     return _index;
   }
@@ -276,7 +279,7 @@ public:
    * @param angle Theta coordinate of point
    * @return Index
    */
-  static inline unsigned int getIndex(
+  static inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & angle)
   {
     // Hybrid-A* and State Lattice share a coordinate system
@@ -293,7 +296,7 @@ public:
    * @return Coordinates
    */
   static inline Coordinates getCoords(
-    const unsigned int & index,
+    const uint64_t & index,
     const unsigned int & width, const unsigned int & angle_quantization)
   {
     // Hybrid-A* and State Lattice share a coordinate system
@@ -307,13 +310,11 @@ public:
    * @brief Get cost of heuristic of node
    * @param node Node index current
    * @param node Node index of new
-   * @param costmap Costmap ptr to use
    * @return Heuristic cost between the nodes
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize motion models
@@ -350,12 +351,12 @@ public:
    * @param goal_coords Coordinates to start heuristic expansion at
    */
   static void resetObstacleHeuristic(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y)
   {
     // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::resetObstacleHeuristic(costmap, start_x, start_y, goal_x, goal_y);
+    NodeHybrid::resetObstacleHeuristic(costmap_ros, start_x, start_y, goal_x, goal_y);
   }
 
   /**
@@ -393,7 +394,7 @@ public:
    * @param neighbors Vector of neighbors to be filled
    */
   void getNeighbors(
-    std::function<bool(const unsigned int &,
+    std::function<bool(const uint64_t &,
     nav2_smac_planner::NodeLattice * &)> & validity_checker,
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown,
@@ -401,14 +402,14 @@ public:
 
   /**
    * @brief Set the starting pose for planning, as a node index
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(CoordinateVector & path);
 
   /**
-   * \brief add node to the path
-   * \param current_node
+   * @brief add node to the path
+   * @param current_node
    */
   void addNodeToPath(NodePtr current_node, CoordinateVector & path);
 
@@ -422,10 +423,11 @@ public:
 private:
   float _cell_cost;
   float _accumulated_cost;
-  unsigned int _index;
+  uint64_t _index;
   bool _was_visited;
   MotionPrimitive * _motion_primitive;
   bool _backwards;
+  bool _is_node_valid{false};
 };
 
 }  // namespace nav2_smac_planner
