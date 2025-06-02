@@ -33,7 +33,7 @@ public:
 
   ~CornerArc() = default;
 
-  void interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & poses);
+  void interpolateArc(const double & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
   double getEdgeLength(const EdgePtr edge);
 

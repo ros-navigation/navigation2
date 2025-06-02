@@ -86,6 +86,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
   double smoothing_radius_;
+  double angle_of_interpolation_;
 };
 
 }  // namespace nav2_route

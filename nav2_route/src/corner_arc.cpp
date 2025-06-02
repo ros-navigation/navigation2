@@ -66,7 +66,7 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
   }
 }
 
-void CornerArc::interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & poses)
+void CornerArc::interpolateArc(const double & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses)
 {
 
   std::vector<double> r_start{ start_coordinate_.x-circle_center_coordinate_.x, start_coordinate_.y-circle_center_coordinate_.y };
@@ -74,7 +74,7 @@ void CornerArc::interpolateArc(std::vector<geometry_msgs::msg::PoseStamped> & po
   double cross = r_start[0]*r_end[1] - r_start[1]*r_end[0];
   double dot = r_start[0]*r_end[0] + r_start[1]*r_end[1];
   signed_angle_ = std::atan2(cross, dot);
-  double max_angle_resolution = 0.1; //[rads]
+  // double max_angle_resolution = 0.1; //[rads]
   int N = std::ceil(std::abs(signed_angle_)/max_angle_resolution);
   double angle_resolution = signed_angle_/N;
 

@@ -32,6 +32,10 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
   nav2_util::declare_parameter_if_not_declared(
     node, "smoothing_radius", rclcpp::ParameterValue(1.0));
   smoothing_radius_ = node->get_parameter("smoothing_radius").as_double();
+  nav2_util::declare_parameter_if_not_declared(
+    node, "angle_of_interpolation", rclcpp::ParameterValue(0.1));
+  angle_of_interpolation_ = node->get_parameter("angle_of_interpolation").as_double();
+
 
   path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
   path_pub_->on_activate();
@@ -87,7 +91,7 @@ nav_msgs::msg::Path PathConverter::densify(
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
 
 
-      corner_arc.interpolateArc(path.poses);
+      corner_arc.interpolateArc(angle_of_interpolation_, path.poses);
 
       //if an arc exists, start of the subsequent edge is end of the arc
       auto new_start_node = std::make_unique<Node>(*next_edge->start);
