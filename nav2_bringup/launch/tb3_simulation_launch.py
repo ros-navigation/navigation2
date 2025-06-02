@@ -195,8 +195,6 @@ def generate_launch_description() -> LaunchDescription:
             'autostart': autostart,
             'use_composition': use_composition,
             'use_respawn': use_respawn,
-            'use_keepout_zones': 'False',
-            'use_speed_zones': 'False',
         }.items(),
     )
     # The SDF file for the world is a xacro file because we wanted to

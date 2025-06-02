@@ -144,8 +144,6 @@ def generate_launch_description() -> LaunchDescription:
             'use_composition': use_composition,
             'use_respawn': use_respawn,
             'use_localization': 'False',  # Don't use SLAM, AMCL
-            'use_keepout_zones': 'False',
-            'use_speed_zones': 'False',
         }.items(),
     )
 
