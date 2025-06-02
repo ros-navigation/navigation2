@@ -112,15 +112,14 @@ public:
 
   /**
    * @brief Refined analytic path from the current node to the goal
-   * @param node The node to start the analytic path from. Node head may
-   * change as a result of refinement
+   * @param current_node The node to start the analytic path from
    * @param goal_node The goal node to plan to
    * @param getter The function object that gets valid nodes from the graph
    * @param analytic_nodes The set of analytic nodes to refine
    * @return The score of the refined path
    */
   float refineAnalyticPath(
-    NodePtr & node,
+    const NodePtr & current_node,
     const NodePtr & goal_node,
     const NodeGetter & getter,
     AnalyticExpansionNodes & analytic_nodes);

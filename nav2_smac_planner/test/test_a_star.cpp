@@ -141,9 +141,7 @@ TEST(AStarTest, test_a_star_2d)
   int dummy_int2 = 0;
   EXPECT_EQ(expander.tryAnalyticExpansion(nullptr, {}, {}, {},
   nullptr, dummy_int1, dummy_int2), nullptr);
-
-  nav2_smac_planner::Node2D * start = nullptr;
-  EXPECT_EQ(expander.refineAnalyticPath(start, nullptr, nullptr,
+  EXPECT_EQ(expander.refineAnalyticPath(nullptr, nullptr, nullptr,
     analytic_expansion_nodes), std::numeric_limits<float>::max());
   nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes
     expected_nodes = expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr);
