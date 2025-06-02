@@ -19,17 +19,8 @@
 
 #include "gtest/gtest.h"
 #include "nav2_smac_planner/collision_checker.hpp"
-#include "nav2_util/lifecycle_node.hpp"
 
 using namespace nav2_costmap_2d;  // NOLINT
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 TEST(collision_footprint, test_basic)
 {
@@ -51,7 +42,13 @@ TEST(collision_footprint, test_basic)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72, node);
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
   collision_checker.inCollision(5.0, 5.0, 0.0, false);
   float cost = collision_checker.getCost();
@@ -64,7 +61,13 @@ TEST(collision_footprint, test_point_cost)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testB");
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72, node);
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   nav2_costmap_2d::Footprint footprint;
   collision_checker.setFootprint(footprint, true /*radius / pointcose*/, 0.0);
 
@@ -79,7 +82,13 @@ TEST(collision_footprint, test_world_to_map)
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testC");
   nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72, node);
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   nav2_costmap_2d::Footprint footprint;
   collision_checker.setFootprint(footprint, true /*radius / point cost*/, 0.0);
 
@@ -92,7 +101,7 @@ TEST(collision_footprint, test_world_to_map)
 
   EXPECT_NEAR(cost, 0.0, 0.001);
 
-  costmap_->setCost(50, 50, 200);
+  costmap->setCost(50, 50, 200);
   collision_checker.worldToMap(5.0, 5.0, x, y);
 
   collision_checker.inCollision(x, y, 0.0, false);
@@ -126,20 +135,31 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72, node);
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
-  collision_checker.inCollision(50, 50, 0.0, false);
+  EXPECT_FALSE(collision_checker.inCollision(50, 50, 0.0, false));
   float cost = collision_checker.getCost();
   EXPECT_NEAR(cost, 128.0, 0.001);
 
-  collision_checker.inCollision(50, 49, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(50, 49, 0.0, false));
   float up_value = collision_checker.getCost();
-  EXPECT_NEAR(up_value, 254.0, 0.001);
+  EXPECT_NEAR(up_value, 128.0, 0.001);  // center cost
 
-  collision_checker.inCollision(50, 52, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(50, 52, 0.0, false));
   float down_value = collision_checker.getCost();
-  EXPECT_NEAR(down_value, 254.0, 0.001);
+  EXPECT_NEAR(down_value, 128.0, 0.001);  // center cost
+
+  EXPECT_TRUE(collision_checker.inCollision(11, 11, 0.0, false));
+  float other_value = collision_checker.getCost();
+  EXPECT_NEAR(other_value, 254.0, 0.001);  // center cost
+
   delete costmap_;
 }
 
@@ -167,19 +187,43 @@ TEST(collision_footprint, test_point_and_line_cost)
 
   nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
 
-  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_, 72, node);
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
   collision_checker.setFootprint(footprint, false /*use footprint*/, 0.0);
 
-  collision_checker.inCollision(50, 50, 0.0, false);
+  EXPECT_FALSE(collision_checker.inCollision(50, 50, 0.0, false));
   float value = collision_checker.getCost();
   EXPECT_NEAR(value, 128.0, 0.001);
 
-  collision_checker.inCollision(49, 50, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(49, 50, 0.0, false));
   float left_value = collision_checker.getCost();
-  EXPECT_NEAR(left_value, 254.0, 0.001);
+  EXPECT_NEAR(left_value, 128.0, 0.001);  // center cost
 
-  collision_checker.inCollision(52, 50, 0.0, false);
+  EXPECT_TRUE(collision_checker.inCollision(52, 50, 0.0, false));
   float right_value = collision_checker.getCost();
-  EXPECT_NEAR(right_value, 254.0, 0.001);
+  EXPECT_NEAR(right_value, 128.0, 0.001);  // center cost
+
+  EXPECT_TRUE(collision_checker.inCollision(39, 60, 0.0, false));
+  float other_value = collision_checker.getCost();
+  EXPECT_NEAR(other_value, 254.0, 0.001);  // center cost
+
   delete costmap_;
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

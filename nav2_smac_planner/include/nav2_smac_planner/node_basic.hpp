@@ -15,18 +15,6 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_BASIC_HPP_
 #define NAV2_SMAC_PLANNER__NODE_BASIC_HPP_
 
-#include <math.h>
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <functional>
-#include <queue>
-#include <memory>
-#include <utility>
-#include <limits>
-
-#include "ompl/base/StateSpace.h"
-
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"
@@ -49,9 +37,9 @@ public:
    * @brief A constructor for nav2_smac_planner::NodeBasic
    * @param index The index of this node for self-reference
    */
-  explicit NodeBasic(const unsigned int index)
-  : index(index),
-    graph_node_ptr(nullptr)
+  explicit NodeBasic(const uint64_t new_index)
+  : graph_node_ptr(nullptr),
+    index(new_index)
   {
   }
 
@@ -73,8 +61,10 @@ public:
   typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
   MotionPrimitive * prim_ptr;  // Used by NodeLattice
-  unsigned int index, motion_index;
+  uint64_t index;
+  unsigned int motion_index;
   bool backward;
+  TurnDirection turn_dir;
 };
 
 }  // namespace nav2_smac_planner

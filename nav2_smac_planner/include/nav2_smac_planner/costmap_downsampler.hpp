@@ -15,9 +15,8 @@
 #ifndef NAV2_SMAC_PLANNER__COSTMAP_DOWNSAMPLER_HPP_
 #define NAV2_SMAC_PLANNER__COSTMAP_DOWNSAMPLER_HPP_
 
-#include <algorithm>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_smac_planner/constants.hpp"

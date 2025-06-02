@@ -16,15 +16,15 @@
 #ifndef NAV2_SMAC_PLANNER__A_STAR_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_HPP_
 
-#include <vector>
-#include <iostream>
-#include <unordered_map>
+#include <functional>
 #include <memory>
 #include <queue>
+#include <tuple>
 #include <utility>
-#include "Eigen/Core"
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_core/planner_exceptions.hpp"
 
 #include "nav2_smac_planner/thirdparty/robin_hood.h"
 #include "nav2_smac_planner/analytic_expansion.hpp"
@@ -32,6 +32,7 @@
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/node_basic.hpp"
+#include "nav2_smac_planner/goal_manager.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 
@@ -47,13 +48,16 @@ class AStarAlgorithm
 {
 public:
   typedef NodeT * NodePtr;
-  typedef robin_hood::unordered_node_map<unsigned int, NodeT> Graph;
+  typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
   typedef typename NodeVector::iterator NeighborIterator;
-  typedef std::function<bool (const unsigned int &, NodeT * &)> NodeGetter;
+  typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
+  typedef GoalManager<NodeT> GoalManagerT;
+  typedef std::vector<GoalState<NodeT>> GoalStateVector;
+
 
   /**
    * @struct nav2_smac_planner::NodeComparator
@@ -86,25 +90,35 @@ public:
    * @param max_on_approach_iterations Maximum number of iterations before returning a valid
    * path once within thresholds to refine path
    * comes at more compute time but smoother paths.
+   * @param terminal_checking_interval Number of iterations to check if the task has been canceled or
+   * or planning time exceeded
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
+   * @param lookup_table_size Size of the lookup table to store heuristic values
+   * @param dim_3_size Number of quantization bins
    */
   void initialize(
     const bool & allow_unknown,
     int & max_iterations,
     const int & max_on_approach_iterations,
+    const int & terminal_checking_interval,
     const double & max_planning_time,
     const float & lookup_table_size,
     const unsigned int & dim_3_size);
 
   /**
    * @brief Creating path from given costmap, start, and goal
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @param num_iterations Reference to number of iterations to create plan
    * @param tolerance Reference to tolerance in costmap nodes
+   * @param cancel_checker Function to check if the task has been canceled
+   * @param expansions_log Optional expansions logged for debug
    * @return if plan was successful
    */
-  bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
+  bool createPath(
+    CoordinateVector & path, int & num_iterations, const float & tolerance,
+    std::function<bool()> cancel_checker,
+    std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
   /**
    * @brief Sets the collision checker to use
@@ -117,11 +131,15 @@ public:
    * @param mx The node X index of the goal
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
+   * @param goal_heading_mode The goal heading mode to use
+   * @param coarse_search_resolution The resolution to search for goal heading
    */
   void setGoal(
-    const unsigned int & mx,
-    const unsigned int & my,
-    const unsigned int & dim_3);
+    const float & mx,
+    const float & my,
+    const unsigned int & dim_3,
+    const GoalHeadingMode & goal_heading_mode = GoalHeadingMode::DEFAULT,
+    const int & coarse_search_resolution = 1);
 
   /**
    * @brief Set the starting pose for planning, as a node index
@@ -130,8 +148,8 @@ public:
    * @param dim_3 The node dim_3 index of the goal
    */
   void setStart(
-    const unsigned int & mx,
-    const unsigned int & my,
+    const float & mx,
+    const float & my,
     const unsigned int & dim_3);
 
   /**
@@ -147,14 +165,8 @@ public:
   NodePtr & getStart();
 
   /**
-   * @brief Get pointer reference to goal node
-   * @return Node pointer reference to goal node
-   */
-  NodePtr & getGoal();
-
-  /**
    * @brief Get maximum number of on-approach iterations after within threshold
-   * @return Reference to Maximum on-appraoch iterations parameter
+   * @return Reference to Maximum on-approach iterations parameter
    */
   int & getOnApproachMaxIterations();
 
@@ -182,6 +194,18 @@ public:
    */
   unsigned int & getSizeDim3();
 
+  /**
+   * @brief Get the resolution of the coarse search
+   * @return Size of the goals to expand
+   */
+  unsigned int getCoarseSearchResolution();
+
+  /**
+   * @brief Get the goals manager class
+   * @return Goal manager class
+   */
+  GoalManagerT getGoalManager();
+
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -200,14 +224,7 @@ protected:
    * @brief Adds node to graph
    * @param index Node index to add
    */
-  inline NodePtr addToGraph(const unsigned int & index);
-
-  /**
-   * @brief Check if this node is the goal node
-   * @param node Node pointer to check if its the goal node
-   * @return if node is goal
-   */
-  inline bool isGoal(NodePtr & node);
+  inline NodePtr addToGraph(const uint64_t & index);
 
   /**
    * @brief Get cost of heuristic of node
@@ -223,7 +240,7 @@ protected:
   inline bool areInputsValid();
 
   /**
-   * @brief Clear hueristic queue of nodes to search
+   * @brief Clear heuristic queue of nodes to search
    */
   inline void clearQueue();
 
@@ -232,22 +249,36 @@ protected:
    */
   inline void clearGraph();
 
-  int _timing_interval = 5000;
+  /**
+   * @brief Check if node has been visited
+   * @param current_node Node to check if visited
+   * @return if node has been visited
+   */
+  inline bool onVisitationCheckNode(const NodePtr & node);
+
+  /**
+   * @brief Populate a debug log of expansions for Hybrid-A* for visualization
+   * @param node Node expanded
+   * @param expansions_log Log to add not expanded to
+   */
+  inline void populateExpansionsLog(
+    const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
 
   bool _traverse_unknown;
+  bool _is_initialized;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   double _max_planning_time;
   float _tolerance;
   unsigned int _x_size;
   unsigned int _y_size;
   unsigned int _dim3_size;
+  unsigned int _coarse_search_resolution;
   SearchInfo _search_info;
 
-  Coordinates _goal_coordinates;
   NodePtr _start;
-  NodePtr _goal;
-
+  GoalManagerT _goal_manager;
   Graph _graph;
   NodeQueue _queue;
 
