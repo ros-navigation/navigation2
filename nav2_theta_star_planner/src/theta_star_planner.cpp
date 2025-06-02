@@ -86,8 +86,12 @@ void ThetaStarPlanner::deactivate()
 
 nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker)
 {
+  // Not implemented yet
+  (void)cancel_checker;
+
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
 

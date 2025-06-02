@@ -129,11 +129,15 @@ NavfnPlanner::cleanup()
 
 nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const geometry_msgs::msg::PoseStamped & goal,
+  std::function<bool()> cancel_checker)
 {
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
+
+  // Not implemented yet
+  (void)cancel_checker;
 
   // Update planner based on the new costmap size
   if (isPlannerOutOfDate()) {

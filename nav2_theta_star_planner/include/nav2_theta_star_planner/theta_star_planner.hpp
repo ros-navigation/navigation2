@@ -55,7 +55,8 @@ public:
 
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) override;
 
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
