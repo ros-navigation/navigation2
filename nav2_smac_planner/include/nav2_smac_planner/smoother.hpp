@@ -15,14 +15,22 @@
 #ifndef NAV2_SMAC_PLANNER__SMOOTHER_HPP_
 #define NAV2_SMAC_PLANNER__SMOOTHER_HPP_
 
+#include <cmath>
 #include <vector>
+#include <iostream>
+#include <memory>
+#include <queue>
+#include <utility>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "angles/angles.h"
+#include "tf2/utils.h"
 #include "ompl/base/StateSpace.h"
+#include "ompl/base/spaces/DubinsStateSpace.h"
 
 namespace nav2_smac_planner
 {

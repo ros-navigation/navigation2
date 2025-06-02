@@ -15,6 +15,18 @@
 #ifndef NAV2_SMAC_PLANNER__NODE_BASIC_HPP_
 #define NAV2_SMAC_PLANNER__NODE_BASIC_HPP_
 
+#include <math.h>
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <functional>
+#include <queue>
+#include <memory>
+#include <utility>
+#include <limits>
+
+#include "ompl/base/StateSpace.h"
+
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"

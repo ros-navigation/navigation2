@@ -16,12 +16,14 @@
 #ifndef NAV2_SMAC_PLANNER__A_STAR_HPP_
 #define NAV2_SMAC_PLANNER__A_STAR_HPP_
 
-#include <functional>
+#include <vector>
+#include <iostream>
+#include <unordered_map>
 #include <memory>
 #include <queue>
-#include <tuple>
 #include <utility>
-#include <vector>
+#include <tuple>
+#include "Eigen/Core"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
