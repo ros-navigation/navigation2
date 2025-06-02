@@ -167,12 +167,12 @@ public:
     : x(x_in), y(y_in), theta(theta_in)
     {}
 
-    inline bool operator==(const Coordinates & rhs) const
+    inline bool operator==(const Coordinates & rhs)
     {
       return this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta;
     }
 
-    inline bool operator!=(const Coordinates & rhs) const
+    inline bool operator!=(const Coordinates & rhs)
     {
       return !(*this == rhs);
     }
@@ -374,7 +374,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const CoordinateVector & goals_coords);
+    const Coordinates & goal_coordinates);
 
   /**
    * @brief Initialize motion models
