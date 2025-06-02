@@ -29,6 +29,9 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
   nav2_util::declare_parameter_if_not_declared(
     node, "path_density", rclcpp::ParameterValue(0.05));
   density_ = static_cast<float>(node->get_parameter("path_density").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "smoothing_radius", rclcpp::ParameterValue(1.0));
+  smoothing_radius_ = node->get_parameter("smoothing_radius").as_double();
 
   path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
   path_pub_->on_activate();
@@ -76,7 +79,7 @@ nav_msgs::msg::Path PathConverter::densify(
 
     end = edge->end->coords;
 
-    CornerArc corner_arc(edge, next_edge, 1.5);
+    CornerArc corner_arc(edge, next_edge, smoothing_radius_);
 
     if(corner_arc.isCornerValid()){
       //if an arc exists, end of the first edge is the start of the arc
