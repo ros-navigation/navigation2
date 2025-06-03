@@ -196,14 +196,13 @@ public:
   inline bool hasGoalChanged(const Coordinates & coord)
   {
     /**
-     * Note: This function checks if the goal has changed. This has to be done with 
+     * Note: This function checks if the goal has changed. This has to be done with
      * the coordinates not the Node pointer because the Node pointer
      * can be reused for different goals, but the coordinates will always
      * be unique for each goal.
      */
     return _ref_goal_coord != coord;
   }
-
 
 protected:
   NodeSet _goals_set;
