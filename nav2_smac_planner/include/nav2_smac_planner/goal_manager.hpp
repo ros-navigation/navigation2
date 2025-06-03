@@ -54,7 +54,7 @@ public:
   : _goals_set(NodeSet()),
     _goals_state(GoalStateVector()),
     _goals_coordinate(CoordinateVector()),
-    ,_ref_goal_coord(Coordinates())
+    _ref_goal_coord(Coordinates())
   {
   }
 
