@@ -114,7 +114,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
             getAnalyticPath(
             current_node, current_goal_node, getter,
             current_node->motion_table.state_space);
-          if (!analytic_nodes.empty()) {
+          if (!analytic_nodes.nodes.empty()) {
             NodePtr node = current_node;
             float score = refineAnalyticPath(
               node, current_goal_node, getter, analytic_nodes);
@@ -124,30 +124,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
               current_best_goal = current_goal_node;
               current_best_score = score;
               current_best_node = node;
-            }
-            analytic_nodes = refined_analytic_nodes;
-            node = test_node;
-          } else {
-            break;
-          }
-        }
-      }
-
-      // perform a final search if we found a goal
-      if (found_valid_expansion) {
-        for (auto & current_goal_node : fine_check_goals) {
-          AnalyticExpansionNodes analytic_nodes =
-            getAnalyticPath(
-            current_node, current_goal_node, getter,
-            current_node->motion_table.state_space);
-          if (!analytic_nodes.empty()) {
-            bool score = refineAnalyticPath(
-              current_node, current_goal_node, getter, analytic_nodes);
-            // Update the best score if we found a better path
-            if (score < current_best_score) {
-              current_best_analytic_nodes = analytic_nodes;
-              current_best_goal = current_goal_node;
-              current_best_score = score;
             }
           }
         }

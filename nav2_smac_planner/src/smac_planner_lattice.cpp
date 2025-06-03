@@ -624,7 +624,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (param_name == _name + ".terminal_checking_interval") {
         reinit_a_star = true;
         _terminal_checking_interval = parameter.as_int();
-      } else if (name == _name + ".coarse_search_resolution") {
+      } else if (param_name == _name + ".coarse_search_resolution") {
         _coarse_search_resolution = parameter.as_int();
         if (_coarse_search_resolution <= 0) {
           RCLCPP_WARN(
@@ -659,7 +659,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
           );
           _coarse_search_resolution = 1;
         }
-      } else if (name == _name + ".goal_heading_mode") {
+      } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
         RCLCPP_INFO(
