@@ -232,10 +232,10 @@ void AStarAlgorithm<NodeT>::setGoal(
     case GoalHeadingMode::DEFAULT: {
         // add a single goal node with single heading
         auto goal = addToGraph(
-              NodeT::getIndex(
-                static_cast<unsigned int>(mx),
-                static_cast<unsigned int>(my),
-                dim_3));      
+          NodeT::getIndex(
+            static_cast<unsigned int>(mx),
+            static_cast<unsigned int>(my),
+            dim_3));
         goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
         goals_state.push_back({goal, true});
         break;
@@ -259,7 +259,8 @@ void AStarAlgorithm<NodeT>::setGoal(
             static_cast<unsigned int>(mx),
             static_cast<unsigned int>(my),
             opposite_heading));
-        opposite_goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
+        opposite_goal->setPose(
+          typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
         goals_state.push_back({opposite_goal, true});
         break;
       }
@@ -285,7 +286,8 @@ void AStarAlgorithm<NodeT>::setGoal(
   }
 
   if (!_search_info.cache_obstacle_heuristic ||
-    _goal_manager.hasGoalChanged(ref_goal_coord)) {
+    _goal_manager.hasGoalChanged(ref_goal_coord))
+  {
     if (!_start) {
       throw std::runtime_error("Start must be set before goal.");
     }
