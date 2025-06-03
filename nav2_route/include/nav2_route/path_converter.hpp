@@ -79,8 +79,6 @@ public:
     float x0, float y0, float x1, float y1,
     std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
-  double getEdgeLength(const EdgePtr edge);
-
 protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};

@@ -27,8 +27,8 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
 
   double tangent_length = minimum_radius/(std::tan(angle/2));
 
-  start_edge_length_ = getEdgeLength(start_edge);
-  end_edge_length_ = getEdgeLength(end_edge);
+  start_edge_length_ = start_edge->getEdgeLength();
+  end_edge_length_ = end_edge->getEdgeLength();
 
   if(tangent_length < start_edge_length_ && tangent_length < end_edge_length_){
     std::vector<double> start_edge_unit_tangent;
@@ -87,16 +87,6 @@ void CornerArc::interpolateArc(const double & max_angle_resolution, std::vector<
   }
 }
 
-double CornerArc::getEdgeLength(const EdgePtr edge){
-    const Coordinates & start = edge->start->coords;
-    const Coordinates & end = edge->end->coords;
-
-    float dx = end.x - start.x;
-    float dy = end.y - start.y;
-
-    return double(sqrt(dx*dx + dy*dy));
-  }
-
 double CornerArc::getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
 
     double start_dx = start_edge->start->coords.x - start_edge->end->coords.x;
@@ -105,15 +95,15 @@ double CornerArc::getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr e
     double end_dx = end_edge->end->coords.x - end_edge->start->coords.x;
     double end_dy = end_edge->end->coords.y - end_edge->start->coords.y;
 
-    double angle = acos((start_dx*end_dx + start_dy*end_dy)/(getEdgeLength(start_edge)*getEdgeLength(end_edge)));
+    double angle = acos((start_dx*end_dx + start_dy*end_dy)/(start_edge->getEdgeLength()*end_edge->getEdgeLength()));
 
     return angle;
 }
 
 double CornerArc::getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
 
-  double start_edge_length = getEdgeLength(start_edge);
-  double end_edge_length = getEdgeLength(end_edge);
+  double start_edge_length = start_edge->getEdgeLength();
+  double end_edge_length = end_edge->getEdgeLength();
 
   double start_dx = (start_edge->start->coords.x - start_edge->end->coords.x)/start_edge_length;
   double start_dy = (start_edge->start->coords.y - start_edge->end->coords.y)/start_edge_length;

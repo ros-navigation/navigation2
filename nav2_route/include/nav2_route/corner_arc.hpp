@@ -35,8 +35,6 @@ public:
 
   void interpolateArc(const double & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
-  double getEdgeLength(const EdgePtr edge);
-
   double getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
   double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
@@ -50,8 +48,8 @@ public:
 private:
   EdgePtr start_edge_;
   EdgePtr end_edge_;
-  double start_edge_length_;
-  double end_edge_length_;
+  float start_edge_length_;
+  float end_edge_length_;
   double minimum_radius_;
   double signed_angle_;
   bool valid_corner_{false};
