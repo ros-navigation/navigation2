@@ -28,6 +28,7 @@
 
 #include "opennav_docking_core/non_charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace opennav_docking
 {
@@ -149,7 +150,9 @@ protected:
   bool subscribe_toggle_{true};
 
   // Client used to call the Trigger service
-  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr detector_client_;
+  nav2_util::ServiceClient<
+    std_srvs::srv::Trigger,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr>::SharedPtr detector_client_;
 
   // Dynamic subscription pointer (can be reset to release CPU/GPU)
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;

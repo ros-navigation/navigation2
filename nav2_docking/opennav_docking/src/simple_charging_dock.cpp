@@ -140,8 +140,9 @@ void SimpleChargingDock::configure(
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
   if (!detector_service_name_.empty()) {
-    detector_client_ = node_->create_client<std_srvs::srv::Trigger>(
-      detector_service_name_);
+    detector_client_ = std::make_shared<
+      nav2_util::ServiceClient<std_srvs::srv::Trigger,
+      rclcpp_lifecycle::LifecycleNode::SharedPtr>>(node_, detector_service_name_);
   }
 
   if (use_battery_status_) {
@@ -345,18 +346,17 @@ void SimpleChargingDock::startDetection()
   if (detector_state_ != DetectorState::OFF) {return;}
 
   // 1. Service START request
-  //    We do not wait for response: non-blocking trigger
   if (detector_client_) {
-    if (!detector_client_->wait_for_service(
-          std::chrono::duration<double>(detector_service_timeout_)))
-    {
+    auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+    try {
+      detector_client_->invoke(
+        req,
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::duration<double>(detector_service_timeout_)));
+    } catch (const std::exception & e) {
       RCLCPP_WARN(node_->get_logger(),
-                  "Detector service '%s' unavailable (timeout %.1f s), "
-                  "continuing with subscription only",
-                  detector_service_name_.c_str(), detector_service_timeout_);
-    } else {
-      auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
-      auto future = detector_client_->async_send_request(req);
+        "Detector service '%s' failed: %s",
+        detector_service_name_.c_str(), e.what());
     }
   }
 
@@ -381,10 +381,18 @@ void SimpleChargingDock::stopDetection()
   if (detector_state_ == DetectorState::OFF) {return;}
 
   // 1. Service STOP request
-  //    Fire-and-forget; detector should teardown itself
-  if (detector_client_ && detector_client_->service_is_ready()) {
+  if (detector_client_) {
     auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
-    detector_client_->async_send_request(req);
+    try {
+      detector_client_->invoke(
+        req,
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::duration<double>(detector_service_timeout_)));
+    } catch (const std::exception & e) {
+      RCLCPP_WARN(node_->get_logger(),
+        "Detector service '%s' failed: %s",
+        detector_service_name_.c_str(), e.what());
+    }
   }
 
   // 2. Unsubscribe to release resources
