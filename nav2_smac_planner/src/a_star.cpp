@@ -199,7 +199,7 @@ void AStarAlgorithm<Node2D>::setGoal(
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
 
-  NodePtr goal = addToGraph(
+  auto goal = addToGraph(
     Node2D::getIndex(
       static_cast<unsigned int>(mx),
       static_cast<unsigned int>(my),
