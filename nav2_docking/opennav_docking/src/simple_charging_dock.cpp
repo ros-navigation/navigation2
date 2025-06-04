@@ -174,6 +174,17 @@ void SimpleChargingDock::configure(
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
+
+  // If not toggling subscription and using external detections, keep
+  // subscription alive by creating it here during configuration
+  if (!subscribe_toggle_ && use_external_detection_pose_ && !detected_pose_sub_) {
+    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "detected_dock_pose", rclcpp::SensorDataQoS(),
+      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+        detected_dock_pose_ = *pose;
+        detector_state_ = DetectorState::ON;
+      });
+  }
 }
 
 geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
