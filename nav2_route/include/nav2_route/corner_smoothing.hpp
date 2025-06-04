@@ -29,44 +29,36 @@ public:
   /**
    * @brief Constructor
    */
-  CornerArc(EdgePtr start_edge, EdgePtr end_edge, float minimum_radius)
+  CornerArc(const Coordinates & start, const Coordinates & corner, const Coordinates & end, float minimum_radius)
   {
-    double angle = getAngleBetweenEdges(start_edge, end_edge);
 
-    double tangent_length = minimum_radius/(std::tan(angle/2));
+    start_edge_length_ = hypotf(corner.x - start.x, corner.y - start.y);
+    end_edge_length_   = hypotf(end.x - corner.x, end.y - corner.y);
 
-    float start_edge_length = start_edge->getEdgeLength();
-    float end_edge_length = end_edge->getEdgeLength();
+    double angle = getAngleBetweenEdges(start, corner, end);
 
-    if(tangent_length < start_edge_length && tangent_length < end_edge_length){
-      std::vector<double> start_edge_unit_tangent;
-      std::vector<double> end_edge_unit_tangent;
-      std::vector<double> unit_bisector;
+    double tangent_length = minimum_radius/(std::tan(std::fabs(angle)/2));
 
-      start_edge_unit_tangent.push_back((start_edge->start->coords.x -start_edge->end->coords.x)/start_edge_length);
-      start_edge_unit_tangent.push_back((start_edge->start->coords.y -start_edge->end->coords.y)/start_edge_length);
-      end_edge_unit_tangent.push_back((end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length);
-      end_edge_unit_tangent.push_back((end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length);
+    if(tangent_length < start_edge_length_ && tangent_length < end_edge_length_){
+      std::vector<double> start_edge_unit_tangent = {(start.x - corner.x)/start_edge_length_, (start.y - corner.y)/start_edge_length_};
+      std::vector<double> end_edge_unit_tangent = {(end.x - corner.x)/end_edge_length_, (end.y - corner.y)/end_edge_length_};
 
       double bisector_x = start_edge_unit_tangent[0]+end_edge_unit_tangent[0];
       double bisector_y = start_edge_unit_tangent[1]+end_edge_unit_tangent[1];
       double bisector_magnitude = std::sqrt(bisector_x*bisector_x + bisector_y*bisector_y);
 
-      unit_bisector.push_back(bisector_x/bisector_magnitude);
-      unit_bisector.push_back(bisector_y/bisector_magnitude);
+      std::vector<double> unit_bisector = {bisector_x/bisector_magnitude, bisector_y/bisector_magnitude};
 
-      start_coordinate_.x = start_edge->end->coords.x + start_edge_unit_tangent[0]*tangent_length;
-      start_coordinate_.y = start_edge->end->coords.y + start_edge_unit_tangent[1]*tangent_length;
+      start_coordinate_.x = corner.x + start_edge_unit_tangent[0]*tangent_length;
+      start_coordinate_.y = corner.y + start_edge_unit_tangent[1]*tangent_length;
 
-      end_coordinate_.x = end_edge->start->coords.x + end_edge_unit_tangent[0]*tangent_length;
-      end_coordinate_.y = end_edge->start->coords.y + end_edge_unit_tangent[1]*tangent_length;
+      end_coordinate_.x = corner.x + end_edge_unit_tangent[0]*tangent_length;
+      end_coordinate_.y = corner.y + end_edge_unit_tangent[1]*tangent_length;
 
-      double signed_angle = getSignedAngleBetweenEdges(start_edge, end_edge);
+      double bisector_length = minimum_radius/std::sin(angle/2);
 
-      double bisector_length = minimum_radius/std::sin(signed_angle/2);
-
-      circle_center_coordinate_.x = end_edge->start->coords.x + unit_bisector[0]*bisector_length;
-      circle_center_coordinate_.y = end_edge->start->coords.y + unit_bisector[1]*bisector_length;
+      circle_center_coordinate_.x = corner.x + unit_bisector[0]*bisector_length;
+      circle_center_coordinate_.y = corner.y + unit_bisector[1]*bisector_length;
 
       valid_corner_ = true;
 
@@ -104,40 +96,24 @@ public:
   Coordinates getCornerEnd() const { return end_coordinate_; }
 
 protected:
-  double getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
 
-    double start_dx = start_edge->start->coords.x - start_edge->end->coords.x;
-    double start_dy = start_edge->start->coords.y - start_edge->end->coords.y;
+  double getAngleBetweenEdges(const Coordinates & start, const Coordinates & corner, const Coordinates & end){
 
-    double end_dx = end_edge->end->coords.x - end_edge->start->coords.x;
-    double end_dy = end_edge->end->coords.y - end_edge->start->coords.y;
+    double start_dx = start.x - corner.x;
+    double start_dy = start.y - corner.y;
 
-    double angle = acos((start_dx*end_dx + start_dy*end_dy)/(start_edge->getEdgeLength()*end_edge->getEdgeLength()));
+    double end_dx = end.x - corner.x;
+    double end_dy = end.y - corner.y;
 
-    return angle;
-  }
-
-  double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge){
-
-    double start_edge_length = start_edge->getEdgeLength();
-    double end_edge_length = end_edge->getEdgeLength();
-
-    double start_dx = (start_edge->start->coords.x - start_edge->end->coords.x)/start_edge_length;
-    double start_dy = (start_edge->start->coords.y - start_edge->end->coords.y)/start_edge_length;
-
-    double end_dx = (end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length;
-    double end_dy = (end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length;
-
-    double dot = start_dx*end_dx + start_dy*end_dy;
-    dot = std::clamp(dot, -1.0, 1.0);
-
-    double angle = std::acos(dot);
+    double angle = acos((start_dx*end_dx + start_dy*end_dy)/(start_edge_length_*end_edge_length_));
 
     return angle;
   }
 
 private:
   bool valid_corner_{false};
+  float start_edge_length_;
+  float end_edge_length_;
   Coordinates start_coordinate_;
   Coordinates end_coordinate_;
   Coordinates circle_center_coordinate_;

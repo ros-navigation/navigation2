@@ -61,66 +61,47 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
-  // Make a copy of all the edges as we'll modify the edges during
-  // smoothing and we don't want to modify the original edges on the route
-  std::vector<EdgePtr> edges{route.edges.begin(), route.edges.end()};
-
-  // Make new edges and new nodes as end points will change depending
-  // On presence of smoothed corner. However we also do not want to
-  // modify the original route
-  std::vector<std::unique_ptr<DirectionalEdge>> new_edges;
-  std::vector<std::unique_ptr<Node>>            new_nodes;
-
-  Coordinates start = edges[0]->start->coords;
+  Coordinates start = route.edges[0]->start->coords;
   Coordinates end;
 
   // Fill in path via route edges
 
-  for (unsigned int i = 0; i < edges.size() - 1; i++) {
+  for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
 
-    const EdgePtr edge = edges[i];
-    const EdgePtr next_edge = edges[i+1];
+    const EdgePtr edge = route.edges[i];
+    const EdgePtr next_edge = route.edges[i+1];
 
     end = edge->end->coords;
 
-    CornerArc corner_arc(edge, next_edge, smoothing_radius_);
+    CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
 
     if(corner_arc.isCornerValid() && smooth_corners_){
       //if an arc exists, end of the first edge is the start of the arc
       end = corner_arc.getCornerStart();
+
+      //interpolate to start of arc
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
 
+      //interpolate arc
       corner_arc.interpolateArc(density_/smoothing_radius_, path.poses);
 
-      //if an arc exists, start of the subsequent edge is end of the arc
-      auto new_start_node = std::make_unique<Node>(*next_edge->start);
-      new_start_node->coords = corner_arc.getCornerEnd();
-      auto new_next_edge   = std::make_unique<DirectionalEdge>(*next_edge);
-      new_next_edge->start = new_start_node.get();
-
-      //reassign the next edge to have the modified start coordinate
-      edges[i+1] = new_next_edge.get();
+      //new start of next edge is end of smoothing arc
       start = corner_arc.getCornerEnd();
-
-      //Store pointer to edges to keep them alive in this method
-      new_nodes.emplace_back(std::move(new_start_node));
-      new_edges.emplace_back(std::move(new_next_edge));
-
     }else{
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
       start = end;
     }
   }
 
-  if (edges.empty()) {
+  if (route.edges.empty()) {
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
   } else {
 
-    interpolateEdge(edges.back()->start->coords.x, edges.back()->start->coords.y,
-                    edges.back()->end->coords.x, edges.back()->end->coords.y, path.poses);
+    interpolateEdge(route.edges.back()->start->coords.x, route.edges.back()->start->coords.y,
+                    route.edges.back()->end->coords.x, route.edges.back()->end->coords.y, path.poses);
 
     path.poses.push_back(
-      utils::toMsg(edges.back()->end->coords.x, edges.back()->end->coords.y));
+      utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
   }
 
   // Set path poses orientations for each point
