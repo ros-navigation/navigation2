@@ -33,7 +33,6 @@ public:
     const Coordinates & start, const Coordinates & corner, const Coordinates & end,
     float minimum_radius)
   {
-
     start_edge_length_ = hypotf(corner.x - start.x, corner.y - start.y);
     end_edge_length_ = hypotf(end.x - corner.x, end.y - corner.y);
 
@@ -66,7 +65,6 @@ public:
       circle_center_coordinate_.y = corner.y + unit_bisector[1] * bisector_length;
 
       valid_corner_ = true;
-
     }
   }
 
@@ -76,7 +74,6 @@ public:
     const float & max_angle_resolution,
     std::vector<geometry_msgs::msg::PoseStamped> & poses)
   {
-
     std::vector<double> r_start{start_coordinate_.x - circle_center_coordinate_.x,
       start_coordinate_.y - circle_center_coordinate_.y};
     std::vector<double> r_end{end_coordinate_.x - circle_center_coordinate_.x,
@@ -111,7 +108,6 @@ protected:
     const Coordinates & start, const Coordinates & corner,
     const Coordinates & end)
   {
-
     double start_dx = start.x - corner.x;
     double start_dy = start.y - corner.y;
 
