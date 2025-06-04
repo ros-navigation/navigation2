@@ -52,7 +52,6 @@ private:
   float start_edge_length_;
   float end_edge_length_;
   double minimum_radius_;
-  double signed_angle_;
   bool valid_corner_{false};
   Coordinates start_coordinate_;
   Coordinates end_coordinate_;
