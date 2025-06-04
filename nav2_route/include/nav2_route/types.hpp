@@ -196,7 +196,8 @@ struct Node
   }
 };
 
-inline float DirectionalEdge::getEdgeLength(){
+inline float DirectionalEdge::getEdgeLength()
+{
   return hypotf(
     end->coords.x - start->coords.x,
     end->coords.y - start->coords.y);
