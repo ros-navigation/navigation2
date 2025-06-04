@@ -20,25 +20,22 @@ namespace nav2_route
 
 CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, float minimum_radius)
 {
-  start_edge_ = start_edge;
-  end_edge_ = end_edge;
-
   double angle = getAngleBetweenEdges(start_edge, end_edge);
 
   double tangent_length = minimum_radius/(std::tan(angle/2));
 
-  start_edge_length_ = start_edge->getEdgeLength();
-  end_edge_length_ = end_edge->getEdgeLength();
+  float start_edge_length = start_edge->getEdgeLength();
+  float end_edge_length = end_edge->getEdgeLength();
 
-  if(tangent_length < start_edge_length_ && tangent_length < end_edge_length_){
+  if(tangent_length < start_edge_length && tangent_length < end_edge_length){
     std::vector<double> start_edge_unit_tangent;
     std::vector<double> end_edge_unit_tangent;
     std::vector<double> unit_bisector;
 
-    start_edge_unit_tangent.push_back((start_edge->start->coords.x -start_edge->end->coords.x)/start_edge_length_);
-    start_edge_unit_tangent.push_back((start_edge->start->coords.y -start_edge->end->coords.y)/start_edge_length_);
-    end_edge_unit_tangent.push_back((end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length_);
-    end_edge_unit_tangent.push_back((end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length_);
+    start_edge_unit_tangent.push_back((start_edge->start->coords.x -start_edge->end->coords.x)/start_edge_length);
+    start_edge_unit_tangent.push_back((start_edge->start->coords.y -start_edge->end->coords.y)/start_edge_length);
+    end_edge_unit_tangent.push_back((end_edge->end->coords.x - end_edge->start->coords.x)/end_edge_length);
+    end_edge_unit_tangent.push_back((end_edge->end->coords.y - end_edge->start->coords.y)/end_edge_length);
 
     double bisector_x = start_edge_unit_tangent[0]+end_edge_unit_tangent[0];
     double bisector_y = start_edge_unit_tangent[1]+end_edge_unit_tangent[1];
@@ -60,7 +57,6 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, float minimum_radius)
     circle_center_coordinate_.x = end_edge->start->coords.x + unit_bisector[0]*bisector_length;
     circle_center_coordinate_.y = end_edge->start->coords.y + unit_bisector[1]*bisector_length;
 
-    minimum_radius_ = minimum_radius;
     valid_corner_ = true;
 
   }

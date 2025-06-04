@@ -47,10 +47,6 @@ protected:
   double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
 private:
-  EdgePtr start_edge_;
-  EdgePtr end_edge_;
-  float start_edge_length_;
-  float end_edge_length_;
   double minimum_radius_;
   bool valid_corner_{false};
   Coordinates start_coordinate_;
