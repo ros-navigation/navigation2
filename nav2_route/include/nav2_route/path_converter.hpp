@@ -84,7 +84,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
   float smoothing_radius_;
-  double angle_of_interpolation_;
   bool smooth_corners_;
 };
 
