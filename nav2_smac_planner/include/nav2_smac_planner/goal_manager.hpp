@@ -76,7 +76,6 @@ public:
    * @brief Sets the internal goals' state list to the provided goals.
    * @param goals Vector of goals state to set,
    */
-
   void setGoalStates(
     GoalStateVector & goals_state)
   {
