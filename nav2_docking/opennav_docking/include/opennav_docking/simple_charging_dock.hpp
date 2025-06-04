@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include <std_srvs/srv/trigger.hpp>
+#include "std_srvs/srv/trigger.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -53,21 +53,17 @@ public:
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
 
   /**
-   * @brief Final cleanup, in case deactivate() was skipped.
-   *        Belt-and-suspenders to avoid dangling subscriptions or clients.
+   * @brief Method to cleanup resources used on shutdown.
    */
   void cleanup() override;
 
   /**
-   * @brief Called when the plugin transitions to the ACTIVE state.
-   *        We don't start the detector here (on-demand in getRefinedPose()),
-   *        but log for debug visibility.
+   * @brief Method to active Behavior and any threads involved in execution.
    */
   void activate() override;
 
   /**
-   * @brief Called when leaving the ACTIVE state (always invoked).
-   *        Ensure any heavy detector is stopped to free resources.
+   * @brief Method to deactivate Behavior and any threads involved in execution.
    */
   void deactivate() override;
 

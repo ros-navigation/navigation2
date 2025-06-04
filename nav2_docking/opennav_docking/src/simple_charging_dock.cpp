@@ -382,8 +382,8 @@ void SimpleChargingDock::startDetection()
       });
   }
 
-  detector_state_ = DetectorState::WAITING_START;
-  RCLCPP_INFO(node_->get_logger(), "Detector START requested");
+  detector_state_ = DetectorState::ON;
+  RCLCPP_INFO(node_->get_logger(), "Detector START requested, state set to ON");
 }
 
 void SimpleChargingDock::stopDetection()
@@ -434,7 +434,6 @@ void SimpleChargingDock::cleanup()
 }
 
 }  // namespace opennav_docking
-
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(opennav_docking::SimpleChargingDock, opennav_docking_core::ChargingDock)

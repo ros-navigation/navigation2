@@ -118,6 +118,7 @@ target_link_libraries(simple_charging_dock PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
+  ${std_srvs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )
@@ -143,6 +144,7 @@ target_link_libraries(simple_non_charging_dock PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
+  ${std_srvs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )
@@ -152,9 +154,6 @@ target_link_libraries(simple_non_charging_dock PRIVATE
   pluginlib::pluginlib
   tf2::tf2
 )
-
-ament_target_dependencies(simple_charging_dock PUBLIC std_srvs)
-ament_target_dependencies(simple_non_charging_dock PUBLIC std_srvs)
 
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
 

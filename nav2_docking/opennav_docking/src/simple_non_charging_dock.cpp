@@ -347,8 +347,8 @@ void SimpleNonChargingDock::startDetection()
       });
   }
 
-  detector_state_ = DetectorState::WAITING_START;
-  RCLCPP_INFO(node_->get_logger(), "Detector START requested");
+  detector_state_ = DetectorState::ON;
+  RCLCPP_INFO(node_->get_logger(), "Detector START requested, state set to ON");
 }
 
 void SimpleNonChargingDock::stopDetection()
