@@ -29,21 +29,22 @@ public:
   /**
    * @brief Constructor
    */
-  CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius);
+  CornerArc(EdgePtr start_edge, EdgePtr end_edge, float minimum_radius);
 
   ~CornerArc() = default;
 
   void interpolateArc(const float & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses);
-
-  double getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
-
-  double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
   bool isCornerValid() const { return valid_corner_; }
 
   Coordinates getCornerStart() const { return start_coordinate_; }
 
   Coordinates getCornerEnd() const { return end_coordinate_; }
+
+protected:
+  double getAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
+
+  double getSignedAngleBetweenEdges(const EdgePtr start_edge, const EdgePtr end_edge);
 
 private:
   EdgePtr start_edge_;

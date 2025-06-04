@@ -83,7 +83,7 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
-  double smoothing_radius_;
+  float smoothing_radius_;
   double angle_of_interpolation_;
   bool smooth_corners_;
 };

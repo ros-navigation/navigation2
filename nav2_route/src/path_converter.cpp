@@ -31,7 +31,7 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
   density_ = static_cast<float>(node->get_parameter("path_density").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node, "smoothing_radius", rclcpp::ParameterValue(1.0));
-  smoothing_radius_ = node->get_parameter("smoothing_radius").as_double();
+  smoothing_radius_ = static_cast<float>(node->get_parameter("smoothing_radius").as_double());
   nav2_util::declare_parameter_if_not_declared(
     node, "angle_of_interpolation", rclcpp::ParameterValue(0.1));
   angle_of_interpolation_ = static_cast<float>(node->get_parameter("angle_of_interpolation").as_double());

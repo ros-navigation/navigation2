@@ -18,7 +18,7 @@
 namespace nav2_route
 {
 
-CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius)
+CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, float minimum_radius)
 {
   start_edge_ = start_edge;
   end_edge_ = end_edge;
