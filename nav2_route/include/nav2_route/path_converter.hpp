@@ -26,7 +26,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
-#include "nav2_route/corner_arc.hpp"
+#include "nav2_route/corner_smoothing.hpp"
 
 namespace nav2_route
 {

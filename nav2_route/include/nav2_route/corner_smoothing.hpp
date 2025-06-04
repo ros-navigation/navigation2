@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROUTE__CORNER_ARC_HPP_
-#define NAV2_ROUTE__CORNER_ARC_HPP_
+#ifndef NAV2_ROUTE__CORNER_SMOOTHING_HPP_
+#define NAV2_ROUTE__CORNER_SMOOTHING_HPP_
 
 #include <vector>
 #include <cmath>
@@ -145,4 +145,4 @@ private:
 
 }  // namespace nav2_route
 
-#endif  // NAV2_ROUTE__CORNER_ARC_HPP_
+#endif  // NAV2_ROUTE__CORNER_SMOOTHING_HPP_
