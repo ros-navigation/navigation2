@@ -69,13 +69,13 @@ nav_msgs::msg::Path PathConverter::densify(
   for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
 
     const EdgePtr edge = route.edges[i];
-    const EdgePtr next_edge = route.edges[i+1];
+    const EdgePtr next_edge = route.edges[i + 1];
 
     end = edge->end->coords;
 
     CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
 
-    if(corner_arc.isCornerValid() && smooth_corners_){
+    if (corner_arc.isCornerValid() && smooth_corners_) {
       //if an arc exists, end of the first edge is the start of the arc
       end = corner_arc.getCornerStart();
 
@@ -83,11 +83,11 @@ nav_msgs::msg::Path PathConverter::densify(
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
 
       //interpolate arc
-      corner_arc.interpolateArc(density_/smoothing_radius_, path.poses);
+      corner_arc.interpolateArc(density_ / smoothing_radius_, path.poses);
 
       //new start of next edge is end of smoothing arc
       start = corner_arc.getCornerEnd();
-    }else{
+    } else {
       interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
       start = end;
     }
@@ -97,8 +97,9 @@ nav_msgs::msg::Path PathConverter::densify(
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
   } else {
 
-    interpolateEdge(route.edges.back()->start->coords.x, route.edges.back()->start->coords.y,
-                    route.edges.back()->end->coords.x, route.edges.back()->end->coords.y, path.poses);
+    interpolateEdge(
+      route.edges.back()->start->coords.x, route.edges.back()->start->coords.y,
+      route.edges.back()->end->coords.x, route.edges.back()->end->coords.y, path.poses);
 
     path.poses.push_back(
       utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
