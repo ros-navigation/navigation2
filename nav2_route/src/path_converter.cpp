@@ -20,6 +20,7 @@
 #include <algorithm>
 
 #include "nav2_route/path_converter.hpp"
+
 namespace nav2_route
 {
 
