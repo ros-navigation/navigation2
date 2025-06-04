@@ -108,6 +108,16 @@ public:
    */
   virtual bool hasStoppedCharging();
 
+  /**
+   * @brief Start external detection process (service call + subscribe).
+   */
+  void startDetectionProcess() override {startDetection();}
+
+  /**
+   * @brief Stop external detection process.
+   */
+  void stopDetectionProcess() override {stopDetection();}
+
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
 

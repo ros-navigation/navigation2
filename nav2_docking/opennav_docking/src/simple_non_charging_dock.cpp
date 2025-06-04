@@ -193,9 +193,6 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
     return true;
   }
 
-  if (detector_state_ == DetectorState::OFF) {
-    startDetection();
-  }
 
   // If using detections, get current detections, transform to frame, and apply offsets
   geometry_msgs::msg::PoseStamped detected = detected_dock_pose_;
@@ -372,13 +369,11 @@ void SimpleNonChargingDock::activate()
 
 void SimpleNonChargingDock::deactivate()
 {
-  stopDetection();
   RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock deactivated");
 }
 
 void SimpleNonChargingDock::cleanup()
 {
-  stopDetection();
   detector_client_.reset();
   detected_pose_sub_.reset();
   RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock cleaned up");

@@ -383,11 +383,12 @@ TEST(SimpleNonChargingDockTests, DetectorLifecycle)
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
   dock->configure(node, "my_dock", nullptr);
 
-  // Verify detector starts in deactivate() and cleanup()
   dock->activate();
-  dock->deactivate();  // Should call stopDetection()
+  dock->startDetectionProcess();
+  dock->stopDetectionProcess();
+  dock->deactivate();
 
-  dock->cleanup();  // Should also call stopDetection()
+  dock->cleanup();
   dock.reset();
 }
 
@@ -406,7 +407,7 @@ TEST(SimpleNonChargingDockTests, DetectorAutoStart)
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
 
-  // First call to getRefinedPose should start detection
+  dock->startDetectionProcess();
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "test_frame";
 
@@ -426,6 +427,7 @@ TEST(SimpleNonChargingDockTests, DetectorAutoStart)
   // Now should get the detected pose
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
 
+  dock->stopDetectionProcess();
   dock->deactivate();
   dock->cleanup();
   dock.reset();
@@ -459,10 +461,9 @@ TEST(SimpleNonChargingDockTests, ServiceDetectorControl)
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
 
-  // First getRefinedPose should trigger service call
+  dock->startDetectionProcess();
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = "test_frame";
-  dock->getRefinedPose(pose, "");
 
   // Wait for async service call to be processed
   auto start_time = std::chrono::steady_clock::now();
@@ -475,7 +476,7 @@ TEST(SimpleNonChargingDockTests, ServiceDetectorControl)
 
   // Service should have been called
   EXPECT_TRUE(service_called);
-
+  dock->stopDetectionProcess();
   dock->deactivate();
   dock->cleanup();
   dock.reset();
@@ -501,6 +502,7 @@ TEST(SimpleNonChargingDockTests, DetectorServiceTimeout)
   pose.header.frame_id = "test_frame";
   EXPECT_FALSE(dock->getRefinedPose(pose, ""));  // No detection available
 
+  dock->stopDetectionProcess();
   dock->deactivate();
   dock->cleanup();
   dock.reset();
@@ -524,6 +526,7 @@ TEST(SimpleNonChargingDockTests, NoDetectorService)
   pose.header.frame_id = "test_frame";
   EXPECT_FALSE(dock->getRefinedPose(pose, ""));  // No detection available
 
+  dock->stopDetectionProcess();
   dock->deactivate();
   dock->cleanup();
   dock.reset();
