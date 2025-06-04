@@ -66,7 +66,7 @@ CornerArc::CornerArc(EdgePtr start_edge, EdgePtr end_edge, double minimum_radius
   }
 }
 
-void CornerArc::interpolateArc(const double & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses)
+void CornerArc::interpolateArc(const float & max_angle_resolution, std::vector<geometry_msgs::msg::PoseStamped> & poses)
 {
 
   std::vector<double> r_start{ start_coordinate_.x-circle_center_coordinate_.x, start_coordinate_.y-circle_center_coordinate_.y };
