@@ -179,8 +179,8 @@ public:
   }
 
   /**
-   * @brief Set the primary goal coordinate
-   * @param coord Coordinates to set as primary goal
+   * @brief Set the Reference goal coordinate
+   * @param coord Coordinates to set as Reference goal
    */
   inline void setRefGoalCoordinates(const Coordinates & coord)
   {
@@ -188,9 +188,9 @@ public:
   }
 
   /**
-   * @brief Checks whether the primary goal coordinate has changed.
-   * @param coord Coordinates to compare with the current primary goal coordinate.
-   * @return true if the primary goal coordinate has changed, false otherwise.
+   * @brief Checks whether the Reference goal coordinate has changed.
+   * @param coord Coordinates to compare with the current Reference goal coordinate.
+   * @return true if the Reference goal coordinate has changed, false otherwise.
    */
   inline bool hasGoalChanged(const Coordinates & coord)
   {
