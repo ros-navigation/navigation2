@@ -30,26 +30,29 @@
 namespace opennav_docking
 {
 
-class SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock
-{
-public:
-  SimpleNonChargingDockShim()
-  : opennav_docking::SimpleNonChargingDock() {}
-
-  std::vector<std::string> getStallJointNames()
+  class SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock
   {
-    return stall_joint_names_;
-  }
-
-  bool detectorIsOn() const
-  {
-    return detector_state_ == DetectorState::ON;
-  }
-
-  opennav_docking::SimpleChargingDock::DetectorState getDetectorState() const {
-    return detector_state_;
-  }
-};
+  public:
+    SimpleNonChargingDockShim()
+    : opennav_docking::SimpleNonChargingDock() {}
+  
+    using DetectorState = opennav_docking::SimpleChargingDock::DetectorState;
+  
+    std::vector<std::string> getStallJointNames()
+    {
+      return stall_joint_names_;
+    }
+  
+    bool detectorIsOn() const
+    {
+      return detector_state_ == DetectorState::ON;
+    }
+  
+    // Exposes detector_state_ for testing purposes
+    DetectorState getDetectorState() const {
+      return detector_state_;
+    }
+  };
 
 TEST(SimpleNonChargingDockTests, ObjectLifecycle)
 {

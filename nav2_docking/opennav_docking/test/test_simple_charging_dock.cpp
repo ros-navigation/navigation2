@@ -34,6 +34,8 @@ public:
   SimpleChargingDockShim()
   : opennav_docking::SimpleChargingDock() {}
 
+  using DetectorState = opennav_docking::SimpleChargingDock::DetectorState;
+
   std::vector<std::string> getStallJointNames()
   {
     return stall_joint_names_;
@@ -45,7 +47,7 @@ public:
   }
 
   // Exposes detector_state_ for testing purposes
-  opennav_docking::SimpleChargingDock::DetectorState getDetectorState() const {
+  DetectorState getDetectorState() const {
     return detector_state_;
   }
 };
