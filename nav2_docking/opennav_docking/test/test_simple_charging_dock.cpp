@@ -21,6 +21,7 @@
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include <thread>
 
 // Testing the simple charging dock plugin
 
@@ -37,6 +38,16 @@ public:
   {
     return stall_joint_names_;
   }
+
+  bool detectorIsOn() const
+  {
+    return detector_state_ == DetectorState::ON;
+  }
+
+  // Exposes detector_state_ for testing purposes
+  opennav_docking::SimpleChargingDock::DetectorState getDetectorState() const {
+    return detector_state_;
+  }
 };
 
 TEST(SimpleChargingDockTests, ObjectLifecycle)
@@ -48,13 +59,36 @@ TEST(SimpleChargingDockTests, ObjectLifecycle)
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
   dock->startDetectionProcess();
-  dock->startDetectionProcess();
 
   // Check initial states
   EXPECT_FALSE(dock->isCharging());
   EXPECT_TRUE(dock->disableCharging());
   EXPECT_TRUE(dock->hasStoppedCharging());
   EXPECT_TRUE(dock->isCharger());
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, DetectorStateTransitions)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true)); // Needed for state changes
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true)); // To allow state changes
+
+  auto dock = std::make_unique<opennav_docking::SimpleChargingDockShim>();
+  dock->configure(node, "my_dock", nullptr);
+  dock->activate();
+
+  // Initially OFF
+  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
+
+  dock->startDetectionProcess();
+  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);
+
+  dock->stopDetectionProcess();
+  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
 
   dock->deactivate();
   dock->cleanup();
@@ -405,6 +439,103 @@ TEST(SimpleChargingDockTests, ShouldRotateToDock)
 
   dock->cleanup();
   dock.reset();
+}
+
+// Test to verify subscription behavior when subscribe_toggle is false.
+// The subscription should be created during configure and remain active
+// regardless of start/stopDetectionProcess calls
+TEST(SimpleChargingDockTests, SubscriptionAlwaysOnWhenToggleIsFalse)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_sub_always_on_charging");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(false));
+  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue("")); // Disable service calls
+
+  auto dock_shim = std::make_unique<opennav_docking::SimpleChargingDockShim>();
+
+  // Configure plugin: subscription to detected_dock_pose should be established.
+  ASSERT_NO_THROW(dock_shim->configure(node, "my_dock", nullptr));
+
+  // Activate plugin. Initial detector state should be OFF.
+  ASSERT_NO_THROW(dock_shim->activate());
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
+
+  // Call startDetectionProcess. Detector state should transition to ON.
+  // The existing subscription should not be affected.
+  ASSERT_NO_THROW(dock_shim->startDetectionProcess());
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);
+
+  // Publish a pose and verify getRefinedPose receives it.
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose", rclcpp::SensorDataQoS());
+  ASSERT_NO_THROW(pub->on_activate());
+
+  geometry_msgs::msg::PoseStamped detected_msg;
+  detected_msg.header.stamp = node->now();
+  detected_msg.header.frame_id = "test_frame";
+  detected_msg.pose.position.x = 1.23; // Expecting 1.03 refined (1.23 - 0.2 default translation_x)
+  detected_msg.pose.orientation.w = 1.0;
+  pub->publish(detected_msg);
+
+  rclcpp::spin_some(node->get_node_base_interface());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  geometry_msgs::msg::PoseStamped refined_pose_msg;
+  refined_pose_msg.header.frame_id = "test_frame";
+  EXPECT_TRUE(dock_shim->getRefinedPose(refined_pose_msg, ""));
+  EXPECT_NEAR(refined_pose_msg.pose.position.x, 1.03, 1e-5);
+
+  // Call stopDetectionProcess. Detector state should transition to OFF.
+  // The subscription should remain active.
+  ASSERT_NO_THROW(dock_shim->stopDetectionProcess());
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
+
+  // Publish another pose. getRefinedPose should still process it due to persistent subscription.
+  detected_msg.header.stamp = node->now();
+  detected_msg.pose.position.x = 4.76; // Expecting 4.56
+  pub->publish(detected_msg);
+  rclcpp::spin_some(node->get_node_base_interface());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  rclcpp::spin_some(node->get_node_base_interface());
+  EXPECT_TRUE(dock_shim->getRefinedPose(refined_pose_msg, ""));
+  EXPECT_NEAR(refined_pose_msg.pose.position.x, 4.56, 1e-5);
+
+  ASSERT_NO_THROW(dock_shim->deactivate());
+  ASSERT_NO_THROW(dock_shim->cleanup());
+}
+
+// Test behavior when external detection is not used.
+TEST(SimpleChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_no_ext_detect_charging");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(false));
+  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue("should_not_be_called_service"));
+  node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
+
+  auto dock_shim = std::make_unique<opennav_docking::SimpleChargingDockShim>();
+
+  ASSERT_NO_THROW(dock_shim->configure(node, "my_dock", nullptr));
+  ASSERT_NO_THROW(dock_shim->activate());
+
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
+  ASSERT_NO_THROW(dock_shim->startDetectionProcess());
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);
+
+  geometry_msgs::msg::PoseStamped pose_from_db, refined_pose;
+  pose_from_db.header.frame_id = "map";
+  pose_from_db.pose.position.x = 10.0;
+  pose_from_db.pose.orientation.w = 1.0;
+
+  refined_pose = pose_from_db;
+  EXPECT_TRUE(dock_shim->getRefinedPose(refined_pose, ""));
+  EXPECT_DOUBLE_EQ(refined_pose.pose.position.x, pose_from_db.pose.position.x);
+  EXPECT_DOUBLE_EQ(refined_pose.pose.orientation.w, pose_from_db.pose.orientation.w);
+
+  ASSERT_NO_THROW(dock_shim->stopDetectionProcess());
+  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);
+
+  ASSERT_NO_THROW(dock_shim->deactivate());
+  ASSERT_NO_THROW(dock_shim->cleanup());
 }
 
 TEST(SimpleChargingDockTests, DetectorLifecycle)

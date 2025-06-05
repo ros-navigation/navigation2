@@ -311,6 +311,93 @@ TEST(DockingServerTests, testDockBackward)
   node.reset();
 }
 
+TEST(DockingServerTests, StartStopDetectorHooks)
+{
+  auto node = std::make_shared<DockingServerShim>();
+
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "initial_perception_timeout",
+    rclcpp::ParameterValue(0.1));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto goal = std::make_shared<DockRobot::Goal>();
+  goal->dock_type = "dock_plugin";
+  goal->dock_pose.header.frame_id = "map";
+  auto dock = node->generateGoalDock(goal);
+  auto plugin = std::dynamic_pointer_cast<TestFailureDock>(dock->plugin);
+  ASSERT_NE(plugin, nullptr);
+
+  geometry_msgs::msg::PoseStamped pose;
+  EXPECT_THROW(
+    node->doInitialPerception(dock, pose),
+    opennav_docking_core::FailedToDetectDock);
+
+  EXPECT_TRUE(plugin->detector_started);
+  EXPECT_FALSE(plugin->detector_stopped);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  EXPECT_TRUE(plugin->detector_stopped);
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
+TEST(DockingServerTests, CleanupStopsDetector)
+{
+  auto node = std::make_shared<DockingServerShim>();
+
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto goal = std::make_shared<DockRobot::Goal>();
+  goal->dock_type = "dock_plugin";
+  goal->dock_pose.header.frame_id = "map";
+  auto dock = node->generateGoalDock(goal);
+  auto plugin = std::dynamic_pointer_cast<TestFailureDock>(dock->plugin);
+  ASSERT_NE(plugin, nullptr);
+
+  plugin->startDetectionProcess();
+  EXPECT_TRUE(plugin->detector_started);
+  EXPECT_FALSE(plugin->detector_stopped);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  EXPECT_TRUE(plugin->detector_stopped);
+  node->on_shutdown(rclcpp_lifecycle::State());
+  node.reset();
+}
+
 }  // namespace opennav_docking
 
 int main(int argc, char **argv)

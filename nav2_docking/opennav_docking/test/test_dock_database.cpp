@@ -91,6 +91,30 @@ TEST(DatabaseTests, findTests)
   db.findDockPlugin("");
 }
 
+TEST(DatabaseTests, DeactivateStopsDetector)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_test"}));
+  node->declare_parameter(
+    "dock_test.plugin",
+    rclcpp::ParameterValue("opennav_docking::TestFailureDock"));
+
+  DbShim db;
+  db.initialize(node, nullptr);
+
+  auto plugin = std::dynamic_pointer_cast<TestFailureDock>(db.findDockPlugin("dock_test"));
+  ASSERT_NE(plugin, nullptr);
+
+  db.activate();
+  EXPECT_FALSE(plugin->detector_stopped);
+
+  db.deactivate();
+
+  EXPECT_TRUE(plugin->detector_stopped);
+}
+
 TEST(DatabaseTests, getDockInstancesBadConversionFile)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
