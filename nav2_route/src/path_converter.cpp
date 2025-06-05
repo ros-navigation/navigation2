@@ -65,7 +65,6 @@ nav_msgs::msg::Path PathConverter::densify(
   Coordinates end;
 
   // Fill in path via route edges
-
   for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
     const EdgePtr edge = route.edges[i];
     const EdgePtr next_edge = route.edges[i + 1];
