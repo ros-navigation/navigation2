@@ -72,7 +72,6 @@ nav_msgs::msg::Path PathConverter::densify(
     end = edge->end->coords;
 
     CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
-
     if (corner_arc.isCornerValid() && smooth_corners_) {
       // if an arc exists, end of the first edge is the start of the arc
       end = corner_arc.getCornerStart();
