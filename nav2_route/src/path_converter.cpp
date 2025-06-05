@@ -67,7 +67,7 @@ nav_msgs::msg::Path PathConverter::densify(
   // Fill in path via route edges
   for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
     const EdgePtr edge = route.edges[i];
-    const EdgePtr next_edge = route.edges[i + 1];
+    const EdgePtr & next_edge = route.edges[i + 1];
     end = edge->end->coords;
 
     CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
