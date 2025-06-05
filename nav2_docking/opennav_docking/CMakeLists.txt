@@ -115,6 +115,7 @@ target_link_libraries(simple_charging_dock PUBLIC
   ${geometry_msgs_TARGETS}
   opennav_docking_core::opennav_docking_core
   pose_filter
+  nav2_util::nav2_util
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
@@ -141,6 +142,7 @@ target_link_libraries(simple_non_charging_dock PUBLIC
   ${geometry_msgs_TARGETS}
   opennav_docking_core::opennav_docking_core
   pose_filter
+  nav2_util::nav2_util
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
