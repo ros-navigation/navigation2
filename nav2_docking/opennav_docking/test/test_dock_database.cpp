@@ -17,6 +17,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/dock_database.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "testing_dock.cpp"
 
 // These sets of tests are admittedly incomplete without a dummy docking plugin.
 // Integration tests handle coverage more fully than the database lookups and population.
