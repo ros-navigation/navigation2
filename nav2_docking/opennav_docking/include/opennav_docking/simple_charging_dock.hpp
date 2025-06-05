@@ -176,7 +176,7 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
 
   // Simple finite-state machine for detector status
-  enum class DetectorState { OFF, WAITING_START, ON };
+  enum class DetectorState { OFF, ON };
   DetectorState detector_state_{DetectorState::OFF};
 
   // Internally enable detector (service + subscribe)
