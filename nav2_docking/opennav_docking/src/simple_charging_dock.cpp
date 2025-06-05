@@ -142,7 +142,7 @@ void SimpleChargingDock::configure(
   if (!detector_service_name_.empty()) {
     detector_client_ = std::make_shared<
       nav2_util::ServiceClient<std_srvs::srv::Trigger,
-      rclcpp_lifecycle::LifecycleNode::SharedPtr>>(node_, detector_service_name_);
+      rclcpp_lifecycle::LifecycleNode::SharedPtr>>(detector_service_name_, node_);
   }
 
   if (use_battery_status_) {
