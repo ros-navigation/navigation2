@@ -33,20 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-<<<<<<< HEAD
               - "<< parameters.key >>-v33\
-=======
-              - "<< parameters.key >>-v35\
->>>>>>> 7f561b0f (Revert "Fix Ci from key signing (#5220)" (#5237))
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-<<<<<<< HEAD
               - "<< parameters.key >>-v33\
-=======
-              - "<< parameters.key >>-v35\
->>>>>>> 7f561b0f (Revert "Fix Ci from key signing (#5220)" (#5237))
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -66,11 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-<<<<<<< HEAD
             key: "<< parameters.key >>-v33\
-=======
-            key: "<< parameters.key >>-v35\
->>>>>>> 7f561b0f (Revert "Fix Ci from key signing (#5220)" (#5237))
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
