@@ -15,13 +15,13 @@
 #include <string>
 #include <memory>
 
-#include "base_footprint_publisher.hpp"
+#include "nav2_toolkit/base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
 #include "tf2/exceptions.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 {
-  auto node = std::make_shared<nav2_util::BaseFootprintPublisher>();
+  auto node = std::make_shared<nav2_toolkit::BaseFootprintPublisher>();
   rclcpp::spin_some(node->get_node_base_interface());
 
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
