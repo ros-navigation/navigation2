@@ -37,7 +37,7 @@ public:
     end_edge_length_ = hypotf(end.x - corner.x, end.y - corner.y);
 
     // invalid scenario would cause equations to blow up
-    if(start_edge_length_ == 0.0 || end_edge_length_ == 0.0){ return; }
+    if (start_edge_length_ == 0.0 || end_edge_length_ == 0.0) {return;}
 
     double angle = getAngleBetweenEdges(start, corner, end);
 

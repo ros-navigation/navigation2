@@ -61,7 +61,7 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
-  if(!route.edges.empty()){
+  if (!route.edges.empty()) {
     Coordinates start = route.edges[0]->start->coords;
     Coordinates end;
 
