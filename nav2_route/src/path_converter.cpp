@@ -65,32 +65,16 @@ nav_msgs::msg::Path PathConverter::densify(
     Coordinates start = route.edges[0]->start->coords;
     Coordinates end;
 
-<<<<<<< HEAD
     // Fill in path via route edges
-
     for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
       const EdgePtr edge = route.edges[i];
-      const EdgePtr next_edge = route.edges[i + 1];
-
+      const EdgePtr & next_edge = route.edges[i + 1];
       end = edge->end->coords;
 
       CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
-
       if (corner_arc.isCornerValid() && smooth_corners_) {
         // if an arc exists, end of the first edge is the start of the arc
         end = corner_arc.getCornerStart();
-=======
-  // Fill in path via route edges
-  for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
-    const EdgePtr edge = route.edges[i];
-    const EdgePtr & next_edge = route.edges[i + 1];
-    end = edge->end->coords;
-
-    CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
-    if (corner_arc.isCornerValid() && smooth_corners_) {
-      // if an arc exists, end of the first edge is the start of the arc
-      end = corner_arc.getCornerStart();
->>>>>>> e9a188238f53cffff012a6f782a12a25d49c0524
 
         // interpolate to start of arc
         interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
