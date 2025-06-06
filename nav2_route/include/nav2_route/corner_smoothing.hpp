@@ -89,7 +89,6 @@ public:
     double angle_resolution = signed_angle / N;
 
     float x, y;
-
     for (int i = 0; i <= N; i++) {
       double angle = i * angle_resolution;
       x = circle_center_coordinate_.x +
