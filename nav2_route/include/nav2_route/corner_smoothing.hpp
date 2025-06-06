@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
@@ -84,7 +85,7 @@ public:
     double cross = r_start[0] * r_end[1] - r_start[1] * r_end[0];
     double dot = r_start[0] * r_end[0] + r_start[1] * r_end[1];
     double signed_angle = std::atan2(cross, dot);
-    //lower limit for N is 1 to protect against divide by 0
+    // lower limit for N is 1 to protect against divide by 0
     int N = std::max(1, static_cast<int>(std::ceil(std::abs(signed_angle) / max_angle_resolution)));
     double angle_resolution = signed_angle / N;
 
