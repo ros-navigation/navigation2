@@ -30,13 +30,13 @@
 namespace opennav_docking
 {
 
-  class SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock
-  {
-  public:
-    SimpleNonChargingDockShim()
-    : opennav_docking::SimpleNonChargingDock() {}
+class SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock
+{
+public:
+  SimpleNonChargingDockShim()
+  : opennav_docking::SimpleNonChargingDock() {}
   
-    using DetectorState = opennav_docking::SimpleChargingDock::DetectorState;
+    using DetectorState = opennav_docking::SimpleNonChargingDock::DetectorState;
   
     std::vector<std::string> getStallJointNames()
     {
