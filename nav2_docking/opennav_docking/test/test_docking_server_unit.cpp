@@ -20,6 +20,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "testing_dock.cpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
