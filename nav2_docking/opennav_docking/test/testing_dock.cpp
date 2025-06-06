@@ -130,7 +130,7 @@ public:
 
   virtual bool isDocked()
   {
-    bool dock_action_called;
+    bool dock_action_called = false;
     node_->get_parameter("dock_action_called", dock_action_called);
     if (dock_action_called) {
       return true;
