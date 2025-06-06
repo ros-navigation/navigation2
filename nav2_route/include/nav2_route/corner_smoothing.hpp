@@ -36,6 +36,9 @@ public:
     start_edge_length_ = hypotf(corner.x - start.x, corner.y - start.y);
     end_edge_length_ = hypotf(end.x - corner.x, end.y - corner.y);
 
+    // invalid scenario would cause equations to blow up
+    if(start_edge_length_ == 0.0 || end_edge_length_ == 0.0){ return; }
+
     double angle = getAngleBetweenEdges(start, corner, end);
 
     double tangent_length = minimum_radius / (std::tan(std::fabs(angle) / 2));
@@ -81,7 +84,8 @@ public:
     double cross = r_start[0] * r_end[1] - r_start[1] * r_end[0];
     double dot = r_start[0] * r_end[0] + r_start[1] * r_end[1];
     double signed_angle = std::atan2(cross, dot);
-    int N = std::ceil(std::abs(signed_angle) / max_angle_resolution);
+    //lower limit for N is 1 to protect against divide by 0
+    int N = std::max(1, static_cast<int>(std::ceil(std::abs(signed_angle) / max_angle_resolution)));
     double angle_resolution = signed_angle / N;
 
     float x, y;
