@@ -55,17 +55,17 @@ public:
   /**
    * @brief Method to cleanup resources used on shutdown.
    */
-   void cleanup() override;
+  void cleanup() override;
 
    /**
     * @brief Method to active Behavior and any threads involved in execution.
     */
-   void activate() override;
+  void activate() override;
 
    /**
     * @brief Method to deactivate Behavior and any threads involved in execution.
     */
-   void deactivate() override;
+  void deactivate() override;
 
   /**
    * @brief Method to obtain the dock's staging pose. This method should likely

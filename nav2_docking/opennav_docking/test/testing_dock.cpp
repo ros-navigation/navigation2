@@ -21,13 +21,14 @@
 
 namespace opennav_docking
 {
-enum class TestFailureDockMode {
-    NONE,
-    FAIL_INITIAL_PERCEPTION_ONCE, // getRefinedPose returns false once, then true
-    FAIL_ALL_PERCEPTION,          // getRefinedPose always returns false
-    FAIL_IS_DOCKED_CHECK,         // isDocked always returns false
-    FAIL_IS_CHARGING_CHECK        // isCharging always returns false (if applicable)
-  };
+enum class TestFailureDockMode
+{
+  NONE,
+  FAIL_INITIAL_PERCEPTION_ONCE,   // getRefinedPose returns false once, then true
+  FAIL_ALL_PERCEPTION,            // getRefinedPose always returns false
+  FAIL_IS_DOCKED_CHECK,           // isDocked always returns false
+  FAIL_IS_CHARGING_CHECK          // isCharging always returns false (if applicable)
+};
 
 // Tests error cases in unit test handling
 class TestFailureDock : public opennav_docking_core::ChargingDock
@@ -56,7 +57,8 @@ public:
     dock_direction_ = opennav_docking_core::DockDirection::FORWARD;
 
     if (!node_->has_parameter(name_ + ".test_failure_mode")) {
-      node_->declare_parameter(name_ + ".test_failure_mode", rclcpp::ParameterValue(std::string("NONE")));
+      node_->declare_parameter(name_ + ".test_failure_mode",
+          rclcpp::ParameterValue(std::string("NONE")));
     }
     name_ = name;
   }

@@ -101,6 +101,7 @@ TEST(DatabaseTests, DeactivateStopsDetector)
   node->declare_parameter(
     "dock_test.plugin",
     rclcpp::ParameterValue("opennav_docking::TestFailureDock"));
+  node->declare_parameter("dock_test.test_failure_mode", rclcpp::ParameterValue("NONE"));
 
   DbShim db;
   db.initialize(node, nullptr);

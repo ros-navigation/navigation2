@@ -1,0 +1,425 @@
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/controller.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/dock_database.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/docking_server.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/navigator.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/pose_filter.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/simple_charging_dock.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/simple_non_charging_dock.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/types.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/include/opennav_docking/utils.hpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/controller.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/dock_database.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/docking_server.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/main.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/navigator.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/pose_filter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/simple_charging_dock.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/src/simple_non_charging_dock.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_controller.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_dock_database.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_docking_server_unit.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_navigator.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_pose_filter.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_simple_charging_dock.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/test_utils.cpp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'nav2_docking/opennav_docking/test/testing_dock.cpp', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/nav2_docking/opennav_docking/include/opennav_docking/simple_non_charging_dock.hpp b/nav2_docking/opennav_docking/include/opennav_docking/simple_non_charging_dock.hpp[m
+[1mindex c365b87e..a11577da 100644[m
+[1m--- a/nav2_docking/opennav_docking/include/opennav_docking/simple_non_charging_dock.hpp[m
+[1m+++ b/nav2_docking/opennav_docking/include/opennav_docking/simple_non_charging_dock.hpp[m
+[36m@@ -55,17 +55,17 @@[m [mpublic:[m
+   /**[m
+    * @brief Method to cleanup resources used on shutdown.[m
+    */[m
+[31m-   void cleanup() override;[m
+[32m+[m[32m  void cleanup() override;[m
+ [m
+    /**[m
+     * @brief Method to active Behavior and any threads involved in execution.[m
+     */[m
+[31m-   void activate() override;[m
+[32m+[m[32m  void activate() override;[m
+ [m
+    /**[m
+     * @brief Method to deactivate Behavior and any threads involved in execution.[m
+     */[m
+[31m-   void deactivate() override;[m
+[32m+[m[32m  void deactivate() override;[m
+ [m
+   /**[m
+    * @brief Method to obtain the dock's staging pose. This method should likely[m
+[1mdiff --git a/nav2_docking/opennav_docking/test/test_dock_database.cpp b/nav2_docking/opennav_docking/test/test_dock_database.cpp[m
+[1mindex 6c3874f5..d504f9de 100644[m
+[1m--- a/nav2_docking/opennav_docking/test/test_dock_database.cpp[m
+[1m+++ b/nav2_docking/opennav_docking/test/test_dock_database.cpp[m
+[36m@@ -101,6 +101,7 @@[m [mTEST(DatabaseTests, DeactivateStopsDetector)[m
+   node->declare_parameter([m
+     "dock_test.plugin",[m
+     rclcpp::ParameterValue("opennav_docking::TestFailureDock"));[m
+[32m+[m[32m  node->declare_parameter("dock_test.test_failure_mode", rclcpp::ParameterValue("NONE"));[m
+ [m
+   DbShim db;[m
+   db.initialize(node, nullptr);[m
+[1mdiff --git a/nav2_docking/opennav_docking/test/test_simple_charging_dock.cpp b/nav2_docking/opennav_docking/test/test_simple_charging_dock.cpp[m
+[1mindex 5df72da4..e75cdc61 100644[m
+[1m--- a/nav2_docking/opennav_docking/test/test_simple_charging_dock.cpp[m
+[1m+++ b/nav2_docking/opennav_docking/test/test_simple_charging_dock.cpp[m
+[36m@@ -47,7 +47,8 @@[m [mpublic:[m
+   }[m
+ [m
+   // Exposes detector_state_ for testing purposes[m
+[31m-  DetectorState getDetectorState() const {[m
+[32m+[m[32m  DetectorState getDetectorState() const[m
+[32m+[m[32m  {[m
+     return detector_state_;[m
+   }[m
+ };[m
+[36m@@ -84,13 +85,16 @@[m [mTEST(SimpleChargingDockTests, DetectorStateTransitions)[m
+   dock->activate();[m
+ [m
+   // Initially OFF[m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+ [m
+   dock->startDetectionProcess();[m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+ [m
+   dock->stopDetectionProcess();[m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+ [m
+   dock->deactivate();[m
+   dock->cleanup();[m
+[36m@@ -281,6 +285,7 @@[m [mTEST(SimpleChargingDockTests, RefinedPoseTest)[m
+   detected_pose.pose.position.y = -0.5;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   pose.header.frame_id = "my_frame";[m
+   EXPECT_TRUE(dock->getRefinedPose(pose, ""));[m
+[36m@@ -315,6 +320,7 @@[m [mTEST(SimpleChargingDockTests, RefinedPoseNotTransform)[m
+   detected_pose.pose.position.y = 1.0;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   // Create a pose with a different frame_id[m
+   geometry_msgs::msg::PoseStamped pose;[m
+[36m@@ -367,6 +373,7 @@[m [mTEST(SimpleChargingDockTests, IsDockedTransformException)[m
+   detected_pose.pose.position.y = 1.0;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   // Second call should succeed with the detected pose[m
+   EXPECT_TRUE(dock->getRefinedPose(pose, ""));[m
+[36m@@ -460,15 +467,18 @@[m [mTEST(SimpleChargingDockTests, SubscriptionAlwaysOnWhenToggleIsFalse)[m
+ [m
+   // Activate plugin. Initial detector state should be OFF.[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+ [m
+   // Call startDetectionProcess. Detector state should transition to ON.[m
+   // The existing subscription should not be affected.[m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+ [m
+   // Publish a pose and verify getRefinedPose receives it.[m
+[31m-  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose", rclcpp::SensorDataQoS());[m
+[32m+[m[32m  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose",[m
+[32m+[m[32m      rclcpp::SensorDataQoS());[m
+   ASSERT_NO_THROW(pub->on_activate());[m
+ [m
+   geometry_msgs::msg::PoseStamped detected_msg;[m
+[36m@@ -490,7 +500,8 @@[m [mTEST(SimpleChargingDockTests, SubscriptionAlwaysOnWhenToggleIsFalse)[m
+   // Call stopDetectionProcess. Detector state should transition to OFF.[m
+   // The subscription should remain active.[m
+   ASSERT_NO_THROW(dock_shim->stopDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+ [m
+   // Publish another pose. getRefinedPose should still process it due to persistent subscription.[m
+   detected_msg.header.stamp = node->now();[m
+[36m@@ -511,7 +522,7 @@[m [mTEST(SimpleChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)[m
+ {[m
+   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_no_ext_detect_charging");[m
+   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(false));[m
+[31m-  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue("should_not_be_called_service"));[m
+[32m+[m[32m  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue(""));[m
+   node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));[m
+ [m
+   auto dock_shim = std::make_unique<opennav_docking::SimpleChargingDockShim>();[m
+[36m@@ -519,9 +530,11 @@[m [mTEST(SimpleChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)[m
+   ASSERT_NO_THROW(dock_shim->configure(node, "my_dock", nullptr));[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+ [m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::ON);[m
+ [m
+   geometry_msgs::msg::PoseStamped pose_from_db, refined_pose;[m
+   pose_from_db.header.frame_id = "map";[m
+[36m@@ -534,7 +547,8 @@[m [mTEST(SimpleChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)[m
+   EXPECT_DOUBLE_EQ(refined_pose.pose.orientation.w, pose_from_db.pose.orientation.w);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->stopDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleChargingDockShim::DetectorState::OFF);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->deactivate());[m
+   ASSERT_NO_THROW(dock_shim->cleanup());[m
+[36m@@ -591,6 +605,7 @@[m [mTEST(SimpleChargingDockTests, DetectorAutoStart)[m
+   detected_pose.pose.position.x = 1.0;[m
+   detected_pose.pose.position.y = 2.0;[m
+   pub->publish(detected_pose);[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+ [m
+[1mdiff --git a/nav2_docking/opennav_docking/test/test_simple_non_charging_dock.cpp b/nav2_docking/opennav_docking/test/test_simple_non_charging_dock.cpp[m
+[1mindex ca984339..c48f3a63 100644[m
+[1m--- a/nav2_docking/opennav_docking/test/test_simple_non_charging_dock.cpp[m
+[1m+++ b/nav2_docking/opennav_docking/test/test_simple_non_charging_dock.cpp[m
+[36m@@ -35,24 +35,25 @@[m [mclass SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock[m
+ public:[m
+   SimpleNonChargingDockShim()[m
+   : opennav_docking::SimpleNonChargingDock() {}[m
+[31m-  [m
+[31m-    using DetectorState = opennav_docking::SimpleNonChargingDock::DetectorState;[m
+[31m-  [m
+[31m-    std::vector<std::string> getStallJointNames()[m
+[31m-    {[m
+[31m-      return stall_joint_names_;[m
+[31m-    }[m
+[31m-  [m
+[31m-    bool detectorIsOn() const[m
+[31m-    {[m
+[31m-      return detector_state_ == DetectorState::ON;[m
+[31m-    }[m
+[31m-  [m
+[32m+[m
+[32m+[m[32m  using DetectorState = opennav_docking::SimpleNonChargingDock::DetectorState;[m
+[32m+[m
+[32m+[m[32m  std::vector<std::string> getStallJointNames()[m
+[32m+[m[32m  {[m
+[32m+[m[32m    return stall_joint_names_;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  bool detectorIsOn() const[m
+[32m+[m[32m  {[m
+[32m+[m[32m    return detector_state_ == DetectorState::ON;[m
+[32m+[m[32m  }[m
+[32m+[m
+     // Exposes detector_state_ for testing purposes[m
+[31m-    DetectorState getDetectorState() const {[m
+[31m-      return detector_state_;[m
+[31m-    }[m
+[31m-  };[m
+[32m+[m[32m  DetectorState getDetectorState() const[m
+[32m+[m[32m  {[m
+[32m+[m[32m    return detector_state_;[m
+[32m+[m[32m  }[m
+[32m+[m[32m};[m
+ [m
+ TEST(SimpleNonChargingDockTests, ObjectLifecycle)[m
+ {[m
+[36m@@ -84,11 +85,14 @@[m [mTEST(SimpleNonChargingDockTests, DetectorStateTransitions)[m
+   dock->configure(node, "my_dock", nullptr);[m
+   dock->activate();[m
+ [m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+   dock->startDetectionProcess();[m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+   dock->stopDetectionProcess();[m
+[31m-  EXPECT_TRUE(dock->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ [m
+   dock->deactivate();[m
+   dock->cleanup();[m
+[36m@@ -112,15 +116,18 @@[m [mTEST(SimpleNonChargingDockTests, SubscriptionAlwaysOnWhenToggleIsFalse)[m
+ [m
+   // Activate plugin. Initial detector state should be OFF.[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ [m
+   // Call startDetectionProcess. Detector state should transition to ON.[m
+   // The existing subscription should not be affected.[m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+ [m
+   // Publish a pose and verify getRefinedPose receives it.[m
+[31m-  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose", rclcpp::SensorDataQoS());[m
+[32m+[m[32m  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose",[m
+[32m+[m[32m      rclcpp::SensorDataQoS());[m
+   ASSERT_NO_THROW(pub->on_activate());[m
+ [m
+   geometry_msgs::msg::PoseStamped detected_msg;[m
+[36m@@ -142,7 +149,8 @@[m [mTEST(SimpleNonChargingDockTests, SubscriptionAlwaysOnWhenToggleIsFalse)[m
+   // Call stopDetectionProcess. Detector state should transition to OFF.[m
+   // The subscription should remain active.[m
+   ASSERT_NO_THROW(dock_shim->stopDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ [m
+   // Publish another pose. getRefinedPose should still process it due to persistent subscription.[m
+   detected_msg.header.stamp = node->now();[m
+[36m@@ -164,16 +172,18 @@[m [mTEST(SimpleNonChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)[m
+ {[m
+   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_no_ext_detect_noncharging");[m
+   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(false));[m
+[31m-  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue("should_not_be_called_service"));[m
+[32m+[m[32m  node->declare_parameter("my_dock.detector_service_name", rclcpp::ParameterValue(""));[m
+   node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));[m
+ [m
+   auto dock_shim = std::make_unique<opennav_docking::SimpleNonChargingDockShim>();[m
+   ASSERT_NO_THROW(dock_shim->configure(node, "my_dock", nullptr));[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+ [m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+ [m
+   geometry_msgs::msg::PoseStamped pose_from_db, refined_pose;[m
+   pose_from_db.header.frame_id = "map";[m
+[36m@@ -186,7 +196,8 @@[m [mTEST(SimpleNonChargingDockTests, UseExternalDetectionPoseFalse_IgnoresDetector)[m
+   EXPECT_DOUBLE_EQ(refined_pose.pose.orientation.w, pose_from_db.pose.orientation.w);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->stopDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->deactivate());[m
+   ASSERT_NO_THROW(dock_shim->cleanup());[m
+[36m@@ -337,6 +348,7 @@[m [mTEST(SimpleNonChargingDockTests, RefinedPoseTest)[m
+   detected_pose.pose.position.y = -0.5;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   pose.header.frame_id = "my_frame";[m
+   EXPECT_TRUE(dock->getRefinedPose(pose, ""));[m
+[36m@@ -371,6 +383,7 @@[m [mTEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)[m
+   detected_pose.pose.position.y = 1.0;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   // Create a pose with a different frame_id[m
+   geometry_msgs::msg::PoseStamped pose;[m
+[36m@@ -423,6 +436,7 @@[m [mTEST(SimpleNonChargingDockTests, IsDockedTransformException)[m
+   detected_pose.pose.position.y = 1.0;[m
+   pub->publish(detected_pose);[m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   // Second call should succeed[m
+   EXPECT_TRUE(dock->getRefinedPose(pose, ""));[m
+[36m@@ -551,6 +565,7 @@[m [mTEST(SimpleNonChargingDockTests, DetectorAutoStart)[m
+   detected_pose.pose.position.x = 1.0;[m
+   detected_pose.pose.position.y = 2.0;[m
+   pub->publish(detected_pose);[m
+[32m+[m[32m  std::this_thread::sleep_for(std::chrono::milliseconds(10));[m
+ [m
+   rclcpp::spin_some(node->get_node_base_interface());[m
+ [m
+[36m@@ -674,13 +689,16 @@[m [mTEST(SimpleNonChargingDockTests, DeactivateStopsDetector)[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+ [m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->deactivate());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->cleanup());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ }[m
+ [m
+ // Test that cleanup stops the detector if it was running and deactivate was skipped.[m
+[36m@@ -695,10 +713,12 @@[m [mTEST(SimpleNonChargingDockTests, CleanupStopsDetectorIfDeactivateSkipped)[m
+   ASSERT_NO_THROW(dock_shim->activate());[m
+ [m
+   ASSERT_NO_THROW(dock_shim->startDetectionProcess());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::ON);[m
+ [m
+   ASSERT_NO_THROW(dock_shim->cleanup());[m
+[31m-  EXPECT_TRUE(dock_shim->getDetectorState() == opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+[32m+[m[32m  EXPECT_TRUE(dock_shim->getDetectorState() ==[m
+[32m+[m[32m      opennav_docking::SimpleNonChargingDockShim::DetectorState::OFF);[m
+ }[m
+ [m
+ }  // namespace opennav_docking[m
+[1mdiff --git a/nav2_docking/opennav_docking/test/testing_dock.cpp b/nav2_docking/opennav_docking/test/testing_dock.cpp[m
+[1mindex 7174e30b..84c0d4a8 100644[m
+[1m--- a/nav2_docking/opennav_docking/test/testing_dock.cpp[m
+[1m+++ b/nav2_docking/opennav_docking/test/testing_dock.cpp[m
+[36m@@ -21,13 +21,14 @@[m
+ [m
+ namespace opennav_docking[m
+ {[m
+[31m-enum class TestFailureDockMode {[m
+[31m-    NONE,[m
+[31m-    FAIL_INITIAL_PERCEPTION_ONCE, // getRefinedPose returns false once, then true[m
+[31m-    FAIL_ALL_PERCEPTION,          // getRefinedPose always returns false[m
+[31m-    FAIL_IS_DOCKED_CHECK,         // isDocked always returns false[m
+[31m-    FAIL_IS_CHARGING_CHECK        // isCharging always returns false (if applicable)[m
+[31m-  };[m
+[32m+[m[32menum class TestFailureDockMode[m
+[32m+[m[32m{[m
+[32m+[m[32m  NONE,[m
+[32m+[m[32m  FAIL_INITIAL_PERCEPTION_ONCE,   // getRefinedPose returns false once, then true[m
+[32m+[m[32m  FAIL_ALL_PERCEPTION,            // getRefinedPose always returns false[m
+[32m+[m[32m  FAIL_IS_DOCKED_CHECK,           // isDocked always returns false[m
+[32m+[m[32m  FAIL_IS_CHARGING_CHECK          // isCharging always returns false (if applicable)[m
+[32m+[m[32m};[m
+ [m
+ // Tests error cases in unit test handling[m
+ class TestFailureDock : public opennav_docking_core::ChargingDock[m
+[36m@@ -56,7 +57,8 @@[m [mpublic:[m
+     dock_direction_ = opennav_docking_core::DockDirection::FORWARD;[m
+ [m
+     if (!node_->has_parameter(name_ + ".test_failure_mode")) {[m
+[31m-      node_->declare_parameter(name_ + ".test_failure_mode", rclcpp::ParameterValue(std::string("NONE")));[m
+[32m+[m[32m      node_->declare_parameter(name_ + ".test_failure_mode",[m
+[32m+[m[32m          rclcpp::ParameterValue(std::string("NONE")));[m
+     }[m
+     name_ = name;[m
+   }[m
