@@ -20,6 +20,7 @@
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "nav2_util/node_thread.hpp"
+#include "testing_dock.cpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
@@ -46,20 +47,35 @@ public:
   }
 };
 
-TEST(DockingServerTests, ObjectLifecycle)
+class DockingServerTestFixture : public ::testing::Test
 {
-  auto node = std::make_shared<opennav_docking::DockingServer>();
+public:
+  void SetUp() override
+  {
+    node = std::make_shared<DockingServerShim>();
+  }
+
+  void TearDown() override
+  {
+    node.reset();
+  }
+
+protected:
+  std::shared_ptr<DockingServerShim> node;
+};
+
+
+TEST_F(DockingServerTestFixture, ObjectLifecycle)
+{
   node->configure();
   node->activate();
   node->deactivate();
   node->cleanup();
   node->shutdown();
-  node.reset();
 }
 
-TEST(DockingServerTests, testErrorExceptions)
+TEST_F(DockingServerTestFixture, testErrorExceptions)
 {
-  auto node = std::make_shared<DockingServerShim>();
   auto node_thread = nav2_util::NodeThread(node);
   auto node2 = std::make_shared<rclcpp::Node>("client_node");
 
@@ -79,6 +95,9 @@ TEST(DockingServerTests, testErrorExceptions)
   node->declare_parameter(
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("NONE"));
 
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
@@ -175,13 +194,10 @@ TEST(DockingServerTests, testErrorExceptions)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node.reset();
 }
 
-TEST(DockingServerTests, getateGoalDock)
+TEST_F(DockingServerTestFixture, getGoalDock)
 {
-  auto node = std::make_shared<opennav_docking::DockingServer>();
-
   // Setup 1 instance of the test failure dock & its plugin instance
   node->declare_parameter(
     "docks",
@@ -198,6 +214,9 @@ TEST(DockingServerTests, getateGoalDock)
   node->declare_parameter(
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("NONE"));
 
   node->on_configure(rclcpp_lifecycle::State());
   std::shared_ptr<const DockRobot::Goal> goal = std::make_shared<const DockRobot::Goal>();
@@ -207,13 +226,10 @@ TEST(DockingServerTests, getateGoalDock)
   node->stashDockData(false, dock, true);
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node.reset();
 }
 
-TEST(DockingServerTests, testDynamicParams)
+TEST_F(DockingServerTestFixture, testDynamicParams)
 {
-  auto node = std::make_shared<opennav_docking::DockingServer>();
-
   // Setup 1 instance of the test failure dock & its plugin instance
   node->declare_parameter(
     "docks",
@@ -230,6 +246,9 @@ TEST(DockingServerTests, testDynamicParams)
   node->declare_parameter(
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("NONE"));
 
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
@@ -264,14 +283,10 @@ TEST(DockingServerTests, testDynamicParams)
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
   node->on_shutdown(rclcpp_lifecycle::State());
-  node.reset();
 }
 
-TEST(DockingServerTests, testDockBackward)
+TEST_F(DockingServerTestFixture, testDockBackward)
 {
-  auto node = std::make_shared<DockingServerShim>();
-
-  // Setup 1 instance of the test failure dock & its plugin instance
   node->declare_parameter(
     "docks",
     rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
@@ -287,6 +302,9 @@ TEST(DockingServerTests, testDockBackward)
   node->declare_parameter(
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("NONE"));
 
   // The dock_backwards parameter should be declared but not set
   node->on_configure(rclcpp_lifecycle::State());
@@ -308,6 +326,93 @@ TEST(DockingServerTests, testDockBackward)
   node->on_cleanup(rclcpp_lifecycle::State());
 
   node->on_shutdown(rclcpp_lifecycle::State());
+}
+
+TEST_F(DockingServerTestFixture, StartStopDetectorHooks)
+{
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("FAIL_ALL_PERCEPTION"));
+  node->declare_parameter(
+    "initial_perception_timeout",
+    rclcpp::ParameterValue(0.1));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto goal = std::make_shared<DockRobot::Goal>();
+  goal->dock_type = "dock_plugin";
+  goal->dock_pose.header.frame_id = "map";
+  auto dock = node->generateGoalDock(goal);
+  auto plugin = std::dynamic_pointer_cast<TestFailureDock>(dock->plugin);
+  ASSERT_NE(plugin, nullptr);
+
+  geometry_msgs::msg::PoseStamped pose;
+  EXPECT_THROW(
+    node->doInitialPerception(dock, pose),
+    opennav_docking_core::FailedToDetectDock);
+
+  EXPECT_TRUE(plugin->detector_started);
+  EXPECT_FALSE(plugin->detector_stopped);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  EXPECT_TRUE(plugin->detector_stopped);
+  node->on_shutdown(rclcpp_lifecycle::State());
+}
+
+TEST_F(DockingServerTestFixture, CleanupStopsDetector)
+{
+  node->declare_parameter(
+    "docks",
+    rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
+  node->declare_parameter(
+    "test_dock.type",
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
+  node->declare_parameter(
+    "test_dock.pose",
+    rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  node->declare_parameter(
+    "dock_plugins",
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
+  node->declare_parameter(
+    "dock_plugin.plugin",
+    rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
+  node->declare_parameter(
+    "dock_plugin.test_failure_mode",
+    rclcpp::ParameterValue("NONE"));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto goal = std::make_shared<DockRobot::Goal>();
+  goal->dock_type = "dock_plugin";
+  goal->dock_pose.header.frame_id = "map";
+  auto dock = node->generateGoalDock(goal);
+  auto plugin = std::dynamic_pointer_cast<TestFailureDock>(dock->plugin);
+  ASSERT_NE(plugin, nullptr);
+
+  plugin->startDetectionProcess();
+  EXPECT_TRUE(plugin->detector_started);
+  EXPECT_FALSE(plugin->detector_stopped);
+
+  node->on_cleanup(rclcpp_lifecycle::State());
+  EXPECT_TRUE(plugin->detector_stopped);
+  node->on_shutdown(rclcpp_lifecycle::State());
   node.reset();
 }
 
@@ -316,9 +421,7 @@ TEST(DockingServerTests, testDockBackward)
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
-
-  rclcpp::init(0, nullptr);
-
+  rclcpp::init(argc, argv);
   int result = RUN_ALL_TESTS();
 
   rclcpp::shutdown();

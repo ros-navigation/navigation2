@@ -21,6 +21,14 @@
 
 namespace opennav_docking
 {
+enum class TestFailureDockMode
+{
+  NONE,
+  FAIL_INITIAL_PERCEPTION_ONCE,   // getRefinedPose returns false once, then true
+  FAIL_ALL_PERCEPTION,            // getRefinedPose always returns false
+  FAIL_IS_DOCKED_CHECK,           // isDocked always returns false
+  FAIL_IS_CHARGING_CHECK          // isCharging always returns false (if applicable)
+};
 
 // Tests error cases in unit test handling
 class TestFailureDock : public opennav_docking_core::ChargingDock
@@ -30,19 +38,54 @@ public:
   : ChargingDock()
   {}
 
+  // Public members for test inspection
+  bool detector_started{false};
+  bool detector_stopped{false};
+  int get_refined_pose_call_count{0};
+  int start_detection_call_count{0};
+  int stop_detection_call_count{0};
+  TestFailureDockMode current_failure_mode{TestFailureDockMode::NONE};
+
   virtual void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    const std::string &, std::shared_ptr<tf2_ros::Buffer>)
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer>)
   {
     node_ = parent.lock();
     if (!node_) {
       throw std::runtime_error{"Failed to lock node"};
     }
     dock_direction_ = opennav_docking_core::DockDirection::FORWARD;
+
+    if (!node_->has_parameter(name_ + ".test_failure_mode")) {
+      node_->declare_parameter(name_ + ".test_failure_mode",
+          rclcpp::ParameterValue(std::string("NONE")));
+    }
+    name_ = name;
   }
 
   virtual void cleanup() {}
-  virtual void activate() {}
+  virtual void activate()
+  {
+    // Reset test-specific state on activation
+    std::string mode_str = node_->get_parameter(name_ + ".test_failure_mode").as_string();
+    if (mode_str == "FAIL_INITIAL_PERCEPTION_ONCE") {
+      current_failure_mode = TestFailureDockMode::FAIL_INITIAL_PERCEPTION_ONCE;
+    } else if (mode_str == "FAIL_ALL_PERCEPTION") {
+      current_failure_mode = TestFailureDockMode::FAIL_ALL_PERCEPTION;
+    } else if (mode_str == "FAIL_IS_DOCKED_CHECK") {
+      current_failure_mode = TestFailureDockMode::FAIL_IS_DOCKED_CHECK;
+    } else if (mode_str == "FAIL_IS_CHARGING_CHECK") {
+      current_failure_mode = TestFailureDockMode::FAIL_IS_CHARGING_CHECK;
+    } else {
+      current_failure_mode = TestFailureDockMode::NONE;
+    }
+
+    detector_started = false;
+    detector_stopped = false;
+    get_refined_pose_call_count = 0;
+    start_detection_call_count = 0;
+    stop_detection_call_count = 0;
+  }
   virtual void deactivate() {}
 
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
@@ -75,25 +118,56 @@ public:
 
   virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped &, std::string)
   {
-    // Always return false to trigger a timeout, when no exceptions are thrown
-    return false;
+    get_refined_pose_call_count++;
+    if (current_failure_mode == TestFailureDockMode::FAIL_ALL_PERCEPTION) {
+      return false;
+    }
+    if (current_failure_mode == TestFailureDockMode::FAIL_INITIAL_PERCEPTION_ONCE &&
+      get_refined_pose_call_count == 1)
+    {
+      return false; // Fail the first time, succeed subsequently
+    }
+    return true; // Default to successful perception
   }
 
   virtual bool isDocked()
   {
-    bool dock_action_called;
+    bool dock_action_called = false;
     node_->get_parameter("dock_action_called", dock_action_called);
-    return dock_action_called;
+    if (dock_action_called) {
+      return true;
+    } // Compatibility with existing tests
+
+    if (current_failure_mode == TestFailureDockMode::FAIL_IS_DOCKED_CHECK) {
+      return false;
+    }
+    return true; // Default to successfully docked if not failing
   }
 
   virtual bool isCharging()
   {
-    return false;
+    if (current_failure_mode == TestFailureDockMode::FAIL_IS_CHARGING_CHECK) {
+      return false;
+    }
+    return true; // Default to charging if not failing (for charging docks)
   }
 
   virtual bool disableCharging()
   {
     return true;
+  }
+
+  virtual void startDetectionProcess() override
+  {
+    start_detection_call_count++;
+    detector_started = true;
+    detector_stopped = false; // Reset if re-started
+  }
+
+  virtual void stopDetectionProcess() override
+  {
+    stop_detection_call_count++;
+    detector_stopped = true;
   }
 
   virtual bool hasStoppedCharging()
@@ -103,6 +177,7 @@ public:
 
 protected:
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  std::string name_;
 };
 
 }  // namespace opennav_docking
