@@ -60,6 +60,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
   declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
+  declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -569,16 +570,19 @@ void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & 
 
 void ControllerServer::publishZeroVelocity()
 {
-  geometry_msgs::msg::TwistStamped velocity;
-  velocity.twist.angular.x = 0;
-  velocity.twist.angular.y = 0;
-  velocity.twist.angular.z = 0;
-  velocity.twist.linear.x = 0;
-  velocity.twist.linear.y = 0;
-  velocity.twist.linear.z = 0;
-  velocity.header.frame_id = costmap_ros_->getBaseFrameID();
-  velocity.header.stamp = now();
-  publishVelocity(velocity);
+  if (get_parameter("publish_zero_velocity").as_bool()) {
+    geometry_msgs::msg::TwistStamped velocity;
+    velocity.twist.angular.x = 0;
+    velocity.twist.angular.y = 0;
+    velocity.twist.angular.z = 0;
+    velocity.twist.linear.x = 0;
+    velocity.twist.linear.y = 0;
+    velocity.twist.linear.z = 0;
+    velocity.header.frame_id = costmap_ros_->getBaseFrameID();
+    velocity.header.stamp = now();
+    publishVelocity(velocity);
+  }
+
 }
 
 bool ControllerServer::isGoalReached()
