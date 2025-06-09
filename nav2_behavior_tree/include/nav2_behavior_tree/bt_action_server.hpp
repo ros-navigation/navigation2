@@ -285,7 +285,7 @@ protected:
   bool always_reload_bt_xml_ = false;
 
   // Parameters for Groot2 monitoring
-  bool enable_groot_monitoring_ = true;
+  bool enable_groot_monitoring_ = false;
   int groot_server_port_ = 1667;
 
   // User-provided callbacks
