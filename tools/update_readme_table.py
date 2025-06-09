@@ -79,6 +79,7 @@ def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
+    table = table[:-1]  # Remove the last space
     table += '\n'
     table += '| :---: |'
     for distro in Distros:
