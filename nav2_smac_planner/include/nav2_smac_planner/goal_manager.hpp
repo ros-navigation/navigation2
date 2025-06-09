@@ -73,14 +73,12 @@ public:
   }
 
   /**
-   * @brief Sets the internal goals' state list to the provided goals.
-   * @param goals Vector of goals state to set,
+   * @brief Adds goal to the goal vector
+   *@param goal Reference to the NodePtr
    */
-  void setGoalStates(
-    GoalStateVector & goals_state)
+  void addGoal(NodePtr & goal)
   {
-    clear();
-    _goals_state = goals_state;
+    _goals_state.push_back({goal, true});
   }
 
   /**
@@ -128,6 +126,11 @@ public:
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown)
   {
+    // Make sure that there was a  goal clear before this was run
+    if (!_goals_set.empty() || !_goals_coordinate.empty()) {
+      throw std::runtime_error("Goal set should be cleared before calling "
+        "removeinvalidgoals");
+    }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
         tolerance > 0.001)

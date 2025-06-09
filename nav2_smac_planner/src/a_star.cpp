@@ -198,7 +198,7 @@ void AStarAlgorithm<Node2D>::setGoal(
   if (dim_3 != 0) {
     throw std::runtime_error("Node type Node2D cannot be given non-zero goal dim 3.");
   }
-
+  _goal_manager.clear();
   auto goal = addToGraph(
     Node2D::getIndex(
       static_cast<unsigned int>(mx),
@@ -206,9 +206,8 @@ void AStarAlgorithm<Node2D>::setGoal(
       getSizeX()));
 
   goal->setPose(Node2D::Coordinates(mx, my));
-  GoalStateVector goals_state;
-  goals_state.push_back({goal, true});
-  _goal_manager.setGoalStates(goals_state);
+  _goal_manager.addGoal(goal);
+
   _coarse_search_resolution = 1;
 }
 
@@ -223,10 +222,23 @@ void AStarAlgorithm<NodeT>::setGoal(
   // Default to minimal resolution unless overridden for ALL_DIRECTION
   _coarse_search_resolution = 1;
 
-  unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
-  GoalStateVector goals_state;
+  _goal_manager.clear();
   Coordinates ref_goal_coord(mx, my, static_cast<float>(dim_3));
 
+  if (!_search_info.cache_obstacle_heuristic ||
+    _goal_manager.hasGoalChanged(ref_goal_coord))
+  {
+    if (!_start) {
+      throw std::runtime_error("Start must be set before goal.");
+    }
+
+    NodeT::resetObstacleHeuristic(
+      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
+  }
+
+  _goal_manager.setRefGoalCoordinates(ref_goal_coord);
+
+  unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
   // set goal based on heading mode
   switch (goal_heading_mode) {
     case GoalHeadingMode::DEFAULT: {
@@ -237,7 +249,7 @@ void AStarAlgorithm<NodeT>::setGoal(
             static_cast<unsigned int>(my),
             dim_3));
         goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-        goals_state.push_back({goal, true});
+        _goal_manager.addGoal(goal);
         break;
       }
 
@@ -250,7 +262,7 @@ void AStarAlgorithm<NodeT>::setGoal(
             static_cast<unsigned int>(my),
             dim_3));
         goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(dim_3)));
-        goals_state.push_back({goal, true});
+        _goal_manager.addGoal(goal);
 
         // Add goal node in opposite (180°) direction
         unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
@@ -261,7 +273,7 @@ void AStarAlgorithm<NodeT>::setGoal(
             opposite_heading));
         opposite_goal->setPose(
           typename NodeT::Coordinates(mx, my, static_cast<float>(opposite_heading)));
-        goals_state.push_back({opposite_goal, true});
+        _goal_manager.addGoal(opposite_goal);
         break;
       }
 
@@ -277,27 +289,13 @@ void AStarAlgorithm<NodeT>::setGoal(
               static_cast<unsigned int>(my),
               i));
           goal->setPose(typename NodeT::Coordinates(mx, my, static_cast<float>(i)));
-          goals_state.push_back({goal, true});
+          _goal_manager.addGoal(goal);
         }
         break;
       }
     case GoalHeadingMode::UNKNOWN:
       throw std::runtime_error("Goal heading is UNKNOWN.");
   }
-
-  if (!_search_info.cache_obstacle_heuristic ||
-    _goal_manager.hasGoalChanged(ref_goal_coord))
-  {
-    if (!_start) {
-      throw std::runtime_error("Start must be set before goal.");
-    }
-
-    NodeT::resetObstacleHeuristic(
-      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
-  }
-
-  _goal_manager.setGoalStates(goals_state);
-  _goal_manager.setRefGoalCoordinates(ref_goal_coord);
 }
 
 template<typename NodeT>
