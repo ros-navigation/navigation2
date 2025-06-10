@@ -39,24 +39,24 @@ BT::NodeStatus SequenceWithBlackboardMemoryNode::tick()
 
     switch (child_status) {
       case BT::NodeStatus::RUNNING:
-          return child_status;
+        return child_status;
 
       case BT::NodeStatus::FAILURE:
-          // Reset on failure
-          resetChildren();
-          current_child_idx = 0;
-          setOutput("current_child_idx", 0);
-          return child_status;
+        // Reset on failure
+        resetChildren();
+        current_child_idx = 0;
+        setOutput("current_child_idx", 0);
+        return child_status;
 
       case BT::NodeStatus::SUCCESS:
       case BT::NodeStatus::SKIPPED:
-          // Skip the child node
-          current_child_idx++;
-          setOutput("current_child_idx", current_child_idx);
+        // Skip the child node
+        current_child_idx++;
+        setOutput("current_child_idx", current_child_idx);
         break;
 
       case BT::NodeStatus::IDLE:
-          throw std::runtime_error("A child node must never return IDLE");
+        throw std::runtime_error("A child node must never return IDLE");
     }  // end switch
   }  // end while loop
 
