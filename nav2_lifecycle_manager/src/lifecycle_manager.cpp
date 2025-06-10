@@ -432,9 +432,17 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      reset(true);  // hard reset to transition all still active down
+
+      RCLCPP_ERROR(get_logger(), "Restarting only the failed node: %s.", node_name.c_str());
+      bond_map_.erase(node_name);
+      changeStateForNode(node_name, Transition::TRANSITION_CONFIGURE);
+      if (!changeStateForNode(node_name, Transition::TRANSITION_ACTIVATE)){
+        RCLCPP_ERROR(get_logger(), "Restart of single node: %s failed. Restarting the entire stack.", node_name.c_str());
+        reset(true); 
+        bond_map_.clear();
+      }
+
       // if a server crashed, it won't get cleared due to failed transition, clear manually
-      bond_map_.clear();
 
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
