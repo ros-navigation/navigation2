@@ -62,6 +62,9 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_distance_to_obstacle",
+    rclcpp::ParameterValue(-1.0));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cost_regulated_linear_velocity_scaling",
@@ -131,6 +134,9 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     params_.max_allowed_time_to_collision_up_to_carrot);
+  node->get_parameter(
+    plugin_name_ + ".min_distance_to_obstacle",
+    params_.min_distance_to_obstacle);
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     params_.use_regulated_linear_velocity_scaling);
@@ -278,6 +284,8 @@ ParameterHandler::updateParametersCallback(
         params_.curvature_lookahead_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot") {
         params_.max_allowed_time_to_collision_up_to_carrot = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_distance_to_obstacle") {
+        params_.min_distance_to_obstacle = parameter.as_double();
       } else if (param_name == plugin_name_ + ".cost_scaling_dist") {
         params_.cost_scaling_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".cost_scaling_gain") {
