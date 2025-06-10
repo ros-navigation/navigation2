@@ -73,6 +73,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
     rclcpp::ServicesQoS().get_rmw_qos_profile(),
     callback_group_);
 
+  is_restarting_pub_ = create_publisher<std_msgs::msg::Bool>("~/is_restarting", rclcpp::SystemDefaultsQoS());
+
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
   transition_state_map_[Transition::TRANSITION_ACTIVATE] = State::PRIMARY_STATE_ACTIVE;
@@ -432,9 +434,24 @@ LifecycleManager::checkBondConnections()
         "CRITICAL FAILURE: SERVER %s IS DOWN after not receiving a heartbeat for %i ms."
         " Shutting down related nodes.",
         node_name.c_str(), static_cast<int>(bond_timeout_.count()));
-      reset(true);  // hard reset to transition all still active down
+
+      auto msg = std::make_unique<std_msgs::msg::Bool>();
+      msg->data = true;
+      is_restarting_pub_->publish(std::move(msg));
+
+      RCLCPP_ERROR(get_logger(), "Restarting only the failed node: %s.", node_name.c_str());
+      bond_map_.erase(node_name);
+      if (
+        !changeStateForNode(node_name, Transition::TRANSITION_CONFIGURE) ||
+        !changeStateForNode(node_name, Transition::TRANSITION_ACTIVATE)) {
+        RCLCPP_ERROR(
+          get_logger(), "Restart of single node: %s failed. Restarting the entire stack.",
+          node_name.c_str());
+        reset(true);
+        bond_map_.clear();
+      } 
+
       // if a server crashed, it won't get cleared due to failed transition, clear manually
-      bond_map_.clear();
 
       // Initialize the bond respawn timer to check if server comes back online
       // after a failure, within a maximum timeout period.
