@@ -90,21 +90,23 @@ bool CollisionChecker::isCollisionImminent(
   curr_pose.x = robot_pose.pose.position.x;
   curr_pose.y = robot_pose.pose.position.y;
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
-  double accumulated_distance = 0.0;
 
   // only forward simulate within time requested
+  double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
+  if (params_->min_distance_to_obstacle > 0.0) {
+    max_allowed_time_to_collision_check = std::max(
+        params_->max_allowed_time_to_collision_up_to_carrot,
+        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel), 0.01)
+    );
+  }
   int i = 1;
-  while (i * projection_time < params_->max_allowed_time_to_collision_up_to_carrot ||
-    (accumulated_distance < params_->min_distance_to_obstacle &&
-    projection_time * linear_vel > 0.01))
-  {
+  while (i * projection_time < max_allowed_time_to_collision_check) {
     i++;
 
     // apply velocity at curr_pose over distance
     curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
     curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
     curr_pose.theta += projection_time * angular_vel;
-    accumulated_distance += projection_time * linear_vel;
 
     // check if past carrot pose, where no longer a thoughtfully valid command
     if (hypot(curr_pose.x - robot_xy.x, curr_pose.y - robot_xy.y) > carrot_dist) {
