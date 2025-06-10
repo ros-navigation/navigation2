@@ -96,7 +96,8 @@ bool CollisionChecker::isCollisionImminent(
   if (params_->min_distance_to_obstacle > 0.0) {
     max_allowed_time_to_collision_check = std::max(
         params_->max_allowed_time_to_collision_up_to_carrot,
-        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel), 0.01)
+        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel),
+        params_->min_approach_linear_velocity)
     );
   }
   int i = 1;
