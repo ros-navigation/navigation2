@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2025 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@
 // Other includes
 #include <string>
 #include <memory>
-#include <mutex>
+#include <map>
 
 // ROS includes
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/callback_group.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "behaviortree_cpp/control_node.h"
+#include "nav2_util/service_server.hpp"
 
 // Interface definitions
 #include "std_srvs/srv/trigger.hpp"
@@ -34,6 +37,20 @@ namespace nav2_behavior_tree
 using Trigger = std_srvs::srv::Trigger;
 
 enum state_t {UNPAUSED, PAUSED, PAUSE_REQUESTED, ON_PAUSE, RESUME_REQUESTED, ON_RESUME};
+const std::map<state_t, std::string> state_names = {
+  {UNPAUSED, "UNPAUSED"},
+  {PAUSED, "PAUSED"},
+  {PAUSE_REQUESTED, "PAUSE_REQUESTED"},
+  {ON_PAUSE, "ON_PAUSE"},
+  {RESUME_REQUESTED, "RESUME_REQUESTED"},
+  {ON_RESUME, "ON_RESUME"}
+};
+const std::map<state_t, uint> child_indices = {
+  {UNPAUSED, 0},
+  {PAUSED, 1},
+  {ON_PAUSE, 2},
+  {ON_RESUME, 3}
+};
 
 /* @brief Controlled through service calls to pause and resume the execution of the tree
  * It has one mandatory child for the UNPAUSED, and three optional for the PAUSED state,
@@ -41,17 +58,27 @@ enum state_t {UNPAUSED, PAUSED, PAUSE_REQUESTED, ON_PAUSE, RESUME_REQUESTED, ON_
  * It has two input ports:
  * - pause_service_name: name of the service to pause
  * - resume_service_name: name of the service to resume
+ *
+ * Usage:
+ * <Pause pause_service_name="/pause" resume_service_name="/resume">
+ *     <!-- UNPAUSED branch -->
+ *
+ *     <!-- PAUSED branch (optional) -->
+ *
+ *     <!-- ON_PAUSE branch (optional) -->
+ *
+ *     <!-- ON_RESUME branch (optional) -->
+ * </Pause>
  */
-class Pause : public BT::ControlNode
+
+
+class PauseResumeController : public BT::ControlNode
 {
 public:
   //! @brief Constructor
-  Pause(
+  PauseResumeController(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
-
-  //! @brief Destructor
-  ~Pause();
 
   //! @brief Reset state and go to Idle
   void halt() override;
@@ -74,23 +101,27 @@ public:
 
 private:
   //! @brief Service callback to pause
-  void pause_service_callback(
+  void pauseServiceCallback(
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<Trigger::Request> request,
     std::shared_ptr<Trigger::Response> response);
 
   //! @brief Service callback to resume
-  void resume_service_callback(
+  void resumeServiceCallback(
+    const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<Trigger::Request> request,
     std::shared_ptr<Trigger::Response> response);
+
+  BT::NodeStatus tickChildAndTransition();
+
+  void switchState(const state_t new_state);
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr cb_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<std::thread> spinner_thread_;
-  rclcpp::Service<Trigger>::SharedPtr pause_srv_;
-  rclcpp::Service<Trigger>::SharedPtr resume_srv_;
+  nav2_util::ServiceServer<Trigger>::SharedPtr pause_srv_;
+  nav2_util::ServiceServer<Trigger>::SharedPtr resume_srv_;
   state_t state_;
-  std::mutex state_mutex_;
 };
 
 }  // namespace nav2_behavior_tree

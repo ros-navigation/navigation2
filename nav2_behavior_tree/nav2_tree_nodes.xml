@@ -405,7 +405,7 @@
 
     <Control ID="NonblockingSequence"/>
 
-    <Control ID="Pause">
+    <Control ID="PauseResumeController">
       <input_port name="pause_service_name">Service to call to pause</input_port>
       <input_port name="resume_service_name">Service to call to resume</input_port>
     </Control>
