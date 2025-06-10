@@ -120,6 +120,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string speed_limit_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
   get_parameter("failure_tolerance", failure_tolerance_);
+  get_parameter("publish_zero_velocity", publish_zero_velocity_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -432,7 +433,9 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  publishZeroVelocity();
+  if (publish_zero_velocity_){
+    publishZeroVelocity();
+  }
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -570,19 +573,16 @@ void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & 
 
 void ControllerServer::publishZeroVelocity()
 {
-  if (get_parameter("publish_zero_velocity").as_bool()) {
-    geometry_msgs::msg::TwistStamped velocity;
-    velocity.twist.angular.x = 0;
-    velocity.twist.angular.y = 0;
-    velocity.twist.angular.z = 0;
-    velocity.twist.linear.x = 0;
-    velocity.twist.linear.y = 0;
-    velocity.twist.linear.z = 0;
-    velocity.header.frame_id = costmap_ros_->getBaseFrameID();
-    velocity.header.stamp = now();
-    publishVelocity(velocity);
-  }
-
+  geometry_msgs::msg::TwistStamped velocity;
+  velocity.twist.angular.x = 0;
+  velocity.twist.angular.y = 0;
+  velocity.twist.angular.z = 0;
+  velocity.twist.linear.x = 0;
+  velocity.twist.linear.y = 0;
+  velocity.twist.linear.z = 0;
+  velocity.header.frame_id = costmap_ros_->getBaseFrameID();
+  velocity.header.stamp = now();
+  publishVelocity(velocity);
 }
 
 bool ControllerServer::isGoalReached()
