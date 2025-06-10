@@ -207,5 +207,6 @@ BT_REGISTER_NODES(factory)
         name, config);
     };
 
-  factory.registerBuilder<nav2_behavior_tree::PauseResumeController>("PauseResumeController", builder);
+  factory.registerBuilder<nav2_behavior_tree::PauseResumeController>(
+    "PauseResumeController", builder);
 }
