@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2025 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,7 @@ namespace nav2_behavior_tree
 SequenceWithBlackboardMemoryNode::SequenceWithBlackboardMemoryNode(
   const std::string & name,
   const BT::NodeConfiguration & conf)
-: BT::ControlNode::ControlNode(name, conf)
-{
-  setRegistrationID("SequenceWithBlackboardMemory");
-}
-
-void SequenceWithBlackboardMemoryNode::halt()
-{
-  ControlNode::halt();
-}
+: BT::ControlNode::ControlNode(name, conf) {}
 
 BT::NodeStatus SequenceWithBlackboardMemoryNode::tick()
 {
@@ -46,35 +38,27 @@ BT::NodeStatus SequenceWithBlackboardMemoryNode::tick()
     const BT::NodeStatus child_status = current_child_node->executeTick();
 
     switch (child_status) {
-      case BT::NodeStatus::RUNNING: {
+      case BT::NodeStatus::RUNNING:
           return child_status;
-        }
-      case BT::NodeStatus::FAILURE: {
+
+      case BT::NodeStatus::FAILURE:
           // Reset on failure
           resetChildren();
           current_child_idx = 0;
           setOutput("current_child_idx", 0);
           return child_status;
-        }
-      case BT::NodeStatus::SUCCESS: {
-          current_child_idx++;
-          setOutput("current_child_idx", current_child_idx);
-        }
-        break;
 
-      case BT::NodeStatus::SKIPPED: {
-          // Same as SUCCESS
+      case BT::NodeStatus::SUCCESS:
+      case BT::NodeStatus::SKIPPED:
           // Skip the child node
           current_child_idx++;
           setOutput("current_child_idx", current_child_idx);
-        }
         break;
 
-      case BT::NodeStatus::IDLE: {
-          throw BT::LogicError("A child node must never return IDLE");
-        }
-    }   // end switch
-  }     // end while loop
+      case BT::NodeStatus::IDLE:
+          throw std::runtime_error("A child node must never return IDLE");
+    }  // end switch
+  }  // end while loop
 
   // The entire while loop completed. This means that all the children returned SUCCESS.
   if (current_child_idx == children_count) {

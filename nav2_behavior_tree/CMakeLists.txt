@@ -218,8 +218,8 @@ list(APPEND plugin_libs nav2_nonblocking_sequence_bt_node)
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
 
-add_library(nav2_pause_bt_node SHARED plugins/control/pause.cpp)
-list(APPEND plugin_libs nav2_pause_bt_node)
+add_library(nav2_pause_resume_controller_bt_node SHARED plugins/control/pause_resume_controller.cpp)
+list(APPEND plugin_libs nav2_pause_resume_controller_bt_node)
 
 add_library(nav2_sequence_with_blackboard_memory_bt_node SHARED plugins/control/sequence_with_blackboard_memory.cpp)
 list(APPEND plugin_libs nav2_sequence_with_blackboard_memory_bt_node)
