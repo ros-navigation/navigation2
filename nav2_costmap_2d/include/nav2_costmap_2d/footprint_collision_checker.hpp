@@ -21,7 +21,6 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
