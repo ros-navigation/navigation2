@@ -21,6 +21,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -53,6 +54,10 @@ public:
    */
   double footprintCost(const Footprint & footprint);
   /**
+   * @brief Find the footprint cost for entire footprint area using full coverage
+   */
+  double footprintAreaCost(const Footprint & footprint);
+  /**
    * @brief Find the footprint cost a a post with an unoriented footprint
    */
   double footprintCostAtPose(double x, double y, double theta, const Footprint & footprint);
@@ -81,6 +86,31 @@ public:
   }
 
 protected:
+  /**
+   * @brief Check if a point is inside the footprint polygon
+   * @param x X coordinate in world frame
+   * @param y Y coordinate in world frame  
+   * @param footprint Footprint polygon
+   * @return True if point is inside footprint
+   */
+  bool isPointInFootprint(
+    double x, double y,
+    const Footprint & footprint);
+
+  /**
+   * @brief Check if footprint is a rectangular (axis-aligned) shape
+   * @param footprint Footprint to check
+   * @param min_x Output minimum x coordinate
+   * @param max_x Output maximum x coordinate
+   * @param min_y Output minimum y coordinate
+   * @param max_y Output maximum y coordinate
+   * @return True if footprint is rectangular
+   */
+  bool isRectangularFootprint(
+    const Footprint & footprint, 
+    double & min_x, double & max_x, 
+    double & min_y, double & max_y) const;
+
   CostmapT costmap_;
 };
 
