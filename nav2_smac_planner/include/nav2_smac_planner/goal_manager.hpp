@@ -76,7 +76,7 @@ public:
    * @brief Adds goal to the goal vector
    *@param goal Reference to the NodePtr
    */
-  void addGoal(NodePtr goal)
+  void addGoal(NodePtr & goal)
   {
     _goals_state.push_back({goal, true});
   }
