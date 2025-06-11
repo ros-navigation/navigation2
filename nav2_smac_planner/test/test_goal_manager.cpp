@@ -136,7 +136,7 @@ TEST(GoalManagerTest, test_goal_manager)
   unsigned int test_goal_size = 16;
 
   for (unsigned int i = 0; i < test_goal_size; ++i) {
-    auto goal = new NodeHybrid(i);
+    NodePtr goal = new NodeHybrid(i);
     goal->setPose(NodeHybrid::Coordinates(i, i, 0));
     goal_manager.addGoal(goal);
   }

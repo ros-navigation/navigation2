@@ -195,7 +195,7 @@ struct MotionPrimitive
 template<typename NodeT>
 struct GoalState
 {
-  NodeT * goal = nullptr;
+  NodeT* goal = nullptr;
   bool is_valid = true;
 };
 
