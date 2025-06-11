@@ -43,7 +43,7 @@ public:
     float angle = getAngleBetweenEdges(start, corner, end);
 
     // no need to smooth an angle that is very shallow
-    if (std::abs(angle) < 1E-9 || std::abs(angle-M_PI) < 1E-9){return;}
+    if (std::abs(angle) < 1E-9 || std::abs(angle - M_PI) < 1E-9) {return;}
 
     float tangent_length = minimum_radius / (std::tan(std::fabs(angle) / 2));
 
