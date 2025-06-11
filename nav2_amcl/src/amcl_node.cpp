@@ -1523,6 +1523,16 @@ AmclNode::initMessageFilters()
 {
   auto sub_opt = rclcpp::SubscriptionOptions();
   sub_opt.callback_group = callback_group_;
+
+  #if RCLCPP_VERSION_GTE(29, 6, 0)
+  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    shared_from_this(), scan_topic_, rclcpp::SensorDataQoS(), sub_opt);
+  #else
+  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+      nav2::LifecycleNode>>(
+    shared_from_this(), scan_topic_, rmw_qos_profile_sensor_data, sub_opt);
+  #endif
+
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
     shared_from_this(), scan_topic_, rclcpp::SensorDataQoS(), sub_opt);
 
