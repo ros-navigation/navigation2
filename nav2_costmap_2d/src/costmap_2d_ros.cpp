@@ -71,7 +71,7 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
     "nav2_costmap_2d::InflationLayer"}
 {
   is_lifecycle_follower_ = false;
-  
+
   RCLCPP_INFO(get_logger(), "Creating Costmap");
 
   declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));

@@ -16,6 +16,7 @@
 #define NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 
 #include <cstdint>
+#include <string>
 
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"

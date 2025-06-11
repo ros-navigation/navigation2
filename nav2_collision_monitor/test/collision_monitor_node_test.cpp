@@ -182,11 +182,11 @@ protected:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_sub_;
 
   geometry_msgs::msg::Twist::SharedPtr cmd_vel_out_;
-  
+
   // CollisionMonitor Action state
   rclcpp::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
   nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
-  
+
   // Service client for setting CollisionMonitor parameters
   rclcpp::Client<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
 };  // Tester
@@ -210,7 +210,7 @@ Tester::Tester()
   cmd_vel_out_sub_ = cm_->create_subscription<geometry_msgs::msg::Twist>(
     CMD_VEL_OUT_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::cmdVelOutCallback, this, std::placeholders::_1));
-  
+
   action_state_sub_ = cm_->create_subscription<nav2_msgs::msg::CollisionMonitorState>(
     STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
     std::bind(&Tester::actionStateCallback, this, std::placeholders::_1));
