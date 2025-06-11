@@ -231,13 +231,23 @@ void ObstacleLayer::onInitialize()
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub;
+      #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
         rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
 
-      // For Jazzy compatibility
-      #if RCLCPP_VERSION_GTE(29, 0, 0)
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
           rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
           rclcpp_lifecycle::LifecycleNode>>(
@@ -271,13 +281,23 @@ void ObstacleLayer::onInitialize()
       observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(0.05));
 
     } else {
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub;
+      #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
         rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
 
-      // For Jazzy compatibility
-      #if RCLCPP_VERSION_GTE(29, 0, 0)
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
           rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
           rclcpp_lifecycle::LifecycleNode>>(

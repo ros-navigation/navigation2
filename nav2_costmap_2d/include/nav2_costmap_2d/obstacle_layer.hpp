@@ -43,6 +43,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/version.h"
 #include "laser_geometry/laser_geometry.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreorder"
@@ -234,8 +235,13 @@ protected:
   /// @brief Used to project laser scans into point clouds
   laser_geometry::LaserProjection projector_;
   /// @brief Used for the observation message filters
+  #if RCLCPP_VERSION_GTE(29, 6, 0)
+  std::vector<std::shared_ptr<message_filters::SubscriberBase>>
+  observation_subscribers_;
+  #else
   std::vector<std::shared_ptr<message_filters::SubscriberBase<rclcpp_lifecycle::LifecycleNode>>>
   observation_subscribers_;
+  #endif
   /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
   /// @brief Used to store observations from various sensors
