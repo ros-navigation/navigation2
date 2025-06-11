@@ -1,6 +1,11 @@
 #Determine if the current path is still valid
 
 nav_msgs/Path path
+<<<<<<< HEAD
+=======
+uint8 max_cost 254
+bool consider_unknown_as_obstacle false
+>>>>>>> 279e17ec (Change max_cost default to 254 (#5256))
 ---
 bool is_valid
 int32[] invalid_pose_indices 

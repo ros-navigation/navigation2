@@ -23,7 +23,12 @@ namespace nav2_behavior_tree
 IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
+<<<<<<< HEAD
 : BT::ConditionNode(condition_name, conf)
+=======
+: BT::ConditionNode(condition_name, conf),
+  max_cost_(254), consider_unknown_as_obstacle_(false)
+>>>>>>> 279e17ec (Change max_cost default to 254 (#5256))
 {
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
