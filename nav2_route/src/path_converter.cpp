@@ -87,6 +87,11 @@ nav_msgs::msg::Path PathConverter::densify(
         // new start of next edge is end of smoothing arc
         start = corner_arc.getCornerEnd();
       } else {
+        if (smooth_corners_) {
+          RCLCPP_WARN(
+            logger_, "Unable to smooth corner between edge %i and edge %i", edge->edgeid,
+            next_edge->edgeid);
+        }
         interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
         start = end;
       }
