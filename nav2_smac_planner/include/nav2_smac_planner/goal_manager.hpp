@@ -149,7 +149,7 @@ public:
    * @param node Node pointer to check.
    * @return if node matches any goal in the goal set.
    */
-  inline bool isGoal(NodePtr & node)
+  inline bool isGoal(const NodePtr & node)
   {
     return _goals_set.find(node) != _goals_set.end();
   }
