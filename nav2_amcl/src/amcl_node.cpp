@@ -1529,7 +1529,7 @@ AmclNode::initMessageFilters()
     shared_from_this(), scan_topic_, rclcpp::SensorDataQoS(), sub_opt);
   #else
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-    rclcpp_lifecycle::LifecycleNode>>(
+      rclcpp_lifecycle::LifecycleNode>>(
     shared_from_this(), scan_topic_, rmw_qos_profile_sensor_data, sub_opt);
   #endif
 
