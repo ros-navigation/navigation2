@@ -56,7 +56,6 @@ public:
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
   typedef GoalManager<NodeT> GoalManagerT;
-  typedef std::vector<GoalState<NodeT>> GoalStateVector;
 
 
   /**
