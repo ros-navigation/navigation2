@@ -52,7 +52,7 @@ public:
     float angle = getAngleBetweenEdges(start, corner, end);
 
     // cannot smooth a 0 (back and forth) or 180 (straight line) angle
-    if (std::abs(angle) < 1E-9 || std::abs(angle - M_PI) < 1E-9) {return;}
+    if (std::abs(angle) < 1E-6 || std::abs(angle - M_PI) < 1E-6) {return;}
 
     float tangent_length = minimum_radius / (std::tan(std::fabs(angle) / 2));
 
