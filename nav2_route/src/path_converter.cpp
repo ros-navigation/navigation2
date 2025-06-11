@@ -61,9 +61,11 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
+  Coordinates start;
+  Coordinates end;
+
   if (!route.edges.empty()) {
-    Coordinates start = route.edges[0]->start->coords;
-    Coordinates end;
+    start = route.edges[0]->start->coords;
 
     // Fill in path via route edges
     for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
@@ -94,9 +96,7 @@ nav_msgs::msg::Path PathConverter::densify(
   if (route.edges.empty()) {
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
   } else {
-    interpolateEdge(
-      route.edges.back()->start->coords.x, route.edges.back()->start->coords.y,
-      route.edges.back()->end->coords.x, route.edges.back()->end->coords.y, path.poses);
+    interpolateEdge(start.x, start.y, route.edges.back()->end->coords.x, route.edges.back()->end->coords.y, path.poses);
 
     path.poses.push_back(
       utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
