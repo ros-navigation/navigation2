@@ -114,7 +114,7 @@ route_server:
     path_density: 0.05                            # Density of points for generating the dense nav_msgs/Path from route (m)
     max_iterations: 0                             # Maximum number of search iterations, if 0, uses maximum possible
     max_planning_time: 2.0                        # Maximum planning time (seconds)
-    smoothing_corners: true                       # Whether to smooth corners formed by adjacent edges or not
+    smooth_corners: true                          # Whether to smooth corners formed by adjacent edges or not
     smoothing_radius: 1.0                         # Radius of corner to fit into the corner
     costmap_topic: 'global_costmap/costmap_raw'   # Costmap topic when enable_nn_search is enabled. May also be used by the collision monitor operation and/or the costmap edge scorer if using the same topic to share resources.
 
