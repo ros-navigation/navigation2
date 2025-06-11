@@ -1533,9 +1533,6 @@ AmclNode::initMessageFilters()
     shared_from_this(), scan_topic_, rmw_qos_profile_sensor_data, sub_opt);
   #endif
 
-  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
-    shared_from_this(), scan_topic_, rclcpp::SensorDataQoS(), sub_opt);
-
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *laser_scan_sub_, *tf_buffer_, odom_frame_id_, 10,
     get_node_logging_interface(),
