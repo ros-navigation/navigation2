@@ -548,7 +548,7 @@ bool CollisionMonitor::processStopSlowdownLimit(
       const double linear_vel = std::hypot(velocity.x, velocity.y);  // absolute
       Velocity safe_vel;
       double ratio = 1.0;
-      
+
       // Calculate the most restrictive ratio to preserve curvature
       if (linear_vel != 0.0) {
         ratio = std::min(ratio, polygon->getLinearLimit() / linear_vel);
