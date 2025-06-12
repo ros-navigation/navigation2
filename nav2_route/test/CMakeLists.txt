@@ -127,3 +127,11 @@ ament_add_gtest(test_goal_intent_search
 target_link_libraries(test_goal_intent_search
   ${library_name}
 )
+
+# Test corner smoothing
+ament_add_gtest(test_corner_smoothing
+  test_corner_smoothing.cpp
+)
+target_link_libraries(test_corner_smoothing
+  ${library_name}
+)
