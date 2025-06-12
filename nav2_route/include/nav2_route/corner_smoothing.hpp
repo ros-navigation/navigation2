@@ -89,6 +89,11 @@ public:
    */
   ~CornerArc() = default;
 
+  /**
+   * @brief interpolates the arc for a path of certain density
+   * @param max_angle_resolution Resolution to interpolate path to
+   * @param poses Pose output
+   */
   void interpolateArc(
     const float & max_angle_resolution,
     std::vector<geometry_msgs::msg::PoseStamped> & poses)
