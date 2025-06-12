@@ -548,13 +548,17 @@ bool CollisionMonitor::processStopSlowdownLimit(
       const double linear_vel = std::hypot(velocity.x, velocity.y);  // absolute
       Velocity safe_vel;
       double ratio = 1.0;
+
+      // Calculate the most restrictive ratio to preserve curvature
       if (linear_vel != 0.0) {
-        ratio = std::clamp(polygon->getLinearLimit() / linear_vel, 0.0, 1.0);
+        ratio = std::min(ratio, polygon->getLinearLimit() / linear_vel);
       }
-      safe_vel.x = velocity.x * ratio;
-      safe_vel.y = velocity.y * ratio;
-      safe_vel.tw = std::clamp(
-        velocity.tw, -polygon->getAngularLimit(), polygon->getAngularLimit());
+      if (velocity.tw != 0.0) {
+        ratio = std::min(ratio, polygon->getAngularLimit() / std::abs(velocity.tw));
+      }
+      ratio = std::clamp(ratio, 0.0, 1.0);
+      // Apply the same ratio to all components to preserve curvature
+      safe_vel = velocity * ratio;
       // Check that currently calculated velocity is safer than
       // chosen for previous shapes one
       if (safe_vel < robot_action.req_vel) {
