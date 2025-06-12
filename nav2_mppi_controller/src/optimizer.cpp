@@ -80,6 +80,7 @@ void Optimizer::getParams()
   getParam(s.base_constraints.ax_max, "ax_max", 3.0f);
   getParam(s.base_constraints.ax_min, "ax_min", -3.0f);
   getParam(s.base_constraints.ay_max, "ay_max", 3.0f);
+  getParam(s.base_constraints.ay_min, "ay_min", -3.0f);
   getParam(s.base_constraints.az_max, "az_max", 3.5f);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
@@ -92,6 +93,13 @@ void Optimizer::getParams()
     RCLCPP_WARN(
       logger_,
       "Sign of the parameter ax_min is incorrect, consider setting it negative.");
+  }
+
+  if (s.base_constraints.ay_min > 0.0) {
+    s.base_constraints.ay_min = -1.0 * s.base_constraints.ay_min;
+    RCLCPP_WARN(
+      logger_,
+      "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
   getParam(motion_model_name, "motion_model", std::string("DiffDrive"));
@@ -267,13 +275,18 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_vx = s.model_dt * s.constraints.ax_max;
   float min_delta_vx = s.model_dt * s.constraints.ax_min;
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
+  float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
   float vx_last = control_sequence_.vx(0);
   float vy_last = control_sequence_.vy(0);
   float wz_last = control_sequence_.wz(0);
   for (unsigned int i = 1; i != control_sequence_.vx.shape(0); i++) {
     float & vx_curr = control_sequence_.vx(i);
-    vx_curr = std::clamp(vx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
+    if (vx_last > 0) {
+      vx_curr = std::clamp(vx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
+    } else {
+      vx_curr = std::clamp(vx_curr, vx_last - max_delta_vx, vx_last - min_delta_vx);
+    }
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
@@ -282,7 +295,11 @@ void Optimizer::applyControlSequenceConstraints()
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
-      vy_curr = std::clamp(vy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
+      if (vy_last > 0) {
+        vy_curr = std::clamp(vy_curr, vy_last + min_delta_vy, vy_last + max_delta_vy);
+      } else {
+        vy_curr = std::clamp(vy_curr, vy_last - max_delta_vy, vy_last - min_delta_vy);
+      }
       vy_last = vy_curr;
     }
   }
