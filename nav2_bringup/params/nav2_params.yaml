@@ -447,6 +447,7 @@ route_server:
     # graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
+    smooth_corners: true
     operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
     ReroutingService:
       plugin: "nav2_route::ReroutingService"
