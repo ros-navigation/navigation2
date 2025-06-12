@@ -86,10 +86,10 @@ public:
    * @return Action type for current polygon
    */
   ActionType getActionType() const;
-   /**
-   * @brief Obtains polygon enabled state
-   * @return Whether polygon is enabled
-   */
+  /**
+  * @brief Obtains polygon enabled state
+  * @return Whether polygon is enabled
+  */
   bool getEnabled() const;
   /**
    * @brief Obtains polygon maximum points to enter inside polygon causing no action
@@ -184,7 +184,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
   /// @brief Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  
+
   // Basic parameters
   /// @brief Name of polygon
   std::string polygon_name_;
