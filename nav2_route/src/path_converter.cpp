@@ -30,9 +30,16 @@ void PathConverter::configure(nav2_util::LifecycleNode::SharedPtr node)
   nav2_util::declare_parameter_if_not_declared(
     node, "path_density", rclcpp::ParameterValue(0.05));
   density_ = static_cast<float>(node->get_parameter("path_density").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "smoothing_radius", rclcpp::ParameterValue(1.0));
+  smoothing_radius_ = static_cast<float>(node->get_parameter("smoothing_radius").as_double());
+  nav2_util::declare_parameter_if_not_declared(
+    node, "smooth_corners", rclcpp::ParameterValue(false));
+  smooth_corners_ = node->get_parameter("smooth_corners").as_bool();
 
   path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan", 1);
   path_pub_->on_activate();
+  logger_ = node->get_logger();
 }
 
 nav_msgs::msg::Path PathConverter::densify(
@@ -54,17 +61,50 @@ nav_msgs::msg::Path PathConverter::densify(
     interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
   }
 
-  // Fill in path via route edges
-  for (unsigned int i = 0; i != route.edges.size(); i++) {
-    const EdgePtr edge = route.edges[i];
-    const Coordinates & start = edge->start->coords;
-    const Coordinates & end = edge->end->coords;
-    interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+  Coordinates start;
+  Coordinates end;
+
+  if (!route.edges.empty()) {
+    start = route.edges[0]->start->coords;
+
+    // Fill in path via route edges
+    for (unsigned int i = 0; i < route.edges.size() - 1; i++) {
+      const EdgePtr edge = route.edges[i];
+      const EdgePtr & next_edge = route.edges[i + 1];
+      end = edge->end->coords;
+
+      CornerArc corner_arc(start, end, next_edge->end->coords, smoothing_radius_);
+      if (corner_arc.isCornerValid() && smooth_corners_) {
+        // if an arc exists, end of the first edge is the start of the arc
+        end = corner_arc.getCornerStart();
+
+        // interpolate to start of arc
+        interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+
+        // interpolate arc
+        corner_arc.interpolateArc(density_ / smoothing_radius_, path.poses);
+
+        // new start of next edge is end of smoothing arc
+        start = corner_arc.getCornerEnd();
+      } else {
+        if (smooth_corners_) {
+          RCLCPP_WARN(
+            logger_, "Unable to smooth corner between edge %i and edge %i", edge->edgeid,
+            next_edge->edgeid);
+        }
+        interpolateEdge(start.x, start.y, end.x, end.y, path.poses);
+        start = end;
+      }
+    }
   }
 
   if (route.edges.empty()) {
     path.poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
   } else {
+    interpolateEdge(
+      start.x, start.y, route.edges.back()->end->coords.x,
+      route.edges.back()->end->coords.y, path.poses);
+
     path.poses.push_back(
       utils::toMsg(route.edges.back()->end->coords.x, route.edges.back()->end->coords.y));
   }

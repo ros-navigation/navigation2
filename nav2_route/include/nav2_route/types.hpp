@@ -138,6 +138,8 @@ struct DirectionalEdge
   EdgeCost edge_cost;      // Cost information associated with edge
   Metadata metadata;       // Any metadata stored in the graph file of interest
   Operations operations;   // Operations to perform related to the edge
+
+  float getEdgeLength();
 };
 
 typedef DirectionalEdge * EdgePtr;
@@ -193,6 +195,13 @@ struct Node
     neighbors.push_back({edgeid, this, node, cost, meta_data, operations_data});
   }
 };
+
+inline float DirectionalEdge::getEdgeLength()
+{
+  return hypotf(
+    end->coords.x - start->coords.x,
+    end->coords.y - start->coords.y);
+}
 
 /**
  * @struct nav2_route::Route
