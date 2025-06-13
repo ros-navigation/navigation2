@@ -45,9 +45,21 @@ void CostmapCostTool::onInitialize()
 
   node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
   local_cost_client_ =
+<<<<<<< HEAD
     node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
   global_cost_client_ =
     node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
+=======
+    std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
+    "local_costmap/get_cost_local_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
+  global_cost_client_ =
+    std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>>(
+    "global_costmap/get_cost_global_costmap",
+    node,
+    false /* Does not create and spin an internal executor*/);
+>>>>>>> 33e78d74 (Add namespace support for rviz costmap cost tool (#5268))
 }
 
 void CostmapCostTool::activate() {}
