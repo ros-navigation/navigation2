@@ -51,6 +51,7 @@
 #pragma GCC diagnostic pop
 
 #include "message_filters/subscriber.hpp"
+#include "point_cloud_transport/subscriber_filter.hpp"
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -236,12 +237,14 @@ protected:
   laser_geometry::LaserProjection projector_;
   /// @brief Used for the observation message filters
   #if RCLCPP_VERSION_GTE(29, 6, 0)
-  std::vector<std::shared_ptr<message_filters::SubscriberBase>>
-  observation_subscribers_;
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>
+  observation_subscribers_laser_;
   #else
-  std::vector<std::shared_ptr<message_filters::SubscriberBase<rclcpp_lifecycle::LifecycleNode>>>
-  observation_subscribers_;
+  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+    rclcpp_lifecycle::LifecycleNode>> observation_subscribers_laser_;
   #endif
+  std::shared_ptr<point_cloud_transport::SubscriberFilter>
+  observation_subscribers_pointcloud_;
   /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
   /// @brief Used to store observations from various sensors

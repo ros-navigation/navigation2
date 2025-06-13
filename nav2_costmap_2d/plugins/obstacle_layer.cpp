@@ -142,7 +142,7 @@ void ObstacleLayer::onInitialize()
   while (ss >> source) {
     // get the parameters for the specific topic
     double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
-    std::string topic, sensor_frame, data_type;
+    std::string topic, sensor_frame, data_type, point_cloud_transport;
     bool inf_is_valid, clearing, marking;
 
     declareParameter(source + "." + "topic", rclcpp::ParameterValue(source));
@@ -159,6 +159,8 @@ void ObstacleLayer::onInitialize()
     declareParameter(source + "." + "obstacle_min_range", rclcpp::ParameterValue(0.0));
     declareParameter(source + "." + "raytrace_max_range", rclcpp::ParameterValue(3.0));
     declareParameter(source + "." + "raytrace_min_range", rclcpp::ParameterValue(0.0));
+    declareParameter(source + "." + "point_cloud_transport",
+      rclcpp::ParameterValue(std::string("raw")));
 
     node->get_parameter(name_ + "." + source + "." + "topic", topic);
     node->get_parameter(name_ + "." + source + "." + "sensor_frame", sensor_frame);
@@ -174,6 +176,8 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "inf_is_valid", inf_is_valid);
     node->get_parameter(name_ + "." + source + "." + "marking", marking);
     node->get_parameter(name_ + "." + source + "." + "clearing", clearing);
+    node->get_parameter(name_ + "." + source + "." + "point_cloud_transport",
+      point_cloud_transport);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(
@@ -278,36 +282,35 @@ void ObstacleLayer::onInitialize()
             observation_buffers_.back()));
       }
 
-      observation_subscribers_.push_back(sub);
+      observation_subscribers_laser_ = std::move(sub);
 
       observation_notifiers_.push_back(filter);
       observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(
           tf_filter_tolerance));
 
     } else {
-      // For Kilted and Older Support from Message Filters API change
-      #if RCLCPP_VERSION_GTE(29, 6, 0)
-      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub;
-      #else
-      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
-        rclcpp_lifecycle::LifecycleNode>> sub;
-      #endif
-
-      // For Kilted compatibility in Message Filters API change
-      #if RCLCPP_VERSION_GTE(29, 6, 0)
-      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
-        node, topic, custom_qos_profile, sub_opt);
-      // For Jazzy compatibility in Message Filters API change
-      #elif RCLCPP_VERSION_GTE(29, 0, 0)
-      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
-          rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
-      // For Humble and Older compatibility in Message Filters API change
-      #else
-      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
-          rclcpp_lifecycle::LifecycleNode>>(
-          node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
-      #endif
-
+      std::shared_ptr<rclcpp::node_interfaces::NodeInterfaces<
+          rclcpp::node_interfaces::NodeBaseInterface,
+          rclcpp::node_interfaces::NodeParametersInterface,
+          rclcpp::node_interfaces::NodeTopicsInterface,
+          rclcpp::node_interfaces::NodeLoggingInterface
+        >> node_interfaces = std::make_shared<
+        rclcpp::node_interfaces::NodeInterfaces<
+          rclcpp::node_interfaces::NodeBaseInterface,
+          rclcpp::node_interfaces::NodeParametersInterface,
+          rclcpp::node_interfaces::NodeTopicsInterface,
+          rclcpp::node_interfaces::NodeLoggingInterface
+        >
+        >(
+            node->get_node_base_interface(),
+            node->get_node_parameters_interface(),
+            node->get_node_topics_interface(),
+            node->get_node_logging_interface()
+        );
+      std::shared_ptr<point_cloud_transport::SubscriberFilter> sub;
+      sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
+        node_interfaces, topic,
+        point_cloud_transport);
       sub->unsubscribe();
 
       if (inf_is_valid) {
@@ -327,7 +330,7 @@ void ObstacleLayer::onInitialize()
           &ObstacleLayer::pointCloud2Callback, this, std::placeholders::_1,
           observation_buffers_.back()));
 
-      observation_subscribers_.push_back(sub);
+      observation_subscribers_pointcloud_ = std::move(sub);
       observation_notifiers_.push_back(filter);
     }
 
@@ -771,10 +774,47 @@ ObstacleLayer::activate()
   }
 
   // if we're stopped we need to re-subscribe to topics
-  for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
-    if (observation_subscribers_[i] != NULL) {
-      observation_subscribers_[i]->subscribe();
+  if (observation_subscribers_laser_ != NULL) {
+    observation_subscribers_laser_->subscribe();
+  }
+
+  if (observation_subscribers_pointcloud_ != NULL) {
+    auto node = node_.lock();
+    if (!node) {
+      throw std::runtime_error{"Failed to lock node"};
     }
+    std::shared_ptr<rclcpp::node_interfaces::NodeInterfaces<
+        rclcpp::node_interfaces::NodeBaseInterface,
+        rclcpp::node_interfaces::NodeParametersInterface,
+        rclcpp::node_interfaces::NodeTopicsInterface,
+        rclcpp::node_interfaces::NodeLoggingInterface
+      >> node_interfaces = std::make_shared<
+      rclcpp::node_interfaces::NodeInterfaces<
+        rclcpp::node_interfaces::NodeBaseInterface,
+        rclcpp::node_interfaces::NodeParametersInterface,
+        rclcpp::node_interfaces::NodeTopicsInterface,
+        rclcpp::node_interfaces::NodeLoggingInterface
+      >
+      >(
+          node->get_node_base_interface(),
+          node->get_node_parameters_interface(),
+          node->get_node_topics_interface(),
+          node->get_node_logging_interface()
+      );
+
+    rmw_qos_profile_t custom_qos = rmw_qos_profile_sensor_data;
+    custom_qos.depth = 50;
+    auto sub_opt = rclcpp::SubscriptionOptions();
+    sub_opt.callback_group = callback_group_;
+
+    // PCT->getTopic() method doesn't work correctly
+    observation_subscribers_pointcloud_->subscribe(
+      node_interfaces,
+      "/rgbd_camera/points",
+      observation_subscribers_pointcloud_->getTransport(),
+      custom_qos,
+      sub_opt
+    );
   }
   resetBuffersLastUpdated();
 }
@@ -782,10 +822,11 @@ ObstacleLayer::activate()
 void
 ObstacleLayer::deactivate()
 {
-  for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
-    if (observation_subscribers_[i] != NULL) {
-      observation_subscribers_[i]->unsubscribe();
-    }
+  if (observation_subscribers_laser_ != NULL) {
+    observation_subscribers_laser_->unsubscribe();
+  }
+  if (observation_subscribers_pointcloud_ != NULL) {
+    observation_subscribers_pointcloud_->unsubscribe();
   }
 }
 
