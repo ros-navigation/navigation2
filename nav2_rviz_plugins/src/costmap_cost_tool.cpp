@@ -45,9 +45,9 @@ void CostmapCostTool::onInitialize()
 
   node_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
   local_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCost>("/local_costmap/get_cost_local_costmap");
+    node_->create_client<nav2_msgs::srv::GetCost>("local_costmap/get_cost_local_costmap");
   global_cost_client_ =
-    node_->create_client<nav2_msgs::srv::GetCost>("/global_costmap/get_cost_global_costmap");
+    node_->create_client<nav2_msgs::srv::GetCost>("global_costmap/get_cost_global_costmap");
 }
 
 void CostmapCostTool::activate() {}
