@@ -22,6 +22,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(std_srvs REQUIRED)
 
 nav2_package()
 
@@ -116,13 +117,14 @@ target_link_libraries(simple_charging_dock PUBLIC
   pose_filter
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_util::nav2_util_core
   ${sensor_msgs_TARGETS}
+  ${std_srvs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )
 target_link_libraries(simple_charging_dock PRIVATE
   angles::angles
-  nav2_util::nav2_util_core
   pluginlib::pluginlib
   tf2::tf2
 )
@@ -141,13 +143,14 @@ target_link_libraries(simple_non_charging_dock PUBLIC
   pose_filter
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_util::nav2_util_core
   ${sensor_msgs_TARGETS}
+  ${std_srvs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )
 target_link_libraries(simple_non_charging_dock PRIVATE
   angles::angles
-  nav2_util::nav2_util_core
   pluginlib::pluginlib
   tf2::tf2
 )
@@ -191,6 +194,7 @@ ament_export_dependencies(
   nav2_graceful_controller
   nav2_msgs
   nav2_util
+  std_srvs
   opennav_docking_core
   pluginlib
   rclcpp
