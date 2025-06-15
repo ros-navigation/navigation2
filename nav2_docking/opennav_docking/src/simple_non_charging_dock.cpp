@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include <cmath>
+#include <chrono>
 
 #include "nav2_util/node_utils.hpp"
 #include "opennav_docking/simple_non_charging_dock.hpp"
 #include "opennav_docking/utils.hpp"
+
+using namespace std::chrono_literals;
 
 namespace opennav_docking
 {
@@ -49,6 +52,14 @@ void SimpleNonChargingDock::configure(
     node_, name + ".external_detection_rotation_roll", rclcpp::ParameterValue(-1.57));
   nav2_util::declare_parameter_if_not_declared(
     node_, name + ".filter_coef", rclcpp::ParameterValue(0.1));
+
+  // Parameters for optional detector control
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".detector_service_name", rclcpp::ParameterValue(""));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".detector_service_timeout", rclcpp::ParameterValue(5.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node_, name + ".subscribe_toggle", rclcpp::ParameterValue(true));
 
   // Optionally determine if docked via stall detection using joint_states
   nav2_util::declare_parameter_if_not_declared(
@@ -94,6 +105,11 @@ void SimpleNonChargingDock::configure(
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
 
+  // Reader parameters to control external detector service and subscription
+  node_->get_parameter(name + ".detector_service_name", detector_service_name_);
+  node_->get_parameter(name + ".detector_service_timeout", detector_service_timeout_);
+  node_->get_parameter(name + ".subscribe_toggle", subscribe_toggle_);
+
   std::string dock_direction;
   node_->get_parameter(name + ".dock_direction", dock_direction);
   dock_direction_ = utils::getDockDirectionFromString(dock_direction);
@@ -112,13 +128,14 @@ void SimpleNonChargingDock::configure(
   node_->get_parameter(name + ".filter_coef", filter_coef);
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
+  if (!detector_service_name_.empty()) {
+    detector_client_ = std::make_shared<
+      nav2_util::ServiceClient<std_srvs::srv::Trigger,
+      rclcpp_lifecycle::LifecycleNode::SharedPtr>>(detector_service_name_, node_);
+  }
+
   if (use_external_detection_pose_) {
     dock_pose_.header.stamp = rclcpp::Time(0);
-    dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "detected_dock_pose", 1,
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
-        detected_dock_pose_ = *pose;
-      });
   }
 
   bool use_stall_detection;
@@ -138,6 +155,17 @@ void SimpleNonChargingDock::configure(
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
+
+  // If subscription toggling is disabled, subscribe here so detections are
+  // always processed when using an external detector
+  if (!subscribe_toggle_ && use_external_detection_pose_ && !detected_pose_sub_) {
+    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "detected_dock_pose", rclcpp::SensorDataQoS(),
+      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+        detected_dock_pose_ = *pose;
+        detector_state_ = DetectorState::ON;
+      });
+  }
 }
 
 geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
@@ -176,6 +204,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
     dock_pose_ = pose;
     return true;
   }
+
 
   // If using detections, get current detections, transform to frame, and apply offsets
   geometry_msgs::msg::PoseStamped detected = detected_dock_pose_;
@@ -286,6 +315,87 @@ void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointStat
   velocity /= stall_joint_names_.size();
 
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
+}
+
+void SimpleNonChargingDock::startDetection()
+{
+  if (detector_state_ != DetectorState::OFF) {return;}
+
+  // 1. Service START request
+  if (detector_client_) {
+    auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+    try {
+      detector_client_->invoke(
+        req,
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::duration<double>(detector_service_timeout_)));
+    } catch (const std::exception & e) {
+      RCLCPP_WARN(node_->get_logger(),
+        "Detector service '%s' failed: %s",
+        detector_service_name_.c_str(), e.what());
+    }
+  }
+
+  // 2. Subscription toggle
+  //    Only subscribe once; will set state to ON on first message
+  if (subscribe_toggle_ && !detected_pose_sub_) {
+    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "detected_dock_pose", rclcpp::SensorDataQoS(),
+      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+        detected_dock_pose_ = *pose;
+        detector_state_ = DetectorState::ON;
+      });
+  }
+
+  detector_state_ = DetectorState::ON;
+  RCLCPP_INFO(node_->get_logger(), "Detector START requested, state set to ON");
+}
+
+void SimpleNonChargingDock::stopDetection()
+{
+  // Skip if already OFF
+  if (detector_state_ == DetectorState::OFF) {return;}
+
+  // 1. Service STOP request
+  if (detector_client_) {
+    auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+    try {
+      detector_client_->invoke(
+        req,
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::duration<double>(detector_service_timeout_)));
+    } catch (const std::exception & e) {
+      RCLCPP_WARN(node_->get_logger(),
+        "Detector service '%s' failed: %s",
+        detector_service_name_.c_str(), e.what());
+    }
+  }
+
+  // 2. Unsubscribe to release resources
+  //    reset() will tear down the topic subscription immediately
+  if (subscribe_toggle_ && detected_pose_sub_) {
+    detected_pose_sub_.reset();
+  }
+
+  detector_state_ = DetectorState::OFF;
+  RCLCPP_INFO(node_->get_logger(), "Detector STOP requested");
+}
+
+void SimpleNonChargingDock::activate()
+{
+  RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock activated");
+}
+
+void SimpleNonChargingDock::deactivate()
+{
+  RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock deactivated");
+}
+
+void SimpleNonChargingDock::cleanup()
+{
+  detector_client_.reset();
+  detected_pose_sub_.reset();
+  RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock cleaned up");
 }
 
 }  // namespace opennav_docking
