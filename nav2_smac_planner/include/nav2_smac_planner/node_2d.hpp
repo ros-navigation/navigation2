@@ -54,6 +54,16 @@ public:
     : x(x_in), y(y_in)
     {}
 
+    inline bool operator==(const Coordinates & rhs) const
+    {
+      return this->x == rhs.x && this->y == rhs.y;
+    }
+
+    inline bool operator!=(const Coordinates & rhs) const
+    {
+      return !(*this == rhs);
+    }
+
     float x, y;
   };
   typedef std::vector<Coordinates> CoordinateVector;
@@ -77,6 +87,15 @@ public:
   bool operator==(const Node2D & rhs)
   {
     return this->_index == rhs._index;
+  }
+
+  /**
+   * @brief setting continuous coordinate search poses (in partial-cells)
+   * @param Pose pose
+   */
+  inline void setPose(const Coordinates & pose_in)
+  {
+    pose = pose_in;
   }
 
   /**
@@ -228,7 +247,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize the neighborhood to be used in A*
@@ -268,6 +287,7 @@ public:
   bool backtracePath(CoordinateVector & path);
 
   Node2D * parent;
+  Coordinates pose;
   static float cost_travel_multiplier;
   static std::vector<int> _neighbors_grid_offsets;
 
