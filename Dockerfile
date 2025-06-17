@@ -57,7 +57,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    && pip3 install --break-system-packages \
+    && pip3 install \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
@@ -146,7 +146,7 @@ RUN apt-get update && \
       bash-completion \
       gdb \
       wget && \
-    pip3 install --break-system-packages \
+    pip3 install \
       bottle \
       glances
 
