@@ -59,11 +59,8 @@ struct SamplingStd
 
   /**
    * @brief Target wz_std value while linear speed goes to infinity.
-   *
    * Must be between 0 and wz_std.
-   *
    * Has no effect if `advanced.wz_std_decay_strength` <= 0.0
-   *
    * Default: 0.0
    */
   float wz_std_decay_to;
