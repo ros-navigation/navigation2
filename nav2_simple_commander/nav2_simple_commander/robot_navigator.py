@@ -35,6 +35,7 @@ from nav_msgs.msg import Goals, OccupancyGrid, Path
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
 from rclpy.action.client import ClientGoalHandle
+from rclpy.client import Client
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
@@ -103,37 +104,101 @@ class BasicNavigator(Node):
         )
 
         self.initial_pose_received = False
-        self.nav_through_poses_client = ActionClient(
-            self, NavigateThroughPoses, 'navigate_through_poses'
-        )
-        self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-        self.follow_waypoints_client = ActionClient(
+        self.nav_through_poses_client: ActionClient[
+            NavigateThroughPoses.Goal,
+            NavigateThroughPoses.Result,
+            NavigateThroughPoses.Feedback
+        ] = ActionClient(
+            self, NavigateThroughPoses, 'navigate_through_poses')
+        self.nav_to_pose_client: ActionClient[
+            NavigateToPose.Goal,
+            NavigateToPose.Result,
+            NavigateToPose.Feedback
+        ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.follow_waypoints_client: ActionClient[
+            FollowWaypoints.Goal,
+            FollowWaypoints.Result,
+            FollowWaypoints.Feedback
+        ] = ActionClient(
             self, FollowWaypoints, 'follow_waypoints'
         )
-        self.follow_gps_waypoints_client = ActionClient(
+        self.follow_gps_waypoints_client: ActionClient[
+            FollowGPSWaypoints.Goal,
+            FollowGPSWaypoints.Result,
+            FollowGPSWaypoints.Feedback
+        ] = ActionClient(
             self, FollowGPSWaypoints, 'follow_gps_waypoints'
         )
-        self.follow_path_client = ActionClient(self, FollowPath, 'follow_path')
-        self.compute_path_to_pose_client = ActionClient(
+        self.follow_path_client: ActionClient[
+            FollowPath.Goal,
+            FollowPath.Result,
+            FollowPath.Feedback
+        ] = ActionClient(self, FollowPath, 'follow_path')
+        self.compute_path_to_pose_client: ActionClient[
+            ComputePathToPose.Goal,
+            ComputePathToPose.Result,
+            ComputePathToPose.Feedback
+        ] = ActionClient(
             self, ComputePathToPose, 'compute_path_to_pose'
         )
-        self.compute_path_through_poses_client = ActionClient(
+        self.compute_path_through_poses_client: ActionClient[
+            ComputePathThroughPoses.Goal,
+            ComputePathThroughPoses.Result,
+            ComputePathThroughPoses.Feedback
+        ] = ActionClient(
             self, ComputePathThroughPoses, 'compute_path_through_poses'
         )
-        self.smoother_client = ActionClient(self, SmoothPath, 'smooth_path')
-        self.compute_route_client = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_and_track_route_client = ActionClient(self, ComputeAndTrackRoute,
-                                                           'compute_and_track_route')
-        self.spin_client = ActionClient(self, Spin, 'spin')
-        self.backup_client = ActionClient(self, BackUp, 'backup')
-        self.drive_on_heading_client = ActionClient(
+        self.smoother_client: ActionClient[
+            SmoothPath.Goal,
+            SmoothPath.Result,
+            SmoothPath.Feedback
+        ] = ActionClient(self, SmoothPath, 'smooth_path')
+        self.compute_route_client: ActionClient[
+            ComputeRoute.Goal,
+            ComputeRoute.Result,
+            ComputeRoute.Feedback
+        ] = ActionClient(self, ComputeRoute, 'compute_route')
+        self.compute_and_track_route_client: ActionClient[
+            ComputeAndTrackRoute.Goal,
+            ComputeAndTrackRoute.Result,
+            ComputeAndTrackRoute.Feedback
+        ] = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
+        self.spin_client: ActionClient[
+            Spin.Goal,
+            Spin.Result,
+            Spin.Feedback
+        ] = ActionClient(self, Spin, 'spin')
+
+        self.backup_client: ActionClient[
+            BackUp.Goal,
+            BackUp.Result,
+            BackUp.Feedback
+        ] = ActionClient(self, BackUp, 'backup')
+        self.drive_on_heading_client: ActionClient[
+            DriveOnHeading.Goal,
+            DriveOnHeading.Result,
+            DriveOnHeading.Feedback
+        ] = ActionClient(
             self, DriveOnHeading, 'drive_on_heading'
         )
-        self.assisted_teleop_client = ActionClient(
+        self.assisted_teleop_client: ActionClient[
+            AssistedTeleop.Goal,
+            AssistedTeleop.Result,
+            AssistedTeleop.Feedback
+        ] = ActionClient(
             self, AssistedTeleop, 'assisted_teleop'
         )
-        self.docking_client = ActionClient(self, DockRobot, 'dock_robot')
-        self.undocking_client = ActionClient(self, UndockRobot, 'undock_robot')
+        self.docking_client: ActionClient[
+            DockRobot.Goal,
+            DockRobot.Result,
+            DockRobot.Feedback
+        ] = ActionClient(self, DockRobot, 'dock_robot')
+        self.undocking_client: ActionClient[
+            UndockRobot.Goal,
+            UndockRobot.Result,
+            UndockRobot.Feedback
+        ] = ActionClient(self, UndockRobot, 'undock_robot')
+
         self.localization_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             'amcl_pose',
@@ -143,23 +208,36 @@ class BasicNavigator(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.change_maps_srv = self.create_client(LoadMap, 'map_server/load_map')
-        self.clear_costmap_global_srv = self.create_client(
+        self.change_maps_srv: Client[LoadMap.Request, LoadMap.Response] = \
+            self.create_client(LoadMap, 'map_server/load_map')
+        self.clear_costmap_global_srv: Client[
+            ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
+            self.create_client(
             ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
         )
-        self.clear_costmap_local_srv = self.create_client(
+        self.clear_costmap_local_srv: Client[
+            ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
+            self.create_client(
             ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
         )
-        self.clear_costmap_except_region_srv = self.create_client(
+        self.clear_costmap_except_region_srv: Client[
+            ClearCostmapExceptRegion.Request, ClearCostmapExceptRegion.Response] = \
+            self.create_client(
             ClearCostmapExceptRegion, 'local_costmap/clear_costmap_except_region'
         )
-        self.clear_costmap_around_robot_srv = self.create_client(
+        self.clear_costmap_around_robot_srv: Client[
+            ClearCostmapAroundRobot.Request, ClearCostmapAroundRobot.Response] = \
+            self.create_client(
             ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
         )
-        self.get_costmap_global_srv = self.create_client(
+        self.get_costmap_global_srv: Client[
+            GetCostmap.Request, GetCostmap.Response] = \
+            self.create_client(
             GetCostmap, 'global_costmap/get_costmap'
         )
-        self.get_costmap_local_srv = self.create_client(
+        self.get_costmap_local_srv: Client[
+            GetCostmap.Request, GetCostmap.Response] = \
+            self.create_client(
             GetCostmap, 'local_costmap/get_costmap'
         )
 
@@ -1035,7 +1113,8 @@ class BasicNavigator(Node):
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info(f'Starting up {srv_name}')
-                mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
+                mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+                    self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
                     self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
@@ -1059,7 +1138,8 @@ class BasicNavigator(Node):
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info(f'Shutting down {srv_name}')
-                mgr_client = self.create_client(ManageLifecycleNodes, srv_name)
+                mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+                    self.create_client(ManageLifecycleNodes, srv_name)
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
                     self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
@@ -1073,7 +1153,8 @@ class BasicNavigator(Node):
         # Waits for the node within the tester namespace to become active
         self.debug(f'Waiting for {node_name} to become active..')
         node_service = f'{node_name}/get_state'
-        state_client = self.create_client(GetState, node_service)
+        state_client: Client[GetState.Request, GetState.Response] = \
+            self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
             self.info(f'{node_service} service not available, waiting...')
 
