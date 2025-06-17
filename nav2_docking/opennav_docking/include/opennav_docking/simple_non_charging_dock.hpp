@@ -154,9 +154,8 @@ protected:
   // Dynamic subscription pointer (can be reset to release CPU/GPU)
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
 
-  // Simple finite-state machine for detector status
-  enum class DetectorState { OFF, ON };
-  DetectorState detector_state_{DetectorState::OFF};
+  // Simple boolean to track detector status
+  bool detector_enabled_{false};
 
   // Internally enable detector (service + subscribe)
   bool startDetection();

@@ -110,6 +110,16 @@ void SimpleNonChargingDock::configure(
   node_->get_parameter(name + ".detector_service_timeout", detector_service_timeout_);
   node_->get_parameter(name + ".subscribe_toggle", subscribe_toggle_);
 
+  // Create persistent subscription if toggling is disabled.
+  if (use_external_detection_pose_ && !subscribe_toggle_) {
+    dock_pose_.header.stamp = rclcpp::Time(0);
+    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "detected_dock_pose", 1,
+      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+        detected_dock_pose_ = *pose;
+      });
+  }
+
   std::string dock_direction;
   node_->get_parameter(name + ".dock_direction", dock_direction);
   dock_direction_ = utils::getDockDirectionFromString(dock_direction);
@@ -134,10 +144,6 @@ void SimpleNonChargingDock::configure(
       rclcpp_lifecycle::LifecycleNode::SharedPtr>>(detector_service_name_, node_);
   }
 
-  if (use_external_detection_pose_) {
-    dock_pose_.header.stamp = rclcpp::Time(0);
-  }
-
   bool use_stall_detection;
   node_->get_parameter(name + ".use_stall_detection", use_stall_detection);
   if (use_stall_detection) {
@@ -156,16 +162,6 @@ void SimpleNonChargingDock::configure(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
 
-  // If subscription toggling is disabled, subscribe here so detections are
-  // always processed when using an external detector
-  if (!subscribe_toggle_ && use_external_detection_pose_ && !detected_pose_sub_) {
-    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "detected_dock_pose", 1,
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
-        detected_dock_pose_ = *pose;
-        detector_state_ = DetectorState::ON;
-      });
-  }
 }
 
 geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
@@ -206,7 +202,7 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   }
 
   // Guard against using pose data before the first detection has arrived.
-  if (detector_state_ != DetectorState::ON) {
+  if (!detector_enabled_) {
     return false;
   }
 
@@ -324,7 +320,7 @@ void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointStat
 bool SimpleNonChargingDock::startDetection()
 {
   // Skip if already starting or ON
-  if (detector_state_ != DetectorState::OFF) {
+  if (detector_enabled_) {
     return true;
   }
 
@@ -358,7 +354,6 @@ bool SimpleNonChargingDock::startDetection()
       "detected_dock_pose", 1,
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
-        detector_state_ = DetectorState::ON;
       });
   }
 
@@ -369,7 +364,7 @@ bool SimpleNonChargingDock::startDetection()
 bool SimpleNonChargingDock::stopDetection()
 {
   // Skip if already OFF
-  if (detector_state_ == DetectorState::OFF) {
+  if (!detector_enabled_) {
     return true;
   }
 
@@ -402,18 +397,16 @@ bool SimpleNonChargingDock::stopDetection()
     detected_pose_sub_.reset();
   }
 
-  detector_state_ = DetectorState::OFF;
+  detector_enabled_ = false;
   RCLCPP_INFO(node_->get_logger(), "Detector STOP requested");
   return true;
 }
 
-void SimpleNonChargingDock::activate()
-{
-  RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock activated");
-}
+void SimpleNonChargingDock::activate() {}
 
 void SimpleNonChargingDock::deactivate()
 {
+  stopDetectionProcess();
   RCLCPP_DEBUG(node_->get_logger(), "SimpleNonChargingDock deactivated");
 }
 
