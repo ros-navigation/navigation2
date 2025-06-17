@@ -445,7 +445,7 @@ float Optimizer::calculateDecayForAngularDeviation()
 
   const static float e = std::exp(1.0f);
   float decayed_wz_std = (s.sampling_std.wz - s.sampling_std.wz_std_decay_to)
-    * powf(e, -1 * s.sampling_std.wz_std_decay_strength * current_speed) + s.sampling_std.wz_std_decay_to;
+    * powf(e, -1.0f * s.sampling_std.wz_std_decay_strength * current_speed) + s.sampling_std.wz_std_decay_to;
 
   RCLCPP_DEBUG_STREAM(logger_, "Current_speed: " << current_speed << " wz_std: " << s.sampling_std.wz << " decayed_wz_std: " << decayed_wz_std);
   return decayed_wz_std;
