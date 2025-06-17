@@ -601,8 +601,18 @@ void tryWriteMapToFile(
     e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
       map.info.origin.position.y << yaw << YAML::EndSeq;
     e << YAML::Key << "negate" << YAML::Value << 0;
-    e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
-    e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
+
+    if (save_parameters.mode == MapMode::Trinary) {
+      // For Trinary mode, the thresholds depend on the pixel values in the saved map,
+      // not on the thresholds used to threshold the map.
+      // As these values are fixed above, the thresholds must also be fixed to separate the
+      // pixel values into occupied, free and unknown.
+      e << YAML::Key << "occupied_thresh" << YAML::Value << 0.65;
+      e << YAML::Key << "free_thresh" << YAML::Value << 0.196;
+    } else {
+      e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
+      e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
+    }
 
     if (!e.good()) {
       RCLCPP_ERROR_STREAM(
