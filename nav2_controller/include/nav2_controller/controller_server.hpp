@@ -179,7 +179,7 @@ protected:
   /**
    * @brief Called on goal exit
    */
-  void onGoalExit();
+  void onGoalExit(bool force_stop);
   /**
    * @brief Checks if goal is reached
    * @return true or false

@@ -476,7 +476,7 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          onGoalExit();
+          onGoalExit(true);
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -513,7 +513,7 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
     result->error_msg = e.what();
@@ -521,7 +521,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
     result->error_msg = e.what();
@@ -529,7 +529,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
     result->error_msg = e.what();
@@ -537,7 +537,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     result->error_msg = e.what();
@@ -545,7 +545,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
     result->error_msg = e.what();
@@ -553,7 +553,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
     result->error_msg = e.what();
@@ -561,7 +561,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
     result->error_msg = e.what();
@@ -569,7 +569,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -577,7 +577,7 @@ void ControllerServer::computeControl()
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -587,7 +587,7 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  onGoalExit();
+  onGoalExit(false);
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -775,16 +775,15 @@ void ControllerServer::publishZeroVelocity()
   publishVelocity(velocity);
 }
 
-void ControllerServer::onGoalExit()
+void ControllerServer::onGoalExit(bool force_stop)
 {
-  if (publish_zero_velocity_) {
+  if (publish_zero_velocity_ || force_stop) {
     publishZeroVelocity();
   }
 
-  // Reset the state of the controllers after the task has ended
-  ControllerMap::iterator it;
-  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second->reset();
+  // Reset controller state
+  for (auto & controller : controllers_) {
+    controller.second->reset();
   }
 }
 
