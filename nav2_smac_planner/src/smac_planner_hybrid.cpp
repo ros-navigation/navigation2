@@ -294,6 +294,9 @@ void SmacPlannerHybrid::configure(
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions", 1);
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints", 1);
+    _smoothed_footprints_publisher =
+      node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "smoothed_footprints", 1);
   }
 
   RCLCPP_INFO(
@@ -314,6 +317,7 @@ void SmacPlannerHybrid::activate()
   if (_debug_visualizations) {
     _expansions_publisher->on_activate();
     _planned_footprints_publisher->on_activate();
+    _smoothed_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -342,6 +346,7 @@ void SmacPlannerHybrid::deactivate()
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_deactivate();
+    _smoothed_footprints_publisher->on_deactivate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -367,8 +372,11 @@ void SmacPlannerHybrid::cleanup()
     _costmap_downsampler.reset();
   }
   _raw_plan_publisher.reset();
-  _expansions_publisher.reset();
-  _planned_footprints_publisher.reset();
+  if (_debug_visualizations) {
+    _expansions_publisher.reset();
+    _planned_footprints_publisher.reset();
+    _smoothed_footprints_publisher.reset();
+  }
 }
 
 nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
@@ -522,9 +530,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   if (_debug_visualizations) {
     // Publish expansions for debug
+    auto now = _clock->now();
     geometry_msgs::msg::PoseArray msg;
     geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = _clock->now();
+    msg.header.stamp = now;
     msg.header.frame_id = _global_frame;
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
@@ -534,19 +543,20 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     }
     _expansions_publisher->publish(msg);
 
-    // plot footprint path planned for debug
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
+      // Clear all markers first
       auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      visualization_msgs::msg::Marker clear_all_marker;
+      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+      marker_array->markers.push_back(clear_all_marker);
+      _planned_footprints_publisher->publish(std::move(marker_array));
+
+      // Publish smoothed footprints for debug
+      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
       for (size_t i = 0; i < plan.poses.size(); i++) {
         const std::vector<geometry_msgs::msg::Point> edge =
           transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
-        marker_array->markers.push_back(createMarker(edge, i, _global_frame, _clock->now()));
-      }
-
-      if (marker_array->markers.empty()) {
-        visualization_msgs::msg::Marker clear_all_marker;
-        clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-        marker_array->markers.push_back(clear_all_marker);
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
       }
       _planned_footprints_publisher->publish(std::move(marker_array));
     }
@@ -574,6 +584,27 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     " milliseconds to smooth path." << std::endl;
 #endif
 
+  if (_debug_visualizations) {
+    if (_smoothed_footprints_publisher->get_subscription_count() > 0) {
+      // Clear all markers first
+      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      visualization_msgs::msg::Marker clear_all_marker;
+      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+      marker_array->markers.push_back(clear_all_marker);
+      _smoothed_footprints_publisher->publish(std::move(marker_array));
+
+      // Publish smoothed footprints for debug
+      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+      auto now = _clock->now();
+      for (size_t i = 0; i < plan.poses.size(); i++) {
+        const std::vector<geometry_msgs::msg::Point> edge =
+          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
+        marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
+      }
+      _smoothed_footprints_publisher->publish(std::move(marker_array));
+    }
+  }
+
   return plan;
 }
 
@@ -589,19 +620,21 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   bool reinit_smoother = false;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == _name + ".max_planning_time") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(_name + ".") != 0 && param_name != "resolution") {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == _name + ".max_planning_time") {
         reinit_a_star = true;
         _max_planning_time = parameter.as_double();
-      } else if (name == _name + ".tolerance") {
+      } else if (param_name == _name + ".tolerance") {
         _tolerance = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".lookup_table_size") {
+      } else if (param_name == _name + ".lookup_table_size") {
         reinit_a_star = true;
         _lookup_table_size = parameter.as_double();
-      } else if (name == _name + ".minimum_turning_radius") {
+      } else if (param_name == _name + ".minimum_turning_radius") {
         reinit_a_star = true;
         if (_smoother) {
           reinit_smoother = true;
@@ -614,29 +647,29 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         }
 
         _minimum_turning_radius_global_coords = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".reverse_penalty") {
+      } else if (param_name == _name + ".reverse_penalty") {
         reinit_a_star = true;
         _search_info.reverse_penalty = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".change_penalty") {
+      } else if (param_name == _name + ".change_penalty") {
         reinit_a_star = true;
         _search_info.change_penalty = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".non_straight_penalty") {
+      } else if (param_name == _name + ".non_straight_penalty") {
         reinit_a_star = true;
         _search_info.non_straight_penalty = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".cost_penalty") {
+      } else if (param_name == _name + ".cost_penalty") {
         reinit_a_star = true;
         _search_info.cost_penalty = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".analytic_expansion_ratio") {
+      } else if (param_name == _name + ".analytic_expansion_ratio") {
         reinit_a_star = true;
         _search_info.analytic_expansion_ratio = static_cast<float>(parameter.as_double());
-      } else if (name == _name + ".analytic_expansion_max_length") {
+      } else if (param_name == _name + ".analytic_expansion_max_length") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_length =
           static_cast<float>(parameter.as_double()) / _costmap->getResolution();
-      } else if (name == _name + ".analytic_expansion_max_cost") {
+      } else if (param_name == _name + ".analytic_expansion_max_cost") {
         reinit_a_star = true;
         _search_info.analytic_expansion_max_cost = static_cast<float>(parameter.as_double());
-      } else if (name == "resolution") {
+      } else if (param_name == "resolution") {
         // Special case: When the costmap's resolution changes, need to reinitialize
         // the controller to have new resolution information
         RCLCPP_INFO(_logger, "Costmap resolution changed. Reinitializing SmacPlannerHybrid.");
@@ -645,35 +678,35 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         reinit_downsampler = true;
         reinit_smoother = true;
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == _name + ".downsample_costmap") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == _name + ".downsample_costmap") {
         reinit_downsampler = true;
         _downsample_costmap = parameter.as_bool();
-      } else if (name == _name + ".allow_unknown") {
+      } else if (param_name == _name + ".allow_unknown") {
         reinit_a_star = true;
         _allow_unknown = parameter.as_bool();
-      } else if (name == _name + ".cache_obstacle_heuristic") {
+      } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
-      } else if (name == _name + ".allow_primitive_interpolation") {
+      } else if (param_name == _name + ".allow_primitive_interpolation") {
         _search_info.allow_primitive_interpolation = parameter.as_bool();
         reinit_a_star = true;
-      } else if (name == _name + ".smooth_path") {
+      } else if (param_name == _name + ".smooth_path") {
         if (parameter.as_bool()) {
           reinit_smoother = true;
         } else {
           _smoother.reset();
         }
-      } else if (name == _name + ".analytic_expansion_max_cost_override") {
+      } else if (param_name == _name + ".analytic_expansion_max_cost_override") {
         _search_info.analytic_expansion_max_cost_override = parameter.as_bool();
         reinit_a_star = true;
       }
-    } else if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == _name + ".downsampling_factor") {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == _name + ".downsampling_factor") {
         reinit_a_star = true;
         reinit_downsampler = true;
         _downsampling_factor = parameter.as_int();
-      } else if (name == _name + ".max_iterations") {
+      } else if (param_name == _name + ".max_iterations") {
         reinit_a_star = true;
         _max_iterations = parameter.as_int();
         if (_max_iterations <= 0) {
@@ -682,7 +715,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".max_on_approach_iterations") {
+      } else if (param_name == _name + ".max_on_approach_iterations") {
         reinit_a_star = true;
         _max_on_approach_iterations = parameter.as_int();
         if (_max_on_approach_iterations <= 0) {
@@ -691,10 +724,10 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "disabling tolerance and on approach iterations.");
           _max_on_approach_iterations = std::numeric_limits<int>::max();
         }
-      } else if (name == _name + ".terminal_checking_interval") {
+      } else if (param_name == _name + ".terminal_checking_interval") {
         reinit_a_star = true;
         _terminal_checking_interval = parameter.as_int();
-      } else if (name == _name + ".angle_quantization_bins") {
+      } else if (param_name == _name + ".angle_quantization_bins") {
         reinit_collision_checker = true;
         reinit_a_star = true;
         int angle_quantizations = parameter.as_int();
@@ -708,7 +741,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           );
           _coarse_search_resolution = 1;
         }
-      } else if (name == _name + ".coarse_search_resolution") {
+      } else if (param_name == _name + ".coarse_search_resolution") {
         _coarse_search_resolution = parameter.as_int();
         if (_coarse_search_resolution <= 0) {
           RCLCPP_WARN(
@@ -726,8 +759,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
           _coarse_search_resolution = 1;
         }
       }
-    } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == _name + ".motion_model_for_search") {
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == _name + ".motion_model_for_search") {
         reinit_a_star = true;
         _motion_model = fromString(parameter.as_string());
         if (_motion_model == MotionModel::UNKNOWN) {
@@ -737,7 +770,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
             _motion_model_for_search.c_str());
         }
-      } else if (name == _name + ".goal_heading_mode") {
+      } else if (param_name == _name + ".goal_heading_mode") {
         std::string goal_heading_type = parameter.as_string();
         GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
         RCLCPP_INFO(

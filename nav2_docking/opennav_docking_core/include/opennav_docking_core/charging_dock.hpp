@@ -136,11 +136,19 @@ public:
    */
   DockDirection getDockDirection() {return dock_direction_;}
 
+  /**
+   * @brief Determines whether the robot should rotate 180º to face away from the dock.
+   * For example, to perform a backward docking without detections.
+   * @return bool If the robot should rotate to face away from the dock.
+   */
+  bool shouldRotateToDock() {return rotate_to_dock_;}
+
   std::string getName() {return name_;}
 
 protected:
   std::string name_;
   DockDirection dock_direction_{DockDirection::UNKNOWN};
+  bool rotate_to_dock_{false};
 };
 
 }  // namespace opennav_docking_core

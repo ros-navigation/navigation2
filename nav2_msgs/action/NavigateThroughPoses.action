@@ -11,6 +11,7 @@ uint16 NONE=0
 uint16 UNKNOWN=9100
 uint16 FAILED_TO_LOAD_BEHAVIOR_TREE=9101
 uint16 TF_ERROR=9102
+uint16 TIMEOUT=9103
 
 uint16 error_code
 string error_msg

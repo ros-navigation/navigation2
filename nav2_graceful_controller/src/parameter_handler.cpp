@@ -135,45 +135,48 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".transform_tolerance") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".transform_tolerance") {
         params_.transform_tolerance = parameter.as_double();
-      } else if (name == plugin_name_ + ".min_lookahead") {
+      } else if (param_name == plugin_name_ + ".min_lookahead") {
         params_.min_lookahead = parameter.as_double();
-      } else if (name == plugin_name_ + ".max_lookahead") {
+      } else if (param_name == plugin_name_ + ".max_lookahead") {
         params_.max_lookahead = parameter.as_double();
-      } else if (name == plugin_name_ + ".k_phi") {
+      } else if (param_name == plugin_name_ + ".k_phi") {
         params_.k_phi = parameter.as_double();
-      } else if (name == plugin_name_ + ".k_delta") {
+      } else if (param_name == plugin_name_ + ".k_delta") {
         params_.k_delta = parameter.as_double();
-      } else if (name == plugin_name_ + ".beta") {
+      } else if (param_name == plugin_name_ + ".beta") {
         params_.beta = parameter.as_double();
-      } else if (name == plugin_name_ + ".lambda") {
+      } else if (param_name == plugin_name_ + ".lambda") {
         params_.lambda = parameter.as_double();
-      } else if (name == plugin_name_ + ".v_linear_min") {
+      } else if (param_name == plugin_name_ + ".v_linear_min") {
         params_.v_linear_min = parameter.as_double();
-      } else if (name == plugin_name_ + ".v_linear_max") {
+      } else if (param_name == plugin_name_ + ".v_linear_max") {
         params_.v_linear_max = parameter.as_double();
         params_.v_linear_max_initial = params_.v_linear_max;
-      } else if (name == plugin_name_ + ".v_angular_max") {
+      } else if (param_name == plugin_name_ + ".v_angular_max") {
         params_.v_angular_max = parameter.as_double();
         params_.v_angular_max_initial = params_.v_angular_max;
-      } else if (name == plugin_name_ + ".v_angular_min_in_place") {
+      } else if (param_name == plugin_name_ + ".v_angular_min_in_place") {
         params_.v_angular_min_in_place = parameter.as_double();
-      } else if (name == plugin_name_ + ".slowdown_radius") {
+      } else if (param_name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
-      } else if (name == plugin_name_ + ".initial_rotation_tolerance") {
+      } else if (param_name == plugin_name_ + ".initial_rotation_tolerance") {
         params_.initial_rotation_tolerance = parameter.as_double();
-      } else if (name == plugin_name_ + ".rotation_scaling_factor") {
+      } else if (param_name == plugin_name_ + ".rotation_scaling_factor") {
         params_.rotation_scaling_factor = parameter.as_double();
-      } else if (name == plugin_name_ + ".in_place_collision_resolution") {
+      } else if (param_name == plugin_name_ + ".in_place_collision_resolution") {
         params_.in_place_collision_resolution = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == plugin_name_ + ".initial_rotation") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".initial_rotation") {
         if (parameter.as_bool() && params_.allow_backward) {
           RCLCPP_WARN(
             logger_, "Initial rotation and allow backward parameters are both true, "
@@ -181,9 +184,9 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           continue;
         }
         params_.initial_rotation = parameter.as_bool();
-      } else if (name == plugin_name_ + ".prefer_final_rotation") {
+      } else if (param_name == plugin_name_ + ".prefer_final_rotation") {
         params_.prefer_final_rotation = parameter.as_bool();
-      } else if (name == plugin_name_ + ".allow_backward") {
+      } else if (param_name == plugin_name_ + ".allow_backward") {
         if (params_.initial_rotation && parameter.as_bool()) {
           RCLCPP_WARN(
             logger_, "Initial rotation and allow backward parameters are both true, "
@@ -191,7 +194,7 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           continue;
         }
         params_.allow_backward = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_collision_detection") {
+      } else if (param_name == plugin_name_ + ".use_collision_detection") {
         params_.use_collision_detection = parameter.as_bool();
       }
     }

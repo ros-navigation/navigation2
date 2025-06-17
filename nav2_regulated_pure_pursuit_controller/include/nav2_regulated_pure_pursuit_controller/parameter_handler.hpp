@@ -42,6 +42,7 @@ struct Parameters
   double min_approach_linear_velocity;
   double approach_velocity_scaling_dist;
   double max_allowed_time_to_collision_up_to_carrot;
+  double min_distance_to_obstacle;
   bool use_regulated_linear_velocity_scaling;
   bool use_cost_regulated_linear_velocity_scaling;
   double cost_scaling_dist;
@@ -61,6 +62,7 @@ struct Parameters
   bool interpolate_curvature_after_goal;
   bool use_collision_detection;
   double transform_tolerance;
+  bool stateful;
 };
 
 /**

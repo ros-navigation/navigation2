@@ -40,16 +40,21 @@ def generate_launch_description() -> LaunchDescription:
     use_keepout_zones = LaunchConfiguration('use_keepout_zones')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['filter_mask_server', 'costmap_filter_info_server']
+    lifecycle_nodes = ['keepout_filter_mask_server', 'keepout_costmap_filter_info_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
+
+    yaml_substitutions = {
+        'KEEPOUT_ZONE_ENABLED': use_keepout_zones,
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites={},
+            value_rewrites=yaml_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
@@ -116,7 +121,7 @@ def generate_launch_description() -> LaunchDescription:
                 condition=IfCondition(use_keepout_zones),
                 package='nav2_map_server',
                 executable='map_server',
-                name='filter_mask_server',
+                name='keepout_filter_mask_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
@@ -128,7 +133,7 @@ def generate_launch_description() -> LaunchDescription:
                 condition=IfCondition(use_keepout_zones),
                 package='nav2_map_server',
                 executable='costmap_filter_info_server',
-                name='costmap_filter_info_server',
+                name='keepout_costmap_filter_info_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
@@ -162,7 +167,7 @@ def generate_launch_description() -> LaunchDescription:
                     ComposableNode(
                         package='nav2_map_server',
                         plugin='nav2_map_server::MapServer',
-                        name='filter_mask_server',
+                        name='keepout_filter_mask_server',
                         parameters=[
                             configured_params,
                             {'yaml_filename': keepout_mask_yaml_file}
@@ -172,7 +177,7 @@ def generate_launch_description() -> LaunchDescription:
                     ComposableNode(
                         package='nav2_map_server',
                         plugin='nav2_map_server::CostmapFilterInfoServer',
-                        name='costmap_filter_info_server',
+                        name='keepout_costmap_filter_info_server',
                         parameters=[configured_params],
                         remappings=remappings,
                     ),

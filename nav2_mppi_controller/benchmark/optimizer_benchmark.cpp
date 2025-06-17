@@ -79,7 +79,8 @@ void prepareAndRunBenchmark(
 
   printInfo(optimizer_settings, path_settings, critics);
   auto node = getDummyNode(optimizer_settings, critics);
-  auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node);
+  std::string name = "test";
+  auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node, name);
   auto optimizer = getDummyOptimizer(node, costmap_ros, parameters_handler.get());
 
   // evalControl args

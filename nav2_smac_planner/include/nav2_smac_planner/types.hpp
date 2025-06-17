@@ -188,11 +188,10 @@ struct MotionPrimitive
   MotionPoses poses;
 };
 
-  /**
-   * @struct nav2_smac_planner::GoalState
-   * @brief A struct to store the goal state
-   */
-
+/**
+ * @struct nav2_smac_planner::GoalState
+ * @brief A struct to store the goal state
+ */
 template<typename NodeT>
 struct GoalState
 {

@@ -25,11 +25,11 @@
 
 using namespace nav2_smac_planner; // NOLINT
 
-using GoalManagerHybrid = GoalManager<NodeHybrid>;
-using NodePtr = NodeHybrid *;
+using NodeT = NodeHybrid;
+using NodePtr = NodeT *;
+using GoalManagerHybrid = GoalManager<NodeT>;
 using NodeVector = GoalManagerHybrid::NodeVector;
 using CoordinateVector = GoalManagerHybrid::CoordinateVector;
-using GoalStateVector = GoalManagerHybrid::GoalStateVector;
 
 TEST(GoalManagerTest, test_goal_manager)
 {
@@ -66,12 +66,9 @@ TEST(GoalManagerTest, test_goal_manager)
   pose_a->setPose(NodeHybrid::Coordinates(0, 0, 0));
   pose_b->setPose(NodeHybrid::Coordinates(0, 0, 10));
 
-  GoalStateVector goals_state = {
-    {pose_a, true},
-    {pose_b, true}
-  };
+  goal_manager.addGoal(pose_a);
+  goal_manager.addGoal(pose_b);
 
-  goal_manager.setGoalStates(goals_state);
   EXPECT_FALSE(goal_manager.goalsIsEmpty());
   EXPECT_EQ(goal_manager.getGoalsState().size(), 2u);
   EXPECT_TRUE(goal_manager.getGoalsSet().empty());
@@ -86,20 +83,21 @@ TEST(GoalManagerTest, test_goal_manager)
   }
 
   // Test is goal
-  EXPECT_TRUE(goal_manager.isGoal(goals_state[0].goal));
-  EXPECT_TRUE(goal_manager.isGoal(goals_state[1].goal));
+  EXPECT_TRUE(goal_manager.isGoal(pose_a));
+  EXPECT_TRUE(goal_manager.isGoal(pose_b));
 
   // Re-populate and validate reset state
-  goal_manager.setGoalStates(goals_state);
+  goal_manager.clear();
+  goal_manager.addGoal(pose_a);
+  goal_manager.addGoal(pose_b);
   EXPECT_EQ(goal_manager.getGoalsSet().size(), 0);
   EXPECT_EQ(goal_manager.getGoalsCoordinates().size(), 0);
 
   // Add invalid goal
-  NodeHybrid pose_c(50);
-  pose_c.setPose(NodeHybrid::Coordinates(50, 50, 0));  // inside lethal zone
-  goals_state.push_back({&pose_c, true});
+  NodePtr pose_c = new NodeHybrid(50);
+  pose_c->setPose(NodeHybrid::Coordinates(50, 50, 0));  // inside lethal zone
 
-  goal_manager.setGoalStates(goals_state);
+  goal_manager.addGoal(pose_c);
   EXPECT_EQ(goal_manager.getGoalsState().size(), 3);
 
   // Tolerance is high, one goal is invalid
@@ -113,7 +111,11 @@ TEST(GoalManagerTest, test_goal_manager)
   }
 
   // Test with low tolerance, expect invalid goal to be filtered out
-  goal_manager.setGoalStates(goals_state);
+  goal_manager.clear();
+  goal_manager.addGoal(pose_a);
+  goal_manager.addGoal(pose_b);
+  goal_manager.addGoal(pose_c);
+
   int low_tolerance = 0.0f;
   goal_manager.removeInvalidGoals(low_tolerance, checker.get(), allow_unknow);
 
@@ -122,7 +124,7 @@ TEST(GoalManagerTest, test_goal_manager)
 
   // expect last goal to be invalid
   for (const auto & goal_state : goal_manager.getGoalsState()) {
-    if (goal_state.goal == goals_state[2].goal) {
+    if (goal_state.goal == pose_c) {
       EXPECT_FALSE(goal_state.is_valid);
     } else {
       EXPECT_TRUE(goal_state.is_valid);
@@ -130,16 +132,15 @@ TEST(GoalManagerTest, test_goal_manager)
   }
 
   // Prepare goals for expansion
-  GoalStateVector expansion_goals;
+  goal_manager.clear();
   unsigned int test_goal_size = 16;
 
   for (unsigned int i = 0; i < test_goal_size; ++i) {
-    auto goal = new NodeHybrid(i);
+    NodePtr goal = new NodeHybrid(i);
     goal->setPose(NodeHybrid::Coordinates(i, i, 0));
-    expansion_goals.push_back({goal, true});
+    goal_manager.addGoal(goal);
   }
 
-  goal_manager.setGoalStates(expansion_goals);
   goal_manager.removeInvalidGoals(tolerance, checker.get(), allow_unknow);
 
   NodeVector coarse_check_goals;
@@ -157,6 +158,14 @@ TEST(GoalManagerTest, test_goal_manager)
   goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals, 4);
   EXPECT_EQ(coarse_check_goals.size(), 4u);  // indices 0, 4, 8, 12
   EXPECT_EQ(fine_check_goals.size(), 12u);
+
+
+  // expect throw if we try to call removeinvalidgoals twice
+  // without clearing the goal manager first
+  EXPECT_THROW(goal_manager.removeInvalidGoals(
+    tolerance, checker.get(), allow_unknow),
+    std::runtime_error
+  );
 
   delete costmapA;
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();

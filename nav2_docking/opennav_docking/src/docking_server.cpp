@@ -33,6 +33,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("initial_perception_timeout", 5.0);
   declare_parameter("wait_charge_timeout", 5.0);
   declare_parameter("dock_approach_timeout", 30.0);
+  declare_parameter("rotate_to_dock_timeout", 10.0);
   declare_parameter("undock_linear_tolerance", 0.05);
   declare_parameter("undock_angular_tolerance", 0.05);
   declare_parameter("max_retries", 3);
@@ -40,6 +41,8 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("fixed_frame", "odom");
   declare_parameter("dock_backwards", rclcpp::PARAMETER_BOOL);
   declare_parameter("dock_prestaging_tolerance", 0.5);
+  declare_parameter("odom_topic", "odom");
+  declare_parameter("rotation_angular_tolerance", 0.05);
 }
 
 nav2_util::CallbackReturn
@@ -52,14 +55,18 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("initial_perception_timeout", initial_perception_timeout_);
   get_parameter("wait_charge_timeout", wait_charge_timeout_);
   get_parameter("dock_approach_timeout", dock_approach_timeout_);
+  get_parameter("rotate_to_dock_timeout", rotate_to_dock_timeout_);
   get_parameter("undock_linear_tolerance", undock_linear_tolerance_);
   get_parameter("undock_angular_tolerance", undock_angular_tolerance_);
   get_parameter("max_retries", max_retries_);
   get_parameter("base_frame", base_frame_);
   get_parameter("fixed_frame", fixed_frame_);
   get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
+  get_parameter("rotation_angular_tolerance", rotation_angular_tolerance_);
+
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
+  // Check the dock_backwards deprecated parameter
   bool dock_backwards = false;
   try {
     if (get_parameter("dock_backwards", dock_backwards)) {
@@ -72,6 +79,11 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create odom subscriber for backward blind docking
+  std::string odom_topic;
+  get_parameter("odom_topic", odom_topic);
+  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
 
   double action_server_result_timeout;
   nav2_util::declare_parameter_if_not_declared(
@@ -165,6 +177,7 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   controller_.reset();
   vel_publisher_.reset();
   dock_backwards_.reset();
+  odom_sub_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -252,6 +265,8 @@ void DockingServer::dockRobot()
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
       RCLCPP_INFO(
         get_logger(), "Robot is already docked and/or charging (if applicable), no need to dock");
+      result->success = true;
+      docking_action_server_->succeeded_current(result);
       return;
     }
 
@@ -289,10 +304,22 @@ void DockingServer::dockRobot()
       dock_backwards_.value() :
       (dock->plugin->getDockDirection() == opennav_docking_core::DockDirection::BACKWARD);
 
+    // If we performed a rotation before docking backward, we must rotate the staging pose
+    // to match the robot orientation
+    auto staging_pose = dock->getStagingPose();
+    if (dock->plugin->shouldRotateToDock()) {
+      staging_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(staging_pose.pose.orientation) + M_PI);
+    }
+
     // Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
+        // Perform a 180º to face away from the dock if needed
+        if (dock->plugin->shouldRotateToDock()) {
+          rotateToDock(dock_pose);
+        }
         // Approach the dock using control law
         if (approachDock(dock, dock_pose, dock_backward)) {
           // We are docked, wait for charging to begin
@@ -327,7 +354,7 @@ void DockingServer::dockRobot()
       }
 
       // Reset to staging pose to try again
-      if (!resetApproach(dock->getStagingPose(), dock_backward)) {
+      if (!resetApproach(staging_pose, dock_backward)) {
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
@@ -424,6 +451,43 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   }
 }
 
+void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_pose)
+{
+  const double dt = 1.0 / controller_frequency_;
+  auto target_pose = dock_pose;
+  target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+    tf2::getYaw(target_pose.pose.orientation) + M_PI);
+
+  rclcpp::Rate loop_rate(controller_frequency_);
+  auto start = this->now();
+  auto timeout = rclcpp::Duration::from_seconds(rotate_to_dock_timeout_);
+
+  while (rclcpp::ok()) {
+    auto robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
+    auto angular_distance_to_heading = angles::shortest_angular_distance(
+      tf2::getYaw(robot_pose.pose.orientation), tf2::getYaw(target_pose.pose.orientation));
+    if (fabs(angular_distance_to_heading) < rotation_angular_tolerance_) {
+      break;
+    }
+
+    auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    current_vel->twist.angular.z = odom_sub_->getTwist().theta;
+
+    auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
+    command->header = robot_pose.header;
+    command->twist = controller_->computeRotateToHeadingCommand(
+      angular_distance_to_heading, current_vel->twist, dt);
+
+    vel_publisher_->publish(std::move(command));
+
+    if (this->now() - start > timeout) {
+      throw opennav_docking_core::FailedToControl("Timed out rotating to dock");
+    }
+
+    loop_rate.sleep();
+  }
+}
+
 bool DockingServer::approachDock(
   Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward)
 {
@@ -447,7 +511,7 @@ bool DockingServer::approachDock(
     }
 
     // Update perception
-    if (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
+    if (!dock->plugin->getRefinedPose(dock_pose, dock->id) && !dock->plugin->shouldRotateToDock()) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
@@ -652,6 +716,13 @@ void DockingServer::undockRobot()
     geometry_msgs::msg::PoseStamped staging_pose =
       dock->getStagingPose(dock_pose.pose, dock_pose.header.frame_id);
 
+    // If we performed a rotation before docking backward, we must rotate the staging pose
+    // to match the robot orientation
+    if (dock->shouldRotateToDock()) {
+      staging_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+        tf2::getYaw(staging_pose.pose.orientation) + M_PI);
+    }
+
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();
     while (rclcpp::ok()) {
@@ -684,8 +755,13 @@ void DockingServer::undockRobot()
           command->twist, staging_pose, undock_linear_tolerance_, undock_angular_tolerance_, false,
           !dock_backward))
       {
-        RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
+        // Perform a 180º to the original staging pose
+        if (dock->shouldRotateToDock()) {
+          rotateToDock(staging_pose);
+        }
+
         // Have reached staging_pose
+        RCLCPP_INFO(get_logger(), "Robot has reached staging pose");
         vel_publisher_->publish(std::move(command));
         if (!dock->isCharger() || dock->hasStoppedCharging()) {
           RCLCPP_INFO(get_logger(), "Robot has undocked!");
@@ -761,29 +837,34 @@ DockingServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
 
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller_frequency") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "controller_frequency") {
         controller_frequency_ = parameter.as_double();
-      } else if (name == "initial_perception_timeout") {
+      } else if (param_name == "initial_perception_timeout") {
         initial_perception_timeout_ = parameter.as_double();
-      } else if (name == "wait_charge_timeout") {
+      } else if (param_name == "wait_charge_timeout") {
         wait_charge_timeout_ = parameter.as_double();
-      } else if (name == "undock_linear_tolerance") {
+      } else if (param_name == "undock_linear_tolerance") {
         undock_linear_tolerance_ = parameter.as_double();
-      } else if (name == "undock_angular_tolerance") {
+      } else if (param_name == "undock_angular_tolerance") {
         undock_angular_tolerance_ = parameter.as_double();
+      } else if (param_name == "rotation_angular_tolerance") {
+        rotation_angular_tolerance_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_STRING) {
-      if (name == "base_frame") {
+    } else if (param_type == ParameterType::PARAMETER_STRING) {
+      if (param_name == "base_frame") {
         base_frame_ = parameter.as_string();
-      } else if (name == "fixed_frame") {
+      } else if (param_name == "fixed_frame") {
         fixed_frame_ = parameter.as_string();
       }
-    } else if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == "max_retries") {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == "max_retries") {
         max_retries_ = parameter.as_int();
       }
     }

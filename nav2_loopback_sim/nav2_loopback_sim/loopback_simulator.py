@@ -86,6 +86,30 @@ class LoopbackSimulator(Node):
         self.declare_parameter('publish_clock', True)
         self.publish_clock = self.get_parameter('publish_clock').get_parameter_value().bool_value
 
+        self.declare_parameter('scan_range_min',  0.05)
+        self.scan_range_min = \
+            self.get_parameter('scan_range_min').get_parameter_value().double_value
+
+        self.declare_parameter('scan_range_max',  30.0)
+        self.scan_range_max = \
+            self.get_parameter('scan_range_max').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_min',  -math.pi)
+        self.scan_angle_min = \
+            self.get_parameter('scan_angle_min').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_max',  math.pi)
+        self.scan_angle_max = \
+            self.get_parameter('scan_angle_max').get_parameter_value().double_value
+
+        self.declare_parameter('scan_angle_increment',  0.0261)  # 0.0261 rad = 1.5 degrees
+        self.scan_angle_increment = \
+            self.get_parameter('scan_angle_increment').get_parameter_value().double_value
+
+        self.declare_parameter('scan_use_inf', True)
+        self.use_inf = \
+            self.get_parameter('scan_use_inf').get_parameter_value().bool_value
+
         self.t_map_to_odom = TransformStamped()
         self.t_map_to_odom.header.frame_id = self.map_frame_id
         self.t_map_to_odom.child_frame_id = self.odom_frame_id
@@ -235,14 +259,14 @@ class LoopbackSimulator(Node):
         self.scan_msg = LaserScan()
         self.scan_msg.header.stamp = (self.get_clock().now()).to_msg()
         self.scan_msg.header.frame_id = self.scan_frame_id
-        self.scan_msg.angle_min = -math.pi
-        self.scan_msg.angle_max = math.pi
+        self.scan_msg.angle_min = self.scan_angle_min
+        self.scan_msg.angle_max = self.scan_angle_max
         # 1.5 degrees
-        self.scan_msg.angle_increment = 0.0261799
+        self.scan_msg.angle_increment = self.scan_angle_increment
         self.scan_msg.time_increment = 0.0
         self.scan_msg.scan_time = 0.1
-        self.scan_msg.range_min = 0.05
-        self.scan_msg.range_max = 30.0
+        self.scan_msg.range_min = self.scan_range_min
+        self.scan_msg.range_max = self.scan_range_max
         num_samples = int(
             (self.scan_msg.angle_max - self.scan_msg.angle_min) /
             self.scan_msg.angle_increment)
@@ -323,7 +347,10 @@ class LoopbackSimulator(Node):
 
     def getLaserScan(self, num_samples: int) -> None:
         if self.map is None or self.initial_pose is None or self.mat_base_to_laser is None:
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            if self.use_inf:
+                self.scan_msg.ranges = [float('inf')] * num_samples
+            else:
+                self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         x0, y0, theta = self.getLaserPose()
@@ -332,7 +359,10 @@ class LoopbackSimulator(Node):
 
         if not 0 < mx0 < self.map.info.width or not 0 < my0 < self.map.info.height:
             # outside map
-            self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
+            if self.use_inf:
+                self.scan_msg.ranges = [float('inf')] * num_samples
+            else:
+                self.scan_msg.ranges = [self.scan_msg.range_max - 0.1] * num_samples
             return
 
         for i in range(num_samples):
@@ -361,6 +391,8 @@ class LoopbackSimulator(Node):
                     break
 
                 line_iterator.advance()
+            if self.scan_msg.ranges[i] == 0.0 and self.use_inf:
+                self.scan_msg.ranges[i] = float('inf')
 
 
 def main() -> None:

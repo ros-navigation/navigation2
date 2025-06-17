@@ -1,0 +1,49 @@
+name: Build Against Released Distributions
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distro: [jazzy, kilted]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker build context
+      run: |
+        mkdir -p /tmp/docker_context/ws/src
+        cp -r . /tmp/docker_context/ws/src
+        echo 'FROM ghcr.io/ros-navigation/nav2_docker:${{ matrix.ros_distro }}-nightly
+
+        RUN apt-get update && apt-get install -y \
+          python3-pip \
+          python3-colcon-common-extensions \
+          python3-vcstool \
+          git \
+          curl \
+          && rm -rf /var/lib/apt/lists/*
+
+        WORKDIR /root/ws
+
+        COPY ws /root/ws
+
+        RUN apt-get update && rosdep update && \
+          rosdep install --from-paths src --ignore-src -r -y \
+          --skip-keys=slam_toolbox
+
+        RUN . /opt/ros/${{ matrix.ros_distro }}/setup.sh && colcon build --packages-skip nav2_system_tests nav2_bringup nav2_simple_commander nav2_loopback_sim navigation2' > /tmp/docker_context/Dockerfile
+
+
+    - name: Build Docker image
+      run: |
+        docker build -t nav2-${{ matrix.ros_distro }}-main-compatibility /tmp/docker_context

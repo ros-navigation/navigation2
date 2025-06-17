@@ -15,6 +15,10 @@
 #ifndef NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_HPP_
 #define NAV2_SMAC_PLANNER__ANALYTIC_EXPANSION_HPP_
 
+#include <ompl/base/ScopedState.h>
+#include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+
 #include <functional>
 #include <list>
 #include <memory>
@@ -61,7 +65,33 @@ public:
     Coordinates proposed_coords;
   };
 
-  typedef std::vector<AnalyticExpansionNode> AnalyticExpansionNodes;
+  /**
+   * @struct AnalyticExpansionNodes
+   * @brief Analytic expansion nodes and associated metadata
+   *
+   * This structure holds a collection of analytic expansion nodes and the number of direction
+   * changes encountered during the expansion.
+   */
+  struct AnalyticExpansionNodes
+  {
+    AnalyticExpansionNodes() = default;
+
+    void add(
+      NodePtr & node,
+      Coordinates & initial_coords,
+      Coordinates & proposed_coords)
+    {
+      nodes.emplace_back(node, initial_coords, proposed_coords);
+    }
+
+    void setDirectionChanges(int changes)
+    {
+      direction_changes = changes;
+    }
+
+    std::vector<AnalyticExpansionNode> nodes;
+    int direction_changes{0};
+  };
 
   /**
    * @brief Constructor for analytic expansion object
@@ -112,14 +142,15 @@ public:
 
   /**
    * @brief Refined analytic path from the current node to the goal
-   * @param current_node The node to start the analytic path from
+   * @param node The node to start the analytic path from. Node head may
+   * change as a result of refinement
    * @param goal_node The goal node to plan to
    * @param getter The function object that gets valid nodes from the graph
    * @param analytic_nodes The set of analytic nodes to refine
    * @return The score of the refined path
    */
   float refineAnalyticPath(
-    const NodePtr & current_node,
+    NodePtr & node,
     const NodePtr & goal_node,
     const NodeGetter & getter,
     AnalyticExpansionNodes & analytic_nodes);
@@ -134,6 +165,13 @@ public:
   NodePtr setAnalyticPath(
     const NodePtr & node, const NodePtr & goal,
     const AnalyticExpansionNodes & expanded_nodes);
+
+  /**
+    * @brief Counts the number of direction changes in a Reeds-Shepp path
+    * @param path The Reeds-Shepp path to count direction changes in
+    * @return The number of direction changes in the path
+    */
+  int countDirectionChanges(const ompl::base::ReedsSheppStateSpace::ReedsSheppPath & path);
 
   /**
    * @brief Takes an expanded nodes to clean up, if necessary, of any state
