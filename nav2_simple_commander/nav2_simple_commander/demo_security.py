@@ -56,7 +56,7 @@ def main() -> None:
     navigator.waitUntilNav2Active()
 
     # Do security route until dead
-    while rclpy.ok():  # type: ignore[attr-defined]
+    while rclpy.ok():
         # Send our route
         route_poses = []
         pose = PoseStamped()

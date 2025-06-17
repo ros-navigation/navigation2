@@ -25,6 +25,7 @@ from rcl_interfaces.srv import SetParameters
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
 from rclpy.action.client import ClientGoalHandle
+from rclpy.client import Client
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 
@@ -34,15 +35,19 @@ class GpsWaypointFollowerTest(Node):
     def __init__(self) -> None:
         super().__init__(node_name='nav2_gps_waypoint_tester', namespace='')
         self.waypoints: list[float] = []
-        self.action_client = ActionClient(
-            self, FollowGPSWaypoints, 'follow_gps_waypoints'
-        )
+        self.action_client: ActionClient[
+            FollowGPSWaypoints.Goal,
+            FollowGPSWaypoints.Result,
+            FollowGPSWaypoints.Feedback
+        ] = ActionClient(
+            self, FollowGPSWaypoints, 'follow_gps_waypoints')
         self.goal_handle: Optional[ClientGoalHandle[
                 FollowGPSWaypoints.Goal, FollowGPSWaypoints.Result,
                 FollowGPSWaypoints.Feedback]] = None
         self.action_result = FollowGPSWaypoints.Result()
 
-        self.param_cli = self.create_client(
+        self.param_cli: Client[SetParameters.Request, SetParameters.Response] \
+            = self.create_client(
             SetParameters, '/waypoint_follower/set_parameters'
         )
 
@@ -126,7 +131,8 @@ class GpsWaypointFollowerTest(Node):
         self.info_msg('Destroyed follow_gps_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] \
+            = self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
