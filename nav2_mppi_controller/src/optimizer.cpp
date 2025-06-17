@@ -339,6 +339,9 @@ void Optimizer::integrateStateVelocities(
   auto traj_yaws = trajectory.col(2);
 
   const size_t n_size = traj_yaws.size();
+  if (n_size == 0) {
+    return;
+  }
 
   float last_yaw = initial_yaw;
   for(size_t i = 0; i != n_size; i++) {
