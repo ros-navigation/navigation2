@@ -51,7 +51,7 @@ public:
    // Expose detector state for test verification
   bool isDetectorActive() const
   {
-    return detector_state_ == DetectorState::ON;
+    return detector_enabled_;
   }
 };
 
