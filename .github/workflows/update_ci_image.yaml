@@ -87,7 +87,7 @@ jobs:
 
           no_cache=false
           if  [ "${{needs.check_ci_files.outputs.no_cache}}" == 'true' ] || \
-              [ "${{needs.check_ci_image.outputs.no_cache}}" == 'true' ]
+              [ "${{needs.check_ci_image.outputs.no_cache || 'false'}}" == 'true' ]
           then
             no_cache=true
           fi
@@ -95,7 +95,7 @@ jobs:
 
           trigger=false
           if  [ "${{needs.check_ci_files.outputs.trigger}}" == 'true' ] || \
-              [ "${{needs.check_ci_image.outputs.trigger}}" == 'true' ]
+              [ "${{needs.check_ci_image.outputs.trigger || 'false'}}" == 'true' ]
           then
             trigger=true
           fi
