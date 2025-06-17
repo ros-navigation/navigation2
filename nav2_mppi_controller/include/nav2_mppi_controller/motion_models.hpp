@@ -90,12 +90,12 @@ public:
         state.vx.col(i - 1) - min_delta_vx);
 
       state.vx.col(i) = state.cvx.col(i - 1)
-         .cwiseMax(lower_bound_vx)
-         .cwiseMin(upper_bound_vx);
+          .cwiseMax(lower_bound_vx)
+          .cwiseMin(upper_bound_vx);
 
       state.wz.col(i) = state.cwz.col(i - 1)
-         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
-         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+          .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+          .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
@@ -106,8 +106,8 @@ public:
           state.vy.col(i - 1) - min_delta_vy);
 
         state.vy.col(i) = state.cvy.col(i - 1)
-           .cwiseMax(lower_bound_vy)
-           .cwiseMin(upper_bound_vy);
+            .cwiseMax(lower_bound_vy)
+            .cwiseMin(upper_bound_vy);
       }
     }
   }
