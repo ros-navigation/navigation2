@@ -25,6 +25,7 @@ from rcl_interfaces.srv import SetParameters
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
 from rclpy.action.client import ClientGoalHandle
+from rclpy.client import Client
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
@@ -35,7 +36,11 @@ class WaypointFollowerTest(Node):
     def __init__(self) -> None:
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
         self.waypoints: list[float] = []
-        self.action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
+        self.action_client: ActionClient[
+            FollowWaypoints.Goal,
+            FollowWaypoints.Result,
+            FollowWaypoints.Feedback
+        ] = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
@@ -55,7 +60,8 @@ class WaypointFollowerTest(Node):
         self.model_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped, 'amcl_pose', self.poseCallback, pose_qos
         )
-        self.param_cli = self.create_client(
+        self.param_cli: Client[SetParameters.Request, SetParameters.Response] = \
+            self.create_client(
             SetParameters, '/waypoint_follower/set_parameters'
         )
 
@@ -153,7 +159,8 @@ class WaypointFollowerTest(Node):
         self.info_msg('Destroyed follow_waypoints action client')
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+            self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
