@@ -51,6 +51,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
+  declare_parameter("action_server_result_timeout", 10.0);
+
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -222,6 +224,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
 
+  double action_server_result_timeout;
+  get_parameter("action_server_result_timeout", action_server_result_timeout);
+  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
+  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
@@ -235,8 +242,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, rcl_action_server_get_default_options(),
-      use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);
