@@ -109,12 +109,12 @@ public:
   /**
    * @brief Start external detection process (service call + subscribe).
    */
-  void startDetectionProcess() override {startDetection();}
+  bool startDetectionProcess() override {return startDetection();}
 
   /**
    * @brief Stop external detection process.
    */
-  void stopDetectionProcess() override {stopDetection();}
+  bool stopDetectionProcess() override {return stopDetection();}
 
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
@@ -166,7 +166,7 @@ protected:
   // Detector control parameters
   std::string detector_service_name_;
   double detector_service_timeout_{5.0};
-  bool subscribe_toggle_{true};
+  bool subscribe_toggle_{false};
 
   // Client used to call the Trigger service
   nav2_util::ServiceClient<
@@ -181,10 +181,10 @@ protected:
   DetectorState detector_state_{DetectorState::OFF};
 
   // Internally enable detector (service + subscribe)
-  void startDetection();
+  bool startDetection();
 
   // Internally disable detector (service + unsubscribe)
-  void stopDetection();
+  bool stopDetection();
 };
 
 }  // namespace opennav_docking

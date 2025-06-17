@@ -41,9 +41,9 @@ The docking procedure is as follows:
 5. Enter a vision-control loop where the robot attempts to reach the docking pose while it's actively being refined by the vision system.
 6. Exit the vision-control loop once contact has been detected or charging has started (if applicable).
 7. Wait until charging starts (if applicable) and return success.
-8. Call the dock's plugin `stopDetectionProcess()` method to deactivate any external detection mechanisms (this is also called on failure/cancellation).
+8. Call the dock's plugin `stopDetectionProcess()` method to deactivate any external detection mechanisms.
 
-If anywhere this procedure is unsuccessful (before step 8), `N` retries may be made. This involves calling `stopDetectionProcess()`, driving back to the dock's staging pose, and then restarting the process from step 3. If still unsuccessful after retries, it will return a failure code to indicate what kind of failure occurred to the client.
+If anywhere this procedure is unsuccessful (before step 8), `N` retries may be made, driving back to the dock's staging pose, and then restarting the process from step 3. If still unsuccessful after retries, it will return a failure code to indicate what kind of failure occurred to the client.
 
 Undocking works more simply:
 1. If previously docked, use the known dock information to get the dock type. If not, use the undock action request's indicated dock type
@@ -153,10 +153,6 @@ There are two functions used during dock approach:
    for charging to start by calling `isCharging`.
    * This may be implemented using the `sensor_msgs/BatteryState` message to check the power status or for charging current.
    * Used for charging-typed plugins.
-   + * `startDetectionProcess`: Start any detection pipelines required for pose refinement.
-     This is expected to be called by the server prior to perception.
-   + * `stopDetectionProcess`: Stop any detection pipelines running for pose refinement.
-     Called by the server when docking actions finish or on shutdown.
 
 Similarly, there are two functions used during undocking:
 
@@ -266,7 +262,7 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | rotate_to_dock        | Enables backward docking without requiring a sensor for detection during the final approach. When enabled, the robot approaches the staging pose facing forward with sensor coverage for dock detection; after detection, it rotates and backs into the dock using only the initially detected pose for dead reckoning. | bool |  false      |
 | detector_service_name      | Trigger service name to start/stop the detector (e.g., a camera node or an AprilTag detector node). Leave empty to disable service calls. | string | ""    |
 | detector_service_timeout   | Timeout (seconds) to wait for the detector service (if `detector_service_name` is set) to become available or respond. | double | 5.0   |
-| subscribe_toggle           | If true, dynamically subscribe/unsubscribe to `detected_dock_pose` topic when `start/stopDetectionProcess` are called. If false, the subscription is kept alive throughout the plugin's lifecycle if `use_external_detection_pose` is true. This can be useful if the detector node is always running and publishing. | bool   | true  |
+| subscribe_toggle           | If true, dynamically subscribe/unsubscribe to `detected_dock_pose` topic when `start/stopDetectionProcess` are called. If false, the subscription is kept alive throughout the plugin's lifecycle if `use_external_detection_pose` is true. This can be useful if the detector node is always running and publishing. | bool   | false  |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
