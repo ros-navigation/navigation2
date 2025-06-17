@@ -34,7 +34,7 @@ TEST(DeclareParameter, useValidParameter)
   nav2_util::LifecycleNode::SharedPtr node =
     std::make_shared<nav2_util::LifecycleNode>("test_node");
   tf2_ros::Buffer tf(node->get_clock());
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
@@ -53,7 +53,7 @@ TEST(DeclareParameter, useInvalidParameter)
   nav2_util::LifecycleNode::SharedPtr node =
     std::make_shared<nav2_util::LifecycleNode>("test_node");
   tf2_ros::Buffer tf(node->get_clock());
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
