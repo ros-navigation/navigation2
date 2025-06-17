@@ -266,9 +266,6 @@ void DockingServer::dockRobot()
         get_logger(), "Robot is already docked and/or charging (if applicable), no need to dock");
       result->success = true;
       docking_action_server_->succeeded_current(result);
-      if (dock) {
-        dock->plugin->stopDetectionProcess();
-      }
       return;
     }
 
@@ -335,10 +332,10 @@ void DockingServer::dockRobot()
             }
             result->success = true;
             result->num_retries = num_retries_;
+            dock->plugin->stopDetectionProcess();
             stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
             docking_action_server_->succeeded_current(result);
-            dock->plugin->stopDetectionProcess();
             return;
           }
         }
