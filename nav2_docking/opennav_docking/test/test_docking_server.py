@@ -134,7 +134,7 @@ class TestDockingServer(unittest.TestCase):
         self.odom_pub = self.node.create_publisher(Odometry, 'odom', 10)
 
     def wait_for_node_to_be_active(self, node_name, timeout_sec=10.0):
-        """Attend qu'un nœud managé passe à l'état actif."""
+        """Wait for a managed node to become active."""
         client = self.node.create_client(GetState, f'{node_name}/get_state')
         if not client.wait_for_service(timeout_sec=2.0):
             self.fail(f'Service get_state for {node_name} not available.')
@@ -148,6 +148,7 @@ class TestDockingServer(unittest.TestCase):
                 self.node.get_logger().info(f'Node {node_name} is active.')
                 return
             time.sleep(0.5)
+        # raises AssertionError
         self.fail(f'Node {node_name} did not become active within {timeout_sec} seconds.')
 
     def tearDown(self) -> None:

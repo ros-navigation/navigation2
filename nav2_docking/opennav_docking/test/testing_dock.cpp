@@ -102,9 +102,17 @@ public:
     return true;
   }
 
-  virtual void startDetectionProcess() {}
+  virtual bool startDetectionProcess()
+  {
+    bool should_fail;
+    node_->get_parameter_or("fail_start_detection", should_fail, false);
+    return !should_fail;
+  }
 
-  virtual void stopDetectionProcess() {}
+  virtual bool stopDetectionProcess()
+  {
+    return true;
+  }
 
 protected:
   nav2::LifecycleNode::SharedPtr node_;

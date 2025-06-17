@@ -63,8 +63,8 @@ TEST(SimpleChargingDockTests, ObjectLifecycle)
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
-  dock->startDetectionProcess();
-  dock->stopDetectionProcess();
+  EXPECT_TRUE(dock->startDetectionProcess());
+  EXPECT_TRUE(dock->stopDetectionProcess());
 
   // Check initial states
   EXPECT_FALSE(dock->isCharging());
@@ -499,7 +499,7 @@ TEST(SimpleChargingDockTests, SubscriptionCallback)
   dock->activate();
 
   auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "detected_dock_pose", rclcpp::SensorDataQoS());
+    "detected_dock_pose", 1);
   // A LifecyclePublisher must be activated to publish.
   publisher->on_activate();
 
@@ -604,7 +604,7 @@ TEST(SimpleChargingDockTests, SubscriptionPersistent)
 
   // The subscription should be active immediately after configuration.
   auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "detected_dock_pose", rclcpp::SensorDataQoS());
+    "detected_dock_pose", 1);
   publisher->on_activate();
 
   int tries = 0;

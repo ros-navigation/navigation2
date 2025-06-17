@@ -441,13 +441,18 @@ Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> go
 void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose)
 {
   publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
-  dock->plugin->startDetectionProcess();
+
+  if (!dock->plugin->startDetectionProcess()) {
+    throw opennav_docking_core::FailedToDetectDock("Failed to start the detection process.");
+  }
+
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
-      throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
+      throw opennav_docking_core::FailedToDetectDock(
+        "Failed initial dock detection: Timeout exceeded");
     }
 
     if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
