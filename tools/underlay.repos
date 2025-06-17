@@ -39,7 +39,7 @@ repositories:
     type: git
     url:  https://github.com/ros2/launch.git
     version: humble
-  # ros-navigation/nav2_minimal_turtlebot_simulation:
-  #   type: git
-  #   url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
-  #  version: main
+  ros-navigation/nav2_minimal_turtlebot_simulation:
+    type: git
+    url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
+    version: main
