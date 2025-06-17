@@ -25,6 +25,7 @@ using nav2_util::generate_internal_node;
 using nav2_util::add_namespaces;
 using nav2_util::time_to_string;
 using nav2_util::declare_parameter_if_not_declared;
+using nav2_util::declare_or_get_parameter;
 using nav2_util::get_plugin_type_param;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
