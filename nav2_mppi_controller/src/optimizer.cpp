@@ -85,6 +85,8 @@ void Optimizer::getParams()
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
+  getParam(s.sampling_std.wz_std_decay_to, "advanced.wz_std_decay_to", 0.0f);
+  getParam(s.sampling_std.wz_std_decay_strength, "advanced.wz_std_decay_strength", -1.0f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
 
   s.base_constraints.ax_max = std::abs(s.base_constraints.ax_max);
@@ -410,6 +412,45 @@ xt::xtensor<float, 2> Optimizer::getOptimizedTrajectory()
   return std::move(trajectories);
 }
 
+float Optimizer::calculateDecayForAngularDeviation()
+{
+  auto & s = settings_;
+  //Should we apply decay function?
+  if (s.sampling_std.wz_std_decay_strength <= 0.0f)
+  {
+    return s.sampling_std.wz; //skip calculation
+  }
+
+  //boundary check, if wz_std_decay_to is out of bounds, print a warning
+  if (s.sampling_std.wz_std_decay_to < 0.0f || s.sampling_std.wz_std_decay_to > s.sampling_std.wz)
+  {
+    RCLCPP_WARN_STREAM(logger_, "SKIPPING decay function. advanced.wz_std_decay_to must be between 0 and wz_std." <<
+      " Applying: wz_std = " << s.sampling_std.wz <<
+      " Ignoring: wz_std_decay_to = " << s.sampling_std.wz_std_decay_to);
+
+    return s.sampling_std.wz; //skip calculation
+  }
+
+  double current_speed;
+  if (isHolonomic())
+  {
+    double vx = state_.speed.linear.x;
+    double vy = state_.speed.linear.y;
+    current_speed = std::sqrt(vx * vx + vy * vy);
+  }
+  else
+  {
+    current_speed = fabs(state_.speed.linear.x);
+  }
+
+  const static float e = std::exp(1.0f);
+  float decayed_wz_std = (s.sampling_std.wz - s.sampling_std.wz_std_decay_to)
+    * powf(e, -1 * s.sampling_std.wz_std_decay_strength * current_speed) + s.sampling_std.wz_std_decay_to;
+
+  RCLCPP_DEBUG_STREAM(logger_, "Current_speed: " << current_speed << " wz_std: " << s.sampling_std.wz << " decayed_wz_std: " << decayed_wz_std);
+  return decayed_wz_std;
+}
+
 void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
@@ -419,8 +460,11 @@ void Optimizer::updateControlSequence()
   xt::noalias(costs_) +=
     s.gamma / powf(s.sampling_std.vx, 2) * xt::sum(
     xt::view(control_sequence_.vx, xt::newaxis(), xt::all()) * bounded_noises_vx, 1, immediate);
+
+  float wz_std = calculateDecayForAngularDeviation();
+
   xt::noalias(costs_) +=
-    s.gamma / powf(s.sampling_std.wz, 2) * xt::sum(
+    s.gamma / powf(wz_std, 2) * xt::sum(
     xt::view(control_sequence_.wz, xt::newaxis(), xt::all()) * bounded_noises_wz, 1, immediate);
 
   if (is_holo) {

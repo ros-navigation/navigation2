@@ -208,6 +208,12 @@ protected:
     const xt::xtensor<float, 2> & state) const;
 
   /**
+   * Calculates wz_std parameter based on linear speed
+   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information
+   */
+  float calculateDecayForAngularDeviation();
+
+  /**
    * @brief Update control sequence with state controls weighted by costs
    * using softmax function
    */
