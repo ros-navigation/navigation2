@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 
+#include "std_srvs/srv/trigger.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -27,6 +28,7 @@
 
 #include "opennav_docking_core/non_charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
+#include "nav2_util/service_client.hpp"
 
 namespace opennav_docking
 {
@@ -53,17 +55,17 @@ public:
   /**
    * @brief Method to cleanup resources used on shutdown.
    */
-  virtual void cleanup() {}
+  void cleanup() override;
 
-  /**
-   * @brief Method to active Behavior and any threads involved in execution.
-   */
-  virtual void activate() {}
+   /**
+    * @brief Method to active Behavior and any threads involved in execution.
+    */
+  void activate() override;
 
-  /**
-   * @brief Method to deactivate Behavior and any threads involved in execution.
-   */
-  virtual void deactivate() {}
+   /**
+    * @brief Method to deactivate Behavior and any threads involved in execution.
+    */
+  void deactivate() override;
 
   /**
    * @brief Method to obtain the dock's staging pose. This method should likely
@@ -87,6 +89,16 @@ public:
    * @copydoc opennav_docking_core::ChargingDock::isDocked
    */
   virtual bool isDocked();
+
+  /**
+   * @brief Start external detection process (service call + subscribe).
+   */
+  bool startDetectionProcess() override {return startDetection();}
+
+  /**
+   * @brief Stop external detection process.
+   */
+  bool stopDetectionProcess() override {return stopDetection();}
 
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
@@ -127,6 +139,28 @@ protected:
 
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+
+  // Detector control parameters
+  std::string detector_service_name_;
+  double detector_service_timeout_{5.0};
+  bool subscribe_toggle_{false};
+
+  // Client used to call the Trigger service
+  nav2_util::ServiceClient<
+    std_srvs::srv::Trigger,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr>::SharedPtr detector_client_;
+
+  // Dynamic subscription pointer (can be reset to release CPU/GPU)
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
+
+  // Simple boolean to track detector status
+  bool detector_enabled_{false};
+
+  // Internally enable detector (service + subscribe)
+  bool startDetection();
+
+  // Internally disable detector (service + unsubscribe)
+  bool stopDetection();
 };
 
 }  // namespace opennav_docking

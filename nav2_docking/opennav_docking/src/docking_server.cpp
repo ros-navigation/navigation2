@@ -164,7 +164,10 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf2_buffer_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
-  dock_db_.reset();
+  if (dock_db_) {
+    dock_db_->deactivate();
+    dock_db_.reset();
+  }
   navigator_.reset();
   curr_dock_type_.clear();
   controller_.reset();
@@ -326,6 +329,7 @@ void DockingServer::dockRobot()
             }
             result->success = true;
             result->num_retries = num_retries_;
+            dock->plugin->stopDetectionProcess();
             stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
             docking_action_server_->succeeded_current(result);
@@ -336,6 +340,7 @@ void DockingServer::dockRobot()
         // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
+        dock->plugin->stopDetectionProcess();
         docking_action_server_->terminate_all(result);
         return;
       } catch (opennav_docking_core::DockingException & e) {
@@ -351,6 +356,7 @@ void DockingServer::dockRobot()
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
+        dock->plugin->stopDetectionProcess();
         docking_action_server_->terminate_all(result);
         return;
       }
@@ -395,6 +401,9 @@ void DockingServer::dockRobot()
   }
 
   // Store dock state for later undocking and delete temp dock, if applicable
+  if (dock) {
+    dock->plugin->stopDetectionProcess();
+  }
   stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
   publishZeroVelocity();
@@ -426,12 +435,18 @@ Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> go
 void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose)
 {
   publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
+
+  if (!dock->plugin->startDetectionProcess()) {
+    throw opennav_docking_core::FailedToDetectDock("Failed to start the detection process.");
+  }
+
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
-      throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
+      throw opennav_docking_core::FailedToDetectDock(
+        "Failed initial dock detection: Timeout exceeded");
     }
 
     if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
