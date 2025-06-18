@@ -117,6 +117,7 @@ void SimpleNonChargingDock::configure(
       "detected_dock_pose", 1,
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
+        detector_enabled_ = true;
       });
   }
 
@@ -161,7 +162,6 @@ void SimpleNonChargingDock::configure(
   filtered_dock_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "filtered_dock_pose", 1);
   staging_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>("staging_pose", 1);
-
 }
 
 geometry_msgs::msg::PoseStamped SimpleNonChargingDock::getStagingPose(
@@ -354,6 +354,7 @@ bool SimpleNonChargingDock::startDetection()
       "detected_dock_pose", 1,
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
+        detector_enabled_ = true;
       });
   }
 
