@@ -218,6 +218,13 @@ protected:
     const Eigen::ArrayXXf & state) const;
 
   /**
+   * Calculates wz_std parameter based on linear speed
+   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information
+   * @return new wz_std to use
+   */
+  float calculateDecayForAngularDeviation();
+
+  /**
    * @brief Update control sequence with state controls weighted by costs
    * using softmax function
    */

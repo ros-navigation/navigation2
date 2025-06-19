@@ -64,7 +64,7 @@ public:
    * @brief Signal to the noise thread the controller is ready to generate a new
    * noised control for the next iteration
    */
-  void generateNextNoises();
+  void generateNextNoises(const models::State & state);
 
   /**
    * @brief set noised control_sequence to state controls

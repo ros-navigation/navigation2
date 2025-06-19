@@ -46,6 +46,44 @@ struct SamplingStd
   float wz;
 };
 
+struct AdvancedConstraints
+{
+  // TODO(vahapt): also add documentation to https://github.com/ros-navigation/docs.nav2.org/blob/master/configuration/packages/configuring-mppic.rst
+  /**
+   * @brief Defines the strength of the reduction function
+   * Allows dynamic modification of wz_std (angular deviation) based on linear velocity of the robot.
+   * When a robot with high inertia (e.g. 500kg) is moving fast and if wz_std is above 0.3, oscillation behavior can be observed. Lowering wz_std stabilizes the robot but then the maneuvers take more time.
+   * Dynamically reducing wz_std as vx, vy increase (speed of the robot) solves both problems.
+   * Suggested values to start with: wz_std = 0.4, wz_std_decay_to = 0.05, wz_std_decay_strength = 3.0
+   * The following is used as the decay function
+   * <pre>f(x) = (wz_std - wz_std_decay_to) * e^(-wz_std_decay_strength * v_linear) + wz_std_decay_to</pre>
+   * <a href="https://www.wolframalpha.com/input?i=plot+%5B%28a-b%29+*+e%5E%28-c+*+x%29+%2B+b%5D+with+a%3D0.5%2C+b%3D0.05%2C+c%3D3">Playground</a>
+   * Default: -1.0 (disabled)
+   */
+  float wz_std_decay_strength;
+
+  /**
+   * @brief Target wz_std value while linear speed goes to infinity.
+   * Must be between 0 and wz_std.
+   * Has no effect if `advanced.wz_std_decay_strength` <= 0.0
+   * Default: 0.0
+   */
+  float wz_std_decay_to;
+
+  bool validateWzStdDecayTo(const float & initial_wz_std)
+  {
+    // Assume valid if angular decay is disabled
+    if (wz_std_decay_strength <= 0.0f) {
+      return true;
+    }
+
+    if (wz_std_decay_to < 0.0f || wz_std_decay_to > initial_wz_std) {
+      return false;
+    }
+    return true;
+  }
+};
+
 }  // namespace mppi::models
 
 #endif  // NAV2_MPPI_CONTROLLER__MODELS__CONSTRAINTS_HPP_

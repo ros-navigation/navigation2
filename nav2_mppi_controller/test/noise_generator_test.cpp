@@ -71,7 +71,7 @@ ParametersHandler handler(node, name);
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps);
+  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -100,7 +100,7 @@ ParametersHandler handler(node, name);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // Request an update with noise requested
-  generator.generateNextNoises();
+  generator.generateNextNoises(state);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
@@ -115,7 +115,7 @@ ParametersHandler handler(node, name);
 
   // Test holonomic setting
   generator.reset(settings, true);  // Now holonomically
-  generator.generateNextNoises();
+  generator.generateNextNoises(state);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
   EXPECT_NE(state.cvx(0), 0);
@@ -160,7 +160,7 @@ ParametersHandler handler(node, name);
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps);
+  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -189,7 +189,7 @@ ParametersHandler handler(node, name);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // this doesn't work if regenerate_noises is false
-  generator.generateNextNoises();
+  generator.generateNextNoises(state);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 

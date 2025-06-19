@@ -42,9 +42,15 @@ struct State
   geometry_msgs::msg::Twist speed;
 
   /**
+   * @brief Internal variable that holds wz_std after decay is applied.
+   * If decay is disabled, SamplingStd.wz == wz_std_adaptive
+   */
+  float wz_std_adaptive;
+
+  /**
     * @brief Reset state data
     */
-  void reset(unsigned int batch_size, unsigned int time_steps)
+  void reset(unsigned int batch_size, unsigned int time_steps, float wz_std)
   {
     vx.setZero(batch_size, time_steps);
     vy.setZero(batch_size, time_steps);
@@ -53,6 +59,8 @@ struct State
     cvx.setZero(batch_size, time_steps);
     cvy.setZero(batch_size, time_steps);
     cwz.setZero(batch_size, time_steps);
+
+    wz_std_adaptive = wz_std;  // reset initial adaptive value to parameterized value
   }
 };
 }  // namespace mppi::models
