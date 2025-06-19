@@ -28,10 +28,6 @@ void NoiseGenerator::initialize(
   is_holonomic_ = is_holonomic;
   active_ = true;
 
-  ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
-  ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
-  ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
-
   auto getParam = param_handler->getParamGetter(name);
   getParam(regenerate_noises_, "regenerate_noises", false);
 
@@ -52,12 +48,21 @@ void NoiseGenerator::shutdown()
   }
 }
 
-void NoiseGenerator::generateNextNoises()
+void NoiseGenerator::generateNextNoises(const models::State & state)
 {
   // Trigger the thread to run in parallel to this iteration
   // to generate the next iteration's noises (if applicable).
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
+
+    // Check if there's any change on adaptive std's and re-create relevant distribution if any
+    // vahapt: Instead of equality check we may compare it to an epsilon value
+    // on another note, construction of ndistribution on every step should be pretty fast,
+    // it's just a 16 byte object
+    if (ndistribution_wz_.stddev() != state.wz_std_adaptive) {
+      ndistribution_wz_ = std::normal_distribution(0.0f, state.wz_std_adaptive);
+    }
+
     ready_ = true;
   }
   noise_cond_.notify_all();
@@ -82,9 +87,17 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
+    // vahapt: Moved construction of normal distributions from initialize() to here
+    // reset() is called during initialization and on parameter change
+    // See issue #5274 for more info
+    ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
+    ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
+    ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
+
     noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
     noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
     noises_wz_.setZero(settings_.batch_size, settings_.time_steps);
+
     ready_ = true;
   }
 
