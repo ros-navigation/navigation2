@@ -46,6 +46,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "rclcpp/version.h"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
