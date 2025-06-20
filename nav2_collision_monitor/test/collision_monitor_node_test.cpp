@@ -190,13 +190,15 @@ protected:
   std::shared_ptr<CollisionMonitorWrapper> cm_;
 
   // Footprint publisher
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    footprint_pub_;
 
   // Data source publishers
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_source_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+    polygon_source_pub_;
 
   // Working with cmd_vel_in/cmd_vel_out
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_pub_;
