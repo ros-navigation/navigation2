@@ -47,7 +47,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {

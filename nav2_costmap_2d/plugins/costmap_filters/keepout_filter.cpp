@@ -58,7 +58,7 @@ void KeepoutFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -70,10 +70,20 @@ void KeepoutFilter::initializeFilter(
     "KeepoutFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
+    filter_info_topic_,
+    std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedTopicQoS());
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
+
+  declareParameter("override_lethal_cost", rclcpp::ParameterValue(false));
+  node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
+  declareParameter("lethal_override_cost", rclcpp::ParameterValue(MAX_NON_OBSTACLE));
+  node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
+
+  // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
+  lethal_override_cost_ = \
+    std::clamp<unsigned int>(lethal_override_cost_, FREE_SPACE, MAX_NON_OBSTACLE);
 }
 
 void KeepoutFilter::filterInfoCallback(
@@ -81,7 +91,7 @@ void KeepoutFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -116,8 +126,9 @@ void KeepoutFilter::filterInfoCallback(
     "KeepoutFilter: Subscribing to \"%s\" topic for filter mask...",
     mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
+    mask_topic_,
+    std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedTopicQoS());
 }
 
 void KeepoutFilter::maskCallback(
@@ -125,7 +136,7 @@ void KeepoutFilter::maskCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -149,7 +160,7 @@ void KeepoutFilter::maskCallback(
 void KeepoutFilter::process(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j,
-  const geometry_msgs::msg::Pose2D & /*pose*/)
+  const geometry_msgs::msg::Pose2D & pose)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -244,10 +255,47 @@ void KeepoutFilter::process(
   }
 
   // unsigned<-signed conversions.
-  unsigned const int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
-  unsigned const int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
-  unsigned const int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
-  unsigned const int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
+  unsigned int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
+  unsigned int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
+  unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
+  unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
+
+  // Let's find the pose's cost if we are allowed to override the lethal cost
+  bool is_pose_lethal = false;
+  if (override_lethal_cost_) {
+    geometry_msgs::msg::Pose2D mask_pose;
+    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+      unsigned int mask_robot_i, mask_robot_j;
+      if (worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
+        is_pose_lethal = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
+        if (is_pose_lethal) {
+          RCLCPP_WARN_THROTTLE(
+            logger_, *(clock_), 2000,
+            "KeepoutFilter: Pose is in keepout zone, reducing cost override to navigate out.");
+        }
+      }
+    }
+
+    // If in lethal space or just exited lethal space,
+    // we need to update all possible spaces touched during this state
+    if (is_pose_lethal || (last_pose_lethal_ && !is_pose_lethal)) {
+      lethal_state_update_min_x_ = std::min(mg_min_x_u, lethal_state_update_min_x_);
+      mg_min_x_u = lethal_state_update_min_x_;
+      lethal_state_update_min_y_ = std::min(mg_min_y_u, lethal_state_update_min_y_);
+      mg_min_y_u = lethal_state_update_min_y_;
+      lethal_state_update_max_x_ = std::max(mg_max_x_u, lethal_state_update_max_x_);
+      mg_max_x_u = lethal_state_update_max_x_;
+      lethal_state_update_max_y_ = std::max(mg_max_y_u, lethal_state_update_max_y_);
+      mg_max_y_u = lethal_state_update_max_y_;
+    } else {
+      // If out of lethal space, reset managed lethal state sizes
+      lethal_state_update_min_x_ = master_grid.getSizeInCellsX();
+      lethal_state_update_min_y_ = master_grid.getSizeInCellsY();
+      lethal_state_update_max_x_ = 0u;
+      lethal_state_update_max_y_ = 0u;
+    }
+  }
 
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
@@ -284,12 +332,19 @@ void KeepoutFilter::process(
         if (data == NO_INFORMATION) {
           continue;
         }
+
         if (data > old_data || old_data == NO_INFORMATION) {
-          master_array[index] = data;
+          if (override_lethal_cost_ && is_pose_lethal) {
+            master_array[index] = lethal_override_cost_;
+          } else {
+            master_array[index] = data;
+          }
         }
       }
     }
   }
+
+  last_pose_lethal_ = is_pose_lethal;
 }
 
 void KeepoutFilter::resetFilter()

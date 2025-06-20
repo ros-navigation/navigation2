@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
-#define NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
+#ifndef NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_
+#define NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_
 
 #include <memory>
 #include <mutex>
@@ -25,20 +25,23 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_util/node_thread.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_thread.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_util
+namespace nav2
 {
 
 /**
- * @class nav2_util::SimpleActionServer
+ * @class nav2::SimpleActionServer
  * @brief An action server wrapper to make applications simpler using Actions
  */
 template<typename ActionT>
 class SimpleActionServer
 {
 public:
+  using SharedPtr = std::shared_ptr<nav2::SimpleActionServer<ActionT>>;
+  using UniquePtr = std::unique_ptr<nav2::SimpleActionServer<ActionT>>;
+
   // Callback function to complete main work. This should itself deal with its
   // own exceptions, but if for some reason one is thrown, it will be caught
   // in SimpleActionServer and terminate the action itself.
@@ -75,6 +78,7 @@ public:
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
+      node->get_node_parameters_interface(),
       action_name, execute_callback, completion_callback,
       server_timeout, spin_thread, realtime)
   {}
@@ -94,6 +98,7 @@ public:
     rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
     rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
+    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
@@ -104,6 +109,7 @@ public:
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
     node_waitables_interface_(node_waitables_interface),
+    node_parameters_interface_(node_parameters_interface),
     action_name_(action_name),
     execute_callback_(execute_callback),
     completion_callback_(completion_callback),
@@ -127,10 +133,27 @@ public:
       std::bind(&SimpleActionServer::handle_accepted, this, _1),
       rcl_action_server_get_default_options(),  // Use consistent QoS settings
       callback_group_);
+
+    rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
+    if (!node_parameters_interface->has_parameter("service_introspection_mode")) {
+      node_parameters_interface->declare_parameter(
+        "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+    }
+    std::string service_introspection_mode =
+      node_parameters_interface->get_parameter("service_introspection_mode").as_string();
+    if (service_introspection_mode == "metadata") {
+      introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
+    } else if (service_introspection_mode == "contents") {
+      introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
+    }
+
+    this->action_server_->configure_introspection(
+        node_clock_interface_->get_clock(), rclcpp::ServicesQoS(), introspection_state);
+
     if (spin_thread_) {
       executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor_->add_callback_group(callback_group_, node_base_interface_);
-      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
+      executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
     }
   }
 
@@ -186,7 +209,7 @@ public:
   void setSoftRealTimePriority()
   {
     if (use_realtime_prioritization_) {
-      nav2_util::setSoftRealTimePriority();
+      nav2::setSoftRealTimePriority();
       debug_msg("Soft realtime prioritization successfully set!");
     }
   }
@@ -528,6 +551,7 @@ protected:
   rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
   rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
   rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface_;
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
@@ -548,7 +572,7 @@ protected:
   bool spin_thread_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+  std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   /**
    * @brief Generate an empty result object for an action type
@@ -664,6 +688,6 @@ protected:
   }
 };
 
-}  // namespace nav2_util
+}  // namespace nav2
 
-#endif   // NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
+#endif   // NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_

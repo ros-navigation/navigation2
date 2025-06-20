@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 

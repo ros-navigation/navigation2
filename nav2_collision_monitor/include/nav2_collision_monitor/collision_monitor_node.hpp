@@ -29,7 +29,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
@@ -50,7 +50,7 @@ namespace nav2_collision_monitor
 /**
  * @brief Collision Monitor ROS2 node
  */
-class CollisionMonitor : public nav2_util::LifecycleNode
+class CollisionMonitor : public nav2::LifecycleNode
 {
 public:
   /**
@@ -70,31 +70,31 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Activates LifecyclePublishers, polygons and main processor, creates bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Deactivates LifecyclePublishers, polygons and main processor, destroys bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Resets all subscribers/publishers, polygons/data sources arrays
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called in shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 protected:
   /**

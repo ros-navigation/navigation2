@@ -20,7 +20,7 @@
 #include <chrono>
 
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
@@ -49,7 +49,7 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
-    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<nav2::LifecycleNode::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
@@ -85,7 +85,7 @@ public:
   void createActionClient(const std::string & action_name)
   {
     // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name, callback_group_);
+    action_client_ = node_->create_action_client<ActionT>(action_name, callback_group_);
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
@@ -161,7 +161,7 @@ protected:
   typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
 
   // The node that will be used for any ROS operations
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 

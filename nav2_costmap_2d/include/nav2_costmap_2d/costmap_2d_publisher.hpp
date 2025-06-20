@@ -51,10 +51,10 @@
 #include "nav2_msgs/msg/costmap_update.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "tf2/transform_datatypes.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_util/service_server.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -69,7 +69,7 @@ public:
    * @brief  Constructor for the Costmap2DPublisher
    */
   Costmap2DPublisher(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     Costmap2D * costmap,
     std::string global_frame,
     std::string topic_name,
@@ -181,8 +181,7 @@ private:
     costmap_raw_update_pub_;
 
   // Service for getting the costmaps
-  nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr
+  nav2::ServiceServer<nav2_msgs::srv::GetCostmap>::SharedPtr
     costmap_service_;
 
   float grid_resolution_;

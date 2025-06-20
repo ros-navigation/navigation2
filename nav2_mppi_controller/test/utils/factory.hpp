@@ -130,20 +130,20 @@ std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getDummyCostmapRos(TestCostmapSet
   return costmap_ros;
 }
 
-std::shared_ptr<rclcpp_lifecycle::LifecycleNode>
+nav2::LifecycleNode::SharedPtr
 getDummyNode(
   TestOptimizerSettings s, std::vector<std::string> critics,
   std::string node_name = std::string("dummy"))
 {
   auto node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>(node_name, getOptimizerOptions(s, critics));
+    std::make_shared<nav2::LifecycleNode>(node_name, getOptimizerOptions(s, critics));
   return node;
 }
 
-std::shared_ptr<rclcpp_lifecycle::LifecycleNode>
+nav2::LifecycleNode::SharedPtr
 getDummyNode(rclcpp::NodeOptions options, std::string node_name = std::string("dummy"))
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>(node_name, options);
+  auto node = std::make_shared<nav2::LifecycleNode>(node_name, options);
   return node;
 }
 
@@ -153,7 +153,7 @@ std::shared_ptr<mppi::Optimizer> getDummyOptimizer(
   TParamHandler * params_handler)
 {
   std::shared_ptr<mppi::Optimizer> optimizer = std::make_shared<mppi::Optimizer>();
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
+  nav2::LifecycleNode::WeakPtr weak_ptr_node{node};
 
   optimizer->initialize(weak_ptr_node, node->get_name(), costmap_ros, params_handler);
 
@@ -166,7 +166,7 @@ mppi::PathHandler getDummyPathHandler(
   TParamHandler * params_handler)
 {
   mppi::PathHandler path_handler;
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
+  nav2::LifecycleNode::WeakPtr weak_ptr_node{node};
 
   path_handler.initialize(weak_ptr_node, node->get_name(), costmap_ros, tf_buffer, params_handler);
 
@@ -179,7 +179,7 @@ std::shared_ptr<nav2_mppi_controller::MPPIController> getDummyController(
   TCostMap costmap_ros)
 {
   auto controller = std::make_shared<nav2_mppi_controller::MPPIController>();
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> weak_ptr_node{node};
+  nav2::LifecycleNode::WeakPtr weak_ptr_node{node};
 
   controller->configure(weak_ptr_node, node->get_name(), tf_buffer, costmap_ros);
   controller->activate();

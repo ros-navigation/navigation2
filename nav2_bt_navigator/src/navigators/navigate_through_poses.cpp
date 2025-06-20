@@ -24,7 +24,7 @@ namespace nav2_bt_navigator
 
 bool
 NavigateThroughPosesNavigator::configure(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+  nav2::LifecycleNode::WeakPtr parent_node,
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
@@ -69,7 +69,7 @@ NavigateThroughPosesNavigator::configure(
 
 std::string
 NavigateThroughPosesNavigator::getDefaultBTFilepath(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+  nav2::LifecycleNode::WeakPtr parent_node)
 {
   std::string default_bt_xml_filename;
   auto node = parent_node.lock();

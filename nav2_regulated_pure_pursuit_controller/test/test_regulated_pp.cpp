@@ -21,7 +21,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "path_utils/path_utils.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
@@ -117,7 +117,7 @@ public:
 
 TEST(RegulatedPurePursuitTest, basicAPI)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -169,7 +169,7 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
 
 TEST(RegulatedPurePursuitTest, findVelocitySignChange)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPfindVelocitySignChange");
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPPfindVelocitySignChange");
   auto ctrl = std::make_shared<BasicAPIRPP>();
 
   std::string name = "PathFollower";
@@ -333,7 +333,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
   auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap =
@@ -443,7 +443,7 @@ TEST(RegulatedPurePursuitTest, projectCarrotPastGoal) {
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -502,8 +502,8 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // Non-Stateful Configuration
   // --------------------------
   auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
-  nav2_util::declare_parameter_if_not_declared(
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  nav2::declare_parameter_if_not_declared(
     node, "PathFollower.stateful", rclcpp::ParameterValue(false));
 
   std::string name = "PathFollower";
@@ -597,7 +597,7 @@ TEST(RegulatedPurePursuitTest, rotateTests)
 TEST(RegulatedPurePursuitTest, applyConstraints)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   std::string name = "PathFollower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -605,7 +605,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   costmap->on_configure(state);
 
   constexpr double approach_velocity_scaling_dist = 0.6;
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     name + ".approach_velocity_scaling_dist",
     rclcpp::ParameterValue(approach_velocity_scaling_dist));
@@ -697,7 +697,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
 
 TEST(RegulatedPurePursuitTest, testDynamicParameter)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("Smactest");
+  auto node = std::make_shared<nav2::LifecycleNode>("Smactest");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap->on_configure(rclcpp_lifecycle::State());
   auto ctrl =
@@ -720,6 +720,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
       rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
       rclcpp::Parameter("test.max_allowed_time_to_collision_up_to_carrot", 2.0),
+      rclcpp::Parameter("test.min_distance_to_obstacle", 2.0),
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
@@ -749,6 +750,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(
     node->get_parameter(
       "test.max_allowed_time_to_collision_up_to_carrot").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.min_distance_to_obstacle").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
@@ -797,7 +799,7 @@ protected:
   void SetUp() override
   {
     ctrl_ = std::make_shared<BasicAPIRPP>();
-    node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPP");
+    node_ = std::make_shared<nav2::LifecycleNode>("testRPP");
     costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   }
@@ -826,7 +828,7 @@ protected:
   void configure_controller(double max_robot_pose_search_dist)
   {
     std::string plugin_name = "test_rpp";
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node_, plugin_name + ".max_robot_pose_search_dist",
       rclcpp::ParameterValue(max_robot_pose_search_dist));
     ctrl_->configure(node_, plugin_name, tf_buffer_, costmap_);
@@ -871,7 +873,7 @@ protected:
   static constexpr char ROBOT_FRAME[] = "test_robot_frame";
 
   std::shared_ptr<BasicAPIRPP> ctrl_;
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::Time transform_time_;

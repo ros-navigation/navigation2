@@ -24,6 +24,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
@@ -47,7 +48,7 @@ public:
    * @param  tf A pointer to a TF buffer
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
 
   /**
@@ -147,7 +148,7 @@ protected:
   double staging_x_offset_;
   double staging_yaw_offset_;
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
 };
 

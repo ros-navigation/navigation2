@@ -99,7 +99,7 @@ protected:
 
 private:
   void update_route_graph(void);
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
   std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

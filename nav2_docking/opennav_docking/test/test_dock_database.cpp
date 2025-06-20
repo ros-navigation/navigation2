@@ -53,7 +53,7 @@ public:
 
 TEST(DatabaseTests, ObjectLifecycle)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
   db.activate();
@@ -65,7 +65,7 @@ TEST(DatabaseTests, ObjectLifecycle)
 
 TEST(DatabaseTests, initializeBogusPlugins)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1", "dockv2"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   opennav_docking::DockDatabase db;
@@ -78,7 +78,7 @@ TEST(DatabaseTests, initializeBogusPlugins)
 
 TEST(DatabaseTests, findTests)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   DbShim db;
   db.populateOne();
 
@@ -93,7 +93,7 @@ TEST(DatabaseTests, findTests)
 
 TEST(DatabaseTests, getDockInstancesBadConversionFile)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
@@ -115,7 +115,7 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
 
 TEST(DatabaseTests, getDockInstancesWrongPath)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
@@ -134,7 +134,7 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
 
 TEST(DatabaseTests, reloadDbService)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
@@ -151,7 +151,7 @@ TEST(DatabaseTests, reloadDbService)
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
-  auto result = client->async_send_request(request);
+  auto result = client->async_call(request);
   EXPECT_EQ(
     rclcpp::spin_until_future_complete(node, result, 2s),
     rclcpp::FutureReturnCode::SUCCESS);
@@ -162,7 +162,7 @@ TEST(DatabaseTests, reloadDbService)
   request2->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/file_does_not_exist.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
-  auto result2 = client->async_send_request(request2);
+  auto result2 = client->async_call(request2);
   EXPECT_EQ(
     rclcpp::spin_until_future_complete(node, result2, 2s),
     rclcpp::FutureReturnCode::SUCCESS);
@@ -171,7 +171,7 @@ TEST(DatabaseTests, reloadDbService)
 
 TEST(DatabaseTests, reloadDbMutexLocked)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::vector<std::string> plugins{"dockv1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
@@ -192,7 +192,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
   request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(client->wait_for_service(1s));
-  auto result = client->async_send_request(request);
+  auto result = client->async_call(request);
   EXPECT_EQ(
     rclcpp::spin_until_future_complete(node, result, 2s),
     rclcpp::FutureReturnCode::SUCCESS);

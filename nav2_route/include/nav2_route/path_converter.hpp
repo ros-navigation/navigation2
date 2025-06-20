@@ -22,10 +22,11 @@
 #include <mutex>
 #include <algorithm>
 
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
+#include "nav2_route/corner_smoothing.hpp"
 
 namespace nav2_route
 {
@@ -50,7 +51,7 @@ public:
    * @brief Configure the object
    * @param node Node to use to get params and create interfaces
    */
-  void configure(nav2_util::LifecycleNode::SharedPtr node);
+  void configure(nav2::LifecycleNode::SharedPtr node);
 
   /**
    * @brief Convert a Route into a dense path
@@ -80,7 +81,10 @@ public:
 
 protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+  rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
+  float smoothing_radius_;
+  bool smooth_corners_;
 };
 
 }  // namespace nav2_route

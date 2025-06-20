@@ -22,7 +22,7 @@ namespace nav2_route
 {
 
 void ReroutingService::configure(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  const nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
 {
@@ -30,12 +30,9 @@ void ReroutingService::configure(
   name_ = name;
   logger_ = node->get_logger();
   reroute_.store(false);
-  service_ =
-    std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Trigger,
-      nav2_util::LifecycleNode::SharedPtr>>(
-      std::string(node->get_name()) + "/" + getName() + "/reroute",
-      node,
-      std::bind(&ReroutingService::serviceCb, this,
+  service_ = node->create_service<std_srvs::srv::Trigger>(
+    std::string(node->get_name()) + "/" + getName() + "/reroute",
+    std::bind(&ReroutingService::serviceCb, this,
         std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 

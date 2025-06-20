@@ -97,7 +97,7 @@ TEST(PathHandlerTests, GetAndPrunePath)
 TEST(PathHandlerTests, TestBounds)
 {
   PathHandlerWrapper handler;
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
@@ -149,7 +149,7 @@ TEST(PathHandlerTests, TestBounds)
 TEST(PathHandlerTests, TestTransforms)
 {
   PathHandlerWrapper handler;
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);

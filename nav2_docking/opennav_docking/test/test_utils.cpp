@@ -24,7 +24,7 @@ namespace opennav_docking
 
 TEST(UtilsTests, parseDockParams1)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   DockMap db;
   std::vector<std::string> dock_str = {"dockA", "dockB"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
@@ -38,7 +38,7 @@ TEST(UtilsTests, parseDockParams1)
 
 TEST(UtilsTests, parseDockParams2)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test2");
+  auto node = std::make_shared<nav2::LifecycleNode>("test2");
   DockMap db;
   std::vector<std::string> dock_str = {"dockC", "dockD"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
@@ -70,7 +70,7 @@ TEST(UtilsTests, parseDockParams2)
 
 TEST(UtilsTests, parseDockParams3)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test3");
+  auto node = std::make_shared<nav2::LifecycleNode>("test3");
   DockMap db;
   std::vector<std::string> dock_str = {"dockE", "dockF"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
@@ -89,7 +89,7 @@ TEST(UtilsTests, parseDockParams3)
 
 TEST(UtilsTests, parseDockFile)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test4");
+  auto node = std::make_shared<nav2::LifecycleNode>("test4");
   DockMap db;
   std::string filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
     "/dock_files/test_dock_file.yaml";
@@ -111,7 +111,7 @@ TEST(UtilsTests, parseDockFile)
 
 TEST(UtilsTests, parseDockFile2)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test4");
+  auto node = std::make_shared<nav2::LifecycleNode>("test4");
   DockMap db;
 
   // Test with a file that has no docks

@@ -25,7 +25,7 @@
 #include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -49,7 +49,7 @@ public:
    */
   explicit BehaviorTreeEngine(
     const std::vector<std::string> & plugin_libraries,
-    rclcpp::Node::SharedPtr node);
+    nav2::LifecycleNode::SharedPtr node);
   virtual ~BehaviorTreeEngine() {}
 
   /**

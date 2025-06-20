@@ -24,23 +24,24 @@ class TestCostmapSubscriberShould : public ::testing::Test
 {
 public:
   TestCostmapSubscriberShould()
-  : topicName("/costmap"), node(nav2_util::LifecycleNode::make_shared("test_subscriber"))
+  : topicName("/costmap"),
+    node(std::make_shared<nav2::LifecycleNode>("test_subscriber"))
   {
     dummyCostmapMsgSubscriber = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      topicName, 10,
+      topicName,
       std::bind(&TestCostmapSubscriberShould::costmapCallback, this, std::placeholders::_1));
 
     dummyCostmapRawMsgSubscriber = node->create_subscription<nav2_msgs::msg::Costmap>(
-      topicName + "_raw", 10,
+      topicName + "_raw",
       std::bind(&TestCostmapSubscriberShould::costmapRawCallback, this, std::placeholders::_1));
 
     dummyCostmapUpdateMsgSubscriber = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
-      topicName + "_updates", 10,
+      topicName + "_updates",
       std::bind(&TestCostmapSubscriberShould::costmapUpdateCallback, this, std::placeholders::_1));
 
     dummyCostmapRawUpdateMsgSubscriber =
       node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
-      topicName + "_raw_updates", 10, std::bind(
+      topicName + "_raw_updates", std::bind(
         &TestCostmapSubscriberShould::costmapRawUpdateCallback, this,
         std::placeholders::_1));
   }
@@ -180,7 +181,7 @@ protected:
   std::string topicName;
   char * cost_translation_table_ = NULL;
 
-  nav2_util::LifecycleNode::SharedPtr node;
+  nav2::LifecycleNode::SharedPtr node;
   rclcpp::Logger logger {rclcpp::get_logger("test_costmap_subscriber_should")};
 
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmapSubscriber;

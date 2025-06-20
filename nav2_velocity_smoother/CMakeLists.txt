@@ -8,6 +8,7 @@ find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -22,6 +23,7 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
@@ -76,5 +78,6 @@ ament_export_dependencies(
   nav2_util
   rclcpp
   rclcpp_lifecycle
+  nav2_ros_common
 )
 ament_package()

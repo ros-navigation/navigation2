@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__QOS_PROFILES_HPP_
-#define NAV2_UTIL__QOS_PROFILES_HPP_
+#ifndef NAV2_ROS_COMMON__QOS_PROFILES_HPP_
+#define NAV2_ROS_COMMON__QOS_PROFILES_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav2_qos
+namespace nav2
+{
+
+namespace qos
 {
 
 /**
@@ -32,12 +35,12 @@ public:
    * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
-  StandardTopicQoS(const int depth = 10)
+  StandardTopicQoS(const int depth = 10)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
     this->durability_volatile();
-  };
+  }
 };
 
 /**
@@ -52,12 +55,12 @@ public:
    * @param depth The history depth for the QoS profile, default is 1
    */
   explicit
-  LatchedTopicQoS(const int depth = 1)
+  LatchedTopicQoS(const int depth = 1)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
     this->transient_local();
-  };
+  }
 };
 
 /**
@@ -72,14 +75,16 @@ public:
    * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
-  SensorDataQoS(const int depth = 10)
+  SensorDataQoS(const int depth = 10)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->best_effort();
     this->durability_volatile();
-  };
+  }
 };
 
-}  // namespace nav2_qos
+}  // namespace qos
 
-#endif  // NAV2_UTIL__QOS_PROFILES_HPP_
+}  // namespace nav2
+
+#endif  // NAV2_ROS_COMMON__QOS_PROFILES_HPP_

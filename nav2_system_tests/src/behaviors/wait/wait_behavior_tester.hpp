@@ -27,7 +27,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_msgs/action/wait.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 

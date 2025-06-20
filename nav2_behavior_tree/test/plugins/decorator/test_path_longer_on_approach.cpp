@@ -34,7 +34,7 @@ class PathLongerOnApproachTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("path_longer_on_approach_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("path_longer_on_approach_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -71,13 +71,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr PathLongerOnApproachTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr PathLongerOnApproachTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * PathLongerOnApproachTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> PathLongerOnApproachTestFixture::factory_ = nullptr;

@@ -25,7 +25,7 @@ namespace opennav_docking
 {
 
 DockingServer::DockingServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("docking_server", "", options)
+: nav2::LifecycleNode("docking_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 
@@ -45,7 +45,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("rotation_angular_tolerance", 0.05);
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 DockingServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring %s", get_name());
@@ -77,7 +77,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
   }
 
-  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
+  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
   // Create odom subscriber for backward blind docking
@@ -86,14 +86,14 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
 
   // Create the action servers for dock / undock
-  docking_action_server_ = std::make_unique<DockingActionServer>(
-    node, "dock_robot",
+  docking_action_server_ = node->create_action_server<DockRobot>(
+    "dock_robot",
     std::bind(&DockingServer::dockRobot, this),
     nullptr, std::chrono::milliseconds(500),
     true);
 
-  undocking_action_server_ = std::make_unique<UndockingActionServer>(
-    node, "undock_robot",
+  undocking_action_server_ = node->create_action_server<UndockRobot>(
+    "undock_robot",
     std::bind(&DockingServer::undockRobot, this),
     nullptr, std::chrono::milliseconds(500),
     true);
@@ -105,13 +105,13 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   dock_db_ = std::make_unique<DockDatabase>(mutex_);
   if (!dock_db_->initialize(node, tf2_buffer_)) {
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating %s", get_name());
@@ -133,10 +133,10 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating %s", get_name());
@@ -154,10 +154,10 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up %s", get_name());
@@ -171,20 +171,20 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_.reset();
   dock_backwards_.reset();
   odom_sub_.reset();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 DockingServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down %s", get_name());
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 template<typename ActionT>
 void DockingServer::getPreemptedGoalIfRequested(
   typename std::shared_ptr<const typename ActionT::Goal> goal,
-  const std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
+  const typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
 {
   if (action_server->is_preempt_requested()) {
     goal = action_server->accept_pending_goal();
@@ -193,7 +193,7 @@ void DockingServer::getPreemptedGoalIfRequested(
 
 template<typename ActionT>
 bool DockingServer::checkAndWarnIfCancelled(
-  std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server,
   const std::string & name)
 {
   if (action_server->is_cancel_requested()) {
@@ -205,7 +205,7 @@ bool DockingServer::checkAndWarnIfCancelled(
 
 template<typename ActionT>
 bool DockingServer::checkAndWarnIfPreempted(
-  std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server,
   const std::string & name)
 {
   if (action_server->is_preempt_requested()) {
@@ -230,12 +230,12 @@ void DockingServer::dockRobot()
     return;
   }
 
-  if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot")) {
+  if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot")) {
     docking_action_server_->terminate_all();
     return;
   }
 
-  getPreemptedGoalIfRequested(goal, docking_action_server_);
+  getPreemptedGoalIfRequested<DockRobot>(goal, docking_action_server_);
   Dock * dock{nullptr};
   num_retries_ = 0;
 
@@ -273,8 +273,8 @@ void DockingServer::dockRobot()
       RCLCPP_INFO(get_logger(), "Robot already within pre-staging pose tolerance for dock");
     } else {
       std::function<bool()> isPreempted = [this]() {
-          return checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
-                 checkAndWarnIfPreempted(docking_action_server_, "dock_robot");
+          return checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
+                 checkAndWarnIfPreempted<DockRobot>(docking_action_server_, "dock_robot");
         };
 
       navigator_->goToPose(
@@ -434,8 +434,8 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
       throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
     }
 
-    if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
-      checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
+    if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
+      checkAndWarnIfPreempted<DockRobot>(docking_action_server_, "dock_robot"))
     {
       return;
     }
@@ -497,8 +497,8 @@ bool DockingServer::approachDock(
     }
 
     // Stop if cancelled/preempted
-    if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
-      checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
+    if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
+      checkAndWarnIfPreempted<DockRobot>(docking_action_server_, "dock_robot"))
     {
       return false;
     }
@@ -564,8 +564,8 @@ bool DockingServer::waitForCharge(Dock * dock)
       return true;
     }
 
-    if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
-      checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
+    if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
+      checkAndWarnIfPreempted<DockRobot>(docking_action_server_, "dock_robot"))
     {
       return false;
     }
@@ -589,8 +589,8 @@ bool DockingServer::resetApproach(
     publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
 
     // Stop if cancelled/preempted
-    if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
-      checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
+    if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
+      checkAndWarnIfPreempted<DockRobot>(docking_action_server_, "dock_robot"))
     {
       return false;
     }
@@ -663,12 +663,12 @@ void DockingServer::undockRobot()
     return;
   }
 
-  if (checkAndWarnIfCancelled(undocking_action_server_, "undock_robot")) {
+  if (checkAndWarnIfCancelled<UndockRobot>(undocking_action_server_, "undock_robot")) {
     undocking_action_server_->terminate_all(result);
     return;
   }
 
-  getPreemptedGoalIfRequested(goal, undocking_action_server_);
+  getPreemptedGoalIfRequested<UndockRobot>(goal, undocking_action_server_);
   auto max_duration = rclcpp::Duration::from_seconds(goal->max_undocking_time);
 
   try {
@@ -726,8 +726,8 @@ void DockingServer::undockRobot()
       }
 
       // Stop if cancelled/preempted
-      if (checkAndWarnIfCancelled(undocking_action_server_, "undock_robot") ||
-        checkAndWarnIfPreempted(undocking_action_server_, "undock_robot"))
+      if (checkAndWarnIfCancelled<UndockRobot>(undocking_action_server_, "undock_robot") ||
+        checkAndWarnIfPreempted<UndockRobot>(undocking_action_server_, "undock_robot"))
       {
         publishZeroVelocity();
         undocking_action_server_->terminate_all(result);

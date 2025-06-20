@@ -18,8 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/goals.hpp"
@@ -74,7 +73,7 @@ public:
 
 private:
   bool first_time;
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   geometry_msgs::msg::PoseStamped goal_;
   nav_msgs::msg::Goals goals_;
 };

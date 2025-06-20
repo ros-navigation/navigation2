@@ -27,7 +27,7 @@ namespace nav2_regulated_pure_pursuit_controller
 using namespace nav2_costmap_2d;  // NOLINT
 
 CollisionChecker::CollisionChecker(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   Parameters * params)
 {
@@ -41,7 +41,7 @@ CollisionChecker::CollisionChecker(
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   footprint_collision_checker_->setCostmap(costmap_);
 
-  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc");
   carrot_arc_pub_->on_activate();
 }
 
@@ -92,8 +92,16 @@ bool CollisionChecker::isCollisionImminent(
   curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
 
   // only forward simulate within time requested
+  double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
+  if (params_->min_distance_to_obstacle > 0.0) {
+    max_allowed_time_to_collision_check = std::max(
+        params_->max_allowed_time_to_collision_up_to_carrot,
+        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel),
+        params_->min_approach_linear_velocity)
+    );
+  }
   int i = 1;
-  while (i * projection_time < params_->max_allowed_time_to_collision_up_to_carrot) {
+  while (i * projection_time < max_allowed_time_to_collision_check) {
     i++;
 
     // apply velocity at curr_pose over distance

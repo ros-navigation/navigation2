@@ -53,7 +53,8 @@ public:
   GoalManager()
   : _goals_set(NodeSet()),
     _goals_state(GoalStateVector()),
-    _goals_coordinate(CoordinateVector())
+    _goals_coordinate(CoordinateVector()),
+    _ref_goal_coord(Coordinates())
   {
   }
 
@@ -72,15 +73,12 @@ public:
   }
 
   /**
-   * @brief Sets the internal goals' state list to the provided goals.
-   * @param goals Vector of goals state to set,
+   * @brief Adds goal to the goal vector
+   *@param goal Reference to the NodePtr
    */
-
-  void setGoalStates(
-    GoalStateVector & goals_state)
+  void addGoal(NodePtr & goal)
   {
-    clear();
-    _goals_state = goals_state;
+    _goals_state.push_back({goal, true});
   }
 
   /**
@@ -128,6 +126,11 @@ public:
     GridCollisionChecker * collision_checker,
     const bool & traverse_unknown)
   {
+    // Make sure that there was a  goal clear before this was run
+    if (!_goals_set.empty() || !_goals_coordinate.empty()) {
+      throw std::runtime_error("Goal set should be cleared before calling "
+        "removeinvalidgoals");
+    }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
         tolerance > 0.001)
@@ -146,7 +149,7 @@ public:
    * @param node Node pointer to check.
    * @return if node matches any goal in the goal set.
    */
-  inline bool isGoal(NodePtr & node)
+  inline bool isGoal(const NodePtr & node)
   {
     return _goals_set.find(node) != _goals_set.end();
   }
@@ -178,11 +181,36 @@ public:
     return _goals_coordinate;
   }
 
+  /**
+   * @brief Set the Reference goal coordinate
+   * @param coord Coordinates to set as Reference goal
+   */
+  inline void setRefGoalCoordinates(const Coordinates & coord)
+  {
+    _ref_goal_coord = coord;
+  }
+
+  /**
+   * @brief Checks whether the Reference goal coordinate has changed.
+   * @param coord Coordinates to compare with the current Reference goal coordinate.
+   * @return true if the Reference goal coordinate has changed, false otherwise.
+   */
+  inline bool hasGoalChanged(const Coordinates & coord)
+  {
+    /**
+     * Note: This function checks if the goal has changed. This has to be done with
+     * the coordinates not the Node pointer because the Node pointer
+     * can be reused for different goals, but the coordinates will always
+     * be unique for each goal.
+     */
+    return _ref_goal_coord != coord;
+  }
+
 protected:
   NodeSet _goals_set;
   GoalStateVector _goals_state;
   CoordinateVector _goals_coordinate;
-  NodePtr primary_goal;
+  Coordinates _ref_goal_coord;
 };
 
 }  // namespace nav2_smac_planner

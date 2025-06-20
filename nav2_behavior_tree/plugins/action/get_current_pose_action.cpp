@@ -32,7 +32,7 @@ GetCurrentPoseAction::GetCurrentPoseAction(
   const BT::NodeConfiguration & conf)
 : BT::ActionNodeBase(name, conf)
 {
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node->get_parameter("transform_tolerance", transform_tolerance_);
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -50,7 +50,7 @@ inline BT::NodeStatus GetCurrentPoseAction::tick()
       current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
   {
     RCLCPP_WARN(
-      config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+      config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
       "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }

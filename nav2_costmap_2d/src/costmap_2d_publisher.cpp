@@ -50,7 +50,7 @@ namespace nav2_costmap_2d
 char * Costmap2DPublisher::cost_translation_table_ = NULL;
 
 Costmap2DPublisher::Costmap2DPublisher(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   Costmap2D * costmap,
   std::string global_frame,
   std::string topic_name,
@@ -67,25 +67,21 @@ Costmap2DPublisher::Costmap2DPublisher(
   clock_ = node->get_clock();
   logger_ = node->get_logger();
 
-  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
-
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    custom_qos);
+    nav2::qos::LatchedTopicQoS());
   costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
     topic_name + "_raw",
-    custom_qos);
+    nav2::qos::LatchedTopicQoS());
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-    topic_name + "_updates", custom_qos);
+    topic_name + "_updates", nav2::qos::LatchedTopicQoS());
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
-    topic_name + "_raw_updates", custom_qos);
+    topic_name + "_raw_updates", nav2::qos::LatchedTopicQoS());
 
   // Create a service that will use the callback function to handle requests.
-  costmap_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::GetCostmap,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(
     std::string("get_") + topic_name,
-    node,
     std::bind(
       &Costmap2DPublisher::costmap_service_callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

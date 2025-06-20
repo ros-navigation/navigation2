@@ -30,7 +30,7 @@ namespace mppi
 {
 
 void Optimizer::initialize(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+  nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   ParametersHandler * param_handler)
 {
@@ -339,6 +339,9 @@ void Optimizer::integrateStateVelocities(
   auto traj_yaws = trajectory.col(2);
 
   const size_t n_size = traj_yaws.size();
+  if (n_size == 0) {
+    return;
+  }
 
   float last_yaw = initial_yaw;
   for(size_t i = 0; i != n_size; i++) {

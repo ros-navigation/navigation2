@@ -15,18 +15,18 @@
 #include <memory>
 #include <string>
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 
-using nav2_util::sanitize_node_name;
-using nav2_util::generate_internal_node_name;
-using nav2_util::generate_internal_node;
-using nav2_util::add_namespaces;
-using nav2_util::time_to_string;
-using nav2_util::declare_parameter_if_not_declared;
-using nav2_util::declare_or_get_parameter;
-using nav2_util::get_plugin_type_param;
+using nav2::sanitize_node_name;
+using nav2::generate_internal_node_name;
+using nav2::generate_internal_node;
+using nav2::add_namespaces;
+using nav2::time_to_string;
+using nav2::declare_parameter_if_not_declared;
+using nav2::declare_or_get_parameter;
+using nav2::get_plugin_type_param;
 
 TEST(SanitizeNodeName, SanitizeNodeName)
 {
@@ -85,19 +85,35 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
 
   // test declared parameter
   node->declare_parameter("foobar", "foo");
-  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"}, true);
+  std::string param = declare_or_get_parameter(node, "foobar", std::string{"bar"});
   EXPECT_EQ(param, "foo");
   node->get_parameter("foobar", param);
   EXPECT_EQ(param, "foo");
+
   // test undeclared parameter
-  int int_param = declare_or_get_parameter(node, "waldo", 3, true);
+  node->set_parameter(rclcpp::Parameter("warn_on_missing_params", true));
+  int int_param = declare_or_get_parameter(node, "waldo", 3);
   EXPECT_EQ(int_param, 3);
+
+  // test unknown parameter with strict_param_loading enabled
+  bool got_exception{false};
+  node->set_parameter(rclcpp::Parameter("strict_param_loading", true));
+  try {
+    declare_or_get_parameter(node, "burpy", true);
+  } catch (const rclcpp::exceptions::InvalidParameterValueException & exc) {
+    got_exception = true;
+  }
+  EXPECT_TRUE(got_exception);
+  // The parameter is anyway declared with the default val and subsequent calls won't fail
+  EXPECT_TRUE(declare_or_get_parameter(node, "burpy", true));
+
   // test declaration by type of existing param
   int_param = declare_or_get_parameter<int>(node, "waldo",
     rclcpp::ParameterType::PARAMETER_INTEGER);
   EXPECT_EQ(int_param, 3);
+
   // test declaration by type of non existing param
-  bool got_exception{false};
+  got_exception = false;
   try {
     int_param = declare_or_get_parameter<int>(node, "wololo",
       rclcpp::ParameterType::PARAMETER_INTEGER);

@@ -559,7 +559,7 @@ TEST(deconflictPortAndParamFrameTest, test_correct_syntax)
   auto tree = factory.createTreeFromText(xml_txt);
 
   rclcpp::init(0, nullptr);
-  std::shared_ptr<rclcpp::Node> node = std::make_shared<rclcpp::Node>("test_node");
+  nav2::LifecycleNode::SharedPtr node = std::make_shared<nav2::LifecycleNode>("test_node");
   node->declare_parameter<int>("test", 2);
   node->declare_parameter<int>("test_alternative", 3);
 

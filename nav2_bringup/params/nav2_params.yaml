@@ -227,8 +227,10 @@ local_costmap:
       filters: ["keepout_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
-        enabled: True
+        enabled: KEEPOUT_ZONE_ENABLED
         filter_info_topic: "keepout_costmap_filter_info"
+        override_lethal_cost: True
+        lethal_override_cost: 200
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
@@ -279,11 +281,13 @@ global_costmap:
       filters: ["keepout_filter", "speed_filter"]
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
-        enabled: True
+        enabled: KEEPOUT_ZONE_ENABLED
         filter_info_topic: "keepout_costmap_filter_info"
+        override_lethal_cost: True
+        lethal_override_cost: 200
       speed_filter:
         plugin: "nav2_costmap_2d::SpeedFilter"
-        enabled: True
+        enabled: SPEED_ZONE_ENABLED
         filter_info_topic: "speed_costmap_filter_info"
         speed_limit_topic: "speed_limit"
       obstacle_layer:
@@ -443,6 +447,7 @@ route_server:
     # graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
+    smooth_corners: true
     operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
     ReroutingService:
       plugin: "nav2_route::ReroutingService"

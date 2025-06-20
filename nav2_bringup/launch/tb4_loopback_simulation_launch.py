@@ -63,7 +63,7 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_graph_file_cmd = DeclareLaunchArgument(
         'graph',
-        default_value=os.path.join(bringup_dir, 'graphs', 'turtlebot4_graph.geojson'),
+        default_value=os.path.join(bringup_dir, 'graphs', 'depot_graph.geojson'),
     )
 
     declare_params_file_cmd = DeclareLaunchArgument(

@@ -46,7 +46,7 @@ SmacPlanner2D::~SmacPlanner2D()
 }
 
 void SmacPlanner2D::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -61,41 +61,41 @@ void SmacPlanner2D::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlanner2D", name.c_str());
 
   // General planner params
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(0.125));
   _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(1.0));
   node->get_parameter(name + ".cost_travel_multiplier", _search_info.cost_penalty);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
   node->get_parameter(name + ".max_iterations", _max_iterations);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
   node->get_parameter(name + ".max_planning_time", _max_planning_time);
   // Note that we need to declare it here to prevent the parameter from being declared in the
   // dynamic reconfigure callback
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
 
   _motion_model = MotionModel::TWOD;
@@ -147,7 +147,7 @@ void SmacPlanner2D::configure(
       node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
+  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "

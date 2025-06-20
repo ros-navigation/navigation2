@@ -19,8 +19,7 @@
 #include <set>
 #include <vector>
 
-#include "rclcpp/time.hpp"
-#include "rclcpp/node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/behavior_tree.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -342,14 +341,14 @@ inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(co
 
 /**
  * @brief Return parameter value from behavior tree node or ros2 parameter file.
- * @param node rclcpp::Node::SharedPtr
+ * @param node nav2::LifecycleNode::SharedPtr
  * @param param_name std::string
  * @param behavior_tree_node T2
  * @return <T1>
  */
 template<typename T1, typename T2 = BT::TreeNode>
 T1 deconflictPortAndParamFrame(
-  rclcpp::Node::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::string param_name,
   const T2 * behavior_tree_node)
 {

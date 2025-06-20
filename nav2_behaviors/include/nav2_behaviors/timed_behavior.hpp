@@ -31,7 +31,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_core/behavior.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -66,7 +66,7 @@ template<typename ActionT>
 class TimedBehavior : public nav2_core::Behavior
 {
 public:
-  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+  using ActionServer = nav2::SimpleActionServer<ActionT>;
 
   /**
    * @brief A TimedBehavior constructor
@@ -113,7 +113,7 @@ public:
 
   // configure the server on lifecycle setup
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker,
     std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker)
@@ -135,15 +135,15 @@ public:
     node->get_parameter("robot_base_frame", robot_base_frame_);
     node->get_parameter("transform_tolerance", transform_tolerance_);
 
-    action_server_ = std::make_shared<ActionServer>(
-      node, behavior_name_,
+    action_server_ = node->create_action_server<ActionT>(
+      behavior_name_,
       std::bind(&TimedBehavior::execute, this), nullptr, std::chrono::milliseconds(
         500), false);
 
     local_collision_checker_ = local_collision_checker;
     global_collision_checker_ = global_collision_checker;
 
-    vel_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
+    vel_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
     onConfigure();
   }
@@ -175,11 +175,11 @@ public:
   }
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
 
   std::string behavior_name_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_pub_;
-  std::shared_ptr<ActionServer> action_server_;
+  typename ActionServer::SharedPtr action_server_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> local_collision_checker_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> global_collision_checker_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

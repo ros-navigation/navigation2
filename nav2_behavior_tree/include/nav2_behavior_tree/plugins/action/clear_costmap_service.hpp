@@ -21,6 +21,7 @@
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {

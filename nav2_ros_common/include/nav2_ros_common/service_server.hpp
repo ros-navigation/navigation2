@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__SERVICE_SERVER_HPP_
-#define NAV2_UTIL__SERVICE_SERVER_HPP_
+#ifndef NAV2_ROS_COMMON__SERVICE_SERVER_HPP_
+#define NAV2_ROS_COMMON__SERVICE_SERVER_HPP_
 
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-namespace nav2_util
+namespace nav2
 {
 
 /**
- * @class nav2_util::ServiceServer
+ * @class nav2::ServiceServer
  * @brief A simple wrapper on ROS2 services server
  */
-template<class ServiceT, typename NodeT = rclcpp::Node::SharedPtr>
+template<class ServiceT>
 class ServiceServer
 {
 public:
@@ -35,8 +35,10 @@ public:
   using ResponseType = typename ServiceT::Response;
   using CallbackType = std::function<void(const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
-  using SharedPtr = std::shared_ptr<ServiceServer<ServiceT, NodeT>>;
+  using SharedPtr = std::shared_ptr<ServiceServer<ServiceT>>;
+  using UniquePtr = std::unique_ptr<ServiceServer<ServiceT>>;
 
+  template<typename NodeT>
   explicit ServiceServer(
     const std::string & service_name,
     const NodeT & node,
@@ -44,7 +46,9 @@ public:
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name), callback_(callback)
   {
-    server_ = node->template create_service<ServiceT>(
+    server_ = rclcpp::create_service<ServiceT>(
+      node->get_node_base_interface(),
+      node->get_node_services_interface(),
       service_name,
       [this](const std::shared_ptr<rmw_request_id_t> request_header,
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
@@ -75,7 +79,7 @@ protected:
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
 };
 
-}  // namespace nav2_util
+}  // namespace nav2
 
 
-#endif  // NAV2_UTIL__SERVICE_SERVER_HPP_
+#endif  // NAV2_ROS_COMMON__SERVICE_SERVER_HPP_

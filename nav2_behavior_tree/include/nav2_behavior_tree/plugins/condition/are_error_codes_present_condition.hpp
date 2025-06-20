@@ -20,7 +20,7 @@
 #include <vector>
 #include <set>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree

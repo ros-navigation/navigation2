@@ -26,6 +26,7 @@ from nav2_msgs.srv import ManageLifecycleNodes
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.client import Client
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from std_srvs.srv import Trigger
@@ -52,8 +53,16 @@ class RouteTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.compute_action_client = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_track_action_client = ActionClient(
+        self.compute_action_client: ActionClient[
+            ComputeRoute.Goal,
+            ComputeRoute.Result,
+            ComputeRoute.Feedback
+        ] = ActionClient(self, ComputeRoute, 'compute_route')
+        self.compute_track_action_client: ActionClient[
+            ComputeAndTrackRoute.Goal,
+            ComputeAndTrackRoute.Result,
+            ComputeAndTrackRoute.Feedback
+        ] = ActionClient(
             self, ComputeAndTrackRoute, 'compute_and_track_route')
         self.feedback_msgs: list[ComputeAndTrackRoute.Feedback] = []
 
@@ -186,7 +195,8 @@ class RouteTester(Node):
         # Trigger a reroute
         time.sleep(1)
         self.info_msg('Triggering a reroute')
-        srv_client = self.create_client(Trigger, 'route_server/ReroutingService/reroute')
+        srv_client: Client[Trigger.Request, Trigger.Response] = \
+            self.create_client(Trigger, 'route_server/ReroutingService/reroute')
         while not srv_client.wait_for_service(timeout_sec=1.0):
             self.info_msg('Reroute service not available, waiting...')
         req = Trigger.Request()
@@ -345,7 +355,8 @@ class RouteTester(Node):
         # Waits for the node within the tester namespace to become active
         self.info_msg(f'Waiting for {node_name} to become active')
         node_service = f'{node_name}/get_state'
-        state_client = self.create_client(GetState, node_service)
+        state_client: Client[GetState.Request, GetState.Response] = \
+            self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{node_service} service not available, waiting...')
         req = GetState.Request()  # empty request
@@ -369,7 +380,8 @@ class RouteTester(Node):
         self.compute_track_action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+            self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 

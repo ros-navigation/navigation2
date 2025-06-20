@@ -26,7 +26,7 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_util/costmap.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
@@ -40,7 +40,7 @@ namespace nav2_planner
 {
 
 PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("planner_server", "", options),
+: nav2::LifecycleNode("planner_server", "", options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
@@ -64,7 +64,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()},
-    get_parameter("use_sim_time").as_bool());
+    get_parameter("use_sim_time").as_bool(), options);
 }
 
 PlannerServer::~PlannerServer()
@@ -77,7 +77,7 @@ PlannerServer::~PlannerServer()
   costmap_thread_.reset();
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -92,7 +92,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+  costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
 
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
@@ -106,7 +106,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     try {
-      planner_types_[i] = nav2_util::get_plugin_type_param(
+      planner_types_[i] = nav2::get_plugin_type_param(
         node, planner_ids_[i]);
       nav2_core::GlobalPlanner::Ptr planner =
         gp_loader_.createUniqueInstance(planner_types_[i]);
@@ -120,7 +120,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -145,33 +145,31 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   // Initialize pubs & subs
-  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan");
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action servers for path planning to a pose and through poses
-  action_server_pose_ = std::make_unique<ActionServerToPose>(
-    shared_from_this(),
+  action_server_pose_ = create_action_server<ActionToPose>(
     "compute_path_to_pose",
     std::bind(&PlannerServer::computePlan, this),
     nullptr,
     std::chrono::milliseconds(500),
     true);
 
-  action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
-    shared_from_this(),
+  action_server_poses_ = create_action_server<ActionThroughPoses>(
     "compute_path_through_poses",
     std::bind(&PlannerServer::computePlanThroughPoses, this),
     nullptr,
     std::chrono::milliseconds(500),
     true);
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -181,7 +179,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   action_server_poses_->activate();
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   PlannerMap::iterator it;
@@ -189,26 +187,22 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
 
-  auto node = shared_from_this();
-
-  is_path_valid_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::IsPathValid,
-      std::shared_ptr<nav2_util::LifecycleNode>>>(
+  is_path_valid_service_ = create_service<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
-    node,
     std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  dyn_params_handler_ = add_on_set_parameters_callback(
     std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
 
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -236,10 +230,10 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -260,19 +254,19 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   planners_.clear();
   costmap_thread_.reset();
   costmap_ = nullptr;
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 PlannerServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 template<typename T>
 bool PlannerServer::isServerInactive(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
+  typename nav2::SimpleActionServer<T>::SharedPtr & action_server)
 {
   if (action_server == nullptr || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -297,7 +291,7 @@ void PlannerServer::waitForCostmap()
 
 template<typename T>
 bool PlannerServer::isCancelRequested(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server)
+  typename nav2::SimpleActionServer<T>::SharedPtr & action_server)
 {
   if (action_server->is_cancel_requested()) {
     RCLCPP_INFO(get_logger(), "Goal was canceled. Canceling planning action.");
@@ -310,7 +304,7 @@ bool PlannerServer::isCancelRequested(
 
 template<typename T>
 void PlannerServer::getPreemptedGoalIfRequested(
-  std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
+  typename nav2::SimpleActionServer<T>::SharedPtr & action_server,
   typename std::shared_ptr<const typename T::Goal> goal)
 {
   if (action_server->is_preempt_requested()) {
@@ -383,13 +377,15 @@ void PlannerServer::computePlanThroughPoses()
   geometry_msgs::msg::PoseStamped curr_start, curr_goal;
 
   try {
-    if (isServerInactive(action_server_poses_) || isCancelRequested(action_server_poses_)) {
+    if (isServerInactive<ActionThroughPoses>(action_server_poses_) ||
+      isCancelRequested<ActionThroughPoses>(action_server_poses_))
+    {
       return;
     }
 
     waitForCostmap();
 
-    getPreemptedGoalIfRequested(action_server_poses_, goal);
+    getPreemptedGoalIfRequested<ActionThroughPoses>(action_server_poses_, goal);
 
     if (goal->goals.goals.empty()) {
       throw nav2_core::NoViapointsGiven("No viapoints given");
@@ -515,13 +511,15 @@ PlannerServer::computePlan()
   geometry_msgs::msg::PoseStamped start;
 
   try {
-    if (isServerInactive(action_server_pose_) || isCancelRequested(action_server_pose_)) {
+    if (isServerInactive<ActionToPose>(action_server_pose_) ||
+      isCancelRequested<ActionToPose>(action_server_pose_))
+    {
       return;
     }
 
     waitForCostmap();
 
-    getPreemptedGoalIfRequested(action_server_pose_, goal);
+    getPreemptedGoalIfRequested<ActionToPose>(action_server_pose_, goal);
 
     // Use start pose if provided otherwise use current robot pose
     if (!getStartPose<ActionToPose>(goal, start)) {

@@ -36,7 +36,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
   settings.batch_size = 100;
   settings.time_steps = 25;
 
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
 ParametersHandler handler(node, name);
@@ -49,7 +49,7 @@ ParametersHandler handler(node, name);
 TEST(NoiseGeneratorTest, NoiseGeneratorMain)
 {
   // Tests shuts down internal thread cleanly
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(true));
   std::string name = "test";
 ParametersHandler handler(node, name);
@@ -138,7 +138,7 @@ ParametersHandler handler(node, name);
 TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
 {
   // This time with no regeneration of noises
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
 ParametersHandler handler(node, name);

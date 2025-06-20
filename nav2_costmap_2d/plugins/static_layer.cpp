@@ -45,7 +45,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_util/validate_messages.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
@@ -73,11 +73,9 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  rclcpp::QoS map_qos(10);  // initialize to default
+  rclcpp::QoS map_qos = nav2::qos::StandardTopicQoS();  // initialize to default
   if (map_subscribe_transient_local_) {
-    map_qos.transient_local();
-    map_qos.reliable();
-    map_qos.keep_last(1);
+    map_qos = nav2::qos::LatchedTopicQoS();
   }
 
   RCLCPP_INFO(
@@ -92,14 +90,14 @@ StaticLayer::onInitialize()
   }
 
   map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    map_topic_, map_qos,
-    std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
+    map_topic_,
+    std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1),
+    map_qos);
 
   if (subscribe_to_updates_) {
     RCLCPP_INFO(logger_, "Subscribing to updates");
     map_update_sub_ = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
       map_topic_ + "_updates",
-      rclcpp::SystemDefaultsQoS(),
       std::bind(&StaticLayer::incomingUpdate, this, std::placeholders::_1));
   }
 }
@@ -280,7 +278,7 @@ StaticLayer::interpretValue(unsigned char value)
 void
 StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
 {
-  if (!nav2_util::validateMsg(*new_map)) {
+  if (!nav2::validateMsg(*new_map)) {
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
     return;
   }

@@ -46,7 +46,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "builtin_interfaces/msg/duration.hpp"
 
 using rclcpp_lifecycle::LifecyclePublisher;
@@ -70,13 +70,13 @@ class DWBPublisher
 {
 public:
   explicit DWBPublisher(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
-  nav2_util::CallbackReturn on_configure();
-  nav2_util::CallbackReturn on_activate();
-  nav2_util::CallbackReturn on_deactivate();
-  nav2_util::CallbackReturn on_cleanup();
+  nav2::CallbackReturn on_configure();
+  nav2::CallbackReturn on_activate();
+  nav2::CallbackReturn on_deactivate();
+  nav2::CallbackReturn on_cleanup();
 
   /**
    * @brief Does the publisher require that the LocalPlanEvaluation be saved
@@ -126,7 +126,7 @@ protected:
   std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
   std::string plugin_name_;
 };

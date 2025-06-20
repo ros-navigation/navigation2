@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 
 namespace nav2_route
@@ -49,7 +49,7 @@ public:
    * @brief Configure
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 

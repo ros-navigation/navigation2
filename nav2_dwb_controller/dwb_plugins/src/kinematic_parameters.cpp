@@ -39,10 +39,10 @@
 #include <vector>
 
 #include "nav_2d_utils/parameters.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -65,7 +65,7 @@ KinematicsHandler::~KinematicsHandler()
 }
 
 void KinematicsHandler::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   node_ = nh;

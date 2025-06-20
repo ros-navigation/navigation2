@@ -20,8 +20,8 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_smac_planner
 {
@@ -72,27 +72,27 @@ struct SmootherParams
    * @param node Ptr to node
    * @param name Name of plugin
    */
-  void get(std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node, const std::string & name)
+  void get(nav2::LifecycleNode::SharedPtr node, const std::string & name)
   {
     std::string local_name = name + std::string(".smoother.");
 
     // Smoother params
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "tolerance", rclcpp::ParameterValue(1e-10));
     node->get_parameter(local_name + "tolerance", tolerance_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "max_iterations", rclcpp::ParameterValue(1000));
     node->get_parameter(local_name + "max_iterations", max_its_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "w_data", rclcpp::ParameterValue(0.2));
     node->get_parameter(local_name + "w_data", w_data_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "w_smooth", rclcpp::ParameterValue(0.3));
     node->get_parameter(local_name + "w_smooth", w_smooth_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "do_refinement", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "do_refinement", do_refinement_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "refinement_num", rclcpp::ParameterValue(2));
     node->get_parameter(local_name + "refinement_num", refinement_num_);
   }
@@ -188,11 +188,10 @@ struct MotionPrimitive
   MotionPoses poses;
 };
 
-  /**
-   * @struct nav2_smac_planner::GoalState
-   * @brief A struct to store the goal state
-   */
-
+/**
+ * @struct nav2_smac_planner::GoalState
+ * @brief A struct to store the goal state
+ */
 template<typename NodeT>
 struct GoalState
 {

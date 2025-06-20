@@ -24,11 +24,11 @@
 namespace nav2_regulated_pure_pursuit_controller
 {
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::string & plugin_name, rclcpp::Logger & logger,
   const double costmap_size_x)
 {
@@ -61,6 +61,9 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_distance_to_obstacle",
+    rclcpp::ParameterValue(-1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
@@ -131,6 +134,9 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     params_.max_allowed_time_to_collision_up_to_carrot);
+  node->get_parameter(
+    plugin_name_ + ".min_distance_to_obstacle",
+    params_.min_distance_to_obstacle);
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     params_.use_regulated_linear_velocity_scaling);
@@ -285,6 +291,8 @@ ParameterHandler::updateParametersCallback(
         params_.curvature_lookahead_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot") {
         params_.max_allowed_time_to_collision_up_to_carrot = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_distance_to_obstacle") {
+        params_.min_distance_to_obstacle = parameter.as_double();
       } else if (param_name == plugin_name_ + ".cost_scaling_dist") {
         params_.cost_scaling_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".cost_scaling_gain") {

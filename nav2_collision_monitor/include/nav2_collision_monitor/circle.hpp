@@ -43,7 +43,7 @@ public:
    * @param transform_tolerance Transform tolerance
    */
   Circle(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,

@@ -35,12 +35,12 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -61,7 +61,7 @@ NavfnPlanner::~NavfnPlanner()
 
 void
 NavfnPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {

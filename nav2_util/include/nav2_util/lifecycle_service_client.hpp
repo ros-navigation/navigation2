@@ -21,12 +21,14 @@
 
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
-#include "nav2_util/service_client.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/service_client.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 
 namespace nav2_util
 {
+
+using namespace std::chrono_literals;  // NOLINT
 
 /// Helper functions to interact with a lifecycle node.
 class LifecycleServiceClient
@@ -34,9 +36,26 @@ class LifecycleServiceClient
 public:
   explicit LifecycleServiceClient(
     const std::string & lifecycle_node_name);
+
+  template<typename NodeT>
+  explicit
   LifecycleServiceClient(
-    const std::string & lifecycle_node_name,
-    rclcpp::Node::SharedPtr parent_node);
+    const string & lifecycle_node_name,
+    NodeT parent_node)
+  : change_state_(lifecycle_node_name + "/change_state", parent_node,
+      true /*creates and spins an internal executor*/),
+    get_state_(lifecycle_node_name + "/get_state", parent_node,
+      true /*creates and spins an internal executor*/)
+  {
+    // Block until server is up
+    rclcpp::Rate r(20);
+    while (!get_state_.wait_for_service(2s)) {
+      RCLCPP_INFO(
+        parent_node->get_logger(),
+        "Waiting for service %s...", get_state_.getServiceName().c_str());
+      r.sleep();
+    }
+  }
 
   /// Trigger a state change
   /**
@@ -54,9 +73,9 @@ public:
   uint8_t get_state(const std::chrono::milliseconds timeout = std::chrono::milliseconds(2000));
 
 protected:
-  rclcpp::Node::SharedPtr node_;
-  ServiceClient<lifecycle_msgs::srv::ChangeState> change_state_;
-  ServiceClient<lifecycle_msgs::srv::GetState> get_state_;
+  rclcpp::Node::SharedPtr node_;  // Node only used if parent_node is not provided
+  nav2::ServiceClient<lifecycle_msgs::srv::ChangeState> change_state_;
+  nav2::ServiceClient<lifecycle_msgs::srv::GetState> get_state_;
 };
 
 }  // namespace nav2_util

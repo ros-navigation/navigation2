@@ -23,7 +23,7 @@
 #include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -248,7 +248,7 @@ private:
   const unsigned int height_ = 11;
   const double resolution_ = 1.0;
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -353,7 +353,7 @@ void TestNode::setDefaultState(bool default_state)
 
 bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_threshold)
 {
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);

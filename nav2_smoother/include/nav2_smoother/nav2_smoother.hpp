@@ -28,9 +28,9 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_msgs/action/smooth_path.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "pluginlib/class_loader.hpp"
 
@@ -42,7 +42,7 @@ namespace nav2_smoother
  * @brief This class hosts variety of plugins of different algorithms to
  * smooth or refine a path from the exposed SmoothPath action server.
  */
-class SmootherServer : public nav2_util::LifecycleNode
+class SmootherServer : public nav2::LifecycleNode
 {
 public:
   using SmootherMap = std::unordered_map<std::string, nav2_core::Smoother::Ptr>;
@@ -68,7 +68,7 @@ protected:
    * @throw pluginlib::PluginlibException When failed to initialize smoother
    * plugin
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Loads smoother plugins from parameter file
@@ -84,7 +84,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Deactivates member variables
@@ -94,7 +94,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Calls clean up states and resets member variables.
@@ -104,18 +104,18 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::SmoothPath;
   using ActionResult = Action::Result;
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
+  using ActionServer = nav2::SimpleActionServer<Action>;
 
   /**
    * @brief SmoothPath action server callback. Handles action server updates and
@@ -144,7 +144,7 @@ protected:
   bool validate(const nav_msgs::msg::Path & path);
 
   // Our action server implements the SmoothPath action
-  std::unique_ptr<ActionServer> action_server_;
+  typename ActionServer::SharedPtr action_server_;
 
   // Transforms
   std::shared_ptr<tf2_ros::Buffer> tf_;

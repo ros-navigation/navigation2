@@ -139,8 +139,8 @@ TEST(ThetaStarTest, test_theta_star) {
 
 // Smoke tests meant to detect issues arising from the plugin part rather than the algorithm
 TEST(ThetaStarPlanner, test_theta_star_planner) {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr life_node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("ThetaStarPlannerTest");
+  nav2::LifecycleNode::SharedPtr life_node =
+    std::make_shared<nav2::LifecycleNode>("ThetaStarPlannerTest");
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -184,8 +184,8 @@ TEST(ThetaStarPlanner, test_theta_star_planner) {
 
 TEST(ThetaStarPlanner, test_theta_star_reconfigure)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr life_node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("ThetaStarPlannerTest");
+  nav2::LifecycleNode::SharedPtr life_node =
+    std::make_shared<nav2::LifecycleNode>("ThetaStarPlannerTest");
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");

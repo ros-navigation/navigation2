@@ -18,8 +18,8 @@
 import requests
 
 # Global information about current distributions, shouldn't need to update
-OSs = {'humble': 'jammy', 'jazzy': 'noble'}
-Prefixs = {'humble': 'H', 'jazzy': 'J'}
+OSs = {'humble': 'jammy', 'jazzy': 'noble', 'kilted': 'noble'}
+Prefixs = {'humble': 'H', 'jazzy': 'J', 'kilted': 'K'}
 
 # Set your packages here
 Packages = [
@@ -47,6 +47,8 @@ Packages = [
     'nav2_planner',
     'nav2_regulated_pure_pursuit_controller',
     'nav2_rotation_shim_controller',
+    'nav2_ros_common',
+    'nav2_route',
     'nav2_rviz_plugins',
     'nav2_simple_commander',
     'nav2_smac_planner',
@@ -60,7 +62,7 @@ Packages = [
 ]
 
 # Set which distributions you care about
-Distros = ['humble', 'jazzy']
+Distros = ['humble', 'jazzy', 'kilted']
 
 
 def getSrcPath(package: str, prefix: str, OS: str) -> str:
@@ -78,6 +80,7 @@ def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
+    table = table[:-1]  # Remove the last space
     table += '\n'
     table += '| :---: |'
     for distro in Distros:

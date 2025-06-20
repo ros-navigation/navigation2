@@ -22,7 +22,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_msgs/action/compute_route.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -65,7 +65,7 @@ public:
    * @param base_frame Robot reference frame
    */
   void configure(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     Graph & graph,
     GraphToIDMap * id_to_graph_map,
     std::shared_ptr<tf2_ros::Buffer> tf,

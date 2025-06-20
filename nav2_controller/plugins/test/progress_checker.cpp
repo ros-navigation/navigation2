@@ -39,48 +39,48 @@
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
 #include "nav2_controller/plugins/pose_progress_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
 using nav2_controller::SimpleProgressChecker;
 using nav2_controller::PoseProgressChecker;
 
-class TestLifecycleNode : public nav2_util::LifecycleNode
+class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
   explicit TestLifecycleNode(const std::string & name)
-  : nav2_util::LifecycleNode(name)
+  : nav2::LifecycleNode(name)
   {
   }
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onError(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 };
 

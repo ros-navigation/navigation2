@@ -44,7 +44,7 @@ public:
    * @param  tf A pointer to a TF buffer
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**

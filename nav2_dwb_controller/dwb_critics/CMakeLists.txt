@@ -14,6 +14,7 @@ find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -34,6 +35,7 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
   costmap_queue::costmap_queue
@@ -85,6 +87,7 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav_2d_msgs
   rclcpp
+  nav2_ros_common
 )
 ament_export_targets(${PROJECT_NAME})
 

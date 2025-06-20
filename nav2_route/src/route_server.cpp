@@ -14,7 +14,7 @@
 
 #include "nav2_route/route_server.hpp"
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -22,10 +22,10 @@ namespace nav2_route
 {
 
 RouteServer::RouteServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("route_server", "", options)
+: nav2::LifecycleNode("route_server", "", options)
 {}
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -40,22 +40,20 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   graph_vis_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    "route_graph", nav2::qos::LatchedTopicQoS());
 
-  compute_route_server_ = std::make_shared<ComputeRouteServer>(
-    node, "compute_route",
+  compute_route_server_ = create_action_server<ComputeRoute>(
+    "compute_route",
     std::bind(&RouteServer::computeRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
 
-  compute_and_track_route_server_ = std::make_shared<ComputeAndTrackRouteServer>(
-    node, "compute_and_track_route",
+  compute_and_track_route_server_ = create_action_server<ComputeAndTrackRoute>(
+    "compute_and_track_route",
     std::bind(&RouteServer::computeAndTrackRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
 
-  set_graph_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetRouteGraph,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  set_graph_service_ = node->create_service<nav2_msgs::srv::SetRouteGraph>(
     std::string(node->get_name()) + "/set_route_graph",
-    node,
     std::bind(
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -72,7 +70,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
   // Create costmap subscriber
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "costmap_topic",
     rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
   std::string costmap_topic = node->get_parameter("costmap_topic").as_string();
@@ -81,7 +79,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
 
     goal_intent_extractor_ = std::make_shared<GoalIntentExtractor>();
@@ -99,13 +97,13 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     path_converter_->configure(node);
   } catch (std::exception & e) {
     RCLCPP_FATAL(get_logger(), "Failed to configure route server: %s", e.what());
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -114,10 +112,10 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   createBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -125,10 +123,10 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
   destroyBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -144,14 +142,14 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   transform_listener_.reset();
   tf_.reset();
   graph_.clear();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 RouteServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 rclcpp::Duration
@@ -171,7 +169,7 @@ RouteServer::findPlanningDuration(const rclcpp::Time & start_time)
 template<typename ActionT>
 bool
 RouteServer::isRequestValid(
-  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
 {
   if (!action_server || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -252,7 +250,7 @@ Route RouteServer::findRoute(
 template<typename ActionT>
 void
 RouteServer::processRouteRequest(
-  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
+  typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
 {
   auto goal = action_server->get_current_goal();
   auto result = std::make_shared<typename ActionT::Result>();
@@ -261,7 +259,7 @@ RouteServer::processRouteRequest(
 
   try {
     while (rclcpp::ok()) {
-      if (!isRequestValid(action_server)) {
+      if (!isRequestValid<ActionT>(action_server)) {
         return;
       }
 
@@ -352,14 +350,14 @@ void
 RouteServer::computeRoute()
 {
   RCLCPP_INFO(get_logger(), "Computing route to goal.");
-  processRouteRequest(compute_route_server_);
+  processRouteRequest<ComputeRoute>(compute_route_server_);
 }
 
 void
 RouteServer::computeAndTrackRoute()
 {
   RCLCPP_INFO(get_logger(), "Computing and tracking route to goal.");
-  processRouteRequest(compute_and_track_route_server_);
+  processRouteRequest<ComputeAndTrackRoute>(compute_and_track_route_server_);
 }
 
 void RouteServer::setRouteGraph(

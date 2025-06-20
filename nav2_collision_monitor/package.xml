@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_collision_monitor</name>
-  <version>1.3.1</version>
+  <version>1.4.0</version>
   <description>Collision Monitor</description>
   <maintainer email="alexey.merzlyakov@samsung.com">Alexey Merzlyakov</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
@@ -23,6 +23,7 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
+  <depend>nav2_ros_common</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>

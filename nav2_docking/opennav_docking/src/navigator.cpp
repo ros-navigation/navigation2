@@ -20,11 +20,11 @@ namespace opennav_docking
 
 using namespace std::chrono_literals;  // NOLINT
 
-Navigator::Navigator(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent)
+Navigator::Navigator(const nav2::LifecycleNode::WeakPtr & parent)
 : node_(parent)
 {
   auto node = node_.lock();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "navigator_bt_xml", rclcpp::ParameterValue(std::string("")));
   node->get_parameter("navigator_bt_xml", navigator_bt_xml_);
 }
@@ -37,11 +37,7 @@ void Navigator::activate()
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   executor_.add_callback_group(callback_group_, node->get_node_base_interface());
-  nav_to_pose_client_ = rclcpp_action::create_client<Nav2Pose>(
-    node->get_node_base_interface(),
-    node->get_node_graph_interface(),
-    node->get_node_logging_interface(),
-    node->get_node_waitables_interface(),
+  nav_to_pose_client_ = node->create_action_client<Nav2Pose>(
     "navigate_to_pose", callback_group_);
 }
 
