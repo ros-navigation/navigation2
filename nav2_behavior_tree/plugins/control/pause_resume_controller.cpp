@@ -31,23 +31,23 @@ PauseResumeController::PauseResumeController(
   const BT::NodeConfiguration & conf)
 : BT::ControlNode(xml_tag_name, conf)
 {
-  node_ = this->config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  state_ = UNPAUSED;
+  auto node = this->config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  state_ = RESUMED;
 
   // Create a separate cb group with a separate executor to spin
-  cb_group_ = node_->create_callback_group(
+  cb_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive, false);
 
   executor_ =
     std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
 
-  executor_->add_callback_group(cb_group_, node_->get_node_base_interface());
+  executor_->add_callback_group(cb_group_, node->get_node_base_interface());
 
   std::string pause_service_name;
   getInput("pause_service_name", pause_service_name);
   pause_srv_ = std::make_shared<nav2_util::ServiceServer<Trigger>>(
     pause_service_name,
-    node_,
+    node,
     std::bind(&PauseResumeController::pauseServiceCallback, this, _1, _2, _3),
     rclcpp::ServicesQoS(), cb_group_);
 
@@ -55,7 +55,7 @@ PauseResumeController::PauseResumeController(
   getInput("resume_service_name", resume_service_name);
   resume_srv_ = std::make_shared<nav2_util::ServiceServer<Trigger>>(
     resume_service_name,
-    node_,
+    node,
     std::bind(&PauseResumeController::resumeServiceCallback, this, _1, _2, _3),
     rclcpp::ServicesQoS(), cb_group_);
 }
@@ -70,48 +70,22 @@ BT::NodeStatus PauseResumeController::tick()
   }
 
   if (status() == BT::NodeStatus::IDLE) {
-    state_ = UNPAUSED;
+    state_ = RESUMED;
   }
   setStatus(BT::NodeStatus::RUNNING);
 
   executor_->spin_some();
 
-  if (state_ == PAUSE_REQUESTED) {
+  // If pause / resume requested, reset children and switch to transient child
+  if (state_ == PAUSE_REQUESTED || state_ == RESUME_REQUESTED) {
     resetChildren();
-    switchState(ON_PAUSE);
-  }
-  if (state_ == RESUME_REQUESTED) {
-    resetChildren();
-    switchState(ON_RESUME);
+    switchToNextState();
   }
 
-  tickChildAndTransition();
-
-  return status();
-}
-
-void PauseResumeController::switchState(const state_t new_state)
-{
-  if (state_ == new_state) {
-    RCLCPP_WARN(node_->get_logger(), "Already in state: %s", state_names.at(state_).c_str());
-    return;
-  }
-
-  state_ = new_state;
-  RCLCPP_INFO(node_->get_logger(), "Switched to state: %s", state_names.at(state_).c_str());
-}
-
-BT::NodeStatus PauseResumeController::tickChildAndTransition()
-{
   // Return RUNNING and do nothing if specific child is not used
-  const uint child_idx = child_indices.at(state_);
+  const uint16_t child_idx = child_indices.at(state_);
   if (children_nodes_.size() <= child_idx) {
-    if (state_ == ON_PAUSE) {
-      switchState(PAUSED);
-    } else if (state_ == ON_RESUME) {
-      switchState(UNPAUSED);
-    }
-
+    switchToNextState();
     return BT::NodeStatus::RUNNING;
   }
 
@@ -123,19 +97,33 @@ BT::NodeStatus PauseResumeController::tickChildAndTransition()
       return BT::NodeStatus::RUNNING;
     case BT::NodeStatus::SUCCESS:
     case BT::NodeStatus::SKIPPED:
-      if (state_ == ON_PAUSE) {
-        switchState(PAUSED);
-      } else if (state_ == ON_RESUME) {
-        switchState(UNPAUSED);
-      }
+      switchToNextState();
       return BT::NodeStatus::SUCCESS;
     case BT::NodeStatus::FAILURE:
       RCLCPP_ERROR(
-        node_->get_logger(), "%s child returned FAILURE", state_names.at(state_).c_str());
+        logger_, "%s child returned FAILURE", state_names.at(state_).c_str());
       return BT::NodeStatus::FAILURE;
     default:
       throw std::runtime_error("A child node must never return IDLE");
   }
+}
+
+void PauseResumeController::switchToNextState()
+{
+  static const std::map<state_t, state_t> next_states = {
+    {PAUSE_REQUESTED, ON_PAUSE},
+    {ON_PAUSE, PAUSED},
+    {RESUME_REQUESTED, ON_RESUME},
+    {ON_RESUME, RESUMED}
+  };
+
+  if (state_ == PAUSED || state_ == RESUMED) {
+    // No next state, do nothing
+    return;
+  }
+
+  state_ = next_states.at(state_);
+  RCLCPP_INFO(logger_, "Switched to state: %s", state_names.at(state_).c_str());
 }
 
 void PauseResumeController::pauseServiceCallback(
@@ -147,19 +135,19 @@ void PauseResumeController::pauseServiceCallback(
     std::string warn_msg = "PauseResumeController BT node has not been ticked yet";
     response->success = false;
     response->message = warn_msg;
-    RCLCPP_ERROR(node_->get_logger(), "%s", warn_msg.c_str());
+    RCLCPP_ERROR(logger_, "%s", warn_msg.c_str());
     return;
   }
 
   if (state_ != PAUSED) {
-    RCLCPP_INFO(node_->get_logger(), "PAUSE_REQUESTED");
+    RCLCPP_INFO(logger_, "Received pause request");
     response->success = true;
     state_ = PAUSE_REQUESTED;
     return;
   }
 
   std::string warn_message = "PauseResumeController BT node already in state PAUSED";
-  RCLCPP_WARN(node_->get_logger(), "%s", warn_message.c_str());
+  RCLCPP_WARN(logger_, "%s", warn_message.c_str());
   response->success = false;
   response->message = warn_message;
 }
@@ -173,26 +161,26 @@ void PauseResumeController::resumeServiceCallback(
     std::string warn_msg = "PauseResumeController BT node has not been ticked yet";
     response->success = false;
     response->message = warn_msg;
-    RCLCPP_ERROR(node_->get_logger(), "%s", warn_msg.c_str());
+    RCLCPP_ERROR(logger_, "%s", warn_msg.c_str());
     return;
   }
 
   if (state_ == PAUSED) {
-    RCLCPP_INFO(node_->get_logger(), "RESUME_REQUESTED");
+    RCLCPP_INFO(logger_, "Received resume request");
     response->success = true;
     state_ = RESUME_REQUESTED;
     return;
   }
 
   std::string warn_message = "PauseResumeController BT node not in state PAUSED";
-  RCLCPP_WARN(node_->get_logger(), "%s", warn_message.c_str());
+  RCLCPP_WARN(logger_, "%s", warn_message.c_str());
   response->success = false;
   response->message = warn_message;
 }
 
 void PauseResumeController::halt()
 {
-  state_ = UNPAUSED;
+  state_ = RESUMED;
   ControlNode::halt();
 }
 
