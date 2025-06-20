@@ -36,32 +36,32 @@ namespace nav2_behavior_tree
 
 using Trigger = std_srvs::srv::Trigger;
 
-enum state_t {UNPAUSED, PAUSED, PAUSE_REQUESTED, ON_PAUSE, RESUME_REQUESTED, ON_RESUME};
+enum state_t {RESUMED, PAUSED, PAUSE_REQUESTED, ON_PAUSE, RESUME_REQUESTED, ON_RESUME};
 const std::map<state_t, std::string> state_names = {
-  {UNPAUSED, "UNPAUSED"},
+  {RESUMED, "RESUMED"},
   {PAUSED, "PAUSED"},
   {PAUSE_REQUESTED, "PAUSE_REQUESTED"},
   {ON_PAUSE, "ON_PAUSE"},
   {RESUME_REQUESTED, "RESUME_REQUESTED"},
   {ON_RESUME, "ON_RESUME"}
 };
-const std::map<state_t, uint> child_indices = {
-  {UNPAUSED, 0},
+const std::map<state_t, uint16_t> child_indices = {
+  {RESUMED, 0},
   {PAUSED, 1},
   {ON_PAUSE, 2},
   {ON_RESUME, 3}
 };
 
 /* @brief Controlled through service calls to pause and resume the execution of the tree
- * It has one mandatory child for the UNPAUSED, and three optional for the PAUSED state,
+ * It has one mandatory child for the RESUMED, and three optional for the PAUSED state,
  * the ON_PAUSE event and the ON_RESUME event.
  * It has two input ports:
  * - pause_service_name: name of the service to pause
  * - resume_service_name: name of the service to resume
  *
  * Usage:
- * <Pause pause_service_name="/pause" resume_service_name="/resume">
- *     <!-- UNPAUSED branch -->
+ * <PauseResumeController pause_service_name="/pause" resume_service_name="/resume">
+ *     <!-- RESUMED branch -->
  *
  *     <!-- PAUSED branch (optional) -->
  *
@@ -83,7 +83,7 @@ public:
   //! @brief Reset state and go to Idle
   void halt() override;
 
-  //! @brief Return a NodeStatus according to the children's status
+  //! @brief Handle transitions if requested and tick child related to the actual state
   BT::NodeStatus tick() override;
 
   //! @brief Declare ports
@@ -100,23 +100,31 @@ public:
   }
 
 private:
-  //! @brief Service callback to pause
+  //! @brief Set state to PAUSE_REQUESTED
   void pauseServiceCallback(
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<Trigger::Request> request,
     std::shared_ptr<Trigger::Response> response);
 
-  //! @brief Service callback to resume
+  //! @brief Set state to RESUME_REQUESTED
   void resumeServiceCallback(
     const std::shared_ptr<rmw_request_id_t>/*request_header*/,
     const std::shared_ptr<Trigger::Request> request,
     std::shared_ptr<Trigger::Response> response);
 
-  BT::NodeStatus tickChildAndTransition();
+  /** @brief Switch to the next state based on the current state
+   *
+   * PAUSE_REQUESTED -> ON_PAUSE
+   * ON_PAUSE -> PAUSED
+   *
+   * RESUME_REQUESTED -> ON_RESUME
+   * ON_RESUME -> RESUMED
+   *
+   * Do nothing if in end state
+   */
+  void switchToNextState();
 
-  void switchState(const state_t new_state);
-
-  rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_{rclcpp::get_logger("PauseResumeController")};
   rclcpp::CallbackGroup::SharedPtr cb_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   nav2_util::ServiceServer<Trigger>::SharedPtr pause_srv_;
