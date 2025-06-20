@@ -185,7 +185,8 @@ public:
 private:
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
 
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    footprint_pub_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
 };
 
