@@ -59,7 +59,7 @@ public:
 TEST(CriticTests, ConstraintsCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -128,7 +128,7 @@ TEST(CriticTests, ConstraintsCritic)
 }
 
 TEST(CriticTests, ObstacleCriticMisalignedParams) {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -149,7 +149,7 @@ TEST(CriticTests, ObstacleCriticMisalignedParams) {
 }
 
 TEST(CriticTests, ObstacleCriticAlignedParams) {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -169,7 +169,7 @@ TEST(CriticTests, ObstacleCriticAlignedParams) {
 
 TEST(CriticTests, CostCriticMisAlignedParams) {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -190,7 +190,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
 
 TEST(CriticTests, CostCriticAlignedParams) {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -209,7 +209,7 @@ TEST(CriticTests, CostCriticAlignedParams) {
 TEST(CriticTests, GoalAngleCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -269,7 +269,7 @@ TEST(CriticTests, GoalAngleCritic)
 TEST(CriticTests, GoalCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -322,7 +322,7 @@ TEST(CriticTests, GoalCritic)
 TEST(CriticTests, PathAngleCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -441,7 +441,7 @@ TEST(CriticTests, PathAngleCritic)
 TEST(CriticTests, PreferForwardCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -498,7 +498,7 @@ TEST(CriticTests, PreferForwardCritic)
 TEST(CriticTests, TwirlingCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -563,7 +563,7 @@ TEST(CriticTests, TwirlingCritic)
 TEST(CriticTests, PathFollowCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -615,7 +615,7 @@ TEST(CriticTests, PathFollowCritic)
 TEST(CriticTests, PathAlignCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -726,7 +726,7 @@ TEST(CriticTests, PathAlignCritic)
 TEST(CriticTests, VelocityDeadbandCritic)
 {
   // Standard preamble
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "yaml-cpp/yaml.h"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
@@ -44,7 +44,7 @@ using opennav_docking_core::DockDirection;
 */
 inline bool parseDockFile(
   const std::string & yaml_filepath,
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
   YAML::Node yaml_file;
@@ -116,7 +116,7 @@ inline bool parseDockFile(
 */
 inline bool parseDockParams(
   const std::vector<std::string> & docks_param,
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
   Dock curr_dock;

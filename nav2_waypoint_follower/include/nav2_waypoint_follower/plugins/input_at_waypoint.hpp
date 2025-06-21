@@ -52,7 +52,7 @@ public:
    * @param plugin_name name of plugin
    */
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
   /**

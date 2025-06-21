@@ -19,7 +19,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "opennav_docking/docking_server.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 
 // Testing unit functions in docking server, smoke/system tests in python file
 
@@ -60,7 +60,7 @@ TEST(DockingServerTests, ObjectLifecycle)
 TEST(DockingServerTests, testErrorExceptions)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2_util::NodeThread(node);
+  auto node_thread = nav2::NodeThread(node);
   auto node2 = std::make_shared<rclcpp::Node>("client_node");
 
   // Setup 1 instance of the test failure dock & its plugin instance

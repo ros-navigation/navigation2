@@ -22,7 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_update.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -37,15 +37,30 @@ public:
    * @brief A constructor
    */
   CostmapSubscriber(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & topic_name);
 
-  /**
-   * @brief A constructor
-   */
+  template<typename NodeT>
   CostmapSubscriber(
-    const rclcpp::Node::WeakPtr & parent,
-    const std::string & topic_name);
+    const NodeT & parent,
+    const std::string & topic_name)
+  : topic_name_(topic_name)
+  {
+    logger_ = parent->get_logger();
+
+    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
+    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
+    constexpr int costmapUpdateQueueDepth = 10;
+    costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+      parent, topic_name_,
+      std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
+      nav2::qos::LatchedTopicQoS());
+
+    costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
+      parent, topic_name_ + "_updates",
+      std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
+      nav2::qos::LatchedTopicQoS(costmapUpdateQueueDepth));
+  }
 
   /**
    * @brief A destructor

@@ -22,10 +22,10 @@
 #include <nlohmann/json.hpp>
 #include <pluginlib/class_loader.hpp>
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/interfaces/graph_file_loader.hpp"
@@ -46,7 +46,7 @@ public:
    * @param options Additional options to control creation of the node.
    */
   explicit GraphLoader(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame);
 

@@ -30,7 +30,7 @@ DockDatabase::~DockDatabase()
 }
 
 bool DockDatabase::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::shared_ptr<tf2_ros::Buffer> tf)
 {
   node_ = parent;
@@ -55,10 +55,8 @@ bool DockDatabase::initialize(
     "Docking Server has %u dock types and %u dock instances available.",
     this->plugin_size(), this->instance_size());
 
-  reload_db_service_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::ReloadDockDatabase,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  reload_db_service_ = node->create_service<nav2_msgs::srv::ReloadDockDatabase>(
     "~/reload_database",
-    node,
     std::bind(
       &DockDatabase::reloadDbCb, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -149,7 +147,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
 }
 
 bool DockDatabase::getDockPlugins(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf)
 {
   std::vector<std::string> docks_plugins;
@@ -168,7 +166,7 @@ bool DockDatabase::getDockPlugins(
 
   for (size_t i = 0; i != docks_plugins.size(); i++) {
     try {
-      std::string plugin_type = nav2_util::get_plugin_type_param(
+      std::string plugin_type = nav2::get_plugin_type_param(
         node, docks_plugins[i]);
       opennav_docking_core::ChargingDock::Ptr dock =
         dock_loader_.createUniqueInstance(plugin_type);
@@ -188,7 +186,7 @@ bool DockDatabase::getDockPlugins(
   return true;
 }
 
-bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+bool DockDatabase::getDockInstances(const nav2::LifecycleNode::SharedPtr & node)
 {
   using rclcpp::ParameterType::PARAMETER_STRING;
   using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;

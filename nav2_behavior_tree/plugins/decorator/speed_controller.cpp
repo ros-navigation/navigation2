@@ -34,7 +34,7 @@ SpeedController::SpeedController(
   min_speed_(0.0),
   max_speed_(0.5)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 
   getInput("min_rate", min_rate_);
   getInput("max_rate", max_rate_);

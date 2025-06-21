@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
-#define  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
+#ifndef  NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_
+#define  NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_
 
 #include <cmath>
 #include <iostream>
@@ -40,7 +40,7 @@
 //             like the size of `map` should be equal to `height*width`
 //     3> Any other needed condition could be joint here in future
 
-namespace nav2_util
+namespace nav2
 {
 
 
@@ -172,8 +172,6 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   return true;
 }
 
+}  //  namespace nav2
 
-}  //  namespace nav2_util
-
-
-#endif  // NAV2_UTIL__VALIDATE_MESSAGES_HPP_
+#endif  // NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_

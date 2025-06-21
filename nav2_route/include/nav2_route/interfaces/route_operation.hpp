@@ -19,8 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -85,7 +84,7 @@ public:
    * to correlate an operation instance to the navigation graph operation calls
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) = 0;
 

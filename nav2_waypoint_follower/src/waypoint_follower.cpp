@@ -28,7 +28,7 @@ using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
 WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("waypoint_follower", "", options),
+: nav2::LifecycleNode("waypoint_follower", "", options),
   waypoint_task_executor_loader_("nav2_waypoint_follower",
     "nav2_core::WaypointTaskExecutor")
 {
@@ -39,10 +39,10 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 
   declare_parameter("global_frame_id", "map");
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     this, std::string("waypoint_task_executor_plugin"),
     rclcpp::ParameterValue(std::string("wait_at_waypoint")));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     this, std::string("wait_at_waypoint.plugin"),
     rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
@@ -51,7 +51,7 @@ WaypointFollower::~WaypointFollower()
 {
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -62,42 +62,26 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   loop_rate_ = get_parameter("loop_rate").as_int();
   waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
   global_frame_id_ = get_parameter("global_frame_id").as_string();
-  global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, get_node_base_interface());
 
-  nav_to_pose_client_ = rclcpp_action::create_client<ClientT>(
-    get_node_base_interface(),
-    get_node_graph_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
+  nav_to_pose_client_ = create_action_client<ClientT>(
     "navigate_to_pose", callback_group_);
 
-  xyz_action_server_ = std::make_unique<ActionServer>(
-    get_node_base_interface(),
-    get_node_clock_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
+  xyz_action_server_ = create_action_server<ActionT>(
     "follow_waypoints", std::bind(
       &WaypointFollower::followWaypointsCallback,
       this), nullptr, std::chrono::milliseconds(
       500), false);
 
-  from_ll_to_map_client_ = std::make_unique<
-    nav2_util::ServiceClient<robot_localization::srv::FromLL,
-    std::shared_ptr<nav2_util::LifecycleNode>>>(
+  from_ll_to_map_client_ = node->create_client<robot_localization::srv::FromLL>(
     "/fromLL",
-    node,
     true /*creates and spins an internal executor*/);
 
-  gps_action_server_ = std::make_unique<ActionServerGPS>(
-    get_node_base_interface(),
-    get_node_clock_interface(),
-    get_node_logging_interface(),
-    get_node_waitables_interface(),
+  gps_action_server_ = create_action_server<ActionTGPS>(
     "follow_gps_waypoints",
     std::bind(
       &WaypointFollower::followGPSWaypointsCallback,
@@ -105,7 +89,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
       500), false);
 
   try {
-    waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
+    waypoint_task_executor_type_ = nav2::get_plugin_type_param(
       this,
       waypoint_task_executor_id_);
     waypoint_task_executor_ = waypoint_task_executor_loader_.createUniqueInstance(
@@ -121,10 +105,10 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     on_cleanup(state);
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -140,10 +124,10 @@ WaypointFollower::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -155,10 +139,10 @@ WaypointFollower::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 WaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -168,14 +152,14 @@ WaypointFollower::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   gps_action_server_.reset();
   from_ll_to_map_client_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 WaypointFollower::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 template<typename T>
@@ -191,7 +175,7 @@ std::vector<geometry_msgs::msg::PoseStamped> WaypointFollower::getLatestGoalPose
   }
 
   // compile time static check to decide which block of code to be built
-  if constexpr (std::is_same<T, std::unique_ptr<ActionServer>>::value) {
+  if constexpr (std::is_same<T, ActionServer::SharedPtr>::value) {
     // If normal waypoint following callback was called, we build here
     poses = current_goal->poses;
   } else {
@@ -396,7 +380,7 @@ void WaypointFollower::followWaypointsCallback()
   auto feedback = std::make_shared<ActionT::Feedback>();
   auto result = std::make_shared<ActionT::Result>();
 
-  followWaypointsHandler<std::unique_ptr<ActionServer>,
+  followWaypointsHandler<typename ActionServer::SharedPtr,
     ActionT::Feedback::SharedPtr,
     ActionT::Result::SharedPtr>(
     xyz_action_server_,
@@ -408,7 +392,7 @@ void WaypointFollower::followGPSWaypointsCallback()
   auto feedback = std::make_shared<ActionTGPS::Feedback>();
   auto result = std::make_shared<ActionTGPS::Result>();
 
-  followWaypointsHandler<std::unique_ptr<ActionServerGPS>,
+  followWaypointsHandler<typename ActionServerGPS::SharedPtr,
     ActionTGPS::Feedback::SharedPtr,
     ActionTGPS::Result::SharedPtr>(
     gps_action_server_,

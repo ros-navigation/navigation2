@@ -25,7 +25,7 @@
 #include <limits>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -79,25 +79,25 @@ class CollisionDetectorWrapper : public nav2_collision_monitor::CollisionDetecto
 public:
   void start()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_activate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_activate(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void stop()
   {
-    ASSERT_EQ(on_deactivate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_cleanup(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_shutdown(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_deactivate(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_cleanup(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_shutdown(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void configure()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void cant_configure()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::FAILURE);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::FAILURE);
   }
 
   bool correctDataReceived(const double expected_dist, const rclcpp::Time & stamp)
@@ -157,10 +157,14 @@ protected:
   std::shared_ptr<CollisionDetectorWrapper> cd_;
 
   // Data source publishers
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_source_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr
+    scan_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    pointcloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Range>::SharedPtr
+    range_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+    polygon_source_pub_;
 
   rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
@@ -177,27 +181,34 @@ Tester::Tester()
 
   scan_pub_ = cd_->create_publisher<sensor_msgs::msg::LaserScan>(
     SCAN_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  scan_pub_->on_activate();
   pointcloud_pub_ = cd_->create_publisher<sensor_msgs::msg::PointCloud2>(
     POINTCLOUD_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  pointcloud_pub_->on_activate();
   range_pub_ = cd_->create_publisher<sensor_msgs::msg::Range>(
     RANGE_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  range_pub_->on_activate();
   polygon_source_pub_ = cd_->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
     POLYGON_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  polygon_source_pub_->on_activate();
 
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
-    STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
+    STATE_TOPIC,
     std::bind(&Tester::stateCallback, this, std::placeholders::_1));
 
   collision_points_marker_sub_ = cd_->create_subscription<visualization_msgs::msg::MarkerArray>(
-    COLLISION_POINTS_MARKERS_TOPIC, rclcpp::SystemDefaultsQoS(),
+    COLLISION_POINTS_MARKERS_TOPIC,
     std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
 }
 
 Tester::~Tester()
 {
   scan_pub_.reset();
+  pointcloud_pub_->on_deactivate();
   pointcloud_pub_.reset();
+  range_pub_->on_deactivate();
   range_pub_.reset();
+  polygon_source_pub_->on_deactivate();
   polygon_source_pub_.reset();
   collision_points_marker_sub_.reset();
 

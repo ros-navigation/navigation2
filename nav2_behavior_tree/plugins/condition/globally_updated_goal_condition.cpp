@@ -26,7 +26,7 @@ GloballyUpdatedGoalCondition::GloballyUpdatedGoalCondition(
 : BT::ConditionNode(condition_name, conf),
   first_time(true)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus GloballyUpdatedGoalCondition::tick()

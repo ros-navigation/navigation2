@@ -16,17 +16,17 @@
 #include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-class LifecycleNodeTest : public rclcpp_lifecycle::LifecycleNode
+class LifecycleNodeTest : public nav2::LifecycleNode
 {
 public:
   LifecycleNodeTest()
-  : rclcpp_lifecycle::LifecycleNode("lifecycle_node_test") {}
+  : nav2::LifecycleNode("lifecycle_node_test") {}
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State & /*state*/) override
   {
@@ -71,12 +71,12 @@ public:
   LifecycleClientTestFixture()
   {
     lf_node_ = std::make_shared<LifecycleNodeTest>();
-    lf_thread_ = std::make_unique<nav2_util::NodeThread>(lf_node_->get_node_base_interface());
+    lf_thread_ = std::make_unique<nav2::NodeThread>(lf_node_->get_node_base_interface());
   }
 
 private:
   std::shared_ptr<LifecycleNodeTest> lf_node_;
-  std::unique_ptr<nav2_util::NodeThread> lf_thread_;
+  std::unique_ptr<nav2::NodeThread> lf_thread_;
 };
 
 TEST(LifecycleClientTest, BasicTest)

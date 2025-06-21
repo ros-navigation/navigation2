@@ -23,7 +23,7 @@
 #include <limits>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
@@ -73,16 +73,12 @@ static const double TIME_BEFORE_COLLISION{1.0};
 static const double SIMULATION_TIME_STEP{0.01};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 
-class TestNode : public nav2_util::LifecycleNode
+class TestNode : public nav2::LifecycleNode
 {
 public:
   TestNode()
-  : nav2_util::LifecycleNode("test_node"), polygon_received_(nullptr)
-  {
-    polygon_sub_ = this->create_subscription<geometry_msgs::msg::PolygonStamped>(
-      POLYGON_PUB_TOPIC, rclcpp::SystemDefaultsQoS(),
-      std::bind(&TestNode::polygonCallback, this, std::placeholders::_1));
-  }
+  : nav2::LifecycleNode("test_node"), polygon_received_(nullptr)
+  {}
 
   ~TestNode()
   {
@@ -90,10 +86,19 @@ public:
     footprint_pub_.reset();
   }
 
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & /*previous_state*/) override
+  {
+    polygon_sub_ = this->create_subscription<geometry_msgs::msg::PolygonStamped>(
+      POLYGON_PUB_TOPIC,
+      std::bind(&TestNode::polygonCallback, this, std::placeholders::_1));
+    return nav2::CallbackReturn::SUCCESS;
+  }
+
   void publishPolygon(const std::string & frame_id, const bool is_correct)
   {
     polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
+    polygon_pub_->on_activate();
 
     std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
       std::make_unique<geometry_msgs::msg::PolygonStamped>();
@@ -122,6 +127,7 @@ public:
   {
     radius_pub_ = this->create_publisher<std_msgs::msg::Float32>(
       POLYGON_SUB_TOPIC, rclcpp::SystemDefaultsQoS());
+    radius_pub_->on_activate();
 
     std::unique_ptr<std_msgs::msg::Float32> msg = std::make_unique<std_msgs::msg::Float32>();
     msg->data = CIRCLE_RADIUS;
@@ -133,6 +139,7 @@ public:
   {
     footprint_pub_ = this->create_publisher<geometry_msgs::msg::PolygonStamped>(
       FOOTPRINT_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    footprint_pub_->on_activate();
 
     std::unique_ptr<geometry_msgs::msg::PolygonStamped> msg =
       std::make_unique<geometry_msgs::msg::PolygonStamped>();
@@ -170,9 +177,10 @@ public:
   }
 
 private:
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
-  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+    footprint_pub_;
   rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
 
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
@@ -182,7 +190,7 @@ class PolygonWrapper : public nav2_collision_monitor::Polygon
 {
 public:
   PolygonWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -207,7 +215,7 @@ class CircleWrapper : public nav2_collision_monitor::Circle
 {
 public:
   CircleWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -277,6 +285,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  test_node_->configure();
+  test_node_->activate();
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
@@ -288,6 +298,8 @@ Tester::~Tester()
   polygon_.reset();
   circle_.reset();
 
+  test_node_->deactivate();
+  test_node_->cleanup();
   test_node_.reset();
 
   tf_listener_.reset();
@@ -418,7 +430,7 @@ void Tester::createPolygon(const std::string & action_type, const bool is_static
   setPolygonParameters(SQUARE_POLYGON_STR, is_static);
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
@@ -430,7 +442,7 @@ void Tester::createCircle(const std::string & action_type, const bool is_static)
   setCircleParameters(CIRCLE_RADIUS, is_static);
 
   circle_ = std::make_shared<CircleWrapper>(
-    test_node_, CIRCLE_NAME,
+    test_node_->weak_from_this(), CIRCLE_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(circle_->configure());
   circle_->activate();
@@ -589,7 +601,7 @@ TEST_F(Tester, testPolygonUndeclaredActionType)
 {
   // "action_type" parameter is not initialized
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "action_type" parameter is not set after configuring
@@ -604,7 +616,7 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
   test_node_->set_parameter(
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
   // Check that "points" and "polygon_sub_topic" parameters are not set after configuring
@@ -618,7 +630,7 @@ TEST_F(Tester, testPolygonIncorrectActionType)
   setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
@@ -634,7 +646,7 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_1_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
@@ -650,7 +662,7 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_2_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
@@ -668,7 +680,7 @@ TEST_F(Tester, testPolygonMaxPoints)
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".max_points", max_points));
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   EXPECT_EQ(polygon_->getMinPoints(), max_points + 1);
@@ -679,7 +691,7 @@ TEST_F(Tester, testCircleUndeclaredRadius)
   setCommonParameters(CIRCLE_NAME, "stop");
 
   circle_ = std::make_shared<CircleWrapper>(
-    test_node_, CIRCLE_NAME,
+    test_node_->weak_from_this(), CIRCLE_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(circle_->configure());
 
@@ -837,7 +849,7 @@ TEST_F(Tester, testPolygonGetPointsInsideEdge)
   setPolygonParameters(ARBITRARY_POLYGON_STR, true);
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
 
@@ -975,7 +987,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
 
   // Create new polygon
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   polygon_->activate();
@@ -998,7 +1010,7 @@ TEST_F(Tester, testPolygonInvalidPointsString)
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INVALID_POINTS_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
@@ -1010,7 +1022,7 @@ TEST_F(Tester, testPolygonSourceDefaultAssociation)
   setCommonParameters(POLYGON_NAME, "stop", all_sources);  // no polygon sources names specified
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   ASSERT_EQ(polygon_->getSourcesNames(), all_sources);
@@ -1023,7 +1035,7 @@ TEST_F(Tester, testPolygonSourceInvalidAssociation)
     POLYGON_NAME, "stop", {"source_1", "source_2", "source_3"}, {"source_1", "source_4"});
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_FALSE(polygon_->configure());
 }
@@ -1035,7 +1047,7 @@ TEST_F(Tester, testPolygonSourceAssociation)
   setCommonParameters(POLYGON_NAME, "stop", {"source_1", "source_2", "source_3"}, poly_sources);
   setPolygonParameters(SQUARE_POLYGON_STR, true);
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME,
+    test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
   ASSERT_TRUE(polygon_->configure());
   ASSERT_EQ(polygon_->getSourcesNames(), poly_sources);

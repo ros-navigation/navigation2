@@ -21,7 +21,6 @@
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "planner_tester.hpp"
-#include "nav2_util/lifecycle_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/planner_exceptions.hpp"
 
@@ -157,7 +156,7 @@ TEST(testPluginMap, Failures)
   obj->set_parameter(rclcpp::Parameter("expected_planner_frequency", 100000.0));
   obj->onConfigure(state);
   obj->create_subscription<nav_msgs::msg::Path>(
-    "plan", rclcpp::SystemDefaultsQoS(), callback);
+    "plan", callback);
 
   geometry_msgs::msg::PoseStamped start;
   geometry_msgs::msg::PoseStamped goal;

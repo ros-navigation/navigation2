@@ -32,7 +32,7 @@ class PathExpiringTimerConditionTestFixture : public nav2_behavior_tree::Behavio
 public:
   void SetUp()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_path_expiring_condition");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_path_expiring_condition");
     config_ = new BT::NodeConfiguration();
     config_->input_ports["seconds"] = 1.0;
     config_->input_ports["path"] = "";
@@ -52,12 +52,12 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition> bt_node_;
   static BT::NodeConfiguration * config_;
 };
 
-rclcpp::Node::SharedPtr PathExpiringTimerConditionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr PathExpiringTimerConditionTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition>
 PathExpiringTimerConditionTestFixture::bt_node_ = nullptr;
 BT::NodeConfiguration * PathExpiringTimerConditionTestFixture::config_ = nullptr;

@@ -24,7 +24,7 @@
 #include <limits>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -58,11 +58,11 @@ static const char POLYGON_TOPIC[]{"polygon"};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
-class TestNode : public nav2_util::LifecycleNode
+class TestNode : public nav2::LifecycleNode
 {
 public:
   TestNode()
-  : nav2_util::LifecycleNode("test_node")
+  : nav2::LifecycleNode("test_node")
   {
   }
 
@@ -78,6 +78,7 @@ public:
   {
     scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(
       SCAN_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    scan_pub_->on_activate();
 
     std::unique_ptr<sensor_msgs::msg::LaserScan> msg =
       std::make_unique<sensor_msgs::msg::LaserScan>();
@@ -102,6 +103,7 @@ public:
   {
     pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       POINTCLOUD_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    pointcloud_pub_->on_activate();
 
     std::unique_ptr<sensor_msgs::msg::PointCloud2> msg =
       std::make_unique<sensor_msgs::msg::PointCloud2>();
@@ -144,6 +146,7 @@ public:
   {
     range_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
       RANGE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    range_pub_->on_activate();
 
     std::unique_ptr<sensor_msgs::msg::Range> msg =
       std::make_unique<sensor_msgs::msg::Range>();
@@ -164,6 +167,7 @@ public:
   {
     polygon_pub_ = this->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
       POLYGON_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    polygon_pub_->on_activate();
 
     std::unique_ptr<geometry_msgs::msg::PolygonInstanceStamped> msg =
       std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>();
@@ -193,17 +197,18 @@ public:
   }
 
 private:
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr polygon_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+    polygon_pub_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan
 {
 public:
   ScanWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -226,7 +231,7 @@ class PointCloudWrapper : public nav2_collision_monitor::PointCloud
 {
 public:
   PointCloudWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -249,7 +254,7 @@ class RangeWrapper : public nav2_collision_monitor::Range
 {
 public:
   RangeWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -272,7 +277,7 @@ class PolygonWrapper : public nav2_collision_monitor::PolygonSource
 {
 public:
   PolygonWrapper(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,

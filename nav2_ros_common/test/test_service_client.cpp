@@ -14,13 +14,13 @@
 
 #include <memory>
 #include <string>
-#include "nav2_util/service_client.hpp"
+#include "nav2_ros_common/service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "gtest/gtest.h"
 
-using nav2_util::ServiceClient;
+using nav2::ServiceClient;
 using std::string;
 
 class RclCppFixture
@@ -41,8 +41,7 @@ public:
   : ServiceClient(name, provided_node, use_internal_executor)
   {}
 
-  string name() {return node_->get_name();}
-  const rclcpp::Node::SharedPtr & getNode() {return node_;}
+  string name() {return node_base_interface_->get_name();}
 };
 
 TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
@@ -54,7 +53,6 @@ TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
     auto node = rclcpp::Node::make_shared("test_node" + mode);
     node->declare_parameter("service_introspection_mode", mode);
     TestServiceClient t("bar", node, true);
-    ASSERT_EQ(t.getNode(), node);
     ASSERT_EQ(t.name(), "test_node" + mode);
   }
 }

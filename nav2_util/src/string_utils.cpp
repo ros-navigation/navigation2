@@ -18,17 +18,6 @@
 namespace nav2_util
 {
 
-std::string strip_leading_slash(const std::string & in)
-{
-  std::string out = in;
-
-  if ((!in.empty()) && (in[0] == '/')) {
-    out.erase(0, 1);
-  }
-
-  return out;
-}
-
 Tokens split(const std::string & tokenstring, char delimiter)
 {
   Tokens tokens;

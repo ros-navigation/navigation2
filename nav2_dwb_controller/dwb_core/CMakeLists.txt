@@ -19,6 +19,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -31,6 +32,7 @@ add_library(dwb_core SHARED
 target_include_directories(dwb_core PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(dwb_core PUBLIC
   ${builtin_interfaces_TARGETS}
@@ -92,6 +94,7 @@ ament_export_dependencies(
   sensor_msgs
   tf2_ros
   visualization_msgs
+  nav2_ros_common
 )
 ament_export_targets(dwb_core)
 

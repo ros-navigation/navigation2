@@ -38,8 +38,9 @@
 
 #include "gtest/gtest.h"
 #include "nav_2d_utils/conversions.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/time.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 using nav_2d_utils::posesToPath;
 using nav_2d_utils::pathToPath;
@@ -57,7 +58,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   geometry_msgs::msg::PoseStamped pose1;
   rclcpp::Time time1, time2;
-  auto node = rclcpp::Node::make_shared("twod_utils_test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("twod_utils_test_node");
   time1 = node->now();
 
   tf2::Quaternion quat1, quat2;

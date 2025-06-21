@@ -29,7 +29,7 @@ class IsBatteryLowConditionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_is_battery_low");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_is_battery_low");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -46,6 +46,7 @@ public:
     battery_pub_ = node_->create_publisher<sensor_msgs::msg::BatteryState>(
       "/battery_status",
       rclcpp::SystemDefaultsQoS());
+    battery_pub_->on_activate();
   }
 
   static void TearDownTestCase()
@@ -58,16 +59,17 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
-  static rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  static rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr
+    battery_pub_;
 };
 
-rclcpp::Node::SharedPtr IsBatteryLowConditionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr IsBatteryLowConditionTestFixture::node_ = nullptr;
 BT::NodeConfiguration * IsBatteryLowConditionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> IsBatteryLowConditionTestFixture::factory_ = nullptr;
-rclcpp::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
+rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr
 IsBatteryLowConditionTestFixture::battery_pub_ = nullptr;
 
 TEST_F(IsBatteryLowConditionTestFixture, test_behavior_percentage)
@@ -86,25 +88,25 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior_percentage)
   battery_msg.percentage = 1.0;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.percentage = 0.49;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 
   battery_msg.percentage = 0.51;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.percentage = 0.0;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
@@ -124,25 +126,25 @@ TEST_F(IsBatteryLowConditionTestFixture, test_behavior_voltage)
   battery_msg.voltage = 10.0;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.voltage = 4.9;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 
   battery_msg.voltage = 5.1;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.voltage = 0.0;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_);
+  rclcpp::spin_some(node_->get_node_base_interface());
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 }
 

@@ -55,7 +55,7 @@ public:
    * @param plugin_name should be provided in nav2_params.yaml==> waypoint_follower
    */
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
 

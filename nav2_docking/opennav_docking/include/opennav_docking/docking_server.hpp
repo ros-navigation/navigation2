@@ -23,9 +23,9 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
 #include "opennav_docking/controller.hpp"
@@ -42,11 +42,11 @@ namespace opennav_docking
  * @class opennav_docking::DockingServer
  * @brief An action server which implements charger docking node for AMRs
  */
-class DockingServer : public nav2_util::LifecycleNode
+class DockingServer : public nav2::LifecycleNode
 {
 public:
-  using DockingActionServer = nav2_util::SimpleActionServer<DockRobot>;
-  using UndockingActionServer = nav2_util::SimpleActionServer<UndockRobot>;
+  using DockingActionServer = nav2::SimpleActionServer<DockRobot>;
+  using UndockingActionServer = nav2::SimpleActionServer<UndockRobot>;
 
   /**
    * @brief A constructor for opennav_docking::DockingServer
@@ -146,7 +146,7 @@ public:
   template<typename ActionT>
   void getPreemptedGoalIfRequested(
     typename std::shared_ptr<const typename ActionT::Goal> goal,
-    const std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
+    const typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server);
 
   /**
    * @brief Checks and logs warning if action canceled
@@ -156,7 +156,7 @@ public:
    */
   template<typename ActionT>
   bool checkAndWarnIfCancelled(
-    std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+    typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server,
     const std::string & name);
 
   /**
@@ -167,7 +167,7 @@ public:
    */
   template<typename ActionT>
   bool checkAndWarnIfPreempted(
-    std::unique_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server,
+    typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server,
     const std::string & name);
 
   /**
@@ -175,35 +175,35 @@ public:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Activate member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Deactivate member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Reset member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Called when in shutdown state
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Publish zero velocity at terminal condition
@@ -265,8 +265,8 @@ protected:
 
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  std::unique_ptr<DockingActionServer> docking_action_server_;
-  std::unique_ptr<UndockingActionServer> undocking_action_server_;
+  typename DockingActionServer::SharedPtr docking_action_server_;
+  typename UndockingActionServer::SharedPtr undocking_action_server_;
 
   std::unique_ptr<DockDatabase> dock_db_;
   std::unique_ptr<Navigator> navigator_;

@@ -49,7 +49,7 @@ using namespace std::chrono_literals;
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string topic_name,
   double observation_keep_time,
   double expected_update_rate,

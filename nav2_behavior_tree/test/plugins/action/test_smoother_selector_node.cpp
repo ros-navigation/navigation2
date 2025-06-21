@@ -30,7 +30,12 @@ class SmootherSelectorTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("smoother_selector_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("smoother_selector_test_fixture");
+
+    // Configure and activate the lifecycle node
+    node_->configure();
+    node_->activate();
+
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -51,6 +56,10 @@ public:
 
   static void TearDownTestCase()
   {
+    // Properly deactivate and cleanup the lifecycle node
+    node_->deactivate();
+    node_->cleanup();
+
     delete config_;
     config_ = nullptr;
     node_.reset();
@@ -63,13 +72,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr SmootherSelectorTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr SmootherSelectorTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * SmootherSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> SmootherSelectorTestFixture::factory_ = nullptr;
@@ -103,11 +112,11 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   selected_smoother_cmd.data = "DWC";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
 
   auto smoother_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("smoother_selector_custom_topic_name", qos);
+  smoother_selector_pub->on_activate();
 
   // publish a few updates of the selected_smoother
   auto start = node_->now();
@@ -115,7 +124,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
     tree_->rootNode()->executeTick();
     smoother_selector_pub->publish(selected_smoother_cmd);
 
-    rclcpp::spin_some(node_);
+    rclcpp::spin_some(node_->get_node_base_interface());
   }
 
   // check smoother updated
@@ -151,11 +160,11 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   selected_smoother_cmd.data = "RRT";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
 
   auto smoother_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("smoother_selector", qos);
+  smoother_selector_pub->on_activate();
 
   // publish a few updates of the selected_smoother
   auto start = node_->now();
@@ -163,7 +172,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
     tree_->rootNode()->executeTick();
     smoother_selector_pub->publish(selected_smoother_cmd);
 
-    rclcpp::spin_some(node_);
+    rclcpp::spin_some(node_->get_node_base_interface());
   }
 
   // check smoother updated

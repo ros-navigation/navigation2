@@ -31,6 +31,7 @@ if(BUILD_TESTING)
   find_package(std_msgs REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
+  find_package(nav2_ros_common REQUIRED)
   find_package(tf2_ros REQUIRED)
   find_package(visualization_msgs REQUIRED)
 
@@ -49,6 +50,12 @@ if(BUILD_TESTING)
     pluginlib::pluginlib
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/controller_plugins.xml)
+  target_include_directories(${local_controller_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
+  )
 
   install(TARGETS ${local_controller_plugin_lib}
     ARCHIVE DESTINATION lib
@@ -70,6 +77,12 @@ if(BUILD_TESTING)
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_ros::tf2_ros
+  )
+  target_include_directories(${global_planner_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/planner_plugins.xml)
 
@@ -93,6 +106,12 @@ if(BUILD_TESTING)
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_ros::tf2_ros
+  )
+  target_include_directories(${smoother_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
 

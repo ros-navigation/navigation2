@@ -15,6 +15,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -28,7 +29,8 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
@@ -40,6 +42,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(${library_name} PRIVATE
   nav_2d_utils::conversions
@@ -55,7 +58,8 @@ add_executable(${executable_name}
 target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${executable_name} PRIVATE rclcpp::rclcpp ${library_name})
 
 # Simple Smoother plugin
@@ -65,7 +69,8 @@ add_library(simple_smoother SHARED
 target_include_directories(simple_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(simple_smoother PUBLIC
   angles::angles
   nav2_core::nav2_core
@@ -77,6 +82,7 @@ target_link_libraries(simple_smoother PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(simple_smoother PRIVATE
   pluginlib::pluginlib
@@ -89,7 +95,8 @@ add_library(savitzky_golay_smoother SHARED
 target_include_directories(savitzky_golay_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(savitzky_golay_smoother PUBLIC
   angles::angles
   nav2_core::nav2_core
@@ -100,6 +107,7 @@ target_link_libraries(savitzky_golay_smoother PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
   tf2_ros::tf2_ros
 )
 target_link_libraries(savitzky_golay_smoother PRIVATE
@@ -151,6 +159,7 @@ ament_export_dependencies(
   nav2_util
   pluginlib
   rclcpp
+  nav2_ros_common
   rclcpp_lifecycle
   tf2
   tf2_ros

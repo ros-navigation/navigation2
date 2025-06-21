@@ -21,7 +21,7 @@
 #include "nav2_behaviors/plugins/spin.hpp"
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -50,22 +50,22 @@ void Spin::onConfigure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "simulate_ahead_time", rclcpp::ParameterValue(2.0));
   node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "max_rotational_vel", rclcpp::ParameterValue(1.0));
   node->get_parameter("max_rotational_vel", max_rotational_vel_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "min_rotational_vel", rclcpp::ParameterValue(0.4));
   node->get_parameter("min_rotational_vel", min_rotational_vel_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "rotational_acc_lim", rclcpp::ParameterValue(3.2));
   node->get_parameter("rotational_acc_lim", rotational_acc_lim_);

@@ -110,7 +110,7 @@ private:
   nav_msgs::msg::Path old_path_;
   double prox_len_ = std::numeric_limits<double>::max();
   double length_factor_ = std::numeric_limits<double>::max();
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   bool first_time_ = true;
 };
 

@@ -20,8 +20,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "rclcpp/rclcpp.hpp"
-
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_core/smoother.hpp"
 #include "nav2_core/planner_exceptions.hpp"
@@ -43,7 +42,7 @@ public:
   ~DummySmoother() {}
 
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
+    const nav2::LifecycleNode::WeakPtr &,
     std::string, std::shared_ptr<tf2_ros::Buffer>,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) {}
@@ -122,7 +121,7 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {
@@ -159,7 +158,7 @@ class DummyFootprintSubscriber : public nav2_costmap_2d::FootprintSubscriber
 {
 public:
   DummyFootprintSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name,
     tf2_ros::Buffer & tf)
   : FootprintSubscriber(node, topic_name, tf)
@@ -200,11 +199,11 @@ public:
     default_types_.resize(1, "DummySmoother");
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & state)
   {
     auto result = SmootherServer::on_configure(state);
-    if (result != nav2_util::CallbackReturn::SUCCESS) {
+    if (result != nav2::CallbackReturn::SUCCESS) {
       return result;
     }
 
@@ -235,8 +234,8 @@ public:
   void SetUp() override
   {
     node_ =
-      std::make_shared<rclcpp::Node>(
-      "LifecycleSmootherTestNode", rclcpp::NodeOptions());
+      std::make_shared<nav2::LifecycleNode>(
+      "LifecycleSmootherTestNode");
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
     smoother_server_->set_parameter(
@@ -321,7 +320,7 @@ public:
     return future_result.get();
   }
 
-  std::shared_ptr<rclcpp::Node> node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<DummySmootherServer> smoother_server_;
   std::shared_ptr<rclcpp_action::Client<SmoothAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<SmoothAction>> goal_handle_;

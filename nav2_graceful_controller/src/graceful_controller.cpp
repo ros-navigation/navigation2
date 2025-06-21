@@ -25,11 +25,14 @@ namespace nav2_graceful_controller
 {
 
 void GracefulController::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  auto node = parent.lock();
+  nav2::LifecycleNode::SharedPtr node = parent.lock();
+  // nav2::LifecycleNode::SharedPtr node =
+  //   std::dynamic_pointer_cast<nav2::LifecycleNode>(parent.lock());
+
   if (!node) {
     throw nav2_core::ControllerException("Unable to lock node!");
   }
@@ -62,10 +65,10 @@ void GracefulController::configure(
   }
 
   // Publishers
-  transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan", 1);
-  local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan", 1);
-  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target", 1);
-  slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown", 1);
+  transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
+  local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
+  motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target");
+  slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown");
 
   RCLCPP_INFO(logger_, "Configured Graceful Motion Controller: %s", plugin_name_.c_str());
 }

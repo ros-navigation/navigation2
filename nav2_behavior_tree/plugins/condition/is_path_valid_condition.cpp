@@ -26,9 +26,11 @@ IsPathValidCondition::IsPathValidCondition(
 : BT::ConditionNode(condition_name, conf),
   max_cost_(254), consider_unknown_as_obstacle_(false)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  client_ = std::make_shared<nav2_util::ServiceClient<nav2_msgs::srv::IsPathValid>>("is_path_valid",
-      node_, false /* Does not create and spin an internal executor*/);
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  client_ =
+    node_->create_client<nav2_msgs::srv::IsPathValid>(
+    "is_path_valid",
+    false /* Does not create and spin an internal executor*/);
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 }

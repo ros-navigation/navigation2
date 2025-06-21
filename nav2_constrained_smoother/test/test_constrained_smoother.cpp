@@ -38,7 +38,7 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {
@@ -108,8 +108,7 @@ protected:
   void SetUp() override
   {
     node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
-      "ConstrainedSmootherTestNode", rclcpp::NodeOptions());
+      std::make_shared<nav2::LifecycleNode>("ConstrainedSmootherTestNode");
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -388,7 +387,7 @@ protected:
     return output;
   }
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
+  nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<nav2_constrained_smoother::ConstrainedSmoother> smoother_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;

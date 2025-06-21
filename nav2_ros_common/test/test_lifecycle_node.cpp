@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "gtest/gtest.h"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 class RclCppFixture
@@ -26,21 +26,21 @@ public:
 };
 RclCppFixture g_rclcppfixture;
 
-class LifecycleTransitionTestNode : public nav2_util::LifecycleNode
+class LifecycleTransitionTestNode : public nav2::LifecycleNode
 {
 public:
   explicit LifecycleTransitionTestNode(rclcpp::NodeOptions options)
-  : nav2_util::LifecycleNode("test_node", "", options) {}
+  : nav2::LifecycleNode("test_node", "", options) {}
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
   {
     configured = true;
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
     activated = true;
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
   bool configured{false};
@@ -54,7 +54,7 @@ public:
 TEST(LifecycleNode, RclcppNodeExitsCleanly)
 {
   // Make sure the node exits cleanly when using an rclcpp_node and associated thread
-  auto node1 = std::make_shared<nav2_util::LifecycleNode>("test_node", "");
+  auto node1 = std::make_shared<nav2::LifecycleNode>("test_node", "");
   std::this_thread::sleep_for(std::chrono::seconds(1));
   SUCCEED();
 }
@@ -62,8 +62,8 @@ TEST(LifecycleNode, RclcppNodeExitsCleanly)
 TEST(LifecycleNode, MultipleRclcppNodesExitCleanly)
 {
   // Try a couple nodes w/ rclcpp_node and threads
-  auto node1 = std::make_shared<nav2_util::LifecycleNode>("test_node1", "");
-  auto node2 = std::make_shared<nav2_util::LifecycleNode>("test_node2", "");
+  auto node1 = std::make_shared<nav2::LifecycleNode>("test_node1", "");
+  auto node2 = std::make_shared<nav2::LifecycleNode>("test_node2", "");
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
   SUCCEED();
@@ -97,12 +97,12 @@ TEST(LifecycleNode, OnPreshutdownCbFires)
 {
   // Ensure the on_rcl_preshutdown_cb fires
 
-  class MyNodeType : public nav2_util::LifecycleNode
+  class MyNodeType : public nav2::LifecycleNode
   {
 public:
     MyNodeType(
       const std::string & node_name)
-    : nav2_util::LifecycleNode(node_name) {}
+    : nav2::LifecycleNode(node_name, rclcpp::NodeOptions()) {}
 
     bool fired = false;
 
@@ -111,7 +111,7 @@ protected:
     {
       fired = true;
 
-      nav2_util::LifecycleNode::on_rcl_preshutdown();
+      nav2::LifecycleNode::on_rcl_preshutdown();
     }
   };
 

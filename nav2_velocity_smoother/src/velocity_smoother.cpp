@@ -22,7 +22,7 @@
 #include "nav2_velocity_smoother/velocity_smoother.hpp"
 
 using namespace std::chrono_literals;
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using std::placeholders::_1;
 using rcl_interfaces::msg::ParameterType;
 
@@ -43,7 +43,7 @@ VelocitySmoother::~VelocitySmoother()
   }
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring velocity smoother");
@@ -80,31 +80,31 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(),
         "Positive values set of deceleration! These should be negative to slow down!");
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
     if (max_accels_[i] < 0.0) {
       RCLCPP_ERROR(
         get_logger(),
         "Negative values set of acceleration! These should be positive to speed up!");
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
     if (min_velocities_[i] > 0.0) {
       RCLCPP_ERROR(
         get_logger(), "Positive values set of min_velocities! These should be negative!");
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
     if (max_velocities_[i] < 0.0) {
       RCLCPP_ERROR(
         get_logger(), "Negative values set of max_velocities! These should be positive!");
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
     if (min_velocities_[i] > max_velocities_[i]) {
       RCLCPP_ERROR(get_logger(), "Min velocities are higher than max velocities!");
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -128,7 +128,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       "Invalid setting of kinematic and/or deadband limits!"
       " All limits must be size of 3 representing (x, y, theta).");
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   // Get control type
@@ -142,35 +142,34 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       get_logger(),
       "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   // Setup inputs / outputs
-  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
+  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed");
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
-    "cmd_vel", rclcpp::QoS(1),
+    "cmd_vel",
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
-    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1)
-  );
+    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1));
 
   declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
   bool use_realtime_priority = false;
   node->get_parameter("use_realtime_priority", use_realtime_priority);
   if (use_realtime_priority) {
     try {
-      nav2_util::setSoftRealTimePriority();
+      nav2::setSoftRealTimePriority();
     } catch (const std::runtime_error & e) {
       RCLCPP_ERROR(get_logger(), "%s", e.what());
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -185,10 +184,10 @@ VelocitySmoother::on_activate(const rclcpp_lifecycle::State &)
 
   // create bond connection
   createBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VelocitySmoother::on_deactivate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -203,24 +202,24 @@ VelocitySmoother::on_deactivate(const rclcpp_lifecycle::State &)
 
   // destroy bond connection
   destroyBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VelocitySmoother::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   smoothed_cmd_pub_.reset();
   odom_smoother_.reset();
   cmd_sub_.reset();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 void VelocitySmoother::inputCommandStampedCallback(

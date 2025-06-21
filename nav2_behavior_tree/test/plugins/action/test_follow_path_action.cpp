@@ -50,7 +50,7 @@ class FollowPathActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("follow_path_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("follow_path_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -100,13 +100,13 @@ public:
   static std::shared_ptr<FollowPathActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr FollowPathActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr FollowPathActionTestFixture::node_ = nullptr;
 std::shared_ptr<FollowPathActionServer>
 FollowPathActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * FollowPathActionTestFixture::config_ = nullptr;

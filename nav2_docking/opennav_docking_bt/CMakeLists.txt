@@ -12,6 +12,7 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -20,6 +21,7 @@ target_include_directories(opennav_dock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_compile_definitions(opennav_dock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
 target_link_libraries(opennav_dock_action_bt_node PUBLIC
@@ -34,6 +36,7 @@ target_include_directories(opennav_undock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_compile_definitions(opennav_undock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
 target_link_libraries(opennav_undock_action_bt_node PUBLIC
@@ -69,6 +72,7 @@ ament_export_dependencies(
   behaviortree_cpp
   geometry_msgs
   nav2_behavior_tree
+  nav2_ros_common
   nav2_msgs
 )
 ament_export_targets(${PROJECT_NAME})

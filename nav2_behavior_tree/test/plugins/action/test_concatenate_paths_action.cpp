@@ -36,7 +36,7 @@ class ConcatenatePathsTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -73,13 +73,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ConcatenatePathsTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr ConcatenatePathsTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * ConcatenatePathsTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> ConcatenatePathsTestFixture::factory_ = nullptr;

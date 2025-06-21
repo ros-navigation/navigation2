@@ -34,7 +34,7 @@ TimeExpiredCondition::TimeExpiredCondition(
 void TimeExpiredCondition::initialize()
 {
   getInput("seconds", period_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   start_ = node_->now();
 }
 

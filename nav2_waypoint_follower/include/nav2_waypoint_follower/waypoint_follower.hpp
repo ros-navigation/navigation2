@@ -24,16 +24,16 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geographic_msgs/msg/geo_pose.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
 #include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/simple_action_server.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
-#include "nav2_util/service_client.hpp"
+#include "nav2_ros_common/service_client.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
@@ -64,17 +64,17 @@ struct GoalStatus
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class WaypointFollower : public nav2_util::LifecycleNode
+class WaypointFollower : public nav2::LifecycleNode
 {
 public:
   using ActionT = nav2_msgs::action::FollowWaypoints;
   using ClientT = nav2_msgs::action::NavigateToPose;
-  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+  using ActionServer = nav2::SimpleActionServer<ActionT>;
   using ActionClient = rclcpp_action::Client<ClientT>;
 
   // Shorten the types for GPS waypoint following
   using ActionTGPS = nav2_msgs::action::FollowGPSWaypoints;
-  using ActionServerGPS = nav2_util::SimpleActionServer<ActionTGPS>;
+  using ActionServerGPS = nav2::SimpleActionServer<ActionTGPS>;
 
   /**
    * @brief A constructor for nav2_waypoint_follower::WaypointFollower class
@@ -94,31 +94,31 @@ protected:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in shutdown state
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Templated function to perform internal logic behind waypoint following,
@@ -199,16 +199,15 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Our action server
-  std::unique_ptr<ActionServer> xyz_action_server_;
+  typename ActionServer::SharedPtr xyz_action_server_;
   ActionClient::SharedPtr nav_to_pose_client_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::shared_future<rclcpp_action::ClientGoalHandle<ClientT>::SharedPtr> future_goal_handle_;
 
   // Our action server for GPS waypoint following
-  std::unique_ptr<ActionServerGPS> gps_action_server_;
-  std::unique_ptr<nav2_util::ServiceClient<robot_localization::srv::FromLL,
-    std::shared_ptr<nav2_util::LifecycleNode>>> from_ll_to_map_client_;
+  typename ActionServerGPS::SharedPtr gps_action_server_;
+  nav2::ServiceClient<robot_localization::srv::FromLL>::SharedPtr from_ll_to_map_client_;
 
   bool stop_on_failure_;
   int loop_rate_;

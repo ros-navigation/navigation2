@@ -14,8 +14,8 @@
 
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/node_utils.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
@@ -25,7 +25,7 @@ namespace nav2_route
 {
 
 OperationsManager::OperationsManager(
-  nav2_util::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 : plugin_loader_("nav2_route", "nav2_route::RouteOperation")
 {
@@ -37,13 +37,13 @@ OperationsManager::OperationsManager(
   const std::vector<std::string> default_plugin_types(
     {"nav2_route::AdjustSpeedLimit", "nav2_route::ReroutingService"});
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "operations", rclcpp::ParameterValue(default_plugin_ids));
   auto operation_ids = node->get_parameter("operations").as_string_array();
 
   if (operation_ids == default_plugin_ids) {
     for (unsigned int i = 0; i != operation_ids.size(); i++) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_plugin_ids[i] + ".plugin", rclcpp::ParameterValue(default_plugin_types[i]));
     }
   }
@@ -51,7 +51,7 @@ OperationsManager::OperationsManager(
   // Create plugins and sort them into On Query, Status Change, and Graph-calling Operations
   for (size_t i = 0; i != operation_ids.size(); i++) {
     try {
-      std::string type = nav2_util::get_plugin_type_param(node, operation_ids[i]);
+      std::string type = nav2::get_plugin_type_param(node, operation_ids[i]);
       RouteOperation::Ptr operation = plugin_loader_.createSharedInstance(type);
       RCLCPP_INFO(
         node->get_logger(), "Created route operation %s of type %s",

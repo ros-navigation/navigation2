@@ -19,7 +19,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -32,23 +32,23 @@ PhotoAtWaypoint::~PhotoAtWaypoint()
 }
 
 void PhotoAtWaypoint::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   auto node = parent.lock();
 
   curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".image_topic",
     rclcpp::ParameterValue("/camera/color/image_raw"));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".save_dir",
     rclcpp::ParameterValue("/tmp/waypoint_images"));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".image_format",
     rclcpp::ParameterValue("png"));
 
@@ -93,7 +93,7 @@ void PhotoAtWaypoint::initialize(
       logger_, "Initializing photo at waypoint plugin, subscribing to camera topic named; %s",
       image_topic_.c_str());
     camera_image_subscriber_ = node->create_subscription<sensor_msgs::msg::Image>(
-      image_topic_, rclcpp::SystemDefaultsQoS(),
+      image_topic_,
       std::bind(&PhotoAtWaypoint::imageCallback, this, std::placeholders::_1));
   }
 }
