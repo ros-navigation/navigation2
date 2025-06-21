@@ -836,6 +836,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _costmap_downsampler = std::make_unique<CostmapDownsampler>();
         _costmap_downsampler->on_configure(
           node, _global_frame, topic_name, _costmap, _downsampling_factor);
+        _costmap_downsampler->on_activate();
       }
     }
 
