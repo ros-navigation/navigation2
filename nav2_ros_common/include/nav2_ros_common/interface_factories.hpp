@@ -132,7 +132,7 @@ typename rclcpp::Subscription<MessageT>::SharedPtr create_subscription(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter<bool>(
-    node, "allow_parameter_qos_overrides", true);
+    node, "allow_parameter_qos_overrides", false);
 
   auto params_interface = node->get_node_parameters_interface();
   auto topics_interface = node->get_node_topics_interface();
@@ -161,7 +161,7 @@ typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr create_publis
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter<bool>(
-    node, "allow_parameter_qos_overrides", true);
+    node, "allow_parameter_qos_overrides", false);
   using PublisherT = rclcpp_lifecycle::LifecyclePublisher<MessageT, std::allocator<void>>;
   auto pub = rclcpp::create_publisher<MessageT, std::allocator<void>, PublisherT>(
     *node,
