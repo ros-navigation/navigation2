@@ -46,6 +46,8 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
+#include "nav2_util/node_utils.hpp"
+#include "rclcpp/version.h"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
 
@@ -99,6 +101,8 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+  double tf_filter_tolerance = nav2_util::declare_or_get_parameter(node, name_ + "." +
+      "tf_filter_tolerance", 0.05);
 
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
@@ -230,13 +234,23 @@ void ObstacleLayer::onInitialize()
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub;
+      #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
         rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
 
-      // For Jazzy compatibility
-      #if RCLCPP_VERSION_GTE(29, 0, 0)
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
           rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
           rclcpp_lifecycle::LifecycleNode>>(
@@ -267,16 +281,27 @@ void ObstacleLayer::onInitialize()
       observation_subscribers_.push_back(sub);
 
       observation_notifiers_.push_back(filter);
-      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(0.05));
+      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(
+          tf_filter_tolerance));
 
     } else {
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub;
+      #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
         rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
 
-      // For Jazzy compatibility
-      #if RCLCPP_VERSION_GTE(29, 0, 0)
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
           rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
           rclcpp_lifecycle::LifecycleNode>>(
@@ -325,6 +350,9 @@ ObstacleLayer::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "min_obstacle_height") {

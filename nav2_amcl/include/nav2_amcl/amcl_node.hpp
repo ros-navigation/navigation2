@@ -28,13 +28,8 @@
 #include <utility>
 #include <vector>
 
-// For compatibility with Jazzy
-#include "rclcpp/version.h"
-#if RCLCPP_VERSION_GTE(29, 0, 0)
 #include "message_filters/subscriber.hpp"
-#else
-#include "message_filters/subscriber.h"
-#endif
+#include "rclcpp/version.h"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/lifecycle_node.hpp"
@@ -177,8 +172,14 @@ protected:
    * @brief Initialize incoming data message subscribers and filters
    */
   void initMessageFilters();
+
+  // To Support Kilted and Older from Message Filters API change
+  #if RCLCPP_VERSION_GTE(29, 6, 0)
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
+  #else
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
     rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
+  #endif
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;
   message_filters::Connection laser_scan_connection_;
 

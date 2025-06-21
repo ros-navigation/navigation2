@@ -1,0 +1,5 @@
+no_docks:
+  dock1:
+    type: "dockv3"
+    frame: "mapA"
+    pose: [0.3, 0.3, 0.0]

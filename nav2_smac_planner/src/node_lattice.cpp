@@ -345,13 +345,18 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coords)
+  const CoordinateVector & goals_coords)
 {
   // get obstacle heuristic value
+  // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic = getObstacleHeuristic(
-    node_coords, goal_coords, motion_table.cost_penalty);
-  const float distance_heuristic =
-    getDistanceHeuristic(node_coords, goal_coords, obstacle_heuristic);
+    node_coords, goals_coords[0], motion_table.cost_penalty);
+  float distance_heuristic = std::numeric_limits<float>::max();
+  for (unsigned int i = 0; i < goals_coords.size(); i++) {
+    distance_heuristic = std::min(
+      distance_heuristic,
+      getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic));
+  }
   return std::max(obstacle_heuristic, distance_heuristic);
 }
 
@@ -467,7 +472,7 @@ void NodeLattice::precomputeDistanceHeuristic(
   int dim_3_size_int = static_cast<int>(dim_3_size);
 
   // Create a lookup table of Dubin/Reeds-Shepp distances in a window around the goal
-  // to help drive the search towards admissible approaches. Deu to symmetries in the
+  // to help drive the search towards admissible approaches. Due to symmetries in the
   // Heuristic space, we need to only store 2 of the 4 quadrants and simply mirror
   // around the X axis any relative node lookup. This reduces memory overhead and increases
   // the size of a window a platform can store in memory.
@@ -494,7 +499,6 @@ void NodeLattice::getNeighbors(
   NodeVector & neighbors)
 {
   uint64_t index = 0;
-  float angle;
   bool backwards = false;
   NodePtr neighbor = nullptr;
   Coordinates initial_node_coords, motion_projection;
@@ -510,6 +514,24 @@ void NodeLattice::getNeighbors(
     motion_projection.y = this->pose.y + (end_pose._y / grid_resolution);
     motion_projection.theta = motion_primitives[i]->end_angle /*this is the ending angular bin*/;
 
+    // if i >= idx, then we're in a reversing primitive. In that situation,
+    // the orientation of the robot is mirrored from what it would otherwise
+    // appear to be from the motion primitives file. We want to take this into
+    // account in case the robot base footprint is asymmetric.
+    backwards = false;
+    if (i >= direction_change_index) {
+      backwards = true;
+      float opposite_heading_theta =
+        motion_projection.theta - (motion_table.num_angle_quantization / 2);
+      if (opposite_heading_theta < 0) {
+        opposite_heading_theta += motion_table.num_angle_quantization;
+      }
+      if (opposite_heading_theta > motion_table.num_angle_quantization) {
+        opposite_heading_theta -= motion_table.num_angle_quantization;
+      }
+      motion_projection.theta = opposite_heading_theta;
+    }
+
     index = NodeLattice::getIndex(
       static_cast<unsigned int>(motion_projection.x),
       static_cast<unsigned int>(motion_projection.y),
@@ -519,28 +541,12 @@ void NodeLattice::getNeighbors(
       // Cache the initial pose in case it was visited but valid
       // don't want to disrupt continuous coordinate expansion
       initial_node_coords = neighbor->pose;
-      // if i >= idx, then we're in a reversing primitive. In that situation,
-      // the orientation of the robot is mirrored from what it would otherwise
-      // appear to be from the motion primitives file. We want to take this into
-      // account in case the robot base footprint is asymmetric.
-      backwards = false;
-      angle = motion_projection.theta;
-      if (i >= direction_change_index) {
-        backwards = true;
-        angle = motion_projection.theta - (motion_table.num_angle_quantization / 2);
-        if (angle < 0) {
-          angle += motion_table.num_angle_quantization;
-        }
-        if (angle > motion_table.num_angle_quantization) {
-          angle -= motion_table.num_angle_quantization;
-        }
-      }
 
       neighbor->setPose(
         Coordinates(
           motion_projection.x,
           motion_projection.y,
-          angle));
+          motion_projection.theta));
 
       // Using a special isNodeValid API here, giving the motion primitive to use to
       // validity check the transition of the current node to the new node over

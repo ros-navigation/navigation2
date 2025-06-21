@@ -26,6 +26,7 @@ from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.client import Client
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 
@@ -51,9 +52,11 @@ class NavTester(Node):
         self.initial_pose_received = False
         self.initial_pose = initial_pose
         self.goal_pose = goal_pose
-        self.action_client = ActionClient(
-            self, NavigateThroughPoses, 'navigate_through_poses'
-        )
+        self.action_client: ActionClient[
+            NavigateThroughPoses.Goal,
+            NavigateThroughPoses.Result,
+            NavigateThroughPoses.Feedback
+        ] = ActionClient(self, NavigateThroughPoses, 'navigate_through_poses')
 
     def info_msg(self, msg: str) -> None:
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
@@ -206,7 +209,8 @@ class NavTester(Node):
         # Waits for the node within the tester namespace to become active
         self.info_msg(f'Waiting for {node_name} to become active')
         node_service = f'{node_name}/get_state'
-        state_client = self.create_client(GetState, node_service)
+        state_client: Client[GetState.Request, GetState.Response] = \
+            self.create_client(GetState, node_service)
         while not state_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{node_service} service not available, waiting...')
         req = GetState.Request()  # empty request
@@ -229,7 +233,8 @@ class NavTester(Node):
         self.action_client.destroy()
 
         transition_service = 'lifecycle_manager_navigation/manage_nodes'
-        mgr_client = self.create_client(ManageLifecycleNodes, transition_service)
+        mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+            self.create_client(ManageLifecycleNodes, transition_service)
         while not mgr_client.wait_for_service(timeout_sec=1.0):
             self.info_msg(f'{transition_service} service not available, waiting...')
 

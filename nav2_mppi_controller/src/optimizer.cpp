@@ -132,7 +132,7 @@ void Optimizer::setOffset(double controller_frequency)
   }
 }
 
-void Optimizer::reset()
+void Optimizer::reset(bool reset_dynamic_speed_limits)
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
@@ -141,12 +141,16 @@ void Optimizer::reset()
   control_history_[2] = {0.0f, 0.0f, 0.0f};
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
-  settings_.constraints = settings_.base_constraints;
+  if (reset_dynamic_speed_limits) {
+    settings_.constraints = settings_.base_constraints;
+  }
 
   costs_.setZero(settings_.batch_size);
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
+  motion_model_->initialize(settings_.constraints, settings_.model_dt);
+
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
 
@@ -335,6 +339,9 @@ void Optimizer::integrateStateVelocities(
   auto traj_yaws = trajectory.col(2);
 
   const size_t n_size = traj_yaws.size();
+  if (n_size == 0) {
+    return;
+  }
 
   float last_yaw = initial_yaw;
   for(size_t i = 0; i != n_size; i++) {
@@ -438,13 +445,16 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto wz_T = control_sequence_.wz.transpose();
   auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
-  auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
-  const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
-  costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+
+  if (s.sampling_std.wz > 0.0f) {
+    auto wz_T = control_sequence_.wz.transpose();
+    auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
+    const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
+    costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+  }
 
   if (is_holo) {
     auto vy_T = control_sequence_.vy.transpose();

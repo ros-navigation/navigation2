@@ -48,7 +48,6 @@ bt_navigator:
     filter_duration: 0.3
     default_server_timeout: 20
     wait_for_service_timeout: 1000
-    action_server_result_timeout: 900.0
     service_introspection_mode: "disabled"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
@@ -79,6 +78,7 @@ bt_navigator:
       - nav_to_pose
       - route
       - spin
+      - smoother
       - undock_robot
       - wait
 
@@ -94,6 +94,7 @@ controller_server:
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
     use_realtime_priority: false
+    speed_limit_topic: "speed_limit"
 
     # Progress checker parameters
     progress_checker:
@@ -223,6 +224,13 @@ local_costmap:
       resolution: 0.05
       robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer"]
+      filters: ["keepout_filter"]
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: KEEPOUT_ZONE_ENABLED
+        filter_info_topic: "keepout_costmap_filter_info"
+        override_lethal_cost: True
+        lethal_override_cost: 200
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
@@ -270,6 +278,18 @@ global_costmap:
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      filters: ["keepout_filter", "speed_filter"]
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: KEEPOUT_ZONE_ENABLED
+        filter_info_topic: "keepout_costmap_filter_info"
+        override_lethal_cost: True
+        lethal_override_cost: 200
+      speed_filter:
+        plugin: "nav2_costmap_2d::SpeedFilter"
+        enabled: SPEED_ZONE_ENABLED
+        filter_info_topic: "speed_costmap_filter_info"
+        speed_limit_topic: "speed_limit"
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -301,12 +321,38 @@ global_costmap:
       service_introspection_mode: "disabled"
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
-# If you'd rather set it in the yaml, remove the default "map" value in the tb3_simulation_launch.py
+# If you'd rather set it in the yaml, remove the default "map" value in the launch file(s).
 # file & provide full path to map below. If CLI map configuration or launch default is provided, that will be used.
 map_server:
   ros__parameters:
     # yaml_filename: ""
     service_introspection_mode: "disabled"
+
+keepout_filter_mask_server:
+  ros__parameters:
+    topic_name: "keepout_filter_mask"
+    # yaml_filename: ""
+
+keepout_costmap_filter_info_server:
+  ros__parameters:
+    type: 0
+    filter_info_topic: "keepout_costmap_filter_info"
+    mask_topic: "keepout_filter_mask"
+    base: 0.0
+    multiplier: 1.0
+
+speed_filter_mask_server:
+  ros__parameters:
+    topic_name: "speed_filter_mask"
+    # yaml_filename: ""
+
+speed_costmap_filter_info_server:
+  ros__parameters:
+    type: 1
+    filter_info_topic: "speed_costmap_filter_info"
+    mask_topic: "speed_filter_mask"
+    base: 100.0
+    multiplier: -1.0
 
 map_saver:
   ros__parameters:
@@ -330,11 +376,22 @@ planner_server:
 
 smoother_server:
   ros__parameters:
-    smoother_plugins: ["simple_smoother"]
+    smoother_plugins: ["simple_smoother", "route_smoother"]
     simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
       max_its: 1000
+      refinement_num: 2
+      # True for Hybrid A* or State Lattice to not smooth over directional changes
+      enforce_path_inversion: True
+      do_refinement: True
+    route_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      refinement_num: 5
+      # False for Route Server or others where smoothing out sharp corners is OK
+      enforce_path_inversion: False
       do_refinement: True
 
 behavior_server:
@@ -376,12 +433,34 @@ waypoint_follower:
     loop_rate: 20
     stop_on_failure: false
     service_introspection_mode: "disabled"
-    action_server_result_timeout: 900.0
     waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
       waypoint_pause_duration: 200
+
+route_server:
+  ros__parameters:
+    # The graph_filepath does not need to be specified since it going to be set by defaults in launch.
+    # If you'd rather set it in the yaml, remove the default "graph" value in the launch file(s).
+    # file & provide full path to map below. If graph config or launch default is provided, it is used
+    # graph_filepath: $(find-pkg-share nav2_route)/graphs/aws_graph.geojson
+    boundary_radius_to_achieve_node: 1.0
+    radius_to_achieve_node: 2.0
+    smooth_corners: true
+    operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
+    ReroutingService:
+      plugin: "nav2_route::ReroutingService"
+    AdjustSpeedLimit:
+      plugin: "nav2_route::AdjustSpeedLimit"
+    CollisionMonitor:
+      plugin: "nav2_route::CollisionMonitor"
+      max_collision_dist: 3.0
+    edge_cost_functions: ["DistanceScorer", "CostmapScorer"]
+    DistanceScorer:
+      plugin: "nav2_route::DistanceScorer"
+    CostmapScorer:
+      plugin: "nav2_route::CostmapScorer"
 
 velocity_smoother:
   ros__parameters:
@@ -489,3 +568,9 @@ loopback_simulator:
     map_frame_id: "map"
     scan_frame_id: "base_scan" # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
     update_duration: 0.02
+    scan_range_min: 0.05
+    scan_range_max: 30.0
+    scan_angle_min: -3.1415
+    scan_angle_max: 3.1415
+    scan_angle_increment: 0.02617
+    scan_use_inf: true

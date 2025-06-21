@@ -51,8 +51,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
-  declare_parameter("action_server_result_timeout", 10.0);
-
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -70,7 +68,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()},
-    get_parameter("use_sim_time").as_bool());
+    get_parameter("use_sim_time").as_bool(), options);
 }
 
 ControllerServer::~ControllerServer()
@@ -224,11 +222,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
 
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
@@ -242,7 +235,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, rcl_action_server_get_default_options(),
+      use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);
@@ -482,7 +476,7 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          onGoalExit();
+          onGoalExit(true);
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -519,7 +513,7 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
     result->error_msg = e.what();
@@ -527,7 +521,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
     result->error_msg = e.what();
@@ -535,7 +529,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
     result->error_msg = e.what();
@@ -543,7 +537,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
     result->error_msg = e.what();
@@ -551,7 +545,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
     result->error_msg = e.what();
@@ -559,7 +553,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
     result->error_msg = e.what();
@@ -567,7 +561,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
     result->error_msg = e.what();
@@ -575,7 +569,7 @@ void ControllerServer::computeControl()
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -583,7 +577,7 @@ void ControllerServer::computeControl()
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    onGoalExit();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
     result->error_msg = e.what();
@@ -593,7 +587,7 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  onGoalExit();
+  onGoalExit(false);
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -781,16 +775,15 @@ void ControllerServer::publishZeroVelocity()
   publishVelocity(velocity);
 }
 
-void ControllerServer::onGoalExit()
+void ControllerServer::onGoalExit(bool force_stop)
 {
-  if (publish_zero_velocity_) {
+  if (publish_zero_velocity_ || force_stop) {
     publishZeroVelocity();
   }
 
-  // Reset the state of the controllers after the task has ended
-  ControllerMap::iterator it;
-  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second->reset();
+  // Reset controller state
+  for (auto & controller : controllers_) {
+    controller.second->reset();
   }
 }
 
@@ -840,12 +833,12 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
-    if (name.find('.') != std::string::npos) {
+    if (param_name.find('.') != std::string::npos) {
       continue;
     }
 
@@ -859,16 +852,14 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       return result;
     }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller_frequency") {
-        controller_frequency_ = parameter.as_double();
-      } else if (name == "min_x_velocity_threshold") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "min_x_velocity_threshold") {
         min_x_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_y_velocity_threshold") {
+      } else if (param_name == "min_y_velocity_threshold") {
         min_y_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_theta_velocity_threshold") {
+      } else if (param_name == "min_theta_velocity_threshold") {
         min_theta_velocity_threshold_ = parameter.as_double();
-      } else if (name == "failure_tolerance") {
+      } else if (param_name == "failure_tolerance") {
         failure_tolerance_ = parameter.as_double();
       }
     }

@@ -203,7 +203,7 @@ bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::Share
       node->get_logger(), "Loading dock from database file  %s.", dock_filepath.c_str());
     try {
       return utils::parseDockFile(dock_filepath, node, dock_instances_);
-    } catch (YAML::ParserException & e) {
+    } catch (YAML::BadConversion & e) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock database (%s) is malformed: %s.", dock_filepath.c_str(), e.what());

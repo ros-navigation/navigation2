@@ -50,7 +50,12 @@ def generate_launch_description() -> LaunchDescription:
 
     # Replace the `use_astar` setting on the params file
     configured_params = RewrittenYaml(
-        source_file=params_file, root_key='', param_rewrites='', convert_types=True
+        source_file=params_file, root_key='', param_rewrites={},
+        value_rewrites={
+            'KEEPOUT_ZONE_ENABLED': 'False',
+            'SPEED_ZONE_ENABLED': 'False',
+        },
+        convert_types=True
     )
 
     return LaunchDescription(

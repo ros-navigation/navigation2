@@ -18,8 +18,8 @@
 import requests
 
 # Global information about current distributions, shouldn't need to update
-OSs = {'humble': 'jammy', 'iron': 'jammy', 'jazzy': 'noble'}
-Prefixs = {'humble': 'H', 'iron': 'I', 'jazzy': 'J'}
+OSs = {'humble': 'jammy', 'jazzy': 'noble', 'kilted': 'noble'}
+Prefixs = {'humble': 'H', 'jazzy': 'J', 'kilted': 'K'}
 
 # Set your packages here
 Packages = [
@@ -39,6 +39,7 @@ Packages = [
     'nav2_dwb_controller',  # Controller plugin for DWB packages
     'nav2_graceful_controller',
     'nav2_lifecycle_manager',
+    'nav2_loopback_sim',
     'nav2_map_server',
     'nav2_mppi_controller',
     'nav2_msgs',
@@ -46,6 +47,7 @@ Packages = [
     'nav2_planner',
     'nav2_regulated_pure_pursuit_controller',
     'nav2_rotation_shim_controller',
+    'nav2_route',
     'nav2_rviz_plugins',
     'nav2_simple_commander',
     'nav2_smac_planner',
@@ -59,7 +61,7 @@ Packages = [
 ]
 
 # Set which distributions you care about
-Distros = ['humble', 'iron', 'jazzy']
+Distros = ['humble', 'jazzy', 'kilted']
 
 
 def getSrcPath(package: str, prefix: str, OS: str) -> str:
@@ -77,6 +79,7 @@ def createPreamble(Distros: list[str]) -> str:
     table = '| Package | '
     for distro in Distros:
         table += distro + ' Source | ' + distro + ' Debian | '
+    table = table[:-1]  # Remove the last space
     table += '\n'
     table += '| :---: |'
     for distro in Distros:
@@ -103,6 +106,7 @@ def main() -> None:
             else:
                 entry += f'[![Build Status]({srcURL}badge/icon)]({srcURL}) | '
                 entry += f'[![Build Status]({binURL}badge/icon)]({binURL}) | '
+        entry = entry[:-1]
         entry += '\n'
         body += entry
 

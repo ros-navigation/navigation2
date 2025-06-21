@@ -76,6 +76,12 @@ BT::NodeStatus DriveOnHeadingAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
+void DriveOnHeadingAction::on_timeout()
+{
+  setOutput("error_code_id", ActionResult::TIMEOUT);
+  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
+}
+
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"

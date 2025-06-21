@@ -24,6 +24,7 @@ module = [
     "launch.*",
     "ament_index_python.*",
     "nav2_common.*",
+    "nav2_loopback_sim.*",
     "nav2_msgs.*",
     "nav2_simple_commander.*",
     "launch_testing.*",
@@ -43,8 +44,11 @@ module = [
     "rcl_interfaces.*",
     "std_msgs.*",
     "zmq.*",
+    "std_srvs.*",
     "graphviz.*",
     "transforms3d.*",
+    "geopandas.*",
+    "pandas.*",
 ]
 
 ignore_missing_imports = true

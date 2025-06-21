@@ -42,6 +42,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
+  declare_parameter("service_timeout", 5.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
 
@@ -53,6 +54,11 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("bond_timeout", bond_timeout_s);
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
+
+  double service_timeout_s;
+  get_parameter("service_timeout", service_timeout_s);
+  service_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::duration<double>(service_timeout_s));
 
   double respawn_timeout_s;
   get_parameter("bond_respawn_max_duration", respawn_timeout_s);
@@ -254,8 +260,9 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition) ||
-    !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
+  if (!node_map_[node_name]->change_state(transition, std::chrono::milliseconds(-1),
+      service_timeout_) ||
+    !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
   {
     RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
     return false;
@@ -547,7 +554,7 @@ LifecycleManager::checkBondRespawnConnection()
     }
 
     try {
-      node_map_[node_name]->get_state();  // Only won't throw if the server exists
+      node_map_[node_name]->get_state(service_timeout_);  // Only won't throw if the server exists
       live_servers++;
     } catch (...) {
       break;

@@ -38,7 +38,8 @@ TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
-  ParametersHandler handler(node);
+  std::string name = "test";
+ParametersHandler handler(node, name);
 
   generator.initialize(settings, false, "test_name", &handler);
   generator.reset(settings, false);
@@ -50,7 +51,8 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   // Tests shuts down internal thread cleanly
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(true));
-  ParametersHandler handler(node);
+  std::string name = "test";
+ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;
@@ -138,7 +140,8 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   // This time with no regeneration of noises
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
-  ParametersHandler handler(node);
+  std::string name = "test";
+ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;

@@ -37,8 +37,6 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   declare_parameter("stop_on_failure", true);
   declare_parameter("loop_rate", 20);
 
-  declare_parameter("action_server_result_timeout", 900.0);
-
   declare_parameter("global_frame_id", "map");
 
   nav2_util::declare_parameter_if_not_declared(
@@ -78,10 +76,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     get_node_waitables_interface(),
     "navigate_to_pose", callback_group_);
 
-  double action_server_result_timeout = get_parameter("action_server_result_timeout").as_double();
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
-
   xyz_action_server_ = std::make_unique<ActionServer>(
     get_node_base_interface(),
     get_node_clock_interface(),
@@ -90,7 +84,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     "follow_waypoints", std::bind(
       &WaypointFollower::followWaypointsCallback,
       this), nullptr, std::chrono::milliseconds(
-      500), false, server_options);
+      500), false);
 
   from_ll_to_map_client_ = std::make_unique<
     nav2_util::ServiceClient<robot_localization::srv::FromLL,
@@ -108,7 +102,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(
       &WaypointFollower::followGPSWaypointsCallback,
       this), nullptr, std::chrono::milliseconds(
-      500), false, server_options);
+      500), false);
 
   try {
     waypoint_task_executor_type_ = nav2_util::get_plugin_type_param(
@@ -474,15 +468,18 @@ WaypointFollower::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_INTEGER) {
-      if (name == "loop_rate") {
+    if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == "loop_rate") {
         loop_rate_ = parameter.as_int();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == "stop_on_failure") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "stop_on_failure") {
         stop_on_failure_ = parameter.as_bool();
       }
     }

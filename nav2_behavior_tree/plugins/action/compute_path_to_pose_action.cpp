@@ -82,6 +82,12 @@ BT::NodeStatus ComputePathToPoseAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
+void ComputePathToPoseAction::on_timeout()
+{
+  setOutput("error_code_id", ActionResult::TIMEOUT);
+  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
+}
+
 void ComputePathToPoseAction::halt()
 {
   nav_msgs::msg::Path empty_path;
