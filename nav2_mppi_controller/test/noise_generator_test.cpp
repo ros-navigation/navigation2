@@ -28,6 +28,8 @@
 
 using namespace mppi;  // NOLINT
 
+static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
+
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 {
   // Tests shuts down internal thread cleanly
