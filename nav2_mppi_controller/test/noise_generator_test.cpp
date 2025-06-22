@@ -254,6 +254,23 @@ TEST(NoiseGeneratorTest, AdaptiveStds)
   generator.computeAdaptiveStds(state);
   EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
   EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
+
+  // Enable AdaptiveStd, with invalid input
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.2f;  // > than wz_std
+  state.speed.linear.x = 1.0f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  // expect wz_std == wz_std_adaptive as adaptive std will be automatically disabled
+  EXPECT_EQ(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive);
+  try {
+    settings.sampling_std.validateConstraints(settings.advanced_constraints, false);
+    FAIL() << "Expected to throw runtime error";
+  } catch (const std::runtime_error & e) {
+    EXPECT_TRUE(!std::string(e.what()).empty());
+  }
+
+  generator.shutdown();
 }
 
 int main(int argc, char **argv)
