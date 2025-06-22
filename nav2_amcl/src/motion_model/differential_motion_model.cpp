@@ -19,6 +19,7 @@
  *
  */
 
+#include <algorithm>
 #include <cmath>
 
 #include "nav2_amcl/angleutils.hpp"
