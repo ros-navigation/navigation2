@@ -161,7 +161,7 @@ public:
   {
     // updateInitialStateVelocities
     models::State state;
-    state.reset(1000, 50, settings_.sampling_std.wz);
+    state.reset(1000, 50);
     state.speed.linear.x = 5.0;
     state.speed.linear.y = 1.0;
     state.speed.angular.z = 6.0;
@@ -188,7 +188,7 @@ public:
     EXPECT_NEAR(state.wz(0, 1), std::clamp(0.1, 6.0 - max_delta_wz, 6.0 + max_delta_wz), 1e-6);
 
     // Putting them together: updateStateVelocities
-    state.reset(1000, 50, settings_.sampling_std.wz);
+    state.reset(1000, 50);
     state.speed.linear.x = -5.0;
     state.speed.linear.y = -1.0;
     state.speed.angular.z = -6.0;
@@ -202,13 +202,6 @@ public:
     EXPECT_NEAR(state.vx(0, 1), std::clamp(-0.75, -5.0 + min_delta_vx, -5.0 + max_delta_vx), 1e-6);
     EXPECT_NEAR(state.vy(0, 1), std::clamp(-0.5, -1.0 - max_delta_vy, -1.0 + max_delta_vy), 1e-6);
     EXPECT_NEAR(state.wz(0, 1), std::clamp(-0.1, -6.0 - max_delta_wz, -6.0 + max_delta_wz), 1e-6);
-
-    // calculateDecayForAngularDeviation
-    state.reset(1000, 50, settings_.sampling_std.wz);
-    float result = calculateDecayForAngularDeviation();
-    EXPECT_NEAR(result, settings_.sampling_std.wz, 1e-6);
-
-    // TODO(vahapt): fill in this section
   }
 
   geometry_msgs::msg::TwistStamped getControlFromSequenceAsTwistWrapper()
@@ -627,7 +620,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
 
   // Give it a couple of easy const traj and check rollout, start from 0
   models::State state;
-  state.reset(1000, 50, optimizer_tester.getSettings().sampling_std.wz);
+  state.reset(1000, 50);
   models::Trajectories traj;
   traj.reset(1000, 50);
   state.vx = 0.1 * Eigen::ArrayXXf::Ones(1000, 50);

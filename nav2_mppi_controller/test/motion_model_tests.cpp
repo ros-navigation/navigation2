@@ -33,7 +33,7 @@ TEST(MotionModelTests, DiffDriveTest)
   int batches = 1000;
   int timesteps = 50;
   control_sequence.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps, 0.0f);  // populates with zeros
+  state.reset(batches, timesteps);  // populates with zeros
   std::unique_ptr<DiffDriveMotionModel> model =
     std::make_unique<DiffDriveMotionModel>();
 
@@ -78,7 +78,7 @@ TEST(MotionModelTests, OmniTest)
   int batches = 1000;
   int timesteps = 50;
   control_sequence.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps, 0.0f);  // populates with zeros
+  state.reset(batches, timesteps);  // populates with zeros
   std::unique_ptr<OmniMotionModel> model =
     std::make_unique<OmniMotionModel>();
 
@@ -125,7 +125,7 @@ TEST(MotionModelTests, AckermannTest)
   int batches = 1000;
   int timesteps = 50;
   control_sequence.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps, 0.0f);  // populates with zeros
+  state.reset(batches, timesteps);  // populates with zeros
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   std::string name = "test";
   ParametersHandler param_handler(node, name);
@@ -184,7 +184,7 @@ TEST(MotionModelTests, AckermannReversingTest)
   int timesteps = 50;
   control_sequence.reset(timesteps);  // populates with zeros
   control_sequence2.reset(timesteps);  // populates with zeros
-  state.reset(batches, timesteps, 0.0f);  // populates with zeros
+  state.reset(batches, timesteps);  // populates with zeros
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   std::string name = "test";
   ParametersHandler param_handler(node, name);

@@ -134,9 +134,16 @@ void Optimizer::setOffset(double controller_frequency)
   }
 }
 
+void Optimizer::resetAdaptiveStds()
+{
+  // reset initial adaptive value to parameterized value
+  *settings_.sampling_std.wz_std_adaptive = settings_.sampling_std.wz;
+}
+
 void Optimizer::reset(bool reset_dynamic_speed_limits)
 {
-  state_.reset(settings_.batch_size, settings_.time_steps, settings_.sampling_std.wz);
+  state_.reset(settings_.batch_size, settings_.time_steps);
+  resetAdaptiveStds();
   control_sequence_.reset(settings_.time_steps);
   control_history_[0] = {0.0f, 0.0f, 0.0f};
   control_history_[1] = {0.0f, 0.0f, 0.0f};
@@ -154,11 +161,10 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   motion_model_->initialize(settings_.constraints, settings_.model_dt);
 
   // Validate decay function, print warning message if decay_to is out of bounds
-  if (settings_.advanced_constraints.validateWzStdDecayTo(settings_.sampling_std.wz) == false) {
-    RCLCPP_WARN_STREAM(logger_,
-      "SKIPPING decay function. advanced.wz_std_decay_to must be between 0 and wz_std." <<
-      " Applying: wz_std = " << settings_.sampling_std.wz <<
-      " Ignoring: wz_std_decay_to = " << settings_.advanced_constraints.wz_std_decay_to);
+  try {
+    settings_.sampling_std.validateConstraints(settings_.advanced_constraints, false);
+  } catch (const std::runtime_error & e) {
+    RCLCPP_WARN_STREAM(logger_, e.what());
   }
 
   RCLCPP_INFO(logger_, "Optimizer reset");
@@ -238,8 +244,6 @@ void Optimizer::prepare(
   critics_data_.motion_model = motion_model_;
   critics_data_.furthest_reached_path_point.reset();
   critics_data_.path_pts_valid.reset();
-
-  state_.wz_std_adaptive = calculateDecayForAngularDeviation();
 }
 
 void Optimizer::shiftControlSequence()
@@ -259,7 +263,7 @@ void Optimizer::shiftControlSequence()
 void Optimizer::generateNoisedTrajectories()
 {
   noise_generator_.setNoisedControls(state_, control_sequence_);
-  noise_generator_.generateNextNoises(state_);
+  noise_generator_.generateNextNoises();
   updateStateVelocities(state_);
   integrateStateVelocities(generated_trajectories_, state_);
 }
@@ -451,35 +455,6 @@ const models::ControlSequence & Optimizer::getOptimalControlSequence()
   return control_sequence_;
 }
 
-float Optimizer::calculateDecayForAngularDeviation()
-{
-  auto & s = settings_;
-  // Should we apply decay function?
-  if (s.advanced_constraints.wz_std_decay_strength <= 0.0f) {
-    return s.sampling_std.wz;  // skip calculation
-  }
-
-  // boundary check, if wz_std_decay_to is out of bounds, print a warning
-  if (s.advanced_constraints.validateWzStdDecayTo(s.sampling_std.wz) == false) {
-    return s.sampling_std.wz;  // skip calculation
-  }
-
-  float current_speed;
-  if (isHolonomic()) {
-    const auto vx = static_cast<float>(state_.speed.linear.x);
-    const auto vy = static_cast<float>(state_.speed.linear.y);
-    current_speed = hypotf(vx, vy);
-  } else {
-    current_speed = fabs(static_cast<float>(state_.speed.linear.x));
-  }
-
-  static const float e = std::exp(1.0f);
-  const float decayed_wz_std = (s.sampling_std.wz - s.advanced_constraints.wz_std_decay_to) *
-    powf(e, -1.0f * s.advanced_constraints.wz_std_decay_strength * current_speed) +
-    s.advanced_constraints.wz_std_decay_to;
-
-  return decayed_wz_std;
-}
 
 void Optimizer::updateControlSequence()
 {
@@ -491,10 +466,11 @@ void Optimizer::updateControlSequence()
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  if (state_.wz_std_adaptive > 0.0f) {
+  const float & wz_std_adaptive = *s.sampling_std.wz_std_adaptive;
+  if (wz_std_adaptive > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
-    const float gamma_wz = s.gamma / (state_.wz_std_adaptive * state_.wz_std_adaptive);
+    const float gamma_wz = s.gamma / (wz_std_adaptive * wz_std_adaptive);
     costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
   }
 

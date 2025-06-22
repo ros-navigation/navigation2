@@ -28,6 +28,8 @@
 
 using namespace mppi;  // NOLINT
 
+static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
+
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 {
   // Tests shuts down internal thread cleanly
@@ -71,7 +73,7 @@ ParametersHandler handler(node, name);
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
+  state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -100,7 +102,7 @@ ParametersHandler handler(node, name);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // Request an update with noise requested
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
@@ -115,7 +117,7 @@ ParametersHandler handler(node, name);
 
   // Test holonomic setting
   generator.reset(settings, true);  // Now holonomically
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
   EXPECT_NE(state.cvx(0), 0);
@@ -160,7 +162,7 @@ ParametersHandler handler(node, name);
   }
 
   mppi::models::State state;
-  state.reset(settings.batch_size, settings.time_steps, settings.sampling_std.wz);
+  state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
   generator.initialize(settings, false, "test_name", &handler);
@@ -189,7 +191,7 @@ ParametersHandler handler(node, name);
   EXPECT_NEAR(state.cwz(0, 9), 9, 0.3);
 
   // this doesn't work if regenerate_noises is false
-  generator.generateNextNoises(state);
+  generator.generateNextNoises();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
 
@@ -202,6 +204,56 @@ ParametersHandler handler(node, name);
   EXPECT_EQ(state.cwz(0, 9), initial_cwz_9);
 
   generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, AdaptiveStds)
+{
+  // Tests shuts down internal thread cleanly
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.1;
+  settings.sampling_std.vy = 0.1;
+  settings.sampling_std.wz = 0.1;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  // Test with AdaptiveStd off (default behavior)
+  generator.initialize(settings, false, "test_name", &handler);
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+
+  // Enable AdaptiveStd but keep velocity == 0
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+
+  // Enable AdaptiveStd, non-holonomic with vx == 1.0 m/sec
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  state.speed.linear.x = 1.0f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
+
+  // Enable AdaptiveStd, holonomic with scalar velocity == 1.0 m/sec
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  state.speed.linear.x = 0.70710678118655f;
+  state.speed.linear.y = 0.70710678118655f;
+  generator.reset(settings, true);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
 }
 
 int main(int argc, char **argv)

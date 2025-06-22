@@ -119,6 +119,11 @@ public:
   void setSpeedLimit(double speed_limit, bool percentage);
 
   /**
+   * Resets adaptive std values to their parametric defaults
+   */
+  void resetAdaptiveStds();
+
+  /**
    * @brief Reset the optimization problem to initial conditions
    * @param Whether to reset the constraints to its base values
    */
@@ -216,13 +221,6 @@ protected:
   void integrateStateVelocities(
     Eigen::Array<float, Eigen::Dynamic, 3> & trajectories,
     const Eigen::ArrayXXf & state) const;
-
-  /**
-   * Calculates wz_std parameter based on linear speed
-   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information
-   * @return new wz_std to use
-   */
-  float calculateDecayForAngularDeviation();
 
   /**
    * @brief Update control sequence with state controls weighted by costs
