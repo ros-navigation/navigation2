@@ -90,7 +90,7 @@ TEST(ModelsTest, StateTest)
   EXPECT_EQ(state.vy(4), 1);
   EXPECT_EQ(state.wz(4), 1);
 
-   state.reset(20, 40, 0.5f);
+  state.reset(20, 40);
 
   // Show contents are gone and new size
   EXPECT_EQ(state.cvx(4), 0);
@@ -111,7 +111,6 @@ TEST(ModelsTest, StateTest)
   EXPECT_EQ(state.vx.cols(), 40);
   EXPECT_EQ(state.vy.cols(), 40);
   EXPECT_EQ(state.wz.cols(), 40);
-  EXPECT_NEAR(state.wz_std_adaptive, 0.5f, 1e-6f);
 }
 
 TEST(ModelsTest, TrajectoriesTest)
