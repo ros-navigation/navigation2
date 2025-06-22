@@ -28,6 +28,7 @@ void NoiseGenerator::initialize(
   is_holonomic_ = is_holonomic;
   active_ = true;
 
+  initializeNormalDistributions();
   auto getParam = param_handler->getParamGetter(name);
   getParam(regenerate_noises_, "regenerate_noises", false);
 
@@ -36,6 +37,13 @@ void NoiseGenerator::initialize(
   } else {
     generateNoisedControls();
   }
+}
+
+void NoiseGenerator::initializeNormalDistributions()
+{
+  ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
+  ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
+  ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
 }
 
 void NoiseGenerator::shutdown()
@@ -48,24 +56,49 @@ void NoiseGenerator::shutdown()
   }
 }
 
-void NoiseGenerator::generateNextNoises(const models::State & state)
+void NoiseGenerator::generateNextNoises()
 {
   // Trigger the thread to run in parallel to this iteration
   // to generate the next iteration's noises (if applicable).
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
-
-    // Check if there's any change on adaptive std's and re-create relevant distribution if any
-    // vahapt: Instead of equality check we may compare it to an epsilon value
-    // on another note, construction of ndistribution on every step should be pretty fast,
-    // it's just a 16 byte object
-    if (ndistribution_wz_.stddev() != state.wz_std_adaptive) {
-      ndistribution_wz_ = std::normal_distribution(0.0f, state.wz_std_adaptive);
-    }
-
     ready_ = true;
   }
   noise_cond_.notify_all();
+}
+
+void NoiseGenerator::computeAdaptiveStds(const models::State & state)
+{
+  auto & s = settings_;
+  float & wz_std_adaptive = *settings_.sampling_std.wz_std_adaptive;
+
+  // Should we apply decay function? or Any constraint is invalid?
+  if (s.advanced_constraints.wz_std_decay_strength <= 0.0f ||
+    !s.sampling_std.validateConstraints(s.advanced_constraints, true))
+  {
+    wz_std_adaptive = s.sampling_std.wz;  // skip calculation
+  } else {
+    float current_speed;
+    if (is_holonomic_) {
+      const auto vx = static_cast<float>(state.speed.linear.x);
+      const auto vy = static_cast<float>(state.speed.linear.y);
+      current_speed = hypotf(vx, vy);
+    } else {
+      current_speed = fabs(static_cast<float>(state.speed.linear.x));
+    }
+
+    static const float e = std::exp(1.0f);
+    const float decayed_wz_std = (s.sampling_std.wz - s.advanced_constraints.wz_std_decay_to) *
+      powf(e, -1.0f * s.advanced_constraints.wz_std_decay_strength * current_speed) +
+      s.advanced_constraints.wz_std_decay_to;
+
+    wz_std_adaptive = decayed_wz_std;
+  }
+
+  // Check if there's any change on adaptive std's and re-create relevant distribution if any
+  if (ndistribution_wz_.stddev() != wz_std_adaptive) {
+    ndistribution_wz_ = std::normal_distribution(0.0f, wz_std_adaptive);
+  }
 }
 
 void NoiseGenerator::setNoisedControls(
@@ -73,6 +106,8 @@ void NoiseGenerator::setNoisedControls(
   const models::ControlSequence & control_sequence)
 {
   std::unique_lock<std::mutex> guard(noise_lock_);
+
+  computeAdaptiveStds(state);
 
   state.cvx = noises_vx_.rowwise() + control_sequence.vx.transpose();
   state.cvy = noises_vy_.rowwise() + control_sequence.vy.transpose();
@@ -87,17 +122,12 @@ void NoiseGenerator::reset(mppi::models::OptimizerSettings & settings, bool is_h
   // Recompute the noises on reset, initialization, and fallback
   {
     std::unique_lock<std::mutex> guard(noise_lock_);
-    // vahapt: Moved construction of normal distributions from initialize() to here
-    // reset() is called during initialization and on parameter change
-    // See issue #5274 for more info
-    ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
-    ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
-    ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
+
+    initializeNormalDistributions();
 
     noises_vx_.setZero(settings_.batch_size, settings_.time_steps);
     noises_vy_.setZero(settings_.batch_size, settings_.time_steps);
     noises_wz_.setZero(settings_.batch_size, settings_.time_steps);
-
     ready_ = true;
   }
 

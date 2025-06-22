@@ -15,6 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__MODELS__CONSTRAINTS_HPP_
 #define NAV2_MPPI_CONTROLLER__MODELS__CONSTRAINTS_HPP_
 
+#include <memory>
+#include <string>
+#include <stdexcept>
+
 namespace mppi::models
 {
 
@@ -35,20 +39,8 @@ struct ControlConstraints
   float az_max;
 };
 
-/**
- * @struct mppi::models::SamplingStd
- * @brief Noise parameters for sampling trajectories
- */
-struct SamplingStd
-{
-  float vx;
-  float vy;
-  float wz;
-};
-
 struct AdvancedConstraints
 {
-  // TODO(vahapt): also add documentation to https://github.com/ros-navigation/docs.nav2.org/blob/master/configuration/packages/configuring-mppic.rst
   /**
    * @brief Defines the strength of the reduction function
    * Allows dynamic modification of wz_std (angular deviation) based on linear velocity of the robot.
@@ -69,16 +61,46 @@ struct AdvancedConstraints
    * Default: 0.0
    */
   float wz_std_decay_to;
+};
 
-  bool validateWzStdDecayTo(const float & initial_wz_std)
+/**
+ * @struct mppi::models::SamplingStd
+ * @brief Noise parameters for sampling trajectories
+ */
+struct SamplingStd
+{
+  float vx;
+  float vy;
+  float wz;
+
+  /**
+   * @brief Internal variable that holds wz_std after decay is applied.
+   * If decay is disabled, SamplingStd.wz == wz_std_adaptive
+  */
+  std::shared_ptr<float> wz_std_adaptive;
+
+  /**
+   * @param c Reference to the advanced constraints
+   * @param quiet Whether to throw reason or just return false if there's an invalid constraint config
+   * @return true if constraints are valid
+   * @throw std::runtime_error Throws the error reason only if quiet is false and constraint configuration is invalid
+   */
+  bool validateConstraints(const AdvancedConstraints & c, bool quiet)
   {
     // Assume valid if angular decay is disabled
-    if (wz_std_decay_strength <= 0.0f) {
-      return true;
+    if (c.wz_std_decay_strength <= 0.0f) {
+      return true;  // valid
     }
 
-    if (wz_std_decay_to < 0.0f || wz_std_decay_to > initial_wz_std) {
-      return false;
+    if (c.wz_std_decay_to < 0.0f || c.wz_std_decay_to > wz) {
+      if (quiet) {
+        return false;
+      }
+      // else
+      const std::string msg =
+        "wz_std_decay_to must be between 0 and wz_std. "
+        "wz: " + std::to_string(wz) + ", wz_std_decay_to: " + std::to_string(c.wz_std_decay_to);
+      throw std::runtime_error(msg);
     }
     return true;
   }

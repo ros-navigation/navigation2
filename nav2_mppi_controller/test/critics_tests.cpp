@@ -396,7 +396,7 @@ TEST(CriticTests, PathAngleCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+   state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
@@ -517,7 +517,7 @@ TEST(CriticTests, PreferForwardCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
@@ -576,7 +576,7 @@ TEST(CriticTests, TwirlingCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
@@ -643,7 +643,7 @@ TEST(CriticTests, PathFollowCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
@@ -697,7 +697,7 @@ TEST(CriticTests, PathAlignCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
@@ -816,7 +816,7 @@ TEST(CriticTests, VelocityDeadbandCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30, 0.0f);
+  state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
