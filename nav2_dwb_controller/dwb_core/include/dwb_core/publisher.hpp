@@ -119,12 +119,12 @@ protected:
   builtin_interfaces::msg::Duration marker_lifetime_;
 
   // Publisher Objects
-  std::shared_ptr<LifecyclePublisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> global_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
-  std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
-  std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
-  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
+  std::shared_ptr<Publisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
+  std::shared_ptr<Publisher<nav_msgs::msg::Path>> global_pub_;
+  std::shared_ptr<Publisher<nav_msgs::msg::Path>> transformed_pub_;
+  std::shared_ptr<Publisher<nav_msgs::msg::Path>> local_pub_;
+  std::shared_ptr<Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
+  std::shared_ptr<Publisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 
   nav2::LifecycleNode::WeakPtr node_;
   rclcpp::Clock::SharedPtr clock_;
