@@ -12,118 +12,111 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
-#define NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
+#ifndef POSE_SAVER__POSE_SAVER_NODE_HPP_
+#define POSE_SAVER__POSE_SAVER_NODE_HPP_
 
-#include <yaml-cpp/yaml.h>
-#include <memory>
-#include <string>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <nav2_msgs/srv/set_initial_pose.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <yaml-cpp/yaml.h>
+#include "nav2_util/service_client.hpp"
 
 namespace nav2_toolkit
 {
+
+/**
+ * @class PoseSaverNode
+ * @brief A utility node to periodically save and restore the robot's pose from a YAML file.
+ *
+ * This node subscribes to `amcl_pose`, stores the latest pose to a file periodically,
+ * and can also restore that pose by calling the `set_initial_pose` service.
+ *
+ * Services:
+ * - `start_pose_saver`: Start periodic pose saving.
+ * - `stop_pose_saver`: Stop periodic pose saving.
+ * - `localise_at_last_known_position`: Restore the saved pose via service call.
+ */
+class PoseSaverNode : public rclcpp::Node
+{
+public:
   /**
-   * @class PoseSaverNode
-   * @brief A ROS 2 node for saving and restoring robot poses.
-   *
-   * This node subscribes to pose messages, saves them to a file, and provides
-   * services to start/stop saving, restore poses, and reset the pose file.
+   * @brief Constructor.
+   * @param options Node options used for configuring the ROS node.
    */
-  class PoseSaverNode : public rclcpp::Node
-  {
-  public:
-    /**
-     * @brief Constructor for PoseSaverNode.
-     * @param options Node options for configuring the node.
-     */
-    explicit PoseSaverNode(const rclcpp::NodeOptions &options);
+  explicit PoseSaverNode(const rclcpp::NodeOptions & options);
 
-  private:
-    /**
-     * @brief Callback for receiving pose messages.
-     * @param msg The received pose message.
-     */
-    void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  // === Testing Interface Methods ===
 
-    /**
-     * @brief Timer callback for periodic tasks.
-     */
-    void timer_callback();
+  /// @brief Write last known pose to configured file path.
+  void test_write_pose_to_file() { write_pose_to_file(pose_file_path_); }
 
-    /**
-     * @brief Service callback to start saving poses.
-     * @param req The service request.
-     * @param res The service response.
-     */
-    void start_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+  /// @brief Read pose from configured file path.
+  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file() { return read_pose_from_file(pose_file_path_); }
+
+  /// @brief Set the internal last pose (used in tests).
+  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) { last_pose_ = pose; }
+
+  /// @brief Get the current pose file path (used in tests).
+  std::string test_get_pose_file_path() const { return pose_file_path_; }
+
+private:
+  // === Callbacks ===
+
+  /// @brief Callback to store incoming AMCL pose.
+  void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+
+  /// @brief Timer callback to periodically write pose to file.
+  void timer_callback();
+
+  /// @brief Handle service call to start saving poses.
+  void start_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                        std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+
+  /// @brief Handle service call to stop saving poses.
+  void stop_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                       std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+
+  /// @brief Handle service call to restore pose.
+  void restore_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
                           std::shared_ptr<std_srvs::srv::Trigger::Response> res);
 
-    /**
-     * @brief Service callback to stop saving poses.
-     * @param req The service request.
-     * @param res The service response.
-     */
-    void stop_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                         std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  /// @brief Check if pose publisher is available and attempt restoration.
+  void pose_publisher_monitor_callback();
 
-    /**
-     * @brief Service callback to restore a pose from the file.
-     * @param req The service request.
-     * @param res The service response.
-     */
-    void restore_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                            std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  /// @brief Perform initial client setup after construction.
+  void post_init_setup();
 
-    /**
-     * @brief Service callback to reset the pose file.
-     * @param req The service request.
-     * @param res The service response.
-     */
-    void reset_pose_file_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                            std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  // === Helpers ===
 
-    /**
-     * @brief Writes the current pose to a file.
-     * @param filepath The file path to save the pose.
-     */
-    void write_pose_to_file(const std::string &filepath);
+  /// @brief Serialize current pose to file.
+  void write_pose_to_file(const std::string &filepath);
 
-    /**
-     * @brief Monitors AMCL (Adaptive Monte Carlo Localization) activity.
-     */
-    void amcl_monitor_callback();
+  /// @brief Load pose from given file.
+  geometry_msgs::msg::PoseWithCovarianceStamped read_pose_from_file(const std::string &filepath);
 
-    /**
-     * @brief Restores a pose from the file and publishes it.
-     * @return True if the pose was successfully restored, false otherwise.
-     */
-    bool restore_pose_from_file_and_publish();
+  /// @brief Restore pose from file and publish it using service call.
+  bool restore_pose_from_file_and_publish();
 
-    /**
-     * @brief Reads a pose from a file.
-     * @param filepath The file path to read the pose from.
-     * @return The pose read from the file.
-     */
-    geometry_msgs::msg::PoseWithCovarianceStamped read_pose_from_file(const std::string &filepath);
+  // === Members ===
 
-    rclcpp::TimerBase::SharedPtr timer_; ///< Timer for periodic tasks.
-    rclcpp::TimerBase::SharedPtr amcl_monitor_timer_; ///< Timer for monitoring AMCL activity.
-    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_; ///< Subscription to pose messages.
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_; ///< Service to start saving poses.
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_; ///< Service to stop saving poses.
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr restore_service_; ///< Service to restore poses.
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_service_; ///< Service to reset the pose file.
-    rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_; ///< Publisher for initial poses.
-    geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_; ///< Last received pose.
-    rclcpp::Time last_amcl_time_; ///< Last time AMCL was active.
-    std::string pose_file_path_; ///< Path to the pose file.
-    bool saving_active_; ///< Flag indicating if saving is active.
-    bool auto_restore_; ///< Flag indicating if auto-restore is enabled.
-    int last_sub_count_; ///< Last subscription count.
-  };
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_;  ///< Subscriber for AMCL pose.
+  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::SetInitialPose>> set_pose_client_;  ///< Client for pose setting.
+  rclcpp::TimerBase::SharedPtr timer_;  ///< Timer for periodic file save.
+  rclcpp::TimerBase::SharedPtr post_init_timer_;  ///< Timer for deferred initialization.
+  rclcpp::TimerBase::SharedPtr pose_publisher_monitor_timer_;  ///< Timer to monitor pose publisher readiness.
 
-} // namespace nav2_toolkit
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;   ///< Service to start saving.
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;    ///< Service to stop saving.
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr restore_service_; ///< Service to restore pose.
 
-#endif // NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_; ///< Most recent pose message.
+  std::string pose_file_path_;    ///< File path to store pose YAML.
+  bool auto_restore_;             ///< Whether to auto-restore on launch.
+  bool pose_restored_;            ///< Whether pose has already been restored.
+  bool was_pose_pub_up_last_check_; ///< Status of pose publisher last check.
+};
+
+}  // namespace nav2_toolkit
+
+#endif  // POSE_SAVER__POSE_SAVER_NODE_HPP_
