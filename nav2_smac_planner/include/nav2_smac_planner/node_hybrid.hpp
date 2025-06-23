@@ -26,6 +26,7 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
+#include "nav2_smac_planner/nav2_smac_planner_common_visibility_control.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
@@ -473,16 +474,16 @@ public:
   Coordinates pose;
 
   // Constants required across all nodes but don't want to allocate more than once
-  static float travel_distance_cost;
-  static HybridMotionTable motion_table;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static float travel_distance_cost;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
-  static LookupTable obstacle_heuristic_lookup_table;
-  static ObstacleHeuristicQueue obstacle_heuristic_queue;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable obstacle_heuristic_lookup_table;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static ObstacleHeuristicQueue obstacle_heuristic_queue;
 
-  static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
-  static LookupTable dist_heuristic_lookup_table;
-  static float size_lookup;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
 
 private:
   float _cell_cost;
