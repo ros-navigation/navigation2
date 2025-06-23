@@ -11,7 +11,7 @@ The factories are listed below:
 - `create_service` --> `nav2::ServiceServer`
 - `create_publisher` --> `nav2::Publisher`
 - `create_subscriber` --> `nav2::Subscriber`
-- `create_action_server` --> `nav2::SimpleActionServer` 
+- `create_action_server` --> `nav2::SimpleActionServer`
 - `create_action_client` --> `nav2::ActionClient`
 
 This is in some cases a big change from `rclcpp` versions, though most have direct analogs or are simply wrappers with additional configurations pre-baked in to remove tedious repetition on every package.
@@ -31,7 +31,7 @@ To see an example of migration, see the [migration example](https://github.com/r
 
 ### Plugin Migration
 
-All plugins now use `nav2::LifecycleNode` instead of `rclcpp_lifecycle::LifecycleNode` or `nav2_util::LifecycleNode`. All must be updated to use this new API from planners and controllers to behavior tree nodes. Similarly, calls to the `create_*` factories will now point to the Nav2 objects, where applicable. See above for what those look like and below for a migration from the existing code usage to the new version in order to make use of the new features and API. 
+All plugins now use `nav2::LifecycleNode` instead of `rclcpp_lifecycle::LifecycleNode` or `nav2_util::LifecycleNode`. All must be updated to use this new API from planners and controllers to behavior tree nodes. Similarly, calls to the `create_*` factories will now point to the Nav2 objects, where applicable. See above for what those look like and below for a migration from the existing code usage to the new version in order to make use of the new features and API.
 
 ### Service Client Migration Example
 
@@ -104,7 +104,7 @@ This is analog to the action server but configures with action introspection and
     nullptr, std::chrono::milliseconds(500), true);  // Type nav2_util::SimpleActionServer<T>
 ```
 
-To 
+To
 
 ```
   compute_and_track_route_server_ = create_action_server<ComputeAndTrackRoute>(
@@ -136,7 +136,7 @@ To
 
 ### Publisher Subscriber Migration
 
-To migrate, the order of the arguments in the Subscription must change since the QoS profile is now optional. It is now `(topic, callback, QoS)` whereas QoS defaults to the StandardTopicQoS, which is the same as `rclcpp::QoS` for the moment. 
+To migrate, the order of the arguments in the Subscription must change since the QoS profile is now optional. It is now `(topic, callback, QoS)` whereas QoS defaults to the StandardTopicQoS, which is the same as `rclcpp::QoS` for the moment.
 
 Publishers that explicitly specify a QoS profile do not require changes, though if the constructor using `depth` is used, it must now specify a policy explicitly. Both are now `nav2::Publisher` and `nav2::Subscription` objects that today just typedef the rclcpp and rclcpp_lifecycle versions. In the future, more features will be added here like lifecycle support for the subscriptions, so its highly recommended as part of this migration to migrate the `rclcpp::` to `nav2::` as well so those updates are already easily available.
 
@@ -156,5 +156,5 @@ To
 
   data_sub_ = node->create_subscription<sensor_msgs::msg::Range>(
     source_topic,
-    std::bind(&Range::dataCallback, this, std::placeholders::_1));  // QoS can be ommitted if using StandardTopicQoS, else it can be provided last
+    std::bind(&Range::dataCallback, this, std::placeholders::_1));  // QoS can be omitted if using StandardTopicQoS, else it can be provided last
 ```
