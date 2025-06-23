@@ -17,8 +17,7 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/simple_action_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "test_msgs/action/fibonacci.hpp"
 #include "std_msgs/msg/empty.hpp"
 
@@ -137,9 +136,9 @@ preempted:
 
 private:
   nav2::SimpleActionServer<Fibonacci>::SharedPtr action_server_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr deactivate_subs_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr activate_subs_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr omit_preempt_subs_;
+  nav2::Subscription<std_msgs::msg::Empty>::SharedPtr deactivate_subs_;
+  nav2::Subscription<std_msgs::msg::Empty>::SharedPtr activate_subs_;
+  nav2::Subscription<std_msgs::msg::Empty>::SharedPtr omit_preempt_subs_;
 
   bool do_premptions_{true};
 };
@@ -229,7 +228,7 @@ public:
     omit_prempt_pub_->publish(std_msgs::msg::Empty());
   }
 
-  rclcpp_action::Client<Fibonacci>::SharedPtr action_client_;
+  nav2::ActionClient<Fibonacci>::SharedPtr action_client_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr deactivate_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr activate_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr omit_prempt_pub_;
@@ -311,7 +310,7 @@ TEST_F(ActionTest, test_simple_action_with_feedback)
   auto goal = Fibonacci::Goal();
   goal.order = 10;
 
-  auto send_goal_options = rclcpp_action::Client<Fibonacci>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<Fibonacci>::SendGoalOptions();
   send_goal_options.feedback_callback = feedback_callback;
 
   // Send the goal

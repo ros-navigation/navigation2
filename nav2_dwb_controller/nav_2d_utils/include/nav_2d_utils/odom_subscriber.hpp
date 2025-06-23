@@ -90,7 +90,7 @@ protected:
     odom_vel_.velocity.theta = msg->twist.twist.angular.z;
   }
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  nav2::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_2d_msgs::msg::Twist2DStamped odom_vel_;
   std::mutex odom_mutex_;
 };

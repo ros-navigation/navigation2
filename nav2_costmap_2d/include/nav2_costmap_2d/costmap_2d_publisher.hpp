@@ -171,13 +171,13 @@ private:
   double map_vis_z_;
 
   // Publisher for translated costmap values as msg::OccupancyGrid used in visualization
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_pub_;
+  nav2::Publisher<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
     costmap_update_pub_;
 
   // Publisher for raw costmap values as msg::Costmap from layered costmap
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapUpdate>::SharedPtr
+  nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_raw_pub_;
+  nav2::Publisher<nav2_msgs::msg::CostmapUpdate>::SharedPtr
     costmap_raw_update_pub_;
 
   // Service for getting the costmaps

@@ -197,10 +197,10 @@ public:
   }
 
 private:
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+  nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
+  nav2::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
     polygon_pub_;
 };  // TestNode
 

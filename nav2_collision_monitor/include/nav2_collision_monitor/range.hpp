@@ -91,7 +91,7 @@ protected:
   // ----- Variables -----
 
   /// @brief Range sensor data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr data_sub_;
+  nav2::Subscription<sensor_msgs::msg::Range>::SharedPtr data_sub_;
 
   /// @brief Angle increment (in rad) between two obstacle points at the range arc
   double obstacles_angle_;

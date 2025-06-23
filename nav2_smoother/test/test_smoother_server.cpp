@@ -322,7 +322,7 @@ public:
 
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<DummySmootherServer> smoother_server_;
-  std::shared_ptr<rclcpp_action::Client<SmoothAction>> client_;
+  std::shared_ptr<nav2::ActionClient<SmoothAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<SmoothAction>> goal_handle_;
 };
 

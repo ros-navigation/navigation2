@@ -94,8 +94,8 @@ protected:
   bool hasCostmapResolutionChanged();
   bool hasCostmapOriginPositionChanged();
 
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
-  rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
+  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
 
   std::shared_ptr<Costmap2D> costmap_;
   nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;

@@ -206,7 +206,7 @@ private:
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
   // Occupancy grid publisher for visualization
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
   rclcpp::WallRate map_publish_rate_;
   void mapCallback();

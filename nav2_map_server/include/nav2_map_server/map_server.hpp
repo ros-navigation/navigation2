@@ -132,7 +132,7 @@ protected:
   nav2::ServiceServer<nav2_msgs::srv::LoadMap>::SharedPtr load_map_service_;
 
   // A topic on which the occupancy grid will be published
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
 
   // The frame ID used in the returned OccupancyGrid message
   std::string frame_id_;

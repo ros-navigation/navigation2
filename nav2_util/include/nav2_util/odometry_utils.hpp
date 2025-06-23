@@ -148,7 +148,7 @@ protected:
   void updateState();
 
   bool received_odom_{false};
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  nav2::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry odom_cumulate_;
   geometry_msgs::msg::TwistStamped vel_smooth_;
   std::mutex odom_mutex_;

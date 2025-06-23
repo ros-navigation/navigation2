@@ -92,7 +92,7 @@ protected:
   double transform_tolerance_;
   bool footprint_received_{false};
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };
 
 }  // namespace nav2_costmap_2d

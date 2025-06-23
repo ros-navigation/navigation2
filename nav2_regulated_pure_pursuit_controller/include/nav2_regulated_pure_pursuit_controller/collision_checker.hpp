@@ -96,7 +96,7 @@ protected:
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
   footprint_collision_checker_;
   Parameters * params_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> carrot_arc_pub_;
   rclcpp::Clock::SharedPtr clock_;
 };
 

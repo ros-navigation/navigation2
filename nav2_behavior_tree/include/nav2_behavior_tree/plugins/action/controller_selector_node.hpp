@@ -93,7 +93,7 @@ private:
    */
   void callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg);
 
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
+  nav2::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
 
   std::string last_selected_controller_;
 

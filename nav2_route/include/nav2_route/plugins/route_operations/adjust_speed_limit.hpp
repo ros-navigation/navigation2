@@ -89,7 +89,7 @@ protected:
   std::string name_;
   std::string speed_tag_;
   rclcpp::Logger logger_{rclcpp::get_logger("AdjustSpeedLimit")};
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
+  nav2::Publisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
 };
 
 }  // namespace nav2_route

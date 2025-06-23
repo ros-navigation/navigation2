@@ -23,6 +23,9 @@
 #include "nav2_ros_common/service_server.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/publisher.hpp"
+#include "nav2_ros_common/subscription.hpp"
+#include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
 
 namespace nav2
@@ -41,7 +44,7 @@ namespace interfaces
  * @param qos_requested_incompatible_qos_callback Callback for when a QoS request is incompatible
  * @param qos_deadline_requested_callback Callback for when a QoS deadline is missed
  * @param qos_liveliness_changed_callback Callback for when a QoS liveliness change occurs
- * @return A rclcpp::SubscriptionOptions object with the specified configurations
+ * @return A nav2::SubscriptionOptions object with the specified configurations
  */
 inline rclcpp::SubscriptionOptions createSubscriptionOptions(
   const bool allow_parameter_qos_overrides = true,
@@ -125,7 +128,7 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @return A shared pointer to the created subscription
  */
 template<typename MessageT, typename NodeT, typename CallbackT>
-typename rclcpp::Subscription<MessageT>::SharedPtr create_subscription(
+typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
   const NodeT & node,
   const std::string & topic_name,
   CallbackT && callback,
@@ -155,7 +158,7 @@ typename rclcpp::Subscription<MessageT>::SharedPtr create_subscription(
  * @return A shared pointer to the created publisher
  */
 template<typename MessageT, typename NodeT>
-typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr create_publisher(
+typename nav2::Publisher<MessageT>::SharedPtr create_publisher(
   const NodeT & node,
   const std::string & topic_name,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
@@ -163,7 +166,7 @@ typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr create_publis
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
     node, "allow_parameter_qos_overrides", false);
-  using PublisherT = rclcpp_lifecycle::LifecyclePublisher<MessageT, std::allocator<void>>;
+  using PublisherT = nav2::Publisher<MessageT>;
   auto pub = rclcpp::create_publisher<MessageT, std::allocator<void>, PublisherT>(
     *node,
     topic_name,
@@ -245,14 +248,14 @@ typename nav2::SimpleActionServer<ActionT>::SharedPtr create_action_server(
 template<typename ActionT, typename NodeT>
 void configure_action_client(
   const NodeT & node,
-  typename rclcpp_action::Client<ActionT>::SharedPtr & action_client)
+  typename nav2::ActionClient<ActionT>::SharedPtr & action_client)
 {
   nav2::setIntrospectionMode(action_client,
     node->get_node_parameters_interface(), node->get_clock());
 }
 
 template<typename ActionT, typename NodeT>
-typename rclcpp_action::Client<ActionT>::SharedPtr create_action_client(
+typename nav2::ActionClient<ActionT>::SharedPtr create_action_client(
   const NodeT & node,
   const std::string & action_name,
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)

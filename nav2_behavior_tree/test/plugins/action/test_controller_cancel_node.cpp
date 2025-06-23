@@ -96,7 +96,7 @@ public:
   }
 
   static std::shared_ptr<CancelControllerServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::FollowPath>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::FollowPath>> client_;
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
@@ -108,7 +108,7 @@ protected:
 nav2::LifecycleNode::SharedPtr CancelControllerActionTestFixture::node_ = nullptr;
 std::shared_ptr<CancelControllerServer>
 CancelControllerActionTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::FollowPath>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::FollowPath>>
 CancelControllerActionTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelControllerActionTestFixture::config_ = nullptr;
@@ -127,7 +127,7 @@ TEST_F(CancelControllerActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::FollowPath>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<nav2_msgs::action::FollowPath>::SendGoalOptions();
 
   // Creating a dummy goal_msg
   auto goal_msg = nav2_msgs::action::FollowPath::Goal();

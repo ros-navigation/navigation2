@@ -101,7 +101,7 @@ protected:
   // ----- Variables -----
 
   /// @brief PolygonSource data subscriber
-  rclcpp::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr data_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr data_sub_;
 
   /// @brief Latest data obtained
   std::vector<geometry_msgs::msg::PolygonInstanceStamped> data_;

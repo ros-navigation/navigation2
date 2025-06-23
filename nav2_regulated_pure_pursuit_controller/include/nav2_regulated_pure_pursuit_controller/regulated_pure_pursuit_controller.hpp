@@ -222,14 +222,14 @@ protected:
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> global_path_pub_;
+  std::shared_ptr<nav2::Publisher<geometry_msgs::msg::PointStamped>>
   carrot_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
+  std::shared_ptr<nav2::Publisher<geometry_msgs::msg::PointStamped>>
   curvature_carrot_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>>
+  std::shared_ptr<nav2::Publisher<std_msgs::msg::Bool>>
   is_rotating_to_heading_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;

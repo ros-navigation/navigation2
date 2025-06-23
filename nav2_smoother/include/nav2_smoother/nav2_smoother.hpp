@@ -151,7 +151,7 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Publishers and subscribers
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // Smoother Plugins
   pluginlib::ClassLoader<nav2_core::Smoother> lp_loader_;

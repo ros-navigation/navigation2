@@ -158,7 +158,7 @@ public:
 
 protected:
   std::string action_name_;
-  typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
+  typename std::shared_ptr<nav2::ActionClient<ActionT>> action_client_;
 
   // The node that will be used for any ROS operations
   nav2::LifecycleNode::SharedPtr node_;

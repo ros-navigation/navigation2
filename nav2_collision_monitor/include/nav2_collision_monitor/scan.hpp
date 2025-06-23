@@ -85,7 +85,7 @@ protected:
   // ----- Variables -----
 
   /// @brief Laser scanner data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
+  nav2::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr data_sub_;
 
   /// @brief Latest data obtained from laser scanner
   sensor_msgs::msg::LaserScan::ConstSharedPtr data_;

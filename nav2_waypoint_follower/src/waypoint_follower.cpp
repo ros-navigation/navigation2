@@ -264,7 +264,7 @@ void WaypointFollower::followWaypointsHandler(
       client_goal.pose = poses[goal_index];
       client_goal.pose.header.stamp = this->now();
 
-      auto send_goal_options = rclcpp_action::Client<ClientT>::SendGoalOptions();
+      auto send_goal_options = nav2::ActionClient<ClientT>::SendGoalOptions();
       send_goal_options.result_callback = std::bind(
         &WaypointFollower::resultCallback, this,
         std::placeholders::_1);

@@ -135,7 +135,7 @@ public:
   }
 
 private:
-  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
+  nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
   nav2_msgs::msg::SpeedLimit::SharedPtr msg_;
   bool speed_limit_updated_;
 };  // SpeedLimitSubscriber

@@ -137,7 +137,7 @@ public:
   }
 
 private:
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_;
+  nav2::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_;
   std_msgs::msg::Bool::SharedPtr msg_;
   bool binary_state_updated_;
 };  // BinaryStateSubscriber

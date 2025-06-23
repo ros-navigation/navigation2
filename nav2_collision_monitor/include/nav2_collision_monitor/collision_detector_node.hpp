@@ -148,10 +148,10 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
 
   /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr
+  nav2::Publisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr
     state_pub_;
   /// @brief Collision points marker publisher
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;

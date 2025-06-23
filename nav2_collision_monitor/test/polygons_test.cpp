@@ -177,11 +177,11 @@ public:
   }
 
 private:
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  nav2::Publisher<std_msgs::msg::Float32>::SharedPtr radius_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
 
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
 };  // TestNode

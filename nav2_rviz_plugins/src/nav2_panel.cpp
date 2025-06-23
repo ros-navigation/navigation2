@@ -1223,7 +1223,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       waypoint_follower_goal_handle_.reset();
     };
@@ -1281,7 +1281,7 @@ Nav2Panel::startNavThroughPoses(nav_msgs::msg::Goals poses)
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       nav_through_poses_goal_handle_.reset();
     };
@@ -1327,7 +1327,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       navigation_goal_handle_.reset();
     };

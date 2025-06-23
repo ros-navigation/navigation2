@@ -126,7 +126,7 @@ private:
     info_ = msg;
   }
 
-  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr subscription_;
+  nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr subscription_;
 
   mutex_t * access_;
 };

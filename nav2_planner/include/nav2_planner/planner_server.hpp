@@ -259,7 +259,7 @@ protected:
   collision_checker_;
 
   // Publishers for the path
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // Service to determine if the path is valid
   nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;

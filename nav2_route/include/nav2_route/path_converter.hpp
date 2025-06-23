@@ -80,7 +80,7 @@ public:
     std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
 protected:
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
   float smoothing_radius_;

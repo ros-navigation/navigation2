@@ -109,7 +109,7 @@ protected:
   float _tolerance;
   int _downsampling_factor;
   bool _downsample_costmap;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   bool _allow_unknown;
   int _max_iterations;

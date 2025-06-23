@@ -382,7 +382,7 @@ protected:
   void send_new_goal()
   {
     goal_result_available_ = false;
-    auto send_goal_options = typename rclcpp_action::Client<ActionT>::SendGoalOptions();
+    auto send_goal_options = typename nav2::ActionClient<ActionT>::SendGoalOptions();
     send_goal_options.result_callback =
       [this](const typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult & result) {
         if (future_goal_handle_) {
@@ -465,7 +465,7 @@ protected:
   }
 
   std::string action_name_;
-  typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
+  typename std::shared_ptr<nav2::ActionClient<ActionT>> action_client_;
 
   // All ROS2 actions have a goal and a result
   typename ActionT::Goal goal_;

@@ -111,7 +111,7 @@ protected:
     }
   }
 
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr layer_sub_;
+  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr layer_sub_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::unique_ptr<nav2::NodeThread> executor_thread_;

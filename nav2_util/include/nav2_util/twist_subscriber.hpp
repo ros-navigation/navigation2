@@ -142,9 +142,9 @@ protected:
   //! @brief The user-configured value for ROS parameter enable_stamped_cmd_vel
   bool is_stamped_{true};
   //! @brief The subscription when using Twist
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
+  nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
   //! @brief The subscription when using TwistStamped
-  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
+  nav2::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
 };
 
 

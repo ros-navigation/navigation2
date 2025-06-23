@@ -123,8 +123,8 @@ public:
 protected:
   std::string topic_;
   bool is_stamped_{true};
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::Twist>::SharedPtr twist_pub_;
+  nav2::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr
     twist_stamped_pub_;
 };
 

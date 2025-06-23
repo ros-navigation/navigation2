@@ -107,7 +107,7 @@ public:
   }
 
 private:
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
 };  // TestNode
 

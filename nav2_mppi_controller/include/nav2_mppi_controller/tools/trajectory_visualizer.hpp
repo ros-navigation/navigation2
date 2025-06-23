@@ -96,10 +96,10 @@ public:
 
 protected:
   std::string frame_id_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>>
+  std::shared_ptr<nav2::Publisher<visualization_msgs::msg::MarkerArray>>
   trajectories_publisher_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_path_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> optimal_path_pub_;
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> transformed_path_pub_;
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> optimal_path_pub_;
 
   std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;

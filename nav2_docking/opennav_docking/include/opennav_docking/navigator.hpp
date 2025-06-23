@@ -40,7 +40,7 @@ class Navigator
 {
 public:
   using Nav2Pose = nav2_msgs::action::NavigateToPose;
-  using ActionClient = rclcpp_action::Client<Nav2Pose>;
+  using ActionClient = nav2::ActionClient<Nav2Pose>;
 
   /**
    * @brief A constructor for opennav_docking::Navigator

@@ -171,11 +171,11 @@ protected:
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>>
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> transformed_plan_pub_;
+  std::shared_ptr<nav2::Publisher<nav_msgs::msg::Path>> local_plan_pub_;
+  std::shared_ptr<nav2::Publisher<geometry_msgs::msg::PoseStamped>>
   motion_target_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
+  std::shared_ptr<nav2::Publisher<visualization_msgs::msg::Marker>>
   slowdown_pub_;
   std::unique_ptr<nav2_graceful_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_graceful_controller::ParameterHandler> param_handler_;

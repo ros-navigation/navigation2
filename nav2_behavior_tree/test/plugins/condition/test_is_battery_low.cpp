@@ -62,14 +62,14 @@ protected:
   static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
-  static rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr
+  static nav2::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
     battery_pub_;
 };
 
 nav2::LifecycleNode::SharedPtr IsBatteryLowConditionTestFixture::node_ = nullptr;
 BT::NodeConfiguration * IsBatteryLowConditionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> IsBatteryLowConditionTestFixture::factory_ = nullptr;
-rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr
+nav2::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
 IsBatteryLowConditionTestFixture::battery_pub_ = nullptr;
 
 TEST_F(IsBatteryLowConditionTestFixture, test_behavior_percentage)

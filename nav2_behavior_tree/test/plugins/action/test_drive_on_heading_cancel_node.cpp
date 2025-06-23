@@ -99,7 +99,7 @@ public:
   }
 
   static std::shared_ptr<CancelDriveOnHeadingServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::DriveOnHeading>> client_;
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
@@ -111,7 +111,7 @@ protected:
 nav2::LifecycleNode::SharedPtr CancelDriveOnHeadingTestFixture::node_ = nullptr;
 std::shared_ptr<CancelDriveOnHeadingServer>
 CancelDriveOnHeadingTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::DriveOnHeading>>
 CancelDriveOnHeadingTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelDriveOnHeadingTestFixture::config_ = nullptr;

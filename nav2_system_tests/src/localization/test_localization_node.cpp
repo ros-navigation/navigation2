@@ -60,7 +60,7 @@ private:
     pose_callback_ = true;
   }
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
+  nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
   geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   double amcl_pose_x;
   double amcl_pose_y;

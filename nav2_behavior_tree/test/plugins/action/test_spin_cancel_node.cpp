@@ -96,7 +96,7 @@ public:
   }
 
   static std::shared_ptr<CancelSpinServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::Spin>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::Spin>> client_;
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
@@ -108,7 +108,7 @@ protected:
 nav2::LifecycleNode::SharedPtr CancelSpinActionTestFixture::node_ = nullptr;
 std::shared_ptr<CancelSpinServer>
 CancelSpinActionTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::Spin>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::Spin>>
 CancelSpinActionTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelSpinActionTestFixture::config_ = nullptr;
@@ -127,7 +127,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::Spin>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<nav2_msgs::action::Spin>::SendGoalOptions();
 
   // Creating a dummy goal_msg
   auto goal_msg = nav2_msgs::action::Spin::Goal();

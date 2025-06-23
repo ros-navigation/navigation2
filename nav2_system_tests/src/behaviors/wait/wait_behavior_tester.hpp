@@ -79,10 +79,10 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
 
   // Subscriber for amcl pose
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
+  nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
 
   // Action client to call wait action
-  rclcpp_action::Client<Wait>::SharedPtr client_ptr_;
+  nav2::ActionClient<Wait>::SharedPtr client_ptr_;
 };
 
 }  // namespace nav2_system_tests

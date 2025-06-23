@@ -157,20 +157,20 @@ protected:
   std::shared_ptr<CollisionDetectorWrapper> cd_;
 
   // Data source publishers
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr
+  nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr
     scan_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     pointcloud_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Range>::SharedPtr
+  nav2::Publisher<sensor_msgs::msg::Range>::SharedPtr
     range_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
     polygon_source_pub_;
 
-  rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
+  nav2::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
 
   // CollisionMonitor collision points markers
-  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_sub_;
   visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
 };  // Tester

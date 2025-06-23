@@ -77,7 +77,7 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
   rclcpp::Clock::SharedPtr clock_;
   std::mutex mutex_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr subscription_;
+  nav2::Subscription<std_msgs::msg::Empty>::SharedPtr subscription_;
 };
 
 }  // namespace nav2_waypoint_follower

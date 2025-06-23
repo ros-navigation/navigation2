@@ -122,8 +122,8 @@ protected:
 
   rclcpp::Time start_time_;
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  nav2::ActionClient<ActionT>::SharedPtr self_client_;
 
   std::string goal_blackboard_id_;
   std::string path_blackboard_id_;

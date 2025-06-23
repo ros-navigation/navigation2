@@ -93,7 +93,7 @@ protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
 
   // Optionally subscribe to a detected dock pose topic
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_sub_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_sub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
@@ -104,7 +104,7 @@ protected:
   geometry_msgs::msg::PoseStamped dock_pose_;
 
   // Optionally subscribe to joint state message, used to determine if stalled
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
+  nav2::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
   std::vector<std::string> stall_joint_names_;
   double stall_velocity_threshold_, stall_effort_threshold_;
   bool is_stalled_;

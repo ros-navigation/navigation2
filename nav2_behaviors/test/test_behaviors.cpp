@@ -235,7 +235,7 @@ protected:
 
   nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<DummyBehavior> behavior_;
-  std::shared_ptr<rclcpp_action::Client<BehaviorAction>> client_;
+  std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

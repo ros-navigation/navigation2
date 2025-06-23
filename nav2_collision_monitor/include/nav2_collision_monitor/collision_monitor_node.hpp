@@ -220,11 +220,11 @@ protected:
   std::unique_ptr<nav2_util::TwistPublisher> cmd_vel_out_pub_;
 
   /// @brief CollisionMonitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
+  nav2::Publisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
     state_pub_;
 
   /// @brief Collision points marker publisher
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
 
   /// @brief Whether main routine is active

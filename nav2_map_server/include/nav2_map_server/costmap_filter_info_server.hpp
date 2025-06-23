@@ -72,7 +72,7 @@ protected:
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 private:
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
+  nav2::Publisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
 
   nav2_msgs::msg::CostmapFilterInfo msg_;
 };  // CostmapFilterInfoServer

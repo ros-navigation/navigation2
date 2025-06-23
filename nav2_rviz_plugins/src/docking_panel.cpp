@@ -381,7 +381,7 @@ void DockingPanel::onDockingButtonPressed()
   }
 
   // Enable result awareness by providing an empty lambda function
-  auto send_goal_options = rclcpp_action::Client<Dock>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<Dock>::SendGoalOptions();
   send_goal_options.result_callback = [this](const DockGoalHandle::WrappedResult & result) {
       dock_goal_handle_.reset();
       if (result.result->success) {
@@ -439,7 +439,7 @@ void DockingPanel::onUndockingButtonPressed()
     goal_msg.dock_type.c_str());
 
   // Enable result awareness by providing an empty lambda function
-  auto send_goal_options = rclcpp_action::Client<Undock>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<Undock>::SendGoalOptions();
   send_goal_options.result_callback = [this](const UndockGoalHandle::WrappedResult & result) {
       undock_goal_handle_.reset();
       if (result.result->success) {

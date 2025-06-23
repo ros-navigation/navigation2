@@ -187,11 +187,11 @@ protected:
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmapSubscriber;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmapToSend;
   std::vector<std::vector<uint8_t>> receivedGrids;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr dummyCostmapMsgSubscriber;
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr dummyCostmapRawMsgSubscriber;
-  rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
+  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr dummyCostmapMsgSubscriber;
+  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr dummyCostmapRawMsgSubscriber;
+  nav2::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr
     dummyCostmapUpdateMsgSubscriber;
-  rclcpp::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr dummyCostmapRawUpdateMsgSubscriber;
+  nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr dummyCostmapRawUpdateMsgSubscriber;
 };
 
 TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)

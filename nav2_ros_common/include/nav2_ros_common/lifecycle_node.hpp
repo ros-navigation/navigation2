@@ -114,12 +114,12 @@ public:
    * @param callback Callback function to handle incoming messages
    * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
    * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created subscription
+   * @return A shared pointer to the created nav2::Subscription
    */
   template<
     typename MessageT,
     typename CallbackT>
-  std::shared_ptr<rclcpp::Subscription<MessageT>>
+  std::shared_ptr<nav2::Subscription<MessageT>>
   create_subscription(
     const std::string & topic_name,
     CallbackT && callback,
@@ -136,10 +136,10 @@ public:
    * @param topic_name Name of topic
    * @param qos QoS settings for the publisher (default is nav2::qos::StandardTopicQoS())
    * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created publisher
+   * @return A shared pointer to the created nav2::Publisher
    */
   template<typename MessageT>
-  typename rclcpp_lifecycle::LifecyclePublisher<MessageT>::SharedPtr
+  typename nav2::Publisher<MessageT>::SharedPtr
   create_publisher(
     const std::string & topic_name,
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
@@ -214,10 +214,10 @@ public:
    * @brief Create a ActionClient to call an action using
    * @param action_name Name of action
    * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created rclcpp_action::Client
+   * @return A shared pointer to the created nav2::ActionClient
    */
   template<typename ActionT>
-  typename rclcpp_action::Client<ActionT>::SharedPtr
+  typename nav2::ActionClient<ActionT>::SharedPtr
   create_action_client(
     const std::string & action_name,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)

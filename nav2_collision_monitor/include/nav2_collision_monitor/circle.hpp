@@ -115,7 +115,7 @@ protected:
   /// @brief (radius * radius) value. Stored for optimization.
   double radius_squared_ = -1.0;
   /// @brief Radius subscription
-  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr radius_sub_;
+  nav2::Subscription<std_msgs::msg::Float32>::SharedPtr radius_sub_;
 };  // class Circle
 
 }  // namespace nav2_collision_monitor

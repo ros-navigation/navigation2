@@ -70,7 +70,7 @@ public:
   using ActionT = nav2_msgs::action::FollowWaypoints;
   using ClientT = nav2_msgs::action::NavigateToPose;
   using ActionServer = nav2::SimpleActionServer<ActionT>;
-  using ActionClient = rclcpp_action::Client<ClientT>;
+  using ActionClient = nav2::ActionClient<ClientT>;
 
   // Shorten the types for GPS waypoint following
   using ActionTGPS = nav2_msgs::action::FollowGPSWaypoints;

@@ -112,15 +112,15 @@ protected:
   int _max_on_approach_iterations;
   int _terminal_checking_interval;
   float _tolerance;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   double _lookup_table_size;
   bool _debug_visualizations;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _smoothed_footprints_publisher;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   GoalHeadingMode _goal_heading_mode;
   int _coarse_search_resolution;

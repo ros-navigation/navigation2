@@ -99,14 +99,14 @@ private:
   QBasicTimer action_timer_;
 
   // The Dock and Undock action client
-  rclcpp_action::Client<Dock>::SharedPtr dock_client_;
-  rclcpp_action::Client<Undock>::SharedPtr undock_client_;
+  nav2::ActionClient<Dock>::SharedPtr dock_client_;
+  nav2::ActionClient<Undock>::SharedPtr undock_client_;
 
   // Docking / Undocking action feedback subscribers
-  rclcpp::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
-  rclcpp::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
-  rclcpp::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
-  rclcpp::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
+  nav2::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
+  nav2::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
+  nav2::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
+  nav2::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
 
   // Goal related state
   DockGoalHandle::SharedPtr dock_goal_handle_;
@@ -161,8 +161,8 @@ class InitialDockThread : public QThread
 
 public:
   explicit InitialDockThread(
-    rclcpp_action::Client<nav2_msgs::action::DockRobot>::SharedPtr & dock_client,
-    rclcpp_action::Client<nav2_msgs::action::UndockRobot>::SharedPtr & undock_client)
+    nav2::ActionClient<nav2_msgs::action::DockRobot>::SharedPtr & dock_client,
+    nav2::ActionClient<nav2_msgs::action::UndockRobot>::SharedPtr & undock_client)
   : dock_client_(dock_client), undock_client_(undock_client)
   {}
 
@@ -196,8 +196,8 @@ signals:
   void undockingInactive();
 
 private:
-  rclcpp_action::Client<nav2_msgs::action::DockRobot>::SharedPtr dock_client_;
-  rclcpp_action::Client<nav2_msgs::action::UndockRobot>::SharedPtr undock_client_;
+  nav2::ActionClient<nav2_msgs::action::DockRobot>::SharedPtr dock_client_;
+  nav2::ActionClient<nav2_msgs::action::UndockRobot>::SharedPtr undock_client_;
   bool dock_active_ = false;
   bool undock_active_ = false;
 };

@@ -49,7 +49,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "builtin_interfaces/msg/duration.hpp"
 
-using rclcpp_lifecycle::LifecyclePublisher;
+using nav2::Publisher;
 
 namespace dwb_core
 {

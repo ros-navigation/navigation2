@@ -91,7 +91,7 @@ protected:
   // ----- Variables -----
 
   /// @brief PointCloud data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+  nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;

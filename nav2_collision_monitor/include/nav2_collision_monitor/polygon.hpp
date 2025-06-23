@@ -285,7 +285,7 @@ protected:
   /// @brief Whether the subscription to polygon topic has transient local QoS durability
   bool polygon_subscribe_transient_local_;
   /// @brief Polygon subscription
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   /// @brief Name of the observation sources to check for polygon
@@ -307,7 +307,7 @@ protected:
   /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;

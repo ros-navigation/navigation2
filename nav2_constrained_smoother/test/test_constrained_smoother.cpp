@@ -393,10 +393,10 @@ protected:
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     path_poses_pub_orig_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     path_poses_pub_cmp_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
 

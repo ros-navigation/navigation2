@@ -93,7 +93,7 @@ private:
   std::atomic<bool> is_stuck_;
 
   // Listen to odometry
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  nav2::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   // Store history of odometry measurements
   std::deque<nav_msgs::msg::Odometry> odom_history_;
   std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
