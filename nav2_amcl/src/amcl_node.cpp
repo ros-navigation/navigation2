@@ -1476,8 +1476,9 @@ AmclNode::initMessageFilters()
     shared_from_this(), scan_topic_, nav2::qos::SensorDataQoS(), sub_opt);
   #else
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-      nav2::LifecycleNode>>(
-    shared_from_this(), scan_topic_, nav2::qos::SensorDataQoS().get_rmw_qos_profile(), sub_opt);
+      rclcpp_lifecycle::LifecycleNode>>(
+    std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(shared_from_this()),
+    scan_topic_, nav2::qos::SensorDataQoS().get_rmw_qos_profile(), sub_opt);
   #endif
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(

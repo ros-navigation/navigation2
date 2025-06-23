@@ -178,7 +178,7 @@ protected:
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> laser_scan_sub_;
   #else
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-    nav2::LifecycleNode>> laser_scan_sub_;
+    rclcpp_lifecycle::LifecycleNode>> laser_scan_sub_;
   #endif
 
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> laser_scan_filter_;

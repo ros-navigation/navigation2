@@ -245,15 +245,13 @@ typename nav2::SimpleActionServer<ActionT>::SharedPtr create_action_server(
     node, action_name, execute_callback, complete_cb, server_timeout, spin_thread, realtime);
 }
 
-template<typename ActionT, typename NodeT>
-void configure_action_client(
-  const NodeT & node,
-  typename nav2::ActionClient<ActionT>::SharedPtr & action_client)
-{
-  nav2::setIntrospectionMode(action_client,
-    node->get_node_parameters_interface(), node->get_clock());
-}
-
+/**
+ * @brief Create an action client for a specific action type
+ * @param node Node to create the action client on
+ * @param action_name Name of the action
+ * @param callback_group The callback group to use (if provided)
+ * @return A shared pointer to the created nav2::ActionClient
+ */
 template<typename ActionT, typename NodeT>
 typename nav2::ActionClient<ActionT>::SharedPtr create_action_client(
   const NodeT & node,
@@ -261,7 +259,8 @@ typename nav2::ActionClient<ActionT>::SharedPtr create_action_client(
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   auto client = rclcpp_action::create_client<ActionT>(node, action_name, callback_group);
-  configure_action_client<ActionT>(node, client);
+  nav2::setIntrospectionMode(client,
+    node->get_node_parameters_interface(), node->get_clock());
   return client;
 }
 

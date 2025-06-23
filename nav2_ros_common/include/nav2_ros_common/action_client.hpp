@@ -20,7 +20,11 @@
 
 namespace nav2
 {
-
+/**
+  * @brief A ROS 2 action client for Nav2
+  * This is a convenience type alias to simplify the use of action clients in Nav2
+  * which may be further built up on in the future with custom APIs.
+  */
 template<typename ActionT>
 using ActionClient = rclcpp_action::Client<ActionT>;
 

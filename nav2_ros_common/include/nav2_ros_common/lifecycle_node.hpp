@@ -119,7 +119,7 @@ public:
   template<
     typename MessageT,
     typename CallbackT>
-  std::shared_ptr<nav2::Subscription<MessageT>>
+  typename nav2::Subscription<MessageT>::SharedPtr
   create_subscription(
     const std::string & topic_name,
     CallbackT && callback,

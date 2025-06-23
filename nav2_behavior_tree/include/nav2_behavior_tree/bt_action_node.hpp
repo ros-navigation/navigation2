@@ -465,7 +465,7 @@ protected:
   }
 
   std::string action_name_;
-  typename std::shared_ptr<nav2::ActionClient<ActionT>> action_client_;
+  typename nav2::ActionClient<ActionT>::SharedPtr action_client_;
 
   // All ROS2 actions have a goal and a result
   typename ActionT::Goal goal_;
