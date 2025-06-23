@@ -30,9 +30,6 @@ void GracefulController::configure(
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   nav2::LifecycleNode::SharedPtr node = parent.lock();
-  // nav2::LifecycleNode::SharedPtr node =
-  //   std::dynamic_pointer_cast<nav2::LifecycleNode>(parent.lock());
-
   if (!node) {
     throw nav2_core::ControllerException("Unable to lock node!");
   }

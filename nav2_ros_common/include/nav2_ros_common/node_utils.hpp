@@ -350,7 +350,7 @@ inline void setSoftRealTimePriority()
   }
 }
 
-template <typename InterfaceT>
+template<typename InterfaceT>
 inline void setIntrospectionMode(
   InterfaceT & ros_interface,
   rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface,
@@ -371,6 +371,10 @@ inline void setIntrospectionMode(
   }
 
   ros_interface->configure_introspection(clock, rclcpp::ServicesQoS(), introspection_state);
+  #else
+  (void)ros_interface;
+  (void)node_parameters_interface;
+  (void)clock;
   #endif
 }
 

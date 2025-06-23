@@ -20,6 +20,7 @@
 #include <thread>
 #include <vector>
 #include <utility>
+#include <chrono>
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -46,6 +47,7 @@ class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
 public:
   using SharedPtr = std::shared_ptr<nav2::LifecycleNode>;
   using WeakPtr = std::weak_ptr<nav2::LifecycleNode>;
+  using SharedConstPointer = std::shared_ptr<const nav2::LifecycleNode>;
 
   /**
    * @brief A lifecycle node constructor
