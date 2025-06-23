@@ -87,7 +87,7 @@ public:
     layer_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
       topic_name,
       std::bind(&LayerSubscriber::layerCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedTopicQoS(),
+      nav2::qos::LatchedSubscriptionQoS(),
       callback_group_);
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();

@@ -46,7 +46,7 @@ CostmapFilterInfoServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string filter_info_topic = get_parameter("filter_info_topic").as_string();
 
   publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic, nav2::qos::LatchedTopicQoS());
+    filter_info_topic, nav2::qos::LatchedPublisherQoS());
 
   msg_ = nav2_msgs::msg::CostmapFilterInfo();
   msg_.header.frame_id = "";

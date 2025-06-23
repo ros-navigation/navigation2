@@ -18,6 +18,7 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 using namespace std::chrono_literals;
 

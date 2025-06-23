@@ -94,12 +94,12 @@ void VoxelLayer::onInitialize()
 
   if (publish_voxel_) {
     voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", nav2::qos::LatchedTopicQoS());
+      "voxel_grid", nav2::qos::LatchedPublisherQoS());
     voxel_pub_->on_activate();
   }
 
   clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "clearing_endpoints", nav2::qos::LatchedTopicQoS());
+    "clearing_endpoints", nav2::qos::LatchedPublisherQoS());
   clearing_endpoints_pub_->on_activate();
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);

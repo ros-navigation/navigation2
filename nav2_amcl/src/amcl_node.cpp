@@ -1337,7 +1337,7 @@ AmclNode::dynamicParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-      nav2::qos::LatchedTopicQoS());
+      nav2::qos::LatchedSubscriptionQoS());
   }
 
   result.successful = true;
@@ -1503,7 +1503,7 @@ AmclNode::initPubSub()
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose",
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedPublisherQoS());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose",
@@ -1512,7 +1512,7 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedSubscriptionQoS());
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }

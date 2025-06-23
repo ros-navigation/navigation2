@@ -238,7 +238,7 @@ void ObstacleLayer::onInitialize()
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub;
       #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-        nav2::LifecycleNode>> sub;
+        rclcpp_lifecycle::LifecycleNode>> sub;
       #endif
 
       // For Kilted compatibility in Message Filters API change
@@ -248,12 +248,15 @@ void ObstacleLayer::onInitialize()
       // For Jazzy compatibility in Message Filters API change
       #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-          nav2::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(shared_from_this()),
+        topic, custom_qos_profile, sub_opt);
       // For Humble and Older compatibility in Message Filters API change
       #else
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-          nav2::LifecycleNode>>(
-          node, topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(shared_from_this()),
+        topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
       #endif
 
       sub->unsubscribe();

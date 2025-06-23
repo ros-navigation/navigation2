@@ -59,7 +59,7 @@ void SmootherSelector::createROSInterfaces()
     smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
       topic_name_,
       std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
-      nav2::qos::LatchedTopicQoS(),
+      nav2::qos::LatchedSubscriptionQoS(),
       callback_group_);
   }
 }

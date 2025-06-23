@@ -40,7 +40,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   graph_vis_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "route_graph", nav2::qos::LatchedTopicQoS());
+    "route_graph", nav2::qos::LatchedPublisherQoS());
 
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",

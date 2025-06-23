@@ -148,6 +148,14 @@ public:
     auto pub = nav2::interfaces::create_publisher<MessageT>(
       shared_from_this(), topic_name, qos, callback_group);
     this->add_managed_entity(pub);
+
+    // Automatically activate the publisher if the node is already active
+    if (get_current_state().id() ==
+      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+      pub->on_activate();
+    }
+
     return pub;
   }
 

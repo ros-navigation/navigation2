@@ -70,14 +70,14 @@ Costmap2DPublisher::Costmap2DPublisher(
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedPublisherQoS());
   costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
     topic_name + "_raw",
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedPublisherQoS());
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
-    topic_name + "_updates", nav2::qos::LatchedTopicQoS());
+    topic_name + "_updates", nav2::qos::LatchedPublisherQoS());
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
-    topic_name + "_raw_updates", nav2::qos::LatchedTopicQoS());
+    topic_name + "_raw_updates", nav2::qos::LatchedPublisherQoS());
 
   // Create a service that will use the callback function to handle requests.
   costmap_service_ = node->create_service<nav2_msgs::srv::GetCostmap>(

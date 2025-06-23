@@ -112,7 +112,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   selected_smoother_cmd.data = "DWC";
 
-  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto smoother_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("smoother_selector_custom_topic_name", qos);
@@ -160,7 +160,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   selected_smoother_cmd.data = "RRT";
 
-  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto smoother_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("smoother_selector", qos);

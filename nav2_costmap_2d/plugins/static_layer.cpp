@@ -75,7 +75,7 @@ StaticLayer::onInitialize()
 
   rclcpp::QoS map_qos = nav2::qos::StandardTopicQoS();  // initialize to default
   if (map_subscribe_transient_local_) {
-    map_qos = nav2::qos::LatchedTopicQoS();
+    map_qos = nav2::qos::LatchedSubscriptionQoS();
   }
 
   RCLCPP_INFO(

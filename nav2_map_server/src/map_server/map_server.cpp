@@ -115,7 +115,7 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create a publisher using the QoS settings to emulate a ROS1 latched topic
   occ_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedPublisherQoS());
 
   // Create a service that loads the occupancy grid from a file
   load_map_service_ = create_service<nav2_msgs::srv::LoadMap>(

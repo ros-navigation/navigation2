@@ -97,7 +97,7 @@ public:
 protected:
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-  trajectories_publisher_;
+    trajectories_publisher_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
 

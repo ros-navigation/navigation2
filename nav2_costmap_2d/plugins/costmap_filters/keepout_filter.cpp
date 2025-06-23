@@ -72,7 +72,7 @@ void KeepoutFilter::initializeFilter(
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic_,
     std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1),
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedSubscriptionQoS());
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
@@ -128,7 +128,7 @@ void KeepoutFilter::filterInfoCallback(
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_,
     std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1),
-    nav2::qos::LatchedTopicQoS());
+    nav2::qos::LatchedSubscriptionQoS());
 }
 
 void KeepoutFilter::maskCallback(

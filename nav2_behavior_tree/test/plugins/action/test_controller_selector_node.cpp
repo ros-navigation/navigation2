@@ -114,7 +114,7 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
 
   auto controller_selector_pub =
     node_->create_publisher<std_msgs::msg::String>(
-      "controller_selector_custom_topic_name", nav2::qos::LatchedTopicQoS());
+      "controller_selector_custom_topic_name", nav2::qos::LatchedPublisherQoS());
   controller_selector_pub->on_activate();
 
   // publish a few updates of the selected_controller
@@ -161,7 +161,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
 
   auto controller_selector_pub =
     node_->create_publisher<std_msgs::msg::String>(
-      "controller_selector", nav2::qos::LatchedTopicQoS());
+      "controller_selector", nav2::qos::LatchedPublisherQoS());
   controller_selector_pub->on_activate();
 
   // publish a few updates of the selected_controller

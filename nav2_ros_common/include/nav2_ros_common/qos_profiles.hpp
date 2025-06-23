@@ -24,7 +24,7 @@ namespace qos
 {
 
 /**
- * @class nav2_qos::StandardTopicQoS
+ * @class nav2::qos::StandardTopicQoS
  * @brief A QoS profile for standard reliable topics with a history of 10 messages
  */
 class StandardTopicQoS : public rclcpp::QoS
@@ -44,18 +44,18 @@ public:
 };
 
 /**
- * @class nav2_qos::LatchedTopicQoS
+ * @class nav2::qos::LatchedPublisherQoS
  * @brief A QoS profile for latched, reliable topics with a history of 1 messages
  */
-class LatchedTopicQoS : public rclcpp::QoS
+class LatchedPublisherQoS : public rclcpp::QoS
 {
 public:
   /**
-   * @brief Constructor for LatchedTopicQoS
+   * @brief Constructor for LatchedPublisherQoS
    * @param depth The history depth for the QoS profile, default is 1
    */
   explicit
-  LatchedTopicQoS(const int depth = 1)  // NOLINT
+  LatchedPublisherQoS(const int depth = 1)  // NOLINT
   : rclcpp::QoS(rclcpp::KeepLast(depth))
   {
     this->reliable();
@@ -64,7 +64,27 @@ public:
 };
 
 /**
- * @class nav2_qos::SensorDataQoS
+ * @class nav2::qos::LatchedSubscriptionQoS
+ * @brief A QoS profile for latched, reliable topics with a history of 1 messages
+ */
+class LatchedSubscriptionQoS : public rclcpp::QoS
+{
+public:
+  /**
+   * @brief Constructor for LatchedSubscriptionQoS
+   * @param depth The history depth for the QoS profile, default is 1
+   */
+  explicit
+  LatchedSubscriptionQoS(const int depth = 10)  // NOLINT
+  : rclcpp::QoS(rclcpp::KeepLast(depth))
+  {
+    this->reliable();
+    this->transient_local();
+  }
+};
+
+/**
+ * @class nav2::qos::SensorDataQoS
  * @brief A QoS profile for best-effort sensor data with a history of 10 messages
  */
 class SensorDataQoS : public rclcpp::QoS

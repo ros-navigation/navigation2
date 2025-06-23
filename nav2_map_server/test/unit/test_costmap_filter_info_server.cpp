@@ -90,7 +90,7 @@ public:
     subscription_ = info_server_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
       FILTER_INFO_TOPIC,
       std::bind(&InfoServerTester::infoCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedTopicQoS());
+      nav2::qos::LatchedSubscriptionQoS());
   }
 
   ~InfoServerTester()

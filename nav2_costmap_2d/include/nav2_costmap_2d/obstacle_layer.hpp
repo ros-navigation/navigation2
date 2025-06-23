@@ -239,7 +239,7 @@ protected:
   std::vector<std::shared_ptr<message_filters::SubscriberBase>>
   observation_subscribers_;
   #else
-  std::vector<std::shared_ptr<message_filters::SubscriberBase<nav2::LifecycleNode>>>
+  std::vector<std::shared_ptr<message_filters::SubscriberBase<rclcpp_lifecycle::LifecycleNode>>>
   observation_subscribers_;
   #endif
   /// @brief Used to make sure that transforms are available for each sensor

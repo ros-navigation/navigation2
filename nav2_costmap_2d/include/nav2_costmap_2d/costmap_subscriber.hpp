@@ -50,16 +50,15 @@ public:
 
     // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
     // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
-    constexpr int costmapUpdateQueueDepth = 10;
     costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
       parent, topic_name_,
       std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedTopicQoS());
+      nav2::qos::LatchedSubscriptionQoS());
 
     costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
       parent, topic_name_ + "_updates",
       std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedTopicQoS(costmapUpdateQueueDepth));
+      nav2::qos::LatchedSubscriptionQoS());
   }
 
   /**

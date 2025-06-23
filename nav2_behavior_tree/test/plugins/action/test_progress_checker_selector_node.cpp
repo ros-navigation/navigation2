@@ -113,7 +113,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_custom_topic)
 
   selected_progress_checker_cmd.data = "AngularProgressChecker";
 
-  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto progress_checker_selector_pub =
     node_->create_publisher<std_msgs::msg::String>(
@@ -164,7 +164,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
 
   selected_progress_checker_cmd.data = "RRT";
 
-  rclcpp::QoS qos = nav2::qos::LatchedTopicQoS();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto progress_checker_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("progress_checker_selector", qos);
