@@ -14,10 +14,13 @@ The factories are listed below:
 - `create_action_server` --> `nav2::SimpleActionServer` 
 - `create_action_client` --> `nav2::ActionClient`
 
-This is in some cases a big change from `rclcpp` versions, though most have direct analogs or are simply wrappers with additional configurations pre-baked in.
+This is in some cases a big change from `rclcpp` versions, though most have direct analogs or are simply wrappers with additional configurations pre-baked in to remove tedious repetition on every package.
+It also allows a central and controlled location to make future changes such as adding tracing, replacing APIs, controlling QoS profiles, or enabling advanced settings.
 Thus, see the migration guide below for how to migrate from the previous versions of these objects to the new ones in this package from ROS 2 Kilted to Lyrical.
 
 ## Migration Guide
+
+To see an example of migration, see the [migration example](https://github.com/ros-navigation/navigation2/pull/5288) of the Nav2 stack.
 
 ### General information
 
