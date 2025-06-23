@@ -21,6 +21,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cctype>
+#include "rclcpp/version.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
@@ -347,6 +348,30 @@ inline void setSoftRealTimePriority()
       "realtime prioritization! Error: ");
     throw std::runtime_error(errmsg + std::strerror(errno));
   }
+}
+
+template <typename InterfaceT>
+inline void setIntrospectionMode(
+  InterfaceT & ros_interface,
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface,
+  rclcpp::Clock::SharedPtr clock)
+{
+  #if RCLCPP_VERSION_GTE(29, 0, 0)
+  rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
+  if (!node_parameters_interface->has_parameter("service_introspection_mode")) {
+    node_parameters_interface->declare_parameter(
+      "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+  }
+  std::string service_introspection_mode =
+    node_parameters_interface->get_parameter("service_introspection_mode").as_string();
+  if (service_introspection_mode == "metadata") {
+    introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
+  } else if (service_introspection_mode == "contents") {
+    introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
+  }
+
+  ros_interface->configure_introspection(clock, rclcpp::ServicesQoS(), introspection_state);
+  #endif
 }
 
 }  // namespace nav2

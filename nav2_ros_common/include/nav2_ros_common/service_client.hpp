@@ -19,6 +19,7 @@
 #include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2
 {
@@ -67,20 +68,8 @@ public:
       rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group_);
 
-    rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if (!provided_node->has_parameter("service_introspection_mode")) {
-      provided_node->declare_parameter("service_introspection_mode", "disabled");
-    }
-    std::string service_introspection_mode =
-      provided_node->get_parameter("service_introspection_mode").as_string();
-    if (service_introspection_mode == "metadata") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode == "contents") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
-    }
-
-    this->client_->configure_introspection(
-        clock_, rclcpp::ServicesQoS(), introspection_state);
+    nav2::setIntrospectionMode(this->client_,
+      provided_node->get_node_parameters_interface(), clock_);
   }
 
   using RequestType = typename ServiceT::Request;

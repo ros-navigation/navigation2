@@ -246,20 +246,8 @@ void configure_action_client(
   const NodeT & node,
   typename rclcpp_action::Client<ActionT>::SharedPtr & action_client)
 {
-  rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-  if (!node->has_parameter("service_introspection_mode")) {
-    node->declare_parameter("service_introspection_mode", "disabled");
-  }
-  std::string service_introspection_mode =
-    node->get_parameter("service_introspection_mode").as_string();
-  if (service_introspection_mode == "metadata") {
-    introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-  } else if (service_introspection_mode == "contents") {
-    introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
-  }
-
-  action_client->configure_introspection(
-      node->get_clock(), rclcpp::ServicesQoS(), introspection_state);
+  nav2::setIntrospectionMode(action_client,
+    node->get_node_parameters_interface(), node->get_clock());
 }
 
 template<typename ActionT, typename NodeT>

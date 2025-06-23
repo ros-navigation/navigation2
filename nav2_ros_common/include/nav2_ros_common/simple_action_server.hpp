@@ -134,21 +134,8 @@ public:
       rcl_action_server_get_default_options(),  // Use consistent QoS settings
       callback_group_);
 
-    rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-    if (!node_parameters_interface->has_parameter("service_introspection_mode")) {
-      node_parameters_interface->declare_parameter(
-        "service_introspection_mode", rclcpp::ParameterValue("disabled"));
-    }
-    std::string service_introspection_mode =
-      node_parameters_interface->get_parameter("service_introspection_mode").as_string();
-    if (service_introspection_mode == "metadata") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-    } else if (service_introspection_mode == "contents") {
-      introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
-    }
-
-    this->action_server_->configure_introspection(
-        node_clock_interface_->get_clock(), rclcpp::ServicesQoS(), introspection_state);
+    nav2::setIntrospectionMode(this->action_server_,
+      node_parameters_interface_, node_clock_interface_->get_clock());
 
     if (spin_thread_) {
       executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
