@@ -16,6 +16,7 @@ target_link_libraries(${test_planner_costmaps_exec}
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_costmaps_exec}
   PUBLIC
@@ -42,6 +43,7 @@ target_link_libraries(${test_planner_random_exec}
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_random_exec}
   PUBLIC
@@ -87,6 +89,7 @@ target_link_libraries(test_planner_plugins
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(test_planner_plugins
   PUBLIC
@@ -109,6 +112,7 @@ target_link_libraries(test_planner_is_path_valid
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(test_planner_is_path_valid
   PUBLIC

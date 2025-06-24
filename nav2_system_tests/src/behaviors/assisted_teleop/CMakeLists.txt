@@ -15,6 +15,7 @@ target_link_libraries(${test_assisted_teleop_behavior}
   ${std_msgs_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_assisted_teleop_behavior}
   PUBLIC

@@ -13,6 +13,7 @@ target_link_libraries(${test_wait_behavior_exec}
   rclcpp_action::rclcpp_action
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_wait_behavior_exec}
   PUBLIC
