@@ -27,4 +27,6 @@ if(BUILD_TESTING)
 
   ament_add_pytest_test(test_rewritten_yaml test/test_rewritten_yaml.py
   )
+  ament_add_pytest_test(test_launch_config_as_bool test/test_launch_config_as_bool.py
+  )
 endif()

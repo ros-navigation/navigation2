@@ -23,7 +23,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, PushROSNamespace
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import RewrittenYaml, LaunchConfigAsBool
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -33,7 +33,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
-    slam = LaunchConfiguration('slam')
+    slam = LaunchConfigAsBool('slam')
     map_yaml_file = LaunchConfiguration('map')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
@@ -44,7 +44,7 @@ def generate_launch_description() -> LaunchDescription:
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
-    use_localization = LaunchConfiguration('use_localization')
+    use_localization = LaunchConfigAsBool('use_localization')
     use_keepout_zones = LaunchConfiguration('use_keepout_zones')
     use_speed_zones = LaunchConfiguration('use_speed_zones')
 
@@ -195,7 +195,7 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'keepout_zone_launch.py')
                 ),
-                condition=IfCondition(PythonExpression([use_keepout_zones])),
+                condition=IfCondition(use_keepout_zones),
                 launch_arguments={
                     'namespace': namespace,
                     'keepout_mask': keepout_mask_yaml_file,
@@ -211,7 +211,7 @@ def generate_launch_description() -> LaunchDescription:
                 PythonLaunchDescriptionSource(
                     os.path.join(launch_dir, 'speed_zone_launch.py')
                 ),
-                condition=IfCondition(PythonExpression([use_speed_zones])),
+                condition=IfCondition(use_speed_zones),
                 launch_arguments={
                     'namespace': namespace,
                     'speed_mask': speed_mask_yaml_file,

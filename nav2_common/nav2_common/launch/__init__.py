@@ -15,9 +15,11 @@
 from .has_node_params import HasNodeParams
 from .replace_string import ReplaceString
 from .rewritten_yaml import RewrittenYaml
+from .launch_config_as_bool import LaunchConfigAsBool
 
 __all__ = [
     'HasNodeParams',
     'RewrittenYaml',
     'ReplaceString',
+    'LaunchConfigAsBool',
 ]
