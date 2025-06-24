@@ -19,7 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, SetParameter, PushRosNamespace
+from launch_ros.actions import LoadComposableNodes, Node, PushRosNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import RewrittenYaml
 
@@ -63,7 +63,6 @@ def generate_launch_description() -> LaunchDescription:
     # Do not add namespace to topics in the parameters file, as they will be remapped
     # by the root key only if they are not prefixed with a forward slash.
     # e.g. 'map' will be remapped to '/<namespace>/map', but '/map' will not be remapped.
-
     # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under 
     # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured 
     # using ReplaceString <robot_namespace>
