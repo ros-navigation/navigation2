@@ -94,14 +94,14 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
     options.event_callbacks.matched_callback =
       [topic_name](rclcpp::MatchedInfo & status) {
         if (status.current_count_change > 0) {
-          RCLCPP_INFO(
+          RCLCPP_DEBUG(
             rclcpp::get_logger("nav2::interfaces"),
             "Connected: %d new publisher(s) to [%s]. Total active: %zu.",
             status.current_count_change,
             topic_name.c_str(),
             status.current_count);
         } else if (status.current_count_change < 0) {
-          RCLCPP_INFO(
+          RCLCPP_DEBUG(
             rclcpp::get_logger("nav2::interfaces"),
             "Disconnected: %d publisher(s) from [%s]. Total active: %zu.",
             -status.current_count_change,
@@ -160,14 +160,14 @@ inline rclcpp::PublisherOptions createPublisherOptions(
     options.event_callbacks.matched_callback =
       [topic_name](rclcpp::MatchedInfo & status) {
         if (status.current_count_change > 0) {
-          RCLCPP_INFO(
+          RCLCPP_DEBUG(
             rclcpp::get_logger("nav2::interfaces"),
             "Connected: %d new subscriber(s) to [%s]. Total active: %zu.",
             status.current_count_change,
             topic_name.c_str(),
             status.current_count);
         } else if (status.current_count_change < 0) {
-          RCLCPP_INFO(
+          RCLCPP_DEBUG(
             rclcpp::get_logger("nav2::interfaces"),
             "Disconnected: %d subscriber(s) from [%s]. Total active: %zu.",
             -status.current_count_change,
