@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from launch.substitution import Substitution
-from launch.substitutions import LaunchConfiguration
+from launch import LaunchContext
+from launch.substitutions import LaunchConfiguration, Substitution
 from launch.utilities import perform_substitutions
 
 
@@ -25,11 +25,11 @@ class LaunchConfigAsBool(Substitution):
     Returns a string 'true' or 'false' for use in PythonExpression and IfCondition contexts.
     """
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__()
         self._config = LaunchConfiguration(name)
 
-    def perform(self, context) -> str:
+    def perform(self, context: LaunchContext) -> str:
         value = perform_substitutions(context, [self._config])
         if value.strip().lower() in ['true', '1', 'yes', 'on']:
             return 'True'
