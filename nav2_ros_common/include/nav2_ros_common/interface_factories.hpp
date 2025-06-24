@@ -200,7 +200,7 @@ typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", false);
+    node, "allow_parameter_qos_overrides", true);
 
   auto params_interface = node->get_node_parameters_interface();
   auto topics_interface = node->get_node_topics_interface();
@@ -229,7 +229,7 @@ typename nav2::Publisher<MessageT>::SharedPtr create_publisher(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", false);
+    node, "allow_parameter_qos_overrides", true);
   using PublisherT = nav2::Publisher<MessageT>;
   auto pub = rclcpp::create_publisher<MessageT, std::allocator<void>, PublisherT>(
     *node,
