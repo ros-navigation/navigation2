@@ -63,8 +63,8 @@ def generate_launch_description() -> LaunchDescription:
     # Do not add namespace to topics in the parameters file, as they will be remapped
     # by the root key only if they are not prefixed with a forward slash.
     # e.g. 'map' will be remapped to '/<namespace>/map', but '/map' will not be remapped.
-    # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under 
-    # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured 
+    # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under
+    # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured
     # using ReplaceString <robot_namespace>
     configured_params = ParameterFile(
         RewrittenYaml(
