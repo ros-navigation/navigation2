@@ -25,7 +25,7 @@ using namespace mppi;  // NOLINT
 
 TEST(TrajectoryVisualizerTests, StateTransition)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
@@ -38,7 +38,7 @@ TEST(TrajectoryVisualizerTests, StateTransition)
 
 TEST(TrajectoryVisualizerTests, VisPathRepub)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
   nav_msgs::msg::Path received_path;
@@ -47,7 +47,7 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
   pub_path.poses.resize(5);
 
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
-    "~/transformed_global_plan", 10,
+    "~/transformed_global_plan",
     [&](const nav_msgs::msg::Path msg) {received_path = msg;});
 
   TrajectoryVisualizer vis;
@@ -62,13 +62,13 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
 
 TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "~/candidate_trajectories", 10,
+    "~/candidate_trajectories",
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   // optimal_trajectory empty, should fail to publish
@@ -125,13 +125,13 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 
 TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
-    "~/candidate_trajectories", 10,
+    "~/candidate_trajectories",
     [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
 
   models::Trajectories candidate_trajectories;
@@ -153,7 +153,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 
 TEST(TrajectoryVisualizerTests, VisOptimalPath)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
   builtin_interfaces::msg::Time cmd_stamp;
@@ -162,7 +162,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
 
   nav_msgs::msg::Path received_path;
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
-    "~/optimal_path", 10,
+    "~/optimal_path",
     [&](const nav_msgs::msg::Path msg) {received_path = msg;});
 
   // optimal_trajectory empty, should fail to publish

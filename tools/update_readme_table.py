@@ -47,6 +47,7 @@ Packages = [
     'nav2_planner',
     'nav2_regulated_pure_pursuit_controller',
     'nav2_rotation_shim_controller',
+    'nav2_ros_common',
     'nav2_route',
     'nav2_rviz_plugins',
     'nav2_simple_commander',

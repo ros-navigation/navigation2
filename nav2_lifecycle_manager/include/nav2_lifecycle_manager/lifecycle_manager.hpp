@@ -24,14 +24,15 @@
 #include <vector>
 
 #include "nav2_util/lifecycle_service_client.hpp"
-#include "nav2_util/node_thread.hpp"
-#include "nav2_util/service_server.hpp"
+#include "nav2_ros_common/node_thread.hpp"
+#include "nav2_ros_common/service_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "bondcpp/bond.hpp"
 #include "diagnostic_updater/diagnostic_updater.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 
 namespace nav2_lifecycle_manager
@@ -72,11 +73,11 @@ public:
 protected:
   // Callback group used by services and timers
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  std::unique_ptr<nav2_util::NodeThread> service_thread_;
+  std::unique_ptr<nav2::NodeThread> service_thread_;
 
   // The services provided by this node
-  nav2_util::ServiceServer<ManageLifecycleNodes>::SharedPtr manager_srv_;
-  nav2_util::ServiceServer<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
+  nav2::ServiceServer<ManageLifecycleNodes>::SharedPtr manager_srv_;
+  nav2::ServiceServer<std_srvs::srv::Trigger>::SharedPtr is_active_srv_;
   /**
    * @brief Lifecycle node manager callback function
    * @param request_header Header of the service request

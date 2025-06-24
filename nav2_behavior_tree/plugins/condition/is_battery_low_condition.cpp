@@ -51,19 +51,17 @@ void IsBatteryLowCondition::createROSInterfaces()
   // Only create a new subscriber if the topic has changed or subscriber is empty
   if (battery_topic_new != battery_topic_ || !battery_sub_) {
     battery_topic_ = battery_topic_new;
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
     battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
       battery_topic_,
-      rclcpp::SystemDefaultsQoS(),
       std::bind(&IsBatteryLowCondition::batteryCallback, this, std::placeholders::_1),
-      sub_option);
+      nav2::qos::StandardTopicQoS(),
+      callback_group_);
   }
 }
 

@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav_2d_utils/tf_help.hpp"
 #include "nav2_graceful_controller/path_handler.hpp"

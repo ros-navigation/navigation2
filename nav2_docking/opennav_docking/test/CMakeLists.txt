@@ -10,6 +10,12 @@ target_link_libraries(test_utils
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
+target_include_directories(test_utils
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
+)
 
 # Test dock database
 ament_add_gtest(test_dock_database
@@ -20,6 +26,12 @@ target_link_libraries(test_dock_database
   ${library_name}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_include_directories(test_dock_database
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 # Test navigator
@@ -35,6 +47,12 @@ target_link_libraries(test_navigator
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
+target_include_directories(test_navigator
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
+)
 
 # Test Controller
 ament_add_gtest(test_controller
@@ -45,6 +63,12 @@ target_link_libraries(test_controller
   ${library_name}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_include_directories(test_controller
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 # Test Simple Dock
@@ -60,6 +84,12 @@ target_link_libraries(test_simple_charging_dock
   simple_charging_dock
   tf2_geometry_msgs::tf2_geometry_msgs
 )
+target_include_directories(test_simple_charging_dock
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
+)
 ament_add_gtest(test_simple_non_charging_dock
   test_simple_non_charging_dock.cpp
 )
@@ -71,6 +101,12 @@ target_link_libraries(test_simple_non_charging_dock
 )
 target_link_libraries(test_simple_non_charging_dock
   ${library_name} simple_non_charging_dock
+)
+target_include_directories(test_simple_non_charging_dock
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 # Test Pose Filter (unit)
@@ -84,20 +120,34 @@ target_link_libraries(test_pose_filter
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
 )
+target_include_directories(test_pose_filter
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
+)
 
 # Test dock pluing for server tests
 add_library(test_dock SHARED testing_dock.cpp)
 target_link_libraries(test_dock PUBLIC
   ${geometry_msgs_TARGETS}
+  ${bond_TARGETS}
   opennav_docking_core::opennav_docking_core
   pluginlib::pluginlib
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  bondcpp::bondcpp
 )
 install(TARGETS test_dock
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+target_include_directories(test_dock
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 ament_export_libraries(test_dock)
 
@@ -111,6 +161,12 @@ target_link_libraries(test_docking_server_unit
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+)
+target_include_directories(test_docking_server_unit
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 # Test docking server (smoke)

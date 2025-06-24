@@ -19,7 +19,7 @@
 #include <memory>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
@@ -82,7 +82,7 @@ private:
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
+  nav2::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   bool is_battery_charging_;
 };

@@ -26,7 +26,7 @@
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/get_current_pose_action.hpp"
 #include "utils/test_behavior_tree_fixture.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 class GetCurrentPoseTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
@@ -35,9 +35,9 @@ public:
   {
     config_->blackboard->set("robot_base_frame", "base_link");
     config_->blackboard->set("global_frame", "map");
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node_, "robot_base_frame", rclcpp::ParameterValue("base_link"));
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node_, "global_frame", rclcpp::ParameterValue("map"));
 
     BT::NodeBuilder builder =

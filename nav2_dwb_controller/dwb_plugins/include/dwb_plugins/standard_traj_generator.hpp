@@ -43,7 +43,7 @@
 #include "dwb_core/trajectory_generator.hpp"
 #include "dwb_plugins/velocity_iterator.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -57,7 +57,7 @@ class StandardTrajectoryGenerator : public dwb_core::TrajectoryGenerator
 public:
   // Standard TrajectoryGenerator interface
   void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const nav2::LifecycleNode::SharedPtr & nh,
     const std::string & plugin_name) override;
   void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity) override;
   bool hasMoreTwists() override;
@@ -86,7 +86,7 @@ protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding
    */
-  virtual void initializeIterator(const nav2_util::LifecycleNode::SharedPtr & nh);
+  virtual void initializeIterator(const nav2::LifecycleNode::SharedPtr & nh);
 
   /**
    * @brief Calculate the velocity after a set period of time, given the desired velocity and acceleration limits

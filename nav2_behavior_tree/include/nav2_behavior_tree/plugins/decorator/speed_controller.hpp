@@ -103,7 +103,7 @@ private:
     period_ = 1.0 / rate;
   }
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   // To keep track of time to reset
   rclcpp::Time start_;

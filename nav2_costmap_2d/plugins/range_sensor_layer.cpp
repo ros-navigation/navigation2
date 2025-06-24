@@ -152,9 +152,11 @@ void RangeSensorLayer::onInitialize()
     }
     range_subs_.push_back(
       node->create_subscription<sensor_msgs::msg::Range>(
-        topic_name, rclcpp::SensorDataQoS(), std::bind(
+        topic_name,
+        std::bind(
           &RangeSensorLayer::bufferIncomingRangeMsg, this,
-          std::placeholders::_1)));
+          std::placeholders::_1),
+        nav2::qos::SensorDataQoS()));
 
     RCLCPP_INFO(
       logger_, "RangeSensorLayer: subscribed to "

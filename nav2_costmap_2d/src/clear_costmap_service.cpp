@@ -32,7 +32,7 @@ using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   Costmap2DROS & costmap)
 : costmap_(costmap)
 {
@@ -40,26 +40,20 @@ ClearCostmapService::ClearCostmapService(
   logger_ = node->get_logger();
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
-  clear_except_service_ = std::make_shared<nav2_util::ServiceServer<ClearExceptRegion,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  clear_except_service_ = node->create_service<ClearExceptRegion>(
     std::string("clear_except_") + costmap_.getName(),
-    node,
     std::bind(
       &ClearCostmapService::clearExceptRegionCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  clear_around_service_ = std::make_shared<nav2_util::ServiceServer<ClearAroundRobot,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  clear_around_service_ = node->create_service<ClearAroundRobot>(
     std::string("clear_around_") + costmap_.getName(),
-    node,
     std::bind(
       &ClearCostmapService::clearAroundRobotCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  clear_entire_service_ = std::make_shared<nav2_util::ServiceServer<ClearEntirely,
-      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>>(
+  clear_entire_service_ = node->create_service<ClearEntirely>(
     std::string("clear_entirely_") + costmap_.getName(),
-    node,
     std::bind(
       &ClearCostmapService::clearEntireCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

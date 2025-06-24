@@ -59,7 +59,7 @@ void SpeedFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -77,15 +77,16 @@ void SpeedFilter::initializeFilter(
     "SpeedFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&SpeedFilter::filterInfoCallback, this, std::placeholders::_1));
+    filter_info_topic_,
+    std::bind(&SpeedFilter::filterInfoCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 
   // Get global frame required for speed limit publisher
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
   // Create new speed limit publisher
   speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic, rclcpp::QoS(10));
+    speed_limit_topic);
   speed_limit_pub_->on_activate();
 
   // Reset speed conversion states
@@ -99,7 +100,7 @@ void SpeedFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -148,8 +149,9 @@ void SpeedFilter::filterInfoCallback(
     "SpeedFilter: Subscribing to \"%s\" topic for filter mask...",
     mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&SpeedFilter::maskCallback, this, std::placeholders::_1));
+    mask_topic_,
+    std::bind(&SpeedFilter::maskCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 }
 
 void SpeedFilter::maskCallback(

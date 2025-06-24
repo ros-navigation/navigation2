@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
@@ -65,13 +65,16 @@ public:
 
 TEST(SmacTest, test_smac_se2)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeSE2 =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSE2Test");
+  nav2::LifecycleNode::SharedPtr nodeSE2 =
+    std::make_shared<nav2::LifecycleNode>("SmacSE2Test");
   nodeSE2->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  nodeSE2->configure();
+  nodeSE2->activate();
 
   nodeSE2->declare_parameter("test.downsample_costmap", true);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
@@ -149,18 +152,23 @@ TEST(SmacTest, test_smac_se2)
 
   planner.reset();
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+  nodeSE2->deactivate();
+  nodeSE2->cleanup();
   costmap_ros.reset();
   nodeSE2.reset();
 }
 
 TEST(SmacTest, test_smac_se2_reconfigure)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeSE2 =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSE2Test");
+  nav2::LifecycleNode::SharedPtr nodeSE2 =
+    std::make_shared<nav2::LifecycleNode>("SmacSE2Test");
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  nodeSE2->configure();
+  nodeSE2->activate();
 
   auto planner = std::make_unique<HybridWrap>();
   planner->configure(nodeSE2, "test", nullptr, costmap_ros);

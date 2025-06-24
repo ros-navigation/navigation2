@@ -19,6 +19,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>rclcpp_components</depend>
+  <depend>nav2_ros_common</depend>
   <depend>std_srvs</depend>
 
   <test_depend>ament_lint_auto</test_depend>

@@ -36,7 +36,7 @@ class ClearEntireCostmapServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_entire_costmap_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_entire_costmap_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -84,13 +84,13 @@ public:
   static std::shared_ptr<ClearEntireCostmapService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ClearEntireCostmapServiceTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr ClearEntireCostmapServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearEntireCostmapService> ClearEntireCostmapServiceTestFixture::server_ = nullptr;
 BT::NodeConfiguration * ClearEntireCostmapServiceTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> ClearEntireCostmapServiceTestFixture::factory_ = nullptr;
@@ -125,7 +125,7 @@ class ClearCostmapExceptRegionServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_costmap_except_region_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_costmap_except_region_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -174,13 +174,13 @@ public:
   static std::shared_ptr<ClearCostmapExceptRegionService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr
+nav2::LifecycleNode::SharedPtr
 ClearCostmapExceptRegionServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearCostmapExceptRegionService>
 ClearCostmapExceptRegionServiceTestFixture::server_ = nullptr;
@@ -220,7 +220,7 @@ class ClearCostmapAroundRobotServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_costmap_around_robot_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_costmap_around_robot_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -269,13 +269,13 @@ public:
   static std::shared_ptr<ClearCostmapAroundRobotService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr
+nav2::LifecycleNode::SharedPtr
 ClearCostmapAroundRobotServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearCostmapAroundRobotService>
 ClearCostmapAroundRobotServiceTestFixture::server_ = nullptr;

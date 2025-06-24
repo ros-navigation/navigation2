@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_behaviors/behavior_server.hpp"
 
 namespace behavior_server
@@ -77,7 +77,7 @@ BehaviorServer::~BehaviorServer()
   behaviors_.clear();
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -92,12 +92,12 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
   setupResourcesForBehaviorPlugins();
   configureBehaviorPlugins();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool
@@ -107,7 +107,7 @@ BehaviorServer::loadBehaviorPlugins()
 
   for (size_t i = 0; i != behavior_ids_.size(); i++) {
     try {
-      behavior_types_[i] = nav2_util::get_plugin_type_param(node, behavior_ids_[i]);
+      behavior_types_[i] = nav2::get_plugin_type_param(node, behavior_ids_[i]);
       RCLCPP_INFO(
         get_logger(), "Creating behavior plugin %s of type %s",
         behavior_ids_[i].c_str(), behavior_types_[i].c_str());
@@ -191,7 +191,7 @@ void BehaviorServer::setupResourcesForBehaviorPlugins()
   }
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -203,10 +203,10 @@ BehaviorServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -219,10 +219,10 @@ BehaviorServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -245,14 +245,14 @@ BehaviorServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   local_collision_checker_.reset();
   global_collision_checker_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 BehaviorServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 }  // end namespace behavior_server

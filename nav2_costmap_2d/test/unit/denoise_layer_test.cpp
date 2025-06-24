@@ -453,8 +453,8 @@ TEST_F(DenoiseLayerTester, updateCosts) {
 }
 
 std::shared_ptr<nav2_costmap_2d::DenoiseLayer> constructLayer(
-  std::shared_ptr<nav2_util::LifecycleNode> node =
-  std::make_shared<nav2_util::LifecycleNode>("test_node"))
+  nav2::LifecycleNode::SharedPtr node =
+  std::make_shared<nav2::LifecycleNode>("test_node"))
 {
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto layers = std::make_shared<nav2_costmap_2d::LayeredCostmap>("frame", false, false);
@@ -480,7 +480,7 @@ TEST_F(DenoiseLayerTester, initializeDefault) {
 }
 
 TEST_F(DenoiseLayerTester, initializeCustom) {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
   auto layer = constructLayer(node);
   node->set_parameter(
     rclcpp::Parameter(layer->getFullName("minimal_group_size"), rclcpp::ParameterValue(5)));
@@ -495,7 +495,7 @@ TEST_F(DenoiseLayerTester, initializeCustom) {
 }
 
 TEST_F(DenoiseLayerTester, initializeInvalid) {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
   auto layer = constructLayer(node);
   node->set_parameter(
     rclcpp::Parameter(layer->getFullName("minimal_group_size"), rclcpp::ParameterValue(-1)));

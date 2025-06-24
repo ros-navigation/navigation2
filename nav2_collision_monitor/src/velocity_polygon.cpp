@@ -14,13 +14,13 @@
 
 #include "nav2_collision_monitor/velocity_polygon.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 VelocityPolygon::VelocityPolygon(
-  const nav2_util::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
+  const nav2::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
@@ -50,20 +50,20 @@ bool VelocityPolygon::getParameters(
 
   try {
     // Get velocity_polygons parameter
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> velocity_polygons =
       node->get_parameter(polygon_name_ + ".velocity_polygons").as_string_array();
 
     // holonomic param
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".holonomic", rclcpp::ParameterValue(false));
     holonomic_ = node->get_parameter(polygon_name_ + ".holonomic").as_bool();
 
     for (std::string velocity_polygon_name : velocity_polygons) {
       // polygon points parameter
       std::vector<Point> poly;
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".points", rclcpp::PARAMETER_STRING);
       std::string poly_string =
         node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".points").as_string();
@@ -74,7 +74,7 @@ bool VelocityPolygon::getParameters(
 
       // linear_min param
       double linear_min;
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".linear_min",
         rclcpp::PARAMETER_DOUBLE);
       linear_min = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_min")
@@ -82,7 +82,7 @@ bool VelocityPolygon::getParameters(
 
       // linear_max param
       double linear_max;
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".linear_max",
         rclcpp::PARAMETER_DOUBLE);
       linear_max = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_max")
@@ -90,7 +90,7 @@ bool VelocityPolygon::getParameters(
 
       // theta_min param
       double theta_min;
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".theta_min",
         rclcpp::PARAMETER_DOUBLE);
       theta_min =
@@ -98,7 +98,7 @@ bool VelocityPolygon::getParameters(
 
       // theta_max param
       double theta_max;
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + "." + velocity_polygon_name + ".theta_max",
         rclcpp::PARAMETER_DOUBLE);
       theta_max =
@@ -108,14 +108,14 @@ bool VelocityPolygon::getParameters(
       double direction_end_angle = 0.0;
       double direction_start_angle = 0.0;
       if (holonomic_) {
-        nav2_util::declare_parameter_if_not_declared(
+        nav2::declare_parameter_if_not_declared(
           node, polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle",
           rclcpp::ParameterValue(M_PI));
         direction_end_angle =
           node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle")
           .as_double();
 
-        nav2_util::declare_parameter_if_not_declared(
+        nav2::declare_parameter_if_not_declared(
           node, polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle",
           rclcpp::ParameterValue(-M_PI));
         direction_start_angle =

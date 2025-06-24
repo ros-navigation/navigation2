@@ -23,7 +23,7 @@ namespace nav2_mppi_controller
 {
 
 void MPPIController::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -49,7 +49,7 @@ void MPPIController::configure(
 
   if (publish_optimal_trajectory_) {
     opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
-      "~/optimal_trajectory", rclcpp::SystemDefaultsQoS());
+      "~/optimal_trajectory");
   }
 
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());

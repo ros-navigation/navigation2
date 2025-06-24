@@ -52,7 +52,7 @@ class UndockRobotActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("undock_robot_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("undock_robot_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -60,7 +60,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set<nav2::LifecycleNode::SharedPtr>(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -102,13 +102,13 @@ public:
   static std::shared_ptr<UndockRobotActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr UndockRobotActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr UndockRobotActionTestFixture::node_ = nullptr;
 std::shared_ptr<UndockRobotActionServer>
 UndockRobotActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * UndockRobotActionTestFixture::config_ = nullptr;

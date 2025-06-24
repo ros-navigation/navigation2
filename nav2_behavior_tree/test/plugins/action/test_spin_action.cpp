@@ -52,7 +52,7 @@ class SpinActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("spin_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("spin_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
 
@@ -106,13 +106,13 @@ public:
   static std::shared_ptr<SpinActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr SpinActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr SpinActionTestFixture::node_ = nullptr;
 std::shared_ptr<SpinActionServer> SpinActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * SpinActionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> SpinActionTestFixture::factory_ = nullptr;

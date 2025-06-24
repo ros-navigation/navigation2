@@ -20,7 +20,7 @@
 #include "nav2_smac_planner/goal_manager.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 
 using namespace nav2_smac_planner; // NOLINT
@@ -33,7 +33,7 @@ using CoordinateVector = GoalManagerHybrid::CoordinateVector;
 
 TEST(GoalManagerTest, test_goal_manager)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
 
   auto costmapA = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
 

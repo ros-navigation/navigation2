@@ -19,6 +19,7 @@ find_package(rcl_interfaces REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -55,6 +56,7 @@ target_include_directories(${library_name}_common
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_common PUBLIC
   ${geometry_msgs_TARGETS}
@@ -82,6 +84,7 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${library_name}_common
@@ -111,6 +114,7 @@ target_include_directories(${library_name}_2d
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_2d PUBLIC
   ${library_name}_common
@@ -140,6 +144,7 @@ target_include_directories(${library_name}_lattice
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_lattice PUBLIC
   ${library_name}_common
@@ -204,6 +209,7 @@ ament_export_dependencies(
   rclcpp_lifecycle
   rcl_interfaces
   tf2
+  nav2_ros_common
   tf2_ros
   visualization_msgs
 )

@@ -123,7 +123,7 @@ TEST(ObstacleFootprint, Prepare)
   std::shared_ptr<dwb_critics::ObstacleFootprintCritic> critic =
     std::make_shared<dwb_critics::ObstacleFootprintCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
 
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
@@ -185,7 +185,7 @@ TEST(ObstacleFootprint, PointCost)
   std::shared_ptr<OpenObstacleFootprintCritic> critic =
     std::make_shared<OpenObstacleFootprintCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
 
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
@@ -210,7 +210,7 @@ TEST(ObstacleFootprint, LineCost)
   std::shared_ptr<OpenObstacleFootprintCritic> critic =
     std::make_shared<OpenObstacleFootprintCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
 
   std::string ns = "/ns";
   std::string costmap_name = "test_global_costmap";
