@@ -17,6 +17,7 @@ find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -38,7 +39,8 @@ add_library(pf_lib SHARED
 target_include_directories(pf_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 if(HAVE_DRAND48)
   target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
 endif()
@@ -52,7 +54,8 @@ add_library(map_lib SHARED
 target_include_directories(map_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 
 add_library(motions_lib SHARED
   src/motion_model/omni_motion_model.cpp
@@ -61,7 +64,8 @@ add_library(motions_lib SHARED
 target_include_directories(motions_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(motions_lib PUBLIC
   pf_lib
   pluginlib::pluginlib
@@ -77,7 +81,8 @@ add_library(sensors_lib SHARED
 target_include_directories(sensors_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(sensors_lib PUBLIC
   pf_lib
   map_lib
@@ -96,7 +101,8 @@ endif()
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   message_filters::message_filters
@@ -123,7 +129,8 @@ add_executable(${executable_name}
 target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
 )
@@ -169,6 +176,7 @@ ament_export_dependencies(
   std_srvs
   tf2
   tf2_ros
+  nav2_ros_common
 )
 ament_export_targets(${library_name})
 pluginlib_export_plugin_description_file(nav2_amcl plugins.xml)

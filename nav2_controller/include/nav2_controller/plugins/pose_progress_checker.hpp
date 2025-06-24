@@ -19,7 +19,7 @@
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_controller
 {
@@ -33,7 +33,7 @@ class PoseProgressChecker : public SimpleProgressChecker
 {
 public:
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
   bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
 

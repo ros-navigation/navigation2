@@ -18,7 +18,7 @@ namespace mppi
 {
 
 ParametersHandler::ParametersHandler(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string & name)
+  const nav2::LifecycleNode::WeakPtr & parent, std::string & name)
 {
   node_ = parent;
   auto node = node_.lock();

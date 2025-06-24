@@ -22,10 +22,10 @@
 #include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -76,7 +76,7 @@ public:
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
    */
   ParameterHandler(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & plugin_name,
     rclcpp::Logger & logger, const double costmap_size_x);
 
@@ -90,7 +90,7 @@ public:
   Parameters * getParams() {return &params_;}
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message

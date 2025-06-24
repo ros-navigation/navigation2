@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav_msgs/msg/goals.hpp"
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"

@@ -23,7 +23,7 @@
 #include <mutex>
 
 #include "nav2_core/controller.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
@@ -61,7 +61,7 @@ public:
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -207,7 +207,7 @@ protected:
    */
   double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
 
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
@@ -222,14 +222,11 @@ protected:
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
-  carrot_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PointStamped>>
-  curvature_carrot_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>>
-  is_rotating_to_heading_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
+  nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
+  nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
+  nav2::Publisher<std_msgs::msg::Bool>::SharedPtr is_rotating_to_heading_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;

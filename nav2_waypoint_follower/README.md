@@ -41,7 +41,7 @@ For instance,
 
 ```cpp
 using ClientT = nav2_msgs::action::FollowGPSWaypoints;
-rclcpp_action::Client<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
+nav2::ActionClient<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
 gps_waypoint_follower_action_client_ = rclcpp_action::create_client<ClientT>(this, "follow_gps_waypoints");
 ```
 

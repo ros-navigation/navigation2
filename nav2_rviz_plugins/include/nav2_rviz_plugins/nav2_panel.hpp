@@ -120,20 +120,20 @@ private:
   QBasicTimer timer_;
 
   // The NavigateToPose action client
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr
+  nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
+  nav2::ActionClient<nav2_msgs::action::FollowWaypoints>::SharedPtr
     waypoint_follower_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SharedPtr
+  nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SharedPtr
     nav_through_poses_action_client_;
 
   // Navigation action feedback subscribers
-  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
     navigation_feedback_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
     nav_through_poses_feedback_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
     navigation_goal_status_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose

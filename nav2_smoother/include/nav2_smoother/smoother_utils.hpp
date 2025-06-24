@@ -27,7 +27,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.hpp"

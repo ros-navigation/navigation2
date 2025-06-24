@@ -22,9 +22,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/service_client.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_client.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
 
 class RclCppFixture
@@ -62,7 +62,7 @@ public:
 
 TEST(GoalIntentExtractorTest, test_obj_lifecycle)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
+  auto node = std::make_shared<nav2::LifecycleNode>("goal_intent_extractor_test");
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
@@ -72,8 +72,8 @@ TEST(GoalIntentExtractorTest, test_obj_lifecycle)
 
 TEST(GoalIntentExtractorTest, test_transform_pose)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
-  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  auto node = std::make_shared<nav2::LifecycleNode>("goal_intent_extractor_test");
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   GoalIntentExtractor extractor;
   Graph graph;
   GraphToIDMap id_map;
@@ -107,9 +107,9 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
 
 TEST(GoalIntentExtractorTest, test_start_goal_finder)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
+  auto node = std::make_shared<nav2::LifecycleNode>("goal_intent_extractor_test");
   node->declare_parameter("enable_nn_search", rclcpp::ParameterValue(false));
-  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;
@@ -188,7 +188,7 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
 
 TEST(GoalIntentExtractorTest, test_pruning)
 {
-  auto node = std::make_shared<nav2_util::LifecycleNode>("goal_intent_extractor_test");
+  auto node = std::make_shared<nav2::LifecycleNode>("goal_intent_extractor_test");
   GoalIntentExtractorWrapper extractor;
   Graph graph;
   GraphToIDMap id_map;

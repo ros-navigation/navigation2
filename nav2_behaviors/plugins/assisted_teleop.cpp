@@ -15,7 +15,7 @@
 #include <utility>
 
 #include "nav2_behaviors/plugins/assisted_teleop.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_behaviors
 {
@@ -32,15 +32,15 @@ void AssistedTeleop::onConfigure()
   }
 
   // set up parameters
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "projection_time", rclcpp::ParameterValue(1.0));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "simulation_time_step", rclcpp::ParameterValue(0.1));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     "cmd_vel_teleop", rclcpp::ParameterValue(std::string("cmd_vel_teleop")));
 
@@ -52,7 +52,7 @@ void AssistedTeleop::onConfigure()
 
   vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
-    cmd_vel_teleop, rclcpp::SystemDefaultsQoS(),
+    cmd_vel_teleop,
     [&](geometry_msgs::msg::Twist::SharedPtr msg) {
       teleop_twist_.twist = *msg;
     }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
@@ -60,7 +60,7 @@ void AssistedTeleop::onConfigure()
     });
 
   preempt_teleop_sub_ = node->create_subscription<std_msgs::msg::Empty>(
-    "preempt_teleop", rclcpp::SystemDefaultsQoS(),
+    "preempt_teleop",
     std::bind(
       &AssistedTeleop::preemptTeleopCallback,
       this, std::placeholders::_1));

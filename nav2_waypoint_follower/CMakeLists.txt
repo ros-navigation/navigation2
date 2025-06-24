@@ -21,6 +21,7 @@ find_package(robot_localization REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -34,6 +35,7 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${geographic_msgs_TARGETS}
@@ -68,6 +70,7 @@ add_executable(${executable_name}
 target_include_directories(${executable_name} PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
@@ -78,6 +81,7 @@ add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
 target_include_directories(wait_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(wait_at_waypoint PUBLIC
   ${geometry_msgs_TARGETS}
@@ -94,6 +98,7 @@ add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
 target_include_directories(photo_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(photo_at_waypoint PUBLIC
   cv_bridge::cv_bridge
@@ -114,6 +119,7 @@ add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
 target_include_directories(input_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(input_at_waypoint PUBLIC
   ${geometry_msgs_TARGETS}
@@ -167,6 +173,7 @@ ament_export_dependencies(
   OpenCV
   pluginlib
   rclcpp
+  nav2_ros_common
   rclcpp_action
   rclcpp_lifecycle
   robot_localization

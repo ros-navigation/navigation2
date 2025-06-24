@@ -67,7 +67,7 @@ inline BT::NodeStatus TruncatePath::tick()
 
   if (std::isnan(final_angle) || std::isinf(final_angle)) {
     RCLCPP_WARN(
-      config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+      config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
       "Final angle is not valid while truncating path. Setting to 0.0");
     final_angle = 0.0;
   }

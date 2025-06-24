@@ -39,7 +39,7 @@
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::BaseObstacleCritic, dwb_core::TrajectoryCritic)
 
@@ -55,7 +55,7 @@ void BaseObstacleCritic::onInit()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     dwb_plugin_name_ + "." + name_ + ".sum_scores", rclcpp::ParameterValue(false));
   node->get_parameter(dwb_plugin_name_ + "." + name_ + ".sum_scores", sum_scores_);

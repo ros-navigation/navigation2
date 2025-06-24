@@ -37,18 +37,17 @@ class RosTopicLogger : public BT::StatusChangeLogger
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::RosTopicLogger
-   * @param ros_node Weak pointer to parent rclcpp::Node
+   * @param ros_node Weak pointer to parent nav2::LifecycleNode
    * @param tree BT to monitor
    */
-  RosTopicLogger(const rclcpp::Node::WeakPtr & ros_node, const BT::Tree & tree)
+  RosTopicLogger(const nav2::LifecycleNode::WeakPtr & ros_node, const BT::Tree & tree)
   : StatusChangeLogger(tree.rootNode())
   {
     auto node = ros_node.lock();
     clock_ = node->get_clock();
     logger_ = node->get_logger();
     log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
-      "behavior_tree_log",
-      rclcpp::QoS(10));
+      "behavior_tree_log");
   }
 
   /**

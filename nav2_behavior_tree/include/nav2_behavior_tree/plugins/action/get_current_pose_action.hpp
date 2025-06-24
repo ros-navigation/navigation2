@@ -24,6 +24,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "behaviortree_cpp/action_node.h"
 

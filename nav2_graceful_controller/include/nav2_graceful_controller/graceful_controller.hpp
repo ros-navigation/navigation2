@@ -60,7 +60,7 @@ public:
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -171,12 +171,10 @@ protected:
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
 
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_plan_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> local_plan_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>>
-  motion_target_pub_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
-  slowdown_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_plan_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr local_plan_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr motion_target_pub_;
+  nav2::Publisher<visualization_msgs::msg::Marker>::SharedPtr slowdown_pub_;
   std::unique_ptr<nav2_graceful_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_graceful_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;

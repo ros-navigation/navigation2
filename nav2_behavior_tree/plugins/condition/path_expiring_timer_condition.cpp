@@ -29,7 +29,7 @@ PathExpiringTimerCondition::PathExpiringTimerCondition(
   period_(1.0),
   first_time_(true)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus PathExpiringTimerCondition::tick()

@@ -36,7 +36,7 @@ protected:
   }
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
-  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr client_;
+  nav2::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr client_;
 };
 
 TEST_F(GetCostServiceTest, TestWithoutFootprint)
@@ -48,7 +48,7 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
   request->poses.push_back(pose);
   request->use_footprint = false;
 
-  auto result_future = client_->async_send_request(request);
+  auto result_future = client_->async_call(request);
   if (rclcpp::spin_until_future_complete(
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
@@ -73,7 +73,7 @@ TEST_F(GetCostServiceTest, TestWithFootprint)
   request->poses.push_back(pose);
   request->use_footprint = true;
 
-  auto result_future = client_->async_send_request(request);
+  auto result_future = client_->async_call(request);
   if (rclcpp::spin_until_future_complete(
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)

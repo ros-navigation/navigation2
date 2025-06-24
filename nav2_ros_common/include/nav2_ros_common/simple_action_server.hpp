@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
-#define NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
+#ifndef NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_
+#define NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_
 
 #include <memory>
 #include <mutex>
@@ -25,20 +25,23 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "nav2_util/node_thread.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_thread.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_util
+namespace nav2
 {
 
 /**
- * @class nav2_util::SimpleActionServer
+ * @class nav2::SimpleActionServer
  * @brief An action server wrapper to make applications simpler using Actions
  */
 template<typename ActionT>
 class SimpleActionServer
 {
 public:
+  using SharedPtr = std::shared_ptr<nav2::SimpleActionServer<ActionT>>;
+  using UniquePtr = std::unique_ptr<nav2::SimpleActionServer<ActionT>>;
+
   // Callback function to complete main work. This should itself deal with its
   // own exceptions, but if for some reason one is thrown, it will be caught
   // in SimpleActionServer and terminate the action itself.
@@ -58,7 +61,6 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
-   * @param options Options to pass to the underlying rcl_action_server_t
    * @param realtime Whether the action server's worker thread should have elevated
    * prioritization (soft realtime)
    */
@@ -70,15 +72,15 @@ public:
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
     const bool realtime = false)
   : SimpleActionServer(
       node->get_node_base_interface(),
       node->get_node_clock_interface(),
       node->get_node_logging_interface(),
       node->get_node_waitables_interface(),
+      node->get_node_parameters_interface(),
       action_name, execute_callback, completion_callback,
-      server_timeout, spin_thread, options, realtime)
+      server_timeout, spin_thread, realtime)
   {}
 
   /**
@@ -88,7 +90,6 @@ public:
    * @param execute_callback Execution  callback function of Action
    * @param server_timeout Timeout to to react to stop or preemption requests
    * @param spin_thread Whether to spin with a dedicated thread internally
-   * @param options Options to pass to the underlying rcl_action_server_t
    * @param realtime Whether the action server's worker thread should have elevated
    * prioritization (soft realtime)
    */
@@ -97,17 +98,18 @@ public:
     rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
     rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
+    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface,
     const std::string & action_name,
     ExecuteCallback execute_callback,
     CompletionCallback completion_callback = nullptr,
     std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
     bool spin_thread = false,
-    const rcl_action_server_options_t & options = rcl_action_server_get_default_options(),
     const bool realtime = false)
   : node_base_interface_(node_base_interface),
     node_clock_interface_(node_clock_interface),
     node_logging_interface_(node_logging_interface),
     node_waitables_interface_(node_waitables_interface),
+    node_parameters_interface_(node_parameters_interface),
     action_name_(action_name),
     execute_callback_(execute_callback),
     completion_callback_(completion_callback),
@@ -129,12 +131,16 @@ public:
       std::bind(&SimpleActionServer::handle_goal, this, _1, _2),
       std::bind(&SimpleActionServer::handle_cancel, this, _1),
       std::bind(&SimpleActionServer::handle_accepted, this, _1),
-      options,
+      rcl_action_server_get_default_options(),  // Use consistent QoS settings
       callback_group_);
+
+    nav2::setIntrospectionMode(this->action_server_,
+      node_parameters_interface_, node_clock_interface_->get_clock());
+
     if (spin_thread_) {
       executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor_->add_callback_group(callback_group_, node_base_interface_);
-      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
+      executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
     }
   }
 
@@ -190,7 +196,7 @@ public:
   void setSoftRealTimePriority()
   {
     if (use_realtime_prioritization_) {
-      nav2_util::setSoftRealTimePriority();
+      nav2::setSoftRealTimePriority();
       debug_msg("Soft realtime prioritization successfully set!");
     }
   }
@@ -532,6 +538,7 @@ protected:
   rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
   rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
   rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr node_parameters_interface_;
   std::string action_name_;
 
   ExecuteCallback execute_callback_;
@@ -552,7 +559,7 @@ protected:
   bool spin_thread_;
   rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+  std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   /**
    * @brief Generate an empty result object for an action type
@@ -668,6 +675,6 @@ protected:
   }
 };
 
-}  // namespace nav2_util
+}  // namespace nav2
 
-#endif   // NAV2_UTIL__SIMPLE_ACTION_SERVER_HPP_
+#endif   // NAV2_ROS_COMMON__SIMPLE_ACTION_SERVER_HPP_

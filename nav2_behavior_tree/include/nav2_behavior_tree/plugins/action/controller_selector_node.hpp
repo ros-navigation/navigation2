@@ -23,7 +23,7 @@
 
 #include "behaviortree_cpp/action_node.h"
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -93,11 +93,11 @@ private:
    */
   void callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg);
 
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
+  nav2::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
 
   std::string last_selected_controller_;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 

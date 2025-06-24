@@ -13,15 +13,15 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include "nav2_util/validate_messages.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 
 TEST(ValidateMessagesTest, DoubleValueCheck) {
   // Test valid double value
-  EXPECT_TRUE(nav2_util::validateMsg(3.14));
+  EXPECT_TRUE(nav2::validateMsg(3.14));
   // Test invalid double value (infinity)
-  EXPECT_FALSE(nav2_util::validateMsg(std::numeric_limits<double>::infinity()));
+  EXPECT_FALSE(nav2::validateMsg(std::numeric_limits<double>::infinity()));
   // Test invalid double value (NaN)
-  EXPECT_FALSE(nav2_util::validateMsg(std::numeric_limits<double>::quiet_NaN()));
+  EXPECT_FALSE(nav2::validateMsg(std::numeric_limits<double>::quiet_NaN()));
 }
 
 TEST(ValidateMessagesTest, TimeStampCheck)
@@ -30,12 +30,12 @@ TEST(ValidateMessagesTest, TimeStampCheck)
   builtin_interfaces::msg::Time valid_time_stamp;
   valid_time_stamp.sec = 123;
   valid_time_stamp.nanosec = 456789;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_time_stamp));
+  EXPECT_TRUE(nav2::validateMsg(valid_time_stamp));
   // Test invalid time stamp (nanosec out of range)
   builtin_interfaces::msg::Time invalid_time_stamp;
   invalid_time_stamp.sec = 123;
   invalid_time_stamp.nanosec = 1e9;   // 1 second = 1e9 nanoseconds
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_time_stamp));
+  EXPECT_FALSE(nav2::validateMsg(invalid_time_stamp));
 }
 
 TEST(ValidateMessagesTest, HeaderCheck)
@@ -45,17 +45,17 @@ TEST(ValidateMessagesTest, HeaderCheck)
   valid_header.stamp.sec = 123;
   valid_header.stamp.nanosec = 456789;
   valid_header.frame_id = "map";
-  EXPECT_TRUE(nav2_util::validateMsg(valid_header));
+  EXPECT_TRUE(nav2::validateMsg(valid_header));
   // Test invalid header with empty frame_id
   std_msgs::msg::Header invalid_header;
   invalid_header.stamp.sec = 123;
   invalid_header.stamp.nanosec = 456789;
   invalid_header.frame_id = "";
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_header));
+  EXPECT_FALSE(nav2::validateMsg(invalid_header));
   invalid_header.stamp.sec = 123;
   invalid_header.stamp.nanosec = 1e9;
   invalid_header.frame_id = "map";
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_header));
+  EXPECT_FALSE(nav2::validateMsg(invalid_header));
 }
 
 TEST(ValidateMessagesTest, PointCheck)
@@ -65,23 +65,23 @@ TEST(ValidateMessagesTest, PointCheck)
   valid_point.x = 1.0;
   valid_point.y = 2.0;
   valid_point.z = 3.0;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_point));
+  EXPECT_TRUE(nav2::validateMsg(valid_point));
   // Test invalid Point message with NaN value
   geometry_msgs::msg::Point invalid_point;
   invalid_point.x = 1.0;
   invalid_point.y = std::numeric_limits<double>::quiet_NaN();
   invalid_point.z = 3.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_point));
+  EXPECT_FALSE(nav2::validateMsg(invalid_point));
   // Test invalid Point message with NaN value
   invalid_point.x = std::numeric_limits<double>::quiet_NaN();
   invalid_point.y = 2.0;
   invalid_point.z = 3.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_point));
+  EXPECT_FALSE(nav2::validateMsg(invalid_point));
   // Test invalid Point message with NaN value
   invalid_point.x = 1.0;
   invalid_point.y = 2.0;
   invalid_point.z = std::numeric_limits<double>::quiet_NaN();
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_point));
+  EXPECT_FALSE(nav2::validateMsg(invalid_point));
 }
 
 TEST(ValidateMessagesTest, QuaternionCheck)
@@ -92,36 +92,36 @@ TEST(ValidateMessagesTest, QuaternionCheck)
   valid_quaternion.y = 0.0;
   valid_quaternion.z = 0.0;
   valid_quaternion.w = 1.0;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_quaternion));
+  EXPECT_TRUE(nav2::validateMsg(valid_quaternion));
   // Test invalid Quaternion message with invalid magnitude
   geometry_msgs::msg::Quaternion invalid_quaternion;
   invalid_quaternion.x = 0.1;
   invalid_quaternion.y = 0.2;
   invalid_quaternion.z = 0.3;
   invalid_quaternion.w = 0.5;   // Invalid magnitude (should be 1.0)
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
+  EXPECT_FALSE(nav2::validateMsg(invalid_quaternion));
 
   // One NaN value
   invalid_quaternion.x = 0.0;
   invalid_quaternion.y = std::numeric_limits<double>::quiet_NaN();
   invalid_quaternion.z = 0.0;
   invalid_quaternion.w = 1.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
+  EXPECT_FALSE(nav2::validateMsg(invalid_quaternion));
   invalid_quaternion.x = std::numeric_limits<double>::quiet_NaN();
   invalid_quaternion.y = 0.0;
   invalid_quaternion.z = 0.0;
   invalid_quaternion.w = 1.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
+  EXPECT_FALSE(nav2::validateMsg(invalid_quaternion));
   invalid_quaternion.x = 0.0;
   invalid_quaternion.y = 0.0;
   invalid_quaternion.z = std::numeric_limits<double>::quiet_NaN();
   invalid_quaternion.w = 1.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
+  EXPECT_FALSE(nav2::validateMsg(invalid_quaternion));
   invalid_quaternion.x = 0.0;
   invalid_quaternion.y = 0.0;
   invalid_quaternion.z = 1.0;
   invalid_quaternion.w = std::numeric_limits<double>::quiet_NaN();
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_quaternion));
+  EXPECT_FALSE(nav2::validateMsg(invalid_quaternion));
 }
 
 TEST(ValidateMessagesTest, PoseCheck)
@@ -135,7 +135,7 @@ TEST(ValidateMessagesTest, PoseCheck)
   valid_pose.orientation.y = 0.0;
   valid_pose.orientation.z = 0.0;
   valid_pose.orientation.w = 0.0;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_pose));
+  EXPECT_TRUE(nav2::validateMsg(valid_pose));
   // Test invalid Pose message with invalid position
   geometry_msgs::msg::Pose invalid_pose;
   invalid_pose.position.x = 1.0;
@@ -145,7 +145,7 @@ TEST(ValidateMessagesTest, PoseCheck)
   invalid_pose.orientation.y = 0.0;
   invalid_pose.orientation.z = 0.0;
   invalid_pose.orientation.w = 0.0;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_pose));
+  EXPECT_FALSE(nav2::validateMsg(invalid_pose));
   // Test invalid Pose message with invalid orientation
   invalid_pose.position.x = 1.0;
   invalid_pose.position.y = 2.0;
@@ -154,7 +154,7 @@ TEST(ValidateMessagesTest, PoseCheck)
   invalid_pose.orientation.y = 0.2;
   invalid_pose.orientation.z = 0.3;
   invalid_pose.orientation.w = 0.4;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_pose));
+  EXPECT_FALSE(nav2::validateMsg(invalid_pose));
 }
 
 
@@ -173,7 +173,7 @@ TEST(ValidateMessagesTest, MapMetaDataCheck) {
   valid_origin.orientation.z = 0.0;
   valid_origin.orientation.w = 1.0;
   valid_map_meta_data.origin = valid_origin;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_map_meta_data));
+  EXPECT_TRUE(nav2::validateMsg(valid_map_meta_data));
 
   // Test invalid origin message
   nav_msgs::msg::MapMetaData invalid_map_meta_data;
@@ -189,21 +189,21 @@ TEST(ValidateMessagesTest, MapMetaDataCheck) {
   invalid_origin.orientation.z = 1.0;
   invalid_origin.orientation.w = 1.0;
   invalid_map_meta_data.origin = invalid_origin;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_map_meta_data));
+  EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
 
   // Test invalid resolution message
   invalid_map_meta_data.resolution = std::numeric_limits<double>::quiet_NaN();
   invalid_map_meta_data.width = 100;
   invalid_map_meta_data.height = 100;
   invalid_map_meta_data.origin = valid_origin;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_map_meta_data));
+  EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
 
   // Test invalid MapMetaData message with zero width
   invalid_map_meta_data.resolution = 0.05;
   invalid_map_meta_data.width = 0;
   invalid_map_meta_data.height = 100;
   invalid_map_meta_data.origin = valid_origin;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_map_meta_data));
+  EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
 }
 
 TEST(ValidateMessagesTest, OccupancyGridCheck) {
@@ -215,7 +215,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   valid_occupancy_grid.info.height = 100;
   std::vector<int8_t> data(100 * 100, 0);   // Initialize with zeros
   valid_occupancy_grid.data = data;
-  EXPECT_TRUE(nav2_util::validateMsg(valid_occupancy_grid));
+  EXPECT_TRUE(nav2::validateMsg(valid_occupancy_grid));
 
   // Test invalid header message with wrong data size
   nav_msgs::msg::OccupancyGrid invalid_occupancy_grid;
@@ -224,7 +224,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
   invalid_occupancy_grid.data = data;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 
   // Test invalid info message with wrong data size
   invalid_occupancy_grid.header.frame_id = "map";
@@ -232,7 +232,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.width = 0;    // Incorrect width
   invalid_occupancy_grid.info.height = 100;
   invalid_occupancy_grid.data = data;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 
   // Test invalid OccupancyGrid message with wrong data size
   invalid_occupancy_grid.header.frame_id = "map";
@@ -241,7 +241,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.height = 100;
   std::vector<int8_t> invalid_data(100 * 99, 0);   // Incorrect data size
   invalid_occupancy_grid.data = invalid_data;
-  EXPECT_FALSE(nav2_util::validateMsg(invalid_occupancy_grid));
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
@@ -260,7 +260,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   validate_msg.pose.orientation.z = 0.0;
   validate_msg.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+  EXPECT_TRUE(nav2::validateMsg(validate_msg));
 
   // Invalid messages
   geometry_msgs::msg::PoseWithCovariance invalidate_msg1;
@@ -279,7 +279,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   invalidate_msg1.pose.orientation.z = 0.0;
   invalidate_msg1.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg1));
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg1));
 
   geometry_msgs::msg::PoseWithCovariance invalidate_msg2;
   invalidate_msg2.covariance[0] = 0.25;
@@ -295,7 +295,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   invalidate_msg2.pose.orientation.z = 0.0;
   invalidate_msg2.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg2));
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
@@ -318,7 +318,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   validate_msg.pose.pose.orientation.z = 0.0;
   validate_msg.pose.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_TRUE(nav2_util::validateMsg(validate_msg));
+  EXPECT_TRUE(nav2::validateMsg(validate_msg));
 
   // Invalid messages
   geometry_msgs::msg::PoseWithCovarianceStamped invalidate_msg1;
@@ -341,7 +341,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   invalidate_msg1.pose.pose.orientation.z = 0.0;
   invalidate_msg1.pose.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg1));
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg1));
 
   geometry_msgs::msg::PoseWithCovarianceStamped invalidate_msg2;
   invalidate_msg2.header.frame_id = "";
@@ -361,7 +361,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
   invalidate_msg2.pose.pose.orientation.z = 0.0;
   invalidate_msg2.pose.pose.orientation.w = -0.32979028309372299;
 
-  EXPECT_FALSE(nav2_util::validateMsg(invalidate_msg2));
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
 }
 
 

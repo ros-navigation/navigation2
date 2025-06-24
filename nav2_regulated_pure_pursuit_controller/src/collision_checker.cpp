@@ -27,7 +27,7 @@ namespace nav2_regulated_pure_pursuit_controller
 using namespace nav2_costmap_2d;  // NOLINT
 
 CollisionChecker::CollisionChecker(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   Parameters * params)
 {
@@ -41,7 +41,7 @@ CollisionChecker::CollisionChecker(
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   footprint_collision_checker_->setCostmap(costmap_);
 
-  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc");
   carrot_arc_pub_->on_activate();
 }
 

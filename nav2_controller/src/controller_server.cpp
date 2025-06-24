@@ -23,7 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
 
@@ -35,7 +35,7 @@ namespace nav2_controller
 {
 
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("controller_server", "", options),
+: nav2::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_ids_{"progress_checker"},
   default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
@@ -79,7 +79,7 @@ ControllerServer::~ControllerServer()
   costmap_thread_.reset();
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   auto node = shared_from_this();
@@ -90,7 +90,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("progress_checker_plugins", progress_checker_ids_);
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_progress_checker_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_progress_checker_types_[i]));
     }
@@ -100,7 +100,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("goal_checker_plugins", goal_checker_ids_);
   if (goal_checker_ids_ == default_goal_checker_ids_) {
     for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_goal_checker_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_goal_checker_types_[i]));
     }
@@ -109,7 +109,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_types_[i]));
     }
@@ -133,11 +133,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+  costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
-      progress_checker_types_[i] = nav2_util::get_plugin_type_param(
+      progress_checker_types_[i] = nav2::get_plugin_type_param(
         node, progress_checker_ids_[i]);
       nav2_core::ProgressChecker::Ptr progress_checker =
         progress_checker_loader_.createUniqueInstance(progress_checker_types_[i]);
@@ -151,7 +151,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(),
         "Failed to create progress_checker. Exception: %s", ex.what());
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -165,7 +165,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
     try {
-      goal_checker_types_[i] = nav2_util::get_plugin_type_param(node, goal_checker_ids_[i]);
+      goal_checker_types_[i] = nav2::get_plugin_type_param(node, goal_checker_ids_[i]);
       nav2_core::GoalChecker::Ptr goal_checker =
         goal_checker_loader_.createUniqueInstance(goal_checker_types_[i]);
       RCLCPP_INFO(
@@ -178,7 +178,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(),
         "Failed to create goal checker. Exception: %s", ex.what());
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -192,7 +192,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
-      controller_types_[i] = nav2_util::get_plugin_type_param(node, controller_ids_[i]);
+      controller_types_[i] = nav2::get_plugin_type_param(node, controller_ids_[i]);
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(
@@ -207,7 +207,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
       on_cleanup(state);
-      return nav2_util::CallbackReturn::FAILURE;
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -220,7 +220,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
-  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
+  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
@@ -229,36 +229,34 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritization if user doesn't have real-time permissions
   try {
-    action_server_ = std::make_unique<ActionServer>(
-      shared_from_this(),
+    action_server_ = create_action_server<Action>(
       "follow_path",
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, rcl_action_server_get_default_options(),
-      use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   // Set subscription to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic, rclcpp::QoS(10),
+    speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
@@ -275,10 +273,10 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -307,10 +305,10 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -335,14 +333,14 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_.reset();
   speed_limit_sub_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool ControllerServer::findControllerId(

@@ -97,15 +97,15 @@ private:
    */
   void callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg);
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  nav2::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;
 
   geometry_msgs::msg::PoseStamped last_goal_received_;
   bool last_goal_received_set_{false};
   nav_msgs::msg::Goals last_goals_received_;
   bool last_goals_received_set_{false};
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::string goal_updater_topic_;

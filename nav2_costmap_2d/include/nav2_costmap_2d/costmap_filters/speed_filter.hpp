@@ -96,10 +96,10 @@ private:
    */
   void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  rclcpp::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
+  nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
+  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
+  nav2::Publisher<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_pub_;
 
   nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
 

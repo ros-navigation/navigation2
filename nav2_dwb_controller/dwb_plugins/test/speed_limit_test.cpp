@@ -41,7 +41,7 @@
 #include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 #include "dwb_plugins/kinematic_parameters.hpp"
@@ -62,7 +62,7 @@ public:
   TestNode()
   {
     const std::string node_name = NODE_NAME;
-    node_ = nav2_util::LifecycleNode::make_shared(node_name);
+    node_ = std::make_shared<nav2::LifecycleNode>(node_name);
 
     node_->declare_parameter(
       node_name + ".max_vel_x", rclcpp::ParameterValue(MAX_VEL_X));
@@ -88,7 +88,7 @@ public:
   ~TestNode() {}
 
 protected:
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 TEST_F(TestNode, TestPercentLimit)

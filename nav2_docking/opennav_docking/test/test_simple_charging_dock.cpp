@@ -41,7 +41,7 @@ public:
 
 TEST(SimpleChargingDockTests, ObjectLifecycle)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
@@ -61,7 +61,7 @@ TEST(SimpleChargingDockTests, ObjectLifecycle)
 
 TEST(SimpleChargingDockTests, BatteryState)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto pub = node->create_publisher<sensor_msgs::msg::BatteryState>(
     "battery_state", rclcpp::QoS(1));
   pub->on_activate();
@@ -103,7 +103,7 @@ TEST(SimpleChargingDockTests, BatteryState)
 
 TEST(SimpleChargingDockTests, StallDetection)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto pub = node->create_publisher<sensor_msgs::msg::JointState>(
     "joint_states", rclcpp::QoS(1));
   pub->on_activate();
@@ -169,7 +169,7 @@ TEST(SimpleChargingDockTests, StallDetection)
 
 TEST(SimpleChargingDockTests, StagingPose)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -198,7 +198,7 @@ TEST(SimpleChargingDockTests, StagingPoseWithYawOffset)
     }
   );
 
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test", options);
+  auto node = std::make_shared<nav2::LifecycleNode>("test", "", options);
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -220,7 +220,7 @@ TEST(SimpleChargingDockTests, StagingPoseWithYawOffset)
 
 TEST(SimpleChargingDockTests, RefinedPoseTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -256,7 +256,7 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
 
 TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -293,7 +293,7 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
 
 TEST(SimpleChargingDockTests, IsDockedTransformException)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -337,7 +337,7 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
 
 TEST(SimpleChargingDockTests, GetDockDirection)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
 
   auto dock = std::make_unique<opennav_docking::SimpleChargingDock>();
@@ -365,7 +365,7 @@ TEST(SimpleChargingDockTests, GetDockDirection)
 
 TEST(SimpleChargingDockTests, ShouldRotateToDock)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
 
   // Case 1: Direction to BACKWARD and rotate_to_dock to true
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward"));

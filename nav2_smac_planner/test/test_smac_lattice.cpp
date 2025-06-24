@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
@@ -64,8 +64,8 @@ public:
 
 TEST(SmacTest, test_smac_lattice)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nav2::LifecycleNode::SharedPtr nodeLattice =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeTest");
   nodeLattice->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
@@ -142,8 +142,8 @@ TEST(SmacTest, test_smac_lattice)
 
 TEST(SmacTest, test_smac_lattice_reconfigure)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nav2::LifecycleNode::SharedPtr nodeLattice =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeTest");
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");

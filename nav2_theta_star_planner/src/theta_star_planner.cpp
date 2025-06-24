@@ -25,7 +25,7 @@
 namespace nav2_theta_star_planner
 {
 void ThetaStarPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -39,7 +39,7 @@ void ThetaStarPlanner::configure(
   planner_->costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name_ + ".how_many_corners", rclcpp::ParameterValue(8));
 
   node->get_parameter(name_ + ".how_many_corners", planner_->how_many_corners_);
@@ -49,25 +49,25 @@ void ThetaStarPlanner::configure(
     RCLCPP_WARN(logger_, "Your value for - .how_many_corners  was overridden, and is now set to 8");
   }
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name_ + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name_ + ".allow_unknown", planner_->allow_unknown_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name_ + ".w_euc_cost", rclcpp::ParameterValue(1.0));
   node->get_parameter(name_ + ".w_euc_cost", planner_->w_euc_cost_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name_ + ".w_traversal_cost", rclcpp::ParameterValue(2.0));
   node->get_parameter(name_ + ".w_traversal_cost", planner_->w_traversal_cost_);
 
   planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name_ + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name_ + ".terminal_checking_interval", planner_->terminal_checking_interval_);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".use_final_approach_orientation", use_final_approach_orientation_);
 }

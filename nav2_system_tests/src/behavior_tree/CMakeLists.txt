@@ -11,4 +11,11 @@ target_link_libraries(test_behavior_tree_node
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(test_behavior_tree_node
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )

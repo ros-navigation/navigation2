@@ -31,20 +31,18 @@ IsStuckCondition::IsStuckCondition(
   current_accel_(0.0),
   brake_accel_limit_(-10.0)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
   callback_group_executor_thread = std::thread([this]() {callback_group_executor_.spin();});
 
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
     "odom",
-    rclcpp::SystemDefaultsQoS(),
     std::bind(&IsStuckCondition::onOdomReceived, this, std::placeholders::_1),
-    sub_option);
+    nav2::qos::StandardTopicQoS(),
+    callback_group_);
 
   RCLCPP_DEBUG(node_->get_logger(), "Initialized an IsStuckCondition BT node");
 

@@ -22,7 +22,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -66,7 +66,7 @@ public:
     * @param dynamic_parameter_handler Parameter handler object
     */
   void initialize(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+    nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
     std::shared_ptr<tf2_ros::Buffer>, ParametersHandler *);
 

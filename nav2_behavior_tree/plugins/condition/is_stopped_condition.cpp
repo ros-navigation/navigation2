@@ -28,7 +28,7 @@ IsStoppedCondition::IsStoppedCondition(
   duration_stopped_(1000ms),
   stopped_stamp_(rclcpp::Time(0, 0, RCL_ROS_TIME))
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   odom_smoother_ = config().blackboard->get<std::shared_ptr<nav2_util::OdomSmoother>>(
     "odom_smoother");
 }

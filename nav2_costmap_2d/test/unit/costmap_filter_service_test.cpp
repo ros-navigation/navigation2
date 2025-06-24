@@ -17,9 +17,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
@@ -45,7 +43,7 @@ public:
     name_ = name;
   }
 
-  void setNode(const nav2_util::LifecycleNode::WeakPtr & node)
+  void setNode(const nav2::LifecycleNode::WeakPtr & node)
   {
     node_ = node;
   }
@@ -62,7 +60,7 @@ public:
   TestNode()
   {
     // Create new LifecycleNode
-    node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_node");
 
     // Create new CostmapFilter
     costmap_filter_ = std::make_shared<CostmapFilterWrapper>();
@@ -84,11 +82,11 @@ public:
 
   template<class T>
   typename T::Response::SharedPtr send_request(
-    nav2_util::LifecycleNode::SharedPtr node,
-    typename rclcpp::Client<T>::SharedPtr client,
+    nav2::LifecycleNode::SharedPtr node,
+    typename nav2::ServiceClient<T>::SharedPtr client,
     typename T::Request::SharedPtr request)
   {
-    auto result = client->async_send_request(request);
+    auto result = client->async_call(request);
 
     // Wait for the result
     if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS) {
@@ -99,7 +97,7 @@ public:
   }
 
 protected:
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<CostmapFilterWrapper> costmap_filter_;
 };
 

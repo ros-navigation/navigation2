@@ -21,7 +21,7 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
 using rcl_interfaces::msg::ParameterType;
@@ -31,14 +31,14 @@ namespace nav2_controller
 {
 
 void PoseProgressChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
   SimpleProgressChecker::initialize(parent, plugin_name);
   auto node = parent.lock();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".required_movement_angle", rclcpp::ParameterValue(0.5));
   node->get_parameter_or(plugin_name + ".required_movement_angle", required_movement_angle_, 0.5);
 

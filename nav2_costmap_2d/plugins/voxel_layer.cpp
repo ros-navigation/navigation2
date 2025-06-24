@@ -92,16 +92,14 @@ void VoxelLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
   combination_method_ = combination_method_from_int(combination_method_param);
 
-  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
-
   if (publish_voxel_) {
     voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", custom_qos);
+      "voxel_grid", nav2::qos::LatchedPublisherQoS());
     voxel_pub_->on_activate();
   }
 
   clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "clearing_endpoints", custom_qos);
+    "clearing_endpoints", nav2::qos::LatchedPublisherQoS());
   clearing_endpoints_pub_->on_activate();
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);

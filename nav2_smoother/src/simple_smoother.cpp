@@ -22,10 +22,10 @@ namespace nav2_smoother
 using namespace smoother_utils;  // NOLINT
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 
 void SimpleSmoother::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)

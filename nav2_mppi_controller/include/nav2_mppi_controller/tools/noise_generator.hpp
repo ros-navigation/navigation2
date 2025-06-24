@@ -24,6 +24,7 @@
 #include <condition_variable>
 #include <random>
 
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"

@@ -32,7 +32,7 @@ class GoalUpdaterTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("goal_updater_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("goal_updater_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -69,13 +69,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr GoalUpdaterTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr GoalUpdaterTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * GoalUpdaterTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> GoalUpdaterTestFixture::factory_ = nullptr;
@@ -129,8 +129,10 @@ TEST_F(GoalUpdaterTestFixture, test_older_goal_update)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
+  goal_updater_pub->on_activate();
   auto goals_updater_pub =
     node_->create_publisher<nav_msgs::msg::Goals>("goals_update", 10);
+  goals_updater_pub->on_activate();
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;
@@ -180,8 +182,10 @@ TEST_F(GoalUpdaterTestFixture, test_get_latest_goal_update)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   auto goal_updater_pub =
     node_->create_publisher<geometry_msgs::msg::PoseStamped>("goal_update", 10);
+  goal_updater_pub->on_activate();
   auto goals_updater_pub =
     node_->create_publisher<nav_msgs::msg::Goals>("goals_update", 10);
+  goals_updater_pub->on_activate();
 
   // create new goal and set it on blackboard
   geometry_msgs::msg::PoseStamped goal;

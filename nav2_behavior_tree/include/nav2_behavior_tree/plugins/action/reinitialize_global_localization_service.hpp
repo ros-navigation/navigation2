@@ -19,6 +19,7 @@
 
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {

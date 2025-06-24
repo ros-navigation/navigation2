@@ -66,7 +66,7 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   double transform_tolerance_;

@@ -45,7 +45,7 @@
 #include "tf2_ros/create_timer_ros.h"
 
 #include "nav2_amcl/portable_utils.hpp"
-#include "nav2_util/validate_messages.hpp"
+#include "nav2_ros_common/validate_messages.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using namespace std::chrono_literals;
@@ -55,185 +55,136 @@ namespace nav2_amcl
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
 AmclNode::AmclNode(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("amcl", "", options)
+: nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  add_parameter(
-    "alpha1", rclcpp::ParameterValue(0.2),
-    "This is the alpha1 parameter", "These are additional constraints for alpha1");
+  declare_parameter(
+    "alpha1", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "alpha2", rclcpp::ParameterValue(0.2),
-    "This is the alpha2 parameter", "These are additional constraints for alpha2");
+  declare_parameter(
+    "alpha2", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "alpha3", rclcpp::ParameterValue(0.2),
-    "This is the alpha3 parameter", "These are additional constraints for alpha3");
+  declare_parameter(
+    "alpha3", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "alpha4", rclcpp::ParameterValue(0.2),
-    "This is the alpha4 parameter", "These are additional constraints for alpha4");
+  declare_parameter(
+    "alpha4", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "alpha5", rclcpp::ParameterValue(0.2),
-    "This is the alpha5 parameter", "These are additional constraints for alpha5");
+  declare_parameter(
+    "alpha5", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")),
-    "Which frame to use for the robot base");
+  declare_parameter(
+    "base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
 
-  add_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
-  add_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
-  add_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
-  add_parameter("do_beamskip", rclcpp::ParameterValue(false));
+  declare_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
+  declare_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
+  declare_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
+  declare_parameter("do_beamskip", rclcpp::ParameterValue(false));
 
-  add_parameter(
-    "global_frame_id", rclcpp::ParameterValue(std::string("map")),
-    "The name of the coordinate frame published by the localization system");
+  declare_parameter(
+    "global_frame_id", rclcpp::ParameterValue(std::string("map")));
 
-  add_parameter(
-    "lambda_short", rclcpp::ParameterValue(0.1),
-    "Exponential decay parameter for z_short part of model");
+  declare_parameter(
+    "lambda_short", rclcpp::ParameterValue(0.1));
 
-  add_parameter(
-    "laser_likelihood_max_dist", rclcpp::ParameterValue(2.0),
-    "Maximum distance to do obstacle inflation on map, for use in likelihood_field model");
+  declare_parameter(
+    "laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
 
-  add_parameter(
-    "laser_max_range", rclcpp::ParameterValue(100.0),
-    "Maximum scan range to be considered",
-    "-1.0 will cause the laser's reported maximum range to be used");
+  declare_parameter(
+    "laser_max_range", rclcpp::ParameterValue(100.0));
 
-  add_parameter(
-    "laser_min_range", rclcpp::ParameterValue(-1.0),
-    "Minimum scan range to be considered",
-    "-1.0 will cause the laser's reported minimum range to be used");
+  declare_parameter(
+    "laser_min_range", rclcpp::ParameterValue(-1.0));
 
-  add_parameter(
-    "laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")),
-    "Which model to use, either beam, likelihood_field, or likelihood_field_prob",
-    "Same as likelihood_field but incorporates the beamskip feature, if enabled");
+  declare_parameter(
+    "laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
 
-  add_parameter(
-    "set_initial_pose", rclcpp::ParameterValue(false),
-    "Causes AMCL to set initial pose from the initial_pose* parameters instead of "
-    "waiting for the initial_pose message");
+  declare_parameter(
+    "set_initial_pose", rclcpp::ParameterValue(false));
 
-  add_parameter(
-    "initial_pose.x", rclcpp::ParameterValue(0.0),
-    "X coordinate of the initial robot pose in the map frame");
+  declare_parameter(
+    "initial_pose.x", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "initial_pose.y", rclcpp::ParameterValue(0.0),
-    "Y coordinate of the initial robot pose in the map frame");
+  declare_parameter(
+    "initial_pose.y", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "initial_pose.z", rclcpp::ParameterValue(0.0),
-    "Z coordinate of the initial robot pose in the map frame");
+  declare_parameter(
+    "initial_pose.z", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "initial_pose.yaw", rclcpp::ParameterValue(0.0),
-    "Yaw of the initial robot pose in the map frame");
+  declare_parameter(
+    "initial_pose.yaw", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "max_beams", rclcpp::ParameterValue(60),
-    "How many evenly-spaced beams in each scan to be used when updating the filter");
+  declare_parameter(
+    "max_beams", rclcpp::ParameterValue(60));
 
-  add_parameter(
-    "max_particles", rclcpp::ParameterValue(2000),
-    "Maximum allowed number of particles");
+  declare_parameter(
+    "max_particles", rclcpp::ParameterValue(2000));
 
-  add_parameter(
-    "min_particles", rclcpp::ParameterValue(500),
-    "Minimum allowed number of particles");
+  declare_parameter(
+    "min_particles", rclcpp::ParameterValue(500));
 
-  add_parameter(
-    "odom_frame_id", rclcpp::ParameterValue(std::string("odom")),
-    "Which frame to use for odometry");
+  declare_parameter(
+    "odom_frame_id", rclcpp::ParameterValue(std::string("odom")));
 
-  add_parameter("pf_err", rclcpp::ParameterValue(0.05));
-  add_parameter("pf_z", rclcpp::ParameterValue(0.99));
+  declare_parameter("pf_err", rclcpp::ParameterValue(0.05));
+  declare_parameter("pf_z", rclcpp::ParameterValue(0.99));
 
-  add_parameter(
-    "recovery_alpha_fast", rclcpp::ParameterValue(0.0),
-    "Exponential decay rate for the fast average weight filter, used in deciding when to recover "
-    "by adding random poses",
-    "A good value might be 0.1");
+  declare_parameter(
+    "recovery_alpha_fast", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "recovery_alpha_slow", rclcpp::ParameterValue(0.0),
-    "Exponential decay rate for the slow average weight filter, used in deciding when to recover "
-    "by adding random poses",
-    "A good value might be 0.001");
+  declare_parameter(
+    "recovery_alpha_slow", rclcpp::ParameterValue(0.0));
 
-  add_parameter(
-    "resample_interval", rclcpp::ParameterValue(1),
-    "Number of filter updates required before resampling");
+  declare_parameter(
+    "resample_interval", rclcpp::ParameterValue(1));
 
-  add_parameter("robot_model_type", rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
+  declare_parameter("robot_model_type",
+    rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
 
-  add_parameter(
-    "save_pose_rate", rclcpp::ParameterValue(0.5),
-    "Maximum rate (Hz) at which to store the last estimated pose and covariance to the parameter "
-    "server, in the variables ~initial_pose_* and ~initial_cov_*. This saved pose will be used "
-    "on subsequent runs to initialize the filter",
-    "-1.0 to disable");
+  declare_parameter(
+    "save_pose_rate", rclcpp::ParameterValue(0.5));
 
-  add_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
+  declare_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "tf_broadcast", rclcpp::ParameterValue(true),
-    "Set this to false to prevent amcl from publishing the transform between the global frame and "
-    "the odometry frame");
+  declare_parameter(
+    "tf_broadcast", rclcpp::ParameterValue(true));
 
-  add_parameter(
-    "transform_tolerance", rclcpp::ParameterValue(1.0),
-    "Time with which to post-date the transform that is published, to indicate that this transform "
-    "is valid into the future");
+  declare_parameter(
+    "transform_tolerance", rclcpp::ParameterValue(1.0));
 
-  add_parameter(
-    "update_min_a", rclcpp::ParameterValue(0.2),
-    "Rotational movement required before performing a filter update");
+  declare_parameter(
+    "update_min_a", rclcpp::ParameterValue(0.2));
 
-  add_parameter(
-    "update_min_d", rclcpp::ParameterValue(0.25),
-    "Translational movement required before performing a filter update");
+  declare_parameter(
+    "update_min_d", rclcpp::ParameterValue(0.25));
 
-  add_parameter("z_hit", rclcpp::ParameterValue(0.5));
-  add_parameter("z_max", rclcpp::ParameterValue(0.05));
-  add_parameter("z_rand", rclcpp::ParameterValue(0.5));
-  add_parameter("z_short", rclcpp::ParameterValue(0.05));
+  declare_parameter("z_hit", rclcpp::ParameterValue(0.5));
+  declare_parameter("z_max", rclcpp::ParameterValue(0.05));
+  declare_parameter("z_rand", rclcpp::ParameterValue(0.5));
+  declare_parameter("z_short", rclcpp::ParameterValue(0.05));
 
-  add_parameter(
-    "always_reset_initial_pose", rclcpp::ParameterValue(false),
-    "Requires that AMCL is provided an initial pose either via topic or initial_pose* parameter "
-    "(with parameter set_initial_pose: true) when reset. Otherwise, by default AMCL will use the"
-    "last known pose to initialize");
+  declare_parameter(
+    "always_reset_initial_pose", rclcpp::ParameterValue(false));
 
-  add_parameter(
-    "scan_topic", rclcpp::ParameterValue("scan"),
-    "Topic to subscribe to in order to receive the laser scan for localization");
+  declare_parameter(
+    "scan_topic", rclcpp::ParameterValue("scan"));
 
-  add_parameter(
-    "map_topic", rclcpp::ParameterValue("map"),
-    "Topic to subscribe to in order to receive the map to localize on");
+  declare_parameter(
+    "map_topic", rclcpp::ParameterValue("map"));
 
-  add_parameter(
-    "first_map_only", rclcpp::ParameterValue(false),
-    "Set this to true, when you want to load a new map published from the map_server");
+  declare_parameter(
+    "first_map_only", rclcpp::ParameterValue(false));
 
-  add_parameter(
-    "freespace_downsampling", rclcpp::ParameterValue(
-      false),
-    "Downsample the free space used by the Pose Generator. Use it with large maps to save memory");
+  declare_parameter(
+    "freespace_downsampling", rclcpp::ParameterValue(false));
 }
 
 AmclNode::~AmclNode()
 {
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -249,11 +200,11 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
   initOdometry();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
-  executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
-  return nav2_util::CallbackReturn::SUCCESS;
+  executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -293,10 +244,10 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -314,10 +265,10 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -384,14 +335,14 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
         rclcpp::ParameterValue(tf2::getYaw(last_published_pose_.pose.pose.orientation))));
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 AmclNode::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool
@@ -416,7 +367,7 @@ AmclNode::getOdomPose(
 {
   // Get the robot's pose
   geometry_msgs::msg::PoseStamped ident;
-  ident.header.frame_id = nav2_util::strip_leading_slash(frame_id);
+  ident.header.frame_id = frame_id;
   ident.header.stamp = sensor_timestamp;
   tf2::toMsg(tf2::Transform::getIdentity(), ident.pose);
 
@@ -524,15 +475,15 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
 
   RCLCPP_INFO(get_logger(), "initialPoseReceived");
 
-  if (!nav2_util::validateMsg(*msg)) {
+  if (!nav2::validateMsg(*msg)) {
     RCLCPP_ERROR(get_logger(), "Received initialpose message is malformed. Rejecting.");
     return;
   }
-  if (nav2_util::strip_leading_slash(msg->header.frame_id) != global_frame_id_) {
+  if (msg->header.frame_id != global_frame_id_) {
     RCLCPP_WARN(
       get_logger(),
       "Ignoring initial pose in frame \"%s\"; initial poses must be in the global frame, \"%s\"",
-      nav2_util::strip_leading_slash(msg->header.frame_id).c_str(),
+      msg->header.frame_id.c_str(),
       global_frame_id_.c_str());
     return;
   }
@@ -638,7 +589,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
     return;
   }
 
-  std::string laser_scan_frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
+  std::string laser_scan_frame_id = laser_scan->header.frame_id;
   last_laser_received_ts_ = now();
   int laser_index = -1;
   geometry_msgs::msg::PoseStamped laser_pose;
@@ -802,7 +753,7 @@ bool AmclNode::updateFilter(
   // Here we set the roll pitch yaw of the lasers.  We assume roll and pitch are zero.
   geometry_msgs::msg::QuaternionStamped min_q, inc_q;
   min_q.header.stamp = laser_scan->header.stamp;
-  min_q.header.frame_id = nav2_util::strip_leading_slash(laser_scan->header.frame_id);
+  min_q.header.frame_id = laser_scan->header.frame_id;
   min_q.quaternion = orientationAroundZAxis(laser_scan->angle_min);
 
   inc_q.header = min_q.header;
@@ -1111,11 +1062,6 @@ AmclNode::initParameters()
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
-
-  odom_frame_id_ = nav2_util::strip_leading_slash(odom_frame_id_);
-  base_frame_id_ = nav2_util::strip_leading_slash(base_frame_id_);
-  global_frame_id_ = nav2_util::strip_leading_slash(global_frame_id_);
-
   last_time_printed_msg_ = now();
 
   // Semantic checks
@@ -1389,8 +1335,9 @@ AmclNode::dynamicParametersCallback(
   if (reinit_map) {
     map_sub_.reset();
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-      map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-      std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+      map_topic_,
+      std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
+      nav2::qos::LatchedSubscriptionQoS());
   }
 
   result.successful = true;
@@ -1401,7 +1348,7 @@ void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
-  if (!nav2_util::validateMsg(*msg)) {
+  if (!nav2::validateMsg(*msg)) {
     RCLCPP_ERROR(get_logger(), "Received map message is malformed. Rejecting.");
     return;
   }
@@ -1526,11 +1473,12 @@ AmclNode::initMessageFilters()
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
-    shared_from_this(), scan_topic_, rclcpp::SensorDataQoS(), sub_opt);
+    shared_from_this(), scan_topic_, nav2::qos::SensorDataQoS(), sub_opt);
   #else
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
       rclcpp_lifecycle::LifecycleNode>>(
-    shared_from_this(), scan_topic_, rmw_qos_profile_sensor_data, sub_opt);
+    std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(shared_from_this()),
+    scan_topic_, nav2::qos::SensorDataQoS().get_rmw_qos_profile(), sub_opt);
   #endif
 
   laser_scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
@@ -1541,9 +1489,7 @@ AmclNode::initMessageFilters()
 
 
   laser_scan_connection_ = laser_scan_filter_->registerCallback(
-    std::bind(
-      &AmclNode::laserReceived,
-      this, std::placeholders::_1));
+    std::bind(&AmclNode::laserReceived, this, std::placeholders::_1));
 }
 
 void
@@ -1553,19 +1499,20 @@ AmclNode::initPubSub()
 
   particle_cloud_pub_ = create_publisher<nav2_msgs::msg::ParticleCloud>(
     "particle_cloud",
-    rclcpp::SensorDataQoS());
+    nav2::qos::SensorDataQoS());
 
   pose_pub_ = create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose",
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    nav2::qos::LatchedPublisherQoS());
 
   initial_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "initialpose", rclcpp::SystemDefaultsQoS(),
+    "initialpose",
     std::bind(&AmclNode::initialPoseReceived, this, std::placeholders::_1));
 
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-    map_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&AmclNode::mapReceived, this, std::placeholders::_1));
+    map_topic_,
+    std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
@@ -1573,21 +1520,18 @@ AmclNode::initPubSub()
 void
 AmclNode::initServices()
 {
-  global_loc_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
-      std::shared_ptr<nav2_util::LifecycleNode>>>(
-    "reinitialize_global_localization", shared_from_this(),
+  global_loc_srv_ = create_service<std_srvs::srv::Empty>(
+    "reinitialize_global_localization",
     std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
-  initial_guess_srv_ = std::make_shared<nav2_util::ServiceServer<nav2_msgs::srv::SetInitialPose,
-      std::shared_ptr<nav2_util::LifecycleNode>>>(
-    "set_initial_pose", shared_from_this(),
+  initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
+    "set_initial_pose",
     std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
-  nomotion_update_srv_ = std::make_shared<nav2_util::ServiceServer<std_srvs::srv::Empty,
-      std::shared_ptr<nav2_util::LifecycleNode>>>(
-    "request_nomotion_update", shared_from_this(),
+  nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
+    "request_nomotion_update",
     std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 }

@@ -92,7 +92,7 @@ public:
 
 TEST(CriticManagerTests, BasicCriticOperations)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   std::string name = "test";
@@ -129,7 +129,7 @@ TEST(CriticManagerTests, BasicCriticOperations)
 
 TEST(CriticManagerTests, CriticLoadingTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter(
     "critic_manager.critics",
     rclcpp::ParameterValue(std::vector<std::string>{"ConstraintCritic", "PreferForwardCritic"}));

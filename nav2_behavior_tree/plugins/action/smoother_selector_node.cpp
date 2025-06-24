@@ -50,22 +50,17 @@ void SmootherSelector::createROSInterfaces()
   getInput("topic_name", topic_new);
   if (topic_new != topic_name_ || !smoother_selector_sub_) {
     topic_name_ = topic_new;
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-    rclcpp::QoS qos(rclcpp::KeepLast(1));
-    qos.transient_local().reliable();
-
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
     smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
       topic_name_,
-      qos,
       std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
-      sub_option);
+      nav2::qos::LatchedSubscriptionQoS(),
+      callback_group_);
   }
 }
 

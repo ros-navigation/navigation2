@@ -33,7 +33,7 @@ TransformAvailableCondition::TransformAvailableCondition(
 : BT::ConditionNode(condition_name, conf),
   was_found_(false)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 }
 

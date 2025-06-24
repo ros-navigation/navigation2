@@ -13,6 +13,13 @@ target_link_libraries(${test_wait_behavior_exec}
   rclcpp_action::rclcpp_action
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(${test_wait_behavior_exec}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 ament_add_test(test_wait_behavior

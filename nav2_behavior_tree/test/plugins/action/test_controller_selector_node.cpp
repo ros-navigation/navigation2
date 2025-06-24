@@ -30,7 +30,12 @@ class ControllerSelectorTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("controller_selector_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("controller_selector_test_fixture");
+
+    // Configure and activate the lifecycle node
+    node_->configure();
+    node_->activate();
+
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -51,6 +56,10 @@ public:
 
   static void TearDownTestCase()
   {
+    // Properly deactivate and cleanup the lifecycle node
+    node_->deactivate();
+    node_->cleanup();
+
     delete config_;
     config_ = nullptr;
     node_.reset();
@@ -63,13 +72,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ControllerSelectorTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr ControllerSelectorTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * ControllerSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> ControllerSelectorTestFixture::factory_ = nullptr;
@@ -103,11 +112,10 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
 
   selected_controller_cmd.data = "DWC";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
-
   auto controller_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("controller_selector_custom_topic_name", qos);
+    node_->create_publisher<std_msgs::msg::String>(
+      "controller_selector_custom_topic_name", nav2::qos::LatchedPublisherQoS());
+  controller_selector_pub->on_activate();
 
   // publish a few updates of the selected_controller
   auto start = node_->now();
@@ -115,7 +123,7 @@ TEST_F(ControllerSelectorTestFixture, test_custom_topic)
     tree_->rootNode()->executeTick();
     controller_selector_pub->publish(selected_controller_cmd);
 
-    rclcpp::spin_some(node_);
+    rclcpp::spin_some(node_->get_node_base_interface());
   }
 
   // check controller updated
@@ -151,11 +159,10 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
 
   selected_controller_cmd.data = "RRT";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
-
   auto controller_selector_pub =
-    node_->create_publisher<std_msgs::msg::String>("controller_selector", qos);
+    node_->create_publisher<std_msgs::msg::String>(
+      "controller_selector", nav2::qos::LatchedPublisherQoS());
+  controller_selector_pub->on_activate();
 
   // publish a few updates of the selected_controller
   auto start = node_->now();
@@ -163,7 +170,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
     tree_->rootNode()->executeTick();
     controller_selector_pub->publish(selected_controller_cmd);
 
-    rclcpp::spin_some(node_);
+    rclcpp::spin_some(node_->get_node_base_interface());
   }
 
   // check controller updated

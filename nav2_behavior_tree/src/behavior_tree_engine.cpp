@@ -29,7 +29,8 @@ namespace nav2_behavior_tree
 {
 
 BehaviorTreeEngine::BehaviorTreeEngine(
-  const std::vector<std::string> & plugin_libraries, rclcpp::Node::SharedPtr node)
+  const std::vector<std::string> & plugin_libraries,
+  const nav2::LifecycleNode::SharedPtr node)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {

@@ -30,8 +30,8 @@
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav_2d_utils/odom_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -46,7 +46,7 @@ class ProgressChecker;
  * @brief This class hosts variety of plugins of different algorithms to
  * complete control tasks from the exposed FollowPath action server.
  */
-class ControllerServer : public nav2_util::LifecycleNode
+class ControllerServer : public nav2::LifecycleNode
 {
 public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
@@ -74,7 +74,7 @@ protected:
    * @throw pluginlib::PluginlibException When failed to initialize controller
    * plugin
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates member variables
    *
@@ -83,7 +83,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates member variables
    *
@@ -92,7 +92,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Calls clean up states and resets member variables.
    *
@@ -101,19 +101,19 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::FollowPath;
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
+  using ActionServer = nav2::SimpleActionServer<Action>;
 
   // Our action server implements the FollowPath action
-  std::unique_ptr<ActionServer> action_server_;
+  typename ActionServer::SharedPtr action_server_;
 
   /**
    * @brief FollowPath action server callback. Handles action server updates and
@@ -230,12 +230,12 @@ protected:
 
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
+  std::unique_ptr<nav2::NodeThread> costmap_thread_;
 
   // Publishers and subscribers
   std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
-  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+  nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;

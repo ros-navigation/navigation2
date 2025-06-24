@@ -18,14 +18,14 @@
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 Source::Source(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -62,16 +62,16 @@ void Source::getCommonParameters(std::string & source_topic)
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".topic",
     rclcpp::ParameterValue("scan"));  // Set default topic for laser scanner
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
   enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".source_timeout",
     rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
   source_timeout_ = rclcpp::Duration::from_seconds(

@@ -65,7 +65,7 @@ TEST(BaseObstacle, ScorePose)
   std::shared_ptr<dwb_critics::BaseObstacleCritic> critic =
     std::make_shared<dwb_critics::BaseObstacleCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("base_obstacle_critic_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("base_obstacle_critic_tester");
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();
@@ -124,7 +124,7 @@ TEST(BaseObstacle, CriticVisualization)
   std::shared_ptr<dwb_critics::BaseObstacleCritic> critic =
     std::make_shared<dwb_critics::BaseObstacleCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("base_obstacle_critic_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("base_obstacle_critic_tester");
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();

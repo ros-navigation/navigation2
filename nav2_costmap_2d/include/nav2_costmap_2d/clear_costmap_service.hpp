@@ -24,8 +24,8 @@
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/service_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -43,7 +43,7 @@ public:
    * @brief A constructor
    */
   ClearCostmapService(
-    const nav2_util::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap);
+    const nav2::LifecycleNode::WeakPtr & parent, Costmap2DROS & costmap);
 
   /**
    * @brief A constructor
@@ -76,8 +76,8 @@ private:
   unsigned char reset_value_;
 
   // Server for clearing the costmap
-  nav2_util::ServiceServer<nav2_msgs::srv::ClearCostmapExceptRegion,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr clear_except_service_;
+  nav2::ServiceServer<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr
+    clear_except_service_;
   /**
    * @brief Callback to clear costmap except in a given region
    */
@@ -86,8 +86,8 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapExceptRegion::Response> response);
 
-  nav2_util::ServiceServer<nav2_msgs::srv::ClearCostmapAroundRobot,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr clear_around_service_;
+  nav2::ServiceServer<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr
+    clear_around_service_;
   /**
    * @brief Callback to clear costmap in a given region
    */
@@ -96,8 +96,8 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Response> response);
 
-  nav2_util::ServiceServer<nav2_msgs::srv::ClearEntireCostmap,
-    std::shared_ptr<rclcpp_lifecycle::LifecycleNode>>::SharedPtr clear_entire_service_;
+  nav2::ServiceServer<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr
+    clear_entire_service_;
   /**
    * @brief Callback to clear costmap
    */

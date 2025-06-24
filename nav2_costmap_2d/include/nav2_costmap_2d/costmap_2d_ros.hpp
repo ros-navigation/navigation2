@@ -51,7 +51,7 @@
 #include "nav2_costmap_2d/clear_costmap_service.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/layer.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.hpp"
@@ -60,7 +60,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/time.hpp"
 #include "tf2/transform_datatypes.hpp"
-#include "nav2_util/service_server.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -73,7 +73,7 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
-class Costmap2DROS : public nav2_util::LifecycleNode
+class Costmap2DROS : public nav2::LifecycleNode
 {
 public:
   /**
@@ -107,27 +107,27 @@ public:
   /**
    * @brief Configure node
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Activate node
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Deactivate node
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Cleanup node
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief shutdown node
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief as a child-LifecycleNode :
@@ -344,19 +344,19 @@ public:
 
 protected:
   // Publishers and subscribers
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
     footprint_pub_;
   std::unique_ptr<Costmap2DPublisher> costmap_publisher_;
 
   std::vector<std::unique_ptr<Costmap2DPublisher>> layer_publishers_;
 
-  rclcpp::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
-  rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
+  nav2::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
+  nav2::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
   // Dedicated callback group and executor for tf timer_interface and message filter
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+  std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   // Transform listener
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -416,8 +416,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> padded_footprint_;
 
   // Services
-  nav2_util::ServiceServer<nav2_msgs::srv::GetCosts,
-    std::shared_ptr<nav2_util::LifecycleNode>>::SharedPtr get_cost_service_;
+  nav2::ServiceServer<nav2_msgs::srv::GetCosts>::SharedPtr get_cost_service_;
   std::unique_ptr<ClearCostmapService> clear_costmap_service_;
 
   // Dynamic parameters handler

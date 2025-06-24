@@ -27,7 +27,7 @@ PathLongerOnApproach::PathLongerOnApproach(
   const BT::NodeConfiguration & conf)
 : BT::DecoratorNode(name, conf)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 bool PathLongerOnApproach::isPathUpdated(

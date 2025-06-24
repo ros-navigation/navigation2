@@ -109,7 +109,7 @@ protected:
   void SetUp() override
   {
     node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+      std::make_shared<nav2::LifecycleNode>(
       "LifecycleBehaviorTestNode", rclcpp::NodeOptions());
     node_lifecycle_->declare_parameter(
       "local_costmap_topic",
@@ -233,9 +233,9 @@ protected:
     return future_result.get();
   }
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
+  nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<DummyBehavior> behavior_;
-  std::shared_ptr<rclcpp_action::Client<BehaviorAction>> client_;
+  std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

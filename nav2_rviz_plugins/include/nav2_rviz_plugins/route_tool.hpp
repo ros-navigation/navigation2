@@ -99,7 +99,7 @@ protected:
 
 private:
   void update_route_graph(void);
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
   std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -110,7 +110,7 @@ private:
 
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
+  nav2::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     clicked_point_subscription_;
 
   unsigned int next_node_id_ = 0;

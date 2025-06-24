@@ -17,7 +17,7 @@
 
 #include "nav2_util/robot_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/are_poses_near_condition.hpp"
 
@@ -29,14 +29,14 @@ ArePosesNearCondition::ArePosesNearCondition(
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf)
 {
-  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node, "global_frame", this);
 }
 
 void ArePosesNearCondition::initialize()
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 }

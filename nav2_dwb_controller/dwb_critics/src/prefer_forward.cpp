@@ -35,11 +35,11 @@
 #include "dwb_critics/prefer_forward.hpp"
 #include <math.h>
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::PreferForwardCritic, dwb_core::TrajectoryCritic)
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 
 namespace dwb_critics
 {

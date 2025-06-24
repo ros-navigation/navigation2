@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "opennav_docking/navigator.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -29,7 +29,7 @@ class DummyNavigationServer : rclcpp::Node
 {
 public:
   using ActionT = nav2_msgs::action::NavigateToPose;
-  using ActionServer = nav2_util::SimpleActionServer<ActionT>;
+  using ActionServer = nav2::SimpleActionServer<ActionT>;
 
   DummyNavigationServer()
   : Node("dummy_navigator")
@@ -39,6 +39,7 @@ public:
       get_node_clock_interface(),
       get_node_logging_interface(),
       get_node_waitables_interface(),
+      get_node_parameters_interface(),
       "navigate_to_pose", std::bind(&DummyNavigationServer::executeCallback, this),
       nullptr, std::chrono::milliseconds(500), true);
 
@@ -83,7 +84,7 @@ protected:
 
 TEST(NavigatorTests, TestNavigatorReconfigure)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
   auto navigator = std::make_unique<Navigator>(node);
   node->configure();
   node->activate();
@@ -106,7 +107,7 @@ TEST(NavigatorTests, TestNavigatorReconfigure)
 TEST(NavigatorTests, TestNavigator)
 {
   auto dummy_navigator_node = std::make_shared<DummyNavigationServer>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
   auto navigator = std::make_unique<Navigator>(node);
   navigator->activate();
 

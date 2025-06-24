@@ -15,6 +15,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -38,7 +39,8 @@ add_library(${monitor_library_name} SHARED
 target_include_directories(${monitor_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${monitor_library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_client
@@ -71,7 +73,8 @@ add_library(${detector_library_name} SHARED
 target_include_directories(${detector_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${detector_library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_client
@@ -95,7 +98,8 @@ add_executable(${monitor_executable_name}
 target_include_directories(${monitor_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${monitor_executable_name} PRIVATE
   rclcpp::rclcpp
   ${monitor_library_name}
@@ -107,7 +111,8 @@ add_executable(${detector_executable_name}
 target_include_directories(${detector_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${detector_executable_name} PRIVATE
   rclcpp::rclcpp
   ${detector_library_name}
@@ -161,6 +166,7 @@ ament_export_dependencies(
   sensor_msgs
   tf2
   tf2_ros
+  nav2_ros_common
   visualization_msgs
 )
 ament_export_targets(export_${PROJECT_NAME})

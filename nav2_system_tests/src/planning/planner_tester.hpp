@@ -21,14 +21,14 @@
 #include <thread>
 #include <algorithm>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_costmap.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_util/costmap.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_planner/planner_server.hpp"
@@ -126,7 +126,7 @@ enum class TaskStatus : int8_t
   RUNNING = 3,
 };
 
-class PlannerTester : public rclcpp::Node
+class PlannerTester : public nav2::LifecycleNode
 {
 public:
   using ComputePathToPoseCommand = geometry_msgs::msg::PoseStamped;
@@ -192,10 +192,10 @@ private:
   std::shared_ptr<NavFnPlannerTester> planner_tester_;
 
   // The is path valid client
-  rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr path_valid_client_;
+  nav2::ServiceClient<nav2_msgs::srv::IsPathValid>::SharedPtr path_valid_client_;
 
   // A thread for spinning the ROS node
-  std::unique_ptr<nav2_util::NodeThread> spin_thread_;
+  std::unique_ptr<nav2::NodeThread> spin_thread_;
 
   // The tester must provide the robot pose through a transform
   std::unique_ptr<geometry_msgs::msg::TransformStamped> base_transform_;
@@ -206,7 +206,7 @@ private:
   void updateRobotPosition(const geometry_msgs::msg::Point & position);
 
   // Occupancy grid publisher for visualization
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
   rclcpp::TimerBase::SharedPtr map_timer_;
   rclcpp::WallRate map_publish_rate_;
   void mapCallback();

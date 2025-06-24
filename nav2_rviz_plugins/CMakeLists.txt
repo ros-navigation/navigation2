@@ -21,6 +21,7 @@ find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -72,6 +73,7 @@ target_include_directories(${library_name} PUBLIC
   ${OGRE_INCLUDE_DIRS}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
@@ -137,6 +139,7 @@ ament_export_dependencies(
   rviz_rendering
   std_msgs
   tf2_geometry_msgs
+  nav2_ros_common
   visualization_msgs
 )
 

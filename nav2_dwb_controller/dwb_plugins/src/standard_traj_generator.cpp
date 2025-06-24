@@ -41,13 +41,13 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace dwb_plugins
 {
 
 void StandardTrajectoryGenerator::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
@@ -55,27 +55,27 @@ void StandardTrajectoryGenerator::initialize(
   kinematics_handler_->initialize(nh, plugin_name_);
   initializeIterator(nh);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".sim_time", rclcpp::ParameterValue(1.7));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".discretize_by_time", rclcpp::ParameterValue(false));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".time_granularity", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".linear_granularity", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".angular_granularity", rclcpp::ParameterValue(0.025));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".include_last_point", rclcpp::ParameterValue(true));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".limit_vel_cmd_in_traj", rclcpp::ParameterValue(false));
 
@@ -97,7 +97,7 @@ void StandardTrajectoryGenerator::initialize(
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
-  const nav2_util::LifecycleNode::SharedPtr & nh)
+  const nav2::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_handler_, plugin_name_);

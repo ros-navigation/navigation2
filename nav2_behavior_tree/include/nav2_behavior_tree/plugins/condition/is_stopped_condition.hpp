@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/odometry.hpp"
@@ -79,7 +79,7 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   double velocity_threshold_;
   std::chrono::milliseconds duration_stopped_;

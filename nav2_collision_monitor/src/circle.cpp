@@ -18,13 +18,13 @@
 #include <cmath>
 #include <exception>
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 Circle::Circle(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -95,7 +95,7 @@ bool Circle::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter radius fails, use dynamic subscription
   try {
     // Leave it not initialized: the will cause an error if it will not set
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
     radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
     radius_squared_ = radius_ * radius_;
@@ -138,13 +138,14 @@ void Circle::createSubscription(std::string & polygon_sub_topic)
       logger_,
       "[%s]: Subscribing on %s topic for polygon",
       polygon_name_.c_str(), polygon_sub_topic.c_str());
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    rclcpp::QoS polygon_qos = nav2::qos::StandardTopicQoS();  // set to default
     if (polygon_subscribe_transient_local_) {
       polygon_qos.transient_local();
     }
     radius_sub_ = node->create_subscription<std_msgs::msg::Float32>(
-      polygon_sub_topic, polygon_qos,
-      std::bind(&Circle::radiusCallback, this, std::placeholders::_1));
+      polygon_sub_topic,
+      std::bind(&Circle::radiusCallback, this, std::placeholders::_1),
+      polygon_qos);
   }
 }
 

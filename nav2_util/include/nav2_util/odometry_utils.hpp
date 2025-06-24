@@ -26,9 +26,9 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -42,27 +42,32 @@ class OdomSmoother
 {
 public:
   /**
-   * @brief Constructor that subscribes to an Odometry topic
-   * @param parent NodeHandle for creating subscriber
-   * @param filter_duration Duration for odom history (seconds)
-   * @param odom_topic Topic on which odometry should be received
-   */
-  explicit OdomSmoother(
-    const rclcpp::Node::WeakPtr & parent,
-    double filter_duration = 0.3,
-    const std::string & odom_topic = "odom");
-
-  /**
    * @brief Overloadded Constructor for nav_util::LifecycleNode parent
    * that subscribes to an Odometry topic
    * @param parent NodeHandle for creating subscriber
    * @param filter_duration Duration for odom history (seconds)
    * @param odom_topic Topic on which odometry should be received
    */
+  template<typename NodeT>
   explicit OdomSmoother(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
+    const NodeT & parent,
     double filter_duration = 0.3,
-    const std::string & odom_topic = "odom");
+    const std::string & odom_topic = "odom")
+  : odom_history_duration_(rclcpp::Duration::from_seconds(filter_duration))
+  {
+    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
+    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
+    odom_sub_ = nav2::interfaces::create_subscription<nav_msgs::msg::Odometry>(
+      parent, odom_topic,
+      std::bind(&OdomSmoother::odomCallback, this, std::placeholders::_1));
+
+    odom_cumulate_.twist.twist.linear.x = 0;
+    odom_cumulate_.twist.twist.linear.y = 0;
+    odom_cumulate_.twist.twist.linear.z = 0;
+    odom_cumulate_.twist.twist.angular.x = 0;
+    odom_cumulate_.twist.twist.angular.y = 0;
+    odom_cumulate_.twist.twist.angular.z = 0;
+  }
 
   /**
    * @brief Get twist msg from smoother
@@ -142,8 +147,8 @@ protected:
    */
   void updateState();
 
-  bool received_odom_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  bool received_odom_{false};
+  nav2::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   nav_msgs::msg::Odometry odom_cumulate_;
   geometry_msgs::msg::TwistStamped vel_smooth_;
   std::mutex odom_mutex_;

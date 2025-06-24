@@ -22,9 +22,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/service_client.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_client.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
 
 class RclCppFixture

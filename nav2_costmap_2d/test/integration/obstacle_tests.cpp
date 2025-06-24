@@ -52,42 +52,42 @@ using std::none_of;
 using std::pair;
 using std::string;
 
-class TestLifecycleNode : public nav2_util::LifecycleNode
+class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
   explicit TestLifecycleNode(const string & name)
-  : nav2_util::LifecycleNode(name)
+  : nav2::LifecycleNode(name)
   {
   }
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onError(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 };
 

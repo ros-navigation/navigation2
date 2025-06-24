@@ -26,7 +26,7 @@
 #include "pluginlib/class_list_macros.hpp"
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 
@@ -40,13 +40,13 @@ class Navigator
 {
 public:
   using Nav2Pose = nav2_msgs::action::NavigateToPose;
-  using ActionClient = rclcpp_action::Client<Nav2Pose>;
+  using ActionClient = nav2::ActionClient<Nav2Pose>;
 
   /**
    * @brief A constructor for opennav_docking::Navigator
    * @param parent Weakptr to the node to use to get interances and parameters
    */
-  explicit Navigator(const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent);
+  explicit Navigator(const nav2::LifecycleNode::WeakPtr & parent);
 
   /**
    * @brief A destructor for opennav_docking::Navigator
@@ -79,7 +79,7 @@ public:
     bool recursed = false);
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor executor_;
   ActionClient::SharedPtr nav_to_pose_client_;

@@ -20,7 +20,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
 
@@ -49,8 +49,8 @@ public:
 
 TEST(SmootherTest, test_simple_smoother)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSmootherTest");
 
   std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
     std::make_shared<nav2_msgs::msg::Costmap>();
@@ -68,16 +68,15 @@ TEST(SmootherTest, test_simple_smoother)
     }
   }
 
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   auto smoother = std::make_unique<SmootherWrapper>();
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
 
   // Test that an irregular distributed path becomes more distributed
   nav_msgs::msg::Path straight_irregular_path;
