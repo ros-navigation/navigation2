@@ -25,15 +25,15 @@ class LaunchConfigAsBool(Substitution):
     Returns a string 'true' or 'false' for use in PythonExpression and IfCondition contexts.
     """
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         super().__init__()
         self._config = LaunchConfiguration(name)
 
-    def perform(self, context):
+    def perform(self, context) -> str:
         value = perform_substitutions(context, [self._config])
         if value.strip().lower() in ['true', '1', 'yes', 'on']:
             return 'True'
         return 'False'
 
-    def describe(self):
+    def describe(self) -> str:
         return f'LaunchConfigAsBool({self._config.describe()})'
