@@ -22,7 +22,7 @@ from launch.substitutions import (EqualsSubstitution, LaunchConfiguration, NotEq
                                   PythonExpression)
 from launch_ros.actions import LoadComposableNodes, Node, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
-from nav2_common.launch import RewrittenYaml, LaunchConfigAsBool
+from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:

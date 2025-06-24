@@ -20,6 +20,7 @@ from launch.utilities import perform_substitutions
 class LaunchConfigAsBool(Substitution):
     """
     Converts a LaunchConfiguration value into a normalized boolean string: 'true' or 'false'.
+
     Allows CLI arguments like 'True', 'true', '1', 'yes' and 'False', 'false', '0', 'no'.
     Returns a string 'true' or 'false' for use in PythonExpression and IfCondition contexts.
     """

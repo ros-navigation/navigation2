@@ -23,7 +23,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, PushROSNamespace
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import RewrittenYaml, LaunchConfigAsBool
+from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:

@@ -16,7 +16,6 @@ import unittest
 
 from launch import LaunchContext
 from nav2_common.launch import LaunchConfigAsBool
-from launch.substitutions import LaunchConfiguration
 
 
 class TestLaunchConfigAsBool(unittest.TestCase):
