@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import launch
 from launch import LaunchContext
-from launch.substitutions import LaunchConfiguration, Substitution
+from launch.substitutions import LaunchConfiguration
 from launch.utilities import perform_substitutions
 
 
-class LaunchConfigAsBool(Substitution):  # type: ignore[misc]
+class LaunchConfigAsBool(launch.Substitution):  # type: ignore[misc]
     """
     Converts a LaunchConfiguration value into a normalized boolean string: 'true' or 'false'.
 
