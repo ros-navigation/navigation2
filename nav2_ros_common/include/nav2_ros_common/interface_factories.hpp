@@ -36,6 +36,7 @@ namespace interfaces
 
 /**
  * @brief Create a SubscriptionOptions object with Nav2's QoS profiles and options
+ * @param topic_name Name of topic
  * @param allow_parameter_qos_overrides Whether to allow QoS overrides for this subscription
  * @param callback_group_ptr Pointer to the callback group to use for this subscription
  * @param qos_message_lost_callback Callback for when a QoS message is lost
@@ -47,6 +48,7 @@ namespace interfaces
  * @return A nav2::SubscriptionOptions object with the specified configurations
  */
 inline rclcpp::SubscriptionOptions createSubscriptionOptions(
+  const std::string & topic_name,
   const bool allow_parameter_qos_overrides = true,
   const rclcpp::CallbackGroup::SharedPtr callback_group_ptr = nullptr,
   rclcpp::QOSMessageLostCallbackType qos_message_lost_callback = nullptr,
@@ -67,19 +69,56 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
   // Set the callback group to use for this subscription, if given
   options.callback_group = callback_group_ptr;
 
-  // Set the event callbacks
+  // ROS 2 default logs this already
+  options.event_callbacks.incompatible_qos_callback = requested_incompatible_qos_callback;
+  options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
+
+  // Set the event callbacks if given, else log
+  if (qos_message_lost_callback) {
+    options.event_callbacks.message_lost_callback =
+      qos_message_lost_callback;
+  } else {
+    options.event_callbacks.message_lost_callback =
+      [topic_name](rclcpp::QOSMessageLostInfo & info) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("nav2::interfaces"),
+          "[%lu] Message was dropped on topic [%s] due to queue size or network constraints.",
+          info.total_count_change,
+          topic_name.c_str());
+      };
+  }
+
+  if (subscription_matched_callback) {
+    options.event_callbacks.matched_callback = subscription_matched_callback;
+  } else {
+    options.event_callbacks.matched_callback =
+      [topic_name](rclcpp::MatchedInfo & status) {
+        if (status.current_count_change > 0) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("nav2::interfaces"),
+            "Connected: %d new publisher(s) to [%s]. Total active: %zu.",
+            status.current_count_change,
+            topic_name.c_str(),
+            status.current_count);
+        } else if (status.current_count_change < 0) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("nav2::interfaces"),
+            "Disconnected: %d publisher(s) from [%s]. Total active: %zu.",
+            -status.current_count_change,
+            topic_name.c_str(),
+            status.current_count);
+        }
+      };
+  }
+
   options.event_callbacks.deadline_callback = qos_deadline_requested_callback;
   options.event_callbacks.liveliness_callback = qos_liveliness_changed_callback;
-  options.event_callbacks.incompatible_qos_callback =
-    requested_incompatible_qos_callback;
-  options.event_callbacks.message_lost_callback = qos_message_lost_callback;
-  options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
-  options.event_callbacks.matched_callback = subscription_matched_callback;
   return options;
 }
 
 /**
  * @brief Create a PublisherOptions object with Nav2's QoS profiles and options
+ * @param topic_name Name of topic
  * @param allow_parameter_qos_overrides Whether to allow QoS overrides for this publisher
  * @param callback_group_ptr Pointer to the callback group to use for this publisher
  * @param publisher_matched_callback Callback when a publisher is matched with a subscriber
@@ -90,6 +129,7 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
  * @return A rclcpp::PublisherOptions object with the specified configurations
  */
 inline rclcpp::PublisherOptions createPublisherOptions(
+  const std::string & topic_name,
   const bool allow_parameter_qos_overrides = true,
   const rclcpp::CallbackGroup::SharedPtr callback_group_ptr = nullptr,
   rclcpp::PublisherMatchedCallbackType publisher_matched_callback = nullptr,
@@ -109,12 +149,36 @@ inline rclcpp::PublisherOptions createPublisherOptions(
   // Set the callback group to use for this publisher, if given
   options.callback_group = callback_group_ptr;
 
-  // Set the event callbacks
-  options.event_callbacks.deadline_callback = qos_deadline_offered_callback;
-  options.event_callbacks.liveliness_callback = qos_liveliness_lost_callback;
+  // ROS 2 default logs this already
   options.event_callbacks.incompatible_qos_callback = offered_incompatible_qos_cb;
   options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
-  options.event_callbacks.matched_callback = publisher_matched_callback;
+
+  // Set the event callbacks, else log
+  if (publisher_matched_callback) {
+    options.event_callbacks.matched_callback = publisher_matched_callback;
+  } else {
+    options.event_callbacks.matched_callback =
+      [topic_name](rclcpp::MatchedInfo & status) {
+        if (status.current_count_change > 0) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("nav2::interfaces"),
+            "Connected: %d new subscriber(s) to [%s]. Total active: %zu.",
+            status.current_count_change,
+            topic_name.c_str(),
+            status.current_count);
+        } else if (status.current_count_change < 0) {
+          RCLCPP_DEBUG(
+            rclcpp::get_logger("nav2::interfaces"),
+            "Disconnected: %d subscriber(s) from [%s]. Total active: %zu.",
+            -status.current_count_change,
+            topic_name.c_str(),
+            status.current_count);
+        }
+      };
+  }
+
+  options.event_callbacks.deadline_callback = qos_deadline_offered_callback;
+  options.event_callbacks.liveliness_callback = qos_liveliness_lost_callback;
   return options;
 }
 
@@ -136,7 +200,7 @@ typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", false);
+    node, "allow_parameter_qos_overrides", true);
 
   auto params_interface = node->get_node_parameters_interface();
   auto topics_interface = node->get_node_topics_interface();
@@ -146,7 +210,7 @@ typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
     topic_name,
     qos,
     std::forward<CallbackT>(callback),
-    createSubscriptionOptions(allow_parameter_qos_overrides, callback_group));
+    createSubscriptionOptions(topic_name, allow_parameter_qos_overrides, callback_group));
 }
 
 /**
@@ -165,13 +229,13 @@ typename nav2::Publisher<MessageT>::SharedPtr create_publisher(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", false);
+    node, "allow_parameter_qos_overrides", true);
   using PublisherT = nav2::Publisher<MessageT>;
   auto pub = rclcpp::create_publisher<MessageT, std::allocator<void>, PublisherT>(
     *node,
     topic_name,
     qos,
-    createPublisherOptions(allow_parameter_qos_overrides, callback_group));
+    createPublisherOptions(topic_name, allow_parameter_qos_overrides, callback_group));
   return pub;
 }
 
