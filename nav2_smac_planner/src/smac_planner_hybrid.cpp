@@ -281,12 +281,10 @@ void SmacPlannerHybrid::configure(
   }
 
   // Initialize costmap downsampler
-  if (_downsample_costmap && _downsampling_factor > 1) {
-    _costmap_downsampler = std::make_unique<CostmapDownsampler>();
-    std::string topic_name = "downsampled_costmap";
-    _costmap_downsampler->on_configure(
-      node, _global_frame, topic_name, _costmap, _downsampling_factor);
-  }
+  _costmap_downsampler = std::make_unique<CostmapDownsampler>();
+  std::string topic_name = "downsampled_costmap";
+  _costmap_downsampler->on_configure(
+    node, _global_frame, topic_name, _costmap, _downsampling_factor);
 
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
 
@@ -391,7 +389,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Downsample costmap, if required
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
-  if (_costmap_downsampler) {
+  if (_downsample_costmap && _downsampling_factor > 1) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
     _collision_checker.setCostmap(costmap);
   }
