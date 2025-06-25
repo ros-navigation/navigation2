@@ -36,21 +36,21 @@ def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Create the launch configuration variables
-    slam = LaunchConfiguration('slam')
+    slam = LaunchConfigAsBool('slam')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
-    use_composition = LaunchConfiguration('use_composition')
-    use_respawn = LaunchConfiguration('use_respawn')
+    use_composition = LaunchConfigAsBool('use_composition')
+    use_respawn = LaunchConfigAsBool('use_respawn')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_simulator = LaunchConfigAsBool('use_simulator')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
-    use_rviz = LaunchConfiguration('use_rviz')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_rviz = LaunchConfigAsBool('use_rviz')
     headless = LaunchConfigAsBool('headless')
     world = LaunchConfiguration('world')
     pose = {

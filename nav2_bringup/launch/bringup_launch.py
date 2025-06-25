@@ -38,15 +38,15 @@ def generate_launch_description() -> LaunchDescription:
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
     graph_filepath = LaunchConfiguration('graph')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
     params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
-    use_composition = LaunchConfiguration('use_composition')
-    use_respawn = LaunchConfiguration('use_respawn')
+    autostart = LaunchConfigAsBool('autostart')
+    use_composition = LaunchConfigAsBool('use_composition')
+    use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
     use_localization = LaunchConfigAsBool('use_localization')
-    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
-    use_speed_zones = LaunchConfiguration('use_speed_zones')
+    use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
+    use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
