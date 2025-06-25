@@ -20,7 +20,7 @@
 #include <chrono>
 
 #include "behaviortree_cpp/action_node.h"
-#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
