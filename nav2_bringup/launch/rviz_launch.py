@@ -21,6 +21,7 @@ from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from nav2_common.launch import LaunchConfigAsBool
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -30,7 +31,7 @@ def generate_launch_description() -> LaunchDescription:
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     rviz_config_file = LaunchConfiguration('rviz_config')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
 
     # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(

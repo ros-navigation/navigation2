@@ -26,6 +26,7 @@ from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+from nav2_common.launch import LaunchConfigAsBool
 
 # Define local map types
 MAP_POSES_DICT = {
@@ -51,26 +52,26 @@ def generate_launch_description() -> LaunchDescription:
     desc_dir = get_package_share_directory('nav2_minimal_tb4_description')
 
     # Create the launch configuration variables
-    slam = LaunchConfiguration('slam')
+    slam = LaunchConfigAsBool('slam')
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
     keepout_mask_yaml_file = LaunchConfiguration('keepout_mask')
     speed_mask_yaml_file = LaunchConfiguration('speed_mask')
     graph_filepath = LaunchConfiguration('graph')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
     params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
-    use_composition = LaunchConfiguration('use_composition')
-    use_respawn = LaunchConfiguration('use_respawn')
-    use_keepout_zones = LaunchConfiguration('use_keepout_zones')
-    use_speed_zones = LaunchConfiguration('use_speed_zones')
+    autostart = LaunchConfigAsBool('autostart')
+    use_composition = LaunchConfigAsBool('use_composition')
+    use_respawn = LaunchConfigAsBool('use_respawn')
+    use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
+    use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
-    use_simulator = LaunchConfiguration('use_simulator')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
-    use_rviz = LaunchConfiguration('use_rviz')
-    headless = LaunchConfiguration('headless')
+    use_simulator = LaunchConfigAsBool('use_simulator')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_rviz = LaunchConfigAsBool('use_rviz')
+    headless = LaunchConfigAsBool('headless')
     world = LaunchConfiguration('world')
     pose = {
         'x': LaunchConfiguration('x_pose', default=MAP_POSES_DICT[MAP_TYPE]['x']),

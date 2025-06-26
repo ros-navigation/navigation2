@@ -28,6 +28,7 @@ from launch.event_handlers import OnShutdown
 from launch.launch_context import LaunchContext
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
+from nav2_common.launch import LaunchConfigAsBool
 import yaml
 
 
@@ -53,13 +54,13 @@ def generate_robot_actions(name: str = '', pose: dict[str, float] = {}) -> list[
     """Generate the actions to launch a robot with the given name and pose."""
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-    use_rviz = LaunchConfiguration('use_rviz')
+    use_rviz = LaunchConfigAsBool('use_rviz')
     params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
+    autostart = LaunchConfigAsBool('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
 
     # Define commands for launching the navigation instances
     group = GroupAction(
@@ -130,9 +131,9 @@ def generate_launch_description() -> LaunchDescription:
     # On this example all robots are launched with the same settings
     map_yaml_file = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
+    autostart = LaunchConfigAsBool('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
