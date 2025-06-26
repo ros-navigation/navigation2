@@ -85,7 +85,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<bool>("wrap_around", false, "Enable wrap-around to first child after last child fails")
+      BT::InputPort<bool>("wrap_around", false,
+        "Enable wrap-around to first child after last child fails")
     };
   }
 
