@@ -388,7 +388,9 @@
       <input_port name="number_of_retries">Number of retries</input_port>
     </Control>
 
-    <Control ID="RoundRobin"/>
+    <Control ID="RoundRobin">
+      <input_port name="wrap_around" default="false">Enable wrap-around to first child after last child fails</input_port>
+    </Control>
 
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
