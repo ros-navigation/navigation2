@@ -13,10 +13,19 @@ on:
 jobs:
   claude-code-action:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+      ) && (
+        github.actor == 'SteveMacenski' ||
+        github.actor == 'tonynajjar' ||
+        github.actor == 'ruffsl' ||
+        github.actor == 'doisyg' ||
+        github.actor == 'padhupradheep'
+      )
+      
     runs-on: ubuntu-latest
     permissions:
       contents: read
