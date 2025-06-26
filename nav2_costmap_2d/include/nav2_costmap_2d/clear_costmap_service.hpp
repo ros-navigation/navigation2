@@ -22,6 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
+#include "nav2_msgs/srv/clear_costmap_around_pose.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -61,6 +62,11 @@ public:
   void clearRegion(double reset_distance, bool invert);
 
   /**
+   * @brief Clears the region around a specific pose
+   */
+  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance);
+
+  /**
    * @brief Clears all layers
    */
   void clearEntirely();
@@ -95,6 +101,16 @@ private:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Request> request,
     const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundRobot::Response> response);
+
+  nav2::ServiceServer<nav2_msgs::srv::ClearCostmapAroundPose>::SharedPtr
+    clear_around_pose_service_;
+  /**
+   * @brief Callback to clear costmap around a given pose
+   */
+  void clearAroundPoseCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundPose::Request> request,
+    const std::shared_ptr<nav2_msgs::srv::ClearCostmapAroundPose::Response> response);
 
   nav2::ServiceServer<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr
     clear_entire_service_;
