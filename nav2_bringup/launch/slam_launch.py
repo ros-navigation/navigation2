@@ -22,16 +22,16 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace, SetParameter, SetRemap
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import HasNodeParams, RewrittenYaml
+from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:
     # Input parameters declaration
     namespace = LaunchConfiguration('namespace')
     params_file = LaunchConfiguration('params_file')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
-    use_respawn = LaunchConfiguration('use_respawn')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
+    autostart = LaunchConfigAsBool('autostart')
+    use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
     # Variables

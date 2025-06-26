@@ -24,7 +24,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -39,14 +39,14 @@ def generate_launch_description() -> LaunchDescription:
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
-    autostart = LaunchConfiguration('autostart')
-    use_composition = LaunchConfiguration('use_composition')
-    use_respawn = LaunchConfiguration('use_respawn')
+    autostart = LaunchConfigAsBool('autostart')
+    use_composition = LaunchConfigAsBool('use_composition')
+    use_respawn = LaunchConfigAsBool('use_respawn')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
-    use_rviz = LaunchConfiguration('use_rviz')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_rviz = LaunchConfigAsBool('use_rviz')
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
