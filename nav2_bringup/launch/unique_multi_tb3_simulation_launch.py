@@ -33,6 +33,7 @@ from launch.conditions import IfCondition
 from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, TextSubstitution
+from nav2_common.launch import LaunchConfigAsBool
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -70,10 +71,10 @@ def generate_launch_description() -> LaunchDescription:
     map_yaml_file = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
 
-    autostart = LaunchConfiguration('autostart')
+    autostart = LaunchConfigAsBool('autostart')
     rviz_config_file = LaunchConfiguration('rviz_config')
-    use_robot_state_pub = LaunchConfiguration('use_robot_state_pub')
-    use_rviz = LaunchConfiguration('use_rviz')
+    use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
+    use_rviz = LaunchConfigAsBool('use_rviz')
     log_settings = LaunchConfiguration('log_settings', default='true')
 
     # Declare the launch arguments
