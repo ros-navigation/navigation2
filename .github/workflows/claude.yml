@@ -25,7 +25,7 @@ jobs:
         github.actor == 'doisyg' ||
         github.actor == 'padhupradheep'
       )
-      
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
