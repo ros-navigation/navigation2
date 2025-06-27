@@ -59,7 +59,7 @@ public:
     const std::string & node_name,
     const std::string & ns,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : rclcpp_lifecycle::LifecycleNode(node_name, ns, options)
+  : rclcpp_lifecycle::LifecycleNode(node_name, ns, options, getEnableLifecycleServices(options))
   {
     // server side never times out from lifecycle manager
     this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
@@ -395,6 +395,24 @@ protected:
   std::unique_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
+
+private:
+  /**
+   * @brief Get the enable_lifecycle_services parameter value from NodeOptions
+   * @param options NodeOptions to check for the parameter
+   * @return true if lifecycle services should be enabled, false otherwise
+   */
+  static bool getEnableLifecycleServices(const rclcpp::NodeOptions & options)
+  {
+    // Check if the parameter is explicitly set in NodeOptions
+    for (const auto & param : options.parameter_overrides()) {
+      if (param.get_name() == "enable_lifecycle_services") {
+        return param.as_bool();
+      }
+    }
+    // Default to true if not specified
+    return true;
+  }
 };
 
 }  // namespace nav2
