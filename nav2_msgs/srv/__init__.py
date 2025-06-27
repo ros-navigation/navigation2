@@ -1,3 +1,4 @@
+from nav2_msgs.srv._clear_costmap_around_pose import ClearCostmapAroundPose
 from nav2_msgs.srv._clear_costmap_around_robot import ClearCostmapAroundRobot
 from nav2_msgs.srv._clear_costmap_except_region import ClearCostmapExceptRegion
 from nav2_msgs.srv._clear_entire_costmap import ClearEntireCostmap
