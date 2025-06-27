@@ -13,6 +13,7 @@ from nav2_msgs.srv._set_initial_pose import SetInitialPose
 __all__ = [
     'ClearCostmapAroundRobot',
     'ClearCostmapExceptRegion',
+    'ClearCostmapAroundPose',
     'ClearEntireCostmap',
     'GetCostmap',
     'GetCosts',

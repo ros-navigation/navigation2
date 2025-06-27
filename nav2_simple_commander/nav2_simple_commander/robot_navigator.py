@@ -30,8 +30,8 @@ from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
                               NavigateThroughPoses, NavigateToPose, SmoothPath, Spin, UndockRobot)
 from nav2_msgs.msg import Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
-                           ClearCostmapExceptRegion, ClearEntireCostmap,
-                           GetCostmap, LoadMap, ManageLifecycleNodes)
+                           ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
+                           ManageLifecycleNodes)
 from nav_msgs.msg import Goals, OccupancyGrid, Path
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
