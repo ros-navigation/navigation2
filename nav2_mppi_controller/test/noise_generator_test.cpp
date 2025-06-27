@@ -28,6 +28,8 @@
 
 using namespace mppi;  // NOLINT
 
+static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
+
 TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
 {
   // Tests shuts down internal thread cleanly
@@ -200,6 +202,73 @@ ParametersHandler handler(node, name);
   EXPECT_EQ(state.cvx(0, 9), initial_cvx_9);
   EXPECT_EQ(state.cvy(0, 9), initial_cvy_9);  // Not populated in non-holonomic
   EXPECT_EQ(state.cwz(0, 9), initial_cwz_9);
+
+  generator.shutdown();
+}
+
+TEST(NoiseGeneratorTest, AdaptiveStds)
+{
+  // Tests shuts down internal thread cleanly
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  std::string name = "test";
+  ParametersHandler handler(node, name);
+  NoiseGenerator generator;
+  mppi::models::OptimizerSettings settings;
+  settings.batch_size = 100;
+  settings.time_steps = 25;
+  settings.sampling_std.vx = 0.1;
+  settings.sampling_std.vy = 0.1;
+  settings.sampling_std.wz = 0.1;
+
+  mppi::models::State state;
+  state.reset(settings.batch_size, settings.time_steps);
+
+  // Test with AdaptiveStd off (default behavior)
+  generator.initialize(settings, false, "test_name", &handler);
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+
+  // Enable AdaptiveStd but keep velocity == 0
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+
+  // Enable AdaptiveStd, non-holonomic with vx == 1.0 m/sec
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  state.speed.linear.x = 1.0f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
+
+  // Enable AdaptiveStd, holonomic with scalar velocity == 1.0 m/sec
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.05f;
+  state.speed.linear.x = 0.70710678118655f;
+  state.speed.linear.y = 0.70710678118655f;
+  generator.reset(settings, true);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
+
+  // Enable AdaptiveStd, with invalid input
+  settings.advanced_constraints.wz_std_decay_strength = 3.0f;
+  settings.advanced_constraints.wz_std_decay_to = 0.2f;  // > than wz_std
+  state.speed.linear.x = 1.0f;
+  generator.reset(settings, false);  // sets initial sizing and zeros out noises
+  generator.computeAdaptiveStds(state);
+  // expect wz_std == wz_std_adaptive as adaptive std will be automatically disabled
+  EXPECT_EQ(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive);
+  try {
+    settings.sampling_std.validateConstraints(settings.advanced_constraints, false);
+    FAIL() << "Expected to throw runtime error";
+  } catch (const std::runtime_error & e) {
+    EXPECT_TRUE(!std::string(e.what()).empty());
+  }
 
   generator.shutdown();
 }

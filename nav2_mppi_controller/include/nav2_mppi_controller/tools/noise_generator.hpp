@@ -57,6 +57,11 @@ public:
     bool is_holonomic, const std::string & name, ParametersHandler * param_handler);
 
   /**
+   * @brief Initialize normal_distributions to their SamplingStd parameterized values (vx, vy, wz)
+   */
+  void initializeNormalDistributions();
+
+  /**
    * @brief Shutdown noise generator thread
    */
   void shutdown();
@@ -66,6 +71,13 @@ public:
    * noised control for the next iteration
    */
   void generateNextNoises();
+
+  /**
+   * Computes adaptive values of the SamplingStd parameters and updates adaptive counterparts
+   * See also wz_std_decay_strength, wz_std_decay_to parameters for more information on how wz => wz_std_adaptive is computed
+   * @param state Current state of the robot
+   */
+  void computeAdaptiveStds(const models::State & state);
 
   /**
    * @brief set noised control_sequence to state controls
