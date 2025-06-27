@@ -94,6 +94,8 @@ struct LatticeMotionTable
    */
   float & getAngleFromBin(const unsigned int & bin_idx);
 
+  MotionModel motion_model = MotionModel::UNKNOWN; // Added here to walkaround build errors
+  float min_turning_radius;  // Added here to walkaround build errors
   unsigned int size_x;
   unsigned int num_angle_quantization;
   float change_penalty;
@@ -312,8 +314,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates,
-    const nav2_costmap_2d::Costmap2D * costmap);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize motion models
@@ -407,8 +408,8 @@ public:
   bool backtracePath(CoordinateVector & path);
 
   /**
-   * \brief add node to the path
-   * \param current_node
+   * @brief add node to the path
+   * @param current_node
    */
   void addNodeToPath(NodePtr current_node, CoordinateVector & path);
 

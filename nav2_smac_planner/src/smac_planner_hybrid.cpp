@@ -136,7 +136,25 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
+
+  std::string goal_heading_type;
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
+  node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+  _goal_heading_mode = fromStringToGH(goal_heading_type);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(1));
+  node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
+
+  if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+    std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
+      "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ";
+    throw std::runtime_error(error_msg);
+  }
+
   _motion_model = fromString(_motion_model_for_search);
+
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
       _logger,
@@ -290,8 +308,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  unsigned int mx, my;
-  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)) {
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
     throw std::runtime_error("Start pose is out of costmap!");
   }
   double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
@@ -303,25 +321,22 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  _a_star->setStart(mx_start, my_start, orientation_bin_id);
 
   // Set goal point, in A* bin search coordinates
-  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
     throw std::runtime_error("Goal pose is out of costmap!");
   }
-  // Removed the orientation bin calculation for the goal pose as we use the start poit orientation for that
-  // orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  // while (orientation_bin < 0.0) {
-  //   orientation_bin += static_cast<float>(_angle_quantizations);
-  // }
-  // // This is needed to handle precision issues
-  // if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-  //   orientation_bin -= static_cast<float>(_angle_quantizations);
-  // }
-  // orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-
-  // Using the starting point orientation as the goal orientation to plan for easiest solution 
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  orientation_bin = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
+  while (orientation_bin < 0.0) {
+    orientation_bin += static_cast<float>(_angle_quantizations);
+  }
+  // This is needed to handle precision issues
+  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin -= static_cast<float>(_angle_quantizations);
+  }
+  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
+    _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -496,6 +511,31 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         int angle_quantizations = parameter.as_int();
         _angle_bin_size = 2.0 * M_PI / angle_quantizations;
         _angle_quantizations = static_cast<unsigned int>(angle_quantizations);
+
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the "
+            "number of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+      } else if (name == _name + ".coarse_search_resolution") {
+        _coarse_search_resolution = parameter.as_int();
+        if (_coarse_search_resolution <= 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration resolution selected as <= 0. "
+            "Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+        if (_angle_quantizations % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger,
+              "coarse iteration should be an increment of the "
+              "number of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
       }
     } else if (type == ParameterType::PARAMETER_STRING) {
       if (name == _name + ".motion_model_for_search") {
@@ -507,6 +547,22 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
             "Unable to get MotionModel search type. Given '%s', "
             "valid options are MOORE, VON_NEUMANN, DUBIN, REEDS_SHEPP.",
             _motion_model_for_search.c_str());
+        }
+      } else if (name == _name + ".goal_heading_mode") {
+        std::string goal_heading_type = parameter.as_string();
+        GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
+        RCLCPP_INFO(
+          _logger,
+          "GoalHeadingMode type set to '%s'.",
+          goal_heading_type.c_str());
+        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s', "
+            "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
+            goal_heading_type.c_str());
+        } else {
+          _goal_heading_mode = goal_heading_mode;
         }
       }
     }

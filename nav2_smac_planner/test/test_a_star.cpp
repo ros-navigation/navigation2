@@ -111,7 +111,6 @@ TEST(AStarTest, test_a_star_2d)
   }
 
   EXPECT_TRUE(a_star_2.getStart() != nullptr);
-  EXPECT_TRUE(a_star_2.getGoal() != nullptr);
   EXPECT_EQ(a_star_2.getSizeX(), 100u);
   EXPECT_EQ(a_star_2.getSizeY(), 100u);
   EXPECT_EQ(a_star_2.getSizeDim3(), 1u);

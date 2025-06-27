@@ -118,6 +118,8 @@ protected:
   double _minimum_turning_radius_global_coords;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;

@@ -111,6 +111,8 @@ protected:
   rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   double _lookup_table_size;
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
   std::mutex _mutex;
   rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
 

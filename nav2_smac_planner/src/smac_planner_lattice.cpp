@@ -127,6 +127,22 @@ void SmacPlannerLattice::configure(
     node, name + ".allow_reverse_expansion", rclcpp::ParameterValue(false));
   node->get_parameter(name + ".allow_reverse_expansion", _search_info.allow_reverse_expansion);
 
+  std::string goal_heading_type;
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".goal_heading_mode", rclcpp::ParameterValue("DEFAULT"));
+  node->get_parameter(name + ".goal_heading_mode", goal_heading_type);
+  _goal_heading_mode = fromStringToGH(goal_heading_type);
+
+  nav2_util::declare_parameter_if_not_declared(
+    node, name + ".coarse_search_resolution", rclcpp::ParameterValue(1));
+  node->get_parameter(name + ".coarse_search_resolution", _coarse_search_resolution);
+
+  if (_goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+    std::string error_msg = "Unable to get GoalHeader type. Given '" + goal_heading_type + "' "
+      "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ";
+    throw std::runtime_error(error_msg);
+  }
+
   _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
   _search_info.minimum_turning_radius =
     _metadata.min_turning_radius / (_costmap->getResolution());
@@ -144,6 +160,20 @@ void SmacPlannerLattice::configure(
       _logger, "maximum iteration selected as <= 0, "
       "disabling maximum iterations.");
     _max_iterations = std::numeric_limits<int>::max();
+  }
+
+  if (_coarse_search_resolution <= 0) {
+    RCLCPP_WARN(
+      _logger, "coarse iteration resolution selected as <= 0, "
+      "disabling coarse iteration resolution search for goal heading"
+    );
+    _coarse_search_resolution = 1;
+  }
+
+  if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
+    std::string error_msg = "coarse iteration should be an increment of"
+      " the number of angular bins configured";
+    throw std::runtime_error(error_msg);
   }
 
   float lookup_table_dim =
@@ -250,17 +280,18 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  unsigned int mx, my;
-  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
   _a_star->setStart(
-    mx, my,
+    mx_start, my_start,
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
 
   // Set goal point, in A* bin search coordinates
-  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
   _a_star->setGoal(
-    mx, my,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
+    mx_goal, my_goal,
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)),
+      _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -423,6 +454,32 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
             "disabling maximum iterations.");
           _max_iterations = std::numeric_limits<int>::max();
         }
+      } else if (name == _name + ".max_on_approach_iterations") {
+        reinit_a_star = true;
+        _max_on_approach_iterations = parameter.as_int();
+        if (_max_on_approach_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "On approach iteration selected as <= 0, "
+            "disabling tolerance and on approach iterations.");
+          _max_on_approach_iterations = std::numeric_limits<int>::max();
+        }
+      } else if (name == _name + ".coarse_search_resolution") {
+        _coarse_search_resolution = parameter.as_int();
+        if (_coarse_search_resolution <= 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration resolution selected as <= 0. "
+            "Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+        if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger,
+              "coarse iteration should be an increment of the number<"
+              " of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
       }
     } else if (name == _name + ".max_on_approach_iterations") {
       reinit_a_star = true;
@@ -443,6 +500,29 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =
           _metadata.min_turning_radius / (_costmap->getResolution());
+        if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
+          RCLCPP_WARN(
+            _logger, "coarse iteration should be an increment of the number "
+            "of angular bins configured. Disabling course research!"
+          );
+          _coarse_search_resolution = 1;
+        }
+      } else if (name == _name + ".goal_heading_mode") {
+        std::string goal_heading_type = parameter.as_string();
+        GoalHeadingMode goal_heading_mode = fromStringToGH(goal_heading_type);
+        RCLCPP_INFO(
+          _logger,
+          "GoalHeadingMode type set to '%s'.",
+          goal_heading_type.c_str());
+        if (goal_heading_mode == GoalHeadingMode::UNKNOWN) {
+          RCLCPP_WARN(
+            _logger,
+            "Unable to get GoalHeader type. Given '%s', "
+            "Valid options are DEFAULT, BIDIRECTIONAL, ALL_DIRECTION. ",
+            goal_heading_type.c_str());
+        } else {
+          _goal_heading_mode = goal_heading_mode;
+        }
       }
     }
   }
