@@ -49,6 +49,11 @@ BT::NodeStatus RoundRobinNode::tick()
         if (wrap_around_) {
           current_child_idx_ = 0;
         } else {
+          if (child_status == BT::NodeStatus::SKIPPED) {
+            num_skipped_children++;
+          } else if (child_status == BT::NodeStatus::FAILURE) {
+            num_failed_children_++;
+          }
           // Exit early if wrap around is disabled and we've reached the end
           break;
         }
