@@ -1,0 +1,6 @@
+# Clears the costmap within a distance around a given pose
+
+geometry_msgs/PoseStamped pose
+float64 reset_distance
+---
+std_msgs/Empty response

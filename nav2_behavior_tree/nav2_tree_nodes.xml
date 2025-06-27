@@ -81,6 +81,13 @@
       <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
     </Action>
 
+    <Action ID="ClearCostmapAroundPose">
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="pose">Pose around which to clear the costmap</input_port>
+      <input_port name="reset_distance">Distance from the pose under which obstacles are cleared</input_port>
+    </Action>
+
     <Action ID="ComputePathToPose">
       <input_port name="goal">Destination to plan to</input_port>
       <input_port name="start">Use as the planner start pose instead of the current robot pose, if use_start is not false (i.e. not provided or set to true)</input_port>
