@@ -29,8 +29,9 @@ from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
                               DriveOnHeading, FollowGPSWaypoints, FollowPath, FollowWaypoints,
                               NavigateThroughPoses, NavigateToPose, SmoothPath, Spin, UndockRobot)
 from nav2_msgs.msg import Route
-from nav2_msgs.srv import (ClearCostmapAroundRobot, ClearCostmapExceptRegion, ClearEntireCostmap,
-                           GetCostmap, LoadMap, ManageLifecycleNodes)
+from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
+                           ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
+                           ManageLifecycleNodes)
 from nav_msgs.msg import Goals, OccupancyGrid, Path
 import rclpy
 from rclpy.action import ActionClient  # type: ignore[attr-defined]
@@ -156,7 +157,23 @@ class BasicNavigator(Node):
         self.clear_costmap_around_robot_srv = self.create_client(
             ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
         )
+<<<<<<< HEAD
         self.get_costmap_global_srv = self.create_client(
+=======
+        self.clear_local_costmap_around_pose_srv: Client[
+            ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
+            self.create_client(
+            ClearCostmapAroundPose, 'local_costmap/clear_costmap_around_pose'
+        )
+        self.clear_global_costmap_around_pose_srv: Client[
+            ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
+            self.create_client(
+            ClearCostmapAroundPose, 'global_costmap/clear_costmap_around_pose'
+        )
+        self.get_costmap_global_srv: Client[
+            GetCostmap.Request, GetCostmap.Response] = \
+            self.create_client(
+>>>>>>> c0bf67e7 (Adding clear costmap around pose service option (#5309))
             GetCostmap, 'global_costmap/get_costmap'
         )
         self.get_costmap_local_srv = self.create_client(
@@ -995,6 +1012,28 @@ class BasicNavigator(Node):
         req = ClearCostmapAroundRobot.Request()
         req.reset_distance = reset_distance
         future = self.clear_costmap_around_robot_srv.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return
+
+    def clearLocalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
+        """Clear the costmap around a given pose."""
+        while not self.clear_local_costmap_around_pose_srv.wait_for_service(timeout_sec=1.0):
+            self.info('ClearLocalCostmapAroundPose service not available, waiting...')
+        req = ClearCostmapAroundPose.Request()
+        req.pose = pose
+        req.reset_distance = reset_distance
+        future = self.clear_local_costmap_around_pose_srv.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return
+
+    def clearGlobalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
+        """Clear the global costmap around a given pose."""
+        while not self.clear_global_costmap_around_pose_srv.wait_for_service(timeout_sec=1.0):
+            self.info('ClearGlobalCostmapAroundPose service not available, waiting...')
+        req = ClearCostmapAroundPose.Request()
+        req.pose = pose
+        req.reset_distance = reset_distance
+        future = self.clear_global_costmap_around_pose_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
         return
 
