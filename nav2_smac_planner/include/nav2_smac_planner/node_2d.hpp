@@ -234,7 +234,7 @@ public:
    * @brief Initialize the neighborhood to be used in A*
    * We support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
    * @param neighborhood The desired neighborhood type
-   * @param x_size_uint The total x size to find neighbors
+   * @param x_size_unsigned int The total x size to find neighbors
    * @param y_size The total y size to find neighbors
    * @param num_angle_quantization Number of quantizations, must be 0
    * @param search_info Search parameters, unused by 2D node

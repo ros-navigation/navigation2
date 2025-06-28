@@ -15,7 +15,9 @@ target_include_directories(pf_lib PRIVATE ../include)
 if(HAVE_DRAND48)
   target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
 endif()
-target_link_libraries(pf_lib m)
+if(NOT WIN32)
+  target_link_libraries(pf_lib m)
+endif()
 
 install(TARGETS
   pf_lib

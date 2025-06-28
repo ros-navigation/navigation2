@@ -278,7 +278,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveAccel)
   double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = 1.0;
   target_vel = 2.0;
@@ -306,7 +306,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToPositiveAccel)
   double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = 0.0;
   target_vel = 2.0;
@@ -335,7 +335,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToPositiveDecelAccel)
   double dv_accel = accel / 20.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_below_zero, steps_above_zero;
+  unsigned int steps_below_zero, steps_above_zero;
 
   init_vel = -1.0;
   target_vel = 2.0;
@@ -368,7 +368,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeAccel)
   double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = -1.0;
   target_vel = -2.0;
@@ -396,7 +396,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsZeroToNegativeAccel)
   double decel = -1.0;
   double dv_accel = accel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = 0.0;
   target_vel = -2.0;
@@ -425,7 +425,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToNegativeDecelAccel)
   double dv_accel = accel / 20.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_below_zero, steps_above_zero;
+  unsigned int steps_below_zero, steps_above_zero;
 
   init_vel = 1.0;
   target_vel = -2.0;
@@ -460,7 +460,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveDecel)
   double decel = -1.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = 2.0;
   target_vel = 1.0;
@@ -488,7 +488,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsPositiveToZeroDecel)
   double decel = -1.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = 2.0;
   target_vel = 0.0;
@@ -516,7 +516,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToNegativeDecel)
   double decel = -1.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = -2.0;
   target_vel = -1.0;
@@ -544,7 +544,7 @@ TEST(VelocitySmootherTest, testapplyConstraintsNegativeToZeroDecel)
   double decel = -1.0;
   double dv_decel = -decel / 20.0;
   double init_vel, target_vel, v_curr;
-  uint steps_to_target;
+  unsigned int steps_to_target;
 
   init_vel = -2.0;
   target_vel = 0.0;

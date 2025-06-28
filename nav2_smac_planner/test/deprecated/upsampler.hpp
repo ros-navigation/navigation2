@@ -158,7 +158,7 @@ public:
     // }
 
     // std::unique_ptr<ceres::Problem> problem = std::make_unique<ceres::Problem>();
-    // for (uint i = 1; i != path_double_sampled.size() - 1; i++) {
+    // for (unsigned int i = 1; i != path_double_sampled.size() - 1; i++) {
     //   ceres::CostFunction * cost_fn =
     //     new UpsamplerConstrainedCostFunction(path_double_sampled, params, 2, i);
     //   problem->AddResidualBlock(
@@ -178,7 +178,7 @@ public:
     //   }
 
     //   std::unique_ptr<ceres::Problem> problem2 = std::make_unique<ceres::Problem>();
-    //   for (uint i = 1; i != path_quad_sampled.size() - 1; i++) {
+    //   for (unsigned int i = 1; i != path_quad_sampled.size() - 1; i++) {
     //     ceres::CostFunction * cost_fn =
     //       new UpsamplerConstrainedCostFunction(path_quad_sampled, params, 4, i);
     //     problem2->AddResidualBlock(
