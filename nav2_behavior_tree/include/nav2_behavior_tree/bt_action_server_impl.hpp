@@ -125,21 +125,6 @@ template<class ActionT, class NodeT>
 BtActionServer<ActionT, NodeT>::~BtActionServer()
 {}
 
-void replaceOrAddArgument(
-  std::vector<std::string> & arguments, const std::string & option,
-  const std::string & arg_name, const std::string & new_argument)
-{
-  auto argument = std::find_if(arguments.begin(), arguments.end(),
-      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
-  if (argument != arguments.end()) {
-    *argument = new_argument;
-  } else {
-    arguments.push_back("--ros-args");
-    arguments.push_back(option);
-    arguments.push_back(new_argument);
-  }
-}
-
 template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::on_configure()
 {
@@ -154,7 +139,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
 
   auto new_arguments = node->get_node_options().arguments();
-  replaceOrAddArgument(new_arguments, "-r", "__node", std::string("__node:=") +
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", std::string("__node:=") +
     std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node");
   auto options = node->get_node_options();
   options = options.arguments(new_arguments);
