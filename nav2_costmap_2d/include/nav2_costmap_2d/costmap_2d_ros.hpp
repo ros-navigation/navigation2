@@ -433,15 +433,6 @@ protected:
 // free functions
 
 /**
-  * @brief Given a specified argument name, replaces it with the specified
-  * new value. If the argument is not in the existing list, a new argument
-  * is created with the specified option.
-  */
-void replaceOrAddArgument(
-  std::vector<std::string> & arguments, const std::string & option,
-  const std::string & arg_name, const std::string & new_argument);
-
-/**
   * @brief Given the node options of a parent node, expands of replaces
   *         the fields for the node name, namespace and use_sim_time
   */
