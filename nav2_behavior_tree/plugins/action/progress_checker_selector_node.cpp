@@ -45,14 +45,17 @@ void ProgressCheckerSelector::createROSInterfaces()
   getInput("topic_name", topic_new);
   if (topic_new != topic_name_ || !progress_checker_selector_sub_) {
     topic_name_ = topic_new;
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-
-    rclcpp::QoS qos(rclcpp::KeepLast(1));
-    qos.transient_local().reliable();
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     progress_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-      topic_name_, qos,
-        std::bind(&ProgressCheckerSelector::callbackProgressCheckerSelect, this, _1));
+      topic_name_,
+      std::bind(&ProgressCheckerSelector::callbackProgressCheckerSelect, this, _1),
+      nav2::qos::LatchedSubscriptionQoS(),
+      callback_group_);
   }
 }
 
@@ -62,7 +65,7 @@ BT::NodeStatus ProgressCheckerSelector::tick()
     initialize();
   }
 
-  rclcpp::spin_some(node_);
+  callback_group_executor_.spin_some();
 
   // This behavior always use the last selected progress checker received from the topic input.
   // When no input is specified it uses the default goaprogressl checker.

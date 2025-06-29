@@ -100,7 +100,7 @@ protected:
 
   // subscribers
   std::unique_ptr<nav2_util::TwistSubscriber> vel_sub_;
-  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr preempt_teleop_sub_;
+  nav2::Subscription<std_msgs::msg::Empty>::SharedPtr preempt_teleop_sub_;
 
   rclcpp::Duration command_time_allowance_{0, 0};
   rclcpp::Time end_time_;

@@ -7,4 +7,11 @@ target_link_libraries(dummy_controller_node PRIVATE
   nav2_behavior_tree::nav2_behavior_tree
   nav2_util::nav2_util_core
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(dummy_controller_node
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )

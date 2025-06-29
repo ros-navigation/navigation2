@@ -30,7 +30,7 @@ public:
 
 TEST(DynParamTestNode, testDynParamsSet)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("dyn_param_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("dyn_param_tester");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
   costmap->on_configure(rclcpp_lifecycle::State());
 

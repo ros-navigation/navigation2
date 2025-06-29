@@ -18,7 +18,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/controller.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "tf2/utils.hpp"
 
@@ -26,48 +26,48 @@ namespace opennav_docking
 {
 
 Controller::Controller(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf,
+  const nav2::LifecycleNode::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf,
   std::string fixed_frame, std::string base_frame)
 : tf2_buffer_(tf), fixed_frame_(fixed_frame), base_frame_(base_frame)
 {
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.k_phi", rclcpp::ParameterValue(3.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.k_delta", rclcpp::ParameterValue(2.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.beta", rclcpp::ParameterValue(0.4));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.lambda", rclcpp::ParameterValue(2.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.v_linear_min", rclcpp::ParameterValue(0.1));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.v_linear_max", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.v_angular_max", rclcpp::ParameterValue(0.75));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.costmap_topic",
     rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.footprint_topic", rclcpp::ParameterValue(
       std::string("local_costmap/published_footprint")));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.transform_tolerance", rclcpp::ParameterValue(0.1));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.projection_time", rclcpp::ParameterValue(5.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
 
   node->get_parameter("controller.k_phi", k_phi_);
@@ -104,7 +104,7 @@ Controller::Controller(
     rotate_to_heading_max_angular_accel_);
 
   trajectory_pub_ =
-    node->create_publisher<nav_msgs::msg::Path>("docking_trajectory", 1);
+    node->create_publisher<nav_msgs::msg::Path>("docking_trajectory");
 }
 
 Controller::~Controller()
@@ -224,7 +224,7 @@ bool Controller::isTrajectoryCollisionFree(
 }
 
 void Controller::configureCollisionChecker(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   std::string costmap_topic, std::string footprint_topic, double transform_tolerance)
 {
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);

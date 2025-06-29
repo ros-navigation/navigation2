@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.hpp"
@@ -54,7 +54,7 @@ public:
   ~SavitzkyGolaySmoother() override = default;
 
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
+    const nav2::LifecycleNode::WeakPtr &,
     std::string name, std::shared_ptr<tf2_ros::Buffer>,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) override;

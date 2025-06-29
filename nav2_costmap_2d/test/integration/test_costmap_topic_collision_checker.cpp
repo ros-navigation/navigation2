@@ -27,7 +27,7 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -47,7 +47,7 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {}
@@ -68,7 +68,7 @@ class DummyFootprintSubscriber : public nav2_costmap_2d::FootprintSubscriber
 {
 public:
   DummyFootprintSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name,
     tf2_ros::Buffer & tf)
   : FootprintSubscriber(node, topic_name, tf)
@@ -81,7 +81,7 @@ public:
   }
 };
 
-class TestCollisionChecker : public nav2_util::LifecycleNode
+class TestCollisionChecker : public nav2::LifecycleNode
 {
 public:
   explicit TestCollisionChecker(std::string name)
@@ -99,7 +99,7 @@ public:
     declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Configuring");
@@ -143,25 +143,25 @@ public:
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_callback_group(callback_group_, get_node_base_interface());
-    executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
-    return nav2_util::CallbackReturn::SUCCESS;
+    executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Activating");
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Deactivating");
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Cleaning Up");
@@ -174,7 +174,7 @@ public:
     footprint_sub_.reset();
     costmap_sub_.reset();
 
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
   ~TestCollisionChecker() {}
@@ -284,7 +284,7 @@ protected:
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+  std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;

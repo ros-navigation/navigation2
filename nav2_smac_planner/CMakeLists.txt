@@ -19,6 +19,7 @@ find_package(rcl_interfaces REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -42,11 +43,20 @@ add_library(${library_name}_common SHARED
   src/node_lattice.cpp
   src/smoother.cpp
 )
+# Add GenerateExportHeader support for symbol visibility, as we are using
+# static members we need to explicitly export them on Windows, as
+# CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS does not work with static members.
+include(GenerateExportHeader)
+generate_export_header(${library_name}_common
+  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}/${library_name}_common_visibility_control.hpp"
+)
 target_include_directories(${library_name}_common
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_common PUBLIC
   ${geometry_msgs_TARGETS}
@@ -74,6 +84,7 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${library_name}_common
@@ -103,6 +114,7 @@ target_include_directories(${library_name}_2d
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_2d PUBLIC
   ${library_name}_common
@@ -132,6 +144,7 @@ target_include_directories(${library_name}_lattice
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name}_lattice PUBLIC
   ${library_name}_common
@@ -167,6 +180,10 @@ install(TARGETS ${library_name}_common ${library_name} ${library_name}_2d ${libr
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}/${library_name}_common_visibility_control.hpp"
+  DESTINATION include/${PROJECT_NAME}
+)
 
 install(DIRECTORY lattice_primitives/sample_primitives DESTINATION share/${PROJECT_NAME})
 
@@ -192,6 +209,7 @@ ament_export_dependencies(
   rclcpp_lifecycle
   rcl_interfaces
   tf2
+  nav2_ros_common
   tf2_ros
   visualization_msgs
 )

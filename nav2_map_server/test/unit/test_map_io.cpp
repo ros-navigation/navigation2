@@ -43,7 +43,7 @@
 #include "yaml-cpp/yaml.h"
 #include "nav2_map_server/map_io.hpp"
 #include "nav2_map_server/map_server.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "test_constants/test_constants.h"
 
 #define TEST_DIR TEST_DIRECTORY

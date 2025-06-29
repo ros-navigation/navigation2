@@ -86,7 +86,8 @@ SpeedControllerTestFixture::dummy_node_ = nullptr;
  */
 TEST_F(SpeedControllerTestFixture, test_behavior)
 {
-  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
+  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>("odom");
+  odom_pub->on_activate();
   nav_msgs::msg::Odometry odom_msg;
 
   auto time = node_->now();

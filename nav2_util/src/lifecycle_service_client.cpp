@@ -21,7 +21,7 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 #include "lifecycle_msgs/srv/get_state.hpp"
 
-using nav2_util::generate_internal_node;
+using nav2::generate_internal_node;
 using std::chrono::milliseconds;
 using std::make_shared;
 using std::string;
@@ -33,24 +33,6 @@ namespace nav2_util
 LifecycleServiceClient::LifecycleServiceClient(
   const string & lifecycle_node_name)
 : node_(generate_internal_node(lifecycle_node_name + "_lifecycle_client")),
-  change_state_(lifecycle_node_name + "/change_state", node_,
-    true /*creates and spins an internal executor*/),
-  get_state_(lifecycle_node_name + "/get_state", node_,
-    true /*creates and spins an internal executor*/)
-{
-  // Block until server is up
-  rclcpp::Rate r(20);
-  while (!get_state_.wait_for_service(2s)) {
-    RCLCPP_INFO(
-      node_->get_logger(), "Waiting for service %s...", get_state_.getServiceName().c_str());
-    r.sleep();
-  }
-}
-
-LifecycleServiceClient::LifecycleServiceClient(
-  const string & lifecycle_node_name,
-  rclcpp::Node::SharedPtr parent_node)
-: node_(parent_node),
   change_state_(lifecycle_node_name + "/change_state", node_,
     true /*creates and spins an internal executor*/),
   get_state_(lifecycle_node_name + "/get_state", node_,

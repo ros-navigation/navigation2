@@ -18,12 +18,12 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 
 TEST(CostmapDownsampler, costmap_downsample_test)
 {
-  nav2_util::LifecycleNode::SharedPtr node = std::make_shared<nav2_util::LifecycleNode>(
+  nav2::LifecycleNode::SharedPtr node = std::make_shared<nav2::LifecycleNode>(
     "CostmapDownsamplerTest");
   nav2_smac_planner::CostmapDownsampler downsampler;
 

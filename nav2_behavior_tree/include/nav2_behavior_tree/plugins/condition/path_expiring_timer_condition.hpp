@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/path.hpp"
@@ -67,7 +67,7 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
   nav_msgs::msg::Path prev_path_;
   double period_;

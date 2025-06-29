@@ -20,7 +20,7 @@
 #include <vector>
 #include <nanoflann.hpp>
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 

@@ -23,7 +23,7 @@ namespace nav2_bt_navigator
 
 bool
 NavigateToPoseNavigator::configure(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+  nav2::LifecycleNode::WeakPtr parent_node,
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
@@ -44,11 +44,10 @@ NavigateToPoseNavigator::configure(
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
-  self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
+  self_client_ = node->create_action_client<ActionT>(getName());
 
   goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
     std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
   if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
@@ -68,7 +67,7 @@ NavigateToPoseNavigator::configure(
 
 std::string
 NavigateToPoseNavigator::getDefaultBTFilepath(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+  nav2::LifecycleNode::WeakPtr parent_node)
 {
   std::string default_bt_xml_filename;
   auto node = parent_node.lock();

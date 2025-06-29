@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -28,7 +29,8 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
   behaviortree_cpp::behaviortree_cpp
@@ -42,6 +44,7 @@ target_link_libraries(${library_name} PUBLIC
   ${sensor_msgs_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
@@ -246,7 +249,8 @@ foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
   target_link_libraries(${bt_plugin} PUBLIC
     behaviortree_cpp::behaviortree_cpp
     ${geometry_msgs_TARGETS}
@@ -261,6 +265,7 @@ foreach(bt_plugin ${plugin_libs})
     tf2_ros::tf2_ros
     ${std_msgs_TARGETS}
     ${std_srvs_TARGETS}
+    nav2_ros_common::nav2_ros_common
   )
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
@@ -282,7 +287,7 @@ target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
   nav2_util::nav2_util_core
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
-target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
+target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR} "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
@@ -328,6 +333,7 @@ ament_export_dependencies(
   std_srvs
   tf2
   tf2_ros
+  nav2_ros_common
 )
 ament_export_targets(${library_name})
 

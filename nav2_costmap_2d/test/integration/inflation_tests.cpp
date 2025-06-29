@@ -45,7 +45,7 @@
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "../testing_helper.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 using geometry_msgs::msg::Point;
@@ -74,7 +74,7 @@ public:
   void waitForMap(std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer);
 
 protected:
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 std::vector<Point> TestNode::setRadii(
@@ -171,7 +171,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   auto options = rclcpp::NodeOptions();
   options.parameter_overrides(parameters);
 
-  node_ = std::make_shared<nav2_util::LifecycleNode>(
+  node_ = std::make_shared<nav2::LifecycleNode>(
     "inflation_test_node", "", options);
 
   // Declare non-plugin specific costmap parameters

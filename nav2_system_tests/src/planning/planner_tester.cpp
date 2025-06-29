@@ -38,7 +38,7 @@ namespace nav2_system_tests
 {
 
 PlannerTester::PlannerTester()
-: Node("PlannerTester"), is_active_(false),
+: nav2::LifecycleNode("PlannerTester"), is_active_(false),
   map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
@@ -56,7 +56,7 @@ void PlannerTester::activate()
   is_active_ = true;
 
   // Launch a thread to process the messages for this node
-  spin_thread_ = std::make_unique<nav2_util::NodeThread>(this);
+  spin_thread_ = std::make_unique<nav2::NodeThread>(this);
 
   // We start with a 10x10 grid with no obstacles
   costmap_ = std::make_unique<Costmap>(this);
@@ -75,7 +75,8 @@ void PlannerTester::activate()
     rclcpp::Parameter(std::string("expected_planner_frequency"), rclcpp::ParameterValue(-1.0)));
   planner_tester_->onConfigure(state);
   publishRobotTransform();
-  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map", 1);
+  map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("map");
+  map_pub_->on_activate();
   path_valid_client_ = this->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
   rclcpp::Rate r(1);
   r.sleep();
@@ -407,7 +408,7 @@ bool PlannerTester::isPathValid(
   request->path = path;
   request->max_cost = max_cost;
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle;
-  auto result = path_valid_client_->async_send_request(request);
+  auto result = path_valid_client_->async_call(request);
 
   RCLCPP_INFO(this->get_logger(), "Waiting for service complete");
   if (rclcpp::spin_until_future_complete(

@@ -15,7 +15,6 @@
 #include "nav2_rviz_plugins/route_tool.hpp"
 #include <QDesktopServices>
 #include <QUrl>
-#include <unistd.h>
 #include <sys/types.h>
 #include <QFileDialog>
 #include "rviz_common/display_context.hpp"
@@ -29,7 +28,7 @@ RouteTool::RouteTool(QWidget * parent)
 {
   // Extend the widget with all attributes and children from UI file
   ui_->setupUi(this);
-  node_ = std::make_shared<nav2_util::LifecycleNode>("route_tool_node", "", rclcpp::NodeOptions());
+  node_ = std::make_shared<nav2::LifecycleNode>("route_tool_node", "", rclcpp::NodeOptions());
   node_->configure();
   graph_vis_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());

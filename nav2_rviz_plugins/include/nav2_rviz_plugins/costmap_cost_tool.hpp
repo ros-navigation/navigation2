@@ -23,7 +23,7 @@
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/qos_profile_property.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "nav2_util/service_client.hpp"
+#include "nav2_ros_common/service_client.hpp"
 
 namespace nav2_rviz_plugins
 {
@@ -49,8 +49,8 @@ public:
 private Q_SLOTS:
 
 private:
-  nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
-  nav2_util::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
+  nav2::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr local_cost_client_;
+  nav2::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr global_cost_client_;
   // The Node pointer that we need to keep alive for the duration of this plugin.
   std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
 

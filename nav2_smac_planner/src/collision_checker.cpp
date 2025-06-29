@@ -20,7 +20,7 @@ namespace nav2_smac_planner
 GridCollisionChecker::GridCollisionChecker(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   unsigned int num_quantizations,
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+  nav2::LifecycleNode::SharedPtr node)
 : FootprintCollisionChecker(costmap_ros ? costmap_ros->getCostmap() : nullptr)
 {
   if (node) {

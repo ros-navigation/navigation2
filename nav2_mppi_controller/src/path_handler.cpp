@@ -22,7 +22,7 @@ namespace mppi
 {
 
 void PathHandler::initialize(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+  nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
   std::shared_ptr<tf2_ros::Buffer> buffer, ParametersHandler * param_handler)
 {

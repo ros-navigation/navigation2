@@ -27,7 +27,7 @@
 #include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -75,7 +75,7 @@ private:
 
   double viapoint_achieved_radius_;
   double transform_tolerance_;
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string robot_base_frame_;
 };

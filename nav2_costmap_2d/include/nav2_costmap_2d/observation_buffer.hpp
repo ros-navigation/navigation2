@@ -47,7 +47,7 @@
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_costmap_2d/observation.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 
 namespace nav2_costmap_2d
@@ -76,7 +76,7 @@ public:
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
   ObservationBuffer(
-    const nav2_util::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string topic_name,
     double observation_keep_time,
     double expected_update_rate,

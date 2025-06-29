@@ -39,24 +39,24 @@
 #include <string>
 
 #include "nav_2d_utils/parameters.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace dwb_plugins
 {
 void XYThetaIterator::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   KinematicsHandler::Ptr kinematics,
   const std::string & plugin_name)
 {
   kinematics_handler_ = kinematics;
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".vx_samples", rclcpp::ParameterValue(20));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".vy_samples", rclcpp::ParameterValue(5));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".vtheta_samples", rclcpp::ParameterValue(20));
 

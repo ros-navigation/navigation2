@@ -41,7 +41,7 @@ public:
 
 TEST(SimpleNonChargingDockTests, ObjectLifecycle)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
@@ -61,7 +61,7 @@ TEST(SimpleNonChargingDockTests, ObjectLifecycle)
 
 TEST(SimpleNonChargingDockTests, StallDetection)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto pub = node->create_publisher<sensor_msgs::msg::JointState>(
     "joint_states", rclcpp::QoS(1));
   pub->on_activate();
@@ -130,7 +130,7 @@ TEST(SimpleNonChargingDockTests, StallDetection)
 
 TEST(SimpleNonChargingDockTests, StagingPose)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -159,7 +159,7 @@ TEST(SimpleNonChargingDockTests, StagingPoseWithYawOffset)
     }
   );
 
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test", options);
+  auto node = std::make_shared<nav2::LifecycleNode>("test", "", options);
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -181,7 +181,7 @@ TEST(SimpleNonChargingDockTests, StagingPoseWithYawOffset)
 
 TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -217,7 +217,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 
 TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -254,7 +254,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
 
 TEST(SimpleNonChargingDockTests, IsDockedTransformException)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -298,7 +298,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
 
 TEST(SimpleNonChargingDockTests, GetDockDirection)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
@@ -326,7 +326,7 @@ TEST(SimpleNonChargingDockTests, GetDockDirection)
 
 TEST(SimpleChargingDockTests, ShouldRotateToDock)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
 
   // Case 1: Direction to BACKWARD and rotate_to_dock to true
   node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward"));

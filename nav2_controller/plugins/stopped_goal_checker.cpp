@@ -39,7 +39,7 @@
 #include <vector>
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 using std::hypot;
 using std::fabs;
@@ -56,7 +56,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 }
 
 void StoppedGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -65,10 +65,10 @@ void StoppedGoalChecker::initialize(
 
   auto node = parent.lock();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
 

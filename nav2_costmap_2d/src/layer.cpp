@@ -31,7 +31,7 @@
 
 #include <string>
 #include <vector>
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -49,7 +49,7 @@ Layer::initialize(
   LayeredCostmap * parent,
   std::string name,
   tf2_ros::Buffer * tf,
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   rclcpp::CallbackGroup::SharedPtr callback_group)
 {
   layered_costmap_ = parent;
@@ -82,7 +82,7 @@ Layer::declareParameter(
     throw std::runtime_error{"Failed to lock node"};
   }
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, getFullName(param_name), value);
 }
 
@@ -96,7 +96,7 @@ Layer::declareParameter(
     throw std::runtime_error{"Failed to lock node"};
   }
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, getFullName(param_name), param_type);
 }
 

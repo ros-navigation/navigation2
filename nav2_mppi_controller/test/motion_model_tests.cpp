@@ -126,7 +126,7 @@ TEST(MotionModelTests, AckermannTest)
   int timesteps = 50;
   control_sequence.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   std::unique_ptr<AckermannMotionModel> model =
@@ -185,7 +185,7 @@ TEST(MotionModelTests, AckermannReversingTest)
   control_sequence.reset(timesteps);  // populates with zeros
   control_sequence2.reset(timesteps);  // populates with zeros
   state.reset(batches, timesteps);  // populates with zeros
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   std::unique_ptr<AckermannMotionModel> model =

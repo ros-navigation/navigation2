@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_UTIL__NODE_THREAD_HPP_
-#define NAV2_UTIL__NODE_THREAD_HPP_
+#ifndef NAV2_ROS_COMMON__NODE_THREAD_HPP_
+#define NAV2_ROS_COMMON__NODE_THREAD_HPP_
 
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav2_util
+namespace nav2
 {
 /**
- * @class nav2_util::NodeThread
+ * @class nav2::NodeThread
  * @brief A background thread to process node/executor callbacks
  */
 class NodeThread
@@ -33,14 +33,32 @@ public:
    * @param node_base Interface to Node to spin in thread
    */
   explicit NodeThread(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base);
+    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base)
+  : node_(node_base)
+  {
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    thread_ = std::make_unique<std::thread>(
+      [&]()
+      {
+        executor_->add_node(node_);
+        executor_->spin();
+        executor_->remove_node(node_);
+      });
+  }
 
   /**
    * @brief A background thread to process executor's callbacks constructor
    * @param executor Interface to executor to spin in thread
    */
   explicit NodeThread(
-    rclcpp::executors::SingleThreadedExecutor::SharedPtr executor);
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr executor)
+  : executor_(executor)
+  {
+    thread_ = std::make_unique<std::thread>(
+      [&]() {
+        executor_->spin();
+      });
+  }
 
   /**
    * @brief A background thread to process node callbacks constructor
@@ -54,7 +72,11 @@ public:
   /**
    * @brief A destructor
    */
-  ~NodeThread();
+  ~NodeThread()
+  {
+    executor_->cancel();
+    thread_->join();
+  }
 
 protected:
   rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_;
@@ -62,6 +84,6 @@ protected:
   rclcpp::Executor::SharedPtr executor_;
 };
 
-}  // namespace nav2_util
+}  // namespace nav2
 
-#endif  // NAV2_UTIL__NODE_THREAD_HPP_
+#endif  // NAV2_ROS_COMMON__NODE_THREAD_HPP_

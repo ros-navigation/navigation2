@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
@@ -67,7 +67,7 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
   double period_;
 };

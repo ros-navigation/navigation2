@@ -20,7 +20,9 @@
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 #include "nav2_msgs/srv/clear_costmap_around_robot.hpp"
+#include "nav2_msgs/srv/clear_costmap_around_pose.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -124,6 +126,47 @@ public:
         BT::InputPort<double>(
           "reset_distance", 1,
           "Distance from the robot under which obstacles are cleared")
+      });
+  }
+};
+
+/**
+ * @brief A nav2_behavior_tree::BtServiceNode class that
+ * wraps nav2_msgs::srv::ClearCostmapAroundPose
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
+ */
+class ClearCostmapAroundPoseService : public BtServiceNode<nav2_msgs::srv::ClearCostmapAroundPose>
+{
+public:
+  /**
+   * @brief A constructor for nav2_behavior_tree::ClearCostmapAroundPoseService
+   * @param service_node_name Service name this node creates a client for
+   * @param conf BT node configuration
+   */
+  ClearCostmapAroundPoseService(
+    const std::string & service_node_name,
+    const BT::NodeConfiguration & conf);
+
+  /**
+   * @brief The main override required by a BT service
+   * @return BT::NodeStatus Status of tick execution
+   */
+  void on_tick() override;
+
+  /**
+   * @brief Creates list of BT ports
+   * @return BT::PortsList Containing basic ports along with node-specific ports
+   */
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts(
+      {
+        BT::InputPort<geometry_msgs::msg::PoseStamped>(
+          "pose", "Pose around which to clear the costmap"),
+        BT::InputPort<double>(
+          "reset_distance", 1.0,
+          "Distance from the pose under which obstacles are cleared")
       });
   }
 };

@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "tf2_ros/buffer.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -79,7 +79,7 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   double transform_tolerance_;
   std::string global_frame_;

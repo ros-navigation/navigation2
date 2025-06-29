@@ -18,7 +18,7 @@ namespace nav2_route
 {
 
 void RouteTracker::configure(
-  nav2_util::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   std::shared_ptr<ActionServerTrack> action_server,
@@ -32,16 +32,16 @@ void RouteTracker::configure(
   action_server_ = action_server;
   tf_buffer_ = tf_buffer;
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "radius_to_achieve_node", rclcpp::ParameterValue(2.0));
   radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "boundary_radius_to_achieve_node", rclcpp::ParameterValue(1.0));
   boundary_radius_threshold_ = node->get_parameter("boundary_radius_to_achieve_node").as_double();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
   tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));
   aggregate_blocked_ids_ = node->get_parameter("aggregate_blocked_ids").as_bool();
 

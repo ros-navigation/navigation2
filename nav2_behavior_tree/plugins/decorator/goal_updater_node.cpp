@@ -48,7 +48,7 @@ void GoalUpdater::initialize()
 
 void GoalUpdater::createROSInterfaces()
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   callback_group_ = node_->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
@@ -63,23 +63,19 @@ void GoalUpdater::createROSInterfaces()
   // Only create a new subscriber if the topic has changed or subscriber is empty
   if (goal_updater_topic_new != goal_updater_topic_ || !goal_sub_) {
     goal_updater_topic_ = goal_updater_topic_new;
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
     goal_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       goal_updater_topic_,
-      rclcpp::SystemDefaultsQoS(),
       std::bind(&GoalUpdater::callback_updated_goal, this, _1),
-      sub_option);
+      nav2::qos::StandardTopicQoS(),
+      callback_group_);
   }
   if (goals_updater_topic_new != goals_updater_topic_ || !goals_sub_) {
     goals_updater_topic_ = goals_updater_topic_new;
-    rclcpp::SubscriptionOptions sub_option;
-    sub_option.callback_group = callback_group_;
     goals_sub_ = node_->create_subscription<nav_msgs::msg::Goals>(
       goals_updater_topic_,
-      rclcpp::SystemDefaultsQoS(),
       std::bind(&GoalUpdater::callback_updated_goals, this, _1),
-      sub_option);
+      nav2::qos::StandardTopicQoS(),
+      callback_group_);
   }
 }
 

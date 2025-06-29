@@ -29,7 +29,7 @@ public:
   ParametersHandlerWrapper() = default;
 
   explicit ParametersHandlerWrapper(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::string name)
+    const nav2::LifecycleNode::WeakPtr & parent, std::string name)
   : ParametersHandler(parent, name) {}
 
   template<typename T>
@@ -118,7 +118,7 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
 
 TEST(ParameterHandlerTest, GetSystemParamsTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   node->declare_parameter("param1", rclcpp::ParameterValue(true));
   node->declare_parameter(name + ".param2", rclcpp::ParameterValue(7));
@@ -142,7 +142,7 @@ TEST(ParameterHandlerTest, GetSystemParamsTest)
 
 TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
 
   node->declare_parameter("test.dynamic_int", rclcpp::ParameterValue(7));
   node->declare_parameter("test.static_int", rclcpp::ParameterValue(7));
@@ -189,7 +189,7 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersTest)
 
 TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("test.dynamic_int", rclcpp::ParameterValue(7));
   node->declare_parameter("test.static_int", rclcpp::ParameterValue(7));
   std::string name = "test";
@@ -235,7 +235,7 @@ TEST(ParameterHandlerTest, DynamicAndStaticParametersNotVerboseTest)
 
 TEST(ParameterHandlerTest, DynamicAndStaticParametersNotDeclaredTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
 
   node->declare_parameter("test.dynamic_int", rclcpp::ParameterValue(7));
   node->declare_parameter("test.static_int", rclcpp::ParameterValue(7));
