@@ -83,13 +83,6 @@ void NoiseGenerator::computeAdaptiveStds(const models::State & state)
   // Should we apply decay function? or Any constraint is invalid?
   if (s.advanced_constraints.wz_std_decay_strength <= 0.0f || !validateWzStdDecayConstraints()) {
     wz_std_adaptive = s.sampling_std.wz;  // skip calculation
-    printf("haydaaa wz_std_decay_strength: %f,"
-          "wz_std_decay_to: %f, "
-          "wz_std_adaptive: %f, "
-          "current_speed: %f\n",
-          s.advanced_constraints.wz_std_decay_strength,
-          s.advanced_constraints.wz_std_decay_to,
-          wz_std_adaptive, 0.0f);
   } else {
     float current_speed;
     if (is_holonomic_) {
@@ -107,8 +100,6 @@ void NoiseGenerator::computeAdaptiveStds(const models::State & state)
       s.advanced_constraints.wz_std_decay_to;
 
     wz_std_adaptive = decayed_wz_std;
-    printf("hopbaaa wz_std_adaptive: %f, "
-           "current_speed: %f\n", wz_std_adaptive, current_speed);
   }
 }
 
@@ -178,8 +169,8 @@ void NoiseGenerator::generateNoisedControls()
 {
   auto & s = settings_;
   auto ndistribution_vx = std::normal_distribution(0.0f, settings_.sampling_std.vx);
-  auto ndistribution_wz = std::normal_distribution(0.0f, settings_.sampling_std.vy);
-  auto ndistribution_vy = std::normal_distribution(0.0f, wz_std_adaptive);
+  auto ndistribution_wz = std::normal_distribution(0.0f, wz_std_adaptive);
+  auto ndistribution_vy = std::normal_distribution(0.0f, settings_.sampling_std.vy);
   noises_vx_ = Eigen::ArrayXXf::NullaryExpr(
     s.batch_size, s.time_steps, [&]() {return ndistribution_vx(generator_);});
   noises_wz_ = Eigen::ArrayXXf::NullaryExpr(
