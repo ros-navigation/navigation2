@@ -94,7 +94,7 @@ double CostmapTopicCollisionChecker::scorePose(
     throw IllegalPoseException(name_, "Pose Goes Off Grid.");
   }
 
-  return collision_checker_.footprintCost(getFootprint(pose, fetch_costmap_and_footprint));
+  return collision_checker_.footprintAreaCost(getFootprint(pose, fetch_costmap_and_footprint));
 }
 
 Footprint CostmapTopicCollisionChecker::getFootprint(

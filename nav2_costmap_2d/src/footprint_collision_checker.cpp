@@ -85,46 +85,6 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
 }
 
 template<typename CostmapT>
-bool FootprintCollisionChecker<CostmapT>::isRectangularFootprint(
-  const Footprint & footprint, double & min_x, double & max_x, 
-  double & min_y, double & max_y) const
-{
-  // Only 4-point footprints can be rectangles
-  if (footprint.size() != 4) {
-    return false;
-  }
-
-  // Find bounding box
-  min_x = std::numeric_limits<double>::max();
-  max_x = std::numeric_limits<double>::lowest();
-  min_y = std::numeric_limits<double>::max();
-  max_y = std::numeric_limits<double>::lowest();
-
-  for (const auto & point : footprint) {
-    min_x = std::min(min_x, point.x);
-    max_x = std::max(max_x, point.x);
-    min_y = std::min(min_y, point.y);
-    max_y = std::max(max_y, point.y);
-  }
-
-  // Check if all points are at corners of bounding box (axis-aligned rectangle)
-  const double tolerance = 1e-6;
-  int corner_count = 0;
-  
-  for (const auto & point : footprint) {
-    bool at_corner = 
-      (std::abs(point.x - min_x) < tolerance || std::abs(point.x - max_x) < tolerance) &&
-      (std::abs(point.y - min_y) < tolerance || std::abs(point.y - max_y) < tolerance);
-    
-    if (at_corner) {
-      corner_count++;
-    }
-  }
-
-  return corner_count == 4;
-}
-
-template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::footprintAreaCost(const Footprint & footprint)
 {
   // Find bounding box of footprint
@@ -149,25 +109,13 @@ double FootprintCollisionChecker<CostmapT>::footprintAreaCost(const Footprint & 
 
   double max_cost = 0.0;
 
-  // Check if footprint is rectangular for optimization
-  bool is_rectangular = isRectangularFootprint(footprint, min_x, max_x, min_y, max_y);
-
   // Check all cells within bounding box
-  for (unsigned int mx = min_mx; mx <= max_mx; ++mx) {
-    for (unsigned int my = min_my; my <= max_my; ++my) {
-      bool cell_in_footprint;
-      
-      if (is_rectangular) {
-        // For rectangular footprints, all cells in bounding box are inside
-        cell_in_footprint = true;
-      } else {
-        // For non-rectangular footprints, check point-in-polygon
-        double wx, wy;
-        costmap_->mapToWorld(mx, my, wx, wy);
-        cell_in_footprint = isPointInFootprint(wx, wy, footprint);
-      }
+  for (unsigned int my = min_my; my <= max_my; ++my) {
+    for (unsigned int mx = min_mx; mx <= max_mx; ++mx) {
+      double wx, wy;
+      costmap_->mapToWorld(mx, my, wx, wy);
 
-      if (cell_in_footprint) {
+      if (isPointInFootprint(wx, wy, footprint)) {
         double cost = pointCost(mx, my);
         
         if (cost == static_cast<double>(LETHAL_OBSTACLE)) {
