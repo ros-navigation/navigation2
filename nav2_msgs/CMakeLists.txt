@@ -35,6 +35,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/IsPathValid.srv"
   "srv/ClearCostmapExceptRegion.srv"
   "srv/ClearCostmapAroundRobot.srv"
+  "srv/ClearCostmapAroundPose.srv"
   "srv/ClearEntireCostmap.srv"
   "srv/ManageLifecycleNodes.srv"
   "srv/LoadMap.srv"
