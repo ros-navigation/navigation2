@@ -88,7 +88,7 @@ protected:
   /**
    * @brief Check if a point is inside the footprint polygon
    * @param x X coordinate in world frame
-   * @param y Y coordinate in world frame  
+   * @param y Y coordinate in world frame
    * @param footprint Footprint polygon
    * @return True if point is inside footprint
    */

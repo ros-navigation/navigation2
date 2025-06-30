@@ -103,7 +103,8 @@ double FootprintCollisionChecker<CostmapT>::footprintAreaCost(const Footprint & 
   // Convert to grid coordinates
   unsigned int min_mx, min_my, max_mx, max_my;
   if (!worldToMap(min_x, min_y, min_mx, min_my) ||
-      !worldToMap(max_x, max_y, max_mx, max_my)) {
+    !worldToMap(max_x, max_y, max_mx, max_my))
+  {
     return static_cast<double>(LETHAL_OBSTACLE);
   }
 
@@ -117,7 +118,7 @@ double FootprintCollisionChecker<CostmapT>::footprintAreaCost(const Footprint & 
 
       if (isPointInFootprint(wx, wy, footprint)) {
         double cost = pointCost(mx, my);
-        
+
         if (cost == static_cast<double>(LETHAL_OBSTACLE)) {
           return cost;
         } else if (cost == static_cast<double>(NO_INFORMATION)) {
@@ -193,7 +194,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
 
 template<typename CostmapT>
 bool FootprintCollisionChecker<CostmapT>::isPointInFootprint(
-  double x, double y, 
+  double x, double y,
   const Footprint & footprint)
 {
   // Adaptation of Shimrat, Moshe. "Algorithm 112: position of point relative to polygon."
