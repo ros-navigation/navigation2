@@ -96,20 +96,6 @@ protected:
     double x, double y,
     const Footprint & footprint);
 
-  /**
-   * @brief Check if footprint is a rectangular (axis-aligned) shape
-   * @param footprint Footprint to check
-   * @param min_x Output minimum x coordinate
-   * @param max_x Output maximum x coordinate
-   * @param min_y Output minimum y coordinate
-   * @param max_y Output maximum y coordinate
-   * @return True if footprint is rectangular
-   */
-  bool isRectangularFootprint(
-    const Footprint & footprint, 
-    double & min_x, double & max_x, 
-    double & min_y, double & max_y) const;
-
   CostmapT costmap_;
 };
 
