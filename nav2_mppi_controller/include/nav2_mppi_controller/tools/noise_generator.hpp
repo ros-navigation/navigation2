@@ -15,8 +15,6 @@
 #ifndef NAV2_MPPI_CONTROLLER__TOOLS__NOISE_GENERATOR_HPP_
 #define NAV2_MPPI_CONTROLLER__TOOLS__NOISE_GENERATOR_HPP_
 
-#include <Eigen/Dense>
-
 #include <string>
 #include <memory>
 #include <thread>
@@ -47,19 +45,13 @@ public:
 
   /**
    * @brief Initialize noise generator with settings and model types
-   * @param settings Settings of controller
-   * @param is_holonomic If base is holonomic
+   * @param logger Reference to the package logger
    * @param name Namespace for configs
    * @param param_handler Get parameters util
    */
   void initialize(
-    mppi::models::OptimizerSettings & settings,
-    bool is_holonomic, const std::string & name, ParametersHandler * param_handler);
-
-  /**
-   * @brief Initialize normal_distributions to their SamplingStd parameterized values (vx, vy, wz)
-   */
-  void initializeNormalDistributions();
+    const std::shared_ptr<nav2::LifecycleNode> & node, const std::string & name,
+    ParametersHandler * param_handler);
 
   /**
    * @brief Shutdown noise generator thread
@@ -73,6 +65,12 @@ public:
   void generateNextNoises();
 
   /**
+   * @brief set noised control_sequence to state controls
+   * @return noises vx, vy, wz
+   */
+  void setNoisedControls(models::State & state, const models::ControlSequence & control_sequence);
+
+  /**
    * Computes adaptive values of the SamplingStd parameters and updates adaptive counterparts
    * See also wz_std_decay_strength, wz_std_decay_to parameters for more information on how wz => wz_std_adaptive is computed
    * @param state Current state of the robot
@@ -80,17 +78,19 @@ public:
   void computeAdaptiveStds(const models::State & state);
 
   /**
-   * @brief set noised control_sequence to state controls
-   * @return noises vx, vy, wz
+   * Validates decay constraints and returns true if constraints are valid
+   * @return true if decay constraints are valid
    */
-  void setNoisedControls(models::State & state, const models::ControlSequence & control_sequence);
+  bool validateWzStdDecayConstraints() const;
+
+  float getWzStdAdaptive() const;
 
   /**
    * @brief Reset noise generator with settings and model types
    * @param settings Settings of controller
    * @param is_holonomic If base is holonomic
    */
-  void reset(mppi::models::OptimizerSettings & settings, bool is_holonomic);
+  void reset(const mppi::models::OptimizerSettings & settings, bool is_holonomic);
 
 protected:
   /**
@@ -112,17 +112,21 @@ protected:
   Eigen::ArrayXXf noises_wz_;
 
   std::default_random_engine generator_;
-  std::normal_distribution<float> ndistribution_vx_;
-  std::normal_distribution<float> ndistribution_wz_;
-  std::normal_distribution<float> ndistribution_vy_;
 
-  mppi::models::OptimizerSettings settings_;
+  std::unique_ptr<rclcpp::Logger> logger_;
+  models::OptimizerSettings settings_;
   bool is_holonomic_;
 
-  std::thread noise_thread_;
+  std::unique_ptr<std::thread> noise_thread_;
   std::condition_variable noise_cond_;
   std::mutex noise_lock_;
-  bool active_{false}, ready_{false}, regenerate_noises_{false};
+  bool active_{false}, ready_{false};
+
+  /**
+   * @brief Internal variable that holds wz_std after decay is applied.
+   * If decay is disabled, SamplingStd.wz == wz_std_adaptive
+  */
+  float wz_std_adaptive;
 };
 
 }  // namespace mppi
