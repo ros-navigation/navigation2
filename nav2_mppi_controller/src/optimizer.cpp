@@ -46,7 +46,7 @@ void Optimizer::initialize(
   getParams();
 
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
-  noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
+  noise_generator_.initialize(node, name_, parameters_handler_);
 
   reset();
 }
@@ -134,16 +134,9 @@ void Optimizer::setOffset(double controller_frequency)
   }
 }
 
-void Optimizer::resetAdaptiveStds()
-{
-  // reset initial adaptive value to parameterized value
-  *settings_.sampling_std.wz_std_adaptive = settings_.sampling_std.wz;
-}
-
 void Optimizer::reset(bool reset_dynamic_speed_limits)
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
-  resetAdaptiveStds();
   control_sequence_.reset(settings_.time_steps);
   control_history_[0] = {0.0f, 0.0f, 0.0f};
   control_history_[1] = {0.0f, 0.0f, 0.0f};
@@ -159,13 +152,6 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
 
   noise_generator_.reset(settings_, isHolonomic());
   motion_model_->initialize(settings_.constraints, settings_.model_dt);
-
-  // Validate decay function, print warning message if decay_to is out of bounds
-  try {
-    settings_.sampling_std.validateConstraints(settings_.advanced_constraints, false);
-  } catch (const std::runtime_error & e) {
-    RCLCPP_WARN_STREAM(logger_, e.what());
-  }
 
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
@@ -455,7 +441,6 @@ const models::ControlSequence & Optimizer::getOptimalControlSequence()
   return control_sequence_;
 }
 
-
 void Optimizer::updateControlSequence()
 {
   const bool is_holo = isHolonomic();
@@ -466,7 +451,7 @@ void Optimizer::updateControlSequence()
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
   costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
-  const float & wz_std_adaptive = *s.sampling_std.wz_std_adaptive;
+  const float & wz_std_adaptive = noise_generator_.getWzStdAdaptive();
   if (wz_std_adaptive > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
     auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;

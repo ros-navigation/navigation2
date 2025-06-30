@@ -119,11 +119,6 @@ public:
   void setSpeedLimit(double speed_limit, bool percentage);
 
   /**
-   * Resets adaptive std values to their parametric defaults
-   */
-  void resetAdaptiveStds();
-
-  /**
    * @brief Reset the optimization problem to initial conditions
    * @param Whether to reset the constraints to its base values
    */

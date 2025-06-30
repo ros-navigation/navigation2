@@ -41,9 +41,9 @@ TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
 
-  generator.initialize(settings, false, "test_name", &handler);
+  generator.initialize(node, "test_name", &handler);
   generator.reset(settings, false);
   generator.shutdown();
 }
@@ -54,7 +54,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(true));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;
@@ -76,7 +76,7 @@ ParametersHandler handler(node, name);
   state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
-  generator.initialize(settings, false, "test_name", &handler);
+  generator.initialize(node, "test_name", &handler);
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
@@ -143,7 +143,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;
@@ -165,7 +165,7 @@ ParametersHandler handler(node, name);
   state.reset(settings.batch_size, settings.time_steps);
 
   // Request an update with no noise yet generated, should result in identical outputs
-  generator.initialize(settings, false, "test_name", &handler);
+  generator.initialize(node, "test_name", &handler);
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   generator.setNoisedControls(state, control_sequence);
@@ -209,7 +209,7 @@ ParametersHandler handler(node, name);
 TEST(NoiseGeneratorTest, AdaptiveStds)
 {
   // Tests shuts down internal thread cleanly
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("node");
+  auto node = std::make_shared<nav2::LifecycleNode>("node");
   std::string name = "test";
   ParametersHandler handler(node, name);
   NoiseGenerator generator;
@@ -224,17 +224,17 @@ TEST(NoiseGeneratorTest, AdaptiveStds)
   state.reset(settings.batch_size, settings.time_steps);
 
   // Test with AdaptiveStd off (default behavior)
-  generator.initialize(settings, false, "test_name", &handler);
+  generator.initialize(node, "test_name", &handler);
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   generator.computeAdaptiveStds(state);
-  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(settings.sampling_std.wz, generator.getWzStdAdaptive(), EPSILON);
 
   // Enable AdaptiveStd but keep velocity == 0
   settings.advanced_constraints.wz_std_decay_strength = 3.0f;
   settings.advanced_constraints.wz_std_decay_to = 0.05f;
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   generator.computeAdaptiveStds(state);
-  EXPECT_NEAR(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(settings.sampling_std.wz, generator.getWzStdAdaptive(), EPSILON);
 
   // Enable AdaptiveStd, non-holonomic with vx == 1.0 m/sec
   settings.advanced_constraints.wz_std_decay_strength = 3.0f;
@@ -242,7 +242,7 @@ TEST(NoiseGeneratorTest, AdaptiveStds)
   state.speed.linear.x = 1.0f;
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   generator.computeAdaptiveStds(state);
-  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_NEAR(0.052489355206489563f, generator.getWzStdAdaptive(), EPSILON);
   EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
 
   // Enable AdaptiveStd, holonomic with scalar velocity == 1.0 m/sec
@@ -252,7 +252,8 @@ TEST(NoiseGeneratorTest, AdaptiveStds)
   state.speed.linear.y = 0.70710678118655f;
   generator.reset(settings, true);  // sets initial sizing and zeros out noises
   generator.computeAdaptiveStds(state);
-  EXPECT_NEAR(0.052489355206489563f, *settings.sampling_std.wz_std_adaptive, EPSILON);
+  EXPECT_TRUE(generator.validateWzStdDecayConstraints());
+  EXPECT_NEAR(0.052489355206489563f, generator.getWzStdAdaptive(), EPSILON);
   EXPECT_NEAR(0.1f, settings.sampling_std.wz, EPSILON);  // wz_std should stay the same
 
   // Enable AdaptiveStd, with invalid input
@@ -262,13 +263,8 @@ TEST(NoiseGeneratorTest, AdaptiveStds)
   generator.reset(settings, false);  // sets initial sizing and zeros out noises
   generator.computeAdaptiveStds(state);
   // expect wz_std == wz_std_adaptive as adaptive std will be automatically disabled
-  EXPECT_EQ(settings.sampling_std.wz, *settings.sampling_std.wz_std_adaptive);
-  try {
-    settings.sampling_std.validateConstraints(settings.advanced_constraints, false);
-    FAIL() << "Expected to throw runtime error";
-  } catch (const std::runtime_error & e) {
-    EXPECT_TRUE(!std::string(e.what()).empty());
-  }
+  EXPECT_FALSE(generator.validateWzStdDecayConstraints());
+  EXPECT_EQ(settings.sampling_std.wz, generator.getWzStdAdaptive());
 
   generator.shutdown();
 }
