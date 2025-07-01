@@ -141,6 +141,11 @@ controller_server:
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
+      TrajectoryValidator:
+        plugin: "mppi::DefaultOptimalTrajectoryValidator"
+        # The validator can be configured with additional parameters if needed.
+        # For example, you can set a threshold for the trajectory validation.
+        # validation_threshold: 0.5
       AckermannConstraints:
         min_turning_r: 0.2
       critics:

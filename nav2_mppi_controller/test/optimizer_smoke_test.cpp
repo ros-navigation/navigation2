@@ -21,6 +21,7 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
+#include "tf2_ros/buffer.h"
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
@@ -68,7 +69,8 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   auto node = getDummyNode(optimizer_settings, critics);
   std::string name = "test";
   auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node, name);
-  auto optimizer = getDummyOptimizer(node, costmap_ros, parameters_handler.get());
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto optimizer = getDummyOptimizer(node, costmap_ros, tf_buffer, parameters_handler.get());
 
   // evalControl args
   auto pose = getDummyPointStamped(node, start_pose);
@@ -77,7 +79,9 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   auto goal = path.poses.back().pose;
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
-  EXPECT_NO_THROW(optimizer->evalControl(pose, velocity, path, goal, dummy_goal_checker));
+  auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, goal, dummy_goal_checker);
+  EXPECT_GT(trajectory.rows(), 0);
+  EXPECT_GT(trajectory.cols(), 0);
 }
 
 INSTANTIATE_TEST_SUITE_P(
