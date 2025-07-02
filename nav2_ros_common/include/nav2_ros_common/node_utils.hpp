@@ -378,6 +378,26 @@ inline void setIntrospectionMode(
   #endif
 }
 
+/**
+  * @brief Given a specified argument name, replaces it with the specified
+  * new value. If the argument is not in the existing list, a new argument
+  * is created with the specified option.
+  */
+inline void replaceOrAddArgument(
+  std::vector<std::string> & arguments, const std::string & option,
+  const std::string & arg_name, const std::string & new_argument)
+{
+  auto argument = std::find_if(arguments.begin(), arguments.end(),
+      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  if (argument != arguments.end()) {
+    *argument = new_argument;
+  } else {
+    arguments.push_back("--ros-args");
+    arguments.push_back(option);
+    arguments.push_back(new_argument);
+  }
+}
+
 }  // namespace nav2
 
 #endif  // NAV2_ROS_COMMON__NODE_UTILS_HPP_
