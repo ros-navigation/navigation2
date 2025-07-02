@@ -32,6 +32,7 @@
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
+#include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -55,6 +56,74 @@ public:
     mode_ = static_cast<PathAngleMode>(mode);
   }
 };
+
+TEST(CriticTests, PathHugCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  // Create mock data
+  models::State state;
+  state.pose.header.frame_id = "map";
+  state.reset(1, 10);
+
+  models::Trajectories trajectories;
+  trajectories.reset(1, 10);
+
+  models::Path path;
+  path.reset(10);
+  for (unsigned int i = 0; i < 10; ++i) {
+    path.x(i) = static_cast<float>(i);
+    path.y(i) = 0.0f;
+  }
+
+  geometry_msgs::msg::Pose goal;
+  xt::xtensor<float, 1> costs = xt::zeros<float>({1});
+  float model_dt = 0.1;
+  CriticData data =
+  {state, trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Initialization testing
+  mppi::critics::PathHugCritic critic;
+  critic.on_configure(node, "mppi_controller", "PathHugCritic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "PathHugCritic");
+
+  // --- Test 1: Perfect trajectory ---
+  for (unsigned int i = 0; i < 10; ++i) {
+    trajectories.x(0, i) = static_cast<float>(i);
+    trajectories.y(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-4);
+
+  // --- Test 2: Deviated trajectory ---
+  costs(0) = 0.0f; // Reset cost
+  node->set_parameter(
+    rclcpp::Parameter("mppi_controller.PathHugCritic.path_hug_weight", 2.5));
+  critic.on_configure(node, "mppi_controller", "PathHugCritic", costmap_ros, &param_handler);
+
+  for (unsigned int i = 0; i < 10; ++i) {
+    trajectories.y(0, i) = 2.0f; // Constant 2.0m offset
+  }
+  critic.score(data);
+  float expected_cost = 2.0f * 2.5f; // distance * weight
+  EXPECT_NEAR(costs(0), expected_cost, 1e-4);
+
+  // --- Test 3: Disabled critic ---
+  costs(0) = 0.0f; // Reset cost
+  node->set_parameter(
+    rclcpp::Parameter("mppi_controller.PathHugCritic.enabled", false));
+  critic.on_configure(node, "mppi_controller", "PathHugCritic", costmap_ros, &param_handler);
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-4);
+}
 
 TEST(CriticTests, ConstraintsCritic)
 {

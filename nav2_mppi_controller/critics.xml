@@ -44,6 +44,10 @@
     <class type="mppi::critics::VelocityDeadbandCritic" base_class_type="mppi::critics::CriticFunction">
       <description>mppi critic for restricting command velocities in deadband range</description>
     </class>
+    
+    <class type="mppi::critics::PathHugCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>MPPI critic for hugging the path and penalizing deviation.</description>
+    </class>
 
   </library>
 </class_libraries>
