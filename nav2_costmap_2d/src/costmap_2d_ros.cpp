@@ -71,21 +71,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
   init();
 }
 
-void replaceOrAddArgument(
-  std::vector<std::string> & arguments, const std::string & option,
-  const std::string & arg_name, const std::string & new_argument)
-{
-  auto argument = std::find_if(arguments.begin(), arguments.end(),
-      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
-  if (argument != arguments.end()) {
-    *argument = new_argument;
-  } else {
-    arguments.push_back("--ros-args");
-    arguments.push_back(option);
-    arguments.push_back(new_argument);
-  }
-}
-
 rclcpp::NodeOptions getChildNodeOptions(
   const std::string & name,
   const std::string & parent_namespace,
@@ -93,10 +78,10 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
-  replaceOrAddArgument(new_arguments, "-r", "__ns",
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__ns",
       "__ns:=" + nav2::add_namespaces(parent_namespace, name));
-  replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
-  replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
+  nav2::replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
       "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
   return rclcpp::NodeOptions().arguments(new_arguments);
 }
