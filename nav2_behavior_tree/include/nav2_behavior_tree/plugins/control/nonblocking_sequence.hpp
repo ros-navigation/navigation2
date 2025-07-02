@@ -81,7 +81,6 @@ protected:
    * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override;
-
 };
 }  // namespace nav2_behavior_tree
 
