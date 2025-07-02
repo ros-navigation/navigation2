@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import tempfile
-from typing import Optional
+from typing import IO, Optional
 
 import launch
 
 
-class ReplaceString(launch.Substitution):  # type: ignore[misc]
+class ReplaceString(launch.Substitution):
     """
     Substitution that replaces strings on a given file.
 
@@ -87,8 +87,8 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
             )
         return resolved_replacements
 
-    def replace(self, input_file: launch.SomeSubstitutionsType,
-                output_file: launch.SomeSubstitutionsType, replacements: dict[str, str]) -> None:
+    def replace(self, input_file: IO[str], output_file: IO[str],
+                replacements: dict[str, str]) -> None:
         for line in input_file:
             for key, value in replacements.items():
                 if isinstance(key, str) and isinstance(value, str):
