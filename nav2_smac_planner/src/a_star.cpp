@@ -24,9 +24,14 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <geometry_msgs/geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_array.hpp>
 
 #include "nav2_smac_planner/a_star.hpp"
 using namespace std::chrono;  // NOLINT
+
+#define VISUALIZE_PLANNER_EXPANSIONS 0
+#define VISUALIZE_REAL_TIME 1
 
 namespace nav2_smac_planner
 {
@@ -339,6 +344,18 @@ bool AStarAlgorithm<NodeT>::createPath(
     return false;
   }
 
+  #if VISUALIZE_PLANNER_EXPANSIONS
+    // DEBUG: Create publisher for visualizing expansions
+    static auto planner_expansions_node = std::make_shared<rclcpp::Node>("planner_expansions");
+    static auto planner_expansions_pub = planner_expansions_node->create_publisher<geometry_msgs::msg::PoseArray>("planner_expansions", 1);
+    geometry_msgs::msg::PoseArray planner_expansions_msg;
+    geometry_msgs::msg::PoseArray recent_expansions_msg;
+    geometry_msgs::msg::Pose planner_expansions_pose;
+    planner_expansions_msg.header.stamp = planner_expansions_node->now();
+    planner_expansions_msg.header.frame_id = "map";
+    recent_expansions_msg.header = planner_expansions_msg.header;
+  #endif
+
   NodeVector coarse_check_goals, fine_check_goals;
   _goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals,
     _coarse_search_resolution);
@@ -401,6 +418,32 @@ bool AStarAlgorithm<NodeT>::createPath(
       continue;
     }
 
+    #if VISUALIZE_PLANNER_EXPANSIONS
+      // DEBUG: Publish visualization of current planning pose
+      if constexpr (std::is_same<NodeT, NodeHybrid>::value) {
+        constexpr int kDisplayEveryNthIteration = 1000;
+        planner_expansions_pose.position.x = _costmap->getOriginX() + (current_node->pose.x * _costmap->getResolution());
+        planner_expansions_pose.position.y = _costmap->getOriginY() + (current_node->pose.y * _costmap->getResolution());
+        tf2::Quaternion q;
+        q.setRPY(0, 0, current_node->pose.theta);
+        planner_expansions_pose.orientation.x = q.x();
+        planner_expansions_pose.orientation.y = q.y();
+        planner_expansions_pose.orientation.z = q.z();
+        planner_expansions_pose.orientation.w = q.w();
+        if (iterations % kDisplayEveryNthIteration == 0) {
+          planner_expansions_msg.poses.push_back(planner_expansions_pose);
+          recent_expansions_msg.poses.push_back(planner_expansions_pose);
+          #if VISUALIZE_REAL_TIME
+          constexpr int kRecentExpansionsToAnimate = 200;
+          if (recent_expansions_msg.poses.size() >= kRecentExpansionsToAnimate) {
+            recent_expansions_msg.poses.erase(recent_expansions_msg.poses.begin());
+          }
+          planner_expansions_pub->publish(recent_expansions_msg);
+          #endif
+        }
+      }
+    #endif
+
     iterations++;
 
     // 2) Mark Nbest as visited
@@ -417,11 +460,17 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 3) Check if we're at the goal, backtrace if required
     if (_goal_manager.isGoal(current_node)) {
+      #if VISUALIZE_PLANNER_EXPANSIONS
+        planner_expansions_pub->publish(planner_expansions_msg);
+      #endif
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
       approach_iterations++;
       if (approach_iterations >= getOnApproachMaxIterations()) {
+        #if VISUALIZE_PLANNER_EXPANSIONS
+          planner_expansions_pub->publish(planner_expansions_msg);
+        #endif
         return _graph.at(_best_heuristic_node.second).backtracePath(path);
       }
     }
@@ -448,6 +497,10 @@ bool AStarAlgorithm<NodeT>::createPath(
       }
     }
   }
+
+  #if VISUALIZE_PLANNER_EXPANSIONS
+    planner_expansions_pub->publish(planner_expansions_msg);
+  #endif
 
   if (_best_heuristic_node.first < getToleranceHeuristic()) {
     // If we run out of search options, return the path that is closest, if within tolerance.
