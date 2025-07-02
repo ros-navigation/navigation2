@@ -18,7 +18,7 @@ from launch.substitutions import LaunchConfiguration
 from launch.utilities import perform_substitutions
 
 
-class LaunchConfigAsBool(launch.Substitution):  # type: ignore[misc]
+class LaunchConfigAsBool(launch.Substitution):
     """
     Converts a LaunchConfiguration value into a normalized boolean string: 'true' or 'false'.
 

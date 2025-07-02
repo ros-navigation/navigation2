@@ -35,7 +35,7 @@ class DictItemReference:
         self.dictionary[self.dictKey] = value
 
 
-class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
+class RewrittenYaml(launch.Substitution):
     """
     Substitution that modifies the given YAML file.
 
