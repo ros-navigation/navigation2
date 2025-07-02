@@ -344,31 +344,47 @@ void VoxelLayer::raytraceFreespace(
     double b = wpy - oy;
     double c = wpz - oz;
     double t = 1.0;
+    bool wp_outside = false;
 
     // we can only raytrace to a maximum z height
     if (wpz > map_end_z) {
       // we know we want the vector's z value to be max_z
       t = std::max(0.0, std::min(t, (map_end_z - 0.01 - oz) / c));
+      wp_outside = true;
     } else if (wpz < origin_z_) {
       // and we can only raytrace down to the floor
       // we know we want the vector's z value to be 0.0
       t = std::min(t, (origin_z_ - oz) / c);
+      wp_outside = true;
     }
 
     // the minimum value to raytrace from is the origin
     if (wpx < origin_x_) {
       t = std::min(t, (origin_x_ - ox) / a);
+      wp_outside = true;
     }
     if (wpy < origin_y_) {
       t = std::min(t, (origin_y_ - oy) / b);
+      wp_outside = true;
     }
 
     // the maximum value to raytrace to is the end of the map
     if (wpx > map_end_x) {
       t = std::min(t, (map_end_x - ox) / a);
+      wp_outside = true;
     }
     if (wpy > map_end_y) {
       t = std::min(t, (map_end_y - oy) / b);
+      wp_outside = true;
+    }
+
+    constexpr double wp_epsilon = 1e-5;
+    if (wp_outside) {
+      if (t > 0.0) {
+        t -= wp_epsilon;
+      } else if (t < 0.0) {
+        t += wp_epsilon;
+      }
     }
 
     wpx = ox + a * t;
