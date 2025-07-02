@@ -121,6 +121,8 @@ def generate_launch_description() -> LaunchDescription:
     start_slam_toolbox_cmd = GroupAction(
 
         actions=[
+            PushRosNamespace(namespace),
+
             # Remapping required to have a slam session subscribe & publish in optional namespaces
             SetRemap(src='/scan', dst='scan'),
             SetRemap(src='/tf', dst='tf'),
