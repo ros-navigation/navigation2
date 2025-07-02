@@ -98,7 +98,7 @@ def generate_test_description() -> LaunchDescription:
             parameters=[{'autostart': True},
                         {'node_names': ['docking_server']}]
         ),
-        launch_testing.actions.ReadyToTest(),
+        launch_testing.actions.ReadyToTest(),  # type: ignore[no-untyped-call]
     ])
 
 
@@ -345,9 +345,9 @@ class TestDockingServer(unittest.TestCase):
             self.assertTrue(self.action_result[3].result.success)
 
 
-@launch_testing.post_shutdown_test()
+@launch_testing.post_shutdown_test()  # type: ignore[no-untyped-call]
 class TestProcessOutput(unittest.TestCase):
 
     def test_exit_code(self, proc_info: launch_testing.ProcInfoHandler) -> None:
         # Check that all processes in the launch exit with code 0
-        launch_testing.asserts.assertExitCodes(proc_info)
+        launch_testing.asserts.assertExitCodes(proc_info)  # type: ignore[no-untyped-call]

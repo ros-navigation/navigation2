@@ -23,6 +23,7 @@ The robots co-exist on a shared environment and are controlled by independent na
 import os
 from pathlib import Path
 import tempfile
+from typing import TypedDict
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -36,6 +37,18 @@ from launch.substitutions import LaunchConfiguration, TextSubstitution
 from nav2_common.launch import LaunchConfigAsBool
 
 
+class RobotConfig(TypedDict):
+    """TypedDict for robot configuration."""
+
+    name: str
+    x_pose: float
+    y_pose: float
+    z_pose: float
+    roll: float
+    pitch: float
+    yaw: float
+
+
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
@@ -43,7 +56,7 @@ def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     # Names and poses of the robots
-    robots = [
+    robots: list[RobotConfig] = [
         {
             'name': 'robot1',
             'x_pose': 0.0,

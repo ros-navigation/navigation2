@@ -23,7 +23,7 @@ from launch_testing.legacy import LaunchTestService
 
 
 def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
 
     ld = LaunchDescription([])
 
@@ -33,11 +33,11 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         output='screen',
     )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':

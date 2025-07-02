@@ -24,11 +24,11 @@ import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv: list[str] = sys.argv[1:]) -> LaunchTestService:
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     launchFile = os.path.join(
         os.getenv('TEST_LAUNCH_DIR', ''), 'costmap_map_server.launch.py'
     )
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
 
     map_to_odom = launch_ros.actions.Node(
         package='tf2_ros',
@@ -86,11 +86,11 @@ def main(argv: list[str] = sys.argv[1:]) -> LaunchTestService:
         output='screen'
     )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':

@@ -112,11 +112,11 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         output='screen',
     )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test_error_codes_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test_error_codes_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':
