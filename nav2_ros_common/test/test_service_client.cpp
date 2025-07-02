@@ -51,7 +51,7 @@ TEST(ServiceClient, can_ServiceClient_use_passed_in_node)
   };
   for(const auto & mode : introspection_modes) {
     auto node = rclcpp::Node::make_shared("test_node" + mode);
-    node->declare_parameter("service_introspection_mode", mode);
+    node->declare_parameter("introspection_mode", mode);
     TestServiceClient t("bar", node, true);
     ASSERT_EQ(t.name(), "test_node" + mode);
   }

@@ -169,7 +169,7 @@ void SmacPlannerHybrid::configure(
   // Note that we need to declare it here to prevent the parameter from being declared in the
   // dynamic reconfigure callback
   nav2::declare_parameter_if_not_declared(
-    node, "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+    node, "introspection_mode", rclcpp::ParameterValue("disabled"));
 
   std::string goal_heading_type;
   nav2::declare_parameter_if_not_declared(
