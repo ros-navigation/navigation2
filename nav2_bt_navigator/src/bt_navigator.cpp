@@ -24,7 +24,8 @@
 #include "nav2_util/string_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
-
+#include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_error.hpp"
 #include "nav2_behavior_tree/plugins_list.hpp"
 
 using nav2::declare_parameter_if_not_declared;
@@ -51,6 +52,8 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
     this, "odom_topic", rclcpp::ParameterValue(std::string("odom")));
   declare_parameter_if_not_declared(
     this, "filter_duration", rclcpp::ParameterValue(0.3));
+  declare_parameter_if_not_declared(
+    this, "tracking_error", rclcpp::ParameterValue(std::string("tracking_error")));
 }
 
 BtNavigator::~BtNavigator()
