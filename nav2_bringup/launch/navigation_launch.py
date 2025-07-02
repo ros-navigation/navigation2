@@ -19,7 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, PushRosNamespace, SetParameter
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
@@ -133,7 +133,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushRosNamespace(namespace=namespace),
+            PushROSNamespace(namespace=namespace),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -258,7 +258,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
-            PushRosNamespace(namespace=namespace),
+            PushROSNamespace(namespace=namespace),
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[

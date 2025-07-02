@@ -20,7 +20,7 @@ from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDesc
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, PushRosNamespace, SetParameter, SetRemap
+from launch_ros.actions import Node, PushROSNamespace, SetParameter, SetRemap
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
@@ -89,7 +89,7 @@ def generate_launch_description() -> LaunchDescription:
     # Nodes launching commands
     start_map_server = GroupAction(
         actions=[
-            PushRosNamespace(namespace),
+            PushROSNamespace(namespace),
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_map_server',
@@ -121,7 +121,7 @@ def generate_launch_description() -> LaunchDescription:
     start_slam_toolbox_cmd = GroupAction(
 
         actions=[
-            PushRosNamespace(namespace),
+            PushROSNamespace(namespace),
 
             # Remapping required to have a slam session subscribe & publish in optional namespaces
             SetRemap(src='/scan', dst='scan'),
