@@ -1,37 +1,57 @@
-/***********  nav2_util/path_utils.cpp  ***********/
+/******************************************************************************
+ *  Copyright (c) 2025, Berkan Tali
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *****************************************************************************/
+
+#include <algorithm>
 #include <cmath>
 #include <limits>
-#include <algorithm>
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "rcutils/logging_macros.h"
 
 namespace
 {
-// ---------- helpers (XY-plane, no std::sqrt inside) ----------
-inline double distanceSquared(
-  const geometry_msgs::msg::Point & a,
-  const geometry_msgs::msg::Point & b)
+// === helpers ===============================================================
+
+constexpr double kEpsilon = 1e-8;
+constexpr double kClosedPathTol = 0.01;  // [m]
+
+inline double
+squaredDistance(const geometry_msgs::msg::Point & a,
+                const geometry_msgs::msg::Point & b)
 {
   const double dx = a.x - b.x;
   const double dy = a.y - b.y;
   return dx * dx + dy * dy;
 }
 
-inline double distanceSquaredToSegmentXY(
-  const geometry_msgs::msg::Point & p,          // test point
-  const geometry_msgs::msg::Point & a,          // segment start
-  const geometry_msgs::msg::Point & b)          // segment end
+inline double
+squaredDistanceToSegmentXY(const geometry_msgs::msg::Point & p,
+                           const geometry_msgs::msg::Point & a,
+                           const geometry_msgs::msg::Point & b)
 {
-  const double seg_len_sq = distanceSquared(a, b);
-  if (seg_len_sq <= 1e-8) {        // degenerate segment
-    return distanceSquared(p, a);
+  const double len2 = squaredDistance(a, b);
+  if (len2 < kEpsilon) {
+    return squaredDistance(p, a);                     // a == b
   }
 
-  const double dot =
-    ( (p.x - a.x) * (b.x - a.x) ) +
-    ( (p.y - a.y) * (b.y - a.y) );
-  const double t = std::clamp(dot / seg_len_sq, 0.0, 1.0);
+  const double dot = (p.x - a.x) * (b.x - a.x) +
+                     (p.y - a.y) * (b.y - a.y);
+  const double t   = std::clamp(dot / len2, 0.0, 1.0);
 
   const double proj_x = a.x + t * (b.x - a.x);
   const double proj_y = a.y + t * (b.y - a.y);
@@ -41,33 +61,49 @@ inline double distanceSquaredToSegmentXY(
   return dx * dx + dy * dy;
 }
 
-inline bool pathIsClosed(const nav_msgs::msg::Path & path, const double eps = 0.01)
+inline bool
+isClosed(const nav_msgs::msg::Path & path)
 {
   return path.poses.size() > 2 &&
-         distanceSquared(path.poses.front().pose.position,
-                         path.poses.back().pose.position) < eps * eps;
+         squaredDistance(path.poses.front().pose.position,
+                         path.poses.back().pose.position) <
+           kClosedPathTol * kClosedPathTol;
 }
-} // anonymous namespace
+}  // namespace
 
 namespace nav2_util
 {
 
 /**
- *  Compute the shortest lateral (XY) distance from @p pose to @p path.
- *  If @p closest_idx is supplied the search starts there and the new index
- *  is written back for the next call, giving stable behaviour on loops.
+ * @brief  Lateral (XY) distance from a robot pose to a path.
  *
- *  Units: metres.
- *  Returns +∞ for an empty path.
+ * Implements the “iterative local minimum” strategy requested in
+ * https://github.com/ros-navigation/navigation2/issues/5037:
+ *   • First invocation (closest_idx == nullptr) -> global scan  
+ *   • Subsequent calls start at *closest_idx for loop-stable tracking
+ *
+ * @param pose         Robot pose in the same frame as @p path
+ * @param path         Path to evaluate
+ * @param closest_idx  IN/OUT latch index; may be nullptr
+ * @return             Shortest distance [m] or +inf for empty path
+ *
+ * @throws std::invalid_argument if pose/path frame_ids differ
  */
-double distanceFromPath(
-  const geometry_msgs::msg::PoseStamped & pose,
-  const nav_msgs::msg::Path & path,
-  size_t * closest_idx /* = nullptr */)
+double
+distanceFromPath(const geometry_msgs::msg::PoseStamped & pose,
+                 const nav_msgs::msg::Path &             path,
+                 size_t *                                closest_idx /* = nullptr */)
 {
   using std::numeric_limits;
 
-  // -------- edge cases --------
+  // ---- sanity -------------------------------------------------------------
+  if (pose.header.frame_id != path.header.frame_id) {
+    throw std::invalid_argument(
+      "distanceFromPath(): pose and path frame_ids differ (" +
+      pose.header.frame_id + " vs " + path.header.frame_id + ")");
+  }
+
+  // ---- trivial cases ------------------------------------------------------
   if (path.poses.empty()) {
     return numeric_limits<double>::infinity();
   }
@@ -78,48 +114,49 @@ double distanceFromPath(
       pose.pose.position.y - path.poses.front().pose.position.y);
   }
 
-  // -------- search setup --------
+  // ---- search range -------------------------------------------------------
   const size_t n = path.poses.size();
-  size_t start = 0;
-  if (closest_idx && *closest_idx < n - 1) {    // valid previous index
-    start = *closest_idx;
+  size_t start   = 0;
+
+  if (closest_idx && *closest_idx < n - 1) {
+    start = *closest_idx;                         // local scan
   }
 
-  double best_dist_sq = numeric_limits<double>::max();
+  double best_sq  = numeric_limits<double>::max();
   size_t best_idx = start;
 
-  // -------- scan segments i … n-2 --------
+  // ---- segments i … n-2 ---------------------------------------------------
   for (size_t i = start; i < n - 1; ++i) {
-    const double d_sq = distanceSquaredToSegmentXY(
+    const double d_sq = squaredDistanceToSegmentXY(
       pose.pose.position,
       path.poses[i].pose.position,
       path.poses[i + 1].pose.position);
 
-    if (d_sq < best_dist_sq) {
-      best_dist_sq = d_sq;
+    if (d_sq < best_sq) {
+      best_sq  = d_sq;
       best_idx = i;
     }
   }
 
-  // -------- handle seam of closed loop --------
-  if (pathIsClosed(path)) {
-    const double d_sq = distanceSquaredToSegmentXY(
+  // ---- seam of closed loop -----------------------------------------------
+  if (isClosed(path)) {
+    const double d_sq = squaredDistanceToSegmentXY(
       pose.pose.position,
       path.poses.back().pose.position,
       path.poses.front().pose.position);
 
-    if (d_sq < best_dist_sq) {
-      best_dist_sq = d_sq;
-      best_idx = n - 1;
+    if (d_sq < best_sq) {
+      best_sq  = d_sq;
+      best_idx = n - 1;   // virtual segment “last → first”
     }
   }
 
-  // -------- update caller’s index --------
-  if (closest_idx) {
+  // ---- write-back ---------------------------------------------------------
+  if (closest_idx != nullptr) {
     *closest_idx = (best_idx >= n - 1) ? 0 : best_idx;
   }
 
-  return std::sqrt(best_dist_sq);
+  return std::sqrt(best_sq);
 }
 
-} // namespace nav2_util
+}  // namespace nav2_util
