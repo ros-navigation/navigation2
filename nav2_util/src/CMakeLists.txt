@@ -5,6 +5,7 @@ add_library(${library_name} SHARED
   robot_utils.cpp
   odometry_utils.cpp
   array_parser.cpp
+  path_utils.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
