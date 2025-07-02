@@ -45,6 +45,7 @@ jobs:
           claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
           claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
           claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+          secrets_admin_pat: ${{ secrets.SECRETS_ADMIN_PAT }}
           timeout_minutes: "60"
           model: "claude-sonnet-4-20250514"
           # direct_prompt: provide prompt information, probably more useful if this job is split into many. Reviewer, implementer, Q&A answerer, etc so that each have their own context
