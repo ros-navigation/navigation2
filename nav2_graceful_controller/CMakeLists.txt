@@ -45,6 +45,7 @@ add_library(${library_name} SHARED
   src/parameter_handler.cpp
   src/path_handler.cpp
   src/utils.cpp
+  src/path_hug.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
