@@ -18,10 +18,41 @@
 #include <string>
 #include "behaviortree_cpp_v3/control_node.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
-#include "nav2_util/node_utils.hpp"
 
 namespace nav2_behavior_tree
 {
+
+/** @brief Type of sequence node that keeps tickinng through all the children until all children
+ * return SUCCESS
+ *
+ * Type of Control Node  | Child Returns Failure | Child Returns Running
+ * ---------------------------------------------------------------------
+ * NonblockingSequence   |      Restart          | Continue tickng next child
+ *
+ * Continue ticking next child means every node after the running node will be ticked. Even
+ * if a previous node returns Running, the subsequent nodes will be reticked.
+ *
+ * As an example, let's say this node has 3 children: A, B and C. At the start,
+ * they are all IDLE.
+ * |    A    |    B    |    C    |
+ * --------------------------------
+ * |  IDLE   |  IDLE   |   IDLE  |
+ * | RUNNING |  IDLE   |   IDLE  |  - at first A gets ticked. Assume it returns RUNNING
+ *                                  - NonblockingSequence returns RUNNING and continues to the next
+ *                                  - node.
+ * | RUNNING | RUNNING | RUNNING |  - Eventually all nodes will be in the running state and
+ *                                  - NonblockingSequence returns RUNNING
+ * | SUCCESS | RUNNING | SUCCESS |  - Even in a configuration where there are multiple nodes
+ *                                  - returning SUCCESS, NonblockingSequence continues on ticking all.
+ *                                  - nodes each time it is ticked and returns RUNNING.
+ * | SUCCESS | SUCCESS | SUCCESS |  - If all child nodes return SUCCESS the NonblockingSequence
+ *                                  - returns SUCCESS
+ *
+ * If any children at any time had returned FAILURE. NonblockingSequence would have returned FAILURE
+ * and halted all children, ending the sequence.
+ *
+ * Usage in XML: <NonblockingSequence>
+ */
 class NonblockingSequence : public BT::ControlNode
 {
 public:
