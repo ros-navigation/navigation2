@@ -82,7 +82,7 @@ void ComputeAndTrackRouteAction::on_timeout()
 }
 
 void ComputeAndTrackRouteAction::on_wait_for_result(
-  std::shared_ptr<const Action::Feedback>/*feedback*/)
+  std::shared_ptr<const Action::Feedback> feedback)
 {
   // Check for request updates to the goal
   bool use_poses = false, use_start = false;
@@ -128,6 +128,15 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
   // Easier to call on_tick() again than to duplicate the code
   if (goal_updated_) {
     on_tick();
+  }
+
+  if (feedback) {
+    setOutput("last_node_id", feedback->last_node_id);
+    setOutput("next_node_id", feedback->next_node_id);
+    setOutput("current_edge_id", feedback->current_edge_id);
+    setOutput("route", feedback->route);
+    setOutput("path", feedback->path);
+    setOutput("rerouted", feedback->rerouted);
   }
 }
 

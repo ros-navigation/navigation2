@@ -135,6 +135,12 @@
       <output_port name="execution_time">Duration to compute route</output_port>
       <output_port name="error_code_id">"Compute route to pose error code"</output_port>
       <output_port name="error_msg">"Compute route to pose error message"</output_port>
+      <output_port name="last_node_id">"ID of the previous node"</output_port>
+      <output_port name="next_node_id">"ID of the next node"</output_port>
+      <output_port name="current_edge_id">"e"</output_port>
+      <output_port name="route">"List of RouteNodes to go from start to end"</output_port>
+      <output_port name="path">"Path created by ComputeAndTrackRoute node"</output_port>
+      <output_port name="rerouted">"Whether the plan has rerouted"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
