@@ -120,8 +120,8 @@ TEST_F(NonblockingSequenceTestFixture, test_behavior)
   third_child_->changeStatus(BT::NodeStatus::SUCCESS);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
-  //Even if first two children are running, we will still tick the third
-  //node, which if set to failure, fails everything
+  // Even if first two children are running, we will still tick the third
+  // node, which if set to failure, fails everything
   first_child_->changeStatus(BT::NodeStatus::RUNNING);
   second_child_->changeStatus(BT::NodeStatus::RUNNING);
   third_child_->changeStatus(BT::NodeStatus::FAILURE);
