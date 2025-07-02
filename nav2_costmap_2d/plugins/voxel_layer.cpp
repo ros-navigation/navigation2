@@ -380,7 +380,7 @@ void VoxelLayer::raytraceFreespace(
     if(wp_outside) {
       if(t > 0.0) {
         t -= wp_epsilon;
-      } else if(t < 0.0) {
+      } else if (t < 0.0) {
         t += wp_epsilon;
       }
     }
