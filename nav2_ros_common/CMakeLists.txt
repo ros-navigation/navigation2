@@ -24,8 +24,8 @@ nav2_package()
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME}
   INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
@@ -53,12 +53,12 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin
 )
 
-
 ament_export_include_directories(include/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
+
   # skip copyright linting
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
@@ -68,6 +68,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_dependencies(
+  bondcpp
   geometry_msgs
   nav2_msgs
   nav_msgs
