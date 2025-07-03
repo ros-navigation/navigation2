@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// The following function was generated with assistance from an AI tool
+// and has been reviewed and adapted by the developer.
+
 #include <chrono>
 #include <thread>
 #include <random>

@@ -14,6 +14,8 @@
  *  limitations under the License.
  *****************************************************************************/
 
+ // The following function was generated with assistance from an AI tool
+// and has been reviewed and adapted by the developer.
 #include <cstddef>
 #include <cmath>
 #include <limits>
