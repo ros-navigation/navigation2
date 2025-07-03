@@ -74,7 +74,35 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
+  // Get feature parameters
+  declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
+  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
+  node->get_parameter("odom_topic", odom_topic_);
+  node->get_parameter("odom_duration", odom_duration_);
+  node->get_parameter("deadband_velocity", deadband_velocities_);
+  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
+  velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
+
+  // Check if parameters are properly set
   size_t size = max_velocities_.size();
+
+  if ((size != 3 && size != 6) ||
+    min_velocities_.size() != size ||
+    max_accels_.size() != size ||
+    max_decels_.size() != size ||
+    deadband_velocities_.size() != size)
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Invalid setting of kinematic and/or deadband limits!"
+      " All limits must be size of 3 (x, y, theta) or 6 (x, y, z, r, p, y)");
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
+  }
+
   for (unsigned int i = 0; i != size; i++) {
     if (max_decels_[i] > 0.0) {
       RCLCPP_ERROR(
@@ -107,32 +135,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       on_cleanup(state);
       return nav2::CallbackReturn::FAILURE;
     }
-  }
-
-  // Get feature parameters
-  declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
-    node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
-  declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
-  node->get_parameter("odom_topic", odom_topic_);
-  node->get_parameter("odom_duration", odom_duration_);
-  node->get_parameter("deadband_velocity", deadband_velocities_);
-  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
-  velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
-
-  if ((size != 3 && size != 6) ||
-    min_velocities_.size() != size ||
-    max_accels_.size() != size ||
-    max_decels_.size() != size ||
-    deadband_velocities_.size() != size)
-  {
-    RCLCPP_ERROR(
-      get_logger(),
-      "Invalid setting of kinematic and/or deadband limits!"
-      " All limits must be size of 3 (x, y, theta) or 6 (x, y, z, r, p, y)");
-    on_cleanup(state);
-    return nav2::CallbackReturn::FAILURE;
   }
 
   is_6dof_ = (size == 6);
