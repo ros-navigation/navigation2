@@ -44,7 +44,11 @@ namespace nav2_behavior_tree
  *                                  - NonblockingSequence returns RUNNING
  * | SUCCESS | RUNNING | SUCCESS |  - Even in a configuration where there are multiple nodes
  *                                  - returning SUCCESS, NonblockingSequence continues on ticking all.
- *                                  - nodes each time it is ticked and returns RUNNING.
+ *                                  - nodes each time it is ticked and returns RUNNING. Note that even
+ *                                  - if a node returns `SUCCESS`, on the next tick, it will attempt to
+ *                                  - restart the node. This is too ensure that successful nodes do
+ *                                  - not latch a stale state while waiting for another long running
+ *                                  - node to be complete
  * | SUCCESS | SUCCESS | SUCCESS |  - If all child nodes return SUCCESS the NonblockingSequence
  *                                  - returns SUCCESS
  *
