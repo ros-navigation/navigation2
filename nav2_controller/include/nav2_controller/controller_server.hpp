@@ -135,7 +135,7 @@ protected:
    * @return bool Whether it found a valid controller to use
    */
   void path_error();
-  
+
   /**
    * @brief Handles errors encountered during path execution.
    *
@@ -143,7 +143,7 @@ protected:
    * It is responsible for managing error states, triggering recovery behaviors, or notifying other
    * components about the failure in path execution.
    */
-    
+
   bool findControllerId(const std::string & c_name, std::string & name);
 
   /**
@@ -301,7 +301,7 @@ private:
     */
   void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::TrackingError>::SharedPtr
-  tracking_error_pub_;
+    tracking_error_pub_;
 };
 
 }  // namespace nav2_controller

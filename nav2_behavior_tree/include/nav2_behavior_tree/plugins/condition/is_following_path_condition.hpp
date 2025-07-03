@@ -32,7 +32,7 @@ namespace nav2_behavior_tree
  *         lateral tracking error is within a configurable bound.
  *
  * Ports:
- *   • max_error   (double)   — Allowed deviation in metres (default: 1.0)  
+ *   • max_error   (double)   — Allowed deviation in metres (default: 1.0)
  *   • error_topic (string)   — Topic publishing nav2_msgs/TrackingError
  */
 class IsFollowingPathCondition : public BT::ConditionNode
@@ -41,7 +41,6 @@ public:
   IsFollowingPathCondition(
     const std::string & name,
     const BT::NodeConfiguration & conf);
-
 
 
   /// Tick: SUCCESS if |error| ≤ max_error_, else FAILURE.

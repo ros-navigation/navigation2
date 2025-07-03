@@ -33,8 +33,9 @@ namespace
 // Helper: MPPI path → nav_msgs/Path
 // ---------------------------------------------------------------------------
 nav_msgs::msg::Path
-mppiPathToNavMsgsPath(const mppi::models::Path & mppi_path,
-                      const std::string & frame_id)
+mppiPathToNavMsgsPath(
+  const mppi::models::Path & mppi_path,
+  const std::string & frame_id)
 {
   nav_msgs::msg::Path out;
   out.header.frame_id = frame_id;
@@ -68,7 +69,7 @@ namespace mppi::critics
 void PathHugCritic::initialize()
 {
   auto gp = parameters_handler_->getParamGetter(name_);
-  gp(power_,  "power",  1.0);
+  gp(power_, "power", 1.0);
   gp(weight_, "weight", 2.0);
 
   RCLCPP_INFO(
@@ -88,19 +89,19 @@ void PathHugCritic::score(CriticData & data)
   // cache global plan once its size changes
   const size_t path_len = static_cast<size_t>(data.path.x.rows());
   if (path_len != last_path_size_) {
-    cached_path_      = mppiPathToNavMsgsPath(
+    cached_path_ = mppiPathToNavMsgsPath(
                            data.path, data.state.pose.header.frame_id);
-    last_path_size_   = path_len;
+    last_path_size_ = path_len;
     closest_path_idx_ = 0;
   }
 
   const auto & trj = data.trajectories;
-  const size_t num_traj   = static_cast<size_t>(trj.x.rows());
+  const size_t num_traj = static_cast<size_t>(trj.x.rows());
   const size_t pts_per_tr = static_cast<size_t>(trj.x.cols());
 
   for (size_t i = 0; i < num_traj; ++i) {
     float accum = 0.0f;
-    size_t idx  = closest_path_idx_;   // latch for iterative local search
+    size_t idx = closest_path_idx_;    // latch for iterative local search
 
     for (size_t j = 0; j < pts_per_tr; ++j) {
       geometry_msgs::msg::PoseStamped ps;
@@ -114,7 +115,7 @@ void PathHugCritic::score(CriticData & data)
 
     closest_path_idx_ = idx;   // save for next trajectory
     data.costs(i) += (accum / static_cast<float>(pts_per_tr)) *
-                     static_cast<float>(weight_);
+      static_cast<float>(weight_);
   }
 }
 

@@ -46,7 +46,7 @@ void IsFollowingPathCondition::initSubscriber()
 
   // ---- read ports (defaults set in header) ----
   getInput("error_topic", topic_);
-  getInput("max_error",  max_error_);
+  getInput("max_error", max_error_);
 
   node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
 
@@ -72,8 +72,8 @@ void IsFollowingPathCondition::initSubscriber()
 void IsFollowingPathCondition::errorCallback(
   const nav2_msgs::msg::TrackingError::SharedPtr msg)
 {
-  last_error_  = msg->tracking_error;
-  got_msg_     = true;
+  last_error_ = msg->tracking_error;
+  got_msg_ = true;
 }
 
 // ---------------------------------------------------------------------------

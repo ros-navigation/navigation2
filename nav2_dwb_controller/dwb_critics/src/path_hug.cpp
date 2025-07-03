@@ -38,12 +38,13 @@ namespace dwb_critics
 //  Helper: Trajectory2D → Path
 // ---------------------------------------------------------------------------
 static nav_msgs::msg::Path
-trajectory2DToPath(const dwb_msgs::msg::Trajectory2D & traj,
-                   const std::string & frame_id)
+trajectory2DToPath(
+  const dwb_msgs::msg::Trajectory2D & traj,
+  const std::string & frame_id)
 {
   nav_msgs::msg::Path path;
   path.header.frame_id = frame_id;
-  path.header.stamp    = rclcpp::Clock().now();
+  path.header.stamp = rclcpp::Clock().now();
   path.poses.reserve(traj.poses.size());
 
   for (const auto & p2 : traj.poses) {
@@ -73,27 +74,28 @@ void PathHugCritic::onInit()
   }
 
   declare_parameter_if_not_declared(
-    node, full_name_ + ".penalty",      rclcpp::ParameterValue(1.0));
+    node, full_name_ + ".penalty", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
-    node, full_name_ + ".strafe_x",     rclcpp::ParameterValue(0.1));
+    node, full_name_ + ".strafe_x", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
     node, full_name_ + ".strafe_theta", rclcpp::ParameterValue(0.2));
   declare_parameter_if_not_declared(
-    node, full_name_ + ".theta_scale",  rclcpp::ParameterValue(10.0));
+    node, full_name_ + ".theta_scale", rclcpp::ParameterValue(10.0));
 
-  node->get_parameter(full_name_ + ".penalty",      penalty_);
-  node->get_parameter(full_name_ + ".strafe_x",     strafe_x_);
+  node->get_parameter(full_name_ + ".penalty", penalty_);
+  node->get_parameter(full_name_ + ".strafe_x", strafe_x_);
   node->get_parameter(full_name_ + ".strafe_theta", strafe_theta_);
-  node->get_parameter(full_name_ + ".theta_scale",  theta_scale_);
+  node->get_parameter(full_name_ + ".theta_scale", theta_scale_);
 }
 
 // ---------------------------------------------------------------------------
 //  prepare()
 // ---------------------------------------------------------------------------
-bool PathHugCritic::prepare(const geometry_msgs::msg::Pose2D & /*pose*/,
-                            const nav_2d_msgs::msg::Twist2D & /*vel*/,
-                            const geometry_msgs::msg::Pose2D & /*goal*/,
-                            const nav_2d_msgs::msg::Path2D & global_plan)
+bool PathHugCritic::prepare(
+  const geometry_msgs::msg::Pose2D & /*pose*/,
+  const nav_2d_msgs::msg::Twist2D & /*vel*/,
+  const geometry_msgs::msg::Pose2D & /*goal*/,
+  const nav_2d_msgs::msg::Path2D & global_plan)
 {
   if (global_plan.poses.empty()) {
     return false;
@@ -117,7 +119,7 @@ double PathHugCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
     trajectory2DToPath(traj, global_plan_path_.header.frame_id);
 
   double accum = 0.0;
-  size_t idx   = 0;  // latch for iterative local search
+  size_t idx = 0;    // latch for iterative local search
 
   for (const auto & pose_stamped : traj_path.poses) {
     accum += nav2_util::distanceFromPath(

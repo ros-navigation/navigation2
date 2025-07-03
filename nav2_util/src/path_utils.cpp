@@ -31,8 +31,9 @@ constexpr double kEpsilon = 1e-8;
 constexpr double kClosedPathTol = 0.01;  // [m]
 
 inline double
-squaredDistance(const geometry_msgs::msg::Point & a,
-                const geometry_msgs::msg::Point & b)
+squaredDistance(
+  const geometry_msgs::msg::Point & a,
+  const geometry_msgs::msg::Point & b)
 {
   const double dx = a.x - b.x;
   const double dy = a.y - b.y;
@@ -40,9 +41,10 @@ squaredDistance(const geometry_msgs::msg::Point & a,
 }
 
 inline double
-squaredDistanceToSegmentXY(const geometry_msgs::msg::Point & p,
-                           const geometry_msgs::msg::Point & a,
-                           const geometry_msgs::msg::Point & b)
+squaredDistanceToSegmentXY(
+  const geometry_msgs::msg::Point & p,
+  const geometry_msgs::msg::Point & a,
+  const geometry_msgs::msg::Point & b)
 {
   const double len2 = squaredDistance(a, b);
   if (len2 < kEpsilon) {
@@ -50,8 +52,8 @@ squaredDistanceToSegmentXY(const geometry_msgs::msg::Point & p,
   }
 
   const double dot = (p.x - a.x) * (b.x - a.x) +
-                     (p.y - a.y) * (b.y - a.y);
-  const double t   = std::clamp(dot / len2, 0.0, 1.0);
+    (p.y - a.y) * (b.y - a.y);
+  const double t = std::clamp(dot / len2, 0.0, 1.0);
 
   const double proj_x = a.x + t * (b.x - a.x);
   const double proj_y = a.y + t * (b.y - a.y);
@@ -67,7 +69,7 @@ isClosed(const nav_msgs::msg::Path & path)
   return path.poses.size() > 2 &&
          squaredDistance(path.poses.front().pose.position,
                          path.poses.back().pose.position) <
-           kClosedPathTol * kClosedPathTol;
+         kClosedPathTol * kClosedPathTol;
 }
 }  // namespace
 
@@ -79,7 +81,7 @@ namespace nav2_util
  *
  * Implements the “iterative local minimum” strategy requested in
  * https://github.com/ros-navigation/navigation2/issues/5037:
- *   • First invocation (closest_idx == nullptr) -> global scan  
+ *   • First invocation (closest_idx == nullptr) -> global scan
  *   • Subsequent calls start at *closest_idx for loop-stable tracking
  *
  * @param pose         Robot pose in the same frame as @p path
@@ -90,9 +92,10 @@ namespace nav2_util
  * @throws std::invalid_argument if pose/path frame_ids differ
  */
 double
-distanceFromPath(const geometry_msgs::msg::PoseStamped & pose,
-                 const nav_msgs::msg::Path &             path,
-                 size_t *                                closest_idx /* = nullptr */)
+distanceFromPath(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const nav_msgs::msg::Path & path,
+  size_t *                                closest_idx /* = nullptr */)
 {
   using std::numeric_limits;
 
@@ -116,13 +119,13 @@ distanceFromPath(const geometry_msgs::msg::PoseStamped & pose,
 
   // ---- search range -------------------------------------------------------
   const size_t n = path.poses.size();
-  size_t start   = 0;
+  size_t start = 0;
 
   if (closest_idx && *closest_idx < n - 1) {
     start = *closest_idx;                         // local scan
   }
 
-  double best_sq  = numeric_limits<double>::max();
+  double best_sq = numeric_limits<double>::max();
   size_t best_idx = start;
 
   // ---- segments i … n-2 ---------------------------------------------------
@@ -133,7 +136,7 @@ distanceFromPath(const geometry_msgs::msg::PoseStamped & pose,
       path.poses[i + 1].pose.position);
 
     if (d_sq < best_sq) {
-      best_sq  = d_sq;
+      best_sq = d_sq;
       best_idx = i;
     }
   }
@@ -146,7 +149,7 @@ distanceFromPath(const geometry_msgs::msg::PoseStamped & pose,
       path.poses.front().pose.position);
 
     if (d_sq < best_sq) {
-      best_sq  = d_sq;
+      best_sq = d_sq;
       best_idx = n - 1;   // virtual segment “last → first”
     }
   }

@@ -1,4 +1,4 @@
-/******************************************************************************  
+/******************************************************************************
  *  Copyright (c) 2025, Berkan Tali
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ namespace nav2_util
  *
  * Implements the “iterative local minimum” strategy requested in
  * <https://github.com/ros-navigation/navigation2/issues/5037>.
- *   * First call, @p closest_idx is nullptr ➜ full global scan.  
+ *   * First call, @p closest_idx is nullptr ➜ full global scan.
  *   * Subsequent calls pass the prior index ➜ local scan forward only,
  *     giving stable behaviour on self-intersecting loops.
  *
@@ -48,7 +48,7 @@ namespace nav2_util
  */
 double distanceFromPath(
   const geometry_msgs::msg::PoseStamped & pose,
-  const nav_msgs::msg::Path &             path,
+  const nav_msgs::msg::Path & path,
   size_t *                                closest_idx = nullptr);
 
 }  // namespace nav2_util
