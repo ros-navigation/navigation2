@@ -212,6 +212,9 @@ list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
+add_library(nav2_nonblocking_sequence_bt_node SHARED plugins/control/nonblocking_sequence.cpp)
+list(APPEND plugin_libs nav2_nonblocking_sequence_bt_node)
+
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
 

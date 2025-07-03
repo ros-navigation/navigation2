@@ -397,6 +397,7 @@
 
     <Control ID="RoundRobin"/>
 
+    <Control ID="NonblockingSequence"/>
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
       <input_port name="hz">Rate</input_port>
