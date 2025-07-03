@@ -618,6 +618,38 @@ TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
   EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
 }
 
+TEST(VelocitySmootherTest, testDifferentParamsSize) {
+   auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> max_vel{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
+  std::vector<double> bad_min_vel{0.0, 0.0, 0.5, 2.5};
+  std::vector<double> accel{2.5, 2.5, 2.5, 5.0, 5.0, 5.0};
+  std::vector<double> decel{-2.5, -2.5, -2.5, -5.0, -5.0, -5.0};
+  std::vector<double> deadband_vel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_min_vel));
+  smoother->declare_parameter("max_accel", rclcpp::ParameterValue(accel));
+  smoother->declare_parameter("min_decel", rclcpp::ParameterValue(decel));
+  smoother->declare_parameter("deadband_velocity", rclcpp::ParameterValue(deadband_vel));
+
+  rclcpp_lifecycle::State state;
+  EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
+}
+
+TEST(VelocitySmootherTest, testInvalidParamsSize) {
+   auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> bad_max_vel{0.5, 0.5, 0.5, 2.5};
+  std::vector<double> bad_min_vel{0, 5, 0.5};
+
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(bad_max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_min_vel));
+  rclcpp_lifecycle::State state;
+  EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
+}
+
 TEST(VelocitySmootherTest, testDynamicParameter)
 {
   auto smoother =
