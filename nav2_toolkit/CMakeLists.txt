@@ -89,6 +89,7 @@ if(BUILD_TESTING)
     nav2_msgs
     std_srvs
     nav2_util
+    nav2_msgs
   )
 endif()
 
@@ -104,6 +105,8 @@ ament_export_dependencies(
   tf2
   tf2_geometry_msgs
   tf2_ros
+  nav2_msgs
+  nav2_util
 )
 ament_export_targets(export_${PROJECT_NAME})
 
