@@ -66,15 +66,30 @@ install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
 
-  ament_find_gtest()
+  ament_add_gtest(test_pose_saver_node
+    test/test_pose_saver_node.cpp
+  )
 
-  add_subdirectory(test)
+  target_include_directories(test_pose_saver_node PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  )
+
+  target_link_libraries(test_pose_saver_node
+    pose_saver_component
+    yaml-cpp
+  )
+
+  ament_target_dependencies(test_pose_saver_node
+    rclcpp
+    geometry_msgs
+    nav2_msgs
+    std_srvs
+    nav2_util
+  )
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
