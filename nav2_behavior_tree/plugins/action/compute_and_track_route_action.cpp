@@ -60,7 +60,6 @@ void ComputeAndTrackRouteAction::on_tick()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 {
-
   setOutput("last_node_id", feedback_.last_node_id);
   setOutput("next_node_id", feedback_.next_node_id);
   setOutput("current_edge_id", feedback_.current_edge_id);
@@ -173,7 +172,7 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
     on_tick();
   }
 
-  if(feedback){
+  if (feedback) {
     feedback_.last_node_id = feedback->last_node_id;
     feedback_.next_node_id = feedback->next_node_id;
     feedback_.current_edge_id = feedback->current_edge_id;
