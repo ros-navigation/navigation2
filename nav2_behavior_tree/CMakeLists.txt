@@ -245,6 +245,9 @@ list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
 add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_route_bt_node)
 
+add_library(nav2_is_following_path_condition_bt_node SHARED plugins/condition/is_following_path_condition.cpp)
+list(APPEND plugin_libs nav2_is_following_path_condition_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE

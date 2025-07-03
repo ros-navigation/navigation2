@@ -26,6 +26,8 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
+#include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_error.hpp"
 
 using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
@@ -64,6 +66,10 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
   declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
   declare_parameter("costmap_update_timeout", 0.30);  // 300ms
+
+  // Tracking error publisher (lifecycle)
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingError>(
+    "tracking_error", rclcpp::QoS(10));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -262,8 +268,15 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->activate();
   }
+
   vel_publisher_->on_activate();
   action_server_->activate();
+
+  // Activate tracking error publisher
+  if (tracking_error_pub_) {
+    tracking_error_pub_->on_activate();
+    RCLCPP_DEBUG(get_logger(), "tracking_pub activated");
+  }
 
   auto node = shared_from_this();
   // Add callback for dynamic parameters

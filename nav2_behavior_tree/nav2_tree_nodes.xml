@@ -387,7 +387,11 @@
       <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
     </Condition>
 
-
+    <Condition ID="IsFollowingPath">
+      <input_port name="max_error">Maximum allowed distance from path</input_port>
+      <input_port name="error_topic">Live path tracking error from the blackboard</input_port>
+    </Condition>
+    
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
 
