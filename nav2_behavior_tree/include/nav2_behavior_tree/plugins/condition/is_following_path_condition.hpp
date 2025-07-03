@@ -42,7 +42,7 @@ public:
     const std::string & name,
     const BT::NodeConfiguration & conf);
 
-  ~IsFollowingPathCondition() override = default;
+
 
   /// Tick: SUCCESS if |error| ≤ max_error_, else FAILURE.
   BT::NodeStatus tick() override;

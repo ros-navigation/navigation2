@@ -34,7 +34,6 @@ IsFollowingPathCondition::IsFollowingPathCondition(
 : BT::ConditionNode(name, conf)
 {}
 
-IsFollowingPathCondition::~IsFollowingPathCondition() = default;
 
 // ---------------------------------------------------------------------------
 //  Lazy one-shot subscription initialiser

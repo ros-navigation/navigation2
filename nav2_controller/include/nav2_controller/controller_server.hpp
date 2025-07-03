@@ -300,6 +300,8 @@ private:
     * @param msg Shared pointer to nav2_msgs::msg::SpeedLimit
     */
   void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::TrackingError>::SharedPtr
+  tracking_error_pub_;
 };
 
 }  // namespace nav2_controller

@@ -22,7 +22,7 @@
 
 #include "nav2_util/path_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "tf2/LinearMath/Quaternion.h"
+//#include "tf2/LinearMath/Quaternion.h"          // tf2::Quaternion
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 PLUGINLIB_EXPORT_CLASS(mppi::critics::PathHugCritic, mppi::critics::CriticFunction)
@@ -38,9 +38,11 @@ mppiPathToNavMsgsPath(const mppi::models::Path & mppi_path,
 {
   nav_msgs::msg::Path out;
   out.header.frame_id = frame_id;
-  out.poses.reserve(mppi_path.x.shape(0));
 
-  for (size_t i = 0; i < mppi_path.x.shape(0); ++i) {
+  const size_t path_len = static_cast<size_t>(mppi_path.x.rows());
+  out.poses.reserve(path_len);
+
+  for (size_t i = 0; i < path_len; ++i) {
     geometry_msgs::msg::PoseStamped ps;
     ps.header = out.header;
     ps.pose.position.x = mppi_path.x(i);
@@ -55,7 +57,7 @@ mppiPathToNavMsgsPath(const mppi::models::Path & mppi_path,
   }
   return out;
 }
-}  // anonymous namespace
+}  // namespace
 
 namespace mppi::critics
 {
@@ -70,7 +72,7 @@ void PathHugCritic::initialize()
   gp(weight_, "weight", 2.0);
 
   RCLCPP_INFO(
-    logger_, "PathHugCritic initialised — weight %.2f, power %.2f",
+    logger_, "PathHugCritic initialised: weight %.2f  power %.2f",
     weight_, power_);
 }
 
@@ -79,38 +81,40 @@ void PathHugCritic::initialize()
 // ---------------------------------------------------------------------------
 void PathHugCritic::score(CriticData & data)
 {
-  if (!enabled_ || data.path.x.shape(0) == 0 || weight_ == 0.0) {
+  if (!enabled_ || data.path.x.rows() == 0 || weight_ == 0.0) {
     return;
   }
 
-  /* cache the global plan if it changed */
-  if (data.path.x.shape(0) != last_path_size_) {
-    cached_path_ = mppiPathToNavMsgsPath(
-      data.path, data.state.pose.header.frame_id);
-    last_path_size_   = data.path.x.shape(0);
-    closest_path_idx_ = 0;   // reset latch
+  // cache global plan once its size changes
+  const size_t path_len = static_cast<size_t>(data.path.x.rows());
+  if (path_len != last_path_size_) {
+    cached_path_      = mppiPathToNavMsgsPath(
+                           data.path, data.state.pose.header.frame_id);
+    last_path_size_   = path_len;
+    closest_path_idx_ = 0;
   }
 
-  const auto & trj  = data.trajectories;
-  const size_t T    = trj.x.shape(0);  // trajectories
-  const size_t P    = trj.x.shape(1);  // points per trajectory
+  const auto & trj = data.trajectories;
+  const size_t num_traj   = static_cast<size_t>(trj.x.rows());
+  const size_t pts_per_tr = static_cast<size_t>(trj.x.cols());
 
-  for (size_t i = 0; i < T; ++i) {
-    float acc = 0.0f;
-    size_t idx = closest_path_idx_;
+  for (size_t i = 0; i < num_traj; ++i) {
+    float accum = 0.0f;
+    size_t idx  = closest_path_idx_;   // latch for iterative local search
 
-    for (size_t j = 0; j < P; ++j) {
+    for (size_t j = 0; j < pts_per_tr; ++j) {
       geometry_msgs::msg::PoseStamped ps;
-      ps.header.frame_id              = data.state.pose.header.frame_id;
-      ps.pose.position.x              = trj.x(i, j);
-      ps.pose.position.y              = trj.y(i, j);
+      ps.header.frame_id = data.state.pose.header.frame_id;
+      ps.pose.position.x = trj.x(i, j);
+      ps.pose.position.y = trj.y(i, j);
 
       const double d = nav2_util::distanceFromPath(ps, cached_path_, &idx);
-      acc += static_cast<float>(std::pow(d, power_));
+      accum += static_cast<float>(std::pow(d, power_));
     }
 
-    closest_path_idx_ = idx;  // latch for next trajectory
-    data.costs(i) += (acc / static_cast<float>(P)) * static_cast<float>(weight_);
+    closest_path_idx_ = idx;   // save for next trajectory
+    data.costs(i) += (accum / static_cast<float>(pts_per_tr)) *
+                     static_cast<float>(weight_);
   }
 }
 
