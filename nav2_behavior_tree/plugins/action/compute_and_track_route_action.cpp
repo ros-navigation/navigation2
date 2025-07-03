@@ -60,6 +60,13 @@ void ComputeAndTrackRouteAction::on_tick()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 {
+
+  setOutput("last_node_id", feedback_.last_node_id);
+  setOutput("next_node_id", feedback_.next_node_id);
+  setOutput("current_edge_id", feedback_.current_edge_id);
+  setOutput("route", feedback_.route);
+  setOutput("path", feedback_.path);
+  setOutput("rerouted", feedback_.rerouted);
   setOutput("execution_duration", result_.result->execution_duration);
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
