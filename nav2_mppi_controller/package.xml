@@ -39,6 +39,7 @@
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/mppic.xml" />
     <nav2_mppi_controller plugin="${prefix}/critics.xml" />
+    <nav2_mppi_controller plugin="${prefix}/trajectory_validators.xml" />
   </export>
 
 </package>

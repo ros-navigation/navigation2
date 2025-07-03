@@ -147,15 +147,15 @@ getDummyNode(rclcpp::NodeOptions options, std::string node_name = std::string("d
   return node;
 }
 
-template<typename TNode, typename TCostMap, typename TParamHandler>
+template<typename TNode, typename TCostMap, typename TFBuffer, typename TParamHandler>
 std::shared_ptr<mppi::Optimizer> getDummyOptimizer(
-  TNode node, TCostMap costmap_ros,
+  TNode node, TCostMap costmap_ros, TFBuffer tf_buffer,
   TParamHandler * params_handler)
 {
   std::shared_ptr<mppi::Optimizer> optimizer = std::make_shared<mppi::Optimizer>();
   nav2::LifecycleNode::WeakPtr weak_ptr_node{node};
 
-  optimizer->initialize(weak_ptr_node, node->get_name(), costmap_ros, params_handler);
+  optimizer->initialize(weak_ptr_node, node->get_name(), costmap_ros, tf_buffer, params_handler);
 
   return optimizer;
 }

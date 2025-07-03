@@ -107,7 +107,35 @@ target_link_libraries(mppi_critics PRIVATE
   pluginlib::pluginlib
 )
 
-install(TARGETS mppi_controller mppi_critics
+add_library(mppi_trajectory_validators SHARED
+  src/trajectory_validators/optimal_trajectory_validator.cpp
+)
+target_compile_options(mppi_trajectory_validators PUBLIC -O3)
+target_include_directories(mppi_trajectory_validators
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+target_link_libraries(mppi_trajectory_validators PUBLIC
+  angles::angles
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_costmap_2d::layers
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${std_msgs_TARGETS}
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
+  ${visualization_msgs_TARGETS}
+)
+target_link_libraries(mppi_trajectory_validators PRIVATE
+  pluginlib::pluginlib
+)
+
+install(TARGETS mppi_controller mppi_critics mppi_trajectory_validators
   EXPORT nav2_mppi_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -153,5 +181,6 @@ ament_export_targets(nav2_mppi_controller)
 
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)
 pluginlib_export_plugin_description_file(nav2_mppi_controller critics.xml)
+pluginlib_export_plugin_description_file(nav2_mppi_controller trajectory_validators.xml)
 
 ament_package()

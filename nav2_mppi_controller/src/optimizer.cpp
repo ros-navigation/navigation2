@@ -25,6 +25,7 @@
 
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace mppi
 {
@@ -32,6 +33,7 @@ namespace mppi
 void Optimizer::initialize(
   nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   ParametersHandler * param_handler)
 {
   parent_ = parent;
@@ -47,6 +49,16 @@ void Optimizer::initialize(
 
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
   noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
+
+  // This may throw an exception if not valid and fail controller server initialization
+  std::string validator_plugin_type = nav2::get_plugin_type_param(
+    node, name_ + ".TrajectoryValidator");
+  validator_loader_ = std::make_unique<pluginlib::ClassLoader<OptimalTrajectoryValidator>>(
+    "nav2_mppi_controller", "mppi::OptimalTrajectoryValidator");
+  trajectory_validator_ = validator_loader_->createUniqueInstance(validator_plugin_type);
+  trajectory_validator_->initialize(
+    parent_, name_ + ".TrajectoryValidator", costmap_ros_, parameters_handler_, tf_buffer);
+  RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
   reset();
 }
@@ -159,7 +171,7 @@ bool Optimizer::isHolonomic() const
   return motion_model_->isHolonomic();
 }
 
-geometry_msgs::msg::TwistStamped Optimizer::evalControl(
+std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalControl(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
   const nav_msgs::msg::Path & plan,
@@ -167,10 +179,28 @@ geometry_msgs::msg::TwistStamped Optimizer::evalControl(
   nav2_core::GoalChecker * goal_checker)
 {
   prepare(robot_pose, robot_speed, plan, goal, goal_checker);
+  Eigen::ArrayXXf optimal_trajectory;
+  bool trajectory_valid = true;
 
   do {
     optimize();
-  } while (fallback(critics_data_.fail_flag));
+    optimal_trajectory = getOptimizedTrajectory();
+    mppi::ValidationResult validation_result = trajectory_validator_->validateTrajectory(
+      optimal_trajectory, robot_pose, robot_speed, plan, goal);
+    switch (validation_result) {
+      case mppi::ValidationResult::SOFT_RESET:
+        trajectory_valid = false;
+        RCLCPP_WARN(logger_, "Soft reset triggered by trajectory validator");
+        break;
+      case mppi::ValidationResult::FAILURE:
+        throw nav2_core::NoValidControl(
+          "Trajectory validator failed to validate trajectory, hard reset triggered.");
+      case mppi::ValidationResult::SUCCESS:
+      default:
+        trajectory_valid = true;
+        break;
+    }
+  } while (fallback(critics_data_.fail_flag || !trajectory_valid));
 
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
@@ -179,7 +209,7 @@ geometry_msgs::msg::TwistStamped Optimizer::evalControl(
     shiftControlSequence();
   }
 
-  return control;
+  return std::make_tuple(control, optimal_trajectory);
 }
 
 void Optimizer::optimize()
