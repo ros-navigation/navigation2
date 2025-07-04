@@ -30,7 +30,6 @@ def generate_launch_description():
     default_pose_file = os.path.join(os.environ['HOME'], 'last_known_pose.yaml')
 
     namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     pose_file_path = LaunchConfiguration('pose_file_path')
 

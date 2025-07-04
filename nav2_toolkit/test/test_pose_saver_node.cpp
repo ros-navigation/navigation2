@@ -13,15 +13,19 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <std_srvs/srv/trigger.hpp>
-#include "nav2_toolkit/pose_saver_node.hpp"
-#include <filesystem>
-#include <thread>
-#include <chrono>
 
-using namespace nav2_toolkit;
+#include <chrono>
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <thread>
+
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/trigger.hpp>
+
+#include "nav2_toolkit/pose_saver_node.hpp"
+
 namespace fs = std::filesystem;
 
 class PoseSaverTest : public ::testing::Test
@@ -29,62 +33,59 @@ class PoseSaverTest : public ::testing::Test
 protected:
   static void SetUpTestSuite()
   {
-    if (!rclcpp::ok())
-    {
+    if (!rclcpp::ok()) {
       rclcpp::init(0, nullptr);
     }
   }
 
   static void TearDownTestSuite()
   {
-    if (rclcpp::ok())
-    {
+    if (rclcpp::ok()) {
       rclcpp::shutdown();
     }
   }
 
   void SetUp() override
   {
-    std::string unique_node_name = "pose_saver_node_" + std::to_string(rand());
+    unsigned int seed = static_cast<unsigned int>(
+      std::chrono::system_clock::now().time_since_epoch().count());
+    std::string unique_node_name = "pose_saver_node_" + std::to_string(rand_r(&seed));
+
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=" + unique_node_name});
     options.append_parameter_override("pose_file_path", test_pose_path_);
     options.append_parameter_override("auto_start_saving", true);
     options.append_parameter_override("auto_restore_pose", false);
-  
-    node_ = std::make_shared<PoseSaverNode>(options);
-  
+
+    node_ = std::make_shared<nav2_toolkit::PoseSaverNode>(options);
+
     exec_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     exec_->add_node(node_);
-  
+
     spin_thread_ = std::make_unique<std::thread>([this]() {
       exec_->spin();
     });
-  
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
-  
-  
 
   void TearDown() override
   {
     exec_->cancel();
-    if (spin_thread_ && spin_thread_->joinable())
-    {
+    if (spin_thread_ && spin_thread_->joinable()) {
       spin_thread_->join();
     }
 
     exec_.reset();
     node_.reset();
 
-    if (fs::exists(test_pose_path_))
-    {
+    if (fs::exists(test_pose_path_)) {
       fs::remove(test_pose_path_);
     }
   }
 
   std::string test_pose_path_ = "/tmp/test_pose.yaml";
-  std::shared_ptr<PoseSaverNode> node_;
+  std::shared_ptr<nav2_toolkit::PoseSaverNode> node_;
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> exec_;
   std::unique_ptr<std::thread> spin_thread_;
 };
@@ -127,9 +128,7 @@ TEST_F(PoseSaverTest, test_start_pose_saver_service)
   ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(5)));
 
   auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-
-  auto future_and_id = client->async_send_request(request);
-  auto future = future_and_id.future.share();
+  auto future = client->async_send_request(request);
 
   auto status = rclcpp::spin_until_future_complete(client_node, future, std::chrono::seconds(5));
   ASSERT_EQ(status, rclcpp::FutureReturnCode::SUCCESS);
@@ -138,14 +137,13 @@ TEST_F(PoseSaverTest, test_start_pose_saver_service)
   EXPECT_TRUE(response->success);
   EXPECT_EQ(response->message, "Pose saving started.");
 }
+
 TEST_F(PoseSaverTest, test_pose_written_by_timer_after_publish)
 {
-  // Create a publisher on /amcl_pose
   auto pub_node = std::make_shared<rclcpp::Node>("test_pub_node");
   auto publisher = pub_node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "amcl_pose", 10);
 
-  // Publish test pose
   geometry_msgs::msg::PoseWithCovarianceStamped msg;
   msg.header.frame_id = "map";
   msg.header.stamp = node_->now();
@@ -153,20 +151,16 @@ TEST_F(PoseSaverTest, test_pose_written_by_timer_after_publish)
   msg.pose.pose.position.y = 2.71;
   msg.pose.pose.orientation.w = 1.0;
 
-  // Wait for subscription to connect
   rclcpp::Rate rate(10);
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }
 
-  // Wait slightly longer than the timer interval (default is 5s)
   std::this_thread::sleep_for(std::chrono::seconds(6));
 
   ASSERT_TRUE(fs::exists(test_pose_path_));
 
-  // Read file contents
   YAML::Node node = YAML::LoadFile(test_pose_path_);
   double x = node["pose"]["position"]["x"].as<double>();
   double y = node["pose"]["position"]["y"].as<double>();
@@ -190,19 +184,15 @@ TEST_F(PoseSaverTest, test_stop_pose_saver_service)
   msg.pose.pose.position.y = 4.44;
   msg.pose.pose.orientation.w = 1.0;
 
-  // Publish a pose to start with
   rclcpp::Rate rate(10);
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }
 
-  // Wait to ensure timer saved it
   std::this_thread::sleep_for(std::chrono::seconds(6));
   ASSERT_TRUE(fs::exists(test_pose_path_));
 
-  // Call stop_pose_saver
   auto client_node = std::make_shared<rclcpp::Node>("test_stop_client");
   auto stop_client = client_node->create_client<std_srvs::srv::Trigger>("stop_pose_saver");
 
@@ -217,24 +207,18 @@ TEST_F(PoseSaverTest, test_stop_pose_saver_service)
   EXPECT_TRUE(response->success);
   EXPECT_EQ(response->message, "Pose saving stopped.");
 
-  // Remove the pose file to test if it's recreated after timer is stopped
   fs::remove(test_pose_path_);
   ASSERT_FALSE(fs::exists(test_pose_path_));
 
-  // Publish another pose
   msg.pose.pose.position.x = 8.88;
   msg.pose.pose.position.y = 7.77;
 
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }
 
-  // Wait again to see if file reappears (it shouldn't)
   std::this_thread::sleep_for(std::chrono::seconds(6));
 
   EXPECT_FALSE(fs::exists(test_pose_path_));
 }
-
-
