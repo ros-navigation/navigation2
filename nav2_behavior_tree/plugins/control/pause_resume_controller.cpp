@@ -92,13 +92,19 @@ BT::NodeStatus PauseResumeController::tick()
   // If child is used, tick it
   const BT::NodeStatus child_status =
     children_nodes_[child_indices.at(state_)]->executeTick();
+
   switch (child_status) {
     case BT::NodeStatus::RUNNING:
       return BT::NodeStatus::RUNNING;
     case BT::NodeStatus::SUCCESS:
     case BT::NodeStatus::SKIPPED:
+      if (state_ == RESUMED) {
+        // Resumed child returned SUCCESS, we're done
+        return BT::NodeStatus::SUCCESS;
+      }
       switchToNextState();
-      return BT::NodeStatus::SUCCESS;
+      // If any branch other than RESUMED returned SUCCESS, keep ticking
+      return BT::NodeStatus::RUNNING;
     case BT::NodeStatus::FAILURE:
       RCLCPP_ERROR(
         logger_, "%s child returned FAILURE", state_names.at(state_).c_str());

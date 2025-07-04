@@ -8,3 +8,6 @@ plugin_add_test(test_control_nonblocking_sequence test_nonblocking_sequence.cpp 
 
 plugin_add_test(test_control_pause_resume_controller
   test_pause_resume_controller.cpp nav2_pause_resume_controller_bt_node)
+
+plugin_add_test(test_sequence_with_blackboard_memory
+  test_sequence_with_blackboard_memory.cpp nav2_sequence_with_blackboard_memory_bt_node)

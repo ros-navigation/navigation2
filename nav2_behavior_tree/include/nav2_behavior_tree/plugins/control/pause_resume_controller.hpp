@@ -69,6 +69,16 @@ const std::map<state_t, uint16_t> child_indices = {
  *
  *     <!-- ON_RESUME branch (optional) -->
  * </Pause>
+ *
+ * The controller starts in RESUMED state, and ticks it until it returns success.
+ * When the pause service is called, ON_PAUSE is ticked until completion,
+ * then the controller switches to PAUSED state.
+ * When the resume service is called, ON_RESUME is ticked until completion,
+ * then the controller switches back to RESUMED state.
+ *
+ * The controller only returns success when the RESUMED child returns success.
+ * The controller returns failure if any child returns failure.
+ * In any other case, it returns running.
  */
 
 
@@ -97,6 +107,11 @@ public:
         "resume_service_name",
         "Name of the service to resume"),
     };
+  }
+
+  [[nodiscard]] inline state_t getState() const
+  {
+    return state_;
   }
 
 private:
