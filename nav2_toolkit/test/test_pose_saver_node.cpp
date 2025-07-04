@@ -1,7 +1,7 @@
-// Copyright (C) 2025 Pranav Kolekar
+// Copyright (c) 2025 Pranav Kolekar
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// You may not use this file except in compliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
@@ -46,7 +46,6 @@ protected:
   void SetUp() override
   {
     std::string unique_node_name = "pose_saver_node_" + std::to_string(rand());
-  
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=" + unique_node_name});
     options.append_parameter_override("pose_file_path", test_pose_path_);

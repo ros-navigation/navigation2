@@ -24,6 +24,7 @@
   <depend>tf2_ros</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
+  <depend>nav2_ros_common</depend>
 
   <build_depend>nav2_common</build_depend>
   <build_depend>ament_index_cpp</build_depend>
