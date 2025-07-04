@@ -61,7 +61,7 @@ BT::NodeStatus SequenceWithBlackboardMemoryNode::tick()
   }  // end while loop
 
   // The entire while loop completed. This means that all the children returned SUCCESS.
-  if (current_child_idx == children_count) {
+  if (current_child_idx >= children_count) {
     resetChildren();
     setOutput("current_child_idx", 0);
   }
