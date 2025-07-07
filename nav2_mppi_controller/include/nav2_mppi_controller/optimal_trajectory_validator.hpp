@@ -81,8 +81,9 @@ public:
   }
 
   /**
-   * @brief Validate the optimal control sequence from MPPI optimization
-   * @param optimal_control The optimal control sequence to validate
+   * @brief Validate the optimal trajectory from MPPI optimization
+   * @param optimal_trajectory The optimal trajectory to validate
+   * @param control_sequence The control sequence to validate
    * @param robot_pose The current pose of the robot
    * @param robot_speed The current speed of the robot
    * @param plan The planned path for the robot
@@ -90,7 +91,8 @@ public:
    * @return True if the trajectory is valid, false otherwise
    */
   virtual ValidationResult validateTrajectory(
-    const Eigen::ArrayXXf & /*optimal_control*/,
+    const Eigen::ArrayXXf & /*optimal_trajectory*/,
+    const models::ControlSequence & /*control_sequence*/,
     const geometry_msgs::msg::PoseStamped /*robot_pose*/,
     const geometry_msgs::msg::Twist /*robot_speed*/,
     const nav_msgs::msg::Path & /*plan*/,
