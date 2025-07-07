@@ -127,7 +127,7 @@ public:
       });
   }
 
-private:
+protected:
   Action::Feedback feedback_;
 };
 
