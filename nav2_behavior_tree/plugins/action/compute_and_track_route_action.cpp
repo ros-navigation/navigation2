@@ -152,7 +152,8 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
   }
 }
 
-void ComputeAndTrackRouteAction::resetFeedbackAndOutputPorts(){
+void ComputeAndTrackRouteAction::resetFeedbackAndOutputPorts()
+{
   nav_msgs::msg::Path empty_path;
   nav2_msgs::msg::Route empty_route;
   feedback_.last_node_id = 0;
