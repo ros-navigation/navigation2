@@ -60,12 +60,7 @@ void ComputeAndTrackRouteAction::on_tick()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 {
-  setOutput("last_node_id", feedback_.last_node_id);
-  setOutput("next_node_id", feedback_.next_node_id);
-  setOutput("current_edge_id", feedback_.current_edge_id);
-  setOutput("route", feedback_.route);
-  setOutput("path", feedback_.path);
-  setOutput("rerouted", feedback_.rerouted);
+  resetFeedbackAndOutputPorts();
   setOutput("execution_duration", result_.result->execution_duration);
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
@@ -74,20 +69,7 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_aborted()
 {
-  nav_msgs::msg::Path empty_path;
-  nav2_msgs::msg::Route empty_route;
-  feedback_.last_node_id = 0;
-  feedback_.next_node_id = 0;
-  feedback_.current_edge_id = 0;
-  feedback_.route = empty_route;
-  feedback_.path = empty_path;
-  feedback_.rerouted = false;
-  setOutput("last_node_id", feedback_.last_node_id);
-  setOutput("next_node_id", feedback_.next_node_id);
-  setOutput("current_edge_id", feedback_.current_edge_id);
-  setOutput("route", feedback_.route);
-  setOutput("path", feedback_.path);
-  setOutput("rerouted", feedback_.rerouted);
+  resetFeedbackAndOutputPorts();
   setOutput("execution_duration", builtin_interfaces::msg::Duration());
   setOutput("error_code_id", result_.result->error_code);
   setOutput("error_msg", result_.result->error_msg);
@@ -96,20 +78,7 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_aborted()
 
 BT::NodeStatus ComputeAndTrackRouteAction::on_cancelled()
 {
-  nav_msgs::msg::Path empty_path;
-  nav2_msgs::msg::Route empty_route;
-  feedback_.last_node_id = 0;
-  feedback_.next_node_id = 0;
-  feedback_.current_edge_id = 0;
-  feedback_.route = empty_route;
-  feedback_.path = empty_path;
-  feedback_.rerouted = false;
-  setOutput("last_node_id", feedback_.last_node_id);
-  setOutput("next_node_id", feedback_.next_node_id);
-  setOutput("current_edge_id", feedback_.current_edge_id);
-  setOutput("route", feedback_.route);
-  setOutput("path", feedback_.path);
-  setOutput("rerouted", feedback_.rerouted);
+  resetFeedbackAndOutputPorts();
   // Set empty error code, action was cancelled
   setOutput("execution_duration", builtin_interfaces::msg::Duration());
   setOutput("error_code_id", ActionResult::NONE);
@@ -173,14 +142,25 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
   }
 
   if (feedback) {
-    feedback_.last_node_id = feedback->last_node_id;
-    feedback_.next_node_id = feedback->next_node_id;
-    feedback_.current_edge_id = feedback->current_edge_id;
-    feedback_.route = feedback->route;
-    feedback_.path = feedback->path;
-    feedback_.rerouted = feedback->rerouted;
+    feedback_ = *feedback;
+    setOutput("last_node_id", feedback_.last_node_id);
+    setOutput("next_node_id", feedback_.next_node_id);
+    setOutput("current_edge_id", feedback_.current_edge_id);
+    setOutput("route", feedback_.route);
+    setOutput("path", feedback_.path);
+    setOutput("rerouted", feedback_.rerouted);
   }
+}
 
+void resetFeedbackAndOutputPorts(){
+  nav_msgs::msg::Path empty_path;
+  nav2_msgs::msg::Route empty_route;
+  feedback_.last_node_id = 0;
+  feedback_.next_node_id = 0;
+  feedback_.current_edge_id = 0;
+  feedback_.route = empty_route;
+  feedback_.path = empty_path;
+  feedback_.rerouted = false;
   setOutput("last_node_id", feedback_.last_node_id);
   setOutput("next_node_id", feedback_.next_node_id);
   setOutput("current_edge_id", feedback_.current_edge_id);
