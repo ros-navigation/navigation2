@@ -137,15 +137,12 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   std::string client_node_name = action_name_;
   std::replace(client_node_name.begin(), client_node_name.end(), '/', '_');
   // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
-  auto options = rclcpp::NodeOptions().arguments(
-    {"--ros-args",
-      "-r",
-      std::string("__node:=") +
-      std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node",
-      "-p",
-      "use_sim_time:=" +
-      std::string(node->get_parameter("use_sim_time").as_bool() ? "true" : "false"),
-      "--"});
+
+  auto new_arguments = node->get_node_options().arguments();
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", std::string("__node:=") +
+    std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node");
+  auto options = node->get_node_options();
+  options = options.arguments(new_arguments);
 
   // Support for handling the topic-based goal pose from rviz
   client_node_ = std::make_shared<nav2::LifecycleNode>("_", options);

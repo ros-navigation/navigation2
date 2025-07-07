@@ -16,7 +16,7 @@ import launch
 import yaml
 
 
-class HasNodeParams(launch.Substitution):  # type: ignore[misc]
+class HasNodeParams(launch.Substitution):
     """
     Substitution that checks if a param file contains parameters for a node.
 

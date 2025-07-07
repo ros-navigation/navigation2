@@ -164,14 +164,14 @@ def generate_launch_description() -> LaunchDescription:
     bringup_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(nav2_bringup_dir, 'launch', 'bringup_launch.py')),
-        launch_arguments={
-            'map': map_yaml_file,
-            'graph': graph_filepath,
-            'use_keepout_zones': use_keepout_zones,
-            'use_speed_zones': use_speed_zones,
-            'keepout_mask': keepout_mask_yaml_file,
-            'speed_mask': speed_mask_yaml_file,
-        }.items())
+        launch_arguments=[
+            ('map', map_yaml_file),
+            ('graph', graph_filepath),
+            ('use_keepout_zones', use_keepout_zones),
+            ('use_speed_zones', use_speed_zones),
+            ('keepout_mask', keepout_mask_yaml_file),
+            ('speed_mask', speed_mask_yaml_file),
+        ])
 
     # start the demo autonomy task
     demo_cmd = Node(

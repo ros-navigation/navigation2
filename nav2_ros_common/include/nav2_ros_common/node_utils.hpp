@@ -358,15 +358,15 @@ inline void setIntrospectionMode(
 {
   #if RCLCPP_VERSION_GTE(29, 0, 0)
   rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-  if (!node_parameters_interface->has_parameter("service_introspection_mode")) {
+  if (!node_parameters_interface->has_parameter("introspection_mode")) {
     node_parameters_interface->declare_parameter(
-      "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+      "introspection_mode", rclcpp::ParameterValue("disabled"));
   }
-  std::string service_introspection_mode =
-    node_parameters_interface->get_parameter("service_introspection_mode").as_string();
-  if (service_introspection_mode == "metadata") {
+  std::string introspection_mode =
+    node_parameters_interface->get_parameter("introspection_mode").as_string();
+  if (introspection_mode == "metadata") {
     introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-  } else if (service_introspection_mode == "contents") {
+  } else if (introspection_mode == "contents") {
     introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
   }
 
@@ -376,6 +376,26 @@ inline void setIntrospectionMode(
   (void)node_parameters_interface;
   (void)clock;
   #endif
+}
+
+/**
+  * @brief Given a specified argument name, replaces it with the specified
+  * new value. If the argument is not in the existing list, a new argument
+  * is created with the specified option.
+  */
+inline void replaceOrAddArgument(
+  std::vector<std::string> & arguments, const std::string & option,
+  const std::string & arg_name, const std::string & new_argument)
+{
+  auto argument = std::find_if(arguments.begin(), arguments.end(),
+      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  if (argument != arguments.end()) {
+    *argument = new_argument;
+  } else {
+    arguments.push_back("--ros-args");
+    arguments.push_back(option);
+    arguments.push_back(new_argument);
+  }
 }
 
 }  // namespace nav2
