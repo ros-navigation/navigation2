@@ -30,7 +30,7 @@ namespace nav2_behavior_tree
  * NonblockingSequence   |      Restart          | Continue tickng next child
  *
  * Continue ticking next child means every node after the running node will be ticked. Even
- * if a previous node returns Running, the subsequent nodes will be reticked.
+ * if a previous node returns Running or Success, the subsequent nodes will be reticked.
  *
  * As an example, let's say this node has 3 children: A, B and C. At the start,
  * they are all IDLE.
