@@ -142,8 +142,8 @@ private:
   rclcpp::Logger logger_{rclcpp::get_logger("PauseResumeController")};
   rclcpp::CallbackGroup::SharedPtr cb_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  nav2_util::ServiceServer<Trigger>::SharedPtr pause_srv_;
-  nav2_util::ServiceServer<Trigger>::SharedPtr resume_srv_;
+  nav2::ServiceServer<Trigger>::SharedPtr pause_srv_;
+  nav2::ServiceServer<Trigger>::SharedPtr resume_srv_;
   state_t state_;
 };
 

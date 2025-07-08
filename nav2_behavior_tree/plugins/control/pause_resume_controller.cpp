@@ -45,19 +45,19 @@ PauseResumeController::PauseResumeController(
 
   std::string pause_service_name;
   getInput("pause_service_name", pause_service_name);
-  pause_srv_ = std::make_shared<nav2_util::ServiceServer<Trigger>>(
+  pause_srv_ = std::make_shared<nav2::ServiceServer<Trigger>>(
     pause_service_name,
     node,
     std::bind(&PauseResumeController::pauseServiceCallback, this, _1, _2, _3),
-    rclcpp::ServicesQoS(), cb_group_);
+    cb_group_);
 
   std::string resume_service_name;
   getInput("resume_service_name", resume_service_name);
-  resume_srv_ = std::make_shared<nav2_util::ServiceServer<Trigger>>(
+  resume_srv_ = std::make_shared<nav2::ServiceServer<Trigger>>(
     resume_service_name,
     node,
     std::bind(&PauseResumeController::resumeServiceCallback, this, _1, _2, _3),
-    rclcpp::ServicesQoS(), cb_group_);
+    cb_group_);
 }
 
 BT::NodeStatus PauseResumeController::tick()
