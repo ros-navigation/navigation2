@@ -32,7 +32,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/line_iterator.hpp"
-#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 
 namespace nav2_route
 {

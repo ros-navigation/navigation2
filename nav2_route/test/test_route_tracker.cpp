@@ -22,7 +22,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/transform_listener.h"
-#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"
 #include "nav2_route/route_server.hpp"

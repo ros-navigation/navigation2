@@ -18,11 +18,11 @@
 #include <memory>
 #include <string>
 
-#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/interfaces/edge_cost_function.hpp"
 #include "nav2_util/line_iterator.hpp"
-#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"

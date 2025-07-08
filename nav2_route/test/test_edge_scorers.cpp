@@ -19,9 +19,9 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/service_client.hpp"
-#include "nav2_ros_common/node_thread.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/service_client.hpp"
+#include "nav2_util/node_thread.hpp"
 #include "nav2_route/edge_scorer.hpp"
 #include "nav2_msgs/srv/dynamic_edges.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"

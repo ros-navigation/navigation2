@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_route/interfaces/route_operation.hpp"
-#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 
 namespace nav2_route

@@ -25,7 +25,7 @@
 #include "nav2_route/utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_util/line_iterator.hpp"
-#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "nav2_core/route_exceptions.hpp"
 
 namespace nav2_route

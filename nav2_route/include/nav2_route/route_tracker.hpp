@@ -18,7 +18,7 @@
 
 #include "tf2_ros/transform_listener.h"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_ros_common/simple_action_server.hpp"
+#include "nav2_util/simple_action_server.hpp"
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/route_exceptions.hpp"
