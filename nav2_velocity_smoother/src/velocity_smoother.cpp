@@ -88,6 +88,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 
   // Check if parameters are properly set
   size_t size = max_velocities_.size();
+  is_6dof_ = (size == 6);
 
   if ((size != 3 && size != 6) ||
     min_velocities_.size() != size ||
@@ -137,7 +138,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  is_6dof_ = (size == 6);
   // Get control type
   if (feedback_type == "OPEN_LOOP") {
     open_loop_ = true;
