@@ -204,7 +204,10 @@ protected:
   void runCleanups();
 
   // Connection to tell that server is still up
-  std::unique_ptr<bond::Bond> bond_{nullptr};
+  // NOTE: Bond uses shared_from_this() internally (e.g. in Bond::start()).
+  // Therefore, it MUST be managed by a std::shared_ptr, not a std::unique_ptr.
+  // Using unique_ptr here would lead to a std::bad_weak_ptr exception at runtime.
+  std::shared_ptr<bond::Bond> bond_{nullptr};
 };
 
 }  // namespace nav2_util

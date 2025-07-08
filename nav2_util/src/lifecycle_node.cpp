@@ -57,7 +57,7 @@ void LifecycleNode::createBond()
 {
   RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
-  bond_ = std::make_unique<bond::Bond>(
+  bond_ = std::make_shared<bond::Bond>(
     std::string("bond"),
     this->get_name(),
     shared_from_this());
