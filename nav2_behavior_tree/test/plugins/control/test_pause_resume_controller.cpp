@@ -26,21 +26,21 @@ class PauseResumeControllerTestFixture : public nav2_behavior_tree::BehaviorTree
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("pause_resume_controller_test_fixture");
+    auto node = std::make_shared<rclcpp::Node>("pause_resume_controller_test_fixture");
     executor_ =
       std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-    cb_group_ = node_->create_callback_group(
+    cb_group_ = node->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive, false);
-    executor_->add_callback_group(cb_group_, node_->get_node_base_interface());
-    pause_client_ = node_->create_client<std_srvs::srv::Trigger>(
+    executor_->add_callback_group(cb_group_, node->get_node_base_interface());
+    pause_client_ = node->create_client<std_srvs::srv::Trigger>(
       "pause", rclcpp::ServicesQoS(), cb_group_);
-    resume_client_ = node_->create_client<std_srvs::srv::Trigger>(
+    resume_client_ = node->create_client<std_srvs::srv::Trigger>(
       "resume", rclcpp::ServicesQoS(), cb_group_);
 
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node);
 
     factory_->registerNodeType<nav2_behavior_tree::PauseResumeController>("PauseResumeController");
 
