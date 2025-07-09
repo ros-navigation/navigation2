@@ -26,7 +26,7 @@ class InitialPoseReceivedConditionTestFixture : public nav2_behavior_tree::Behav
 public:
   void SetUp()
   {
-    config_->input_ports["initial_pose_received"] = 0;
+    config_->input_ports["initial_pose_received"] = false;
     bt_node_ = std::make_shared<nav2_behavior_tree::InitialPoseReceived>("TestNode", *config_);
   }
 
