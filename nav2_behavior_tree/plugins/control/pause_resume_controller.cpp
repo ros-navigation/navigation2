@@ -137,14 +137,6 @@ void PauseResumeController::pauseServiceCallback(
   const std::shared_ptr<Trigger::Request>/*request*/,
   std::shared_ptr<Trigger::Response> response)
 {
-  if (status() == BT::NodeStatus::IDLE) {
-    std::string warn_msg = "PauseResumeController BT node has not been ticked yet";
-    response->success = false;
-    response->message = warn_msg;
-    RCLCPP_ERROR(logger_, "%s", warn_msg.c_str());
-    return;
-  }
-
   if (state_ != PAUSED) {
     RCLCPP_INFO(logger_, "Received pause request");
     response->success = true;
@@ -163,14 +155,6 @@ void PauseResumeController::resumeServiceCallback(
   const std::shared_ptr<Trigger::Request>/*request*/,
   std::shared_ptr<Trigger::Response> response)
 {
-  if (status() == BT::NodeStatus::IDLE) {
-    std::string warn_msg = "PauseResumeController BT node has not been ticked yet";
-    response->success = false;
-    response->message = warn_msg;
-    RCLCPP_ERROR(logger_, "%s", warn_msg.c_str());
-    return;
-  }
-
   if (state_ == PAUSED) {
     RCLCPP_INFO(logger_, "Received resume request");
     response->success = true;
