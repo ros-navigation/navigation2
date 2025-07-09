@@ -51,7 +51,7 @@ public:
    * @param parent pointer to user's node
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node) override;
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node) override;
 
   /**
    * @brief Loads the geojson file into the graph

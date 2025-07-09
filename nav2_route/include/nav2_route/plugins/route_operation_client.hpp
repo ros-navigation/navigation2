@@ -78,7 +78,7 @@ public:
    * main service name and existence.
    */
   virtual void configureEvent(
-    const nav2::LifecycleNode::SharedPtr /*node*/,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr /*node*/,
     const std::string & /*name*/) {}
 
   /**
@@ -98,7 +98,7 @@ protected:
    * @brief Configure
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     const std::string & name) final
   {
@@ -107,7 +107,7 @@ protected:
     logger_ = node->get_logger();
     node_ = node;
 
-    nav2::declare_parameter_if_not_declared(
+    nav2_util::declare_parameter_if_not_declared(
       node, getName() + ".service_name", rclcpp::ParameterValue(""));
     main_srv_name_ = node->get_parameter(getName() + ".service_name").as_string();
 
@@ -196,8 +196,8 @@ protected:
   std::string name_, main_srv_name_;
   std::atomic_bool reroute_;
   rclcpp::Logger logger_{rclcpp::get_logger("RouteOperationClient")};
-  typename nav2::ServiceClient<SrvT>::SharedPtr main_client_;
-  nav2::LifecycleNode::WeakPtr node_;
+  typename rclcpp::Client<SrvT>::SharedPtr main_client_;
+  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
 };
 
 }  // namespace nav2_route

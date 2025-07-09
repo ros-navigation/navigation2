@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 GraphLoader::GraphLoader(
-  nav2::LifecycleNode::SharedPtr node,
+  nav2_util::LifecycleNode::SharedPtr node,
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
@@ -31,23 +31,23 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(std::string("")));
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
   auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
   if (graph_file_loader_id == default_plugin_id_) {
-    nav2::declare_parameter_if_not_declared(
+    nav2_util::declare_parameter_if_not_declared(
       node, default_plugin_id_ + ".plugin",
       rclcpp::ParameterValue("nav2_route::GeoJsonGraphFileLoader"));
   }
 
   // Create graph file loader plugin
   try {
-    plugin_type_ = nav2::get_plugin_type_param(node, graph_file_loader_id);
+    plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_loader_id);
     graph_file_loader_ = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileLoader %s of type %s",

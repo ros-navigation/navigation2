@@ -31,17 +31,17 @@ GraphSaver::GraphSaver(
   tf_ = tf;
   route_frame_ = frame;
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(std::string("")));
   graph_filepath_ = node->get_parameter("graph_filepath").as_string();
 
   // Default Graph Parser
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileSaver";
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_saver", rclcpp::ParameterValue(default_plugin_id_));
   auto graph_file_saver_id = node->get_parameter("graph_file_saver").as_string();
   if (graph_file_saver_id == default_plugin_id_) {
-    nav2::declare_parameter_if_not_declared(
+    nav2_util::declare_parameter_if_not_declared(
       node, default_plugin_id_ + ".plugin", rclcpp::ParameterValue(default_plugin_type));
   }
 

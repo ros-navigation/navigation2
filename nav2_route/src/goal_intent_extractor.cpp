@@ -24,7 +24,7 @@ namespace nav2_route
 static float EPSILON = 1e-6;
 
 void GoalIntentExtractor::configure(
-  nav2::LifecycleNode::SharedPtr node,
+  nav2_util::LifecycleNode::SharedPtr node,
   Graph & graph,
   GraphToIDMap * id_to_graph_map,
   std::shared_ptr<tf2_ros::Buffer> tf,
@@ -42,31 +42,31 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph);
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "prune_goal", rclcpp::ParameterValue(true));
   prune_goal_ = node->get_parameter("prune_goal").as_bool();
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "max_prune_dist_from_edge", rclcpp::ParameterValue(8.0));
   max_dist_from_edge_ = static_cast<float>(
     node->get_parameter("max_prune_dist_from_edge").as_double());
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "min_prune_dist_from_goal", rclcpp::ParameterValue(0.15));
   min_dist_from_goal_ = static_cast<float>(
     node->get_parameter("min_prune_dist_from_goal").as_double());
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "min_prune_dist_from_start", rclcpp::ParameterValue(0.10));
   min_dist_from_start_ = static_cast<float>(
     node->get_parameter("min_prune_dist_from_start").as_double());
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "enable_nn_search", rclcpp::ParameterValue(true));
   enable_search_ = node->get_parameter("enable_nn_search").as_bool();
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "max_nn_search_iterations", rclcpp::ParameterValue(10000));
   max_nn_search_iterations_ = node->get_parameter("max_nn_search_iterations").as_int();
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "num_nearest_nodes", rclcpp::ParameterValue(5));
   int num_of_nearest_nodes = node->get_parameter("num_nearest_nodes").as_int();
   node_spatial_tree_->setNumOfNearestNodes(num_of_nearest_nodes);

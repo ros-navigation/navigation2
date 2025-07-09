@@ -49,7 +49,7 @@ public:
    * @brief Configure
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node,
+    const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 
@@ -99,7 +99,7 @@ protected:
   std::string name_;
   std::atomic_bool reroute_;
   rclcpp::Logger logger_{rclcpp::get_logger("ReroutingService")};
-  typename nav2::ServiceServer<std_srvs::srv::Trigger>::SharedPtr service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
 };
 
 }  // namespace nav2_route

@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 void DynamicEdgesScorer::configure(
-  const nav2::LifecycleNode::SharedPtr node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)

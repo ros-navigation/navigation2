@@ -48,7 +48,7 @@ public:
    * @param frame Coordinate frame that the graph belongs to
    */
   explicit GraphSaver(
-    nav2::LifecycleNode::SharedPtr node,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
     std::shared_ptr<tf2_ros::Buffer> tf,
     const std::string frame);
 

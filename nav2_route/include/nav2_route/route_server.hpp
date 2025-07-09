@@ -52,19 +52,19 @@ namespace nav2_route
  * @brief An action server implements a Navigation Route-Graph planner
  * to compliment free-space planning in the Planner Server
  */
-class RouteServer : public nav2::LifecycleNode
+class RouteServer : public nav2_util::LifecycleNode
 {
 public:
   using ComputeRoute = nav2_msgs::action::ComputeRoute;
   using ComputeRouteGoal = ComputeRoute::Goal;
   using ComputeRouteResult = ComputeRoute::Result;
-  using ComputeRouteServer = nav2::SimpleActionServer<ComputeRoute>;
+  using ComputeRouteServer = nav2_util::SimpleActionServer<ComputeRoute>;
 
   using ComputeAndTrackRoute = nav2_msgs::action::ComputeAndTrackRoute;
   using ComputeAndTrackRouteGoal = ComputeAndTrackRoute::Goal;
   using ComputeAndTrackRouteFeedback = ComputeAndTrackRoute::Feedback;
   using ComputeAndTrackRouteResult = ComputeAndTrackRoute::Result;
-  using ComputeAndTrackRouteServer = nav2::SimpleActionServer<ComputeAndTrackRoute>;
+  using ComputeAndTrackRouteServer = nav2_util::SimpleActionServer<ComputeAndTrackRoute>;
 
   /**
    * @brief A constructor for nav2_route::RouteServer
@@ -82,35 +82,35 @@ protected:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Activate member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Deactivate member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Reset member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Called when in shutdown state
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Main route action server callbacks for computing and tracking a route
@@ -138,7 +138,7 @@ protected:
    */
   template<typename ActionT>
   void processRouteRequest(
-    typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server);
+    typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server);
 
   /**
    * @brief Find the planning duration of the request and log warnings
@@ -153,7 +153,7 @@ protected:
    * @return if the request is valid
    */
   template<typename ActionT>
-  bool isRequestValid(typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server);
+  bool isRequestValid(typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server);
 
   /**
    * @brief Populate result for compute route action
@@ -208,11 +208,11 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
   // Publish the route for visualization
-  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
 
   // Set or modify graph
-  nav2::ServiceServer<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
+  rclcpp::Service<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
 
   // Internal tools
   std::shared_ptr<GraphLoader> graph_loader_;

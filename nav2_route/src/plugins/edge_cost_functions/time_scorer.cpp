@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 void TimeScorer::configure(
-  const nav2::LifecycleNode::SharedPtr node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::shared_ptr<tf2_ros::Buffer>/* tf_buffer */,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
@@ -30,20 +30,20 @@ void TimeScorer::configure(
   name_ = name;
 
   // Find the tag at high the speed limit information is stored
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".speed_tag", rclcpp::ParameterValue("abs_speed_limit"));
   speed_tag_ = node->get_parameter(getName() + ".speed_tag").as_string();
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".time_tag", rclcpp::ParameterValue("abs_time_taken"));
   prev_time_tag_ = node->get_parameter(getName() + ".time_tag").as_string();
 
   // Find the proportional weight to apply, if multiple cost functions
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".weight", rclcpp::ParameterValue(1.0));
   weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".max_vel", rclcpp::ParameterValue(0.5));
   max_vel_ = static_cast<float>(node->get_parameter(getName() + ".max_vel").as_double());
 }

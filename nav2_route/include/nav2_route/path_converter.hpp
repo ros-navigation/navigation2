@@ -51,7 +51,7 @@ public:
    * @brief Configure the object
    * @param node Node to use to get params and create interfaces
    */
-  void configure(nav2::LifecycleNode::SharedPtr node);
+  void configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
   /**
    * @brief Convert a Route into a dense path
@@ -80,7 +80,7 @@ public:
     std::vector<geometry_msgs::msg::PoseStamped> & poses);
 
 protected:
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
   rclcpp::Logger logger_{rclcpp::get_logger("PathConverter")};
   float density_;
   float smoothing_radius_;

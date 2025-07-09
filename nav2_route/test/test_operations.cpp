@@ -179,7 +179,7 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   // Enable rerouting service, which conducts on query (not status change)
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"ReroutingService"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "ReroutingService.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::ReroutingService"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -234,7 +234,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   // Operations Manager as well as the route operations client.
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -314,10 +314,10 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   // Set the global service to use instead of file settings for conflict testing
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.service_name",
     rclcpp::ParameterValue(std::string{"hello_world"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -402,7 +402,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   // when a graph object contains the request for opening a door only
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "OpenDoor.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -447,7 +447,7 @@ TEST(OperationsManagerTest, test_time_marker)
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   node->declare_parameter(
     "operations", rclcpp::ParameterValue(std::vector<std::string>{"TimeMarker"}));
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "TimeMarker.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeMarker"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;

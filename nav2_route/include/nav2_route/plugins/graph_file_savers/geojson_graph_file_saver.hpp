@@ -52,7 +52,7 @@ public:
    * @param parent pointer to user's node
    */
   void configure(
-    const nav2::LifecycleNode::SharedPtr node) override;
+    const nav2_util::LifecycleNode::SharedPtr node) override;
 
   /**
    * @brief Saves the graph to a geojson file

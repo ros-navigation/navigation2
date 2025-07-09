@@ -22,13 +22,13 @@ namespace nav2_route
 {
 
 void TimeMarker::configure(
-  const nav2::LifecycleNode::SharedPtr node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
 {
   RCLCPP_INFO(node->get_logger(), "Configuring Adjust speed limit operation.");
   name_ = name;
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".time_tag", rclcpp::ParameterValue("abs_time_taken"));
   time_tag_ = node->get_parameter(getName() + ".time_tag").as_string();
   clock_ = node->get_clock();

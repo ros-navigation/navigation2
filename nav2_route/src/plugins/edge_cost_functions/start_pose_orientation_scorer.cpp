@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 void StartPoseOrientationScorer::configure(
-  const nav2::LifecycleNode::SharedPtr node,
+  const rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/* costmap_subscriber */,
   const std::string & name)
@@ -30,14 +30,14 @@ void StartPoseOrientationScorer::configure(
   name_ = name;
   logger_ = node->get_logger();
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node,
     getName() + ".orientation_tolerance", rclcpp::ParameterValue(M_PI / 2.0));
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".orientation_weight", rclcpp::ParameterValue(1.0));
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".use_orientation_threshold", rclcpp::ParameterValue(false));
 
   orientation_tolerance_ = node->get_parameter(getName() + ".orientation_tolerance").as_double();

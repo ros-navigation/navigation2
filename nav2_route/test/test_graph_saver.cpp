@@ -40,14 +40,14 @@ TEST(GraphSaver, test_invalid_plugin)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   // Set dummy parameter
   std::string default_plugin = "nav2_route::Dummy";
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_saver", rclcpp::ParameterValue(default_plugin));
 
   EXPECT_THROW(GraphSaver graph_saver(node, tf, frame), std::runtime_error);
@@ -59,7 +59,7 @@ TEST(GraphSaver, test_empty_filename)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
@@ -80,7 +80,7 @@ TEST(GraphSaver, test_api)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
@@ -117,7 +117,7 @@ TEST(GraphSaver, test_transformation_api)
 
   std::string frame = "map";
 
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
       ament_index_cpp::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
