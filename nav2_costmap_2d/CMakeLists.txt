@@ -46,13 +46,13 @@ target_include_directories(nav2_costmap_2d_core
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_costmap_2d_core PUBLIC
   ${geometry_msgs_TARGETS}
   ${map_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
+  nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
   pluginlib::pluginlib
   ${std_srvs_TARGETS}
@@ -75,7 +75,6 @@ target_include_directories(layers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(layers PUBLIC
   angles::angles
@@ -84,6 +83,7 @@ target_link_libraries(layers PUBLIC
   laser_geometry::laser_geometry
   nav2_voxel_grid::voxel_grid
   nav2_costmap_2d_core
+  nav2_ros_common::nav2_ros_common
   tf2::tf2
 )
 target_link_libraries(layers PRIVATE
@@ -99,12 +99,12 @@ target_include_directories(filters
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(filters PUBLIC
   nav2_costmap_2d_core
   ${std_msgs_TARGETS}
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(nav2_costmap_2d_client SHARED
@@ -116,12 +116,12 @@ target_include_directories(nav2_costmap_2d_client
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_costmap_2d_client PUBLIC
   nav2_costmap_2d_core
   ${std_msgs_TARGETS}
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
@@ -137,7 +137,6 @@ target_include_directories(nav2_costmap_2d_markers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 add_executable(nav2_costmap_2d_cloud src/costmap_2d_cloud.cpp)
@@ -154,7 +153,6 @@ target_include_directories(nav2_costmap_2d_cloud
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 
 add_executable(nav2_costmap_2d src/costmap_2d_node.cpp)
