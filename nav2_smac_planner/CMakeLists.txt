@@ -23,7 +23,6 @@ find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(angles REQUIRED)
 find_package(ompl REQUIRED)
-find_package(ode REQUIRED)
 list(REMOVE_ITEM OMPL_LIBRARIES "ode_double")
 list(APPEND OMPL_LIBRARIES "ODE::ODE")
 
