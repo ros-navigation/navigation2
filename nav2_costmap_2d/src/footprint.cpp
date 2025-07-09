@@ -71,7 +71,7 @@ std::pair<double, double> calculateMinAndMaxDistances(
   return std::pair<double, double>(min_dist, max_dist);
 }
 
-geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
+geometry_msgs::msg::Point32 toPoint32(const geometry_msgs::msg::Point & pt)
 {
   geometry_msgs::msg::Point32 point32;
   point32.x = pt.x;
@@ -80,7 +80,7 @@ geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
   return point32;
 }
 
-geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt)
+geometry_msgs::msg::Point toPoint(const geometry_msgs::msg::Point32 & pt)
 {
   geometry_msgs::msg::Point point;
   point.x = pt.x;
@@ -89,20 +89,22 @@ geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt)
   return point;
 }
 
-geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts)
+geometry_msgs::msg::Polygon toPolygon(const std::vector<geometry_msgs::msg::Point> & pts)
 {
   geometry_msgs::msg::Polygon polygon;
-  for (unsigned int i = 0; i < pts.size(); i++) {
-    polygon.points.push_back(toPoint32(pts[i]));
+  polygon.points.reserve(pts.size());
+  for (const auto & pt : pts) {
+    polygon.points.push_back(toPoint32(pt));
   }
   return polygon;
 }
 
-std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
+std::vector<geometry_msgs::msg::Point> toPointVector(const geometry_msgs::msg::Polygon & polygon)
 {
   std::vector<geometry_msgs::msg::Point> pts;
-  for (unsigned int i = 0; i < polygon->points.size(); i++) {
-    pts.push_back(toPoint(polygon->points[i]));
+  pts.reserve(polygon.points.size());
+  for (const auto & point: polygon.points) {
+    pts.push_back(toPoint(point));
   }
   return pts;
 }
