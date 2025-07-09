@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_smac_planner)
 
-set(CMAKE_BUILD_TYPE Release) #Debug, Release
-
 find_package(ament_cmake REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -22,14 +20,15 @@ find_package(pluginlib REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(angles REQUIRED)
+find_package(visualization_msgs REQUIRED)
+
+nav2_package()
+
 find_package(ompl REQUIRED)
-find_package(OpenMP REQUIRED)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 if(MSVC)
   add_compile_definitions(_USE_MATH_DEFINES)
@@ -40,15 +39,7 @@ endif()
 include_directories(
   include
   ${OMPL_INCLUDE_DIRS}
-  ${OpenMP_INCLUDE_DIRS}
 )
-
-find_package(OpenMP)
-if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
 
 set(library_name nav2_smac_planner)
 
@@ -85,7 +76,7 @@ add_library(${library_name} SHARED
   src/node_basic.cpp
 )
 
-target_link_libraries(${library_name} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
+target_link_libraries(${library_name} ${OMPL_LIBRARIES})
 target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}

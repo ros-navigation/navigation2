@@ -146,7 +146,7 @@ protected:
    * @brief Set the field value for a given dimension
    * @param msg Current pose to sample
    * @param dim Dimension ID of interest
-   * @param value to set the dimention to for the pose
+   * @param value to set the dimension to for the pose
    */
   inline void setFieldByDim(
     geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
@@ -232,7 +232,7 @@ protected:
     bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
-  int max_its_, refinement_ctr_;
+  int max_its_, refinement_ctr_, refinement_num_;
   bool is_holonomic_, do_refinement_;
   MotionModel motion_model_;
   ompl::base::StateSpacePtr state_space_;

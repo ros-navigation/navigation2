@@ -26,7 +26,7 @@
 namespace nav2_smac_planner
 {
 
-typedef std::pair<float, unsigned int> NodeHeuristicPair;
+typedef std::pair<float, uint64_t> NodeHeuristicPair;
 
 /**
  * @struct nav2_smac_planner::SearchInfo
@@ -34,18 +34,23 @@ typedef std::pair<float, unsigned int> NodeHeuristicPair;
  */
 struct SearchInfo
 {
-  float minimum_turning_radius;
-  float non_straight_penalty;
-  float change_penalty;
-  float reverse_penalty;
-  float cost_penalty;
-  float retrospective_penalty;
-  float rotation_penalty;
-  float analytic_expansion_ratio;
-  float analytic_expansion_max_length;
+  float minimum_turning_radius{8.0};
+  float non_straight_penalty{1.05};
+  float change_penalty{0.0};
+  float reverse_penalty{2.0};
+  float cost_penalty{2.0};
+  float retrospective_penalty{0.015};
+  float rotation_penalty{5.0};
+  float analytic_expansion_ratio{3.5};
+  float analytic_expansion_max_length{60.0};
+  float analytic_expansion_max_cost{200.0};
+  bool analytic_expansion_max_cost_override{false};
   std::string lattice_filepath;
-  bool cache_obstacle_heuristic;
-  bool allow_reverse_expansion;
+  bool cache_obstacle_heuristic{false};
+  bool allow_reverse_expansion{false};
+  bool allow_primitive_interpolation{false};
+  bool downsample_obstacle_heuristic{true};
+  bool use_quadratic_cost_penalty{false};
 };
 
 /**
@@ -87,6 +92,9 @@ struct SmootherParams
     nav2_util::declare_parameter_if_not_declared(
       node, local_name + "do_refinement", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "do_refinement", do_refinement_);
+    nav2_util::declare_parameter_if_not_declared(
+      node, local_name + "refinement_num", rclcpp::ParameterValue(2));
+    node->get_parameter(local_name + "refinement_num", refinement_num_);
   }
 
   double tolerance_;
@@ -95,6 +103,22 @@ struct SmootherParams
   double w_smooth_;
   bool holonomic_;
   bool do_refinement_;
+  int refinement_num_;
+};
+
+/**
+ * @struct nav2_smac_planner::TurnDirection
+ * @brief A struct with the motion primitive's direction embedded
+ */
+enum class TurnDirection
+{
+  UNKNOWN = 0,
+  FORWARD = 1,
+  LEFT = 2,
+  RIGHT = 3,
+  REVERSE = 4,
+  REV_LEFT = 5,
+  REV_RIGHT = 6
 };
 
 /**
@@ -113,19 +137,22 @@ struct MotionPose
    * @param x X pose
    * @param y Y pose
    * @param theta Angle of pose
+   * @param TurnDirection Direction of the primitive's turn
    */
-  MotionPose(const float & x, const float & y, const float & theta)
-  : _x(x), _y(y), _theta(theta)
+  MotionPose(const float & x, const float & y, const float & theta, const TurnDirection & turn_dir)
+  : _x(x), _y(y), _theta(theta), _turn_dir(turn_dir)
   {}
 
   MotionPose operator-(const MotionPose & p2)
   {
-    return MotionPose(this->_x - p2._x, this->_y - p2._y, this->_theta - p2._theta);
+    return MotionPose(
+      this->_x - p2._x, this->_y - p2._y, this->_theta - p2._theta, TurnDirection::UNKNOWN);
   }
 
   float _x;
   float _y;
   float _theta;
+  TurnDirection _turn_dir;
 };
 
 typedef std::vector<MotionPose> MotionPoses;
@@ -159,6 +186,17 @@ struct MotionPrimitive
   float straight_length;
   bool left_turn;
   MotionPoses poses;
+};
+
+/**
+ * @struct nav2_smac_planner::GoalState
+ * @brief A struct to store the goal state
+ */
+template<typename NodeT>
+struct GoalState
+{
+  NodeT * goal = nullptr;
+  bool is_valid = true;
 };
 
 typedef std::vector<MotionPrimitive> MotionPrimitives;

@@ -11,8 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
+
 #include <vector>
+#include <memory>
+
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_smac_planner/constants.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -39,7 +43,7 @@ public:
    * orientations for to speed up collision checking
    */
   GridCollisionChecker(
-    nav2_costmap_2d::Costmap2D * costmap,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     unsigned int num_quantizations,
     rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
@@ -62,7 +66,7 @@ public:
   void setFootprint(
     const nav2_costmap_2d::Footprint & footprint,
     const bool & radius,
-    const double & possible_inscribed_cost);
+    const double & possible_collision_cost);
 
   /**
    * @brief Check if in collision with costmap and footprint at pose
@@ -103,7 +107,12 @@ public:
     return angles_;
   }
 
-private:
+  /**
+   * @brief Get costmap ros object for inflation layer params
+   * @return Costmap ros
+   */
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS() {return costmap_ros_;}
+
   /**
    * @brief Check if value outside the range
    * @param min Minimum value of the range
@@ -114,12 +123,13 @@ private:
   bool outsideRange(const unsigned int & max, const float & value);
 
 protected:
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
-  double footprint_cost_;
-  bool footprint_is_radius_;
+  float center_cost_;
+  bool footprint_is_radius_{false};
   std::vector<float> angles_;
-  double possible_inscribed_cost_{-1};
+  float possible_collision_cost_{-1};
   rclcpp::Logger logger_{rclcpp::get_logger("SmacPlannerCollisionChecker")};
   rclcpp::Clock::SharedPtr clock_;
 };
