@@ -166,8 +166,7 @@ public:
     geometry_msgs::msg::Pose pose2d;
     pose2d.position.x = current_pose.pose.position.x;
     pose2d.position.y = current_pose.pose.position.y;
-    pose2d.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0},
-      tf2::getYaw(current_pose.pose.orientation)));
+    pose2d.orientation = current_pose.pose.orientation;
 
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
