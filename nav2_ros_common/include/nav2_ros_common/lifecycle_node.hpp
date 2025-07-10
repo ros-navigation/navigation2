@@ -313,7 +313,7 @@ public:
     if (bond_heartbeat_period > 0.0) {
       RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
-      bond_ = std::make_unique<bond::Bond>(
+      bond_ = std::make_shared<bond::Bond>(
         std::string("bond"),
         this->get_name(),
         shared_from_this());
@@ -392,7 +392,7 @@ protected:
 
   // Connection to tell that server is still up
   std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
-  std::unique_ptr<bond::Bond> bond_{nullptr};
+  std::shared_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
 
