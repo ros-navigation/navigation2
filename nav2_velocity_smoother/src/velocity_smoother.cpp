@@ -74,7 +74,37 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   node->get_parameter("max_accel", max_accels_);
   node->get_parameter("max_decel", max_decels_);
 
-  for (unsigned int i = 0; i != 3; i++) {
+  // Get feature parameters
+  declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
+  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
+  declare_parameter_if_not_declared(
+    node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
+  declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
+  node->get_parameter("odom_topic", odom_topic_);
+  node->get_parameter("odom_duration", odom_duration_);
+  node->get_parameter("deadband_velocity", deadband_velocities_);
+  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
+  velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
+
+  // Check if parameters are properly set
+  size_t size = max_velocities_.size();
+  is_6dof_ = (size == 6);
+
+  if ((size != 3 && size != 6) ||
+    min_velocities_.size() != size ||
+    max_accels_.size() != size ||
+    max_decels_.size() != size ||
+    deadband_velocities_.size() != size)
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Invalid setting of kinematic and/or deadband limits!"
+      " All limits must be size of 3 (x, y, theta) or 6 (x, y, z, r, p, y)");
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
+  }
+
+  for (unsigned int i = 0; i != size; i++) {
     if (max_decels_[i] > 0.0) {
       RCLCPP_ERROR(
         get_logger(),
@@ -106,29 +136,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       on_cleanup(state);
       return nav2::CallbackReturn::FAILURE;
     }
-  }
-
-  // Get feature parameters
-  declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
-    node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
-  declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
-  node->get_parameter("odom_topic", odom_topic_);
-  node->get_parameter("odom_duration", odom_duration_);
-  node->get_parameter("deadband_velocity", deadband_velocities_);
-  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
-  velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
-
-  if (max_velocities_.size() != 3 || min_velocities_.size() != 3 ||
-    max_accels_.size() != 3 || max_decels_.size() != 3 || deadband_velocities_.size() != 3)
-  {
-    RCLCPP_ERROR(
-      get_logger(),
-      "Invalid setting of kinematic and/or deadband limits!"
-      " All limits must be size of 3 representing (x, y, theta).");
-    on_cleanup(state);
-    return nav2::CallbackReturn::FAILURE;
   }
 
   // Get control type
@@ -332,15 +339,36 @@ void VelocitySmoother::smootherTimer()
   }
 
   // Apply absolute velocity restrictions to the command
-  command_->twist.linear.x = std::clamp(
-    command_->twist.linear.x, min_velocities_[0],
-    max_velocities_[0]);
-  command_->twist.linear.y = std::clamp(
-    command_->twist.linear.y, min_velocities_[1],
-    max_velocities_[1]);
-  command_->twist.angular.z = std::clamp(
-    command_->twist.angular.z, min_velocities_[2],
-    max_velocities_[2]);
+  if(!is_6dof_) {
+    command_->twist.linear.x = std::clamp(
+      command_->twist.linear.x, min_velocities_[0],
+      max_velocities_[0]);
+    command_->twist.linear.y = std::clamp(
+      command_->twist.linear.y, min_velocities_[1],
+      max_velocities_[1]);
+    command_->twist.angular.z = std::clamp(
+      command_->twist.angular.z, min_velocities_[2],
+      max_velocities_[2]);
+  } else {
+    command_->twist.linear.x = std::clamp(
+      command_->twist.linear.x, min_velocities_[0],
+      max_velocities_[0]);
+    command_->twist.linear.y = std::clamp(
+      command_->twist.linear.y, min_velocities_[1],
+      max_velocities_[1]);
+    command_->twist.linear.z = std::clamp(
+      command_->twist.linear.z, min_velocities_[2],
+      max_velocities_[2]);
+    command_->twist.angular.x = std::clamp(
+      command_->twist.angular.x, min_velocities_[3],
+      max_velocities_[3]);
+    command_->twist.angular.y = std::clamp(
+      command_->twist.angular.y, min_velocities_[4],
+      max_velocities_[4]);
+    command_->twist.angular.z = std::clamp(
+      command_->twist.angular.z, min_velocities_[5],
+      max_velocities_[5]);
+  }
 
   // Find if any component is not within the acceleration constraints. If so, store the most
   // significant scale factor to apply to the vector <dvx, dvy, dvw>, eta, to reduce all axes
@@ -350,42 +378,113 @@ void VelocitySmoother::smootherTimer()
   double eta = 1.0;
   if (scale_velocities_) {
     double curr_eta = -1.0;
+    if(!is_6dof_) {
+      curr_eta = findEtaConstraint(
+        current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
 
-    curr_eta = findEtaConstraint(
-      current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0]);
-    if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
-      eta = curr_eta;
-    }
+      curr_eta = findEtaConstraint(
+        current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
 
-    curr_eta = findEtaConstraint(
-      current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1]);
-    if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
-      eta = curr_eta;
-    }
+      curr_eta = findEtaConstraint(
+        current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
+    } else {
+      curr_eta = findEtaConstraint(
+        current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
 
-    curr_eta = findEtaConstraint(
-      current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2]);
-    if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
-      eta = curr_eta;
+      curr_eta = findEtaConstraint(
+        current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
+
+      curr_eta = findEtaConstraint(
+        current_.twist.linear.z, command_->twist.linear.z, max_accels_[2], max_decels_[2]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
+
+      curr_eta = findEtaConstraint(
+        current_.twist.angular.x, command_->twist.angular.x, max_accels_[3], max_decels_[3]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
+
+      curr_eta = findEtaConstraint(
+        current_.twist.angular.y, command_->twist.angular.y, max_accels_[4], max_decels_[4]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
+
+      curr_eta = findEtaConstraint(
+        current_.twist.angular.z, command_->twist.angular.z, max_accels_[5], max_decels_[5]);
+      if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+      }
     }
   }
 
-  cmd_vel->twist.linear.x = applyConstraints(
-    current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0], eta);
-  cmd_vel->twist.linear.y = applyConstraints(
-    current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1], eta);
-  cmd_vel->twist.angular.z = applyConstraints(
-    current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2], eta);
+  if(!is_6dof_) {
+    cmd_vel->twist.linear.x = applyConstraints(
+      current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0], eta);
+    cmd_vel->twist.linear.y = applyConstraints(
+      current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1], eta);
+    cmd_vel->twist.angular.z = applyConstraints(
+      current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2], eta);
+  } else {
+    cmd_vel->twist.linear.x = applyConstraints(
+      current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0], eta);
+    cmd_vel->twist.linear.y = applyConstraints(
+      current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1], eta);
+    cmd_vel->twist.linear.z = applyConstraints(
+      current_.twist.linear.z, command_->twist.linear.z, max_accels_[2], max_decels_[2], eta);
+    cmd_vel->twist.angular.x = applyConstraints(
+      current_.twist.angular.x, command_->twist.angular.x, max_accels_[3], max_decels_[3], eta);
+    cmd_vel->twist.angular.y = applyConstraints(
+      current_.twist.angular.y, command_->twist.angular.y, max_accels_[4], max_decels_[4], eta);
+    cmd_vel->twist.angular.z = applyConstraints(
+      current_.twist.angular.z, command_->twist.angular.z, max_accels_[5], max_decels_[5], eta);
+  }
+
   last_cmd_ = *cmd_vel;
 
-  // Apply deadband restrictions & publish
-  cmd_vel->twist.linear.x =
-    fabs(cmd_vel->twist.linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
-  cmd_vel->twist.linear.y =
-    fabs(cmd_vel->twist.linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
-  cmd_vel->twist.angular.z =
-    fabs(cmd_vel->twist.angular.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->twist.angular.z;
 
+  // Apply deadband restrictions & publish
+  if(!is_6dof_) {
+    cmd_vel->twist.linear.x =
+      fabs(cmd_vel->twist.linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
+    cmd_vel->twist.linear.y =
+      fabs(cmd_vel->twist.linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
+    cmd_vel->twist.linear.z = command_->twist.linear.z;
+    cmd_vel->twist.angular.x = command_->twist.angular.x;
+    cmd_vel->twist.angular.y = command_->twist.angular.y;
+    cmd_vel->twist.angular.z =
+      fabs(cmd_vel->twist.angular.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->twist.angular.z;
+  } else {
+    cmd_vel->twist.linear.x =
+      fabs(cmd_vel->twist.linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
+    cmd_vel->twist.linear.y =
+      fabs(cmd_vel->twist.linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
+    cmd_vel->twist.linear.z =
+      fabs(cmd_vel->twist.linear.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->twist.linear.z;
+    cmd_vel->twist.angular.x =
+      fabs(cmd_vel->twist.angular.x) < deadband_velocities_[3] ? 0.0 : cmd_vel->twist.angular.x;
+    cmd_vel->twist.angular.y =
+      fabs(cmd_vel->twist.angular.y) < deadband_velocities_[4] ? 0.0 : cmd_vel->twist.angular.y;
+    cmd_vel->twist.angular.z =
+      fabs(cmd_vel->twist.angular.z) < deadband_velocities_[5] ? 0.0 : cmd_vel->twist.angular.z;
+  }
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 
@@ -423,15 +522,16 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           shared_from_this(), odom_duration_, odom_topic_);
       }
     } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
-      if (parameter.as_double_array().size() != 3) {
-        RCLCPP_WARN(get_logger(), "Invalid size of parameter %s. Must be size 3",
-            param_name.c_str());
+      size_t size = is_6dof_ ? 6 : 3;
+      if (parameter.as_double_array().size() != size) {
+        RCLCPP_WARN(get_logger(), "Invalid size of parameter %s. Must be size %ld",
+            param_name.c_str(), size);
         result.successful = false;
         break;
       }
 
       if (param_name == "max_velocity") {
-        for (unsigned int i = 0; i != 3; i++) {
+        for (unsigned int i = 0; i != size; i++) {
           if (parameter.as_double_array()[i] < 0.0) {
             RCLCPP_WARN(
               get_logger(),
@@ -443,7 +543,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           max_velocities_ = parameter.as_double_array();
         }
       } else if (param_name == "min_velocity") {
-        for (unsigned int i = 0; i != 3; i++) {
+        for (unsigned int i = 0; i != size; i++) {
           if (parameter.as_double_array()[i] > 0.0) {
             RCLCPP_WARN(
               get_logger(),
@@ -455,7 +555,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           min_velocities_ = parameter.as_double_array();
         }
       } else if (param_name == "max_accel") {
-        for (unsigned int i = 0; i != 3; i++) {
+        for (unsigned int i = 0; i != size; i++) {
           if (parameter.as_double_array()[i] < 0.0) {
             RCLCPP_WARN(
               get_logger(),
@@ -467,7 +567,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
           max_accels_ = parameter.as_double_array();
         }
       } else if (param_name == "max_decel") {
-        for (unsigned int i = 0; i != 3; i++) {
+        for (unsigned int i = 0; i != size; i++) {
           if (parameter.as_double_array()[i] > 0.0) {
             RCLCPP_WARN(
               get_logger(),
