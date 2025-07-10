@@ -35,8 +35,7 @@ FootprintSubscriber::getFootprintRaw(
   }
 
   auto current_footprint = std::atomic_load(&footprint_);
-  footprint = toPointVector(
-    std::make_shared<geometry_msgs::msg::Polygon>(current_footprint->polygon));
+  footprint = toPointVector(current_footprint->polygon);
   footprint_header = current_footprint->header;
 
   return true;

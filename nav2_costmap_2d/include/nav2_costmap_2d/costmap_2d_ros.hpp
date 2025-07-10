@@ -313,7 +313,7 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
-  void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
+  void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon & footprint);
 
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
 
@@ -351,6 +351,7 @@ protected:
   std::vector<std::unique_ptr<Costmap2DPublisher>> layer_publishers_;
 
   nav2::Subscription<geometry_msgs::msg::Polygon>::SharedPtr footprint_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_stamped_sub_;
   nav2::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_sub_;
 
   // Dedicated callback group and executor for tf timer_interface and message filter
@@ -407,6 +408,8 @@ protected:
   double transform_tolerance_{0};           ///< The timeout before transform errors
   double initial_transform_timeout_{0};   ///< The timeout before activation of the node errors
   double map_vis_z_{0};                 ///< The height of map, allows to avoid flickering at -0.008
+  /// If true, the footprint subscriber expects a PolygonStamped msg
+  bool subscribe_to_stamped_footprint_{false};
 
   bool is_lifecycle_follower_{true};   ///< whether is a child-LifecycleNode or an independent node
 
