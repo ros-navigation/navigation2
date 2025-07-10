@@ -29,8 +29,7 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
   behaviortree_cpp::behaviortree_cpp
@@ -38,6 +37,7 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -249,8 +249,7 @@ foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
   target_link_libraries(${bt_plugin} PUBLIC
     behaviortree_cpp::behaviortree_cpp
     ${geometry_msgs_TARGETS}
@@ -285,9 +284,10 @@ add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp
 target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
   behaviortree_cpp::behaviortree_cpp
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
-target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR} "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
 install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/

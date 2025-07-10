@@ -48,10 +48,10 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
@@ -97,10 +97,10 @@ target_include_directories(edge_scorers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(edge_scorers PUBLIC
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
@@ -135,10 +135,10 @@ target_include_directories(route_operations
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(route_operations PUBLIC
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
@@ -168,10 +168,10 @@ target_include_directories(graph_file_loaders
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(graph_file_loaders PUBLIC
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
@@ -200,10 +200,10 @@ target_include_directories(graph_file_savers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(graph_file_savers PUBLIC
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core

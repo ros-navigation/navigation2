@@ -39,14 +39,14 @@ add_library(${monitor_library_name} SHARED
 target_include_directories(${monitor_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${monitor_library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
@@ -73,14 +73,14 @@ add_library(${detector_library_name} SHARED
 target_include_directories(${detector_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${detector_library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
@@ -98,10 +98,10 @@ add_executable(${monitor_executable_name}
 target_include_directories(${monitor_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${monitor_executable_name} PRIVATE
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
   ${monitor_library_name}
 )
 
@@ -111,10 +111,10 @@ add_executable(${detector_executable_name}
 target_include_directories(${detector_executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${detector_executable_name} PRIVATE
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
   ${detector_library_name}
 )
 
