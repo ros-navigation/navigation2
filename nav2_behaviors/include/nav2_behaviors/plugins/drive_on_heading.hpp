@@ -163,10 +163,7 @@ public:
       cmd_vel->twist.linear.x = forward ? minimum_speed_ : -minimum_speed_;
     }
 
-    geometry_msgs::msg::Pose pose2d;
-    pose2d.position.x = current_pose.pose.position.x;
-    pose2d.position.y = current_pose.pose.position.y;
-    pose2d.orientation = current_pose.pose.orientation;
+    geometry_msgs::msg::Pose pose2d = current_pose.pose;
 
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
