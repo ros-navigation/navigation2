@@ -36,7 +36,7 @@ using namespace nav2_route; //NOLINT
 
 TEST(GraphSaver, test_invalid_plugin)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
@@ -55,7 +55,7 @@ TEST(GraphSaver, test_invalid_plugin)
 
 TEST(GraphSaver, test_empty_filename)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
@@ -76,7 +76,7 @@ TEST(GraphSaver, test_empty_filename)
 
 TEST(GraphSaver, test_api)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
@@ -109,7 +109,7 @@ TEST(GraphSaver, test_api)
 
 TEST(GraphSaver, test_transformation_api)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("graph_saver_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf->setUsingDedicatedThread(true);
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
@@ -143,8 +143,7 @@ TEST(GraphSaver, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::Rate(1).sleep();
   tf_broadcaster->sendTransform(transform);
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
+  rclcpp::spin(node->get_node_base_interface());
 
   GraphSaver graph_saver(node, tf, frame);
   std::string file_path = "test.geojson";

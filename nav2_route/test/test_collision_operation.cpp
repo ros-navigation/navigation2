@@ -76,7 +76,7 @@ public:
 
 TEST(TestCollisionMonitor, test_lifecycle)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("test");
   node->declare_parameter("costmap_topic", rclcpp::ParameterValue("dummy_topic"));
   CollisionMonitor monitor;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -87,7 +87,7 @@ TEST(TestCollisionMonitor, test_lifecycle)
 
 TEST(TestCollisionMonitor, test_geometric_backout_vector)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("test");
   node->declare_parameter("costmap_topic", rclcpp::ParameterValue("local_costmap/costmap_raw"));
   node->declare_parameter("name.max_collision_dist", rclcpp::ParameterValue(-1.0));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -161,9 +161,9 @@ TEST(TestCollisionMonitor, test_geometric_backout_vector)
 
 TEST(TestCollisionMonitor, test_costmap_apis)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("test");
   node->declare_parameter("costmap_topic", rclcpp::ParameterValue("dummy_topic"));
-  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   CollisionMonitorWrapper monitor;
   monitor.configure(node, costmap_subscriber, "name");

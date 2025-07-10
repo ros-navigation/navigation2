@@ -21,7 +21,7 @@ namespace nav2_route
 {
 
 GraphSaver::GraphSaver(
-  nav2::LifecycleNode::SharedPtr node,
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileSaver"),
@@ -47,7 +47,7 @@ GraphSaver::GraphSaver(
 
   // Create graph file saver plugin
   try {
-    plugin_type_ = nav2::get_plugin_type_param(node, graph_file_saver_id);
+    plugin_type_ = nav2_util::get_plugin_type_param(node, graph_file_saver_id);
     graph_file_saver_ = plugin_loader_.createSharedInstance((plugin_type_));
     RCLCPP_INFO(
       logger_, "Created GraphFileSaver %s of type %s",

@@ -130,7 +130,7 @@ TEST(RoutePlannerTest, test_route_planner_positive)
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   RouteRequest route_request;
 
-  auto node = std::make_shared<nav2::LifecycleNode>("router_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;
   RoutePlanner planner;
@@ -189,7 +189,7 @@ TEST(RoutePlannerTest, test_route_planner_negative)
   geometry_msgs::msg::PoseStamped start_pose, goal_pose;
   RouteRequest route_request;
 
-  auto node = std::make_shared<nav2::LifecycleNode>("router_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("router_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   node->declare_parameter("max_iterations", rclcpp::ParameterValue(5));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> collision_checker;

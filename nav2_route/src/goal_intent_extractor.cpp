@@ -155,7 +155,8 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (enable_search) {
     try {
       costmap = costmap_subscriber_->getCostmap();
-      costmap_frame_id = costmap_subscriber_->getFrameID();
+      // costmap_frame_id = costmap_subscriber_->getFrameID();
+      costmap_frame_id = "map";
     } catch (const std::exception & ex) {
       enable_search = false;
       RCLCPP_WARN(

@@ -40,15 +40,15 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto node = shared_from_this();
   graph_vis_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "route_graph", nav2::qos::LatchedPublisherQoS());
+    "route_graph", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-  compute_route_server_ = create_action_server<ComputeRoute>(
-    "compute_route",
+  compute_route_server_ = std::make_shared<ComputeRouteServer>(
+    node, "compute_route",
     std::bind(&RouteServer::computeRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
 
-  compute_and_track_route_server_ = create_action_server<ComputeAndTrackRoute>(
-    "compute_and_track_route",
+  compute_and_track_route_server_ = std::make_shared<ComputeAndTrackRouteServer>(
+    node, "compute_and_track_route",
     std::bind(&RouteServer::computeAndTrackRoute, this),
     nullptr, std::chrono::milliseconds(500), true);
 
@@ -169,7 +169,7 @@ RouteServer::findPlanningDuration(const rclcpp::Time & start_time)
 template<typename ActionT>
 bool
 RouteServer::isRequestValid(
-  typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server)
+  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
 {
   if (!action_server || !action_server->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
@@ -250,7 +250,7 @@ Route RouteServer::findRoute(
 template<typename ActionT>
 void
 RouteServer::processRouteRequest(
-  typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server)
+  std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server)
 {
   auto goal = action_server->get_current_goal();
   auto result = std::make_shared<typename ActionT::Result>();

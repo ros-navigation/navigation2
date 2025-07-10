@@ -34,12 +34,12 @@ using namespace nav2_route;  // NOLINT
 
 TEST(PathConverterTest, test_path_converter_api)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
-  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
 
   nav_msgs::msg::Path path_msg;
   auto sub = node->create_subscription<nav_msgs::msg::Path>(
-    "plan", [&, this](nav_msgs::msg::Path msg) {path_msg = msg;});
+    "plan", rclcpp::QoS(1), [&, this](nav_msgs::msg::Path msg) {path_msg = msg;});
 
   PathConverter converter;
   converter.configure(node);
@@ -93,7 +93,7 @@ TEST(PathConverterTest, test_path_converter_api)
 
 TEST(PathConverterTest, test_path_single_pt_path)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   PathConverter converter;
   converter.configure(node);
 
@@ -117,7 +117,7 @@ TEST(PathConverterTest, test_path_single_pt_path)
 
 TEST(PathConverterTest, test_prev_info_path)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   PathConverter converter;
   converter.configure(node);
 
@@ -146,7 +146,7 @@ TEST(PathConverterTest, test_prev_info_path)
 
 TEST(PathConverterTest, test_path_converter_interpolation)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   PathConverter converter;
   converter.configure(node);
 

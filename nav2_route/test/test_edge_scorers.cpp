@@ -42,7 +42,7 @@ using namespace nav2_route;  // NOLINT
 
 TEST(EdgeScorersTest, test_lifecycle)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
@@ -51,7 +51,7 @@ TEST(EdgeScorersTest, test_lifecycle)
 TEST(EdgeScorersTest, test_api)
 {
   // Tests basic API and default behavior. Also covers the DistanceScorer plugin.
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
@@ -87,7 +87,7 @@ TEST(EdgeScorersTest, test_api)
 TEST(EdgeScorersTest, test_failed_api)
 {
   // Expect failure since plugin does not exist
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -104,8 +104,8 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 {
   // Test API for the edge scorer to maintain proper state when a plugin
   // rejects and edge. Also covers the DynamicEdgesScorer plugin to demonstrate.
-  auto node = std::make_shared<nav2::LifecycleNode>("route_server");
-  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  auto node = std::make_shared<nav2_util::LifecycleNode>("route_server");
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
@@ -121,7 +121,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 
   // Send service to set an edge as invalid
   auto srv_client =
-    nav2::ServiceClient<nav2_msgs::srv::DynamicEdges>(
+    nav2_util::ServiceClient<nav2_msgs::srv::DynamicEdges>(
     "route_server/DynamicEdgesScorer/adjust_edges", node2);
   auto req = std::make_shared<nav2_msgs::srv::DynamicEdges::Request>();
   req->closed_edges.push_back(10u);
@@ -174,7 +174,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 TEST(EdgeScorersTest, test_penalty_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -211,9 +211,9 @@ TEST(EdgeScorersTest, test_penalty_scoring)
 TEST(EdgeScorersTest, test_costmap_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   node->declare_parameter("costmap_topic", "dummy_topic");
-  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -326,9 +326,9 @@ TEST(EdgeScorersTest, test_costmap_scoring)
 TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   node->declare_parameter("costmap_topic", "dummy_costmap/costmap_raw");
-  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  auto node_thread = std::make_unique<nav2_util::NodeThread>(node);
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -429,7 +429,7 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
 TEST(EdgeScorersTest, test_time_scoring)
 {
   // Test Time scorer plugin loading
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -487,7 +487,7 @@ TEST(EdgeScorersTest, test_time_scoring)
 TEST(EdgeScorersTest, test_semantic_scoring_key)
 {
   // Test Time scorer plugin loading
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -560,7 +560,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
 TEST(EdgeScorersTest, test_semantic_scoring_keys)
 {
   // Test Time scorer plugin loading
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -639,7 +639,7 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
 TEST(EdgeScorersTest, test_goal_orientation_threshold)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -708,7 +708,7 @@ TEST(EdgeScorersTest, test_goal_orientation_threshold)
 TEST(EdgeScorersTest, test_goal_orientation_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   double orientation_weight = 100.0;
@@ -783,7 +783,7 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::shared_ptr<tf2_ros::TransformListener> tf_listener =
     std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
@@ -869,7 +869,7 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 {
   // Test Penalty scorer plugin loading + penalizing on metadata values
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::shared_ptr<tf2_ros::TransformListener> tf_listener =
     std::make_shared<tf2_ros::TransformListener>(*tf_buffer);

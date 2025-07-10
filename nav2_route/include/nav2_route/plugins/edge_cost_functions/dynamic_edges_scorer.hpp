@@ -88,7 +88,7 @@ protected:
   std::string name_;
   std::set<unsigned int> closed_edges_;
   std::unordered_map<unsigned int, float> dynamic_penalties_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr service_;
+  rclcpp::Service<nav2_msgs::srv::DynamicEdges>::SharedPtr service_;
 };
 
 }  // namespace nav2_route

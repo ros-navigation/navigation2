@@ -106,6 +106,10 @@ protected:
     name_ = name;
     logger_ = node->get_logger();
     node_ = node;
+    callback_group_ = node->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node->get_node_base_interface());
 
     nav2_util::declare_parameter_if_not_declared(
       node, getName() + ".service_name", rclcpp::ParameterValue(""));
@@ -117,8 +121,8 @@ protected:
     // If this is set to empty string after configuration, then the individual nodes will
     // indicate the endpoint for the particular service call.
     if (!main_srv_name_.empty()) {
-      main_client_ =
-        node->create_client<SrvT>(main_srv_name_, true);
+      main_client_ = node->create_client<SrvT>(
+        main_srv_name_, rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(), callback_group_);
     }
   }
 
@@ -156,16 +160,16 @@ protected:
     try {
       if (srv_name.empty()) {
         srv_name = main_srv_name_;
-        response = main_client_->invoke(req, std::chrono::nanoseconds(500ms));
+        response = callService(main_client_, req);
       } else {
         auto node = node_.lock();
         if (!node) {
           throw nav2_core::OperationFailed(
             "Route operation service (" + getName() + ") failed to lock node.");
         }
-        auto client =
-          node->create_client<SrvT>(srv_name, true);
-        response = client->invoke(req, std::chrono::nanoseconds(500ms));
+        auto client = node->create_client<SrvT>(
+          srv_name, rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(), callback_group_);
+        response = callService(client, req);
       }
     } catch (const std::exception & e) {
       throw nav2_core::OperationFailed(
@@ -178,6 +182,30 @@ protected:
       "%s: Processed operation at Node %i with service %s.",
       name_.c_str(), node_achieved->nodeid, srv_name.c_str());
     return processResponse(response);
+  }
+
+  std::shared_ptr<typename SrvT::Response> callService(
+    typename rclcpp::Client<SrvT>::SharedPtr client,
+    std::shared_ptr<typename SrvT::Request> req,
+    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(500ms))
+  {
+    auto node = node_.lock();
+    if (!client->wait_for_service(1s)) {
+      throw nav2_core::OperationFailed(
+              "Route operation service " +
+              std::string(client->get_service_name()) + "is not available!");
+    }
+
+    auto result = client->async_send_request(req);
+    if (callback_group_executor_.spin_until_future_complete(result, timeout) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+    {
+      throw nav2_core::OperationFailed(
+              "Route operation service " +
+              std::string(client->get_service_name()) + "failed to call!");
+    }
+
+    return result.get();
   }
 
   /**
@@ -198,6 +226,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("RouteOperationClient")};
   typename rclcpp::Client<SrvT>::SharedPtr main_client_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 };
 
 }  // namespace nav2_route

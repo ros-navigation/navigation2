@@ -138,7 +138,7 @@ protected:
    */
   template<typename ActionT>
   void processRouteRequest(
-    typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server);
+    std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
 
   /**
    * @brief Find the planning duration of the request and log warnings
@@ -153,7 +153,7 @@ protected:
    * @return if the request is valid
    */
   template<typename ActionT>
-  bool isRequestValid(typename nav2_util::SimpleActionServer<ActionT>::SharedPtr & action_server);
+  bool isRequestValid(std::shared_ptr<nav2_util::SimpleActionServer<ActionT>> & action_server);
 
   /**
    * @brief Populate result for compute route action
@@ -200,8 +200,8 @@ protected:
   template<typename GoalT>
   void exceptionWarning(const std::shared_ptr<const GoalT> goal, const std::exception & ex);
 
-  typename ComputeRouteServer::SharedPtr compute_route_server_;
-  typename ComputeAndTrackRouteServer::SharedPtr compute_and_track_route_server_;
+  std::shared_ptr<ComputeRouteServer> compute_route_server_;
+  std::shared_ptr<ComputeAndTrackRouteServer> compute_and_track_route_server_;
 
   // TF
   std::shared_ptr<tf2_ros::Buffer> tf_;
