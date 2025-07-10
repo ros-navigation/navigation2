@@ -98,7 +98,7 @@ public:
     getParam(consider_footprint_, "consider_footprint", false);
     if (consider_footprint_) {
       collision_checker_ = std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<
-        nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
+            nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
     }
   }
 
@@ -167,7 +167,7 @@ protected:
   unsigned int traj_samples_to_evaluate_{0u};
   bool consider_footprint_{false};
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
-    collision_checker_;
+  collision_checker_;
 };
 
 }  // namespace mppi
