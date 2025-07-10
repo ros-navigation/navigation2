@@ -141,6 +141,11 @@ controller_server:
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
+      TrajectoryValidator:
+        # The validator can be configured with additional parameters if needed.
+        plugin: "mppi::DefaultOptimalTrajectoryValidator"
+        collision_lookahead_time: 2.0  # Time to look ahead to check for collisions
+        consider_footprint: false  # Whether to consider the full robot's footprint (or circle) in trajectory validation collision checks
       AckermannConstraints:
         min_turning_r: 0.2
       critics:

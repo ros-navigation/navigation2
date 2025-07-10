@@ -19,12 +19,15 @@
 
 #include <string>
 #include <memory>
+#include <tuple>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "tf2_ros/buffer.h"
+#include "pluginlib/class_loader.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -40,6 +43,7 @@
 #include "nav2_mppi_controller/tools/noise_generator.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "nav2_mppi_controller/optimal_trajectory_validator.hpp"
 
 namespace mppi
 {
@@ -68,10 +72,12 @@ public:
    * @param name Name of plugin
    * @param costmap_ros Costmap2DROS object of environment
    * @param dynamic_parameter_handler Parameter handler object
+   * @param tf_buffer TF buffer for transformations
    */
   void initialize(
     nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     ParametersHandler * dynamic_parameters_handler);
 
   /**
@@ -86,9 +92,9 @@ public:
    * @param plan Path plan to track
    * @param goal Given Goal pose to reach.
    * @param goal_checker Object to check if goal is completed
-   * @return TwistStamped of the MPPI control
+   * @return Tuple of [TwistStamped command, optimal trajectory]
    */
-  geometry_msgs::msg::TwistStamped evalControl(
+  std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> evalControl(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed, const nav_msgs::msg::Path & plan,
     const geometry_msgs::msg::Pose & goal, nav2_core::GoalChecker * goal_checker);
@@ -254,12 +260,16 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string name_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
   std::shared_ptr<MotionModel> motion_model_;
 
   ParametersHandler * parameters_handler_;
   CriticManager critic_manager_;
   NoiseGenerator noise_generator_;
+
+  std::unique_ptr<pluginlib::ClassLoader<OptimalTrajectoryValidator>> validator_loader_;
+  OptimalTrajectoryValidator::Ptr trajectory_validator_;
 
   models::OptimizerSettings settings_;
 
