@@ -28,6 +28,7 @@
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/models/control_sequence.hpp"
+#include "nav2_mppi_controller/models/optimizer_settings.hpp"
 
 namespace mppi
 {
@@ -65,23 +66,46 @@ public:
    * @param costmap Shared pointer to the costmap ROS wrapper
    * @param param_handler Pointer to the parameters handler
    * @param tf_buffer Shared pointer to the TF buffer
+   * @param settings Settings for the MPPI optimizer
    */
   virtual void initialize(
-    const nav2::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
     ParametersHandler * param_handler,
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer)
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const models::OptimizerSettings & settings)
   {
     param_handler_ = param_handler;
     name_ = name;
-    node_ = node;
-    costmap_ = costmap;
+    node_ = parent;
+    costmap_ros_ = costmap;
     tf_buffer_ = tf_buffer;
+
+    auto node = node_.lock();
+    auto getParam = param_handler_->getParamGetter(name_);
+    getParam(collision_lookahead_time_, "collision_lookahead_time", 2.0f);
+    traj_samples_to_evaluate_ = collision_lookahead_time_ / settings.model_dt;
+    if (traj_samples_to_evaluate_ > settings.time_steps) {
+      traj_samples_to_evaluate_ = settings.time_steps;
+      RCLCPP_WARN(
+        node->get_logger(),
+        "Collision lookahead time is greater than the number of trajectory samples, "
+        "setting it to the maximum number of samples (%u).",
+        traj_samples_to_evaluate_);
+    }
+
+    getParam(consider_footprint_, "consider_footprint", false);
+    if (consider_footprint_) {
+      collision_checker_ = std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<
+        nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
+    }
   }
 
   /**
    * @brief Validate the optimal trajectory from MPPI optimization
+   * Could be used to check for collisions, progress towards goal,
+   * distance from path, min distance from obstacles, dynamic feasibility, etc.
    * @param optimal_trajectory The optimal trajectory to validate
    * @param control_sequence The control sequence to validate
    * @param robot_pose The current pose of the robot
@@ -91,22 +115,59 @@ public:
    * @return True if the trajectory is valid, false otherwise
    */
   virtual ValidationResult validateTrajectory(
-    const Eigen::ArrayXXf & /*optimal_trajectory*/,
+    const Eigen::ArrayXXf & optimal_trajectory,
     const models::ControlSequence & /*control_sequence*/,
-    const geometry_msgs::msg::PoseStamped /*robot_pose*/,
-    const geometry_msgs::msg::Twist /*robot_speed*/,
+    const geometry_msgs::msg::PoseStamped & /*robot_pose*/,
+    const geometry_msgs::msg::Twist & /*robot_speed*/,
     const nav_msgs::msg::Path & /*plan*/,
     const geometry_msgs::msg::Pose & /*goal*/)
   {
+    // The Optimizer automatically ensures that we are within Kinematic
+    // and dynamic constraints, no need to check for those again.
+
+    // Check for collisions. This is highly unlikely to occur since the Obstacle/Cost Critics
+    // penalize collisions severely, but it is still possible if those critics are not used or the
+    // optimized trajectory is very near obstacles and the dynamic constraints cause invalidity.
+    auto costmap = costmap_ros_->getCostmap();
+    for (size_t i = 0; i < traj_samples_to_evaluate_; ++i) {
+      const double x = static_cast<double>(optimal_trajectory(i, 0));
+      const double y = static_cast<double>(optimal_trajectory(i, 1));
+
+      if (consider_footprint_) {
+        const double theta = static_cast<double>(optimal_trajectory(i, 2));
+        double footprint_cost = collision_checker_->footprintCostAtPose(
+          x, y, theta, costmap_ros_->getRobotFootprint());
+        if (footprint_cost == static_cast<double>(nav2_costmap_2d::LETHAL_OBSTACLE)) {
+          return ValidationResult::SOFT_RESET;
+        }
+      } else {
+        unsigned int x_i = 0u, y_i = 0u;
+        if (!costmap->worldToMap(x, y, x_i, y_i)) {
+          continue;  // Out of bounds, skip this point
+        }
+        unsigned char cost = costmap->getCost(x_i, y_i);
+        if (cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE ||
+          cost == nav2_costmap_2d::LETHAL_OBSTACLE)
+        {
+          return ValidationResult::SOFT_RESET;
+        }
+      }
+    }
+
     return ValidationResult::SUCCESS;
   }
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
   std::string name_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   ParametersHandler * param_handler_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  float collision_lookahead_time_{1.0f};
+  unsigned int traj_samples_to_evaluate_{0u};
+  bool consider_footprint_{false};
+  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+    collision_checker_;
 };
 
 }  // namespace mppi

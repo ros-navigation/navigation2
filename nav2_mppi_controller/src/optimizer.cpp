@@ -41,6 +41,7 @@ void Optimizer::initialize(
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
   parameters_handler_ = param_handler;
+  tf_buffer_ = tf_buffer;
 
   auto node = parent_.lock();
   logger_ = node->get_logger();
@@ -60,7 +61,8 @@ void Optimizer::initialize(
     "nav2_mppi_controller", "mppi::OptimalTrajectoryValidator");
   trajectory_validator_ = validator_loader_->createUniqueInstance(validator_plugin_type);
   trajectory_validator_->initialize(
-    parent_, name_ + ".TrajectoryValidator", costmap_ros_, parameters_handler_, tf_buffer);
+    parent_, name_ + ".TrajectoryValidator",
+    costmap_ros_, parameters_handler_, tf_buffer, settings_);
   RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
   reset();
@@ -165,6 +167,9 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
 
   noise_generator_.reset(settings_, isHolonomic());
   motion_model_->initialize(settings_.constraints, settings_.model_dt);
+  trajectory_validator_->initialize(
+    parent_, name_ + ".TrajectoryValidator",
+    costmap_ros_, parameters_handler_, tf_buffer_, settings_);
 
   RCLCPP_INFO(logger_, "Optimizer reset");
 }

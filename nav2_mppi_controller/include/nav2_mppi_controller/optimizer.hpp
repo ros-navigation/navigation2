@@ -260,6 +260,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::string name_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
   std::shared_ptr<MotionModel> motion_model_;
 
