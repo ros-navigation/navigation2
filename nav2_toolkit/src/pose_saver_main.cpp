@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Open Navigation LLC
+// Copyright (C) 2025 Pranav Kolekar
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-
-#include "base_footprint_publisher.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_toolkit/pose_saver_node.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_util::BaseFootprintPublisher>();
-  rclcpp::spin(node->get_node_base_interface());
+  auto node = std::make_shared<nav2_toolkit::PoseSaverNode>(rclcpp::NodeOptions{});
+  rclcpp::spin(node);
   rclcpp::shutdown();
-
   return 0;
 }
