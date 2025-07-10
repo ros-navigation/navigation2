@@ -220,8 +220,8 @@ DWBPublisher::publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & res
     }
     m.points.clear();
     for (unsigned int j = 0; j < twist.traj.poses.size(); ++j) {
-      pt.x = twist.traj.poses[j].x;
-      pt.y = twist.traj.poses[j].y;
+      pt.x = twist.traj.poses[j].position.x;
+      pt.y = twist.traj.poses[j].position.y;
       pt.z = 0;
       m.points.push_back(pt);
     }
@@ -239,7 +239,7 @@ DWBPublisher::publishLocalPlan(
 
   auto path =
     std::make_unique<nav_msgs::msg::Path>(
-    nav_2d_utils::poses2DToPath(
+    nav_2d_utils::posesToPath(
       traj.poses, header.frame_id,
       header.stamp));
 

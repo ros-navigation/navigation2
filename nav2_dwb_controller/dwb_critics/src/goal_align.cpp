@@ -58,8 +58,8 @@ void GoalAlignCritic::onInit()
 }
 
 bool GoalAlignCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-  const geometry_msgs::msg::Pose2D & goal,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose & goal,
   const nav_2d_msgs::msg::Path2D & global_plan)
 {
   // we want the robot nose to be drawn to its final position
@@ -67,16 +67,17 @@ bool GoalAlignCritic::prepare(
   // path for the robot center. Choosing the final position after
   // turning towards goal orientation causes instability when the
   // robot needs to make a 180 degree turn at the end
-  double angle_to_goal = atan2(goal.y - pose.y, goal.x - pose.x);
+  double angle_to_goal = atan2(goal.position.y - pose.position.y,
+    goal.position.x - pose.position.x);
 
   nav_2d_msgs::msg::Path2D target_poses = global_plan;
-  target_poses.poses.back().x += forward_point_distance_ * cos(angle_to_goal);
-  target_poses.poses.back().y += forward_point_distance_ * sin(angle_to_goal);
+  target_poses.poses.back().position.x += forward_point_distance_ * cos(angle_to_goal);
+  target_poses.poses.back().position.y += forward_point_distance_ * sin(angle_to_goal);
 
   return GoalDistCritic::prepare(pose, vel, goal, target_poses);
 }
 
-double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
+double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose & pose)
 {
   return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }

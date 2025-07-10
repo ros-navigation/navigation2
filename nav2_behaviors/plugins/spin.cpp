@@ -145,12 +145,9 @@ ResultStatus Spin::onCycleUpdate()
   cmd_vel->header.stamp = clock_->now();
   cmd_vel->twist.angular.z = copysign(vel, cmd_yaw_);
 
-  geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = current_pose.pose.position.x;
-  pose2d.y = current_pose.pose.position.y;
-  pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
+  geometry_msgs::msg::Pose pose = current_pose.pose;
 
-  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose2d)) {
+  if (!isCollisionFree(relative_yaw_, cmd_vel->twist, pose)) {
     stopRobot();
     std::string error_msg = "Collision Ahead - Exiting Spin";
     RCLCPP_WARN(logger_, error_msg.c_str());
@@ -165,7 +162,7 @@ ResultStatus Spin::onCycleUpdate()
 bool Spin::isCollisionFree(
   const double & relative_yaw,
   const geometry_msgs::msg::Twist & cmd_vel,
-  geometry_msgs::msg::Pose2D & pose2d)
+  geometry_msgs::msg::Pose & pose)
 {
   if (cmd_disable_collision_checks_) {
     return true;
@@ -175,19 +172,21 @@ bool Spin::isCollisionFree(
   int cycle_count = 0;
   double sim_position_change;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
-  geometry_msgs::msg::Pose2D init_pose = pose2d;
+  geometry_msgs::msg::Pose init_pose = pose;
+  double init_theta = tf2::getYaw(init_pose.orientation);
   bool fetch_data = true;
 
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel.angular.z * (cycle_count / cycle_frequency_);
-    pose2d.theta = init_pose.theta + sim_position_change;
+    double new_theta = init_theta + sim_position_change;
+    pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, new_theta));
     cycle_count++;
 
-    if (abs(relative_yaw) - abs(sim_position_change) <= 0.) {
+    if (abs(relative_yaw) - abs(sim_position_change) <= 0.0) {
       break;
     }
 
-    if (!local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+    if (!local_collision_checker_->isCollisionFree(pose, fetch_data)) {
       return false;
     }
     fetch_data = false;

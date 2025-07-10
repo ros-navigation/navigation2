@@ -21,7 +21,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_core
 {

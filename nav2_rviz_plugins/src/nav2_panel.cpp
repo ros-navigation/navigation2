@@ -34,7 +34,7 @@
 #include "rviz_common/load_resource.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 using namespace std::chrono_literals;
 

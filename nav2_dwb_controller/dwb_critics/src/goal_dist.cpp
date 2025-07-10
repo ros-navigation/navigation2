@@ -41,8 +41,8 @@
 namespace dwb_critics
 {
 bool GoalDistCritic::prepare(
-  const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
-  const geometry_msgs::msg::Pose2D &,
+  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose &,
   const nav_2d_msgs::msg::Path2D & global_plan)
 {
   reset();
@@ -73,8 +73,8 @@ bool GoalDistCritic::getLastPoseOnCostmap(
 
   // skip global path points until we reach the border of the local map
   for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i) {
-    double g_x = adjusted_global_plan.poses[i].x;
-    double g_y = adjusted_global_plan.poses[i].y;
+    double g_x = adjusted_global_plan.poses[i].position.x;
+    double g_y = adjusted_global_plan.poses[i].position.y;
     unsigned int map_x, map_y;
     if (costmap_->worldToMap(
         g_x, g_y, map_x,

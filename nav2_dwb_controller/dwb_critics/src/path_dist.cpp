@@ -41,8 +41,8 @@
 namespace dwb_critics
 {
 bool PathDistCritic::prepare(
-  const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
-  const geometry_msgs::msg::Pose2D &,
+  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose &,
   const nav_2d_msgs::msg::Path2D & global_plan)
 {
   reset();
@@ -61,8 +61,8 @@ bool PathDistCritic::prepare(
   unsigned int i;
   // put global path points into local map until we reach the border of the local map
   for (i = 0; i < adjusted_global_plan.poses.size(); ++i) {
-    double g_x = adjusted_global_plan.poses[i].x;
-    double g_y = adjusted_global_plan.poses[i].y;
+    double g_x = adjusted_global_plan.poses[i].position.x;
+    double g_y = adjusted_global_plan.poses[i].position.y;
     unsigned int map_x, map_y;
     if (costmap_->worldToMap(
         g_x, g_y, map_x,

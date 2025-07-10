@@ -86,8 +86,8 @@ public:
   : oscillation_reset_time_(0s) {}
   void onInit() override;
   bool prepare(
-    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+    const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
   void reset() override;
   void debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
@@ -152,7 +152,7 @@ private:
   double oscillation_reset_dist_sq_;
 
   // Saved positions
-  geometry_msgs::msg::Pose2D pose_, prev_stationary_pose_;
+  geometry_msgs::msg::Pose pose_, prev_stationary_pose_;
   // Saved timestamp
   rclcpp::Time prev_reset_time_;
   rclcpp::Clock::SharedPtr clock_;

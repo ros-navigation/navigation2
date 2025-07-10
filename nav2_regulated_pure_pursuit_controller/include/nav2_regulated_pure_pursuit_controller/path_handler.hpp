@@ -27,7 +27,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {

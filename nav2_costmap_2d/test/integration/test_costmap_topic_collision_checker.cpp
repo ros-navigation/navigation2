@@ -183,10 +183,12 @@ public:
   {
     rclcpp::Time stamp = now();
     publishPose(x, y, theta, stamp);
-    geometry_msgs::msg::Pose2D pose;
-    pose.x = x;
-    pose.y = y;
-    pose.theta = theta;
+
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = 0.0;
+    pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta));
 
     setPose(x, y, theta, stamp);
     publishFootprint();

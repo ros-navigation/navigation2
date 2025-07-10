@@ -41,6 +41,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/obstacle_footprint.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 TEST(BaseObstacle, IsValidCost)
 {
@@ -81,41 +83,45 @@ TEST(BaseObstacle, ScorePose)
   costmap_ros->getCostmap()->setCost(0, 2, some_other_cost);
 
   // The pose is in "world" coordinates. The (default) resolution is 0.1 m.
-  geometry_msgs::msg::Pose2D pose;
-  pose.x = 0;
-  pose.y = 0;
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = 0;
+  pose.position.y = 0;
+  pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0, 1));
 
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = 0;
-  pose.y = 0.15;
+  pose.position.x = 0;
+  pose.position.y = 0.15;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.y = 0.25;
-  pose.x = 0.05;
+  pose.position.y = 0.25;
+  pose.position.x = 0.05;
   ASSERT_EQ(critic->scorePose(pose), some_other_cost);
 
   // The theta should not influence the cost
   for (int i = -50; i < 150; i++) {
-    pose.theta = (1.0 / 50) * i * M_PI;
+    double theta = (1.0 / 50) * i * M_PI;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, theta);
+    pose.orientation = tf2::toMsg(q);
     ASSERT_EQ(critic->scorePose(pose), some_other_cost);
   }
 
   // Poses outside the map should throw an exception.
-  pose.x = 1.0;
-  pose.y = -0.1;
+  pose.position.x = 1.0;
+  pose.position.y = -0.1;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = costmap_ros->getCostmap()->getSizeInMetersX() + 0.1;
-  pose.y = 1.0;
+  pose.position.x = costmap_ros->getCostmap()->getSizeInMetersX() + 0.1;
+  pose.position.y = 1.0;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = 1.0;
-  pose.y = costmap_ros->getCostmap()->getSizeInMetersY() + 0.1;
+  pose.position.x = 1.0;
+  pose.position.y = costmap_ros->getCostmap()->getSizeInMetersY() + 0.1;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = -0.1;
-  pose.y = 1.0;
+  pose.position.x = -0.1;
+  pose.position.y = 1.0;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 }
 

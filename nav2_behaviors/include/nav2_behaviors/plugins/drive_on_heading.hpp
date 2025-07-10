@@ -163,10 +163,11 @@ public:
       cmd_vel->twist.linear.x = forward ? minimum_speed_ : -minimum_speed_;
     }
 
-    geometry_msgs::msg::Pose2D pose2d;
-    pose2d.x = current_pose.pose.position.x;
-    pose2d.y = current_pose.pose.position.y;
-    pose2d.theta = tf2::getYaw(current_pose.pose.orientation);
+    geometry_msgs::msg::Pose pose2d;
+    pose2d.position.x = current_pose.pose.position.x;
+    pose2d.position.y = current_pose.pose.position.y;
+    pose2d.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0},
+      tf2::getYaw(current_pose.pose.orientation)));
 
     if (!isCollisionFree(distance, cmd_vel->twist, pose2d)) {
       this->stopRobot();
@@ -200,13 +201,13 @@ protected:
    * @brief Check if pose is collision free
    * @param distance Distance to check forward
    * @param cmd_vel current commanded velocity
-   * @param pose2d Current pose
+   * @param pose Current pose
    * @return is collision free or not
    */
   bool isCollisionFree(
     const double & distance,
     const geometry_msgs::msg::Twist & cmd_vel,
-    geometry_msgs::msg::Pose2D & pose2d)
+    geometry_msgs::msg::Pose & pose)
   {
     if (command_disable_collision_checks_) {
       return true;
@@ -217,20 +218,21 @@ protected:
     double sim_position_change;
     const double diff_dist = abs(command_x_) - distance;
     const int max_cycle_count = static_cast<int>(this->cycle_frequency_ * simulate_ahead_time_);
-    geometry_msgs::msg::Pose2D init_pose = pose2d;
+    geometry_msgs::msg::Pose init_pose = pose;
+    double init_theta = tf2::getYaw(init_pose.orientation);
     bool fetch_data = true;
 
     while (cycle_count < max_cycle_count) {
       sim_position_change = cmd_vel.linear.x * (cycle_count / this->cycle_frequency_);
-      pose2d.x = init_pose.x + sim_position_change * cos(init_pose.theta);
-      pose2d.y = init_pose.y + sim_position_change * sin(init_pose.theta);
+      pose.position.x = init_pose.position.x + sim_position_change * cos(init_theta);
+      pose.position.y = init_pose.position.y + sim_position_change * sin(init_theta);
       cycle_count++;
 
       if (diff_dist - abs(sim_position_change) <= 0.) {
         break;
       }
 
-      if (!this->local_collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+      if (!this->local_collision_checker_->isCollisionFree(pose, fetch_data)) {
         return false;
       }
       fetch_data = false;

@@ -148,9 +148,9 @@ void OscillationCritic::onInit()
 }
 
 bool OscillationCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose,
+  const geometry_msgs::msg::Pose & pose,
   const nav_2d_msgs::msg::Twist2D &,
-  const geometry_msgs::msg::Pose2D &,
+  const geometry_msgs::msg::Pose &,
   const nav_2d_msgs::msg::Path2D &)
 {
   pose_ = pose;
@@ -172,19 +172,19 @@ void OscillationCritic::debrief(const nav_2d_msgs::msg::Twist2D & cmd_vel)
     }
   }
 }
-
 bool OscillationCritic::resetAvailable()
 {
   if (oscillation_reset_dist_ >= 0.0) {
-    double x_diff = pose_.x - prev_stationary_pose_.x;
-    double y_diff = pose_.y - prev_stationary_pose_.y;
+    double x_diff = pose_.position.x - prev_stationary_pose_.position.x;
+    double y_diff = pose_.position.y - prev_stationary_pose_.position.y;
     double sq_dist = x_diff * x_diff + y_diff * y_diff;
     if (sq_dist > oscillation_reset_dist_sq_) {
       return true;
     }
   }
   if (oscillation_reset_angle_ >= 0.0) {
-    double th_diff = pose_.theta - prev_stationary_pose_.theta;
+    double th_diff = tf2::getYaw(pose_.orientation) -
+      tf2::getYaw(prev_stationary_pose_.orientation);
     if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;
     }

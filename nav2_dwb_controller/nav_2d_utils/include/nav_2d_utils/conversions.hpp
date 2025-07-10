@@ -52,17 +52,15 @@ geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_
 nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel);
 // nav_2d_msgs::msg::Pose2DStamped stampedPoseToPose2D(const tf2::Stamped<tf2::Pose>& pose);
 nav_2d_msgs::msg::Pose2DStamped poseStampedToPose2D(const geometry_msgs::msg::PoseStamped & pose);
-geometry_msgs::msg::Pose2D poseToPose2D(const geometry_msgs::msg::Pose & pose);
-geometry_msgs::msg::Pose pose2DToPose(const geometry_msgs::msg::Pose2D & pose2d);
 geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
   const nav_2d_msgs::msg::Pose2DStamped & pose2d);
 geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
-  const geometry_msgs::msg::Pose2D & pose2d,
+  const geometry_msgs::msg::Pose & pose2d,
   const std::string & frame, const rclcpp::Time & stamp);
 nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses);
 nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path);
-nav_msgs::msg::Path poses2DToPath(
-  const std::vector<geometry_msgs::msg::Pose2D> & poses,
+nav_msgs::msg::Path posesToPath(
+  const std::vector<geometry_msgs::msg::Pose> & poses,
   const std::string & frame, const rclcpp::Time & stamp);
 nav_msgs::msg::Path pathToPath(const nav_2d_msgs::msg::Path2D & path2d);
 

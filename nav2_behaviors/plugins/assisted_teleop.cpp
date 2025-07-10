@@ -110,10 +110,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
     return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};
   }
 
-  geometry_msgs::msg::Pose2D projected_pose;
-  projected_pose.x = current_pose.pose.position.x;
-  projected_pose.y = current_pose.pose.position.y;
-  projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
+  geometry_msgs::msg::Pose projected_pose = current_pose.pose;
 
   auto scaled_twist = std::make_unique<geometry_msgs::msg::TwistStamped>(teleop_twist_);
   for (double time = simulation_time_step_; time < projection_time_;
@@ -151,22 +148,25 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   return ResultStatus{Status::RUNNING, AssistedTeleopActionResult::NONE, ""};
 }
 
-geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
-  const geometry_msgs::msg::Pose2D & pose,
+geometry_msgs::msg::Pose AssistedTeleop::projectPose(
+  const geometry_msgs::msg::Pose & pose,
   const geometry_msgs::msg::Twist & twist,
   double projection_time)
 {
-  geometry_msgs::msg::Pose2D projected_pose = pose;
+  geometry_msgs::msg::Pose projected_pose = pose;
 
-  projected_pose.x += projection_time * (
-    twist.linear.x * cos(pose.theta) +
-    twist.linear.y * sin(pose.theta));
+  double theta = tf2::getYaw(pose.orientation);
 
-  projected_pose.y += projection_time * (
-    twist.linear.x * sin(pose.theta) -
-    twist.linear.y * cos(pose.theta));
+  projected_pose.position.x += projection_time * (
+    twist.linear.x * cos(theta) +
+    twist.linear.y * sin(theta));
 
-  projected_pose.theta += projection_time * twist.angular.z;
+  projected_pose.position.y += projection_time * (
+    twist.linear.x * sin(theta) -
+    twist.linear.y * cos(theta));
+
+  double new_theta = theta + projection_time * twist.angular.z;
+  projected_pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, new_theta));
 
   return projected_pose;
 }

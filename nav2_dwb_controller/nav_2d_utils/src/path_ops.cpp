@@ -32,8 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "nav_2d_utils/path_ops.hpp"
 #include <cmath>
+
+#include "nav_2d_utils/path_ops.hpp"
+#include "tf2/convert.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using std::sqrt;
 
@@ -48,36 +52,41 @@ nav_2d_msgs::msg::Path2D adjustPlanResolution(
     return global_plan_out;
   }
 
-  geometry_msgs::msg::Pose2D last = global_plan_in.poses[0];
+  geometry_msgs::msg::Pose last = global_plan_in.poses[0];
   global_plan_out.poses.push_back(last);
 
   // we can take "holes" in the plan smaller than 2 grid cells (squared = 4)
   double min_sq_resolution = resolution * resolution * 4.0;
 
   for (unsigned int i = 1; i < global_plan_in.poses.size(); ++i) {
-    geometry_msgs::msg::Pose2D loop = global_plan_in.poses[i];
-    double sq_dist = (loop.x - last.x) * (loop.x - last.x) + (loop.y - last.y) * (loop.y - last.y);
+    geometry_msgs::msg::Pose loop = global_plan_in.poses[i];
+    double sq_dist = (loop.position.x - last.position.x) * (loop.position.x - last.position.x) +
+      (loop.position.y - last.position.y) * (loop.position.y - last.position.y);
     if (sq_dist > min_sq_resolution) {
       // add points in-between
       double diff = sqrt(sq_dist) - sqrt(min_sq_resolution);
       int steps = static_cast<int>(diff / resolution) - 1;
       double steps_double = static_cast<double>(steps);
 
-      double delta_x = (loop.x - last.x) / steps_double;
-      double delta_y = (loop.y - last.y) / steps_double;
-      double delta_t = (loop.theta - last.theta) / steps_double;
+      double theta_last = tf2::getYaw(last.orientation);
+      double theta_loop = tf2::getYaw(loop.orientation);
+      double delta_x = (loop.position.x - last.position.x) / steps_double;
+      double delta_y = (loop.position.y - last.position.y) / steps_double;
+      double delta_t = (theta_loop - theta_last) / steps_double;
 
       for (int j = 1; j < steps; ++j) {
-        geometry_msgs::msg::Pose2D pose;
-        pose.x = last.x + j * delta_x;
-        pose.y = last.y + j * delta_y;
-        pose.theta = last.theta + j * delta_t;
+        geometry_msgs::msg::Pose pose;
+        pose.position.x = last.position.x + j * delta_x;
+        pose.position.y = last.position.y + j * delta_y;
+        tf2::Quaternion q;
+        q.setRPY(0, 0, theta_last + j * delta_t);
+        pose.orientation = tf2::toMsg(q);
         global_plan_out.poses.push_back(pose);
       }
     }
     global_plan_out.poses.push_back(global_plan_in.poses[i]);
-    last.x = loop.x;
-    last.y = loop.y;
+    last.position.x = loop.position.x;
+    last.position.y = loop.position.y;
   }
   return global_plan_out;
 }

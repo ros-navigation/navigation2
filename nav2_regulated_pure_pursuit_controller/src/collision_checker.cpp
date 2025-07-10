@@ -86,10 +86,12 @@ bool CollisionChecker::isCollisionImminent(
   }
 
   const geometry_msgs::msg::Point & robot_xy = robot_pose.pose.position;
-  geometry_msgs::msg::Pose2D curr_pose;
-  curr_pose.x = robot_pose.pose.position.x;
-  curr_pose.y = robot_pose.pose.position.y;
-  curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
+  geometry_msgs::msg::Pose curr_pose;
+  curr_pose.position.x = robot_pose.pose.position.x;
+  curr_pose.position.y = robot_pose.pose.position.y;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, tf2::getYaw(robot_pose.pose.orientation));
+  curr_pose.orientation = tf2::toMsg(q);
 
   // only forward simulate within time requested
   double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
@@ -104,24 +106,28 @@ bool CollisionChecker::isCollisionImminent(
   while (i * projection_time < max_allowed_time_to_collision_check) {
     i++;
 
+    double theta = tf2::getYaw(curr_pose.orientation);
+
     // apply velocity at curr_pose over distance
-    curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
-    curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
-    curr_pose.theta += projection_time * angular_vel;
+    curr_pose.position.x += projection_time * (linear_vel * cos(theta));
+    curr_pose.position.y += projection_time * (linear_vel * sin(theta));
+    theta += projection_time * angular_vel;
+    q.setRPY(0, 0, theta);
+    curr_pose.orientation = tf2::toMsg(q);
 
     // check if past carrot pose, where no longer a thoughtfully valid command
-    if (hypot(curr_pose.x - robot_xy.x, curr_pose.y - robot_xy.y) > carrot_dist) {
+    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {
       break;
     }
 
     // store it for visualization
-    pose_msg.pose.position.x = curr_pose.x;
-    pose_msg.pose.position.y = curr_pose.y;
+    pose_msg.pose.position.x = curr_pose.position.x;
+    pose_msg.pose.position.y = curr_pose.position.y;
     pose_msg.pose.position.z = 0.01;
     arc_pts_msg.poses.push_back(pose_msg);
 
     // check for collision at the projected pose
-    if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta)) {
+    if (inCollision(curr_pose.position.x, curr_pose.position.y, theta)) {
       carrot_arc_pub_->publish(arc_pts_msg);
       return true;
     }

@@ -82,15 +82,15 @@ void RotateToGoalCritic::reset()
 }
 
 bool RotateToGoalCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-  const geometry_msgs::msg::Pose2D & goal,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose & goal,
   const nav_2d_msgs::msg::Path2D &)
 {
-  double dxy_sq = hypot_sq(pose.x - goal.x, pose.y - goal.y);
+  double dxy_sq = hypot_sq(pose.position.x - goal.position.x, pose.position.y - goal.position.y);
   in_window_ = in_window_ || dxy_sq <= xy_goal_tolerance_sq_;
   current_xy_speed_sq_ = hypot_sq(vel.x, vel.y);
   rotating_ = rotating_ || (in_window_ && current_xy_speed_sq_ <= stopped_xy_velocity_sq_);
-  goal_yaw_ = goal.theta;
+  goal_yaw_ = tf2::getYaw(goal.orientation);
   return true;
 }
 
@@ -124,10 +124,10 @@ double RotateToGoalCritic::scoreRotation(const dwb_msgs::msg::Trajectory2D & tra
 
   double end_yaw;
   if (lookahead_time_ >= 0.0) {
-    geometry_msgs::msg::Pose2D eval_pose = dwb_core::projectPose(traj, lookahead_time_);
-    end_yaw = eval_pose.theta;
+    geometry_msgs::msg::Pose eval_pose = dwb_core::projectPose(traj, lookahead_time_);
+    end_yaw = tf2::getYaw(eval_pose.orientation);
   } else {
-    end_yaw = traj.poses.back().theta;
+    end_yaw = tf2::getYaw(traj.poses.back().orientation);
   }
   return fabs(angles::shortest_angular_distance(end_yaw, goal_yaw_));
 }
