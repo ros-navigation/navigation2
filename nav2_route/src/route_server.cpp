@@ -271,7 +271,8 @@ RouteServer::processRouteRequest(
 
       // Find the route
       Route route = findRoute(goal, rerouting_info);
-      RCLCPP_INFO(get_logger(), "Route found with %zu nodes and %zu edges",
+      RCLCPP_INFO(
+        get_logger(), "Route found with %zu nodes and %zu edges",
         route.edges.size() + 1u, route.edges.size());
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
 

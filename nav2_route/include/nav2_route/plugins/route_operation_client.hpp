@@ -165,7 +165,7 @@ protected:
         auto node = node_.lock();
         if (!node) {
           throw nav2_core::OperationFailed(
-            "Route operation service (" + getName() + ") failed to lock node.");
+                  "Route operation service (" + getName() + ") failed to lock node.");
         }
         auto client = node->create_client<SrvT>(
           srv_name, rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(), callback_group_);
@@ -173,8 +173,8 @@ protected:
       }
     } catch (const std::exception & e) {
       throw nav2_core::OperationFailed(
-        "Route operation service (" + getName() + ") failed to call service: " +
-        srv_name + " at Node " + std::to_string(node_achieved->nodeid));
+              "Route operation service (" + getName() + ") failed to call service: " +
+              srv_name + " at Node " + std::to_string(node_achieved->nodeid));
     }
 
     RCLCPP_INFO(

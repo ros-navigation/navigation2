@@ -182,7 +182,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     auto transformed_start = transformPose(start_, costmap_frame_id);
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
-      candidate_nodes.front().pose.position, transformed_start.pose.position))
+        candidate_nodes.front().pose.position, transformed_start.pose.position))
     {
       if (los_checker.isInCollision()) {
         GoalIntentSearch::BreadthFirstSearch bfs(costmap);
@@ -209,7 +209,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     auto transformed_end = transformPose(goal_, costmap_frame_id);
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
-      candidate_nodes.front().pose.position, transformed_end.pose.position))
+        candidate_nodes.front().pose.position, transformed_end.pose.position))
     {
       if (los_checker.isInCollision()) {
         GoalIntentSearch::BreadthFirstSearch bfs(costmap);

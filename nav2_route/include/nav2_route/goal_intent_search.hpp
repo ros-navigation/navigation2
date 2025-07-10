@@ -71,8 +71,9 @@ public:
 
     // Convert target to costmap space
     unsigned int goal_x, goal_y;
-    if (!costmap_->worldToMap(reference_node.pose.position.x, reference_node.pose.position.y,
-          goal_x, goal_y))
+    if (!costmap_->worldToMap(
+        reference_node.pose.position.x, reference_node.pose.position.y,
+        goal_x, goal_y))
     {
       return false;
     }
@@ -193,9 +194,9 @@ public:
     return closest_node_idx_;
   }
 
- /**
-  * @brief Destructor
-  */
+  /**
+   * @brief Destructor
+   */
   ~BreadthFirstSearch() = default;
 
 protected:
