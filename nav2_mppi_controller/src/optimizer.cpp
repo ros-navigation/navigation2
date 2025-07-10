@@ -193,9 +193,9 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   do {
     optimize();
     optimal_trajectory = getOptimizedTrajectory();
-    mppi::ValidationResult validation_result = trajectory_validator_->validateTrajectory(
-      optimal_trajectory, control_sequence_, robot_pose, robot_speed, plan, goal);
-    switch (validation_result) {
+    switch (trajectory_validator_->validateTrajectory(
+      optimal_trajectory, control_sequence_, robot_pose, robot_speed, plan, goal))
+    {
       case mppi::ValidationResult::SOFT_RESET:
         trajectory_valid = false;
         RCLCPP_WARN(logger_, "Soft reset triggered by trajectory validator");
