@@ -50,7 +50,10 @@ void Optimizer::initialize(
   critic_manager_.on_configure(parent_, name_, costmap_ros_, parameters_handler_);
   noise_generator_.initialize(settings_, isHolonomic(), name_, parameters_handler_);
 
-  // This may throw an exception if not valid and fail controller server initialization
+  // This may throw an exception if not valid and fail initialization
+  nav2::declare_parameter_if_not_declared(
+    node, name_ + ".TrajectoryValidator.plugin",
+    rclcpp::ParameterValue("mppi::DefaultOptimalTrajectoryValidator"));
   std::string validator_plugin_type = nav2::get_plugin_type_param(
     node, name_ + ".TrajectoryValidator");
   validator_loader_ = std::make_unique<pluginlib::ClassLoader<OptimalTrajectoryValidator>>(
