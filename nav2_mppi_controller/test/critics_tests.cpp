@@ -13,10 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// The following function was generated with assistance from an AI tool
+// and has been reviewed and adapted by the developer.
+
 #include <chrono>
 #include <thread>
 #include <random>
+#include <memory>
 
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
@@ -32,6 +39,7 @@
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
+#include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 #include "utils_test.cpp"  // NOLINT
 
 // Tests the various critic plugin functions
@@ -55,6 +63,99 @@ public:
     mode_ = static_cast<PathAngleMode>(mode);
   }
 };
+/* ---------- helper to configure critic ---------------------------------- */
+static void configureCritic(
+  mppi::critics::PathHugCritic & critic,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros,
+  mppi::ParametersHandler * params)
+{
+  nav2::LifecycleNode::SharedPtr nav_node =
+    std::static_pointer_cast<nav2::LifecycleNode>(node);
+  nav2::LifecycleNode::WeakPtr weak_node(nav_node);
+
+  critic.on_configure(
+    weak_node,
+    "mppi_controller",
+    "PathHugCritic",
+    costmap_ros,
+    params);
+}
+
+/* --------------------------------------------------------------------- */
+TEST(PathHugCritic, BasicScenarios)
+{
+  /* ROS node + param handler ------------------------------------------ */
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node");
+
+  nav2::LifecycleNode::SharedPtr nav_node =
+    std::static_pointer_cast<nav2::LifecycleNode>(node);
+  nav2::LifecycleNode::WeakPtr weak_node(nav_node);
+
+  std::string critic_ns = "path_hug_test_ns";
+  mppi::ParametersHandler params(weak_node, critic_ns);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+
+  /* Critic ------------------------------------------------------------- */
+  mppi::critics::PathHugCritic critic;
+  configureCritic(critic, node, costmap_ros, &params);
+
+  /* Mock data ---------------------------------------------------------- */
+  mppi::models::State state;
+  state.pose.header.frame_id = "map";
+  state.reset(1, 10);
+
+  mppi::models::Trajectories traj;
+  traj.reset(1, 10);
+
+  constexpr size_t N = 10;
+  mppi::models::Path ref_path;
+  ref_path.reset(N);
+  for (size_t i = 0; i < N; ++i) {
+    ref_path.x(i) = static_cast<float>(i);
+    ref_path.y(i) = 0.0f;
+  }
+
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1);
+  float dt = 0.1f;                              // mutable, not const
+
+  mppi::CriticData data{
+    state, traj, ref_path, goal,
+    costs, dt, false, nullptr, nullptr,
+    std::nullopt, std::nullopt};
+
+  data.motion_model = std::make_shared<mppi::DiffDriveMotionModel>();
+
+  /* ---------- 1. Perfect trajectory -> zero cost --------------------- */
+  for (size_t i = 0; i < N; ++i) {
+    traj.x(0, i) = static_cast<float>(i);
+    traj.y(0, i) = 0.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-4);
+
+  /* ---------- 2. 2 m offset, weight 2.5 ------------------------------ */
+  costs.setZero();
+  node->set_parameter(
+    rclcpp::Parameter(critic_ns + ".PathHugCritic.weight", 2.5));
+  configureCritic(critic, node, costmap_ros, &params);
+
+  for (size_t i = 0; i < N; ++i) {
+    traj.y(0, i) = 2.0f;
+  }
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 2.0f * 2.5f, 1e-4);
+
+  /* ---------- 3. Critic disabled ------------------------------------- */
+  costs.setZero();
+  node->set_parameter(
+    rclcpp::Parameter(critic_ns + ".PathHugCritic.enabled", false));
+  configureCritic(critic, node, costmap_ros, &params);
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0.0f, 1e-4);
+}
 
 TEST(CriticTests, ConstraintsCritic)
 {
