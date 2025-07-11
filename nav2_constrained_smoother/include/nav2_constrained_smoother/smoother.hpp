@@ -144,8 +144,8 @@ private:
     // Create costmap grid
     costmap_grid_ = std::make_shared<ceres::Grid2D<unsigned char>>(
       costmap->getCharMap(), 0, costmap->getSizeInCellsY(), 0, costmap->getSizeInCellsX());
-    auto costmap_interpolator = std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>>(
-      *costmap_grid_);
+    auto costmap_interpolator =
+      std::make_shared<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>>(*costmap_grid_);
 
     // Create residual blocks
     const double cusp_half_length = params.cusp_zone_length / 2;
