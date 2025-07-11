@@ -62,7 +62,7 @@ Footprint getOrientedFootprint(
 
 bool ObstacleFootprintCritic::prepare(
   const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Path2D &)
+  const geometry_msgs::msg::Pose &, const nav_msgs::msg::Path &)
 {
   footprint_spec_ = costmap_ros_->getRobotFootprint();
   if (footprint_spec_.size() == 0) {

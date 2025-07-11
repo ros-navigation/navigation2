@@ -84,7 +84,7 @@ void RotateToGoalCritic::reset()
 bool RotateToGoalCritic::prepare(
   const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
   const geometry_msgs::msg::Pose & goal,
-  const nav_2d_msgs::msg::Path2D &)
+  const nav_msgs::msg::Path &)
 {
   double dxy_sq = hypot_sq(pose.position.x - goal.position.x, pose.position.y - goal.position.y);
   in_window_ = in_window_ || dxy_sq <= xy_goal_tolerance_sq_;

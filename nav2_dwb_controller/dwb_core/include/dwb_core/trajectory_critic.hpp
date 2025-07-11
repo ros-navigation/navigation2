@@ -44,7 +44,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "nav_2d_msgs/msg/path2_d.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -133,7 +133,7 @@ public:
   virtual bool prepare(
     const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
     const geometry_msgs::msg::Pose &,
-    const nav_2d_msgs::msg::Path2D &)
+    const nav_msgs::msg::Path &)
   {
     return true;
   }

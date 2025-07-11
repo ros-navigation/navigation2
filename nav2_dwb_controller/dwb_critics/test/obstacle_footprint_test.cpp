@@ -143,7 +143,7 @@ TEST(ObstacleFootprint, Prepare)
   geometry_msgs::msg::Pose pose;
   nav_2d_msgs::msg::Twist2D vel;
   geometry_msgs::msg::Pose goal;
-  nav_2d_msgs::msg::Path2D global_plan;
+  nav_msgs::msg::Path global_plan;
 
   // no footprint set in the costmap. Prepare should return false;
   std::vector<geometry_msgs::msg::Point> footprint;

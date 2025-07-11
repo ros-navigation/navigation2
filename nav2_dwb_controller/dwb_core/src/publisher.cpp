@@ -338,31 +338,31 @@ DWBPublisher::publishCostGrid(
 }
 
 void
-DWBPublisher::publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan)
+DWBPublisher::publishGlobalPlan(const nav_msgs::msg::Path plan)
 {
   publishGenericPlan(plan, *global_pub_, publish_global_plan_);
 }
 
 void
-DWBPublisher::publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan)
+DWBPublisher::publishTransformedPlan(const nav_msgs::msg::Path plan)
 {
   publishGenericPlan(plan, *transformed_pub_, publish_transformed_);
 }
 
 void
-DWBPublisher::publishLocalPlan(const nav_2d_msgs::msg::Path2D plan)
+DWBPublisher::publishLocalPlan(const nav_msgs::msg::Path plan)
 {
   publishGenericPlan(plan, *local_pub_, publish_local_plan_);
 }
 
 void
 DWBPublisher::publishGenericPlan(
-  const nav_2d_msgs::msg::Path2D plan,
+  const nav_msgs::msg::Path plan,
   rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag)
 {
   if (pub.get_subscription_count() < 1) {return;}
   if (!flag) {return;}
-  auto path = std::make_unique<nav_msgs::msg::Path>(nav_2d_utils::pathToPath(plan));
+  auto path = std::make_unique<nav_msgs::msg::Path>(plan);
   pub.publish(std::move(path));
 }
 

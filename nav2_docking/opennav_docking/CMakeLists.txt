@@ -103,7 +103,7 @@ target_include_directories(${executable_name}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${executable_name} PRIVATE ${library_name} 
+target_link_libraries(${executable_name} PRIVATE ${library_name}
   rclcpp::rclcpp
   nav2_ros_common::nav2_ros_common
 )

@@ -57,7 +57,7 @@ public:
   void onInit() override;
   bool prepare(
     const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
+    const geometry_msgs::msg::Pose & goal, const nav_msgs::msg::Path & global_plan) override;
   double scorePose(const geometry_msgs::msg::Pose & pose) override;
 
 protected:

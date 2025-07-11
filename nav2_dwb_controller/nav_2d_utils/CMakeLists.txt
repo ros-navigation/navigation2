@@ -49,6 +49,7 @@ target_link_libraries(path_ops PUBLIC
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
   nav2_ros_common::nav2_ros_common
+  nav2_util::nav2_util_core
 )
 target_link_libraries(path_ops PRIVATE
   ${geometry_msgs_TARGETS}

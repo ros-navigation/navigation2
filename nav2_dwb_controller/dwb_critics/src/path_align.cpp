@@ -60,7 +60,7 @@ void PathAlignCritic::onInit()
 bool PathAlignCritic::prepare(
   const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
   const geometry_msgs::msg::Pose & goal,
-  const nav_2d_msgs::msg::Path2D & global_plan)
+  const nav_msgs::msg::Path & global_plan)
 {
   double dx = pose.position.x - goal.position.x;
   double dy = pose.position.y - goal.position.y;
