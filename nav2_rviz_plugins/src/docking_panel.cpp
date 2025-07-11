@@ -311,10 +311,6 @@ void DockingPanel::save(rviz_common::Config config) const
   Panel::save(config);
 }
 
-void DockingPanel::onStartup() {
-    // TODO: Add implementation
-}
-
 void DockingPanel::onDockingButtonPressed()
 {
   auto is_action_server_ready =

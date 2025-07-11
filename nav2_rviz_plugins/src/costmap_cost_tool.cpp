@@ -50,10 +50,6 @@ void CostmapCostTool::onInitialize()
     node_->create_client<nav2_msgs::srv::GetCost>("global_costmap/get_cost_global_costmap");
 }
 
-void CostmapCostTool::updateAutoDeactivate() {
-    // TODO: Add implementation
-}
-
 void CostmapCostTool::activate() {}
 void CostmapCostTool::deactivate() {}
 
