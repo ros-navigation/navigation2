@@ -65,23 +65,23 @@ std::pair<double, double> calculateMinAndMaxDistances(
 /**
  * @brief Convert Point32 to Point
  */
-geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt);
+geometry_msgs::msg::Point toPoint(const geometry_msgs::msg::Point32 & pt);
 
 /**
  * @brief Convert Point to Point32
  */
-geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt);
+geometry_msgs::msg::Point32 toPoint32(const geometry_msgs::msg::Point & pt);
 
 /**
  * @brief Convert vector of Points to Polygon msg
  */
-geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts);
+geometry_msgs::msg::Polygon toPolygon(const std::vector<geometry_msgs::msg::Point> & pts);
 
 /**
  * @brief Convert Polygon msg to vector of Points.
  */
 std::vector<geometry_msgs::msg::Point> toPointVector(
-  geometry_msgs::msg::Polygon::SharedPtr polygon);
+  const geometry_msgs::msg::Polygon & polygon);
 
 /**
  * @brief  Given a pose and base footprint, build the oriented footprint of the robot (list of Points)
