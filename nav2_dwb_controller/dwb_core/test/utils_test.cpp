@@ -34,8 +34,8 @@
 
 #include "gtest/gtest.h"
 #include "dwb_core/trajectory_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "tf2/utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using dwb_core::getClosestPose;
 using dwb_core::projectPose;
@@ -72,7 +72,7 @@ TEST(Utils, ProjectPose)
     double d = static_cast<double>(i);
     traj.poses[i].position.x = d;
     traj.poses[i].position.y = 30.0 - 2.0 * d;
-    traj.poses[i].orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.42));
+    traj.poses[i].orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.42);
     traj.time_offsets[i] = rclcpp::Duration::from_seconds(d);
   }
 

@@ -40,8 +40,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/obstacle_footprint.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "tf2/utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 class OpenObstacleFootprintCritic : public dwb_critics::ObstacleFootprintCritic
 {
@@ -104,7 +103,7 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
 
   std::vector<geometry_msgs::msg::Point> footprint_after;
   geometry_msgs::msg::Pose pose;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
@@ -117,7 +116,7 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
     ASSERT_NEAR(expected.z, actual.z, 0.000001);
   }
   theta = 5.123;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
   for (unsigned int i = 0; i < footprint_before.size(); i++) {

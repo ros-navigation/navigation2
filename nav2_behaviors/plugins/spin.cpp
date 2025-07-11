@@ -19,9 +19,8 @@
 #include <utility>
 
 #include "nav2_behaviors/plugins/spin.hpp"
-#include "tf2/utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -179,7 +178,7 @@ bool Spin::isCollisionFree(
   while (cycle_count < max_cycle_count) {
     sim_position_change = cmd_vel.angular.z * (cycle_count / cycle_frequency_);
     double new_theta = init_theta + sim_position_change;
-    pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, new_theta));
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(new_theta);
     cycle_count++;
 
     if (abs(relative_yaw) - abs(sim_position_change) <= 0.0) {

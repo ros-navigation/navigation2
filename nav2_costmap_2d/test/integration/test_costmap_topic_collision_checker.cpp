@@ -188,7 +188,7 @@ public:
     pose.position.x = x;
     pose.position.y = y;
     pose.position.z = 0.0;
-    pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta));
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
     setPose(x, y, theta, stamp);
     publishFootprint();

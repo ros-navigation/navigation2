@@ -42,7 +42,7 @@
 
 #include <exception>
 
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -121,7 +121,7 @@ void CostmapFilter::updateBounds(
   latest_pose_.position.x = robot_x;
   latest_pose_.position.y = robot_y;
   latest_pose_.position.z = 0.0;
-  latest_pose_.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, robot_yaw));
+  latest_pose_.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
 }
 
 void CostmapFilter::updateCosts(
@@ -179,7 +179,7 @@ bool CostmapFilter::transformPose(
       return false;
     }
 
-    mask_pose = global_pose;  // Copy everything
+    mask_pose = global_pose;
     mask_pose.position.x = out.point.x;
     mask_pose.position.y = out.point.y;
     // mask_pose.position.z is kept as-is (0 or original)

@@ -16,6 +16,7 @@
 
 #include "nav2_behaviors/plugins/assisted_teleop.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_behaviors
 {
@@ -166,7 +167,7 @@ geometry_msgs::msg::Pose AssistedTeleop::projectPose(
     twist.linear.y * cos(theta));
 
   double new_theta = theta + projection_time * twist.angular.z;
-  projected_pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, new_theta));
+  projected_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(new_theta);
 
   return projected_pose;
 }

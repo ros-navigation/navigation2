@@ -39,6 +39,7 @@
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "eigen3/Eigen/Geometry"
 
@@ -58,12 +59,12 @@ void checkMacro(
   pose0.position.x = x0;
   pose0.position.y = y0;
   pose0.position.z = 0.0;
-  pose0.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta0));
+  pose0.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta0);
 
   pose1.position.x = x1;
   pose1.position.y = y1;
   pose1.position.z = 0.0;
-  pose1.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, theta1));
+  pose1.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta1);
 
   geometry_msgs::msg::Twist v;
   v.linear.x = xv;

@@ -27,8 +27,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2/utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -472,7 +471,7 @@ void TestNode::testFullMask(
   pose.position.x = x - tr_x;
   pose.position.y = y - tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   sign = getSign(x, y, base, multiplier, flip_threshold);
@@ -492,7 +491,7 @@ void TestNode::testFullMask(
       pose.position.x = x - tr_x;
       pose.position.y = y - tr_y;
       pose.position.z = 0.0;
-      pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+      pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
       publishTransform();
       binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
 
@@ -514,7 +513,7 @@ void TestNode::testFullMask(
   pose.position.x = -tr_x;
   pose.position.y = -tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
@@ -543,7 +542,7 @@ void TestNode::testSimpleMask(
   pose.position.x = x - tr_x;
   pose.position.y = y - tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   sign = getSign(x, y, base, multiplier, flip_threshold);
@@ -563,7 +562,7 @@ void TestNode::testSimpleMask(
   pose.position.x = x - tr_x;
   pose.position.y = y - tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
 
@@ -584,7 +583,7 @@ void TestNode::testSimpleMask(
   pose.position.x = x - tr_x;
   pose.position.y = y - tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
 
@@ -604,7 +603,7 @@ void TestNode::testSimpleMask(
   pose.position.x = -tr_x;
   pose.position.y = -tr_y;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
@@ -631,7 +630,7 @@ void TestNode::testOutOfMask()
   pose.position.x = width_ / 2 - 1;
   pose.position.y = height_ / 2 - 1;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
   verifyBinaryState(getSign(pose.position.x, pose.position.y, base, multiplier, flip_threshold),
@@ -641,7 +640,7 @@ void TestNode::testOutOfMask()
   pose.position.x = -2.0;
   pose.position.y = -2.0;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
@@ -650,7 +649,7 @@ void TestNode::testOutOfMask()
   pose.position.x = width_ + 1.0;
   pose.position.y = height_ + 1.0;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
@@ -672,7 +671,7 @@ void TestNode::testIncorrectTF()
   pose.position.x = width_ / 2 - 1;
   pose.position.y = height_ / 2 - 1;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
 
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
@@ -698,7 +697,7 @@ void TestNode::testResetFilter()
   pose.position.x = width_ / 2 - 1;
   pose.position.y = height_ / 2 - 1;
   pose.position.z = 0.0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion({0.0, 0.0, 1.0}, 0.0));
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
