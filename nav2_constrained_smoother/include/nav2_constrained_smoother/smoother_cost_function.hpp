@@ -57,7 +57,8 @@ public:
     double next_to_last_length_ratio,
     bool reversing,
     const nav2_costmap_2d::Costmap2D * costmap,
-    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> & costmap_interpolator,
+    const std::shared_ptr<ceres::BiCubicInterpolator<ceres::Grid2D<unsigned char>>> &
+    costmap_interpolator,
     const SmootherParams & params,
     double costmap_weight)
   : original_pos_(original_pos),
