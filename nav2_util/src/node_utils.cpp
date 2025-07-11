@@ -93,7 +93,11 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
 void setSoftRealTimePriority()
 {
   #if defined(__APPLE__) || defined(_WIN32)
-    throw std::runtime_error("Setting priority as real-time thread is currently only supported on Linux. Contributions welcome.");
+    std::string errmsg(
+    "Setting priority as real-time thread is currently only supported on Linux."
+    "Contributions welcome.");
+    throw std::runtime_error(errmsg + std::strerror(errno));
+
   #else
 
   sched_param sch;
