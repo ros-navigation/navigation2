@@ -94,8 +94,8 @@ void setSoftRealTimePriority()
 {
   #if defined(__APPLE__) || defined(_WIN32)
   std::string errmsg(
-  "Setting priority as real-time thread is currently only supported on Linux."
-  "Contributions welcome.");
+    "Set  ting priority as real-time thread is currently only supported on Linux."
+    "Contributions welcome.");
   throw std::runtime_error(errmsg + std::strerror(errno));
 
   #else
