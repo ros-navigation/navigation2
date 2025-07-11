@@ -38,13 +38,10 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "nav_2d_msgs/msg/pose2_d_stamped.hpp"
-#include "nav_2d_msgs/msg/path2_d.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -75,64 +72,15 @@ nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel)
   return cmd_vel_2d;
 }
 
-// nav_2d_msgs::msg::Pose2DStamped stampedPoseToPose2D(const tf2::Stamped<tf2::Pose>& pose)
-// {
-//   nav_2d_msgs::msg::Pose2DStamped pose2d;
-//   pose2d.header.stamp = pose.stamp_;
-//   pose2d.header.frame_id = pose.frame_id_;
-//   pose2d.pose.x = pose.getOrigin().getX();
-//   pose2d.pose.y = pose.getOrigin().getY();
-//   pose2d.pose.theta = tf::getYaw(pose.getRotation());
-//   return pose2d;
-// }
 
-nav_2d_msgs::msg::Pose2DStamped poseStampedToPose2D(const geometry_msgs::msg::PoseStamped & pose)
-{
-  nav_2d_msgs::msg::Pose2DStamped pose2d;
-  pose2d.header = pose.header;
-  pose2d.pose.x = pose.pose.position.x;
-  pose2d.pose.y = pose.pose.position.y;
-  pose2d.pose.theta = tf2::getYaw(pose.pose.orientation);
-  return pose2d;
-}
-
-geometry_msgs::msg::Pose2D poseToPose2D(const geometry_msgs::msg::Pose & pose)
-{
-  geometry_msgs::msg::Pose2D pose2d;
-  pose2d.x = pose.position.x;
-  pose2d.y = pose.position.y;
-  pose2d.theta = tf2::getYaw(pose.orientation);
-  return pose2d;
-}
-
-geometry_msgs::msg::Pose pose2DToPose(const geometry_msgs::msg::Pose2D & pose2d)
-{
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = pose2d.x;
-  pose.position.y = pose2d.y;
-  pose.orientation = orientationAroundZAxis(pose2d.theta);
-  return pose;
-}
-
-geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
-  const nav_2d_msgs::msg::Pose2DStamped & pose2d)
-{
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header = pose2d.header;
-  pose.pose = pose2DToPose(pose2d.pose);
-  return pose;
-}
-
-geometry_msgs::msg::PoseStamped pose2DToPoseStamped(
-  const geometry_msgs::msg::Pose2D & pose2d,
+geometry_msgs::msg::PoseStamped poseToPoseStamped(
+  const geometry_msgs::msg::Pose & pose_in,
   const std::string & frame, const rclcpp::Time & stamp)
 {
   geometry_msgs::msg::PoseStamped pose;
   pose.header.frame_id = frame;
   pose.header.stamp = stamp;
-  pose.pose.position.x = pose2d.x;
-  pose.pose.position.y = pose2d.y;
-  pose.pose.orientation = orientationAroundZAxis(pose2d.theta);
+  pose.pose = pose_in;
   return pose;
 }
 
@@ -151,19 +99,9 @@ nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStampe
   return path;
 }
 
-nav_2d_msgs::msg::Path2D pathToPath2D(const nav_msgs::msg::Path & path)
-{
-  nav_2d_msgs::msg::Path2D path2d;
-  path2d.header = path.header;
-  for (auto & pose : path.poses) {
-    path2d.poses.push_back(poseToPose2D(pose.pose));
-  }
-  return path2d;
-}
 
-
-nav_msgs::msg::Path poses2DToPath(
-  const std::vector<geometry_msgs::msg::Pose2D> & poses,
+nav_msgs::msg::Path posesToPath(
+  const std::vector<geometry_msgs::msg::Pose> & poses,
   const std::string & frame, const rclcpp::Time & stamp)
 {
   nav_msgs::msg::Path path;
@@ -171,19 +109,9 @@ nav_msgs::msg::Path poses2DToPath(
   path.header.frame_id = frame;
   path.header.stamp = stamp;
   for (unsigned int i = 0; i < poses.size(); i++) {
-    path.poses[i] = pose2DToPoseStamped(poses[i], frame, stamp);
-  }
-  return path;
-}
-
-nav_msgs::msg::Path pathToPath(const nav_2d_msgs::msg::Path2D & path2d)
-{
-  nav_msgs::msg::Path path;
-  path.header = path2d.header;
-  path.poses.resize(path2d.poses.size());
-  for (unsigned int i = 0; i < path.poses.size(); i++) {
-    path.poses[i].header = path2d.header;
-    path.poses[i].pose = pose2DToPose(path2d.poses[i]);
+    path.poses[i].header.frame_id = frame;
+    path.poses[i].header.stamp = stamp;
+    path.poses[i].pose = poses[i];
   }
   return path;
 }

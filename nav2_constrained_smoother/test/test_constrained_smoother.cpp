@@ -29,6 +29,8 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
 

@@ -204,7 +204,7 @@ bool Controller::isTrajectoryCollisionFree(
     // If this distance is greater than the dock_collision_threshold, check for collisions
     if (use_collision_detection_ &&
       dock_collision_distance > dock_collision_threshold_ &&
-      !collision_checker_->isCollisionFree(nav_2d_utils::poseToPose2D(local_pose.pose)))
+      !collision_checker_->isCollisionFree(local_pose.pose))
     {
       RCLCPP_WARN(
         logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",

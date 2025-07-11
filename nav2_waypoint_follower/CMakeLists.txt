@@ -35,11 +35,11 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${geographic_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
   ${nav_msgs_TARGETS}
@@ -70,24 +70,24 @@ add_executable(${executable_name}
 target_include_directories(${executable_name} PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(wait_at_waypoint SHARED plugins/wait_at_waypoint.cpp)
 target_include_directories(wait_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(wait_at_waypoint PUBLIC
   ${geometry_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(wait_at_waypoint PRIVATE
   pluginlib::pluginlib
@@ -98,13 +98,13 @@ add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
 target_include_directories(photo_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(photo_at_waypoint PUBLIC
   cv_bridge::cv_bridge
   ${geometry_msgs_TARGETS}
   image_transport::image_transport
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   opencv_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -119,11 +119,11 @@ add_library(input_at_waypoint SHARED plugins/input_at_waypoint.cpp)
 target_include_directories(input_at_waypoint PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(input_at_waypoint PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${std_msgs_TARGETS}

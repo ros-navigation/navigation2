@@ -24,7 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -70,7 +70,7 @@ public:
    * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   double scorePose(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_costmap_and_footprint = true);
 
   /**
@@ -81,7 +81,7 @@ public:
    * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   bool isCollisionFree(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_costmap_and_footprint = true);
 
 protected:
@@ -93,7 +93,7 @@ protected:
    * footprint should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   Footprint getFootprint(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_latest_footprint = true);
 
   // Name used for logging

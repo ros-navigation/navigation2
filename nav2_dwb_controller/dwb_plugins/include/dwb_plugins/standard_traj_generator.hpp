@@ -64,7 +64,7 @@ public:
   nav_2d_msgs::msg::Twist2D nextTwist() override;
 
   dwb_msgs::msg::Trajectory2D generateTrajectory(
-    const geometry_msgs::msg::Pose2D & start_pose,
+    const geometry_msgs::msg::Pose & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) override;
 
@@ -108,8 +108,8 @@ protected:
    * @param dt amount of time in seconds
    * @return New pose after dt seconds
    */
-  virtual geometry_msgs::msg::Pose2D computeNewPosition(
-    const geometry_msgs::msg::Pose2D start_pose, const nav_2d_msgs::msg::Twist2D & vel,
+  virtual geometry_msgs::msg::Pose computeNewPosition(
+    const geometry_msgs::msg::Pose start_pose, const nav_2d_msgs::msg::Twist2D & vel,
     const double dt);
 
 

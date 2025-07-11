@@ -74,7 +74,7 @@ public:
    * @param pose The pose to score, assumed to be in the same frame as the costmap
    * @return The score associated with the cell of the costmap where the pose lies
    */
-  virtual double scorePose(const geometry_msgs::msg::Pose2D & pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose & pose);
 
   /**
    * @brief Retrieve the score for a particular cell of the costmap

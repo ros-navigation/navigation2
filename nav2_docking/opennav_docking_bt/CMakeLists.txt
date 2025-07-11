@@ -21,13 +21,13 @@ target_include_directories(opennav_dock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_compile_definitions(opennav_dock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
 target_link_libraries(opennav_dock_action_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
 )
 
@@ -36,13 +36,13 @@ target_include_directories(opennav_undock_action_bt_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_compile_definitions(opennav_undock_action_bt_node PRIVATE BT_PLUGIN_EXPORT)
 target_link_libraries(opennav_undock_action_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
 )
 

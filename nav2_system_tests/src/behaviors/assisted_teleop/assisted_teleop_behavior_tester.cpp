@@ -222,12 +222,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
     return false;
   }
 
-  geometry_msgs::msg::Pose2D pose_2d;
-  pose_2d.x = current_pose.pose.position.x;
-  pose_2d.y = current_pose.pose.position.y;
-  pose_2d.theta = tf2::getYaw(current_pose.pose.orientation);
-
-  if (!collision_checker_->isCollisionFree(pose_2d)) {
+  if (!collision_checker_->isCollisionFree(current_pose.pose)) {
     RCLCPP_ERROR(node_->get_logger(), "Ended in collision");
     return false;
   }

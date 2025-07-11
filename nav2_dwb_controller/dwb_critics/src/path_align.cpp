@@ -58,12 +58,12 @@ void PathAlignCritic::onInit()
 }
 
 bool PathAlignCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-  const geometry_msgs::msg::Pose2D & goal,
-  const nav_2d_msgs::msg::Path2D & global_plan)
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose & goal,
+  const nav_msgs::msg::Path & global_plan)
 {
-  double dx = pose.x - goal.x;
-  double dy = pose.y - goal.y;
+  double dx = pose.position.x - goal.position.x;
+  double dy = pose.position.y - goal.position.y;
   double sq_dist = dx * dx + dy * dy;
   if (sq_dist > forward_point_distance_ * forward_point_distance_) {
     zero_scale_ = false;
@@ -85,7 +85,7 @@ double PathAlignCritic::getScale() const
   }
 }
 
-double PathAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
+double PathAlignCritic::scorePose(const geometry_msgs::msg::Pose & pose)
 {
   return PathDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }

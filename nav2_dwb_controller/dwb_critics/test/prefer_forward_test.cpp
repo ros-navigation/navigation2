@@ -45,6 +45,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 static constexpr double default_penalty = 1.0;
 static constexpr double default_strafe_x = 0.1;

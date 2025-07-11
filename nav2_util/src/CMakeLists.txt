@@ -24,12 +24,12 @@ target_link_libraries(${library_name} PUBLIC
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
+  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(${library_name} PRIVATE
   ${bond_TARGETS}
 )
 target_include_directories(${library_name} PUBLIC
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 

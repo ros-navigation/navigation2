@@ -120,7 +120,7 @@ public:
    * @param cmd_vel The desired command velocity
    */
   virtual dwb_msgs::msg::Trajectory2D generateTrajectory(
-    const geometry_msgs::msg::Pose2D & start_pose,
+    const geometry_msgs::msg::Pose & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) = 0;
 

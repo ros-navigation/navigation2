@@ -35,7 +35,7 @@
 #ifndef NAV_2D_UTILS__PATH_OPS_HPP_
 #define NAV_2D_UTILS__PATH_OPS_HPP_
 
-#include "nav_2d_msgs/msg/path2_d.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 namespace nav_2d_utils
 {
@@ -46,8 +46,8 @@ namespace nav_2d_utils
  * @param resolution desired distance between waypoints
  * @return Higher resolution plan
  */
-nav_2d_msgs::msg::Path2D adjustPlanResolution(
-  const nav_2d_msgs::msg::Path2D & global_plan_in,
+nav_msgs::msg::Path adjustPlanResolution(
+  const nav_msgs::msg::Path & global_plan_in,
   double resolution);
 }  // namespace nav_2d_utils
 

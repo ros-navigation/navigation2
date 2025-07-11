@@ -73,10 +73,10 @@ double BaseObstacleCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & t
   return score;
 }
 
-double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
+double BaseObstacleCritic::scorePose(const geometry_msgs::msg::Pose & pose)
 {
   unsigned int cell_x, cell_y;
-  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
+  if (!costmap_->worldToMap(pose.position.x, pose.position.y, cell_x, cell_y)) {
     throw dwb_core::
           IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
   }

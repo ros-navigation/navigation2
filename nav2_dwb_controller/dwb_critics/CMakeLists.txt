@@ -15,6 +15,8 @@ find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 nav2_package()
 
@@ -35,7 +37,6 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
   costmap_queue::costmap_queue
@@ -43,8 +44,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_ros_common::nav2_ros_common
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE
   angles::angles

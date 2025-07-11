@@ -33,7 +33,7 @@ public:
   void process(
     nav2_costmap_2d::Costmap2D &,
     int, int, int, int,
-    const geometry_msgs::msg::Pose2D &) {}
+    const geometry_msgs::msg::Pose &) {}
 
   void resetFilter() {}
 
