@@ -113,7 +113,7 @@ private:
 
   /**
    * @brief Get the interpreted value in the costmap
-   * @return uint value
+   * @return unsigned int value
    */
   uint8_t interpret_value(const int8_t value) const;
 
