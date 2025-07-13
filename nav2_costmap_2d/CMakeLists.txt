@@ -59,6 +59,7 @@ target_link_libraries(nav2_costmap_2d_core PUBLIC
   tf2::tf2
   tf2_ros::tf2_ros
   tf2_sensor_msgs::tf2_sensor_msgs
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(layers SHARED
@@ -85,6 +86,7 @@ target_link_libraries(layers PUBLIC
   nav2_voxel_grid::voxel_grid
   nav2_costmap_2d_core
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
@@ -122,6 +124,7 @@ target_link_libraries(nav2_costmap_2d_client PUBLIC
   nav2_costmap_2d_core
   ${std_msgs_TARGETS}
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
 )
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
