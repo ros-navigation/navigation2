@@ -65,14 +65,14 @@ public:
 
 /**
  * @class nav2::qos::LatchedSubscriptionQoS
- * @brief A QoS profile for latched, reliable topics with a history of 1 messages
+ * @brief A QoS profile for latched, reliable topics with a history of 10 messages
  */
 class LatchedSubscriptionQoS : public rclcpp::QoS
 {
 public:
   /**
    * @brief Constructor for LatchedSubscriptionQoS
-   * @param depth The history depth for the QoS profile, default is 1
+   * @param depth The history depth for the QoS profile, default is 10
    */
   explicit
   LatchedSubscriptionQoS(const int depth = 10)  // NOLINT
