@@ -148,7 +148,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   // Setup inputs / outputs
   smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
-    node,
+    *node,
     "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
     std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1)

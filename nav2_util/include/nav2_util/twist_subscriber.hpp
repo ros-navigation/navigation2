@@ -23,6 +23,10 @@
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "rclcpp/create_subscription.hpp"
+#include "rclcpp/node_interfaces/node_interfaces.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
 #include "rclcpp/parameter_service.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/qos.hpp"
@@ -79,31 +83,56 @@ public:
   * @param TwistCallback The subscriber callback for Twist messages
   * @param TwistStampedCallback The subscriber callback for TwistStamped messages
   */
-  template<typename TwistCallbackT,
-    typename TwistStampedCallbackT
-  >
+//   template<typename TwistCallbackT,
+//     typename TwistStampedCallbackT
+//   >
+//   explicit TwistSubscriber(
+//     nav2_util::LifecycleNode::SharedPtr node,
+//     const std::string & topic,
+//     const rclcpp::QoS & qos,
+//     TwistCallbackT && TwistCallback,
+//     TwistStampedCallbackT && TwistStampedCallback
+//   )
+//   : TwistSubscriber(
+//       rclcpp::node_interfaces::NodeInterfaces<
+//         rclcpp::node_interfaces::NodeParametersInterface>(*node),
+//       topic, qos, std::forward<TwistCallbackT>(TwistCallback),
+//       std::forward<TwistStampedCallbackT>(TwistStampedCallback)) {}
+
+  /**
+  * @brief A constructor that supports either Twist and TwistStamped
+  * @param node The node to add the Twist subscriber to
+  * @param topic The subscriber topic name
+  * @param qos The subscriber quality of service
+  * @param TwistCallback The subscriber callback for Twist messages
+  * @param TwistStampedCallback The subscriber callback for TwistStamped
+  * messages
+  */
+  template<typename TwistCallbackT, typename TwistStampedCallbackT>
   explicit TwistSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
-    const std::string & topic,
-    const rclcpp::QoS & qos,
+    rclcpp::node_interfaces::NodeInterfaces<
+      rclcpp::node_interfaces::NodeParametersInterface,
+      rclcpp::node_interfaces::NodeTopicsInterface>
+    node,
+    const std::string & topic, const rclcpp::QoS & qos,
     TwistCallbackT && TwistCallback,
-    TwistStampedCallbackT && TwistStampedCallback
-  )
+    TwistStampedCallbackT && TwistStampedCallback)
   {
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(false));
-    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+        rclcpp::node_interfaces::NodeInterfaces<
+        rclcpp::node_interfaces::NodeParametersInterface>(node),
+        "enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
+    is_stamped_ = node.get_node_parameters_interface()
+      ->get_parameter("enable_stamped_cmd_vel")
+      .as_bool();
     if (is_stamped_) {
-      twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
-        topic,
-        qos,
-        std::forward<TwistStampedCallbackT>(TwistStampedCallback));
+      twist_stamped_sub_ =
+        rclcpp::create_subscription<geometry_msgs::msg::TwistStamped>(
+              node, topic, qos,
+              std::forward<TwistStampedCallbackT>(TwistStampedCallback));
     } else {
-      twist_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
-        topic,
-        qos,
-        std::forward<TwistCallbackT>(TwistCallback));
+      twist_sub_ = rclcpp::create_subscription<geometry_msgs::msg::Twist>(
+          node, topic, qos, std::forward<TwistCallbackT>(TwistCallback));
     }
   }
 
@@ -115,23 +144,52 @@ public:
   * @param TwistStampedCallback The subscriber callback for TwistStamped messages
   * @throw std::invalid_argument When configured with an invalid ROS parameter
   */
+//   template<typename TwistStampedCallbackT>
+//   explicit TwistSubscriber(
+//     nav2_util::LifecycleNode::SharedPtr node,
+//     const std::string & topic,
+//     const rclcpp::QoS & qos,
+//     TwistStampedCallbackT && TwistStampedCallback
+//   )
+//   : TwistSubscriber(
+//       rclcpp::node_interfaces::NodeInterfaces<
+//         rclcpp::node_interfaces::NodeParametersInterface>(*node),
+//       topic, qos,
+//       std::forward<TwistStampedCallbackT>(TwistStampedCallback)) {}
+
+  /**
+  * @brief A constructor that only supports TwistStamped
+  * @param node The node to add the TwistStamped subscriber to
+  * @param topic The subscriber topic name
+  * @param qos The subscriber quality of service
+  * @param TwistStampedCallback The subscriber callback for TwistStamped
+  * messages
+  * @throw std::invalid_argument When configured with an invalid ROS parameter
+  */
   template<typename TwistStampedCallbackT>
   explicit TwistSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
-    const std::string & topic,
-    const rclcpp::QoS & qos,
-    TwistStampedCallbackT && TwistStampedCallback
-  )
+    rclcpp::node_interfaces::NodeInterfaces<
+      rclcpp::node_interfaces::NodeParametersInterface,
+      rclcpp::node_interfaces::NodeTopicsInterface>
+    node,
+    const std::string & topic, const rclcpp::QoS & qos,
+    TwistStampedCallbackT && TwistStampedCallback)
   {
     nav2_util::declare_parameter_if_not_declared(
-      node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(false));
-    node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
+        rclcpp::node_interfaces::NodeInterfaces<
+        rclcpp::node_interfaces::NodeParametersInterface>(node),
+        "enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
+    is_stamped_ = node.get_node_parameters_interface()
+      ->get_parameter("enable_stamped_cmd_vel")
+      .as_bool();
     if (is_stamped_) {
-      twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
-        topic,
-        qos,
-        std::forward<TwistStampedCallbackT>(TwistStampedCallback));
+      twist_stamped_sub_ =
+        node.get_node_topics_interface()->create_subscription(
+              topic,
+              rclcpp::create_subscription_factory<
+          geometry_msgs::msg::TwistStamped>(
+                  std::forward<TwistStampedCallbackT>(TwistStampedCallback)),
+              qos);
     } else {
       throw std::invalid_argument(
               "enable_stamped_cmd_vel must be true when using this constructor!");
