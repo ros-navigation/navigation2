@@ -65,7 +65,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   cmd_vel_in_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
-    shared_from_this(),
+    *this,
     cmd_vel_in_topic,
     1,
     std::bind(&CollisionMonitor::cmdVelInCallbackUnstamped, this, std::placeholders::_1),
