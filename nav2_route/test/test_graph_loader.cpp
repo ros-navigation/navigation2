@@ -34,6 +34,7 @@ using namespace nav2_route; //NOLINT
 
 TEST(GraphLoader, test_invalid_plugin)
 {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   auto node = std::make_shared<nav2_util::LifecycleNode>("graph_loader_test");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
@@ -48,7 +49,7 @@ TEST(GraphLoader, test_invalid_plugin)
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin));
 
-  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), pluginlib::PluginlibException);
+  ASSERT_DEATH(GraphLoader graph_loader(node, tf, frame), "");
 }
 
 TEST(GraphLoader, test_api)
@@ -96,6 +97,7 @@ TEST(GraphLoader, test_transformation_api)
     ament_index_cpp::get_package_share_directory("nav2_route") +
     "/graphs/aws_graph.geojson";
   EXPECT_TRUE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+  ASSERT_FALSE(graph.empty());
 
   // Test with another frame, should transform
   geometry_msgs::msg::TransformStamped transform;
@@ -107,7 +109,7 @@ TEST(GraphLoader, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::Rate(1).sleep();
   tf_broadcaster->sendTransform(transform);
-  rclcpp::spin(node->get_node_base_interface());
+  rclcpp::spin_some(node->get_node_base_interface());
 
   graph[0].coords.frame_id = "map_test";
   EXPECT_EQ(graph[0].coords.frame_id, "map_test");

@@ -47,11 +47,12 @@ TEST(OperationsManagerTest, test_lifecycle)
 
 TEST(OperationsManagerTest, test_failed_plugins)
 {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // This plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
-  EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
+  ASSERT_DEATH(OperationsManager manager(node, costmap_subscriber), "");
 }
 
 TEST(OperationsManagerTest, test_find_operations)
@@ -94,11 +95,12 @@ TEST(OperationsManagerTest, test_find_operations)
 
 TEST(OperationsManagerTest, test_find_operations_failure2)
 {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // This plugin does not exist
   auto node = std::make_shared<nav2_util::LifecycleNode>("operations_manager_test");
   node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
-  EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
+  ASSERT_DEATH(OperationsManager manager(node, costmap_subscriber), "");
 }
 
 TEST(OperationsManagerTest, test_processing_fail)
