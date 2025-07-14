@@ -67,6 +67,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
 
   if (path_.poses.empty()) {
     setOutput("output_path", path_);
+    setOutput("last_path_pose", path_.poses.back());
     return BT::NodeStatus::SUCCESS;
   }
 
@@ -101,6 +102,7 @@ inline BT::NodeStatus TruncatePathLocal::tick()
   output_path.poses = std::vector<geometry_msgs::msg::PoseStamped>(
     backward_pose_it.base(), forward_pose_it);
   setOutput("output_path", output_path);
+  setOutput("last_path_pose", output_path.poses.back());
 
   return BT::NodeStatus::SUCCESS;
 }

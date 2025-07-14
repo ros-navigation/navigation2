@@ -53,6 +53,8 @@ public:
       BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
       BT::OutputPort<nav_msgs::msg::Path>(
         "output_path", "Path truncated to a certain distance around robot"),
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
+        "last_path_pose", "Last pose ot the truncated path"),
       BT::InputPort<double>(
         "distance_forward", 8.0,
         "Distance in forward direction"),
