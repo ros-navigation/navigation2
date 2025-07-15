@@ -513,7 +513,8 @@ class BasicNavigator(Node):
         return RunningTask.ASSISTED_TELEOP
 
     def followPath(self, path: Path, controller_id: str = '',
-                   goal_checker_id: str = '', key_poses: list[PoseStamped] = None) -> Optional[RunningTask]:
+                   goal_checker_id: str = '',
+                   key_poses: list[PoseStamped] = None) -> Optional[RunningTask]:
         self.clearTaskError()
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")

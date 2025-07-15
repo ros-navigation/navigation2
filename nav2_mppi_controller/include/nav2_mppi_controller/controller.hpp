@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"

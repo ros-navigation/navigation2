@@ -38,6 +38,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"

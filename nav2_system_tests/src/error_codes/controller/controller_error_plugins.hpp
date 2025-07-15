@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"

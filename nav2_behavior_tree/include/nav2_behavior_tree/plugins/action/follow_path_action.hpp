@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
