@@ -15,6 +15,7 @@
 #ifndef OPENNAV_DOCKING_CORE__DOCKING_EXCEPTIONS_HPP_
 #define OPENNAV_DOCKING_CORE__DOCKING_EXCEPTIONS_HPP_
 
+#include <stdexcept>
 #include <string>
 #include <memory>
 
