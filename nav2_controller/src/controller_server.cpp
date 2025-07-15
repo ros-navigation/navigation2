@@ -591,7 +591,8 @@ void ControllerServer::computeControl()
   action_server_->succeeded_current();
 }
 
-void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path,
+void ControllerServer::setPlannerPath(
+  const nav_msgs::msg::Path & path,
   const std::vector<geometry_msgs::msg::PoseStamped> & key_poses)
 {
   RCLCPP_DEBUG(

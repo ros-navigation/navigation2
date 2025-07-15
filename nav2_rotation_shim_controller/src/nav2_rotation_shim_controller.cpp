@@ -391,7 +391,8 @@ bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
   return current_path_.poses.back().pose != path.poses.back().pose;
 }
 
-void RotationShimController::setPlan(const nav_msgs::msg::Path & path,
+void RotationShimController::setPlan(
+  const nav_msgs::msg::Path & path,
   const std::vector<geometry_msgs::msg::PoseStamped> & key_poses)
 {
   path_updated_ = rotate_to_heading_once_ ? isGoalChanged(path) : true;

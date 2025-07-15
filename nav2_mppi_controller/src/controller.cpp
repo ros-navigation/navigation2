@@ -141,7 +141,8 @@ void MPPIController::visualize(
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
-void MPPIController::setPlan(const nav_msgs::msg::Path & path,
+void MPPIController::setPlan(
+  const nav_msgs::msg::Path & path,
   const std::vector<geometry_msgs::msg::PoseStamped> & /*key_poses*/)
 {
   path_handler_.setPath(path);

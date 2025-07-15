@@ -477,7 +477,8 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = sign * linear_vel;
 }
 
-void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path,
+void RegulatedPurePursuitController::setPlan(
+  const nav_msgs::msg::Path & path,
   const std::vector<geometry_msgs::msg::PoseStamped> & /*key_poses*/)
 {
   has_reached_xy_tolerance_ = false;
