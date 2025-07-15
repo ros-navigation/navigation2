@@ -41,7 +41,7 @@ NodeT * get_node_from_tree(
     return nullptr;
   }
   if (nodes.size() <= index) {
-    RCLCPP_ERROR(logger, "Out of bounds (found %zu < %zu nodes)", nodes.size() + 1, index);
+    RCLCPP_ERROR(logger, "Out of bounds (found %zu < %zu nodes)", nodes.size(), index);
     return nullptr;
   }
 
