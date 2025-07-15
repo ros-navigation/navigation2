@@ -94,8 +94,10 @@ public:
   /**
    * @brief local setPlan - Sets the global plan
    * @param path The global plan
+   * @param key_poses Key poses along the path that are considered points of interest
    */
-  virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
+  virtual void setPlan(const nav_msgs::msg::Path & path,
+    const std::vector<geometry_msgs::msg::PoseStamped> & key_poses) = 0;
 
   /**
    * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity

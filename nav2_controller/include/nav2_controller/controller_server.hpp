@@ -156,8 +156,10 @@ protected:
   /**
    * @brief Assigns path to controller
    * @param path Path received from action server
+   * @param key_poses Key poses along the path that are considered points of interest
    */
-  void setPlannerPath(const nav_msgs::msg::Path & path);
+  void setPlannerPath(const nav_msgs::msg::Path & path,
+    const std::vector<geometry_msgs::msg::PoseStamped> & key_poses);
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
    */

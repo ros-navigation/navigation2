@@ -90,8 +90,10 @@ public:
   /**
     * @brief Set new reference path to track
     * @param path Path to track
+    * @param key_poses Key poses along the path that are considered points of interest
     */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void setPlan(const nav_msgs::msg::Path & path,
+    const std::vector<geometry_msgs::msg::PoseStamped> & key_poses) override;
 
   /**
     * @brief Set new speed limit from callback

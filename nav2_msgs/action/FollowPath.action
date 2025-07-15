@@ -3,6 +3,7 @@ nav_msgs/Path path
 string controller_id
 string goal_checker_id
 string progress_checker_id
+geometry_msgs/PoseStamped[] key_poses
 ---
 #result definition
 

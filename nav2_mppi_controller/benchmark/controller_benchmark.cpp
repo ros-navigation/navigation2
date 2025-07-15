@@ -106,7 +106,7 @@ void prepareAndRunBenchmark(
   auto velocity = getDummyTwist();
   auto path = getIncrementalDummyPath(node, path_settings);
 
-  controller->setPlan(path);
+  controller->setPlan(path, {});
 
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 

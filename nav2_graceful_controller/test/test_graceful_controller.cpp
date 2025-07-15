@@ -225,7 +225,7 @@ TEST(GracefulControllerTest, configure) {
   plan.header.frame_id = "map";
   plan.poses.resize(3);
   plan.poses[0].header.frame_id = "map";
-  controller->setPlan(plan);
+  controller->setPlan(plan, {});
   EXPECT_EQ(controller->getPlan().poses.size(), 3u);
   EXPECT_EQ(controller->getPlan().poses[0].header.frame_id, "map");
 
@@ -536,7 +536,7 @@ TEST(GracefulControllerTest, emptyPlan) {
   // Set an empty global plan
   nav_msgs::msg::Path global_plan;
   global_plan.header.frame_id = "test_global_frame";
-  controller->setPlan(global_plan);
+  controller->setPlan(global_plan, {});
 
   EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::InvalidPath);
 }
@@ -591,7 +591,7 @@ TEST(GracefulControllerTest, poseOutsideCostmap) {
   global_plan.poses[0].header.frame_id = "test_global_frame";
   global_plan.poses[0].pose.position.x = 0.0;
   global_plan.poses[0].pose.position.y = 0.0;
-  controller->setPlan(global_plan);
+  controller->setPlan(global_plan, {});
 
   EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::ControllerException);
 }
@@ -655,7 +655,7 @@ TEST(GracefulControllerTest, noPruningPlan) {
   global_plan.poses[2].pose.position.x = 3.0;
   global_plan.poses[2].pose.position.y = 3.0;
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(global_plan);
+  controller->setPlan(global_plan, {});
 
   // Check results: the plan should not be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
@@ -732,7 +732,7 @@ TEST(GracefulControllerTest, pruningPlan) {
   global_plan.poses[5].pose.position.x = 500.0;
   global_plan.poses[5].pose.position.y = 500.0;
   global_plan.poses[5].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(global_plan);
+  controller->setPlan(global_plan, {});
 
   // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
@@ -798,7 +798,7 @@ TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
   global_plan.poses[2].pose.position.x = 200.0;
   global_plan.poses[2].pose.position.y = 200.0;
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(global_plan);
+  controller->setPlan(global_plan, {});
 
   // Check results: the plan should be pruned
   auto transformed_plan = controller->transformGlobalPlan(robot_pose);
@@ -866,7 +866,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   plan.poses[2].pose.position.x = 1.0;
   plan.poses[2].pose.position.y = 1.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->setPlan(plan, {});
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -942,7 +942,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   plan.poses[2].pose.position.x = 2.0;
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->setPlan(plan, {});
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -1023,7 +1023,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   plan.poses[2].pose.position.x = -2.0;
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->setPlan(plan, {});
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -1108,7 +1108,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   plan.poses[4].pose.position.x = 0.2;
   plan.poses[4].pose.position.y = 0.0;
   plan.poses[4].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->setPlan(plan, {});
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;

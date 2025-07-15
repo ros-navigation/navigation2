@@ -252,7 +252,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   throw nav2_core::NoValidControl("Collision detected in trajectory");
 }
 
-void GracefulController::setPlan(const nav_msgs::msg::Path & path)
+void GracefulController::setPlan(const nav_msgs::msg::Path & path,
+  const std::vector<geometry_msgs::msg::PoseStamped> & /*key_poses*/)
 {
   path_handler_->setPlan(path);
   goal_reached_ = false;

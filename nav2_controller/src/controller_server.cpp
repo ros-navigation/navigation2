@@ -457,7 +457,7 @@ void ControllerServer::computeControl()
       throw nav2_core::ControllerException("Failed to find progress checker name: " + pc_name);
     }
 
-    setPlannerPath(goal->path);
+    setPlannerPath(goal->path, goal->key_poses);
     progress_checkers_[current_progress_checker_]->reset();
 
     last_valid_cmd_time_ = now();
@@ -591,7 +591,8 @@ void ControllerServer::computeControl()
   action_server_->succeeded_current();
 }
 
-void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
+void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path,
+  const std::vector<geometry_msgs::msg::PoseStamped> & key_poses)
 {
   RCLCPP_DEBUG(
     get_logger(),
@@ -599,7 +600,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   if (path.poses.empty()) {
     throw nav2_core::InvalidPath("Path is empty.");
   }
-  controllers_[current_controller_]->setPlan(path);
+  controllers_[current_controller_]->setPlan(path, key_poses);
 
   end_pose_ = path.poses.back();
   end_pose_.header.frame_id = path.header.frame_id;
@@ -743,7 +744,7 @@ void ControllerServer::updateGlobalPath()
       action_server_->terminate_current(result);
       return;
     }
-    setPlannerPath(goal->path);
+    setPlannerPath(goal->path, goal->key_poses);
   }
 }
 

@@ -94,8 +94,10 @@ public:
   /**
    * @brief nav2_core setPlan - Sets the global plan.
    * @param path The global plan
+   * @param key_poses Key poses along the path that are considered points of interest
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void setPlan(const nav_msgs::msg::Path & path,
+    const std::vector<geometry_msgs::msg::PoseStamped> & key_poses) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.

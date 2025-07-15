@@ -134,7 +134,7 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   nav_msgs::msg::Path path;
   path.poses.resize(2);
   path.poses[0].header.frame_id = "fake_frame";
-  ctrl->setPlan(path);
+  ctrl->setPlan(path, {});
   EXPECT_EQ(ctrl->getPlan().poses.size(), 2ul);
   EXPECT_EQ(ctrl->getPlan().poses[0].header.frame_id, std::string("fake_frame"));
 
@@ -196,13 +196,13 @@ TEST(RegulatedPurePursuitTest, findVelocitySignChange)
   path.poses[1].pose.position.y = 2.0;
   path.poses[2].pose.position.x = -1.0;
   path.poses[2].pose.position.y = -1.0;
-  ctrl->setPlan(path);
+  ctrl->setPlan(path, {});
   auto rtn = ctrl->findVelocitySignChangeWrapper(path);
   EXPECT_EQ(rtn, sqrt(8.0));
 
   path.poses[2].pose.position.x = 3.0;
   path.poses[2].pose.position.y = 3.0;
-  ctrl->setPlan(path);
+  ctrl->setPlan(path, {});
   rtn = ctrl->findVelocitySignChangeWrapper(path);
   EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
@@ -914,7 +914,7 @@ TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
     std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
 
@@ -958,7 +958,7 @@ TEST_F(TransformGlobalPlanTest, transform_start_selection)
     std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
   auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
@@ -1003,7 +1003,7 @@ TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
     std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
   EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::ControllerException);
@@ -1045,7 +1045,7 @@ TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
     std::make_unique<path_utils::LeftCircle>(circle_radius)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
   auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
@@ -1090,7 +1090,7 @@ TEST_F(TransformGlobalPlanTest, costmap_pruning)
     std::make_unique<path_utils::Straight>(path_length)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
   auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
@@ -1137,7 +1137,7 @@ TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
     std::make_unique<path_utils::Straight>(path_length)
   });
 
-  ctrl_->setPlan(global_plan);
+  ctrl_->setPlan(global_plan, {});
 
   // Transform the plan
   auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);

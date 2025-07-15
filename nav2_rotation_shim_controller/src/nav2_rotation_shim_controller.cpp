@@ -391,11 +391,12 @@ bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
   return current_path_.poses.back().pose != path.poses.back().pose;
 }
 
-void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
+void RotationShimController::setPlan(const nav_msgs::msg::Path & path,
+  const std::vector<geometry_msgs::msg::PoseStamped> & key_poses)
 {
   path_updated_ = rotate_to_heading_once_ ? isGoalChanged(path) : true;
   current_path_ = path;
-  primary_controller_->setPlan(path);
+  primary_controller_->setPlan(path, key_poses);
   position_goal_checker_->reset();
 }
 
