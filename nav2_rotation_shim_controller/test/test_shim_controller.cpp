@@ -153,12 +153,12 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   EXPECT_EQ(pose.pose.position.y, 1.0);
 
   nav_msgs::msg::Path path_invalid_leng;
-  controller->setPlan(path_invalid_leng);
+  controller->setPlan(path_invalid_leng, {});
   EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 
   nav_msgs::msg::Path path_invalid_dists;
   path.poses.resize(10);
-  controller->setPlan(path_invalid_dists);
+  controller->setPlan(path_invalid_dists, {});
   EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 }
 
