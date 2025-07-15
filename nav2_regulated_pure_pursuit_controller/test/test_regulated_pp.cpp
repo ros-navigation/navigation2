@@ -549,13 +549,13 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // basic full speed at a speed
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_EQ(lin_v, 0.0);
-  EXPECT_EQ(ang_v, 1.8);
+  EXPECT_EQ(ang_v, 1.6);  // hit slow down limit
 
   // negative direction
   angle_to_path = -0.4;
   curr_speed.angular.z = -1.75;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
-  EXPECT_EQ(ang_v, -1.8);
+  EXPECT_EQ(ang_v, -1.6);  // hit slow down limit
 
   // kinematic clamping, no speed, some speed accelerating, some speed decelerating
   angle_to_path = 0.4;

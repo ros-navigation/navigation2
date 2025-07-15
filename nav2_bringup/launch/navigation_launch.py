@@ -38,6 +38,8 @@ def generate_launch_description() -> LaunchDescription:
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
+    use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
     lifecycle_nodes = [
         'controller_server',
@@ -58,6 +60,11 @@ def generate_launch_description() -> LaunchDescription:
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {'autostart': autostart}
 
+    yaml_substitutions = {
+        'KEEPOUT_ZONE_ENABLED': use_keepout_zones,
+        'SPEED_ZONE_ENABLED': use_speed_zones,
+    }
+
     # RewrittenYaml: Adds namespace to the parameters file as a root key
     # Note: Make sure that all frames are correctly namespaced in the parameters file
     # Do not add namespace to topics in the parameters file, as they will be remapped
@@ -71,6 +78,7 @@ def generate_launch_description() -> LaunchDescription:
             source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
+            value_rewrites=yaml_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
@@ -127,6 +135,16 @@ def generate_launch_description() -> LaunchDescription:
 
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='log level'
+    )
+
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
+    )
+
+    declare_use_speed_zones_cmd = DeclareLaunchArgument(
+        'use_speed_zones', default_value='True',
+        description='Whether to enable speed zones or not'
     )
 
     load_nodes = GroupAction(
@@ -361,6 +379,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
+    ld.add_action(declare_use_speed_zones_cmd)
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
