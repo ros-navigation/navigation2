@@ -97,7 +97,8 @@ public:
           "use_poses", false, "Whether to use poses or IDs for start and goal"),
         BT::OutputPort<ActionResult::_route_type>(
           "route", "The route computed by ComputeRoute node"),
-        BT::OutputPort<builtin_interfaces::msg::Duration>("planning_time",
+        BT::OutputPort<builtin_interfaces::msg::Duration>(
+          "planning_time",
           "Time taken to compute route"),
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputeRoute node"),
       });
