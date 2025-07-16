@@ -71,6 +71,7 @@ public:
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & route_frame,
+    const std::string & global_costmap_frame,
     const std::string & base_frame);
 
   /**
@@ -132,6 +133,7 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
   std::string route_frame_;
+  std::string global_costmap_frame_;
   std::string base_frame_;
   geometry_msgs::msg::PoseStamped start_, goal_;
   bool prune_goal_, enable_search_;

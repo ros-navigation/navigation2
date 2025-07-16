@@ -61,11 +61,14 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   declare_parameter_if_not_declared(
     node, "route_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter_if_not_declared(
+    node, "global_costmap_frame", rclcpp::ParameterValue(std::string("map")));
+  declare_parameter_if_not_declared(
     node, "base_frame", rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter_if_not_declared(
     node, "max_planning_time", rclcpp::ParameterValue(2.0));
 
   route_frame_ = node->get_parameter("route_frame").as_string();
+  global_costmap_frame_ = node->get_parameter("global_costmap_frame").as_string();
   base_frame_ = node->get_parameter("base_frame").as_string();
   max_planning_time_ = node->get_parameter("max_planning_time").as_double();
 
@@ -84,7 +87,8 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
     goal_intent_extractor_ = std::make_shared<GoalIntentExtractor>();
     goal_intent_extractor_->configure(
-      node, graph_, &id_to_graph_map_, tf_, costmap_subscriber_, route_frame_, base_frame_);
+      node, graph_, &id_to_graph_map_, tf_, costmap_subscriber_, route_frame_,
+      global_costmap_frame_, base_frame_);
 
     route_planner_ = std::make_shared<RoutePlanner>();
     route_planner_->configure(node, tf_, costmap_subscriber_);

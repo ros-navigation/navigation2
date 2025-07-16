@@ -30,6 +30,7 @@ void GoalIntentExtractor::configure(
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & route_frame,
+  const std::string & global_costmap_frame,
   const std::string & base_frame)
 {
   logger_ = node->get_logger();
@@ -38,6 +39,7 @@ void GoalIntentExtractor::configure(
   tf_ = tf;
   costmap_subscriber_ = costmap_subscriber;
   route_frame_ = route_frame;
+  global_costmap_frame_ = global_costmap_frame;
   base_frame_ = base_frame;
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph);
@@ -155,8 +157,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (enable_search) {
     try {
       costmap = costmap_subscriber_->getCostmap();
-      // costmap_frame_id = costmap_subscriber_->getFrameID();
-      costmap_frame_id = "map";
+      costmap_frame_id = global_costmap_frame_;
     } catch (const std::exception & ex) {
       enable_search = false;
       RCLCPP_WARN(
