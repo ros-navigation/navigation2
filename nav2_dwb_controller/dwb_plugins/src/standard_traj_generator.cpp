@@ -230,7 +230,6 @@ geometry_msgs::msg::Pose StandardTrajectoryGenerator::computeNewPosition(
   return new_pose;
 }
 
-
 }  // namespace dwb_plugins
 
 PLUGINLIB_EXPORT_CLASS(

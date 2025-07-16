@@ -87,11 +87,7 @@ bool CollisionChecker::isCollisionImminent(
 
   const geometry_msgs::msg::Point & robot_xy = robot_pose.pose.position;
   geometry_msgs::msg::Pose curr_pose;
-  curr_pose.position.x = robot_pose.pose.position.x;
-  curr_pose.position.y = robot_pose.pose.position.y;
-  tf2::Quaternion q;
-  q.setRPY(0, 0, tf2::getYaw(robot_pose.pose.orientation));
-  curr_pose.orientation = tf2::toMsg(q);
+  curr_pose = robot_pose.pose;
 
   // only forward simulate within time requested
   double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
@@ -112,8 +108,7 @@ bool CollisionChecker::isCollisionImminent(
     curr_pose.position.x += projection_time * (linear_vel * cos(theta));
     curr_pose.position.y += projection_time * (linear_vel * sin(theta));
     theta += projection_time * angular_vel;
-    q.setRPY(0, 0, theta);
-    curr_pose.orientation = tf2::toMsg(q);
+    curr_pose.orientation = curr_pose.orientation;
 
     // check if past carrot pose, where no longer a thoughtfully valid command
     if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {

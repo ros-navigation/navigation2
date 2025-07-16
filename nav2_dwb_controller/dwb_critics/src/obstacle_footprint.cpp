@@ -50,8 +50,9 @@ Footprint getOrientedFootprint(
 {
   std::vector<geometry_msgs::msg::Point> oriented_footprint;
   oriented_footprint.resize(footprint_spec.size());
-  double cos_th = cos(tf2::getYaw(pose.orientation));
-  double sin_th = sin(tf2::getYaw(pose.orientation));
+  double theta = tf2::getYaw(pose.orientation);
+  double cos_th = cos(theta);
+  double sin_th = sin(theta);
   for (unsigned int i = 0; i < footprint_spec.size(); ++i) {
     geometry_msgs::msg::Point & new_pt = oriented_footprint[i];
     new_pt.x = pose.position.x + footprint_spec[i].x * cos_th - footprint_spec[i].y * sin_th;

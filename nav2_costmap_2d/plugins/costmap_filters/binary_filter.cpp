@@ -224,6 +224,7 @@ void BinaryFilter::process(
     }
   }
 }
+
 void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());

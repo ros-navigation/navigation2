@@ -183,8 +183,13 @@ bool OscillationCritic::resetAvailable()
     }
   }
   if (oscillation_reset_angle_ >= 0.0) {
-    double th_diff = tf2::getYaw(pose_.orientation) -
-      tf2::getYaw(prev_stationary_pose_.orientation);
+    tf2::Quaternion tf2_q1, tf2_q2;
+    tf2::fromMsg(pose_.orientation, tf2_q1);
+    tf2::fromMsg(prev_stationary_pose_.orientation, tf2_q2);
+
+    tf2::Quaternion delta_q = tf2_q2 * tf2_q1.inverse();
+    double th_diff = tf2::getYaw(delta_q);
+
     if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;
     }
