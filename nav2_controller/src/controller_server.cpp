@@ -433,7 +433,7 @@ void ControllerServer::computeControl()
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  if (publish_zero_velocity_){
+  if (publish_zero_velocity_) {
     publishZeroVelocity();
   }
 

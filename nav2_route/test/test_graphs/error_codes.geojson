@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "name": "turtlebot3_graph",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
+  "features": [
+  { "type": "Feature", "properties": { "id": 1 }, "geometry": { "type": "Point", "coordinates": [ 1.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 399 }, "geometry": { "type": "Point", "coordinates": [ 399.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 400 }, "geometry": { "type": "Point", "coordinates": [ 400.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 401 }, "geometry": { "type": "Point", "coordinates": [ 401.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 402 }, "geometry": { "type": "Point", "coordinates": [ 402.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 403 }, "geometry": { "type": "Point", "coordinates": [ 403.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 404 }, "geometry": { "type": "Point", "coordinates": [ 404.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 405 }, "geometry": { "type": "Point", "coordinates": [ 405.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 406 }, "geometry": { "type": "Point", "coordinates": [ 406.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 407 }, "geometry": { "type": "Point", "coordinates": [ 407.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 408 }, "geometry": { "type": "Point", "coordinates": [ 408.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 409 }, "geometry": { "type": "Point", "coordinates": [ 409.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 410 }, "geometry": { "type": "Point", "coordinates": [ 410.0, 0.0 ] } },
+  { "type": "Feature", "properties": { "id": 15, "startid": 1, "endid": 399 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 1.0, 0.0 ], [ 399.0, 0.0 ] ] ] } }
+  ]
+}
