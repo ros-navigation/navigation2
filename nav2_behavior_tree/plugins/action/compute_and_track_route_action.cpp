@@ -62,8 +62,6 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_success()
 {
   resetFeedbackAndOutputPorts();
   setOutput("execution_duration", result_.result->execution_duration);
-  setOutput("error_code_id", ActionResult::NONE);
-  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
 }
 
@@ -71,8 +69,6 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_aborted()
 {
   resetFeedbackAndOutputPorts();
   setOutput("execution_duration", builtin_interfaces::msg::Duration());
-  setOutput("error_code_id", result_.result->error_code);
-  setOutput("error_msg", result_.result->error_msg);
   return BT::NodeStatus::FAILURE;
 }
 
@@ -81,8 +77,6 @@ BT::NodeStatus ComputeAndTrackRouteAction::on_cancelled()
   resetFeedbackAndOutputPorts();
   // Set empty error code, action was cancelled
   setOutput("execution_duration", builtin_interfaces::msg::Duration());
-  setOutput("error_code_id", ActionResult::NONE);
-  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
 }
 

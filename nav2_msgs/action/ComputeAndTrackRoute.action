@@ -21,8 +21,6 @@ uint16 OPERATION_FAILED=406
 uint16 INVALID_EDGE_SCORER_USE=407
 
 builtin_interfaces/Duration execution_duration
-uint16 error_code 0
-string error_msg
 ---
 #feedback definition
 uint16 last_node_id

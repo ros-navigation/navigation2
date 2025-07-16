@@ -22,7 +22,5 @@ uint16 INVALID_EDGE_SCORER_USE=407
 builtin_interfaces/Duration planning_time
 nav_msgs/Path path
 Route route
-uint16 error_code 0
-string error_msg
 ---
 #feedback definition
