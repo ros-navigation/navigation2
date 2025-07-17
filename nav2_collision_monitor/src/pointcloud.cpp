@@ -64,6 +64,10 @@ void PointCloud::configure()
     source_topic,
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&PointCloud::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
 bool PointCloud::getData(
@@ -122,6 +126,28 @@ void PointCloud::getParameters(std::string & source_topic)
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
   data_ = msg;
+}
+
+rcl_interfaces::msg::SetParametersResult
+PointCloud::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == source_name_ + "." + "min_height") {
+        min_height_ = parameter.as_double();
+      } else if (param_name == source_name_ + "." + "max_height") {
+        max_height_ = parameter.as_double();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_collision_monitor
