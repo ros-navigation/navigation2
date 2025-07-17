@@ -84,9 +84,6 @@ TEST(BaseObstacle, ScorePose)
 
   // The pose is in "world" coordinates. The (default) resolution is 0.1 m.
   geometry_msgs::msg::Pose pose;
-  pose.position.x = 0;
-  pose.position.y = 0;
-  pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0, 1));
 
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 

@@ -108,7 +108,7 @@ bool CollisionChecker::isCollisionImminent(
     curr_pose.position.x += projection_time * (linear_vel * cos(theta));
     curr_pose.position.y += projection_time * (linear_vel * sin(theta));
     theta += projection_time * angular_vel;
-    curr_pose.orientation = curr_pose.orientation;
+    curr_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
     // check if past carrot pose, where no longer a thoughtfully valid command
     if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {

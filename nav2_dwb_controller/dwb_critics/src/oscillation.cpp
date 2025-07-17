@@ -41,6 +41,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "angles/angles.h"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::OscillationCritic, dwb_core::TrajectoryCritic)
 
@@ -183,12 +184,12 @@ bool OscillationCritic::resetAvailable()
     }
   }
   if (oscillation_reset_angle_ >= 0.0) {
-    tf2::Quaternion tf2_q1, tf2_q2;
-    tf2::fromMsg(pose_.orientation, tf2_q1);
-    tf2::fromMsg(prev_stationary_pose_.orientation, tf2_q2);
+    tf2::Quaternion pose_q, prev_stationary_pose_q;
+    tf2::fromMsg(pose_.orientation, pose_q);
+    tf2::fromMsg(prev_stationary_pose_.orientation, prev_stationary_pose_q);
 
-    tf2::Quaternion delta_q = tf2_q2 * tf2_q1.inverse();
-    double th_diff = tf2::getYaw(delta_q);
+    double th_diff = angles::shortest_angular_distance(
+       tf2::getYaw(pose_q), tf2::getYaw(prev_stationary_pose_q));
 
     if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;
