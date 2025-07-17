@@ -19,7 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, SetParameter
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
@@ -65,6 +65,14 @@ def generate_launch_description() -> LaunchDescription:
         'SPEED_ZONE_ENABLED': use_speed_zones,
     }
 
+    # RewrittenYaml: Adds namespace to the parameters file as a root key
+    # Note: Make sure that all frames are correctly namespaced in the parameters file
+    # Do not add namespace to topics in the parameters file, as they will be remapped
+    # by the root key only if they are not prefixed with a forward slash.
+    # e.g. 'map' will be remapped to '/<namespace>/map', but '/map' will not be remapped.
+    # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under
+    # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured
+    # using ReplaceString <robot_namespace>
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
@@ -143,6 +151,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -267,6 +276,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
