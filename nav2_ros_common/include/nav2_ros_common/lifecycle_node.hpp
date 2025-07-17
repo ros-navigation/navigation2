@@ -67,14 +67,9 @@ public:
       rclcpp::Parameter(
         bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 
-    nav2::declare_parameter_if_not_declared(
-      this, "bond_heartbeat_period", rclcpp::ParameterValue(0.1));
-    this->get_parameter("bond_heartbeat_period", bond_heartbeat_period);
+    bond_heartbeat_period = this->declare_or_get_parameter<double>("bond_heartbeat_period", 0.1);
 
-    bool autostart_node = false;
-    nav2::declare_parameter_if_not_declared(
-      this, "autostart_node", rclcpp::ParameterValue(false));
-    this->get_parameter("autostart_node", autostart_node);
+    bool autostart_node = this->declare_or_get_parameter("autostart_node", false);
     if (autostart_node) {
       autostart();
     }
@@ -106,6 +101,26 @@ public:
       context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
       rcl_preshutdown_cb_handle_.reset();
     }
+  }
+
+  /**
+   * @brief Declares or gets a parameter.
+   * If the parameter is already declared, returns its value;
+   * otherwise declares it and returns the default value.
+   * @param parameter_name Name of the parameter
+   * @param default_value Default value of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   * @return The value of the param from the override if existent, otherwise the default value.
+   */
+  template<typename ParamType>
+  inline ParamType declare_or_get_parameter(
+    const std::string & parameter_name,
+    const ParamType & default_value,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    return nav2::declare_or_get_parameter(
+      shared_from_this(), parameter_name,
+      default_value, parameter_descriptor);
   }
 
   /**
