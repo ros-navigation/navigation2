@@ -296,23 +296,21 @@ void SmootherServer::smoothPlan()
 
     // Check for collisions
     if (goal->check_for_collisions) {
-      geometry_msgs::msg::Pose2D pose2d;
+      geometry_msgs::msg::Pose pose;
       bool fetch_data = true;
-      for (const auto & pose : result->path.poses) {
-        pose2d.x = pose.pose.position.x;
-        pose2d.y = pose.pose.position.y;
-        pose2d.theta = tf2::getYaw(pose.pose.orientation);
+      for (const auto & p : result->path.poses) {
+        pose = p.pose;
 
-        if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+        if (!collision_checker_->isCollisionFree(pose, fetch_data)) {
           RCLCPP_ERROR(
             get_logger(),
             "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
-            pose2d.x, pose2d.y, pose2d.theta);
+            pose.position.x, pose.position.y, tf2::getYaw(pose.orientation));
           throw nav2_core::SmoothedPathInCollision(
                   "Smoothed Path collided at"
-                  "X: " + std::to_string(pose2d.x) +
-                  "Y: " + std::to_string(pose2d.y) +
-                  "Theta: " + std::to_string(pose2d.theta));
+                  "X: " + std::to_string(pose.position.x) +
+                  "Y: " + std::to_string(pose.position.y) +
+                  "Theta: " + std::to_string(tf2::getYaw(pose.orientation)));
         }
         fetch_data = false;
       }

@@ -24,7 +24,6 @@ target_include_directories(conversions
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(conversions PUBLIC
   ${geometry_msgs_TARGETS}
@@ -45,10 +44,12 @@ target_include_directories(path_ops
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(path_ops PUBLIC
   ${nav_2d_msgs_TARGETS}
+  rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
+  nav2_util::nav2_util_core
 )
 target_link_libraries(path_ops PRIVATE
   ${geometry_msgs_TARGETS}
@@ -61,13 +62,13 @@ target_include_directories(tf_help
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(tf_help PUBLIC
   conversions
   ${geometry_msgs_TARGETS}
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros

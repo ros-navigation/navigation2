@@ -155,11 +155,11 @@ double MapGridCritic::scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj)
   return score;
 }
 
-double MapGridCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
+double MapGridCritic::scorePose(const geometry_msgs::msg::Pose & pose)
 {
   unsigned int cell_x, cell_y;
   // we won't allow trajectories that go off the map... shouldn't happen that often anyways
-  if (!costmap_->worldToMap(pose.x, pose.y, cell_x, cell_y)) {
+  if (!costmap_->worldToMap(pose.position.x, pose.position.y, cell_x, cell_y)) {
     throw dwb_core::
           IllegalTrajectoryException(name_, "Trajectory Goes Off Grid.");
   }

@@ -95,21 +95,4 @@ bool transformPose(
   return false;
 }
 
-bool transformPose(
-  const std::shared_ptr<tf2_ros::Buffer> tf,
-  const std::string frame,
-  const nav_2d_msgs::msg::Pose2DStamped & in_pose,
-  nav_2d_msgs::msg::Pose2DStamped & out_pose,
-  rclcpp::Duration & transform_tolerance
-)
-{
-  geometry_msgs::msg::PoseStamped in_3d_pose = pose2DToPoseStamped(in_pose);
-  geometry_msgs::msg::PoseStamped out_3d_pose;
-
-  bool ret = transformPose(tf, frame, in_3d_pose, out_3d_pose, transform_tolerance);
-  if (ret) {
-    out_pose = poseStampedToPose2D(out_3d_pose);
-  }
-  return ret;
-}
 }  // namespace nav_2d_utils

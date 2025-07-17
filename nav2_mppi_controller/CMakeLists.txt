@@ -50,12 +50,12 @@ target_compile_options(mppi_controller PUBLIC -O3)
 target_include_directories(mppi_controller
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav_msgs_TARGETS}
@@ -86,12 +86,12 @@ target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
 target_include_directories(mppi_critics
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav_msgs_TARGETS}

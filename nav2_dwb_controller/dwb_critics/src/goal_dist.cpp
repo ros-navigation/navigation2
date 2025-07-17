@@ -41,9 +41,9 @@
 namespace dwb_critics
 {
 bool GoalDistCritic::prepare(
-  const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
-  const geometry_msgs::msg::Pose2D &,
-  const nav_2d_msgs::msg::Path2D & global_plan)
+  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose &,
+  const nav_msgs::msg::Path & global_plan)
 {
   reset();
 
@@ -63,18 +63,18 @@ bool GoalDistCritic::prepare(
 }
 
 bool GoalDistCritic::getLastPoseOnCostmap(
-  const nav_2d_msgs::msg::Path2D & global_plan,
+  const nav_msgs::msg::Path & global_plan,
   unsigned int & x, unsigned int & y)
 {
-  nav_2d_msgs::msg::Path2D adjusted_global_plan = nav_2d_utils::adjustPlanResolution(
+  nav_msgs::msg::Path adjusted_global_plan = nav_2d_utils::adjustPlanResolution(
     global_plan,
     costmap_->getResolution());
   bool started_path = false;
 
   // skip global path points until we reach the border of the local map
   for (unsigned int i = 0; i < adjusted_global_plan.poses.size(); ++i) {
-    double g_x = adjusted_global_plan.poses[i].x;
-    double g_y = adjusted_global_plan.poses[i].y;
+    double g_x = adjusted_global_plan.poses[i].pose.position.x;
+    double g_y = adjusted_global_plan.poses[i].pose.position.y;
     unsigned int map_x, map_y;
     if (costmap_->worldToMap(
         g_x, g_y, map_x,

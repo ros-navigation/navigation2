@@ -78,8 +78,8 @@ protected:
    * @param twist velocity to project pose by
    * @param projection_time time to project by
    */
-  geometry_msgs::msg::Pose2D projectPose(
-    const geometry_msgs::msg::Pose2D & pose,
+  geometry_msgs::msg::Pose projectPose(
+    const geometry_msgs::msg::Pose & pose,
     const geometry_msgs::msg::Twist & twist,
     double projection_time);
 

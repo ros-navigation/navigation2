@@ -169,7 +169,7 @@ void BinaryFilter::maskCallback(
 void BinaryFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
-  const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose & pose)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -181,7 +181,7 @@ void BinaryFilter::process(
     return;
   }
 
-  geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
+  geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
   if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
@@ -190,7 +190,9 @@ void BinaryFilter::process(
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+  if (!worldToMask(filter_mask_, mask_pose.position.x, mask_pose.position.y, mask_robot_i,
+    mask_robot_j))
+  {
     // Robot went out of mask range. Set "false" state by-default
     RCLCPP_WARN(
       logger_,
@@ -210,6 +212,7 @@ void BinaryFilter::process(
       mask_robot_i, mask_robot_j);
     return;
   }
+
   // Check and flip binary state, if necessary
   if (base_ + mask_data * multiplier_ > flip_threshold_) {
     if (binary_state_ == default_state_) {

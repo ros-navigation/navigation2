@@ -94,16 +94,16 @@ public:
   void publishCostGrid(
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const std::vector<TrajectoryCritic::Ptr> critics);
-  void publishGlobalPlan(const nav_2d_msgs::msg::Path2D plan);
-  void publishTransformedPlan(const nav_2d_msgs::msg::Path2D plan);
-  void publishLocalPlan(const nav_2d_msgs::msg::Path2D plan);
+  void publishGlobalPlan(const nav_msgs::msg::Path plan);
+  void publishTransformedPlan(const nav_msgs::msg::Path plan);
+  void publishLocalPlan(const nav_msgs::msg::Path plan);
 
 protected:
   void publishTrajectories(const dwb_msgs::msg::LocalPlanEvaluation & results);
 
   // Helper function for publishing other plans
   void publishGenericPlan(
-    const nav_2d_msgs::msg::Path2D plan,
+    const nav_msgs::msg::Path plan,
     rclcpp::Publisher<nav_msgs::msg::Path> & pub, bool flag);
 
   // Flags for turning on/off publishing specific components
