@@ -135,9 +135,7 @@ bool GridCollisionChecker::inCollision(
       return true;
     }
 
-    // if possible inscribed, need to check actual footprint pose.
-    // Use precomputed oriented footprints are done on initialization,
-    // offset by translation value to collision check
+    // Use full area checking instead of edge-only checking
     double wx, wy;
     costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
     geometry_msgs::msg::Point new_pt;
@@ -150,7 +148,8 @@ bool GridCollisionChecker::inCollision(
       current_footprint.push_back(new_pt);
     }
 
-    float footprint_cost = static_cast<float>(footprintCost(current_footprint));
+    // Check full area covered by footprint
+    float footprint_cost = static_cast<float>(footprintAreaCost(current_footprint));
 
     if (footprint_cost == UNKNOWN_COST && traverse_unknown) {
       return false;
