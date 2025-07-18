@@ -579,3 +579,10 @@ loopback_simulator:
     scan_angle_max: 3.1415
     scan_angle_increment: 0.02617
     scan_use_inf: true
+
+pose_saver:
+  ros__parameters:
+    auto_start_saving: true
+    auto_restore_pose: true
+    save_interval_sec: 0.5
+
