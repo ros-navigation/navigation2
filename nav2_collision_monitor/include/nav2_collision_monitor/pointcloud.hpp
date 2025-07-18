@@ -88,6 +88,13 @@ protected:
    */
   void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
   // ----- Variables -----
 
   /// @brief PointCloud data subscriber
