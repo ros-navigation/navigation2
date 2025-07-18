@@ -7,7 +7,7 @@
     helper scripts designed to streamline navigation testing and configuration in ROS 2.
   </description>
   <maintainer email="pranavkolekar13@gmail.com">Pranav</maintainer>
-  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
+  <!-- <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer> -->
   <license>Apache-2.0</license>
   <license>BSD-3-Clause</license>
 
@@ -20,9 +20,11 @@
   <depend>yaml-cpp</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
-  <depend>nav2_msgs</depend>
   <depend>tf2_msgs</depend>
   <depend>tf2_ros</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
+  <depend>nav2_ros_common</depend>
 
   <build_depend>nav2_common</build_depend>
   <build_depend>ament_index_cpp</build_depend>

@@ -38,11 +38,6 @@ add_executable(lifecycle_bringup
 )
 target_link_libraries(lifecycle_bringup PRIVATE ${library_name} rclcpp::rclcpp)
 
-add_executable(base_footprint_publisher
-  base_footprint_publisher.cpp
-)
-target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp ${tf2_msgs_TARGETS})
-
 install(TARGETS
   ${library_name}
   EXPORT ${library_name}

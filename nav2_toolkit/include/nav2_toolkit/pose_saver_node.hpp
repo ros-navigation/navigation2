@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Pranav Kolekar
+// Copyright (c) 2025 Pranav Kolekar
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef POSE_SAVER__POSE_SAVER_NODE_HPP_
-#define POSE_SAVER__POSE_SAVER_NODE_HPP_
+#ifndef NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
+#define NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
 
+#include <yaml-cpp/yaml.h>
+#include <memory>
+#include <string>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <nav2_msgs/srv/set_initial_pose.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <yaml-cpp/yaml.h>
-#include "nav2_util/service_client.hpp"
+#include "nav2_ros_common/service_client.hpp"
+
 
 namespace nav2_toolkit
 {
@@ -52,10 +55,14 @@ public:
   void test_write_pose_to_file() { write_pose_to_file(pose_file_path_); }
 
   /// @brief Read pose from configured file path.
-  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file() { return read_pose_from_file(pose_file_path_); }
+  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file()
+  {
+    return read_pose_from_file(pose_file_path_);
+  }
 
   /// @brief Set the internal last pose (used in tests).
-  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose) { last_pose_ = pose; }
+  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
+  { last_pose_ = pose; }
 
   /// @brief Get the current pose file path (used in tests).
   std::string test_get_pose_file_path() const { return pose_file_path_; }
@@ -100,23 +107,25 @@ private:
 
   // === Members ===
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_;  ///< Subscriber for AMCL pose.
-  std::shared_ptr<nav2_util::ServiceClient<nav2_msgs::srv::SetInitialPose>> set_pose_client_;  ///< Client for pose setting.
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>
+    ::SharedPtr sub_;  ///< Subscriber for AMCL pose.
+  rclcpp::Client<nav2_msgs::srv::SetInitialPose>::SharedPtr set_pose_client_;
   rclcpp::TimerBase::SharedPtr timer_;  ///< Timer for periodic file save.
   rclcpp::TimerBase::SharedPtr post_init_timer_;  ///< Timer for deferred initialization.
-  rclcpp::TimerBase::SharedPtr pose_publisher_monitor_timer_;  ///< Timer to monitor pose publisher readiness.
-
+  rclcpp::TimerBase::SharedPtr
+    pose_publisher_monitor_timer_;  ///< Timer to monitor pose publisher readiness.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;   ///< Service to start saving.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;    ///< Service to stop saving.
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr restore_service_; ///< Service to restore pose.
-
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_; ///< Most recent pose message.
+  rclcpp::Service<std_srvs::srv::Trigger>
+    ::SharedPtr restore_service_;  ///< Service to restore pose.
+  geometry_msgs::msg::PoseWithCovarianceStamped
+    ::SharedPtr last_pose_;  ///< Most recent pose message.
   std::string pose_file_path_;    ///< File path to store pose YAML.
   bool auto_restore_;             ///< Whether to auto-restore on launch.
   bool pose_restored_;            ///< Whether pose has already been restored.
-  bool was_pose_pub_up_last_check_; ///< Status of pose publisher last check.
+  bool was_pose_pub_up_last_check_;  ///< Status of pose publisher last check.
 };
 
 }  // namespace nav2_toolkit
 
-#endif  // POSE_SAVER__POSE_SAVER_NODE_HPP_
+#endif  // NAV2_TOOLKIT__POSE_SAVER_NODE_HPP_
