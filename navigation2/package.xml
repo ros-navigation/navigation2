@@ -41,6 +41,7 @@
   <exec_depend>nav2_smac_planner</exec_depend>
   <exec_depend>nav2_smoother</exec_depend>
   <exec_depend>nav2_theta_star_planner</exec_depend>
+  <exec_depend>nav2_toolkit</exec_depend>
   <exec_depend>nav2_util</exec_depend>
   <exec_depend>nav2_velocity_smoother</exec_depend>
   <exec_depend>nav2_voxel_grid</exec_depend>
