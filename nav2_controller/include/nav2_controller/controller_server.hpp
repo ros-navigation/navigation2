@@ -36,6 +36,7 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_msgs/msg/tracking_error.hpp"
 
 namespace nav2_controller
 {
@@ -133,6 +134,16 @@ protected:
    * @param name Reference to the name to use for control if any valid available
    * @return bool Whether it found a valid controller to use
    */
+  void path_error();
+
+  /**
+   * @brief Handles errors encountered during path execution.
+   *
+   * This method is called when an error occurs while following or processing the navigation path.
+   * It is responsible for managing error states, triggering recovery behaviors, or notifying other
+   * components about the failure in path execution.
+   */
+
   bool findControllerId(const std::string & c_name, std::string & name);
 
   /**
@@ -289,6 +300,8 @@ private:
     * @param msg Shared pointer to nav2_msgs::msg::SpeedLimit
     */
   void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::TrackingError>::SharedPtr
+    tracking_error_pub_;
 };
 
 }  // namespace nav2_controller

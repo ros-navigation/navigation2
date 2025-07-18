@@ -37,6 +37,12 @@
     <class type="dwb_critics::TwirlingCritic" base_class_type="dwb_core::TrajectoryCritic">
       <description>Penalize trajectories with rotational velocities
       </description>
+
+    <class type="dwb_critics::PathHugCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description> critic for hugging the path and penalizing deviation.
+      </description>
+    </class>
+
     </class>
   </library>
 </class_libraries>
