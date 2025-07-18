@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
@@ -28,7 +29,6 @@ def generate_launch_description():
     default_pose_file = os.path.join(os.environ['HOME'], 'last_known_pose.yaml')
 
     namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     pose_file_path = LaunchConfiguration('pose_file_path')
 

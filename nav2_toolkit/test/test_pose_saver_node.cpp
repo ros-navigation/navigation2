@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+#include <filesystem>
+#include <random>
+#include <thread>
 #include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include "nav2_toolkit/pose_saver_node.hpp"
-#include <filesystem>
-#include <thread>
-#include <chrono>
 
-using namespace nav2_toolkit;
+
+using nav2_toolkit::PoseSaverNode;
 namespace fs = std::filesystem;
 
 class PoseSaverTest : public ::testing::Test
@@ -45,7 +47,8 @@ protected:
 
   void SetUp() override
   {
-    std::string unique_node_name = "pose_saver_node_" + std::to_string(rand());
+    std::mt19937 rng(std::random_device{}());
+    std::string unique_node_name = "pose_saver_node_" + std::to_string(rng());
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=" + unique_node_name});
     options.append_parameter_override("pose_file_path", test_pose_path_);
@@ -236,5 +239,3 @@ TEST_F(PoseSaverTest, test_stop_pose_saver_service)
 
   EXPECT_FALSE(fs::exists(test_pose_path_));
 }
-
-
