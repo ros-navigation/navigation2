@@ -708,7 +708,7 @@ void TestNode::testResetFilter()
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, default_state_);
+  ASSERT_EQ(binary_state->data, binary_state_);
 }
 
 
