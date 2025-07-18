@@ -20,6 +20,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose2_d.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -102,6 +103,22 @@ inline double euclidean_distance(
   const bool is_3d = false)
 {
   return euclidean_distance(pos1.pose, pos2.pose, is_3d);
+}
+
+/**
+ * @brief Get the L2 distance between 2 geometry_msgs::Pose2D
+ * @param pos1 First pose
+ * @param pos1 Second pose
+ * @return double L2 distance
+ */
+inline double euclidean_distance(
+  const geometry_msgs::msg::Pose2D & pos1,
+  const geometry_msgs::msg::Pose2D & pos2)
+{
+  double dx = pos1.x - pos2.x;
+  double dy = pos1.y - pos2.y;
+
+  return std::hypot(dx, dy);
 }
 
 /**
