@@ -97,7 +97,7 @@ void BinaryFilter::initializeFilter(
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
 
-  // Initialize state binary_state_ which is "false" by-default
+  // Initialize state binary_state_ which at start its equal to default_state_
   changeState(binary_state_);
 }
 
@@ -229,7 +229,7 @@ void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  RCLCPP_INFO(logger_, "BinaryFilter: Resetting the filter to default state");
+  RCLCPP_INFO(logger_, "BinaryFilter: Resetting the filter to the last binary state");
   changeState(binary_state_);
 
   filter_info_sub_.reset();
