@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gtest/gtest.h>
 #include <chrono>
 #include <filesystem>
 #include <random>
 #include <thread>
-#include <gtest/gtest.h>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <std_srvs/srv/trigger.hpp>
