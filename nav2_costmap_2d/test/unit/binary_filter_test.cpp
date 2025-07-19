@@ -236,6 +236,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2D> master_grid_;
 
   bool default_state_;
+  bool binary_state_;
 
 private:
   void waitSome(const std::chrono::nanoseconds & duration);
@@ -703,7 +704,8 @@ void TestNode::testResetFilter()
   binary_state = waitBinaryState();
   verifyBinaryState(getSign(pose.position.x, pose.position.y, base,
     multiplier, flip_threshold), binary_state);
-
+  binary_state_ = binary_state->data;
+  
   // Reset binary filter and check its state was reset to default
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
