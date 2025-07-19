@@ -7,7 +7,7 @@
     helper scripts designed to streamline navigation testing and configuration in ROS 2.
   </description>
   <maintainer email="pranavkolekar13@gmail.com">Pranav</maintainer>
-  <!-- <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer> -->
+  <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
   <license>BSD-3-Clause</license>
 

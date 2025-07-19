@@ -16,18 +16,8 @@ Save and restore robot poses across system restarts:
 - **Position Recovery**: Restores the robot's last known position after system restarts
 - **Crash-Safe Storage**: Uses atomic file operations to prevent data corruption
 - **Service Interface**: Start/stop saving, force immediate save, restore from saved data
-<!-- 
-### Navigation Goal Controller
-
-Controls the robot's navigation tasks dynamically:
-
-- **Pause/Resume Navigation**: Interrupt and later resume navigation tasks without losing progress
-- **Service Interface**: Simple services to pause, resume, and manage navigation goals -->
 
 ### Base Footprint Publisher
-
-
-
 
 ## Configuration Parameters
 

@@ -54,20 +54,14 @@ protected:
     options.append_parameter_override("pose_file_path", test_pose_path_);
     options.append_parameter_override("auto_start_saving", true);
     options.append_parameter_override("auto_restore_pose", false);
-  
     node_ = std::make_shared<PoseSaverNode>(options);
-  
     exec_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     exec_->add_node(node_);
-  
     spin_thread_ = std::make_unique<std::thread>([this]() {
       exec_->spin();
     });
-  
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
-  
-  
 
   void TearDown() override
   {
