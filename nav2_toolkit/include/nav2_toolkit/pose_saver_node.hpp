@@ -52,7 +52,7 @@ public:
   // === Testing Interface Methods ===
 
   /// @brief Write last known pose to configured file path.
-  void test_write_pose_to_file() { write_pose_to_file(pose_file_path_); }
+  void test_write_pose_to_file() {write_pose_to_file(pose_file_path_);}
 
   /// @brief Read pose from configured file path.
   geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file()
@@ -61,11 +61,11 @@ public:
   }
 
   /// @brief Set the internal last pose (used in tests).
-  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr &pose)
-  { last_pose_ = pose; }
+  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose)
+  {last_pose_ = pose;}
 
   /// @brief Get the current pose file path (used in tests).
-  std::string test_get_pose_file_path() const { return pose_file_path_; }
+  std::string test_get_pose_file_path() const {return pose_file_path_;}
 
 private:
   // === Callbacks ===
@@ -77,16 +77,19 @@ private:
   void timer_callback();
 
   /// @brief Handle service call to start saving poses.
-  void start_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                        std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  void start_service_cb(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> res);
 
   /// @brief Handle service call to stop saving poses.
-  void stop_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                       std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  void stop_service_cb(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> res);
 
   /// @brief Handle service call to restore pose.
-  void restore_service_cb(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-                          std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+  void restore_service_cb(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> res);
 
   /// @brief Check if pose publisher is available and attempt restoration.
   void pose_publisher_monitor_callback();
@@ -97,10 +100,10 @@ private:
   // === Helpers ===
 
   /// @brief Serialize current pose to file.
-  void write_pose_to_file(const std::string &filepath);
+  void write_pose_to_file(const std::string & filepath);
 
   /// @brief Load pose from given file.
-  geometry_msgs::msg::PoseWithCovarianceStamped read_pose_from_file(const std::string &filepath);
+  geometry_msgs::msg::PoseWithCovarianceStamped read_pose_from_file(const std::string & filepath);
 
   /// @brief Restore pose from file and publish it using service call.
   bool restore_pose_from_file_and_publish();
@@ -108,7 +111,7 @@ private:
   // === Members ===
 
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>
-    ::SharedPtr sub_;  ///< Subscriber for AMCL pose.
+  ::SharedPtr sub_;    ///< Subscriber for AMCL pose.
   rclcpp::Client<nav2_msgs::srv::SetInitialPose>::SharedPtr set_pose_client_;
   rclcpp::TimerBase::SharedPtr timer_;  ///< Timer for periodic file save.
   rclcpp::TimerBase::SharedPtr post_init_timer_;  ///< Timer for deferred initialization.
@@ -117,9 +120,9 @@ private:
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;   ///< Service to start saving.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;    ///< Service to stop saving.
   rclcpp::Service<std_srvs::srv::Trigger>
-    ::SharedPtr restore_service_;  ///< Service to restore pose.
+  ::SharedPtr restore_service_;    ///< Service to restore pose.
   geometry_msgs::msg::PoseWithCovarianceStamped
-    ::SharedPtr last_pose_;  ///< Most recent pose message.
+  ::SharedPtr last_pose_;    ///< Most recent pose message.
   std::string pose_file_path_;    ///< File path to store pose YAML.
   bool auto_restore_;             ///< Whether to auto-restore on launch.
   bool pose_restored_;            ///< Whether pose has already been restored.

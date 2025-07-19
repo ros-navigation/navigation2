@@ -31,16 +31,14 @@ class PoseSaverTest : public ::testing::Test
 protected:
   static void SetUpTestSuite()
   {
-    if (!rclcpp::ok())
-    {
+    if (!rclcpp::ok()) {
       rclcpp::init(0, nullptr);
     }
   }
 
   static void TearDownTestSuite()
   {
-    if (rclcpp::ok())
-    {
+    if (rclcpp::ok()) {
       rclcpp::shutdown();
     }
   }
@@ -58,7 +56,7 @@ protected:
     exec_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     exec_->add_node(node_);
     spin_thread_ = std::make_unique<std::thread>([this]() {
-      exec_->spin();
+          exec_->spin();
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
@@ -66,16 +64,14 @@ protected:
   void TearDown() override
   {
     exec_->cancel();
-    if (spin_thread_ && spin_thread_->joinable())
-    {
+    if (spin_thread_ && spin_thread_->joinable()) {
       spin_thread_->join();
     }
 
     exec_.reset();
     node_.reset();
 
-    if (fs::exists(test_pose_path_))
-    {
+    if (fs::exists(test_pose_path_)) {
       fs::remove(test_pose_path_);
     }
   }
@@ -152,8 +148,7 @@ TEST_F(PoseSaverTest, test_pose_written_by_timer_after_publish)
 
   // Wait for subscription to connect
   rclcpp::Rate rate(10);
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }
@@ -189,8 +184,7 @@ TEST_F(PoseSaverTest, test_stop_pose_saver_service)
 
   // Publish a pose to start with
   rclcpp::Rate rate(10);
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }
@@ -222,8 +216,7 @@ TEST_F(PoseSaverTest, test_stop_pose_saver_service)
   msg.pose.pose.position.x = 8.88;
   msg.pose.pose.position.y = 7.77;
 
-  for (int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     publisher->publish(msg);
     rate.sleep();
   }

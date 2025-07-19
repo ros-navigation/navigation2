@@ -31,14 +31,14 @@ namespace fs = std::filesystem;
 namespace nav2_toolkit
 {
 
-PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions &options)
+PoseSaverNode::PoseSaverNode(const rclcpp::NodeOptions & options)
 : Node("pose_saver_node", options),
   pose_restored_(false),
   was_pose_pub_up_last_check_(false)
 {
   this->declare_parameter("save_interval_sec", 5.0);
-  this->declare_parameter("pose_file_path", std::string
-    (std::getenv("HOME")) + "/last_known_pose.yaml");
+  this->declare_parameter("pose_file_path",
+      std::string(std::getenv("HOME")) + "/last_known_pose.yaml");
   this->declare_parameter("auto_start_saving", true);
   this->declare_parameter("auto_restore_pose", true);
 
@@ -108,9 +108,8 @@ void PoseSaverNode::post_init_setup()
     );
 
 
-
     RCLCPP_INFO(this->get_logger(), "Service client created and ready.");
-  } catch (const std::exception &e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to initialize service client: %s", e.what());
   }
 }
@@ -123,11 +122,11 @@ void PoseSaverNode::pose_callback(
 
 void PoseSaverNode::timer_callback()
 {
-  if (!last_pose_) return;
+  if (!last_pose_) {return;}
 
   try {
     write_pose_to_file(pose_file_path_);
-  } catch (const std::exception &e) {
+  } catch (const std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "Failed to save pose: %s", e.what());
   }
 }
@@ -165,8 +164,9 @@ void PoseSaverNode::restore_service_cb(
 
 void PoseSaverNode::pose_publisher_monitor_callback()
 {
-  if (!auto_restore_)
+  if (!auto_restore_) {
     return;
+  }
 
   const bool pose_publisher_up = set_pose_client_->wait_for_service(100ms);
 
@@ -198,9 +198,9 @@ void PoseSaverNode::pose_publisher_monitor_callback()
   }
 }
 
-void PoseSaverNode::write_pose_to_file(const std::string &path)
+void PoseSaverNode::write_pose_to_file(const std::string & path)
 {
-  if (!last_pose_) return;
+  if (!last_pose_) {return;}
 
   YAML::Emitter out;
   out << YAML::BeginMap;
@@ -244,8 +244,8 @@ void PoseSaverNode::write_pose_to_file(const std::string &path)
   }
 }
 
-geometry_msgs::msg::PoseWithCovarianceStamped PoseSaverNode::
-  read_pose_from_file(const std::string &path)
+geometry_msgs::msg::PoseWithCovarianceStamped PoseSaverNode::read_pose_from_file(
+  const std::string & path)
 {
   YAML::Node node = YAML::LoadFile(path);
   geometry_msgs::msg::PoseWithCovarianceStamped msg;

@@ -3,7 +3,7 @@
   <name>nav2_toolkit</name>
   <version>1.3.1</version>
   <description>
-    This package provides a set of quality-of-life (QOL) tools to enhance the development experience when working with the navigation2 stack. It includes 
+    This package provides a set of quality-of-life (QOL) tools to enhance the development experience when working with the navigation2 stack. It includes
     helper scripts designed to streamline navigation testing and configuration in ROS 2.
   </description>
   <maintainer email="pranavkolekar13@gmail.com">Pranav</maintainer>
@@ -30,7 +30,7 @@
   <build_depend>ament_index_cpp</build_depend>
   <exec_depend>nav2_common</exec_depend>
   <exec_depend>ament_index_cpp</exec_depend>
-  
+
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>

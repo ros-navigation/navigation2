@@ -585,4 +585,3 @@ pose_saver:
     auto_start_saving: true
     auto_restore_pose: true
     save_interval_sec: 0.5
-

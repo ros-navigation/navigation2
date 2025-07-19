@@ -29,4 +29,3 @@ Save and restore robot poses across system restarts:
 | `pose_file` | string | ~/.ros/pose.yaml | File path to store pose data |
 | `auto_save_on_startup` | bool | true | Automatically start saving poses on node startup |
 | `auto_restore_on_startup` | bool | false | Automatically restore pose on node startup |
-
