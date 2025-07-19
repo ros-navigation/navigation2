@@ -705,7 +705,7 @@ void TestNode::testResetFilter()
   verifyBinaryState(getSign(pose.position.x, pose.position.y, base,
     multiplier, flip_threshold), binary_state);
   binary_state_ = binary_state->data;
-  
+
   // Reset binary filter and check its state was reset to default
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
