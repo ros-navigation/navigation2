@@ -68,7 +68,6 @@ public:
         bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 
     bond_heartbeat_period = this->declare_or_get_parameter<double>("bond_heartbeat_period", 0.1);
-
     bool autostart_node = this->declare_or_get_parameter("autostart_node", false);
     if (autostart_node) {
       autostart();
