@@ -23,7 +23,7 @@ from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     bringup_dir = get_package_share_directory('nav2_bringup')
     default_params_file = os.path.join(bringup_dir, 'params', 'nav2_params.yaml')
     default_pose_file = os.path.join(os.environ['HOME'], 'last_known_pose.yaml')
