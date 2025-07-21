@@ -225,7 +225,7 @@ protected:
   // State Data
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
-  std::string route_frame_, global_costmap_frame_, base_frame_;
+  std::string route_frame_, global_frame_, base_frame_;
   double max_planning_time_;
 };
 
