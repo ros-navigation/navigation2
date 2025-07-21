@@ -88,11 +88,6 @@ public:
     tf2::Duration tf_tolerance);
 
   /**
-   * @brief  Destructor... cleans up
-   */
-  ~ObservationBuffer();
-
-  /**
    * @brief  Transforms a PointCloud to the global frame and buffers it
    * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
    * @param  cloud The cloud to be buffered
@@ -103,7 +98,7 @@ public:
    * @brief  Pushes copies of all current observations onto the end of the vector passed in
    * @param  observations The vector to be filled
    */
-  void getObservations(std::vector<Observation> & observations);
+  void getObservations(std::vector<Observation::ConstSharedPtr> & observations);
 
   /**
    * @brief  Check if the observation buffer is being update at its expected rate
@@ -146,7 +141,7 @@ private:
   rclcpp::Time last_updated_;
   std::string global_frame_;
   std::string sensor_frame_;
-  std::list<Observation> observation_list_;
+  std::list<Observation::ConstSharedPtr> observation_list_;
   std::string topic_name_;
   double min_obstacle_height_, max_obstacle_height_;
   std::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
