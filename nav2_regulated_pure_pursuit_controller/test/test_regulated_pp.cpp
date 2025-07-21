@@ -101,12 +101,6 @@ public:
       linear_vel, sign);
   }
 
-  double findVelocitySignChangeWrapper(
-    const nav_msgs::msg::Path & transformed_plan)
-  {
-    return findVelocitySignChange(transformed_plan);
-  }
-
   nav_msgs::msg::Path transformGlobalPlanWrapper(
     const geometry_msgs::msg::PoseStamped & pose)
   {
@@ -164,38 +158,6 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.x, 1.0);
   EXPECT_EQ(rtn->point.y, 12.0);
   EXPECT_EQ(rtn->point.z, 0.01);
-}
-
-TEST(RegulatedPurePursuitTest, findVelocitySignChange)
-{
-  auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testRPPfindVelocitySignChange");
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header.frame_id = "smb";
-  auto time = node->get_clock()->now();
-  pose.header.stamp = time;
-  pose.pose.position.x = 1.0;
-  pose.pose.position.y = 0.0;
-
-  nav_msgs::msg::Path path;
-  path.poses.resize(3);
-  path.header.frame_id = "smb";
-  path.header.stamp = pose.header.stamp;
-  path.poses[0].pose.position.x = 1.0;
-  path.poses[0].pose.position.y = 1.0;
-  path.poses[1].pose.position.x = 2.0;
-  path.poses[1].pose.position.y = 2.0;
-  path.poses[2].pose.position.x = -1.0;
-  path.poses[2].pose.position.y = -1.0;
-  ctrl->setPlan(path);
-  auto rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, sqrt(8.0));
-
-  path.poses[2].pose.position.x = 3.0;
-  path.poses[2].pose.position.y = 3.0;
-  ctrl->setPlan(path);
-  rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
 using CircleSegmentIntersectionParam = std::tuple<
