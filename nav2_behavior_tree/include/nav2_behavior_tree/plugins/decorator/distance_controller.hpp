@@ -20,7 +20,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
