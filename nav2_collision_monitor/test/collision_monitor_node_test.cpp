@@ -34,7 +34,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_monitor_node.hpp"

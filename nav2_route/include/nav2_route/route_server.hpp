@@ -23,8 +23,8 @@
 #include <mutex>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"

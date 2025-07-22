@@ -23,7 +23,7 @@
 #include <memory>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
