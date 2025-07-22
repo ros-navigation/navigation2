@@ -229,7 +229,7 @@ void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  // Forming and publishing new BinaryState message for the test
+  // Publishing new BinaryState ib reset
   std::unique_ptr<std_msgs::msg::Bool> msg =
     std::make_unique<std_msgs::msg::Bool>();
   msg->data = binary_state_;
