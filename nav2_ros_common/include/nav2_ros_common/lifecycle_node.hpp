@@ -118,7 +118,7 @@ public:
     const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
   {
     return nav2::declare_or_get_parameter(
-      shared_from_this(), parameter_name,
+      this, parameter_name,
       default_value, parameter_descriptor);
   }
 
