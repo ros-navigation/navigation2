@@ -770,7 +770,7 @@ ObstacleLayer::deactivate()
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->unsubscribe();
-  }
+    }
   }
 }
 
