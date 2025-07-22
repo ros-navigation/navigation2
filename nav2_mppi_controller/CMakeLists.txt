@@ -52,7 +52,7 @@ if(COMPILER_SUPPORTS_AVX512)
   add_compile_options(-mno-avx512f)
 endif()
 
-if(COMPILER_SUPPORTS_SSE4)
+if(COMPILER_SUPPORTS_SSE4 AND NOT APPLE)
   add_compile_options(-msse4.2)
 endif()
 
@@ -94,7 +94,9 @@ add_library(mppi_critics SHARED
 set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
-  target_compile_options(${lib} PUBLIC -fconcepts)
+  if(NOT APPLE)
+    target_compile_options(${lib} PUBLIC -fconcepts)
+  endif()
   target_include_directories(${lib} PUBLIC ${xsimd_INCLUDE_DIRS})  #  ${OpenMP_INCLUDE_DIRS}
   target_link_libraries(${lib} xtensor xtensor::optimize xtensor::use_xsimd)
   ament_target_dependencies(${lib} ${dependencies_pkgs})
