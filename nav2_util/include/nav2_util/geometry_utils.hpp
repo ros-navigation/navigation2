@@ -234,15 +234,16 @@ inline bool isPointInsidePolygon(
 /**
  * @brief Find the distance to a point
  * @param global_pose Robot's current or planned position
- * @param target
+ * @param target target point
  * @return int
  */
-inline double distanceToPoint(const geometry_msgs::msg::PoseStamped &global_pose,
-                                const geometry_msgs::msg::PoseStamped &target)
+inline double distanceToPoint(
+  const geometry_msgs::msg::PoseStamped & point1,
+  const geometry_msgs::msg::PoseStamped & point2)
 {
-    const double xDist = global_pose.pose.position.x - target.pose.position.x;
-    const double yDist = global_pose.pose.position.y - target.pose.position.y;
-    return std::hypot(xDist,yDist);
+  const double dx = point1.pose.position.x - point2.pose.position.x;
+  const double dy = point1.pose.position.y - point2.pose.position.y;
+  return std::hypot(dx, dy);
 }
 
 /**
@@ -253,29 +254,34 @@ inline double distanceToPoint(const geometry_msgs::msg::PoseStamped &global_pose
  * @return int
  */
 inline double distanceToSegment(
-const geometry_msgs::msg::PoseStamped & point,
-const geometry_msgs::msg::PoseStamped & start,
-const geometry_msgs::msg::PoseStamped & end)
+  const geometry_msgs::msg::PoseStamped & point,
+  const geometry_msgs::msg::PoseStamped & start,
+  const geometry_msgs::msg::PoseStamped & end)
 {
-const auto & p = point.pose.position;
-const auto & a = start.pose.position;
-const auto & b = end.pose.position;
+  const auto & p = point.pose.position;
+  const auto & a = start.pose.position;
+  const auto & b = end.pose.position;
 
-const double seg_len_sq = distanceToPoint(start, end);
-if (seg_len_sq <= 1e-8) {
-    return std::sqrt(distanceToPoint(start, end));
+  const double dx_seg = b.x - a.x;
+  const double dy_seg = b.y - a.y;
+
+  const double seg_len_sq = (dx_seg * dx_seg) + (dy_seg * dy_seg);
+
+  if (seg_len_sq <= 1e-9) {
+    return distanceToPoint(point, start);
+  }
+
+  const double dot = ((p.x - a.x) * dx_seg) + ((p.y - a.y) * dy_seg);
+  const double t = std::clamp(dot / seg_len_sq, 0.0, 1.0);
+
+  const double proj_x = a.x + t * dx_seg;
+  const double proj_y = a.y + t * dy_seg;
+
+  const double dx_proj = p.x - proj_x;
+  const double dy_proj = p.y - proj_y;
+  return std::hypot(dx_proj, dy_proj);
 }
 
-const double dot = ((p.x - a.x) * (b.x - a.x)) + ((p.y - a.y) * (b.y - a.y));
-const double t = std::clamp(dot / seg_len_sq, 0.0, 1.0);
-
-const double proj_x = a.x + t * (b.x - a.x);
-const double proj_y = a.y + t * (b.y - a.y);
-
-const double dx_proj = p.x - proj_x;
-const double dy_proj = p.y - proj_y;
-return std::hypot(dx_proj,dy_proj);
-}
 }  // namespace geometry_utils
 }  // namespace nav2_util
 
