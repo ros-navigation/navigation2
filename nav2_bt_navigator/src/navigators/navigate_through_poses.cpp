@@ -31,20 +31,20 @@ NavigateThroughPosesNavigator::configure(
   auto node = parent_node.lock();
 
   goals_blackboard_id_ =
-    nav2::declare_or_get_parameter(node, "goals_blackboard_id", std::string("goals"));
+    node->declare_or_get_parameter("goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
-    nav2::declare_or_get_parameter(node, "path_blackboard_id", std::string("path"));
+    node->declare_or_get_parameter("path_blackboard_id", std::string("path"));
   waypoint_statuses_blackboard_id_ =
-    nav2::declare_or_get_parameter(node, "waypoint_statuses_blackboard_id",
+    node->declare_or_get_parameter("waypoint_statuses_blackboard_id",
       std::string("waypoint_statuses"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
   bool enable_groot_monitoring =
-    nav2::declare_or_get_parameter(node, getName() + ".enable_groot_monitoring", false);
+    node->declare_or_get_parameter(getName() + ".enable_groot_monitoring", false);
   int groot_server_port =
-    nav2::declare_or_get_parameter(node, getName() + ".groot_server_port", 1669);
+    node->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
 
   bt_action_server_->setGrootMonitoring(
       enable_groot_monitoring,
@@ -61,8 +61,8 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
   std::string pkg_share_dir =
     ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
 
-  auto default_bt_xml_filename = nav2::declare_or_get_parameter<std::string>(
-    node, "default_nav_through_poses_bt_xml",
+  auto default_bt_xml_filename = node->declare_or_get_parameter(
+    "default_nav_through_poses_bt_xml",
     pkg_share_dir +
     "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml");
 

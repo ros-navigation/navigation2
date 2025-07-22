@@ -27,6 +27,8 @@
 
 #include "nav2_behavior_tree/plugins_list.hpp"
 
+using nav2::declare_parameter_if_not_declared;
+
 namespace nav2_bt_navigator
 {
 
@@ -95,9 +97,9 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   navigator_ids = this->declare_or_get_parameter("navigators", default_navigator_ids);
   if (navigator_ids == default_navigator_ids) {
     for (size_t i = 0; i < default_navigator_ids.size(); ++i) {
-      this->declare_or_get_parameter(
-        default_navigator_ids[i] + ".plugin",
-        default_navigator_types[i]);
+      declare_parameter_if_not_declared(
+        node, default_navigator_ids[i] + ".plugin",
+        rclcpp::ParameterValue(default_navigator_types[i]));
     }
   }
 
