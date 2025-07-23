@@ -27,19 +27,9 @@ NavigateToPoseNavigator::configure(
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
-  auto node = parent_node.lock();
 
-  if (!node->has_parameter("goal_blackboard_id")) {
-    node->declare_parameter("goal_blackboard_id", std::string("goal"));
-  }
-
-  goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
-
-  if (!node->has_parameter("path_blackboard_id")) {
-    node->declare_parameter("path_blackboard_id", std::string("path"));
-  }
-
-  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
+  goal_blackboard_id_ = this->declare_or_get_parameter("goal_blackboard_id", std::string("goal"));
+  path_blackboard_id_ = this->declare_or_get_parameter("path_blackboard_id", std::string("path"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -50,17 +40,14 @@ NavigateToPoseNavigator::configure(
     "goal_pose",
     std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
 
-  if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
-    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
-  }
-
-  if (!node->has_parameter(getName() + ".groot_server_port")) {
-    node->declare_parameter(getName() + ".groot_server_port", 1667);
-  }
+  bool enable_groot_monitoring =
+    this->declare_or_get_parameter(getName() + ".enable_groot_monitoring", false);
+  int groot_server_port =
+    this->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
 
   bt_action_server_->setGrootMonitoring(
-      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
-      node->get_parameter(getName() + ".groot_server_port").as_int());
+      enable_groot_monitoring,
+      groot_server_port);
 
   return true;
 }
@@ -69,19 +56,13 @@ std::string
 NavigateToPoseNavigator::getDefaultBTFilepath(
   nav2::LifecycleNode::WeakPtr parent_node)
 {
-  std::string default_bt_xml_filename;
-  auto node = parent_node.lock();
+  std::string pkg_share_dir =
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
 
-  if (!node->has_parameter("default_nav_to_pose_bt_xml")) {
-    std::string pkg_share_dir =
-      ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
-    node->declare_parameter<std::string>(
-      "default_nav_to_pose_bt_xml",
+  auto default_bt_xml_filename = this->declare_or_get_parameter<std::string>(
+    "default_nav_to_pose_bt_xml",
       pkg_share_dir +
       "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
-  }
-
-  node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
 
   return default_bt_xml_filename;
 }
