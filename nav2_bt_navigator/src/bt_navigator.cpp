@@ -38,19 +38,6 @@ BtNavigator::BtNavigator(rclcpp::NodeOptions options)
   class_loader_("nav2_core", "nav2_core::NavigatorBase")
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  declare_parameter_if_not_declared(
-    this, "plugin_lib_names", rclcpp::ParameterValue(std::vector<std::string>{}));
-  declare_parameter_if_not_declared(
-    this, "transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
-    this, "global_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter_if_not_declared(
-    this, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter_if_not_declared(
-    this, "odom_topic", rclcpp::ParameterValue(std::string("odom")));
-  declare_parameter_if_not_declared(
-    this, "filter_duration", rclcpp::ParameterValue(0.3));
 }
 
 BtNavigator::~BtNavigator()
@@ -69,17 +56,18 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   tf_->setUsingDedicatedThread(true);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
-  global_frame_ = get_parameter("global_frame").as_string();
-  robot_frame_ = get_parameter("robot_base_frame").as_string();
-  transform_tolerance_ = get_parameter("transform_tolerance").as_double();
-  odom_topic_ = get_parameter("odom_topic").as_string();
-  filter_duration_ = get_parameter("filter_duration").as_double();
+  global_frame_ = this->declare_or_get_parameter("global_frame", std::string("map"));
+  robot_frame_ = this->declare_or_get_parameter("robot_base_frame", std::string("base_link"));
+  transform_tolerance_ = this->declare_or_get_parameter("transform_tolerance", 0.1);
+  odom_topic_ = this->declare_or_get_parameter("odom_topic", std::string("odom"));
+  filter_duration_ = this->declare_or_get_parameter("filter_duration", 0.3);
 
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names;
   plugin_lib_names = nav2_util::split(nav2::details::BT_BUILTIN_PLUGINS, ';');
 
-  auto user_defined_plugins = get_parameter("plugin_lib_names").as_string_array();
+  auto user_defined_plugins =
+    this->declare_or_get_parameter("plugin_lib_names", std::vector<std::string>{});
   // append user_defined_plugins to plugin_lib_names
   plugin_lib_names.insert(
     plugin_lib_names.end(), user_defined_plugins.begin(),
@@ -106,10 +94,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & state)
   };
 
   std::vector<std::string> navigator_ids;
-  declare_parameter_if_not_declared(
-    node, "navigators",
-    rclcpp::ParameterValue(default_navigator_ids));
-  get_parameter("navigators", navigator_ids);
+  navigator_ids = this->declare_or_get_parameter("navigators", default_navigator_ids);
   if (navigator_ids == default_navigator_ids) {
     for (size_t i = 0; i < default_navigator_ids.size(); ++i) {
       declare_parameter_if_not_declared(
