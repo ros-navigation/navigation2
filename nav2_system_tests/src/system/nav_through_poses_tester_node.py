@@ -25,7 +25,7 @@ from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import NavigateThroughPoses
 from nav2_msgs.srv import ManageLifecycleNodes
 import rclpy
-from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.action import ActionClient
 from rclpy.client import Client
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
@@ -62,7 +62,7 @@ class NavTester(Node):
         self.get_logger().info('\033[1;37;44m' + msg + '\033[0m')
 
     def warn_msg(self, msg: str) -> None:
-        self.get_logger().warn('\033[1;37;43m' + msg + '\033[0m')
+        self.get_logger().warning('\033[1;37;43m' + msg + '\033[0m')
 
     def error_msg(self, msg: str) -> None:
         self.get_logger().error('\033[1;37;41m' + msg + '\033[0m')

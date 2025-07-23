@@ -23,7 +23,7 @@ from nav2_msgs.action import ComputePathToPose, FollowWaypoints
 from nav2_msgs.srv import ManageLifecycleNodes
 from rcl_interfaces.srv import SetParameters
 import rclpy
-from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.client import Client
 from rclpy.node import Node
@@ -199,7 +199,7 @@ class WaypointFollowerTest(Node):
         self.get_logger().info(msg)
 
     def warn_msg(self, msg: str) -> None:
-        self.get_logger().warn(msg)
+        self.get_logger().warning(msg)
 
     def error_msg(self, msg: str) -> None:
         self.get_logger().error(msg)
