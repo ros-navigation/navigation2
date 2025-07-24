@@ -64,6 +64,7 @@ void VoxelLayer::onInitialize()
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  declareParameter("min_obstacle_height", rclcpp::ParameterValue(0.0));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
   declareParameter("z_voxels", rclcpp::ParameterValue(10));
   declareParameter("origin_z", rclcpp::ParameterValue(0.0));
@@ -80,6 +81,7 @@ void VoxelLayer::onInitialize()
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   node->get_parameter(name_ + "." + "z_voxels", size_z_);
   node->get_parameter(name_ + "." + "origin_z", origin_z_);
@@ -193,6 +195,12 @@ void VoxelLayer::updateBounds(
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+
+      // if the obstacle is too low, we won't add it
+      if (*iter_z < min_obstacle_height_) {
+        continue;
+      }
+
       // if the obstacle is too high or too far away from the robot we won't add it
       if (*iter_z > max_obstacle_height_) {
         continue;
@@ -515,7 +523,9 @@ VoxelLayer::dynamicParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "max_obstacle_height") {
+      if (param_name == name_ + "." + "min_obstacle_height") {
+        min_obstacle_height_ = parameter.as_double();
+      } else if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
       } else if (param_name == name_ + "." + "origin_z") {
         origin_z_ = parameter.as_double();
