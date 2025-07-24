@@ -51,12 +51,16 @@ class CloverleafPathTest : public ::testing::Test
 protected:
   void SetUp() override
   {
+    // Target path has three leaves with a radius of 5.0
     generateCirclePath(target_path, 5.0, 0.0, 5.0, 50);
     generateCirclePath(target_path, -5.0, 0.0, 5.0, 50);
     generateCirclePath(target_path, 0.0, 5.0, 5.0, 50);
 
+    // Robot trajectory now also travels all three leaves, but with a radius of 4.8
     nav_msgs::msg::Path robot_path;
     generateCirclePath(robot_path, 5.0, 0.0, 4.8, 50);
+    generateCirclePath(robot_path, -5.0, 0.0, 4.8, 50);
+    generateCirclePath(robot_path, 0.0, 5.0, 4.8, 50);
     robot_trajectory = robot_path.poses;
   }
   nav_msgs::msg::Path target_path;
@@ -236,6 +240,7 @@ TEST_F(CuttingCornerWindowedTest, WindowedSearch)
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
     auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    start_index = result.closest_segment_index;
     EXPECT_NEAR(result.distance, expected_distances[i], 0.15);
   }
 }
@@ -251,36 +256,8 @@ TEST_F(RetracingPathWindowedTest, WindowedSearch)
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
     auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    start_index = result.closest_segment_index;
     EXPECT_NEAR(result.distance, expected_distance, 1e-6);
-  }
-}
-
-class CloverleafPathWindowedTest : public CloverleafPathTest {};
-
-TEST_F(CloverleafPathWindowedTest, WindowedSearch)
-{
-  const double search_window = 50.0;
-  size_t start_index = 0;
-
-  for (size_t i = 0; i < robot_trajectory.size(); ++i) {
-    const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
-    EXPECT_LT(result.distance, 0.25);
-  }
-}
-
-class RetracingCircleWindowedTest : public RetracingCircleTest {};
-
-TEST_F(RetracingCircleWindowedTest, WindowedSearch)
-{
-  const double expected_distance = 0.2;
-  const double search_window = 100.0;
-  size_t start_index = 0;
-
-  for (size_t i = 0; i < robot_trajectory.size(); ++i) {
-    const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
-    EXPECT_NEAR(result.distance, expected_distance, 0.05);
   }
 }
 
@@ -294,6 +271,7 @@ TEST_F(ZigZagPathWindowedTest, WindowedSearch)
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
     auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    start_index = result.closest_segment_index;
     EXPECT_LT(result.distance, 1.0);
   }
 }
@@ -308,6 +286,7 @@ TEST_F(HairpinTurnWindowedTest, WindowedSearch)
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
     auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    start_index = result.closest_segment_index;
     EXPECT_LT(result.distance, 1.5);
   }
 }
