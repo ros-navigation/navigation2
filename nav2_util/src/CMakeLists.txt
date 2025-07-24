@@ -6,6 +6,7 @@ add_library(${library_name} SHARED
   controller_utils.cpp
   odometry_utils.cpp
   array_parser.cpp
+  path_utils.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
@@ -17,6 +18,7 @@ target_link_libraries(${library_name} PUBLIC
   ${lifecycle_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
+  ${nav_2d_msgs_TARGETS}
   ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
