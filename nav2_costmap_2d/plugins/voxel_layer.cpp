@@ -195,7 +195,6 @@ void VoxelLayer::updateBounds(
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-
       // if the obstacle is too low, we won't add it
       if (*iter_z < min_obstacle_height_) {
         continue;
