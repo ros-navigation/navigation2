@@ -3,7 +3,7 @@
   <name>dwb_critics</name>
   <version>1.4.0</version>
   <description>The dwb_critics package</description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
