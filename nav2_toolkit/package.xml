@@ -9,7 +9,6 @@
   <maintainer email="pranavkolekar13@gmail.com">Pranav</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
-  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>nav2_common</buildtool_depend>
