@@ -86,7 +86,6 @@ ament_export_dependencies(
   nav_2d_msgs
   bondcpp
   rclcpp_lifecycle
-  rcl_lifecycle
   nav2_ros_common
   nav_msgs
   rclcpp

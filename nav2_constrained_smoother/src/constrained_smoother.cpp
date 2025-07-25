@@ -24,7 +24,6 @@
 
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
 
 #include "pluginlib/class_loader.hpp"
@@ -33,7 +32,6 @@
 #include "tf2/utils.hpp"
 
 using nav2::declare_parameter_if_not_declared;
-using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
 
 namespace nav2_constrained_smoother

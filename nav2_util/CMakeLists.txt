@@ -3,19 +3,14 @@ project(nav2_util)
 
 find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
-find_package(bond REQUIRED)
-find_package(bondcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
@@ -46,16 +41,12 @@ endif()
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
-  bondcpp
   geometry_msgs
   lifecycle_msgs
   nav2_msgs
   nav_msgs
-  rcl_interfaces
   rclcpp
-  rclcpp_action
   rclcpp_lifecycle
-  std_msgs
   tf2
   tf2_geometry_msgs
   tf2_ros
