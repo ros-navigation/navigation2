@@ -31,7 +31,6 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/string_utils.hpp"
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"

@@ -9,7 +9,6 @@ find_package(image_transport REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -41,7 +40,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
@@ -91,7 +89,6 @@ target_link_libraries(wait_at_waypoint PUBLIC
 )
 target_link_libraries(wait_at_waypoint PRIVATE
   pluginlib::pluginlib
-  nav2_util::nav2_util_core
 )
 
 add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
@@ -111,7 +108,6 @@ target_link_libraries(photo_at_waypoint PUBLIC
   ${sensor_msgs_TARGETS}
 )
 target_link_libraries(photo_at_waypoint PRIVATE
-  nav2_util::nav2_util_core
   pluginlib::pluginlib
 )
 
@@ -130,7 +126,6 @@ target_link_libraries(input_at_waypoint PUBLIC
 )
 target_link_libraries(input_at_waypoint PRIVATE
   pluginlib::pluginlib
-  nav2_util::nav2_util_core
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_waypoint_follower::WaypointFollower")
@@ -168,7 +163,6 @@ ament_export_dependencies(
   image_transport
   nav2_core
   nav2_msgs
-  nav2_util
   nav_msgs
   OpenCV
   pluginlib

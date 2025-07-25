@@ -73,7 +73,6 @@ target_link_libraries(tf_help PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   rclcpp_lifecycle::rclcpp_lifecycle
-  rcl_lifecycle::rcl_lifecycle
 )
 
 install(TARGETS conversions path_ops tf_help
@@ -106,7 +105,6 @@ ament_export_dependencies(
   nav_2d_msgs
   bondcpp
   rclcpp_lifecycle
-  rcl_lifecycle
   nav2_ros_common
   nav_msgs
   rclcpp
