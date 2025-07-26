@@ -144,7 +144,6 @@ public:
   {
     pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       POINTCLOUD_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-    pointcloud_pub_->on_activate();
 
     std::unique_ptr<sensor_msgs::msg::PointCloud2> msg =
       std::make_unique<sensor_msgs::msg::PointCloud2>();
