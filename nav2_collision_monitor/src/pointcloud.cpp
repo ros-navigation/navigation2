@@ -110,6 +110,13 @@ void PointCloud::getData(
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     // Transform point coordinates from source frame -> to base frame
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+
+    // Check range from sensor origin before transformation
+    double range = p_v3_s.length();
+    if (range < min_range_) {
+      continue;
+    }
+
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
@@ -134,6 +141,9 @@ void PointCloud::getParameters(std::string & source_topic)
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
   max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
+  nav2::declare_parameter_if_not_declared(
+    node, source_name_ + ".min_range", rclcpp::ParameterValue(0.0));
+  min_range_ = node->get_parameter(source_name_ + ".min_range").as_double();
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
@@ -141,4 +151,37 @@ void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
   data_ = msg;
 }
 
+<<<<<<< HEAD
+=======
+rcl_interfaces::msg::SetParametersResult
+PointCloud::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(source_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == source_name_ + "." + "min_height") {
+        min_height_ = parameter.as_double();
+      } else if (param_name == source_name_ + "." + "max_height") {
+        max_height_ = parameter.as_double();
+      } else if (param_name == source_name_ + "." + "min_range") {
+        min_range_ = parameter.as_double();
+      }
+    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == source_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
+}
+
+>>>>>>> 40a04517 (Adding minimum range to PC2 in collision monitor (#5392))
 }  // namespace nav2_collision_monitor
