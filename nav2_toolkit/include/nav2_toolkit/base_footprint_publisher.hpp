@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BASE_FOOTPRINT_PUBLISHER_HPP_
-#define BASE_FOOTPRINT_PUBLISHER_HPP_
+#ifndef NAV2_TOOLKIT__BASE_FOOTPRINT_PUBLISHER_HPP_
+#define NAV2_TOOLKIT__BASE_FOOTPRINT_PUBLISHER_HPP_
 
 #include <string>
 #include <memory>
@@ -28,7 +28,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
 
-namespace nav2_util
+namespace nav2_toolkit
 {
 
 /**
@@ -95,7 +95,7 @@ protected:
 };
 
 /**
- * @class nav2_util::BaseFootprintPublisher
+ * @class nav2_toolkit::BaseFootprintPublisher
  * @brief Republishes the ``base_link`` frame as ``base_footprint``
  * stripping away the Z, Roll, and Pitch of the full 3D state to provide
  * a 2D projection for navigation when state estimation is full 3D
@@ -124,6 +124,6 @@ protected:
   std::shared_ptr<BaseFootprintPublisherListener> listener_publisher_;
 };
 
-}  // end namespace nav2_util
+}  // end namespace nav2_toolkit
 
-#endif  // BASE_FOOTPRINT_PUBLISHER_HPP_
+#endif  // NAV2_TOOLKIT__BASE_FOOTPRINT_PUBLISHER_HPP_
