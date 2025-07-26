@@ -17,7 +17,6 @@
 #include <limits>
 
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/action/get_pose_from_path_action.hpp"
 

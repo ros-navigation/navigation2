@@ -21,7 +21,6 @@
   <depend>nav2_util</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_ros_common</depend>
 

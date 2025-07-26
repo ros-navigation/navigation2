@@ -13,7 +13,6 @@ find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
@@ -37,7 +36,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
@@ -75,7 +73,7 @@ install(DIRECTORY include/
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(ceres nav2_core nav2_ros_common nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+ament_export_dependencies(ceres nav2_core nav2_ros_common nav2_costmap_2d rclcpp tf2_ros)
 ament_export_targets(${library_name})
 
 pluginlib_export_plugin_description_file(nav2_core nav2_constrained_smoother.xml)

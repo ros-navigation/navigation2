@@ -19,7 +19,6 @@
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>

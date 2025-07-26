@@ -14,8 +14,6 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(bondcpp REQUIRED)
 
 nav2_package()
 
@@ -36,7 +34,6 @@ target_link_libraries(conversions PUBLIC
 )
 target_link_libraries(conversions PRIVATE
   nav2_util::nav2_util_core
-  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 add_library(path_ops SHARED
@@ -84,8 +81,6 @@ ament_export_libraries(conversions path_ops)
 ament_export_dependencies(
   geometry_msgs
   nav_2d_msgs
-  bondcpp
-  rclcpp_lifecycle
   nav2_ros_common
   nav_msgs
   rclcpp

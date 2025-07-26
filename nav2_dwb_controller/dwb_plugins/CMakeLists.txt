@@ -7,7 +7,6 @@ find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(nav2_util REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -30,7 +29,6 @@ target_link_libraries(standard_traj_generator PUBLIC
   dwb_core::dwb_core
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
@@ -74,7 +72,6 @@ ament_export_dependencies(
   dwb_core
   dwb_msgs
   geometry_msgs
-  nav2_util
   nav_2d_msgs
   rclcpp
   rcl_interfaces

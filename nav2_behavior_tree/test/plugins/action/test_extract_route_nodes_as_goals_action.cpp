@@ -20,7 +20,6 @@
 
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"
 

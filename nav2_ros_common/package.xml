@@ -24,10 +24,6 @@
   <depend>rclcpp_action</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>std_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>tf2_msgs</depend>
-  <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
 
   <test_depend>ament_lint_common</test_depend>
