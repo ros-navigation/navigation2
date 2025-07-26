@@ -140,6 +140,59 @@ public:
     pointcloud_pub_->publish(std::move(msg));
   }
 
+  void publishPointCloudForMinRange(const rclcpp::Time & stamp)
+  {
+    pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+      POINTCLOUD_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    pointcloud_pub_->on_activate();
+
+    std::unique_ptr<sensor_msgs::msg::PointCloud2> msg =
+      std::make_unique<sensor_msgs::msg::PointCloud2>();
+    sensor_msgs::PointCloud2Modifier modifier(*msg);
+
+    msg->header.frame_id = SOURCE_FRAME_ID;
+    msg->header.stamp = stamp;
+
+    modifier.setPointCloud2Fields(
+      3, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+    modifier.resize(4);
+
+    sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
+    sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
+    sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
+
+    // Point 0: Very close to origin (0.05, 0.0, 0.15) - range ≈ 0.158,
+    // should be filtered
+    *iter_x = 0.05;
+    *iter_y = 0.0;
+    *iter_z = 0.15;
+    ++iter_x; ++iter_y; ++iter_z;
+
+    // Point 1: Close to origin (0.15, 0.0, 0.15) - range ≈ 0.212,
+    // should pass with min_range=0.16
+    *iter_x = 0.15;
+    *iter_y = 0.0;
+    *iter_z = 0.15;
+    ++iter_x; ++iter_y; ++iter_z;
+
+    // Point 2: At min_range threshold (0.2, 0.0, 0.15) - range ≈ 0.25,
+    // should pass with min_range=0.16
+    *iter_x = 0.2;
+    *iter_y = 0.0;
+    *iter_z = 0.15;
+    ++iter_x; ++iter_y; ++iter_z;
+
+    // Point 3: Beyond min_range (0.5, 0.0, 0.15) - range ≈ 0.522,
+    // should pass
+    *iter_x = 0.5;
+    *iter_y = 0.0;
+    *iter_z = 0.15;
+
+    pointcloud_pub_->publish(std::move(msg));
+  }
+
   void publishRange(const rclcpp::Time & stamp, const double range)
   {
     range_pub_ = this->create_publisher<sensor_msgs::msg::Range>(
@@ -296,6 +349,8 @@ class Tester : public ::testing::Test
 public:
   Tester();
   ~Tester();
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
 protected:
   // Data sources creation routine
@@ -319,10 +374,6 @@ protected:
   std::shared_ptr<PointCloudWrapper> pointcloud_;
   std::shared_ptr<RangeWrapper> range_;
   std::shared_ptr<PolygonWrapper> polygon_;
-
-private:
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };  // Tester
 
 Tester::Tester()
@@ -739,6 +790,62 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
+}
+
+TEST_F(Tester, testPointCloudMinRange)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  // Create PointCloud object with min_range = 0.2
+  test_node_->declare_parameter(
+    std::string(POINTCLOUD_NAME) + ".topic", rclcpp::ParameterValue(POINTCLOUD_TOPIC));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POINTCLOUD_NAME) + ".topic", POINTCLOUD_TOPIC));
+  test_node_->declare_parameter(
+    std::string(POINTCLOUD_NAME) + ".min_height", rclcpp::ParameterValue(0.1));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POINTCLOUD_NAME) + ".min_height", 0.1));
+  test_node_->declare_parameter(
+    std::string(POINTCLOUD_NAME) + ".max_height", rclcpp::ParameterValue(1.0));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POINTCLOUD_NAME) + ".max_height", 1.0));
+  test_node_->declare_parameter(
+    std::string(POINTCLOUD_NAME) + ".min_range", rclcpp::ParameterValue(0.16));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POINTCLOUD_NAME) + ".min_range", 0.16));
+
+  pointcloud_ = std::make_shared<PointCloudWrapper>(
+    test_node_, POINTCLOUD_NAME, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
+  pointcloud_->configure();
+
+  sendTransforms(curr_time);
+
+  // Publish pointcloud data with points at various ranges
+  test_node_->publishPointCloudForMinRange(curr_time);
+
+  // Wait until pointcloud receives the data
+  ASSERT_TRUE(waitPointCloud(500ms));
+
+  // Check PointCloud data - should only contain points with range >= min_range (0.16)
+  std::vector<nav2_collision_monitor::Point> data;
+  pointcloud_->getData(curr_time, data);
+
+  // Should have 3 points: first point (range ≈ 0.158) filtered out, remaining 3 pass
+  ASSERT_EQ(data.size(), 3u);
+
+  // Point 1: (0.15 + 0.1, 0.0 + 0.1) = (0.25, 0.1) - range ≈ 0.212, passes
+  EXPECT_NEAR(data[0].x, 0.25, EPSILON);
+  EXPECT_NEAR(data[0].y, 0.1, EPSILON);
+
+  // Point 2: (0.2 + 0.1, 0.0 + 0.1) = (0.3, 0.1) - range ≈ 0.25, passes
+  EXPECT_NEAR(data[1].x, 0.3, EPSILON);
+  EXPECT_NEAR(data[1].y, 0.1, EPSILON);
+
+  // Point 3: (0.5 + 0.1, 0.0 + 0.1) = (0.6, 0.1) - range ≈ 0.522, passes
+  EXPECT_NEAR(data[2].x, 0.6, EPSILON);
+  EXPECT_NEAR(data[2].y, 0.1, EPSILON);
 }
 
 int main(int argc, char ** argv)
