@@ -19,7 +19,6 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(robot_localization REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
@@ -45,7 +44,6 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
@@ -173,7 +171,6 @@ ament_export_dependencies(
   robot_localization
   sensor_msgs
   std_msgs
-  tf2_ros
 )
 ament_export_targets(${PROJECT_NAME})
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)
