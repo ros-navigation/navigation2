@@ -16,8 +16,6 @@
 #include <memory>
 #include <limits>
 
-#include "nav2_util/geometry_utils.hpp"
-
 #include "nav2_behavior_tree/plugins/action/append_goal_pose_to_goals_action.hpp"
 
 namespace nav2_behavior_tree

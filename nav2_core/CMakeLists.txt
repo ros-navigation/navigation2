@@ -10,7 +10,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 nav2_package()
@@ -30,7 +29,6 @@ target_link_libraries(nav2_core INTERFACE
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
 )
 
@@ -61,7 +59,6 @@ ament_export_dependencies(
   nav_msgs
   pluginlib
   rclcpp
-  rclcpp_lifecycle
   tf2_ros
 )
 ament_export_targets(nav2_core)

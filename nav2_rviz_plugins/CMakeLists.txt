@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_rviz_plugins)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
@@ -19,7 +18,6 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -87,11 +85,9 @@ target_link_libraries(${library_name} PUBLIC
   rviz_default_plugins::rviz_default_plugins
   rviz_rendering::rviz_rendering
   ${std_msgs_TARGETS}
-  tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
 )
 target_link_libraries(${library_name} PRIVATE
-  ament_index_cpp::ament_index_cpp
   pluginlib::pluginlib
   yaml-cpp::yaml-cpp
 )
@@ -138,7 +134,6 @@ ament_export_dependencies(
   rviz_default_plugins
   rviz_rendering
   std_msgs
-  tf2_geometry_msgs
   nav2_ros_common
   visualization_msgs
 )
