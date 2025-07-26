@@ -95,6 +95,8 @@ protected:
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;
+  // Minimum range from sensor origin to filter out close points
+  double min_range_;
 
   /// @brief Latest data obtained from pointcloud
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;
