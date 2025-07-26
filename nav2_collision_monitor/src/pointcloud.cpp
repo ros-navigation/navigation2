@@ -124,7 +124,7 @@ void PointCloud::getParameters(std::string & source_topic)
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
   max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
-  nav2::declare_parameter_if_not_declared(
+  nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".min_range", rclcpp::ParameterValue(0.0));
   min_range_ = node->get_parameter(source_name_ + ".min_range").as_double();
 }
