@@ -27,8 +27,8 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_core/route_exceptions.hpp"
-#include "tf2_ros/static_transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/static_transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 class RclCppFixture
 {

@@ -24,7 +24,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"

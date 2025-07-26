@@ -43,7 +43,7 @@
 
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "rclcpp/time.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav2_costmap_2d/observation.hpp"
