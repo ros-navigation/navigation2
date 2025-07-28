@@ -253,14 +253,14 @@ inline double distanceToPoint(
  * @param finish End point of target vector
  * @return int
  */
-inline double distanceToSegment(
-  const geometry_msgs::msg::PoseStamped & point,
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & end)
+inline double distance_to_segment(
+  const geometry_msgs::msg::Point & point,
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & end)
 {
-  const auto & p = point.pose.position;
-  const auto & a = start.pose.position;
-  const auto & b = end.pose.position;
+  const auto & p = point;
+  const auto & a = start.position;
+  const auto & b = end.position;
 
   const double dx_seg = b.x - a.x;
   const double dy_seg = b.y - a.y;
@@ -268,7 +268,7 @@ inline double distanceToSegment(
   const double seg_len_sq = (dx_seg * dx_seg) + (dy_seg * dy_seg);
 
   if (seg_len_sq <= 1e-9) {
-    return distanceToPoint(point, start);
+    return euclidean_distance(point, a);
   }
 
   const double dot = ((p.x - a.x) * dx_seg) + ((p.y - a.y) * dy_seg);

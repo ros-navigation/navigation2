@@ -31,21 +31,27 @@
 namespace nav2_util
 {
 
+/**
+ * @brief Result of searching for the closest segment on a path.
+ */
 struct PathSearchResult
 {
+  /**
+   * @brief The minimum distance from the robot to the path.
+   */
   double distance;
+
+  /**
+   * @brief The index of the closest path segment.
+   */
   size_t closest_segment_index;
 };
 
-PathSearchResult distanceFromPath(
-  const nav_msgs::msg::Path & path,
-  const geometry_msgs::msg::PoseStamped & robot_pose);
-
-PathSearchResult distanceFromPath(
+PathSearchResult distance_from_path(
   const nav_msgs::msg::Path & path,
   const geometry_msgs::msg::PoseStamped & robot_pose,
-  const size_t start_index,
-  const double search_window_length);
+  const size_t start_index = 0,
+  const double search_window_length = std::numeric_limits<double>::max());
 
 }  // namespace nav2_util
 
