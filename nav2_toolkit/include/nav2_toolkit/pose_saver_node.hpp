@@ -45,7 +45,7 @@ namespace nav2_toolkit
  *
  * Services Provided:
  * - `start_pose_saver`: Start periodic pose saving
- * - `stop_pose_saver`: Stop periodic pose saving  
+ * - `stop_pose_saver`: Stop periodic pose saving
  * - `localise_at_last_known_position`: Restore the saved pose via service call
  *
  * Topics Subscribed:

@@ -10,7 +10,7 @@ Automatically saves and restores robot pose across system restarts.
 
 **Key Features:**
 - Automatic pose backup - Continuously saves pose to disk at configurable intervals
-- Intelligent restoration - Restores last known position on startup  
+- Intelligent restoration - Restores last known position on startup
 - Crash-safe storage - Atomic file operations prevent corruption during power loss
 - Service-based control - Start/stop saving, manual restore, force immediate save
 
@@ -224,5 +224,3 @@ ros2 service list | grep pose_saver
 # Test service response
 ros2 service call /start_pose_saver std_srvs/srv/Trigger "{}"
 ```
-
-
