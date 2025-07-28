@@ -38,7 +38,8 @@ public:
     last_pose_ = pose;
   }
 
-  std::string test_get_pose_file_path() const {
+  std::string test_get_pose_file_path() const
+  {
     return pose_file_path_;
   }
 
