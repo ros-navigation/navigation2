@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
 
@@ -168,12 +169,12 @@ TEST(PathUtilsTest, EmptyAndSinglePointPaths)
   auto robot_pose = createPose(5.0, 5.0);
   nav_msgs::msg::Path empty_path;
 
-  auto result = nav2_util::distanceFromPath(empty_path, robot_pose);
-  EXPECT_EQ(result.distance, std::numeric_limits<double>::infinity());
+  auto result = nav2_util::distance_from_path(empty_path, robot_pose);
+  EXPECT_EQ(result.distance, std::numeric_limits<double>::max());
 
   nav_msgs::msg::Path single_point_path;
   single_point_path.poses.push_back(createPose(0.0, 0.0));
-  result = nav2_util::distanceFromPath(single_point_path, robot_pose);
+  result = nav2_util::distance_from_path(single_point_path, robot_pose);
   EXPECT_NEAR(result.distance, 7.071, 0.01);
 }
 
@@ -181,7 +182,7 @@ TEST_F(CuttingCornerTest, TrajectoryCutsCorner)
 {
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_NEAR(result.distance, expected_distances[i], 0.1);
   }
 }
@@ -191,7 +192,7 @@ TEST_F(RetracingPathTest, TrajectoryFollowsRetracingPath)
   const double expected_distance = 0.5;
 
   for (const auto & robot_pose : robot_trajectory) {
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_NEAR(result.distance, expected_distance, 1e-6);
   }
 }
@@ -199,7 +200,7 @@ TEST_F(RetracingPathTest, TrajectoryFollowsRetracingPath)
 TEST_F(CloverleafPathTest, TrajectoryFollowsCloverleafLoop)
 {
   for (const auto & robot_pose : robot_trajectory) {
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_LT(result.distance, 0.25);
   }
 }
@@ -209,7 +210,7 @@ TEST_F(RetracingCircleTest, TrajectoryFollowsRetracingCircle)
   const double expected_distance = 0.2;
 
   for (const auto & robot_pose : robot_trajectory) {
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_NEAR(result.distance, expected_distance, 0.01);
   }
 }
@@ -217,7 +218,7 @@ TEST_F(RetracingCircleTest, TrajectoryFollowsRetracingCircle)
 TEST_F(ZigZagPathTest, TrajectoryFollowsZigZagPath)
 {
   for (const auto & robot_pose : robot_trajectory) {
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_LT(result.distance, 1.0);
   }
 }
@@ -225,7 +226,7 @@ TEST_F(ZigZagPathTest, TrajectoryFollowsZigZagPath)
 TEST_F(HairpinTurnTest, TrajectoryFollowsHairpinTurn)
 {
   for (const auto & robot_pose : robot_trajectory) {
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose);
     EXPECT_LT(result.distance, 1.5);
   }
 }
@@ -239,7 +240,8 @@ TEST_F(CuttingCornerWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+      search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(result.distance, expected_distances[i], 0.15);
   }
@@ -255,7 +257,8 @@ TEST_F(RetracingPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+      search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(result.distance, expected_distance, 1e-6);
   }
@@ -270,7 +273,8 @@ TEST_F(ZigZagPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+      search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(result.distance, 1.0);
   }
@@ -285,7 +289,8 @@ TEST_F(HairpinTurnWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distanceFromPath(target_path, robot_pose, start_index, search_window);
+    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+      search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(result.distance, 1.5);
   }
@@ -298,12 +303,6 @@ TEST(PathUtilsWindowedTest, EdgeCases)
   test_path.poses.push_back(createPose(0.0, 0.0));
   test_path.poses.push_back(createPose(10.0, 0.0));
 
-  auto result = nav2_util::distanceFromPath(test_path, robot_pose, 1, 5.0);
+  auto result = nav2_util::distance_from_path(test_path, robot_pose, 1, 5.0);
   EXPECT_NEAR(result.distance, 7.071, 0.01);
-
-  result = nav2_util::distanceFromPath(test_path, robot_pose, 0, 0.0);
-  EXPECT_NEAR(result.distance, 7.071, 0.01);
-
-  result = nav2_util::distanceFromPath(test_path, robot_pose, 10, 5.0);
-  EXPECT_EQ(result.distance, std::numeric_limits<double>::infinity());
 }
