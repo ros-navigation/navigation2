@@ -16,7 +16,6 @@ target_link_libraries(${library_name} PUBLIC
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}

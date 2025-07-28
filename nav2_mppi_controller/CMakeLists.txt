@@ -12,7 +12,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -62,7 +61,6 @@ target_link_libraries(mppi_controller PUBLIC
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${std_msgs_TARGETS}
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -97,7 +95,6 @@ target_link_libraries(mppi_critics PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${std_msgs_TARGETS}
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -125,7 +122,6 @@ target_link_libraries(mppi_trajectory_validators PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${std_msgs_TARGETS}
   tf2::tf2
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -150,6 +146,7 @@ install(DIRECTORY include/
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(rclcpp_lifecycle REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
@@ -168,7 +165,6 @@ ament_export_dependencies(
   nav_msgs
   pluginlib
   rclcpp
-  rclcpp_lifecycle
   std_msgs
   tf2
   tf2_geometry_msgs

@@ -10,7 +10,6 @@ find_package(image_transport REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -40,7 +39,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
-  ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -162,7 +160,6 @@ ament_export_dependencies(
   image_transport
   nav2_core
   nav2_msgs
-  nav_msgs
   OpenCV
   pluginlib
   rclcpp
