@@ -9,7 +9,6 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_ros_common REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
@@ -34,6 +33,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(rclcpp_lifecycle REQUIRED)
   add_subdirectory(test)
 endif()
 
@@ -45,7 +45,6 @@ ament_export_dependencies(
   nav2_msgs
   nav_msgs
   rclcpp
-  rclcpp_lifecycle
   tf2
   tf2_geometry_msgs
   tf2_ros

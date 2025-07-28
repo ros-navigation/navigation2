@@ -19,7 +19,6 @@
 #include "opennav_docking/controller.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav_2d_utils/conversions.hpp"
 #include "tf2/utils.hpp"
 
 namespace opennav_docking

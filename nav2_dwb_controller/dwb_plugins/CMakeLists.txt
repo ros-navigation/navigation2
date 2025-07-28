@@ -36,7 +36,6 @@ target_link_libraries(standard_traj_generator PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
 )
 target_link_libraries(standard_traj_generator PRIVATE
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 

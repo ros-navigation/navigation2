@@ -38,7 +38,6 @@
 #include <algorithm>
 #include <memory>
 #include "dwb_plugins/xy_theta_iterator.hpp"
-#include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"

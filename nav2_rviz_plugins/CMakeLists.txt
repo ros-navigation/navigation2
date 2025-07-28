@@ -18,6 +18,7 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
@@ -85,6 +86,7 @@ target_link_libraries(${library_name} PUBLIC
   rviz_default_plugins::rviz_default_plugins
   rviz_rendering::rviz_rendering
   ${std_msgs_TARGETS}
+  tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
 )
 target_link_libraries(${library_name} PRIVATE
@@ -134,6 +136,7 @@ ament_export_dependencies(
   rviz_default_plugins
   rviz_rendering
   std_msgs
+  tf2_ros
   nav2_ros_common
   visualization_msgs
 )

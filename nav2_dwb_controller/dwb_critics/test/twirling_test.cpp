@@ -40,7 +40,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/twirling.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 TEST(TwirlingTests, Scoring)
 {

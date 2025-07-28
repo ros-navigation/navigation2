@@ -5,6 +5,7 @@ set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
 
 find_package(ament_cmake REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
+find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -29,6 +30,7 @@ target_include_directories(${library_name}
 )
 target_link_libraries(${library_name} PUBLIC
   Ceres::ceres
+  Eigen3::Eigen
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
@@ -72,7 +74,7 @@ install(DIRECTORY include/
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(ceres nav2_core nav2_ros_common nav2_costmap_2d rclcpp tf2_ros)
+ament_export_dependencies(ceres eigen3 nav2_core nav2_ros_common nav2_costmap_2d rclcpp tf2_ros)
 ament_export_targets(${library_name})
 
 pluginlib_export_plugin_description_file(nav2_core nav2_constrained_smoother.xml)
