@@ -9,7 +9,6 @@ target_link_libraries(twist_gen_test
   ${geometry_msgs_TARGETS}
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
 )
 
 ament_add_gtest(kinematic_parameters_test kinematic_parameters_test.cpp)

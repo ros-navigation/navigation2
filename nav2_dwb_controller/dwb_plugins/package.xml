@@ -21,12 +21,11 @@
   <depend>rclcpp</depend>
   <depend>rcl_interfaces</depend>
   <depend>nav2_ros_common</depend>
+  <depend>nav2_costmap_2d</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>nav2_costmap_2d</test_depend>
-  <test_depend>rclcpp_lifecycle</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

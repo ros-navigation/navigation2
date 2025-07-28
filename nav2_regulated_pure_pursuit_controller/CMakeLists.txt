@@ -41,7 +41,6 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   ${std_msgs_TARGETS}
   tf2::tf2
@@ -84,7 +83,6 @@ ament_export_dependencies(
   nav_msgs
   pluginlib
   rclcpp
-  rclcpp_lifecycle
   rcl_interfaces
   nav2_ros_common
   std_msgs

@@ -21,7 +21,6 @@
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_cancel_node.hpp"
-#include "lifecycle_msgs/srv/change_state.hpp"
 
 class CancelDriveOnHeadingServer : public TestActionServer<nav2_msgs::action::DriveOnHeading>
 {
