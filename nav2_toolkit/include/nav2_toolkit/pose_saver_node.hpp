@@ -74,7 +74,7 @@ protected:
 
   /**
    * @brief Timer callback to periodically write pose to file
-   * 
+   *
    * Called at regular intervals (configurable via parameter) to save the most
    * recent pose to the configured YAML file path
    */
@@ -109,7 +109,7 @@ protected:
 
   /**
    * @brief Monitor pose publisher availability and attempt restoration
-   * 
+   *
    * Periodically checks if the pose publisher service is available and
    * performs automatic pose restoration if configured and not yet done
    */
@@ -117,7 +117,7 @@ protected:
 
   /**
    * @brief Perform initial client setup after construction
-   * 
+   *
    * Deferred initialization to ensure all ROS components are properly
    * set up before attempting service connections and restoration
    */
@@ -128,7 +128,7 @@ protected:
   /**
    * @brief Serialize current pose to YAML file with atomic operations
    * @param filepath Full path to the target YAML file
-   * 
+   *
    * Uses atomic file operations (write to temp file, then rename) to
    * prevent data corruption in case of crashes during write operations
    */
@@ -138,7 +138,7 @@ protected:
    * @brief Load pose from YAML file
    * @param filepath Full path to the source YAML file
    * @return Loaded pose with covariance, or default-constructed pose if file read fails
-   * 
+   *
    * Safely loads pose data from YAML file with error handling for
    * malformed files or I/O errors
    */
@@ -147,7 +147,7 @@ protected:
   /**
    * @brief Restore pose from file and publish it using service call
    * @return True if restoration was successful, false otherwise
-   * 
+   *
    * Combines file reading and service calling to restore the robot's
    * pose from the saved YAML file
    */
