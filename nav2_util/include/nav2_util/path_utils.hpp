@@ -36,14 +36,7 @@ namespace nav2_util
  */
 struct PathSearchResult
 {
-  /**
-   * @brief The minimum distance from the robot to the path.
-   */
   double distance;
-
-  /**
-   * @brief The index of the closest path segment.
-   */
   size_t closest_segment_index;
 };
 
