@@ -33,7 +33,7 @@ public:
   : PoseSaverNode(options) {}
 
   // Expose protected methods and members for testing
-  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) 
+  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose)
   {
     last_pose_ = pose;
   }
@@ -42,12 +42,12 @@ public:
     return pose_file_path_;
   }
 
-  void test_write_pose_to_file() 
+  void test_write_pose_to_file()
   {
     write_pose_to_file(pose_file_path_);
   }
 
-  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file() 
+  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file()
   {
     return read_pose_from_file(pose_file_path_);
   }
