@@ -42,11 +42,6 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.hpp"
-#pragma GCC diagnostic pop
-
 #include "nav2_util/geometry_utils.hpp"
 
 namespace nav_2d_utils

@@ -11,7 +11,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -36,7 +35,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_util::nav2_util_core
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2_ros::tf2_ros
 )
@@ -64,6 +62,7 @@ install(FILES theta_star_planner.xml
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(rclcpp_lifecycle REQUIRED)
   set(gtest_disable_pthreads OFF)
   ament_lint_auto_find_test_dependencies()
 

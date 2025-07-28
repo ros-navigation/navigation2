@@ -13,6 +13,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
@@ -33,6 +34,7 @@ target_link_libraries(standard_traj_generator PUBLIC
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
   ${rcl_interfaces_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
 )
 target_link_libraries(standard_traj_generator PRIVATE
   nav_2d_utils::conversions
@@ -48,8 +50,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   ament_find_gtest()
 
-  find_package(nav2_costmap_2d REQUIRED)
-  find_package(rclcpp_lifecycle REQUIRED)
   add_subdirectory(test)
 endif()
 
