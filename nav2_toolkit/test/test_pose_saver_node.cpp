@@ -22,9 +22,33 @@
 #include <std_srvs/srv/trigger.hpp>
 #include "nav2_toolkit/pose_saver_node.hpp"
 
-
 using nav2_toolkit::PoseSaverNode;
 namespace fs = std::filesystem;
+
+// Test fixture that inherits from PoseSaverNode to access protected members
+class TestablePoseSaverNode : public PoseSaverNode
+{
+public:
+  explicit TestablePoseSaverNode(const rclcpp::NodeOptions & options)
+  : PoseSaverNode(options) {}
+
+  // Expose protected methods and members for testing
+  void test_set_last_pose(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr & pose) {
+    last_pose_ = pose;
+  }
+
+  std::string test_get_pose_file_path() const {
+    return pose_file_path_;
+  }
+
+  void test_write_pose_to_file() {
+    write_pose_to_file(pose_file_path_);
+  }
+
+  geometry_msgs::msg::PoseWithCovarianceStamped test_read_pose_from_file() {
+    return read_pose_from_file(pose_file_path_);
+  }
+};
 
 class PoseSaverTest : public ::testing::Test
 {
@@ -52,7 +76,7 @@ protected:
     options.append_parameter_override("pose_file_path", test_pose_path_);
     options.append_parameter_override("auto_start_saving", true);
     options.append_parameter_override("auto_restore_pose", false);
-    node_ = std::make_shared<PoseSaverNode>(options);
+    node_ = std::make_shared<TestablePoseSaverNode>(options);
     exec_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     exec_->add_node(node_);
     spin_thread_ = std::make_unique<std::thread>([this]() {
@@ -77,7 +101,7 @@ protected:
   }
 
   std::string test_pose_path_ = "/tmp/test_pose.yaml";
-  std::shared_ptr<PoseSaverNode> node_;
+  std::shared_ptr<TestablePoseSaverNode> node_;
   std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> exec_;
   std::unique_ptr<std::thread> spin_thread_;
 };
@@ -131,6 +155,7 @@ TEST_F(PoseSaverTest, test_start_pose_saver_service)
   EXPECT_TRUE(response->success);
   EXPECT_EQ(response->message, "Pose saving started.");
 }
+
 TEST_F(PoseSaverTest, test_pose_written_by_timer_after_publish)
 {
   // Create a publisher on /amcl_pose

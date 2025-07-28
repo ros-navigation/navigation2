@@ -153,7 +153,23 @@ protected:
    */
   bool restore_pose_from_file_and_publish();
 
-private:
+  // === State Members ===
+
+  /// Most recent pose message received
+  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_;
+
+  /// File path to store pose YAML data
+  std::string pose_file_path_;
+
+  /// Whether to automatically restore pose on launch
+  bool auto_restore_;
+
+  /// Whether pose has already been restored this session
+  bool pose_restored_;
+
+  /// Status of pose publisher from last availability check
+  bool was_pose_pub_up_last_check_;
+
   // === ROS Interface Members ===
 
   /// Subscriber for robot pose updates
@@ -179,23 +195,6 @@ private:
 
   /// Service to restore saved pose
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr restore_service_;
-
-  // === State Members ===
-
-  /// Most recent pose message received
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_;
-
-  /// File path to store pose YAML data
-  std::string pose_file_path_;
-
-  /// Whether to automatically restore pose on launch
-  bool auto_restore_;
-
-  /// Whether pose has already been restored this session
-  bool pose_restored_;
-
-  /// Status of pose publisher from last availability check
-  bool was_pose_pub_up_last_check_;
 };
 
 }  // namespace nav2_toolkit
