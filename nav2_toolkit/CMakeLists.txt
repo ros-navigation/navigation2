@@ -12,6 +12,9 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 nav2_package()
@@ -72,6 +75,8 @@ target_include_directories(base_footprint_publisher PRIVATE
 target_link_libraries(base_footprint_publisher PRIVATE
   rclcpp::rclcpp
   ${geometry_msgs_TARGETS}
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
 )
 
@@ -135,6 +140,9 @@ ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
   std_srvs
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
   yaml-cpp
 )
 ament_export_targets(${PROJECT_NAME})
