@@ -155,45 +155,45 @@ protected:
 
 private:
   // === ROS Interface Members ===
-  
+
   /// Subscriber for robot pose updates
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sub_;
-  
+
   /// Client for setting initial pose
   rclcpp::Client<nav2_msgs::srv::SetInitialPose>::SharedPtr set_pose_client_;
-  
+
   /// Timer for periodic file save operations
   rclcpp::TimerBase::SharedPtr timer_;
-  
+
   /// Timer for deferred initialization
   rclcpp::TimerBase::SharedPtr post_init_timer_;
-  
+
   /// Timer to monitor pose publisher readiness
   rclcpp::TimerBase::SharedPtr pose_publisher_monitor_timer_;
-  
+
   /// Service to start pose saving
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
-  
+
   /// Service to stop pose saving
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stop_service_;
-  
+
   /// Service to restore saved pose
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr restore_service_;
 
   // === State Members ===
-  
+
   /// Most recent pose message received
   geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr last_pose_;
-  
+
   /// File path to store pose YAML data
   std::string pose_file_path_;
-  
+
   /// Whether to automatically restore pose on launch
   bool auto_restore_;
-  
+
   /// Whether pose has already been restored this session
   bool pose_restored_;
-  
+
   /// Status of pose publisher from last availability check
   bool was_pose_pub_up_last_check_;
 };
