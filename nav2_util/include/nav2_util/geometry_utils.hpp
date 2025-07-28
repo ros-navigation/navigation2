@@ -189,35 +189,24 @@ inline int find_next_matching_goal_in_waypoint_statuses(
 }
 
 /**
- * @brief Find the distance to a point
- * @param global_pose Robot's current or planned position
- * @param target target point
- * @return int
+ * @brief Find the shortest distance from a point to a line segment
+ *
+ * Uses the closed-form solution for the distance from a point to a segment in 2D.
+ * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+ *
+ * @param point The point to measure from
+ * @param start The start pose of the segment
+ * @param end The end pose of the segment
+ * @return double The shortest distance
  */
-inline double distanceToPoint(
-  const geometry_msgs::msg::PoseStamped & point1,
-  const geometry_msgs::msg::PoseStamped & point2)
+inline double distance_to_segment(
+  const geometry_msgs::msg::Point & point,
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & end)
 {
-  const double dx = point1.pose.position.x - point2.pose.position.x;
-  const double dy = point1.pose.position.y - point2.pose.position.y;
-  return std::hypot(dx, dy);
-}
-
-/**
- * @brief Find the shortest distance to a vector
- * @param global_pose Robot's current or planned position
- * @param start Starting point of target vector
- * @param finish End point of target vector
- * @return int
- */
-inline double distanceToSegment(
-  const geometry_msgs::msg::PoseStamped & point,
-  const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & end)
-{
-  const auto & p = point.pose.position;
-  const auto & a = start.pose.position;
-  const auto & b = end.pose.position;
+  const auto & p = point;
+  const auto & a = start.position;
+  const auto & b = end.position;
 
   const double dx_seg = b.x - a.x;
   const double dy_seg = b.y - a.y;
@@ -225,7 +214,7 @@ inline double distanceToSegment(
   const double seg_len_sq = (dx_seg * dx_seg) + (dy_seg * dy_seg);
 
   if (seg_len_sq <= 1e-9) {
-    return distanceToPoint(point, start);
+    return euclidean_distance(point, a);
   }
 
   const double dot = ((p.x - a.x) * dx_seg) + ((p.y - a.y) * dy_seg);
