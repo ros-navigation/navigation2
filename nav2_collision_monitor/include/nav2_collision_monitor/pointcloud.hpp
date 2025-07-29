@@ -20,6 +20,7 @@
 #include <string>
 
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "point_cloud_transport/point_cloud_transport.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
 
@@ -98,7 +99,9 @@ protected:
   // ----- Variables -----
 
   /// @brief PointCloud data subscriber
-  nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+  std::shared_ptr<point_cloud_transport::PointCloudTransport> pct_;
+  point_cloud_transport::Subscriber data_sub_;
+  std::string transport_type_;
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;
