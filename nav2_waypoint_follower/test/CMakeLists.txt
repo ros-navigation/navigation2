@@ -8,7 +8,6 @@ target_link_libraries(test_task_executors
   photo_at_waypoint
   input_at_waypoint
   ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
@@ -20,7 +19,6 @@ ament_add_gtest(test_dynamic_parameters
 )
 target_link_libraries(test_dynamic_parameters
   ${library_name}
-  nav2_util::nav2_util_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )

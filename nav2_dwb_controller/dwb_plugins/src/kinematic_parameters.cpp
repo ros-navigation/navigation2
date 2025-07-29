@@ -38,7 +38,6 @@
 #include <string>
 #include <vector>
 
-#include "nav_2d_utils/parameters.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
