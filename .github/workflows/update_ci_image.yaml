@@ -16,6 +16,12 @@ on:
       - '**/*.repos'
       - 'Dockerfile'
       - '.github/workflows/update_ci_image.yaml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you rebuilding the image?'
+        required: false
+        default: 'Manual trigger'
 
 jobs:
   check_ci_files:
