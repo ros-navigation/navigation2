@@ -1,5 +1,6 @@
 # Clears the costmap within a distance
 
 float32 reset_distance
+string[] plugins
 ---
 std_msgs/Empty response

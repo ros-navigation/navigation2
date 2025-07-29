@@ -84,7 +84,7 @@ void ClearCostmapService::clearExceptRegionCallback(
     logger_, "%s",
     ("Received request to clear except a region the " + costmap_.getName()).c_str());
 
-  clearRegion(request->reset_distance, true);
+  clearRegion(request->reset_distance, true, request->plugins);
 }
 
 void ClearCostmapService::clearAroundRobotCallback(
@@ -92,7 +92,7 @@ void ClearCostmapService::clearAroundRobotCallback(
   const shared_ptr<ClearAroundRobot::Request> request,
   const shared_ptr<ClearAroundRobot::Response>/*response*/)
 {
-  clearRegion(request->reset_distance, false);
+  clearRegion(request->reset_distance, false, request->plugins);
 }
 
 void ClearCostmapService::clearAroundPoseCallback(
@@ -104,24 +104,25 @@ void ClearCostmapService::clearAroundPoseCallback(
     logger_, "%s",
     ("Received request to clear around pose for " + costmap_.getName()).c_str());
 
-  clearAroundPose(request->pose, request->reset_distance);
+  clearAroundPose(request->pose, request->reset_distance, request->plugins);
 }
 
 void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<ClearEntirely::Request>/*request*/,
+  const std::shared_ptr<ClearEntirely::Request> request,
   const std::shared_ptr<ClearEntirely::Response>/*response*/)
 {
   RCLCPP_INFO(
     logger_, "%s",
     ("Received request to clear entirely the " + costmap_.getName()).c_str());
 
-  clearEntirely();
+  clearEntirely(request->plugins);
 }
 
 void ClearCostmapService::clearAroundPose(
   const geometry_msgs::msg::PoseStamped & pose,
-  const double reset_distance)
+  const double reset_distance,
+  const std::vector<std::string> & plugins)
 {
   double x, y;
 
@@ -147,14 +148,14 @@ void ClearCostmapService::clearAroundPose(
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
 
   for (auto & layer : *layers) {
-    if (layer->isClearable()) {
+    if (shouldClearLayer(layer, plugins)) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clearLayerRegion(costmap_layer, x, y, reset_distance, false);
     }
   }
 }
 
-void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
+void ClearCostmapService::clearRegion(const double reset_distance, bool invert, const std::vector<std::string> & plugins)
 {
   double x, y;
 
@@ -168,7 +169,7 @@ void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
 
   for (auto & layer : *layers) {
-    if (layer->isClearable()) {
+    if (shouldClearLayer(layer, plugins)) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
     }
@@ -200,10 +201,56 @@ void ClearCostmapService::clearLayerRegion(
   costmap->addExtraBounds(ox, oy, ox + width, oy + height);
 }
 
-void ClearCostmapService::clearEntirely()
+void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins)
 {
-  std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
-  costmap_.resetLayers();
+  if (plugins.empty()) {
+    // Default behavior: clear all layers
+    std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
+    RCLCPP_INFO(logger_, "Clearing all layers in costmap: %s", costmap_.getName().c_str()); 
+    costmap_.resetLayers();
+  } else {
+    // Clear only specified plugins
+    auto layers = costmap_.getLayeredCostmap()->getPlugins();
+    
+    for (auto & layer : *layers) {
+      if (shouldClearLayer(layer, plugins)) {
+        if (layer->isClearable()) {
+          RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
+          auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+          std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_layer->getMutex())); 
+          costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(), costmap_layer->getSizeInCellsY());
+        } else {
+          RCLCPP_WARN(
+            logger_,
+            "Layer '%s' is not clearable, skipping.",
+            layer->getName().c_str());
+        }
+      }
+    }
+  }
+}
+
+bool ClearCostmapService::shouldClearLayer(
+  const std::shared_ptr<Layer> & layer,
+  const std::vector<std::string> & plugins) const
+{
+  // If no specific plugins requested, use default behavior (clear all clearable layers)
+  if (plugins.empty()) {
+    return layer->isClearable();
+  }
+  
+  // If specific plugins requested, check if this layer is in the list AND clearable
+  bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(), layer->getName()) != plugins.end();
+  
+  if (is_in_plugin_list && !layer->isClearable()) {
+    RCLCPP_WARN(
+      logger_,
+      "Plugin '%s' was requested to be cleared but is not clearable. Skipping.",
+      layer->getName().c_str());
+    return false;
+  }
+  
+  return is_in_plugin_list && layer->isClearable();
 }
 
 bool ClearCostmapService::getPosition(double & x, double & y) const
