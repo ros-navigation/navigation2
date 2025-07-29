@@ -532,7 +532,7 @@ jobs:
 
 _parameters:
   release_parameters: &release_parameters
-    packages_skip_regex: "'(nav2_system_tests|nav2_smac_planner|nav2_mppi_controller)'"
+    packages_skip_regex: "'(nav2_system_tests|nav2_smac_planner|nav2_mppi_controller|nav2_route)'"
 
 workflows:
   version: 2
