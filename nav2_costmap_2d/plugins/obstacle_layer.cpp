@@ -141,7 +141,7 @@ void ObstacleLayer::onInitialize()
   while (ss >> source) {
     // get the parameters for the specific topic
     double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
-    std::string topic, sensor_frame, data_type, point_cloud_transport;
+    std::string topic, sensor_frame, data_type, transport_type;
     bool inf_is_valid, clearing, marking;
 
     declareParameter(source + "." + "topic", rclcpp::ParameterValue(source));
@@ -158,8 +158,7 @@ void ObstacleLayer::onInitialize()
     declareParameter(source + "." + "obstacle_min_range", rclcpp::ParameterValue(0.0));
     declareParameter(source + "." + "raytrace_max_range", rclcpp::ParameterValue(3.0));
     declareParameter(source + "." + "raytrace_min_range", rclcpp::ParameterValue(0.0));
-    declareParameter(source + "." + "point_cloud_transport",
-      rclcpp::ParameterValue(std::string("raw")));
+    declareParameter(source + "." + "transport_type", rclcpp::ParameterValue(std::string("raw")));
 
     node->get_parameter(name_ + "." + source + "." + "topic", topic);
     node->get_parameter(name_ + "." + source + "." + "sensor_frame", sensor_frame);
@@ -175,8 +174,7 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "inf_is_valid", inf_is_valid);
     node->get_parameter(name_ + "." + source + "." + "marking", marking);
     node->get_parameter(name_ + "." + source + "." + "clearing", clearing);
-    node->get_parameter(name_ + "." + source + "." + "point_cloud_transport",
-      point_cloud_transport);
+    node->get_parameter(name_ + "." + source + "." + "transport_type", transport_type);
 
     if (!(data_type == "PointCloud2" || data_type == "LaserScan")) {
       RCLCPP_FATAL(
@@ -292,7 +290,7 @@ void ObstacleLayer::onInitialize()
 
     } else {
       auto sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
-        *node, topic, point_cloud_transport, custom_qos_profile, sub_opt);
+        *node, topic, transport_type, custom_qos_profile, sub_opt);
       sub->unsubscribe();
 
       if (inf_is_valid) {
