@@ -410,7 +410,7 @@
       <input_port name="resume_service_name">Service to call to resume</input_port>
     </Control>
 
-    <Control ID="SequenceWithBlackboardMemory">
+    <Control ID="PersistentSequence">
       <bidirectional_port name="current_child_idx">Index of the child to execute</bidirectional_port>
     </Control>
 

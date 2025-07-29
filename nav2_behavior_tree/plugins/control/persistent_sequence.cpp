@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_behavior_tree/plugins/control/sequence_with_blackboard_memory.hpp"
+#include "nav2_behavior_tree/plugins/control/persistent_sequence.hpp"
 #include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/bt_factory.h"
 
 namespace nav2_behavior_tree
 {
 
-SequenceWithBlackboardMemoryNode::SequenceWithBlackboardMemoryNode(
+PersistentSequenceNode::PersistentSequenceNode(
   const std::string & name,
   const BT::NodeConfiguration & conf)
 : BT::ControlNode::ControlNode(name, conf) {}
 
-BT::NodeStatus SequenceWithBlackboardMemoryNode::tick()
+BT::NodeStatus PersistentSequenceNode::tick()
 {
   const int children_count = children_nodes_.size();
 
@@ -75,10 +75,10 @@ BT_REGISTER_NODES(factory)
   BT::NodeBuilder builder =
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<nav2_behavior_tree::SequenceWithBlackboardMemoryNode>(
+      return std::make_unique<nav2_behavior_tree::PersistentSequenceNode>(
         name, config);
     };
 
-  factory.registerBuilder<nav2_behavior_tree::SequenceWithBlackboardMemoryNode>(
-    "SequenceWithBlackboardMemory", builder);
+  factory.registerBuilder<nav2_behavior_tree::PersistentSequenceNode>(
+    "PersistentSequence", builder);
 }

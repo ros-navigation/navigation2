@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__SEQUENCE_WITH_BLACKBOARD_MEMORY_HPP_
-#define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__SEQUENCE_WITH_BLACKBOARD_MEMORY_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__PERSISTENT_SEQUENCE_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__PERSISTENT_SEQUENCE_HPP_
 
 #include <string>
 #include "behaviortree_cpp/control_node.h"
@@ -22,7 +22,7 @@
 namespace nav2_behavior_tree
 {
 /**
- * @brief The SequenceWithBlackboardMemoryNode is similar to the SequenceNode, but it
+ * @brief The PersistentSequenceNode is similar to the SequenceNode, but it
  * stores the index of the last running child in the blackboard (key: "current_child_idx"),
  * and it does not reset the index when it got halted.
  * It used to tick children in an ordered sequence. If any child returns RUNNING, previous
@@ -37,12 +37,12 @@ namespace nav2_behavior_tree
  *   Restart the loop only if (reset_on_failure == true)
  *
  */
-class SequenceWithBlackboardMemoryNode : public BT::ControlNode
+class PersistentSequenceNode : public BT::ControlNode
 {
 public:
-  SequenceWithBlackboardMemoryNode(const std::string & name, const BT::NodeConfiguration & conf);
+  PersistentSequenceNode(const std::string & name, const BT::NodeConfiguration & conf);
 
-  ~SequenceWithBlackboardMemoryNode() override = default;
+  ~PersistentSequenceNode() override = default;
 
   //! @brief Declare ports
   static BT::PortsList providedPorts()
@@ -58,4 +58,4 @@ private:
 
 }  // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__SEQUENCE_WITH_BLACKBOARD_MEMORY_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__CONTROL__PERSISTENT_SEQUENCE_HPP_

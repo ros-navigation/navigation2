@@ -18,9 +18,9 @@
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "utils/test_dummy_tree_node.hpp"
 #include "utils/get_node_from_tree.hpp"
-#include "nav2_behavior_tree/plugins/control/sequence_with_blackboard_memory.hpp"
+#include "nav2_behavior_tree/plugins/control/persistent_sequence.hpp"
 
-class SequenceWithBlackboardMemoryTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
+class PersistentSequenceTestFixture : public nav2_behavior_tree::BehaviorTreeTestFixture
 {
 public:
   static void SetUpTestCase()
@@ -30,8 +30,8 @@ public:
     config_->blackboard = BT::Blackboard::create();
     config_->blackboard->set("seq_child_idx", 0);
 
-    factory_->registerNodeType<nav2_behavior_tree::SequenceWithBlackboardMemoryNode>(
-      "SequenceWithBlackboardMemory");
+    factory_->registerNodeType<nav2_behavior_tree::PersistentSequenceNode>(
+      "PersistentSequence");
 
     // Register dummy node for testing
     factory_->registerNodeType<nav2_behavior_tree::DummyNode>("DummyNode");
@@ -57,21 +57,21 @@ protected:
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-BT::NodeConfiguration * SequenceWithBlackboardMemoryTestFixture::config_ = nullptr;
+BT::NodeConfiguration * PersistentSequenceTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory>
-SequenceWithBlackboardMemoryTestFixture::factory_ = nullptr;
-std::shared_ptr<BT::Tree> SequenceWithBlackboardMemoryTestFixture::tree_ = nullptr;
+PersistentSequenceTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree> PersistentSequenceTestFixture::tree_ = nullptr;
 
-TEST_F(SequenceWithBlackboardMemoryTestFixture, test_tick)
+TEST_F(PersistentSequenceTestFixture, test_tick)
 {
   // create tree
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <SequenceWithBlackboardMemory current_child_idx="{seq_child_idx}">
+          <PersistentSequence current_child_idx="{seq_child_idx}">
             <AlwaysSuccess/>
-          </SequenceWithBlackboardMemory>
+          </PersistentSequence>
         </BehaviorTree>
       </root>)";
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
@@ -80,18 +80,18 @@ TEST_F(SequenceWithBlackboardMemoryTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
-TEST_F(SequenceWithBlackboardMemoryTestFixture, test_behavior)
+TEST_F(PersistentSequenceTestFixture, test_behavior)
 {
   // create tree
   std::string xml_txt =
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <SequenceWithBlackboardMemory current_child_idx="{seq_child_idx}">
+          <PersistentSequence current_child_idx="{seq_child_idx}">
             <DummyNode/>
             <DummyNode/>
             <DummyNode/>
-          </SequenceWithBlackboardMemory>
+          </PersistentSequence>
         </BehaviorTree>
       </root>)";
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
