@@ -172,7 +172,7 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     get_node_timers_interface(),
     callback_group_);
   tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, true);
 
   // Then load and add the plug-ins to the costmap
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {

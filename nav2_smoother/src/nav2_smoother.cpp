@@ -80,7 +80,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(), get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
 
   std::string costmap_topic, footprint_topic, robot_base_frame;
   double transform_tolerance = 0.1;
