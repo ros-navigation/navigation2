@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.17.1
 ARG DEV_FROM_STAGE=tooler
 ARG EXPORT_FROM_STAGE=builder
 ARG PREP_FROM_STAGE=runner
