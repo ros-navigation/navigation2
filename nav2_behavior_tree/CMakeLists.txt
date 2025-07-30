@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)

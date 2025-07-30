@@ -3,6 +3,7 @@ project(nav2_regulated_pure_pursuit_controller)
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
