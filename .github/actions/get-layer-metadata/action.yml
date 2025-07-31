@@ -1,0 +1,50 @@
+name: "Get Layer Metadata"
+description: "GitHub Action to get layer metadata from Docker Buildx Bake output result"
+author: 'ros-navigation'
+branding:
+  icon: 'layers'
+  color: 'blue'
+
+inputs:
+  metadata:
+    description: 'Build result metadata'
+    required: true
+  load:
+    description: "Load is a shorthand to use local registry"
+    required: false
+    default: 'false'
+
+outputs:
+  metadata:
+    description: 'Layer result metadata'
+    value: ${{ steps.iterate_metadata.outputs.metadata }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Iterate Metadata
+      id: iterate_metadata
+      env:
+        METADATA_INPUT: ${{ inputs.metadata }}
+        LOAD: ${{ inputs.load }}
+      shell: bash
+      run: |
+        set -eo pipefail
+        metadata_output=$METADATA_INPUT
+        for target in $(jq -r 'keys[]' <<< $METADATA_INPUT); do
+          data=$(jq -r ".${target}" <<< $METADATA_INPUT)
+          if [[ $LOAD == 'true' ]]; then
+            image_digest=$(jq -r '."containerimage.config.digest"' <<< $data)
+            layer_digest=$(docker inspect $image_digest | jq -r '.[0].RootFS.Layers[-1]')
+          else
+            image_digest=$(jq -r '."containerimage.digest"' <<< $data)
+            image_name=$(jq -r '."image.name"' <<< $data)
+            layer_digest=$(docker buildx imagetools inspect --raw $image_name@$image_digest | jq -r '.layers[-1].digest')
+          fi
+          metadata_output=$(jq ".${target}.\"layer.digest\" = \"$layer_digest\"" <<< $metadata_output)
+        done
+        {
+          echo "metadata<<EOF"
+          echo $metadata_output
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
