@@ -47,7 +47,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
 
-#define EPSILON 1e-3
+#define EPSILON 1e-5
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
