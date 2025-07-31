@@ -24,9 +24,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"

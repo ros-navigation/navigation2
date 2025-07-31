@@ -20,8 +20,8 @@
 
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav_msgs/msg/path.hpp"

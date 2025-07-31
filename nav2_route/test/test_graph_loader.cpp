@@ -20,7 +20,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "tf2_ros/static_transform_broadcaster.h"
+#include "tf2_ros/static_transform_broadcaster.hpp"
 
 class RclCppFixture
 {

@@ -16,11 +16,11 @@
 #include <cmath>
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "gtest/gtest.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 
 TEST(RobotUtils, LookupExceptionError)
 {

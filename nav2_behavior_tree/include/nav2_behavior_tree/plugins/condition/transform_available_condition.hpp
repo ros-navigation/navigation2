@@ -21,7 +21,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 namespace nav2_behavior_tree
 {

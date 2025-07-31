@@ -24,7 +24,7 @@
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 namespace nav2_collision_monitor
 {
