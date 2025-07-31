@@ -68,7 +68,7 @@ const std::map<state_t, uint16_t> child_indices = {
  *     <!-- ON_PAUSE branch (optional) -->
  *
  *     <!-- ON_RESUME branch (optional) -->
- * </Pause>
+ * </PauseResumeController>
  *
  * The controller starts in RESUMED state, and ticks it until it returns success.
  * When the pause service is called, ON_PAUSE is ticked until completion,
