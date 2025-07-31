@@ -61,9 +61,7 @@ void PointCloud::configure()
   getParameters(source_topic);
 
   const point_cloud_transport::TransportHints hint(transport_type_);
-
   pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(*node);
-
   data_sub_ = pct_->subscribe(
     source_topic, nav2::qos::SensorDataQoS(),
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
@@ -136,6 +134,7 @@ void PointCloud::getParameters(std::string & source_topic)
   nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".min_range", rclcpp::ParameterValue(0.0));
   min_range_ = node->get_parameter(source_name_ + ".min_range").as_double();
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".transport_type", rclcpp::ParameterValue(std::string("raw")));
   transport_type_ = node->get_parameter(source_name_ + ".transport_type").as_string();
 }

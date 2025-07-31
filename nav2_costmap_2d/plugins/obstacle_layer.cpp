@@ -289,8 +289,32 @@ void ObstacleLayer::onInitialize()
           tf_filter_tolerance));
 
     } else {
-      auto sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<point_cloud_transport::SubscriberFilter> sub;
+      #else
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+        rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
+
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
         *node, topic, transport_type, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
+      #else
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+      #endif
+
       sub->unsubscribe();
 
       if (inf_is_valid) {
