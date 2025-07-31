@@ -59,17 +59,17 @@ public:
   /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
    */
-  void clearRegion(double reset_distance, bool invert);
+  void clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears the region around a specific pose
    */
-  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance);
+  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears all layers
    */
-  void clearEntirely();
+  void clearEntirely(const std::vector<std::string> & plugins);
 
 private:
   // The Logger object for logging
@@ -126,13 +126,17 @@ private:
    * @brief  Function used to clear a given costmap layer
    */
   void clearLayerRegion(
-    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
-    bool invert);
+    std::shared_ptr<CostmapLayer> & costmap,
+    double pose_x, double pose_y, double reset_distance, bool invert);
 
   /**
    * @brief Get the robot's position in the costmap using the master costmap
    */
   bool getPosition(double & x, double & y) const;
+
+  bool shouldClearLayer(
+    const std::shared_ptr<Layer> & layer,
+    const std::vector<std::string> & plugins) const;
 };
 
 }  // namespace nav2_costmap_2d
