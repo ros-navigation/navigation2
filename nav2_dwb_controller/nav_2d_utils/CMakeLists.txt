@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav_2d_utils)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)

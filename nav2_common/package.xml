@@ -7,6 +7,7 @@
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
   <license>Apache-2.0</license>
 
+  <depend>backward_ros</depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
   <depend>osrf_pycommon</depend>

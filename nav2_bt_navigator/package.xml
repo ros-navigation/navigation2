@@ -11,6 +11,7 @@
   <build_depend>nav2_common</build_depend>
 
   <depend>ament_index_cpp</depend>
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>nav2_core</depend>

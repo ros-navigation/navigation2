@@ -12,6 +12,7 @@
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>libomp-dev</depend>
   <depend>nav2_common</depend>

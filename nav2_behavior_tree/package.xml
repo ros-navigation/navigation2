@@ -12,6 +12,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>action_msgs</depend>
+  <depend>backward_ros</depend>
   <depend>behaviortree_cpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_common</depend>

@@ -12,6 +12,7 @@
 
   <depend>ament_index_cpp</depend>
   <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>

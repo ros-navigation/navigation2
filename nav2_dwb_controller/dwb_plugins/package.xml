@@ -12,6 +12,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>dwb_core</depend>
   <depend>dwb_msgs</depend>
   <depend>geometry_msgs</depend>

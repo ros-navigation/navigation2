@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_bringup)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(navigation2 REQUIRED)
 
