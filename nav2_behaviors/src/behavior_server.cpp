@@ -87,7 +87,7 @@ BehaviorServer::on_configure(const rclcpp_lifecycle::State & state)
     get_node_base_interface(),
     get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
 
   behavior_types_.resize(behavior_ids_.size());
   if (!loadBehaviorPlugins()) {
