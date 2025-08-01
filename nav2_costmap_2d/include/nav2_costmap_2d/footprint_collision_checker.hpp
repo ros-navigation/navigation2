@@ -53,6 +53,10 @@ public:
    */
   double footprintCost(const Footprint & footprint);
   /**
+   * @brief Find the footprint cost for entire footprint area using full coverage
+   */
+  double footprintAreaCost(const Footprint & footprint);
+  /**
    * @brief Find the footprint cost a a post with an unoriented footprint
    */
   double footprintCostAtPose(double x, double y, double theta, const Footprint & footprint);
@@ -81,6 +85,17 @@ public:
   }
 
 protected:
+  /**
+   * @brief Check if a point is inside the footprint polygon
+   * @param x X coordinate in world frame
+   * @param y Y coordinate in world frame
+   * @param footprint Footprint polygon
+   * @return True if point is inside footprint
+   */
+  bool isPointInFootprint(
+    double x, double y,
+    const Footprint & footprint);
+
   CostmapT costmap_;
 };
 
