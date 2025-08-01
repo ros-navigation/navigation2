@@ -404,6 +404,16 @@
     <Control ID="RoundRobin"/>
 
     <Control ID="NonblockingSequence"/>
+
+    <Control ID="PauseResumeController">
+      <input_port name="pause_service_name">Service to call to pause</input_port>
+      <input_port name="resume_service_name">Service to call to resume</input_port>
+    </Control>
+
+    <Control ID="PersistentSequence">
+      <bidirectional_port name="current_child_idx">Index of the child to execute</bidirectional_port>
+    </Control>
+
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">
       <input_port name="hz">Rate</input_port>
