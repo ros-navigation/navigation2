@@ -45,7 +45,11 @@ PointCloud::PointCloud(
 PointCloud::~PointCloud()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
+  #if RCLCPP_VERSION_GTE(30, 0, 0)
   data_sub_.shutdown();
+  #else
+  data_sub_.reset();
+  #endif
 }
 
 void PointCloud::configure()
@@ -60,6 +64,7 @@ void PointCloud::configure()
 
   getParameters(source_topic);
 
+  #if RCLCPP_VERSION_GTE(30, 0, 0)
   const point_cloud_transport::TransportHints hint(transport_type_);
   pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(*node);
   data_sub_ = pct_->subscribe(
@@ -67,6 +72,12 @@ void PointCloud::configure()
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
     {}, &hint
   );
+  #else
+  data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
+    source_topic,
+    std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
+    nav2::qos::SensorDataQoS());
+  #endif
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
