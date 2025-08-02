@@ -289,18 +289,25 @@ void ObstacleLayer::onInitialize()
           tf_filter_tolerance));
 
     } else {
-      // For Kilted and Older Support from Message Filters API change
-      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      // For Rolling and Newer Support from PointCloudTransport API change
+      #if RCLCPP_VERSION_GTE(30, 0, 0)
       std::shared_ptr<point_cloud_transport::SubscriberFilter> sub;
+      // For Kilted and Older Support from Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub;
       #else
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
         rclcpp_lifecycle::LifecycleNode>> sub;
       #endif
 
-      // For Kilted compatibility in Message Filters API change
-      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      // For Rolling compatibility in PointCloudTransport API change
+      #if RCLCPP_VERSION_GTE(30, 0, 0)
       sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
         *node, topic, transport_type, custom_qos_profile, sub_opt);
+        // For Kilted compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+        node, topic, custom_qos_profile, sub_opt);
       // For Jazzy compatibility in Message Filters API change
       #elif RCLCPP_VERSION_GTE(29, 0, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
