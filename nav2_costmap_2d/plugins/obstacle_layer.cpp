@@ -304,7 +304,7 @@ void ObstacleLayer::onInitialize()
       #if RCLCPP_VERSION_GTE(30, 0, 0)
       sub = std::make_shared<point_cloud_transport::SubscriberFilter>(
         *node, topic, transport_type, custom_qos_profile, sub_opt);
-        // For Kilted compatibility in Message Filters API change
+      // For Kilted compatibility in Message Filters API change
       #elif RCLCPP_VERSION_GTE(29, 6, 0)
       sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
         node, topic, custom_qos_profile, sub_opt);
