@@ -99,9 +99,13 @@ protected:
   // ----- Variables -----
 
   /// @brief PointCloud data subscriber
+  #if RCLCPP_VERSION_GTE(30, 0, 0)
   std::shared_ptr<point_cloud_transport::PointCloudTransport> pct_;
   point_cloud_transport::Subscriber data_sub_;
   std::string transport_type_;
+  #else
+  nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+  #endif
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;
