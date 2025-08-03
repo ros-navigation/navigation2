@@ -83,7 +83,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   // Create odom subscriber for backward blind docking
   std::string odom_topic;
   get_parameter("odom_topic", odom_topic);
-  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
+  odom_sub_ = std::make_unique<nav2_util::OdomSubscriber>(node, odom_topic);
 
   // Create the action servers for dock / undock
   docking_action_server_ = node->create_action_server<DockRobot>(
@@ -464,7 +464,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
     }
 
     auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    current_vel->twist.angular.z = odom_sub_->getTwist().theta;
+    current_vel->twist.angular.z = odom_sub_->getTwist().angular.z;
 
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header = robot_pose.header;

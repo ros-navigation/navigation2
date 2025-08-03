@@ -11,8 +11,6 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav_2d_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -42,9 +40,6 @@ target_link_libraries(${library_name} PUBLIC
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
-  ${nav_2d_msgs_TARGETS}
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -86,7 +81,6 @@ target_link_libraries(simple_progress_checker PUBLIC
 )
 target_link_libraries(simple_progress_checker PRIVATE
   nav2_util::nav2_util_core
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 
@@ -107,7 +101,6 @@ target_link_libraries(pose_progress_checker PUBLIC
 target_link_libraries(pose_progress_checker PRIVATE
   angles::angles
   nav2_util::nav2_util_core
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 
@@ -218,8 +211,6 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav2_msgs
   nav2_util
-  nav_2d_msgs
-  nav_2d_utils
   pluginlib
   rclcpp
   rclcpp_lifecycle

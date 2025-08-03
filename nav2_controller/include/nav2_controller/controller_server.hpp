@@ -29,10 +29,10 @@
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
-#include "nav_2d_utils/odom_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/odom_subscriber.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -208,12 +208,12 @@ protected:
    * @param Twist The current Twist from odometry
    * @return Twist Twist after thresholds applied
    */
-  nav_2d_msgs::msg::Twist2D getThresholdedTwist(const nav_2d_msgs::msg::Twist2D & twist)
+  geometry_msgs::msg::Twist getThresholdedTwist(const geometry_msgs::msg::Twist & twist)
   {
-    nav_2d_msgs::msg::Twist2D twist_thresh;
-    twist_thresh.x = getThresholdedVelocity(twist.x, min_x_velocity_threshold_);
-    twist_thresh.y = getThresholdedVelocity(twist.y, min_y_velocity_threshold_);
-    twist_thresh.theta = getThresholdedVelocity(twist.theta, min_theta_velocity_threshold_);
+    geometry_msgs::msg::Twist twist_thresh;
+    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, min_x_velocity_threshold_);
+    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, min_y_velocity_threshold_);
+    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, min_theta_velocity_threshold_);
     return twist_thresh;
   }
 
@@ -233,7 +233,7 @@ protected:
   std::unique_ptr<nav2::NodeThread> costmap_thread_;
 
   // Publishers and subscribers
-  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+  std::unique_ptr<nav2_util::OdomSubscriber> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
 

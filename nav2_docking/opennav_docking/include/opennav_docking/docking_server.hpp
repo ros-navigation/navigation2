@@ -27,7 +27,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
-#include "nav_2d_utils/odom_subscriber.hpp"
+#include "nav2_util/odom_subscriber.hpp"
 #include "opennav_docking/controller.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
@@ -264,7 +264,7 @@ protected:
   rclcpp::Time action_start_time_;
 
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
-  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+  std::unique_ptr<nav2_util::OdomSubscriber> odom_sub_;
   typename DockingActionServer::SharedPtr docking_action_server_;
   typename UndockingActionServer::SharedPtr undocking_action_server_;
 
