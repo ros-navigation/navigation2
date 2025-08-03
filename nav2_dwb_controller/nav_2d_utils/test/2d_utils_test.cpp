@@ -64,7 +64,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("twod_utils_test_node");
   rclcpp::Time time = node->now();
-  std::string frame = "frame_common";
+  std::string frame = "map";
 
   tf2::Quaternion quat1, quat2;
   quat1.setRPY(0, 0, 0.123);
