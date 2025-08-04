@@ -63,6 +63,9 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
   declare_parameter("costmap_update_timeout", 0.30);  // 300ms
 
+  declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
+  declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
+
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()},
@@ -123,8 +126,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  std::string speed_limit_topic;
+  std::string speed_limit_topic, odom_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
+  get_parameter("odom_topic", odom_topic);
+  double odom_duration;
+  get_parameter("odom_duration", odom_duration);
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
@@ -217,7 +223,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
-  odom_sub_ = std::make_unique<nav2_util::OdomSubscriber>(node);
+  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
   double costmap_update_timeout_dbl;
@@ -622,7 +628,7 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::FailedToMakeProgress("Failed to make progress");
   }
 
-  geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getTwist());
+  geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
@@ -790,7 +796,7 @@ bool ControllerServer::isGoalReached()
     return false;
   }
 
-  geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getTwist());
+  geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::PoseStamped transformed_end_pose;
   nav2_util::transformPoseInTargetFrame(

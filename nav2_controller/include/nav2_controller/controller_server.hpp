@@ -32,7 +32,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/odom_subscriber.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -233,7 +233,7 @@ protected:
   std::unique_ptr<nav2::NodeThread> costmap_thread_;
 
   // Publishers and subscribers
-  std::unique_ptr<nav2_util::OdomSubscriber> odom_sub_;
+  std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
 
