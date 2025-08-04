@@ -16,6 +16,8 @@
 #ifndef NAV2_UTIL__NODE_UTILS_HPP_
 #define NAV2_UTIL__NODE_UTILS_HPP_
 
+#include <rclcpp/node_interfaces/node_interfaces.hpp>
+#include <rclcpp/node_interfaces/node_parameters_interface.hpp>
 #include <vector>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
@@ -102,6 +104,21 @@ void declare_parameter_if_not_declared(
     node->declare_parameter(parameter_name, default_value, parameter_descriptor);
   }
 }
+
+/// Declares static ROS2 parameter and sets it to a given value if it was not already declared
+/* Declares static ROS2 parameter and sets it to a given value
+ * if it was not already declared.
+ *
+ * \param[in] node A node in which given parameter to be declared
+ * \param[in] parameter_name The name of parameter
+ * \param[in] default_value Parameter value to initialize with
+ * \param[in] parameter_descriptor Parameter descriptor (optional)
+ */
+void declare_parameter_if_not_declared(
+  rclcpp::node_interfaces::NodeInterfaces<rclcpp::node_interfaces::NodeParametersInterface> node,
+  const std::string & parameter_name,
+  const rclcpp::ParameterValue & default_value,
+  const ParameterDescriptor & parameter_descriptor = ParameterDescriptor());
 
 /// Declares static ROS2 parameter with given type if it was not already declared
 /* Declares static ROS2 parameter with given type if it was not already declared.
