@@ -19,7 +19,6 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-
 #include <opencv2/imgproc.hpp>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"

@@ -229,7 +229,7 @@ TEST(collision_footprint, to_point_32) {
   // Convert to Point32 format
   geometry_msgs::msg::Point32 p32;
   p32 = nav2_costmap_2d::toPoint32(p);
-  
+
   // Verify all coordinates are preserved
   EXPECT_NEAR(p.x, p32.x, 1e-5);
   EXPECT_NEAR(p.y, p32.y, 1e-5);
@@ -268,14 +268,14 @@ TEST(collision_footprint, to_polygon) {
 // Verifies that string-based footprint configuration works correctly
 TEST(collision_footprint, make_footprint_from_string) {
   std::vector<geometry_msgs::msg::Point> footprint;
-  
+
   // Parse a valid footprint string with scientific notation
   bool result = nav2_costmap_2d::makeFootprintFromString(
     "[[1, 2.2], [.3, -4e4], [-.3, -4e4], [-1, 2.2]]", footprint);
-  
+
   EXPECT_EQ(result, true);
   EXPECT_EQ(4u, footprint.size());
-  
+
   // Verify all coordinate values are parsed correctly
   EXPECT_NEAR(footprint[0].x, 1.0, 1e-5);
   EXPECT_NEAR(footprint[0].y, 2.2, 1e-5);
@@ -291,7 +291,7 @@ TEST(collision_footprint, make_footprint_from_string) {
 // Verifies that parsing fails gracefully with invalid input
 TEST(collision_footprint, make_footprint_from_string_parse_error) {
   std::vector<geometry_msgs::msg::Point> footprint;
-  
+
   // Try to parse a malformed string (missing closing bracket)
   bool result = nav2_costmap_2d::makeFootprintFromString(
     "[[bad_string", footprint);
@@ -302,7 +302,7 @@ TEST(collision_footprint, make_footprint_from_string_parse_error) {
 // Verifies that polygons with insufficient vertices are rejected
 TEST(collision_footprint, make_footprint_from_string_two_points_error) {
   std::vector<geometry_msgs::msg::Point> footprint;
-  
+
   // Try to parse footprint with only 2 points (need at least 3 for polygon)
   bool result = nav2_costmap_2d::makeFootprintFromString(
     "[[1, 2.2], [.3, -4e4]", footprint);
@@ -313,7 +313,7 @@ TEST(collision_footprint, make_footprint_from_string_two_points_error) {
 // Verifies that points with extra coordinates are rejected
 TEST(collision_footprint, make_footprint_from_string_not_pairs) {
   std::vector<geometry_msgs::msg::Point> footprint;
-  
+
   // Try to parse footprint with a point having 3 coordinates (should be 2)
   bool result = nav2_costmap_2d::makeFootprintFromString(
     "[[1, 2.2], [.3, -4e4], [-.3, -4e4], [-1, 2.2, 5.6]]", footprint);
@@ -463,7 +463,7 @@ TEST(collision_footprint, test_full_area_check_rotated_footprint) {
 
   // Test with 90-degree rotation (M_PI/2 radians)
   // The tall rectangle becomes a wide rectangle, covering the obstacle
-  auto rotated_cost = collision_checker.footprintCostAtPose(5.0, 5.0, M_PI/2, footprint, true);
+  auto rotated_cost = collision_checker.footprintCostAtPose(5.0, 5.0, M_PI / 2, footprint, true);
   EXPECT_GT(rotated_cost, 0.0);  // Should detect the obstacle
 }
 
