@@ -53,6 +53,7 @@ public:
     const std::string & action_name,
     const std::vector<std::string> & plugin_lib_names,
     const std::string & default_bt_xml_filename,
+    const std::vector<std::string> & search_directories,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
     OnPreemptCallback on_preempt_callback,
@@ -103,6 +104,16 @@ public:
    * if something went wrong, and previous BT is maintained
    */
   bool loadBehaviorTree(const std::string & bt_xml_filename = "");
+
+  /**
+   * @brief Replace current BT with another one
+   * @param bt_xml_filename The file containing the new BT, uses default filename if empty
+   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
+   * if something went wrong, and previous BT is maintained
+   */
+  bool loadBehaviorTreesRecursive(
+    const std::string & bt_xml_filename = "",
+    const std::vector<std::string> & search_directories = {});
 
   /**
    * @brief Getter function for BT Blackboard
@@ -245,6 +256,7 @@ protected:
   // The XML file that contains the Behavior Tree to create
   std::string current_bt_xml_filename_;
   std::string default_bt_xml_filename_;
+  std::vector<std::string> search_directories_;
 
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;

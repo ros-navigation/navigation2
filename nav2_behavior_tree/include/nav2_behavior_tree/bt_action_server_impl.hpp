@@ -39,12 +39,14 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   const std::string & action_name,
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
+  const std::vector<std::string> & search_directories,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback)
 : action_name_(action_name),
   default_bt_xml_filename_(default_bt_xml_filename),
+  search_directories_(search_directories),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
@@ -202,7 +204,7 @@ template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::on_activate()
 {
   resetInternalError();
-  if (!loadBehaviorTree(default_bt_xml_filename_)) {
+  if (!loadBehaviorTreesRecursive(default_bt_xml_filename_, search_directories_)) {
     RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
     return false;
   }
@@ -290,6 +292,83 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   current_bt_xml_filename_ = filename;
 
   // Enable monitoring with Groot2
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
+
+  return true;
+}
+
+template<class ActionT, class NodeT>
+bool BtActionServer<ActionT, NodeT>::loadBehaviorTreesRecursive(
+  const std::string & bt_xml_filename,
+  const std::vector<std::string> & search_directories)
+{
+  namespace fs = std::filesystem;
+
+  // Empty filename is default for backward compatibility
+  auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
+
+  // Use previous BT if it is the existing one and always reload flag is not set to true
+  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == filename) {
+    RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
+    return true;
+  }
+
+  // Reset any existing Groot2 monitoring
+  bt_->resetGrootMonitor();
+
+  std::ifstream xml_file(filename);
+  if (!xml_file.good()) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Couldn't open BT XML file: " + filename);
+    return false;
+  }
+
+  const auto canonical_main_bt = fs::canonical(filename);
+
+  // Register all XML behavior Subtrees found in the given directories
+  for (const auto & directory : search_directories) {
+    try {
+      for (const auto & entry : fs::directory_iterator(directory)) {
+        if (entry.path().extension() == ".xml") {
+          // Skip registering the main tree file
+          if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
+            continue;
+          }
+          bt_->registerTreeFromFile(entry.path().string());
+        }
+      }
+    } catch (const std::exception & e) {
+      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+        "Exception reading behavior tree directory: " + std::string(e.what()));
+      return false;
+    }
+  }
+
+  // Try to load the main BT tree
+  try {
+    tree_ = bt_->createTreeFromFile(filename, blackboard_);
+    for (auto & subtree : tree_.subtrees) {
+      auto & blackboard = subtree->blackboard;
+      blackboard->set("node", client_node_);
+      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
+      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout",
+          wait_for_service_timeout_);
+    }
+  } catch (const std::exception & e) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when creating BT tree from file: ") + e.what());
+    return false;
+  }
+
+  // Optional logging and monitoring
+  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+
   if (enable_groot_monitoring_) {
     bt_->addGrootMonitoring(&tree_, groot_server_port_);
     RCLCPP_DEBUG(
