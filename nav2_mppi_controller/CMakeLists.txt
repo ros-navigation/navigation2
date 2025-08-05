@@ -89,7 +89,6 @@ target_include_directories(mppi_critics
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
-  mppi_controller
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
