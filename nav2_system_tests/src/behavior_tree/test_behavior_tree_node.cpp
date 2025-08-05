@@ -71,53 +71,98 @@ public:
     }
   }
 
-  bool loadBehaviorTree(const std::string & filename)
+  BT::Blackboard::Ptr setBlackboardVariables()
   {
-    // Read the input BT XML from the specified file into a string
-    std::ifstream xml_file(filename);
-
-    if (!xml_file.good()) {
-      RCLCPP_ERROR(node_->get_logger(), "Couldn't open input XML file: %s", filename.c_str());
-      return false;
-    }
-
-    std::stringstream buffer;
-    buffer << xml_file.rdbuf();
-    xml_file.close();
-    std::string xml_string = buffer.str();
-    // Create the blackboard that will be shared by all of the nodes in the tree
+     // Create and populate the blackboard
     blackboard = BT::Blackboard::create();
+    blackboard->set("node", node_);
+    blackboard->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(20));
+    blackboard->set<std::chrono::milliseconds>("bt_loop_duration", std::chrono::milliseconds(10));
+    blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout",
+             std::chrono::milliseconds(1000));
+    blackboard->set("tf_buffer", tf_);
+    blackboard->set("initial_pose_received", false);
+    blackboard->set("number_recoveries", 0);
+    blackboard->set("odom_smoother", odom_smoother_);
 
-    // Put items on the blackboard
-    blackboard->set("node", node_);  // NOLINT
-    blackboard->set<std::chrono::milliseconds>(
-      "server_timeout", std::chrono::milliseconds(20));  // NOLINT
-    blackboard->set<std::chrono::milliseconds>(
-      "bt_loop_duration", std::chrono::milliseconds(10));  // NOLINT
-    blackboard->set<std::chrono::milliseconds>(
-      "wait_for_service_timeout", std::chrono::milliseconds(1000));  // NOLINT
-    blackboard->set("tf_buffer", tf_);  // NOLINT
-    blackboard->set("initial_pose_received", false);  // NOLINT
-    blackboard->set("number_recoveries", 0);  // NOLINT
-    blackboard->set("odom_smoother", odom_smoother_);  // NOLINT
-
-    // set dummy goal on blackboard
+    // Create dummy goal
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
     goal.header.frame_id = "map";
-    goal.pose.position.x = 0.0;
-    goal.pose.position.y = 0.0;
-    goal.pose.position.z = 0.0;
-    goal.pose.orientation.x = 0.0;
-    goal.pose.orientation.y = 0.0;
-    goal.pose.orientation.z = 0.0;
-    goal.pose.orientation.w = 1.0;
+    blackboard->set("goal", goal);
+    return blackboard;
+  }
 
-    blackboard->set("goal", goal);  // NOLINT
+  bool behaviorTreeFileValidation(
+    const std::string & filename)
+  {
+    std::ifstream xml_file(filename);
+    if (!xml_file.good()) {
+      RCLCPP_ERROR(node_->get_logger(),
+        "Couldn't open BT XML file: %s", filename.c_str());
+      return false;
+    }
+    return true;
+  }
+
+
+  bool loadBehaviorTreesRecursive(
+    const std::string & filename,
+    const std::vector<std::string> & search_dirs)
+  {
+
+    if (!behaviorTreeFileValidation(filename)) {
+      return false;
+    }
+
+    const auto canonical_main_bt = fs::canonical(filename);
+
+    // Register all XML behavior Subtrees found in the given directories
+    for (const auto & directory : search_directories) {
+      try {
+        for (const auto & entry : fs::directory_iterator(directory)) {
+          if (entry.path().extension() == ".xml") {
+          // Skip registering the main tree file
+            if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
+              continue;
+            }
+            bt_->registerTreeFromFile(entry.path().string());
+          }
+        }
+      } catch (const std::exception & e) {
+        RCLCPP_ERROR(node_->get_logger(),
+          "Exception reading behavior tree directory: %s", e.what());
+        return false;
+      }
+    }
+
+    // Create and populate the blackboard
+    blackboard = setBlackboardVariables();
+
+    // Build the tree from the XML string
+    try {
+      tree = factory_.createTreeFromFile(filename, blackboard);
+    } catch (BT::RuntimeError & exp) {
+      RCLCPP_ERROR(node_->get_logger(), "Failed to create BT from %s: %s", filename.c_str(),
+          exp.what());
+      return false;
+    }
+
+    return true;
+  }
+
+  bool loadBehaviorTree(const std::string & filename)
+  {
+    if (!behaviorTreeFileValidation(filename)) {
+      return false;
+    }
+
+    // Create and populate the blackboard
+    blackboard = setBlackboardVariables();
 
     // Create the Behavior Tree from the XML input
     try {
-      tree = factory_.createTreeFromText(xml_string, blackboard);
+      tree = factory_.createTreeFromFile(filename, blackboard);
     } catch (BT::RuntimeError & exp) {
       RCLCPP_ERROR(node_->get_logger(), "%s: %s", filename.c_str(), exp.what());
       return false;
@@ -205,6 +250,29 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
         std::cout << entry.path().string() << std::endl;
         EXPECT_EQ(bt_handler->loadBehaviorTree(entry.path().string()), true);
       }
+    }
+  }
+}
+
+TEST_F(BehaviorTreeTestFixture, TestBTXMLFilesRecursiveLoad)
+{
+  // Get the BT root directory
+  std::filesystem::path root_dir =
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  root_dir /= "behavior_trees";
+
+  ASSERT_TRUE(std::filesystem::exists(root_dir));
+  ASSERT_TRUE(std::filesystem::is_directory(root_dir));
+
+  std::vector<std::string> search_dirs = {root_dir.string()};
+
+  for (auto const & entry : std::filesystem::recursive_directory_iterator(root_dir)) {
+    if (entry.is_regular_file() && entry.path().extension() == ".xml") {
+      std::string main_bt = entry.path().string();
+      std::cout << "Testing BT file: " << main_bt << std::endl;
+
+      EXPECT_TRUE(bt_handler->loadBehaviorTreesRecursive(main_bt, search_dirs))
+        << "Failed to load: " << main_bt;
     }
   }
 }
