@@ -20,29 +20,17 @@
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-const float UNKNOWN_COST = 255.0;
-const float OCCUPIED_COST = 254.0;
-const float INSCRIBED_COST = 253.0;
-const float MAX_NON_OBSTACLE_COST = 252.0;
-const float FREE_COST = 0;
 
 namespace nav2_mppi_controller
 {
 
 /**
  * @struct CollisionResult
- * @brief Result structure for batch collision checking
+ * @brief Result of collision checking
  */
-enum class CollisionType
-{
-  NONE = 0,
-  POINT_COST = 1,
-  FOOTPRINT_COST = 2,
-  SWEPT_AREA_COST = 3
-};
-
 struct CollisionResult
 {
   bool in_collision;

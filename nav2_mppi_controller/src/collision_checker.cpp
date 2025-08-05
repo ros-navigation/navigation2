@@ -101,12 +101,12 @@ CollisionResult MPPICollisionChecker::inCollision(
 
     result.center_cost[i] = current_center_cost;
 
-    if (current_center_cost == UNKNOWN_COST && !traverse_unknown) {
+    if (current_center_cost == nav2_costmap_2d::NO_INFORMATION && !traverse_unknown) {
       result.in_collision = true;
       return result;
     }
 
-    if (current_center_cost >= INSCRIBED_COST) {
+    if (current_center_cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
       result.in_collision = true;
       return result;
     }
@@ -162,23 +162,23 @@ CollisionResult MPPICollisionChecker::inCollision(
     // Store footprint cost in result
     result.footprint_cost[i] = footprint_cost;
 
-    if (footprint_cost == UNKNOWN_COST && !traverse_unknown) {
+    if (footprint_cost == nav2_costmap_2d::NO_INFORMATION && !traverse_unknown) {
       result.in_collision = true;
       return result;
     }
 
-    if (footprint_cost >= OCCUPIED_COST) {
+    if (footprint_cost >= nav2_costmap_2d::LETHAL_OBSTACLE) {
       result.in_collision = true;
       return result;
     }
 
-    // Mark for swept area checking if footprint cost is INSCRIBED_COST
-    if (footprint_cost == INSCRIBED_COST) {
+    // Mark for swept area checking if footprint cost is INSCRIBED_INFLATED_OBSTACLE
+    if (footprint_cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
       needs_swept_area_check[i] = true;
     }
   }
 
-  // Step 3: Check swept area for consecutive poses with footprint cost INSCRIBED_COST
+  // Step 3: Check swept area for consecutive poses with footprint cost INSCRIBED_INFLATED_OBSTACLE
   // Find consecutive sequences of poses that need swept area checking
   std::vector<std::vector<size_t>> consecutive_sequences;
   std::vector<size_t> current_sequence;
@@ -230,12 +230,12 @@ CollisionResult MPPICollisionChecker::inCollision(
     // Check swept area cost using full area checking
     float swept_area_cost = static_cast<float>(footprintCost(convex_hull, true));
 
-    if (swept_area_cost == UNKNOWN_COST && !traverse_unknown) {
+    if (swept_area_cost == nav2_costmap_2d::NO_INFORMATION && !traverse_unknown) {
       result.in_collision = true;
       return result;
     }
 
-    if (swept_area_cost >= OCCUPIED_COST) {
+    if (swept_area_cost >= nav2_costmap_2d::LETHAL_OBSTACLE) {
       result.in_collision = true;
       return result;
     }
