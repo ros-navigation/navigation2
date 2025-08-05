@@ -166,7 +166,7 @@ void CostCritic::score(CriticData & data)
       for (size_t k = 0; k < collision_result.footprint_cost.size(); ++k) {
         // For optimization purposes, we don't always have the footprint cost
         // but we still use it when available to staw away from collision more conservatively
-        float cost = collision_result.footprint_cost[k] != -1.0f ? 
+        float cost = collision_result.footprint_cost[k] != -1.0f ?
           collision_result.footprint_cost[k] : collision_result.center_cost[k];
 
         if (cost >= static_cast<float>(near_collision_cost_)) {
