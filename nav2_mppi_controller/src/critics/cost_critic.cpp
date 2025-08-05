@@ -120,7 +120,7 @@ void CostCritic::score(CriticData & data)
     costmap_ros_->getUseRadius(),
     inflation_layer_name_);
 
-  // Batch collision checking using new vectorized function
+  // Batch collision checking
   for (int i = 0; i < strided_traj_rows; ++i) {
     bool trajectory_collide = false;
     float & traj_cost = repulsive_cost(i);
@@ -154,7 +154,7 @@ void CostCritic::score(CriticData & data)
       continue;
     }
 
-    // Perform batch collision checking using yaw angles
+    // Perform batch collision checking
     auto collision_result = collision_checker_->inCollision(
       x_coords, y_coords, yaw_angles, is_tracking_unknown_);
 
@@ -162,7 +162,6 @@ void CostCritic::score(CriticData & data)
       traj_cost = collision_cost_;
       trajectory_collide = true;
     } else {
-      // Let near-collision trajectory points be punished severely
       for (size_t k = 0; k < collision_result.footprint_cost.size(); ++k) {
         // For optimization purposes, we don't always have the footprint cost
         // but we still use it when available to staw away from collision more conservatively

@@ -84,8 +84,6 @@ protected:
 
   std::unique_ptr<nav2_mppi_controller::MPPICollisionChecker> collision_checker_;
   float possible_collision_cost_;
-
-
   bool consider_footprint_{true};
   bool is_tracking_unknown_{true};
   float collision_cost_{0.0f};

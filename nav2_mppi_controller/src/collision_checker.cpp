@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
-#include "nav2_mppi_controller/collision_checker.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
 #include <algorithm>
 #include <cmath>
+
+#include "nav2_mppi_controller/collision_checker.hpp"
+#include "nav2_costmap_2d/inflation_layer.hpp"
+
 
 namespace nav2_mppi_controller
 {
@@ -75,6 +77,7 @@ CollisionResult MPPICollisionChecker::inCollision(
 
   // Check if all vectors have the same size
   if (x.size() != y.size() || x.size() != yaw.size()) {
+    RCLCPP_ERROR(logger_, "Unexpected size of input vectors for collision checking");
     result.in_collision = true;
     return result;
   }

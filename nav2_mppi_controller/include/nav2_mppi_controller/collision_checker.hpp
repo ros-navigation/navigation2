@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
