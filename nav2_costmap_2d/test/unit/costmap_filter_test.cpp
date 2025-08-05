@@ -21,7 +21,7 @@
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/costmap_filter.hpp"
@@ -41,7 +41,7 @@ public:
   // API coverage
   void initializeFilter(const std::string &) {}
   void process(
-    nav2_costmap_2d::Costmap2D &, int, int, int, int, const geometry_msgs::msg::Pose2D &)
+    nav2_costmap_2d::Costmap2D &, int, int, int, int, const geometry_msgs::msg::Pose &)
   {}
   void resetFilter() {}
 };

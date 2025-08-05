@@ -22,8 +22,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 
 namespace nav2_map_server
@@ -54,11 +54,11 @@ inline std::string unparseUUID(const unsigned char * uuid)
  */
 template<typename ValT>
 inline rclcpp::Parameter getParameter(
-  nav2_util::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   const std::string & param_name,
   const ValT & default_val)
 {
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, param_name, rclcpp::ParameterValue(default_val));
   return node->get_parameter(param_name);
 }
@@ -73,11 +73,11 @@ inline rclcpp::Parameter getParameter(
  */
 template<>
 inline rclcpp::Parameter getParameter<rclcpp::ParameterType>(
-  nav2_util::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   const std::string & param_name,
   const rclcpp::ParameterType & val_type)
 {
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, param_name, val_type);
   return node->get_parameter(param_name);
 }

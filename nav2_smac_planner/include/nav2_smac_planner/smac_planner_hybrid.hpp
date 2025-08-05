@@ -30,9 +30,9 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
-#include "tf2/utils.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "tf2/utils.hpp"
 
 namespace nav2_smac_planner
 {
@@ -58,7 +58,7 @@ public:
    * @param costmap_ros Costmap2DROS object
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -91,7 +91,7 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult
@@ -123,13 +123,17 @@ protected:
   bool _debug_visualizations;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  GoalHeadingMode _goal_heading_mode;
+  int _coarse_search_resolution;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    _smoothed_footprints_publisher;
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   std::mutex _mutex;
-  rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
+  nav2::LifecycleNode::WeakPtr _node;
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;

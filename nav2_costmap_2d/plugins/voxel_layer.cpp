@@ -64,6 +64,7 @@ void VoxelLayer::onInitialize()
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(true));
+  declareParameter("min_obstacle_height", rclcpp::ParameterValue(0.0));
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
   declareParameter("z_voxels", rclcpp::ParameterValue(10));
   declareParameter("origin_z", rclcpp::ParameterValue(0.0));
@@ -80,6 +81,7 @@ void VoxelLayer::onInitialize()
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   node->get_parameter(name_ + "." + "z_voxels", size_z_);
   node->get_parameter(name_ + "." + "origin_z", origin_z_);
@@ -92,16 +94,14 @@ void VoxelLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
   combination_method_ = combination_method_from_int(combination_method_param);
 
-  auto custom_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable();
-
   if (publish_voxel_) {
     voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", custom_qos);
+      "voxel_grid", nav2::qos::LatchedPublisherQoS());
     voxel_pub_->on_activate();
   }
 
   clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
-    "clearing_endpoints", custom_qos);
+    "clearing_endpoints", nav2::qos::LatchedPublisherQoS());
   clearing_endpoints_pub_->on_activate();
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
@@ -195,6 +195,11 @@ void VoxelLayer::updateBounds(
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+      // if the obstacle is too low, we won't add it
+      if (*iter_z < min_obstacle_height_) {
+        continue;
+      }
+
       // if the obstacle is too high or too far away from the robot we won't add it
       if (*iter_z > max_obstacle_height_) {
         continue;
@@ -319,7 +324,7 @@ void VoxelLayer::raytraceFreespace(
   sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
   sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
-  // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+  // we can pre-compute the endpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
   double map_end_y = origin_y_ + getSizeInMetersY();
   double map_end_z = origin_z_ + getSizeInMetersZ();
@@ -344,31 +349,47 @@ void VoxelLayer::raytraceFreespace(
     double b = wpy - oy;
     double c = wpz - oz;
     double t = 1.0;
+    bool wp_outside = false;
 
     // we can only raytrace to a maximum z height
     if (wpz > map_end_z) {
       // we know we want the vector's z value to be max_z
       t = std::max(0.0, std::min(t, (map_end_z - 0.01 - oz) / c));
+      wp_outside = true;
     } else if (wpz < origin_z_) {
       // and we can only raytrace down to the floor
       // we know we want the vector's z value to be 0.0
       t = std::min(t, (origin_z_ - oz) / c);
+      wp_outside = true;
     }
 
     // the minimum value to raytrace from is the origin
     if (wpx < origin_x_) {
       t = std::min(t, (origin_x_ - ox) / a);
+      wp_outside = true;
     }
     if (wpy < origin_y_) {
       t = std::min(t, (origin_y_ - oy) / b);
+      wp_outside = true;
     }
 
     // the maximum value to raytrace to is the end of the map
     if (wpx > map_end_x) {
       t = std::min(t, (map_end_x - ox) / a);
+      wp_outside = true;
     }
     if (wpy > map_end_y) {
       t = std::min(t, (map_end_y - oy) / b);
+      wp_outside = true;
+    }
+
+    constexpr double wp_epsilon = 1e-5;
+    if (wp_outside) {
+      if (t > 0.0) {
+        t -= wp_epsilon;
+      } else if (t < 0.0) {
+        t += wp_epsilon;
+      }
     }
 
     wpx = ox + a * t;
@@ -422,7 +443,7 @@ void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
   cell_oy = static_cast<int>((new_origin_y - origin_y_) / resolution_);
 
   // compute the associated world coordinates for the origin cell
-  // beacuase we want to keep things grid-aligned
+  // because we want to keep things grid-aligned
   double new_grid_ox, new_grid_oy;
   new_grid_ox = origin_x_ + cell_ox * resolution_;
   new_grid_oy = origin_y_ + cell_oy * resolution_;
@@ -496,9 +517,14 @@ VoxelLayer::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "max_obstacle_height") {
+      if (param_name == name_ + "." + "min_obstacle_height") {
+        min_obstacle_height_ = parameter.as_double();
+      } else if (param_name == name_ + "." + "max_obstacle_height") {
         max_obstacle_height_ = parameter.as_double();
       } else if (param_name == name_ + "." + "origin_z") {
         origin_z_ = parameter.as_double();

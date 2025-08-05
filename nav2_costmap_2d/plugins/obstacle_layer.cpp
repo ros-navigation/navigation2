@@ -47,6 +47,8 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "rclcpp/version.h"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
 
@@ -100,6 +102,8 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+  double tf_filter_tolerance = nav2::declare_or_get_parameter(node, name_ + "." +
+      "tf_filter_tolerance", 0.05);
 
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
@@ -190,6 +194,7 @@ void ObstacleLayer::onInitialize()
     node->get_parameter(name_ + "." + source + "." + "raytrace_min_range", raytrace_min_range);
     node->get_parameter(name_ + "." + source + "." + "raytrace_max_range", raytrace_max_range);
 
+    topic = joinWithParentNamespace(topic);
 
     RCLCPP_DEBUG(
       logger_,
@@ -226,13 +231,36 @@ void ObstacleLayer::onInitialize()
       source.c_str(), topic.c_str(),
       global_frame_.c_str(), expected_update_rate, observation_keep_time);
 
-    rmw_qos_profile_t custom_qos_profile = rmw_qos_profile_sensor_data;
-    custom_qos_profile.depth = 50;
+    const auto custom_qos_profile = nav2::qos::SensorDataQoS(50);
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
-      auto sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
-          rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub;
+      #else
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+        rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
+
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
+      #else
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+      #endif
+
       sub->unsubscribe();
 
       auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
@@ -257,11 +285,36 @@ void ObstacleLayer::onInitialize()
       observation_subscribers_.push_back(sub);
 
       observation_notifiers_.push_back(filter);
-      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(0.05));
+      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(
+          tf_filter_tolerance));
 
     } else {
-      auto sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
-          rclcpp_lifecycle::LifecycleNode>>(node, topic, custom_qos_profile, sub_opt);
+      // For Kilted and Older Support from Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> sub;
+      #else
+      std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+        rclcpp_lifecycle::LifecycleNode>> sub;
+      #endif
+
+      // For Kilted compatibility in Message Filters API change
+      #if RCLCPP_VERSION_GTE(29, 6, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
+        node, topic, custom_qos_profile, sub_opt);
+      // For Jazzy compatibility in Message Filters API change
+      #elif RCLCPP_VERSION_GTE(29, 0, 0)
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile, sub_opt);
+      // For Humble and Older compatibility in Message Filters API change
+      #else
+      sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
+          rclcpp_lifecycle::LifecycleNode>>(
+        std::static_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node),
+        topic, custom_qos_profile.get_rmw_qos_profile(), sub_opt);
+      #endif
+
       sub->unsubscribe();
 
       if (inf_is_valid) {
@@ -304,6 +357,9 @@ ObstacleLayer::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "min_obstacle_height") {
@@ -647,7 +703,7 @@ ObstacleLayer::raytraceFreespace(
     return;
   }
 
-  // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+  // we can pre-compute the endpoints of the map outside of the inner loop... we'll need these later
   double origin_x = origin_x_, origin_y = origin_y_;
   double map_end_x = origin_x + size_x_ * resolution_;
   double map_end_y = origin_y + size_y_ * resolution_;
@@ -664,7 +720,7 @@ ObstacleLayer::raytraceFreespace(
     double wx = *iter_x;
     double wy = *iter_y;
 
-    // now we also need to make sure that the enpoint we're raytracing
+    // now we also need to make sure that the endpoint we're raytracing
     // to isn't off the costmap and scale if necessary
     double a = wx - ox;
     double b = wy - oy;

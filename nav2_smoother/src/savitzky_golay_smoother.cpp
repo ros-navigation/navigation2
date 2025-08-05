@@ -23,10 +23,10 @@ namespace nav2_smoother
 using namespace smoother_utils;  // NOLINT
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 
 void SavitzkyGolaySmoother::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>/*costmap_sub*/,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
@@ -38,8 +38,11 @@ void SavitzkyGolaySmoother::configure(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
+  declare_parameter_if_not_declared(
+    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
+  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
 }
 
 bool SavitzkyGolaySmoother::smooth(
@@ -53,7 +56,11 @@ bool SavitzkyGolaySmoother::smooth(
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
-  std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+  std::vector<PathSegment> path_segments{
+    PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
+  if (enforce_path_inversion_) {
+    path_segments = findDirectionalPathSegments(path);
+  }
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 9) {
@@ -118,74 +125,44 @@ bool SavitzkyGolaySmoother::smoothImpl(
     };
 
   auto applyFilterOverAxes =
-    [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts) -> void
+    [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
+    const std::vector<geometry_msgs::msg::PoseStamped> & init_plan_pts) -> void
     {
-      // Handle initial boundary conditions, first point is fixed
-      unsigned int idx = 1;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 3].pose.position});
+      auto pt_m3 = init_plan_pts[0].pose.position;
+      auto pt_m2 = init_plan_pts[0].pose.position;
+      auto pt_m1 = init_plan_pts[0].pose.position;
+      auto pt = init_plan_pts[1].pose.position;
+      auto pt_p1 = init_plan_pts[2].pose.position;
+      auto pt_p2 = init_plan_pts[3].pose.position;
+      auto pt_p3 = init_plan_pts[4].pose.position;
 
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 3].pose.position});
+      // First point is fixed
+      for (unsigned int idx = 1; idx != path_size - 1; idx++) {
+        plan_pts[idx].pose.position = applyFilter({pt_m3, pt_m2, pt_m1, pt, pt_p1, pt_p2, pt_p3});
+        pt_m3 = pt_m2;
+        pt_m2 = pt_m1;
+        pt_m1 = pt;
+        pt = pt_p1;
+        pt_p1 = pt_p2;
+        pt_p2 = pt_p3;
 
-      // Apply nominal filter
-      for (idx = 3; idx < path_size - 4; ++idx) {
-        plan_pts[idx].pose.position = applyFilter(
-        {
-          plan_pts[idx - 3].pose.position,
-          plan_pts[idx - 2].pose.position,
-          plan_pts[idx - 1].pose.position,
-          plan_pts[idx].pose.position,
-          plan_pts[idx + 1].pose.position,
-          plan_pts[idx + 2].pose.position,
-          plan_pts[idx + 3].pose.position});
+        if (idx + 4 < path_size - 1) {
+          pt_p3 = init_plan_pts[idx + 4].pose.position;
+        } else {
+          // Return the last point
+          pt_p3 = init_plan_pts[path_size - 1].pose.position;
+        }
       }
-
-      // Handle terminal boundary conditions, last point is fixed
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 3].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 2].pose.position,
-        plan_pts[idx + 2].pose.position});
-
-      idx++;
-      plan_pts[idx].pose.position = applyFilter(
-      {
-        plan_pts[idx - 3].pose.position,
-        plan_pts[idx - 2].pose.position,
-        plan_pts[idx - 1].pose.position,
-        plan_pts[idx].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 1].pose.position,
-        plan_pts[idx + 1].pose.position});
     };
 
-  applyFilterOverAxes(path.poses);
+  const auto initial_path_poses = path.poses;
+  applyFilterOverAxes(path.poses, initial_path_poses);
 
-  // Lets do additional refinement, it shouldn't take more than a couple milliseconds
+  // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   if (do_refinement_) {
     for (int i = 0; i < refinement_num_; i++) {
-      applyFilterOverAxes(path.poses);
+      const auto reined_initial_path_poses = path.poses;
+      applyFilterOverAxes(path.poses, reined_initial_path_poses);
     }
   }
 

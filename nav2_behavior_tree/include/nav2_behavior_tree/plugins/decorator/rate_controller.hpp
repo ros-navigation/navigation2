@@ -25,6 +25,8 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A BT::DecoratorNode that ticks its child at a specified rate
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class RateController : public BT::DecoratorNode
 {
@@ -64,7 +66,6 @@ private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
   double period_;
   bool first_time_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

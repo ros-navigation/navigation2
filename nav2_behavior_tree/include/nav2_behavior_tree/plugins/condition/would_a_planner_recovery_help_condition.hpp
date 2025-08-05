@@ -29,7 +29,7 @@ class WouldAPlannerRecoveryHelp : public AreErrorCodesPresent
   using Action = nav2_msgs::action::ComputePathToPose;
   using ActionResult = Action::Result;
   using ThroughAction = nav2_msgs::action::ComputePathThroughPoses;
-  using ThroughActionResult = Action::Result;
+  using ThroughActionResult = ThroughAction::Result;
 
 public:
   WouldAPlannerRecoveryHelp(

@@ -21,7 +21,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
     config = os.path.join(
         get_package_share_directory('nav2_bringup'), 'params', 'nav2_params.yaml'
@@ -94,7 +94,7 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(
                     os.path.join(nav2_bringup_dir, 'launch', 'rviz_launch.py')
                 ),
-                launch_arguments={'namespace': '', 'use_namespace': 'False'}.items(),
+                launch_arguments={'namespace': ''}.items(),
             ),
         ]
     )

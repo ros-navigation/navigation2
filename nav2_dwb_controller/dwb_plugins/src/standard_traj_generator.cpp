@@ -41,13 +41,15 @@
 #include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace dwb_plugins
 {
 
 void StandardTrajectoryGenerator::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
@@ -55,27 +57,27 @@ void StandardTrajectoryGenerator::initialize(
   kinematics_handler_->initialize(nh, plugin_name_);
   initializeIterator(nh);
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".sim_time", rclcpp::ParameterValue(1.7));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".discretize_by_time", rclcpp::ParameterValue(false));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".time_granularity", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".linear_granularity", rclcpp::ParameterValue(0.5));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".angular_granularity", rclcpp::ParameterValue(0.025));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".include_last_point", rclcpp::ParameterValue(true));
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     nh,
     plugin_name + ".limit_vel_cmd_in_traj", rclcpp::ParameterValue(false));
 
@@ -97,7 +99,7 @@ void StandardTrajectoryGenerator::initialize(
 }
 
 void StandardTrajectoryGenerator::initializeIterator(
-  const nav2_util::LifecycleNode::SharedPtr & nh)
+  const nav2::LifecycleNode::SharedPtr & nh)
 {
   velocity_iterator_ = std::make_shared<XYThetaIterator>();
   velocity_iterator_->initialize(nh, kinematics_handler_, plugin_name_);
@@ -149,14 +151,14 @@ std::vector<double> StandardTrajectoryGenerator::getTimeSteps(
 }
 
 dwb_msgs::msg::Trajectory2D StandardTrajectoryGenerator::generateTrajectory(
-  const geometry_msgs::msg::Pose2D & start_pose,
+  const geometry_msgs::msg::Pose & start_pose,
   const nav_2d_msgs::msg::Twist2D & start_vel,
   const nav_2d_msgs::msg::Twist2D & cmd_vel)
 {
   dwb_msgs::msg::Trajectory2D traj;
   traj.velocity = cmd_vel;
   //  simulate the trajectory
-  geometry_msgs::msg::Pose2D pose = start_pose;
+  geometry_msgs::msg::Pose pose = start_pose;
   nav_2d_msgs::msg::Twist2D vel = start_vel;
   double running_time = 0.0;
   std::vector<double> steps = getTimeSteps(cmd_vel);
@@ -208,16 +210,23 @@ nav_2d_msgs::msg::Twist2D StandardTrajectoryGenerator::computeNewVelocity(
   return new_vel;
 }
 
-geometry_msgs::msg::Pose2D StandardTrajectoryGenerator::computeNewPosition(
-  const geometry_msgs::msg::Pose2D start_pose,
+geometry_msgs::msg::Pose StandardTrajectoryGenerator::computeNewPosition(
+  const geometry_msgs::msg::Pose start_pose,
   const nav_2d_msgs::msg::Twist2D & vel, const double dt)
 {
-  geometry_msgs::msg::Pose2D new_pose;
-  new_pose.x = start_pose.x +
-    (vel.x * cos(start_pose.theta) + vel.y * cos(M_PI_2 + start_pose.theta)) * dt;
-  new_pose.y = start_pose.y +
-    (vel.x * sin(start_pose.theta) + vel.y * sin(M_PI_2 + start_pose.theta)) * dt;
-  new_pose.theta = start_pose.theta + vel.theta * dt;
+  geometry_msgs::msg::Pose new_pose;
+
+  double theta = tf2::getYaw(start_pose.orientation);
+  new_pose.position.x = start_pose.position.x +
+    (vel.x * cos(theta) + vel.y * cos(M_PI_2 + theta)) * dt;
+  new_pose.position.y = start_pose.position.y +
+    (vel.x * sin(theta) + vel.y * sin(M_PI_2 + theta)) * dt;
+
+  double new_theta = theta + vel.theta * dt;
+  tf2::Quaternion q;
+  q.setRPY(0.0, 0.0, new_theta);
+  new_pose.orientation = tf2::toMsg(q);
+
   return new_pose;
 }
 

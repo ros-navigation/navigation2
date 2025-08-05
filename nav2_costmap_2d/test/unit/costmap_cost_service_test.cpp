@@ -21,14 +21,6 @@
 #include "nav2_msgs/srv/get_costs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 using namespace std::chrono_literals;
 
 class GetCostServiceTest : public ::testing::Test
@@ -44,19 +36,19 @@ protected:
   }
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
-  rclcpp::Client<nav2_msgs::srv::GetCosts>::SharedPtr client_;
+  nav2::ServiceClient<nav2_msgs::srv::GetCosts>::SharedPtr client_;
 };
 
 TEST_F(GetCostServiceTest, TestWithoutFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  geometry_msgs::msg::Pose2D pose;
-  pose.x = 0.5;
-  pose.y = 1.0;
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
   request->poses.push_back(pose);
   request->use_footprint = false;
 
-  auto result_future = client_->async_send_request(request);
+  auto result_future = client_->async_call(request);
   if (rclcpp::spin_until_future_complete(
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
@@ -72,14 +64,16 @@ TEST_F(GetCostServiceTest, TestWithoutFootprint)
 TEST_F(GetCostServiceTest, TestWithFootprint)
 {
   auto request = std::make_shared<nav2_msgs::srv::GetCosts::Request>();
-  geometry_msgs::msg::Pose2D pose;
-  pose.x = 0.5;
-  pose.y = 1.0;
-  pose.theta = 0.5;
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 0.5;
+  pose.pose.position.y = 1.0;
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 0.5);
+  pose.pose.orientation = tf2::toMsg(q);
   request->poses.push_back(pose);
   request->use_footprint = true;
 
-  auto result_future = client_->async_send_request(request);
+  auto result_future = client_->async_call(request);
   if (rclcpp::spin_until_future_complete(
       costmap_,
       result_future) == rclcpp::FutureReturnCode::SUCCESS)
@@ -90,4 +84,17 @@ TEST_F(GetCostServiceTest, TestWithFootprint)
   } else {
     FAIL() << "Failed to call service";
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

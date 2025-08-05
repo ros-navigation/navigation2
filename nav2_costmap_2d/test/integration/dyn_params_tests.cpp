@@ -21,14 +21,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class DynParamTestNode
 {
 public:
@@ -38,7 +30,7 @@ public:
 
 TEST(DynParamTestNode, testDynParamsSet)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("dyn_param_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("dyn_param_tester");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
   costmap->on_configure(rclcpp_lifecycle::State());
 
@@ -104,4 +96,17 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

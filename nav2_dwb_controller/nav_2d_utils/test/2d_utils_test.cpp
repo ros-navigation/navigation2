@@ -33,16 +33,18 @@
  */
 
 #include <math.h>
-#include <tf2/LinearMath/Quaternion.h>
 #include <vector>
+#include <tf2/LinearMath/Quaternion.hpp>
+
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "gtest/gtest.h"
 #include "nav_2d_utils/conversions.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/time.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 using nav_2d_utils::posesToPath;
-using nav_2d_utils::pathToPath;
 
 TEST(nav_2d_utils, PosesToPathEmpty)
 {
@@ -57,7 +59,7 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   std::vector<geometry_msgs::msg::PoseStamped> poses;
   geometry_msgs::msg::PoseStamped pose1;
   rclcpp::Time time1, time2;
-  auto node = rclcpp::Node::make_shared("twod_utils_test_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("twod_utils_test_node");
   time1 = node->now();
 
   tf2::Quaternion quat1, quat2;
@@ -101,50 +103,6 @@ TEST(nav_2d_utils, PosesToPathNonEmpty)
   EXPECT_EQ(path.header.stamp, time1);
 }
 
-TEST(nav_2d_utils, PathToPathEmpty)
-{
-  nav_2d_msgs::msg::Path2D path2d;
-  nav_msgs::msg::Path path = pathToPath(path2d);
-  EXPECT_EQ(path.poses.size(), 0ul);
-}
-
-TEST(nav_2d_utils, PathToPathNoNEmpty)
-{
-  nav_2d_msgs::msg::Path2D path2d;
-
-  geometry_msgs::msg::Pose2D pose1;
-  pose1.x = 1.0;
-  pose1.y = 2.0;
-  pose1.theta = M_PI / 2.0;
-
-  geometry_msgs::msg::Pose2D pose2;
-  pose2.x = 4.0;
-  pose2.y = 5.0;
-  pose2.theta = M_PI;
-
-  path2d.poses.push_back(pose1);
-  path2d.poses.push_back(pose2);
-
-  nav_msgs::msg::Path path = pathToPath(path2d);
-  EXPECT_EQ(path.poses.size(), 2ul);
-  EXPECT_EQ(path.poses[0].pose.position.x, 1.0);
-  EXPECT_EQ(path.poses[0].pose.position.y, 2.0);
-
-  tf2::Quaternion quat;
-  quat.setRPY(0, 0, M_PI / 2.0);
-  EXPECT_EQ(path.poses[0].pose.orientation.w, quat.w());
-  EXPECT_EQ(path.poses[0].pose.orientation.x, quat.x());
-  EXPECT_EQ(path.poses[0].pose.orientation.y, quat.x());
-  EXPECT_EQ(path.poses[0].pose.orientation.z, quat.z());
-
-  EXPECT_EQ(path.poses[1].pose.position.x, 4.0);
-  EXPECT_EQ(path.poses[1].pose.position.y, 5.0);
-  quat.setRPY(0, 0, M_PI);
-  EXPECT_EQ(path.poses[1].pose.orientation.w, quat.w());
-  EXPECT_EQ(path.poses[1].pose.orientation.x, quat.x());
-  EXPECT_EQ(path.poses[1].pose.orientation.y, quat.x());
-  EXPECT_EQ(path.poses[1].pose.orientation.z, quat.z());
-}
 
 int main(int argc, char ** argv)
 {

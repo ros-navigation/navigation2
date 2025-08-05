@@ -23,7 +23,7 @@
 #include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -135,7 +135,7 @@ public:
   }
 
 private:
-  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
+  nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
   nav2_msgs::msg::SpeedLimit::SharedPtr msg_;
   bool speed_limit_updated_;
 };  // SpeedLimitSubscriber
@@ -243,7 +243,7 @@ private:
   const unsigned int height_ = 11;
   const double resolution_ = 1.0;
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -341,7 +341,7 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 
 bool TestNode::createSpeedFilter(const std::string & global_frame)
 {
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -448,12 +448,12 @@ void TestNode::testFullMask(
   const int max_i = width_ + 4;
   const int max_j = height_ + 4;
 
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
 
   // data = 0
-  pose.x = 1 - tr_x;
-  pose.y = -tr_y;
+  pose.position.x = 1 - tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
@@ -463,8 +463,8 @@ void TestNode::testFullMask(
   unsigned int x, y;
   for (y = 1; y < height_; y++) {
     for (x = 0; x < width_; x++) {
-      pose.x = x - tr_x;
-      pose.y = y - tr_y;
+      pose.position.x = x - tr_x;
+      pose.position.y = y - tr_y;
       publishTransform();
       speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
       speed_limit = waitSpeedLimit();
@@ -474,8 +474,8 @@ void TestNode::testFullMask(
   }
 
   // data = 0
-  pose.x = 1 - tr_x;
-  pose.y = -tr_y;
+  pose.position.x = 1 - tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
@@ -483,14 +483,15 @@ void TestNode::testFullMask(
   EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
 
   // data = -1
-  pose.x = -tr_x;
-  pose.y = -tr_y;
+  pose.position.x = -tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
   EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
 }
+
 
 void TestNode::testSimpleMask(
   uint8_t type, double base, double multiplier,
@@ -501,12 +502,12 @@ void TestNode::testSimpleMask(
   const int max_i = width_ + 4;
   const int max_j = height_ + 4;
 
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
 
   // data = 0
-  pose.x = 1 - tr_x;
-  pose.y = -tr_y;
+  pose.position.x = 1 - tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
@@ -515,8 +516,8 @@ void TestNode::testSimpleMask(
   // data = <some_middle_value>
   unsigned int x = width_ / 2 - 1;
   unsigned int y = height_ / 2 - 1;
-  pose.x = x - tr_x;
-  pose.y = y - tr_y;
+  pose.position.x = x - tr_x;
+  pose.position.y = y - tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
@@ -526,8 +527,8 @@ void TestNode::testSimpleMask(
   // data = 100
   x = width_ - 1;
   y = height_ - 1;
-  pose.x = x - tr_x;
-  pose.y = y - tr_y;
+  pose.position.x = x - tr_x;
+  pose.position.y = y - tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
@@ -535,8 +536,8 @@ void TestNode::testSimpleMask(
   verifySpeedLimit(type, base, multiplier, x, y, speed_limit);
 
   // data = 0
-  pose.x = 1 - tr_x;
-  pose.y = -tr_y;
+  pose.position.x = 1 - tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = waitSpeedLimit();
@@ -544,8 +545,8 @@ void TestNode::testSimpleMask(
   EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
 
   // data = -1
-  pose.x = -tr_x;
-  pose.y = -tr_y;
+  pose.position.x = -tr_x;
+  pose.position.y = -tr_y;
   publishTransform();
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
@@ -560,26 +561,26 @@ void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
   const int max_i = width_ + 4;
   const int max_j = height_ + 4;
 
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr old_speed_limit, speed_limit;
 
   // data = <some_middle_value>
-  pose.x = width_ / 2 - 1;
-  pose.y = height_ / 2 - 1;
+  pose.position.x = width_ / 2 - 1;
+  pose.position.y = height_ / 2 - 1;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   old_speed_limit = waitSpeedLimit();
   ASSERT_TRUE(old_speed_limit != nullptr);
-  verifySpeedLimit(type, base, multiplier, pose.x, pose.y, old_speed_limit);
+  verifySpeedLimit(type, base, multiplier, pose.position.x, pose.position.y, old_speed_limit);
 
   // Then go to out of mask bounds and ensure that speed limit was not updated
-  pose.x = -2.0;
-  pose.y = -2.0;
+  pose.position.x = -2.0;
+  pose.position.y = -2.0;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit == old_speed_limit);
 
-  pose.x = width_ + 1.0;
-  pose.y = height_ + 1.0;
+  pose.position.x = width_ + 1.0;
+  pose.position.y = height_ + 1.0;
   speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit == old_speed_limit);
@@ -592,7 +593,7 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
   const int max_i = width_ + 4;
   const int max_j = height_ + 4;
 
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
 
   std::vector<std::tuple<unsigned int, unsigned int>> points;
@@ -608,12 +609,12 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
   points.push_back(std::make_tuple(width_ - 1, height_ - 1));
 
   for (auto it = points.begin(); it != points.end(); ++it) {
-    pose.x = static_cast<double>(std::get<0>(*it));
-    pose.y = static_cast<double>(std::get<1>(*it));
+    pose.position.x = static_cast<double>(std::get<0>(*it));
+    pose.position.y = static_cast<double>(std::get<1>(*it));
     speed_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
     speed_limit = waitSpeedLimit();
     ASSERT_TRUE(speed_limit != nullptr);
-    verifySpeedLimit(type, base, multiplier, pose.x, pose.y, speed_limit);
+    verifySpeedLimit(type, base, multiplier, pose.position.x, pose.position.y, speed_limit);
   }
 }
 

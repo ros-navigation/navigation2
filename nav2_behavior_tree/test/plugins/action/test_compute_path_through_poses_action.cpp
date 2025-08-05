@@ -44,7 +44,7 @@ protected:
     const auto goal = goal_handle->get_goal();
     auto result = std::make_shared<nav2_msgs::action::ComputePathThroughPoses::Result>();
     result->path.poses.resize(2);
-    result->path.poses[1].pose.position.x = goal->goals[0].pose.position.x;
+    result->path.poses[1].pose.position.x = goal->goals.goals[0].pose.position.x;
     if (goal->use_start) {
       result->path.poses[0].pose.position.x = goal->start.pose.position.x;
     } else {
@@ -59,7 +59,7 @@ class ComputePathThroughPosesActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("compute_path_through_poses_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("compute_path_through_poses_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -109,13 +109,13 @@ public:
   static std::shared_ptr<ComputePathThroughPosesActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ComputePathThroughPosesActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr ComputePathThroughPosesActionTestFixture::node_ = nullptr;
 std::shared_ptr<ComputePathThroughPosesActionServer>
 ComputePathThroughPosesActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * ComputePathThroughPosesActionTestFixture::config_ = nullptr;
@@ -137,9 +137,9 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
   // create new goal and set it on blackboard
-  std::vector<geometry_msgs::msg::PoseStamped> goals;
-  goals.resize(1);
-  goals[0].pose.position.x = 1.0;
+  nav_msgs::msg::Goals goals;
+  goals.goals.resize(1);
+  goals.goals[0].pose.position.x = 1.0;
   config_->blackboard->set("goals", goals);
 
   // tick until node succeeds
@@ -150,7 +150,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, 1.0);
   EXPECT_FALSE(action_server_->getCurrentGoal()->use_start);
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
 
@@ -166,7 +166,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal
-  goals[0].pose.position.x = -2.5;
+  goals.goals[0].pose.position.x = -2.5;
   config_->blackboard->set("goals", goals);
 
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
@@ -174,7 +174,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick)
   }
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, -2.5);
 
   EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);
@@ -202,9 +202,9 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   config_->blackboard->set("start", start);
 
   // create new goal and set it on blackboard
-  std::vector<geometry_msgs::msg::PoseStamped> goals;
-  goals.resize(1);
-  goals[0].pose.position.x = 1.0;
+  nav_msgs::msg::Goals goals;
+  goals.goals.resize(1);
+  goals.goals[0].pose.position.x = 1.0;
   config_->blackboard->set("goals", goals);
 
   // tick until node succeeds
@@ -215,7 +215,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
-  EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, 1.0);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, 1.0);
   EXPECT_EQ(action_server_->getCurrentGoal()->start.pose.position.x, 2.0);
   EXPECT_TRUE(action_server_->getCurrentGoal()->use_start);
   EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
@@ -232,7 +232,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::IDLE);
 
   // set new goal and new start
-  goals[0].pose.position.x = -2.5;
+  goals.goals[0].pose.position.x = -2.5;
   start.pose.position.x = -1.5;
   config_->blackboard->set("goals", goals);
   config_->blackboard->set("start", start);
@@ -242,7 +242,7 @@ TEST_F(ComputePathThroughPosesActionTestFixture, test_tick_use_start)
   }
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(action_server_->getCurrentGoal()->goals[0].pose.position.x, -2.5);
+  EXPECT_EQ(action_server_->getCurrentGoal()->goals.goals[0].pose.position.x, -2.5);
 
   EXPECT_TRUE(config_->blackboard->get<nav_msgs::msg::Path>("path", path));
   EXPECT_EQ(path.poses.size(), 2u);

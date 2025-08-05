@@ -19,7 +19,7 @@
 #include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/simple_progress_checker.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_controller
 {
@@ -33,7 +33,7 @@ class PoseProgressChecker : public SimpleProgressChecker
 {
 public:
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
   bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
 
@@ -43,11 +43,11 @@ protected:
    * @param pose Current pose of the robot
    * @return true, if movement is greater than radius_, or false
    */
-  bool isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose);
+  bool isRobotMovedEnough(const geometry_msgs::msg::Pose & pose);
 
   static double poseAngleDistance(
-    const geometry_msgs::msg::Pose2D &,
-    const geometry_msgs::msg::Pose2D &);
+    const geometry_msgs::msg::Pose &,
+    const geometry_msgs::msg::Pose &);
 
   double required_movement_angle_;
 
@@ -56,7 +56,7 @@ protected:
   std::string plugin_name_;
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

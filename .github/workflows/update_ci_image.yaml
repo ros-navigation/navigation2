@@ -8,6 +8,9 @@ on:
   push:
     branches:
       - main
+      - kilted
+      - jazzy
+      - humble
     paths:
       - '**/package.xml'
       - '**/*.repos'
@@ -27,7 +30,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "trigger=true" >> $GITHUB_OUTPUT
-          echo "no_cache=false" >> $GITHUB_OUTPUT
+          echo "no_cache=true" >> $GITHUB_OUTPUT
   check_ci_image:
     name: Check CI Image
     if: github.event_name == 'schedule'

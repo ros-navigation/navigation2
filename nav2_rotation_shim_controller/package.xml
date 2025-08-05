@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_rotation_shim_controller</name>
-  <version>1.3.1</version>
+  <version>1.4.0</version>
   <description>Rotation Shim Controller</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <license>Apache-2.0</license>
@@ -13,6 +13,7 @@
   <depend>angles</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_controller</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
@@ -22,6 +23,7 @@
   <depend>rcl_interfaces</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>nav2_ros_common</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>

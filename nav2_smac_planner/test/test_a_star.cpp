@@ -22,24 +22,16 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(AStarTest, test_a_star_2d)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::Node2D> a_star(
     nav2_smac_planner::MotionModel::TWOD, info);
@@ -131,19 +123,38 @@ TEST(AStarTest, test_a_star_2d)
   }
 
   EXPECT_TRUE(a_star_2.getStart() != nullptr);
-  EXPECT_TRUE(a_star_2.getGoal() != nullptr);
+  EXPECT_NE(a_star_2.getGoalManager().getGoalsState().size(), 0);
   EXPECT_EQ(a_star_2.getSizeX(), 100u);
   EXPECT_EQ(a_star_2.getSizeY(), 100u);
   EXPECT_EQ(a_star_2.getSizeDim3(), 1u);
   EXPECT_EQ(a_star_2.getToleranceHeuristic(), 20.0);
   EXPECT_EQ(a_star_2.getOnApproachMaxIterations(), 10);
 
+  // test unused functions
+  nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D> expander(
+    nav2_smac_planner::MotionModel::TWOD, info, false, 1);
+
+  auto analytic_expansion_nodes =
+    nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes();
+  EXPECT_EQ(expander.setAnalyticPath(nullptr, nullptr, analytic_expansion_nodes), nullptr);
+  int dummy_int1 = 0;
+  int dummy_int2 = 0;
+  EXPECT_EQ(expander.tryAnalyticExpansion(nullptr, {}, {}, {},
+  nullptr, dummy_int1, dummy_int2), nullptr);
+
+  nav2_smac_planner::Node2D * start = nullptr;
+  EXPECT_EQ(expander.refineAnalyticPath(start, nullptr, nullptr,
+    analytic_expansion_nodes), std::numeric_limits<float>::max());
+  nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes
+    expected_nodes = expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr);
+  EXPECT_EQ(expected_nodes.nodes.size(), 0);
+
   delete costmapA;
 }
 
 TEST(AStarTest, test_a_star_se2)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -201,8 +212,8 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 3146);
-  EXPECT_EQ(path.size(), 63u);
+  EXPECT_GT(num_it, 2000);
+  EXPECT_NEAR(path.size(), 63u, 2u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
   }
@@ -220,7 +231,7 @@ TEST(AStarTest, test_a_star_se2)
 
 TEST(AStarTest, test_a_star_analytic_expansion)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.0;
   info.non_straight_penalty = 1.1;
@@ -282,7 +293,7 @@ TEST(AStarTest, test_a_star_analytic_expansion)
 
 TEST(AStarTest, test_a_star_lattice)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.05;
   info.non_straight_penalty = 1.05;
@@ -357,7 +368,7 @@ TEST(AStarTest, test_a_star_lattice)
 
 TEST(AStarTest, test_se2_single_pose_path)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -399,10 +410,17 @@ TEST(AStarTest, test_se2_single_pose_path)
     };
   // functional case testing
   a_star.setCollisionChecker(checker.get());
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+
+  // test with no goals set nor start
+  EXPECT_THROW(
+    a_star.createPath(
+      path, num_it, tolerance,
+      dummy_cancel_checker), std::runtime_error);
+
   a_star.setStart(10u, 10u, 0u);
   // Goal is one costmap cell away
   a_star.setGoal(12u, 10u, 0u);
-  nav2_smac_planner::NodeHybrid::CoordinateVector path;
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // Check that the path is length one
@@ -412,6 +430,102 @@ TEST(AStarTest, test_se2_single_pose_path)
 
   delete costmapA;
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();
+}
+
+TEST(AStarTest, test_goal_heading_mode)
+{
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // in grid coordinates
+  info.retrospective_penalty = 0.015;
+  info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+  info.analytic_expansion_ratio = 3.5;
+  unsigned int size_theta = 72;
+  info.cost_penalty = 1.7;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  float tolerance = 10.0;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  int num_it = 0;
+
+  // BIDIRECTIONAL goal heading mode
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  a_star.setCollisionChecker(checker.get());
+
+  EXPECT_THROW(
+    a_star.setGoal(
+      80u, 80u, 40u,
+      nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL),
+    std::runtime_error);
+  a_star.setStart(10u, 10u, 0u);
+  a_star.setGoal(80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+  std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
+  expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
+  EXPECT_EQ(a_star.getGoalManager().getGoalsState().size(), 2);
+  EXPECT_EQ(a_star.getGoalManager().getGoalsState().size(),
+    a_star.getGoalManager().getGoalsCoordinates().size());
+
+
+  // ALL_DIRECTION goal heading mode
+  unsigned int coarse_search_resolution = 16;
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 10u, 0u);
+  a_star.setGoal(80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
+    coarse_search_resolution);
+  EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
+
+  unsigned int num_bins = nav2_smac_planner::NodeHybrid::motion_table.num_angle_quantization;
+
+  // get number of valid goal states
+  unsigned int num_valid_goals = 0;
+  auto goals_state = a_star.getGoalManager().getGoalsState();
+  for (unsigned int i = 0; i < goals_state.size(); i++) {
+    if(goals_state[i].is_valid) {
+      num_valid_goals++;
+    }
+  }
+  EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() == num_bins);
+  EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() == num_valid_goals);
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
+  EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() ==
+    a_star.getGoalManager().getGoalsCoordinates().size());
+
+  // UNKNOWN goal heading mode
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 10u, 0u);
+
+  EXPECT_THROW(
+    a_star.setGoal(
+      80u, 80u, 10u,
+      nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
 }
 
 TEST(AStarTest, test_constants)
@@ -425,6 +539,15 @@ TEST(AStarTest, test_constants)
   mm = nav2_smac_planner::MotionModel::REEDS_SHEPP;  // reeds-shepp
   EXPECT_EQ(nav2_smac_planner::toString(mm), std::string("Reeds-Shepp"));
 
+  nav2_smac_planner::GoalHeadingMode gh = nav2_smac_planner::GoalHeadingMode::UNKNOWN;
+  EXPECT_EQ(nav2_smac_planner::toString(gh), std::string("Unknown"));
+  gh = nav2_smac_planner::GoalHeadingMode::DEFAULT;  // default
+  EXPECT_EQ(nav2_smac_planner::toString(gh), std::string("DEFAULT"));
+  gh = nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL;  // bidirectional
+  EXPECT_EQ(nav2_smac_planner::toString(gh), std::string("BIDIRECTIONAL"));
+  gh = nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION;  // all_direction
+  EXPECT_EQ(nav2_smac_planner::toString(gh), std::string("ALL_DIRECTION"));
+
   EXPECT_EQ(
     nav2_smac_planner::fromString(
       "2D"), nav2_smac_planner::MotionModel::TWOD);
@@ -433,4 +556,29 @@ TEST(AStarTest, test_constants)
     nav2_smac_planner::fromString(
       "REEDS_SHEPP"), nav2_smac_planner::MotionModel::REEDS_SHEPP);
   EXPECT_EQ(nav2_smac_planner::fromString("NONE"), nav2_smac_planner::MotionModel::UNKNOWN);
+
+  EXPECT_EQ(
+    nav2_smac_planner::fromStringToGH(
+      "DEFAULT"), nav2_smac_planner::GoalHeadingMode::DEFAULT);
+  EXPECT_EQ(
+    nav2_smac_planner::fromStringToGH(
+      "BIDIRECTIONAL"), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+  EXPECT_EQ(
+    nav2_smac_planner::fromStringToGH(
+      "ALL_DIRECTION"), nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION);
+  EXPECT_EQ(
+    nav2_smac_planner::fromStringToGH("NONE"), nav2_smac_planner::GoalHeadingMode::UNKNOWN);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

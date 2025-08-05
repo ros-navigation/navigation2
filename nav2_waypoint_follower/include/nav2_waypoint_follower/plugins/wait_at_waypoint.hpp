@@ -26,7 +26,7 @@ namespace nav2_waypoint_follower
 {
 
 /**
- * @brief Simple plugin based on WaypointTaskExecutor, lets robot to sleep for a
+ * @brief Simple plugin based on WaypointTaskExecutor, let's robot to sleep for a
  *        specified amount of time at waypoint arrival. You can reference this class to define
  *        your own task and rewrite the body for it.
  *
@@ -49,11 +49,11 @@ public:
   /**
    * @brief declares and loads parameters used (waypoint_pause_duration_)
    *
-   * @param parent parent node that plugin will be created withing(waypoint_follower in this case)
+   * @param parent parent node that plugin will be created within (waypoint_follower in this case)
    * @param plugin_name
    */
   void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name);
 
 

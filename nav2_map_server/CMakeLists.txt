@@ -18,6 +18,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -53,6 +54,7 @@ target_include_directories(${map_io_library_name}
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 target_link_libraries(${map_io_library_name} PUBLIC
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${nav_msgs_TARGETS}
 )
 target_link_libraries(${map_io_library_name} PRIVATE
@@ -74,6 +76,7 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -89,7 +92,8 @@ add_library(${vo_library_name} SHARED
 target_include_directories(${vo_library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
 target_link_libraries(${vo_library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   ${nav_msgs_TARGETS}
@@ -117,6 +121,7 @@ target_link_libraries(${map_server_executable} PRIVATE
   ${library_name}
   ${map_io_library_name}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 add_executable(${map_saver_cli_executable}
@@ -131,6 +136,7 @@ target_link_libraries(${map_saver_cli_executable} PRIVATE
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -147,6 +153,7 @@ target_link_libraries(${map_saver_server_executable} PRIVATE
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -163,6 +170,7 @@ target_link_libraries(${costmap_filter_info_server_executable} PRIVATE
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -222,7 +230,7 @@ ament_export_libraries(
   ${map_io_library_name}
   ${vo_library_name}
 )
-ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle)
+ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle nav2_ros_common)
 ament_export_targets(${library_name})
 
 ament_package()

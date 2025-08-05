@@ -21,7 +21,7 @@
 
 #include "angles/angles.h"
 
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 #include "nav2_smac_planner/smoother.hpp"
 
@@ -184,7 +184,7 @@ bool Smoother::smoothImpl(
     last_path = new_path;
   }
 
-  // Lets do additional refinement, it shouldn't take more than a couple milliseconds
+  // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
@@ -247,7 +247,7 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
     double ab_y = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
 
-    // Checking for the existance of cusp, in the path, using the dot product.
+    // Checking for the existence of cusp, in the path, using the dot product.
     double dot_product = (oa_x * ab_x) + (oa_y * ab_y);
     if (dot_product < 0.0) {
       curr_segment.end = idx;
@@ -255,7 +255,7 @@ std::vector<PathSegment> Smoother::findDirectionalPathSegments(const nav_msgs::m
       curr_segment.start = idx;
     }
 
-    // Checking for the existance of a differential rotation in place.
+    // Checking for the existence of a differential rotation in place.
     double cur_theta = tf2::getYaw(path.poses[idx].pose.orientation);
     double next_theta = tf2::getYaw(path.poses[idx + 1].pose.orientation);
     double dtheta = angles::shortest_angular_distance(cur_theta, next_theta);

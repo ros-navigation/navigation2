@@ -1,0 +1,80 @@
+<class_libraries>
+  <library path="edge_scorers">
+    <class type="nav2_route::DistanceScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for penalizing edge distance proportionally to potential speed limits</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::DynamicEdgesScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for rejecting edge that are closed due to non-traversability or setting remote dynamic costs (as opposed to static costs in the metadata from the Penalty Scorer)</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::PenaltyScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding a cost based on metadata stored in the navigation graph</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::CostmapScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding a cost based on the costmap values in the edge</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::SemanticScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding costs to edges based on arbitrary semantic data</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::TimeScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for adding costs to edges time to complete the edge based on previous runs and/or estimation with absolute speed limits.</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::GoalOrientationScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for checking if the orientation of route matches orientation of the goal</description>
+    </class>
+  </library>
+  <library path="edge_scorers">
+    <class type="nav2_route::StartPoseOrientationScorer" base_class_type="nav2_route::EdgeCostFunction">
+      <description>Cost function for checking if the orientation of robot matches with the orientation of the edge</description>
+    </class>
+  </library>
+
+  <library path="route_operations">
+    <class type="nav2_route::AdjustSpeedLimit" base_class_type="nav2_route::RouteOperation">
+      <description>Route tracking operation to adjust speed limit based on graph metadata</description>
+    </class>
+  </library>
+  <library path="route_operations">
+    <class type="nav2_route::ReroutingService" base_class_type="nav2_route::RouteOperation">
+      <description>Exposes a route operation to replan upon external service request</description>
+    </class>
+  </library>
+  <library path="route_operations">
+    <class type="nav2_route::TriggerEvent" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation templated by service types to call arbitrary services on node or edge events</description>
+    </class>
+  </library>
+
+  <library path="graph_file_loaders">
+    <class type="nav2_route::GeoJsonGraphFileLoader" base_class_type="nav2_route::GraphFileLoader">
+      <description>Parse the geojson graph file into the graph data type</description>
+    </class>
+  </library>
+  <library path="graph_file_savers">
+    <class type="nav2_route::GeoJsonGraphFileSaver" base_class_type="nav2_route::GraphFileSaver">
+      <description>Save a route graph to a geojson graph file</description>
+    </class>
+  </library>
+
+  <library path="route_operations">
+    <class type="nav2_route::CollisionMonitor" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to periodically check a costmap for localized viability of the route</description>
+    </class>
+  </library>
+  <library path="route_operations">
+    <class type="nav2_route::TimeMarker" base_class_type="nav2_route::RouteOperation">
+      <description>Route operation to add actual times of traversal to edge's metadata for use in later more accurate planning by the TimeScorer</description>
+    </class>
+  </library>
+</class_libraries>

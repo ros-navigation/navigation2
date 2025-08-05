@@ -28,7 +28,7 @@
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/remove_shapes.hpp"
 #include "nav2_msgs/srv/get_shapes.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_map_server/vector_object_utils.hpp"
 #include "nav2_map_server/vector_object_shapes.hpp"
@@ -37,7 +37,7 @@ namespace nav2_map_server
 {
 
 /// @brief Vector Object server node
-class VectorObjectServer : public nav2_util::LifecycleNode
+class VectorObjectServer : public nav2::LifecycleNode
 {
 public:
   /**
@@ -53,31 +53,31 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Activates output map publisher and creates bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Deactivates map publisher and timer (if any), destroys bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Resets all services, publishers, map and TF-s
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called in shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Supporting routine obtaining all ROS-parameters
@@ -211,11 +211,11 @@ protected:
   rclcpp::TimerBase::SharedPtr map_timer_;
 
   /// @brief AddShapes service
-  rclcpp::Service<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_service_;
+  nav2::ServiceServer<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_service_;
   /// @brief GetShapes service
-  rclcpp::Service<nav2_msgs::srv::GetShapes>::SharedPtr get_shapes_service_;
+  nav2::ServiceServer<nav2_msgs::srv::GetShapes>::SharedPtr get_shapes_service_;
   /// @brief RemoveShapes service
-  rclcpp::Service<nav2_msgs::srv::RemoveShapes>::SharedPtr remove_shapes_service_;
+  nav2::ServiceServer<nav2_msgs::srv::RemoveShapes>::SharedPtr remove_shapes_service_;
 
   /// @beirf Topic name where the output map to be published to
   std::string map_topic_;

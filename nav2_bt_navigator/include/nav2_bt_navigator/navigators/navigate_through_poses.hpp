@@ -23,6 +23,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
+#include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -40,8 +41,6 @@ class NavigateThroughPosesNavigator
 {
 public:
   using ActionT = nav2_msgs::action::NavigateThroughPoses;
-  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
-
   /**
    * @brief A constructor for NavigateThroughPosesNavigator
    */
@@ -54,7 +53,7 @@ public:
    * @param odom_smoother Object to get current smoothed robot's speed
    */
   bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
+    nav2::LifecycleNode::WeakPtr node,
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
 
   /**
@@ -68,7 +67,7 @@ public:
    * @param node WeakPtr to the lifecycle node
    * @return string Filepath to default XML
    */
-  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+  std::string getDefaultBTFilepath(nav2::LifecycleNode::WeakPtr node) override;
 
 protected:
   /**
@@ -111,6 +110,7 @@ protected:
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
   std::string path_blackboard_id_;
+  std::string waypoint_statuses_blackboard_id_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;

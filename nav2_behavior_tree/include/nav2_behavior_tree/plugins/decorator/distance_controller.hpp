@@ -31,6 +31,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that ticks its child every time the robot
  * travels a specified distance
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class DistanceController : public BT::DecoratorNode
 {
@@ -64,7 +66,7 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_;
   double transform_tolerance_;

@@ -21,11 +21,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "tf2/time.h"
+#include "tf2/time.hpp"
 #include "tf2_ros/buffer.h"
 
 #include "nav2_collision_monitor/types.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "std_msgs/msg/header.hpp"
 
 namespace nav2_collision_monitor
@@ -50,7 +50,7 @@ public:
    * considering the difference between current time and latest source time
    */
   Source(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -141,7 +141,7 @@ protected:
   // ----- Variables -----
 
   /// @brief Collision Monitor node
-  nav2_util::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
   /// @brief Dynamic parameters handler

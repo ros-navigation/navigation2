@@ -34,10 +34,10 @@ namespace nav2_map_server
 {
 
 VectorObjectServer::VectorObjectServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("vector_object_server", "", options), process_map_(false)
+: nav2::LifecycleNode("vector_object_server", "", options), process_map_(false)
 {}
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
@@ -52,7 +52,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   // Obtaining ROS parameters
   if (!obtainParams()) {
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -71,10 +71,10 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "~/remove_shapes",
     std::bind(&VectorObjectServer::removeShapesCallback, this, _1, _2, _3));
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VectorObjectServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -88,10 +88,10 @@ VectorObjectServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Creating bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VectorObjectServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -107,10 +107,10 @@ VectorObjectServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   map_pub_->on_deactivate();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VectorObjectServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -127,15 +127,15 @@ VectorObjectServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_buffer_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 VectorObjectServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool VectorObjectServer::obtainParams()

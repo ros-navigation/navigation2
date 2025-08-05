@@ -18,10 +18,15 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
+#include "nav2_ros_common/service_client.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -61,19 +66,28 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<std::chrono::milliseconds>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
-      BT::InputPort<std::chrono::milliseconds>("server_timeout")
+      BT::InputPort<std::chrono::milliseconds>("server_timeout"),
+      BT::InputPort<unsigned int>("max_cost", 253, "Maximum cost of the path"),
+      BT::InputPort<bool>(
+          "consider_unknown_as_obstacle", false,
+          "Whether to consider unknown cost as obstacle")
     };
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::Client<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
-  // The timeout value while waiting for a responce from the
+  nav2::LifecycleNode::SharedPtr node_;
+  nav2::ServiceClient<nav2_msgs::srv::IsPathValid>::SharedPtr client_;
+  // The timeout value while waiting for a response from the
   // is path valid service
   std::chrono::milliseconds server_timeout_;
-  bool initialized_;
+  unsigned int max_cost_;
+  bool consider_unknown_as_obstacle_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
@@ -27,6 +27,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time a specified
  * time period passes and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class TimeExpiredCondition : public BT::ConditionNode
 {
@@ -65,10 +67,9 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::Time start_;
   double period_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

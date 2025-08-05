@@ -24,7 +24,7 @@ Basic navigation demo to go to pose.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -42,8 +42,8 @@ def main():
     # Wait for navigation to fully activate, since autostarting nav2
     navigator.waitUntilNav2Active()
 
-    navigator.assistedTeleop(time_allowance=20)
-    while not navigator.isTaskComplete():
+    teleop_task = navigator.assistedTeleop(time_allowance=20)
+    while not navigator.isTaskComplete(task=teleop_task):
         # Publish twist commands to be filtered by the assisted teleop action
         sleep(0.2)
         pass

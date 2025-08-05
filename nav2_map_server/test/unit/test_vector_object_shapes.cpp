@@ -31,7 +31,7 @@
 
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 
 #include "nav2_map_server/vector_object_shapes.hpp"
@@ -50,7 +50,7 @@ static std::vector<double> CENTER{0.0, 0.0};
 class PolygonWrapper : public nav2_map_server::Polygon
 {
 public:
-  explicit PolygonWrapper(const nav2_util::LifecycleNode::WeakPtr & node)
+  explicit PolygonWrapper(const nav2::LifecycleNode::WeakPtr & node)
   : Polygon(node)
   {}
 
@@ -63,7 +63,7 @@ public:
 class CircleWrapper : public nav2_map_server::Circle
 {
 public:
-  explicit CircleWrapper(const nav2_util::LifecycleNode::WeakPtr & node)
+  explicit CircleWrapper(const nav2::LifecycleNode::WeakPtr & node)
   : Circle(node)
   {}
 
@@ -107,12 +107,12 @@ protected:
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
 
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 };  // Tester
 
 Tester::Tester()
 {
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  node_ = std::make_shared<nav2::LifecycleNode>("test_node");
 
   // Create shapes
   polygon_ = std::make_shared<PolygonWrapper>(node_);

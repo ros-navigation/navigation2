@@ -20,13 +20,17 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/utils/shared_library.h"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_behavior_tree/utils/loop_rate.hpp"
 
 namespace nav2_behavior_tree
 {
 
 BehaviorTreeEngine::BehaviorTreeEngine(
-  const std::vector<std::string> & plugin_libraries, rclcpp::Node::SharedPtr node)
+  const std::vector<std::string> & plugin_libraries,
+  const nav2::LifecycleNode::SharedPtr node)
 {
   BT::SharedLibrary loader;
   for (const auto & p : plugin_libraries) {
@@ -49,7 +53,7 @@ BehaviorTreeEngine::run(
   std::function<bool()> cancelRequested,
   std::chrono::milliseconds loopTimeout)
 {
-  rclcpp::WallRate loopRate(loopTimeout);
+  nav2_behavior_tree::LoopRate loopRate(loopTimeout, tree);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // Loop until something happens with ROS or the node completes
@@ -96,6 +100,27 @@ BehaviorTreeEngine::createTreeFromFile(
   BT::Blackboard::Ptr blackboard)
 {
   return factory_.createTreeFromFile(file_path, blackboard);
+}
+
+void
+BehaviorTreeEngine::addGrootMonitoring(
+  BT::Tree * tree,
+  uint16_t server_port)
+{
+  // This logger publish status changes using Groot2
+  groot_monitor_ = std::make_unique<BT::Groot2Publisher>(*tree, server_port);
+
+  // Register common types JSON definitions
+  BT::RegisterJsonDefinition<builtin_interfaces::msg::Time>();
+  BT::RegisterJsonDefinition<std_msgs::msg::Header>();
+}
+
+void
+BehaviorTreeEngine::resetGrootMonitor()
+{
+  if (groot_monitor_) {
+    groot_monitor_.reset();
+  }
 }
 
 // In order to re-run a Behavior Tree, we must be able to reset all nodes to the initial state

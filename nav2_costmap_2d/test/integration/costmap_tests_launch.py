@@ -17,20 +17,18 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
-from launch.actions import ExecuteProcess
-from launch.actions import IncludeLaunchDescription
+from launch import LaunchDescription, LaunchService
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     launchFile = os.path.join(
-        os.getenv('TEST_LAUNCH_DIR'), 'costmap_map_server.launch.py'
+        os.getenv('TEST_LAUNCH_DIR', ''), 'costmap_map_server.launch.py'
     )
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
 
     map_to_odom = launch_ros.actions.Node(
         package='tf2_ros',
@@ -76,20 +74,23 @@ def main(argv=sys.argv[1:]):
         [
             IncludeLaunchDescription(PythonLaunchDescriptionSource([launchFile])),
             map_to_odom,
-            odom_to_base_link,
             lifecycle_manager,
         ]
     )
+    if os.getenv('STATIC_ODOM_TO_BASE_LINK') == 'true':
+        ld.add_action(odom_to_base_link)
 
     test1_action = ExecuteProcess(
-        cmd=[testExecutable], name='costmap_tests', output='screen'
+        cmd=[testExecutable],
+        name='costmap_tests',
+        output='screen'
     )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@
 # for instructions
 
 import argparse
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
 
 import graphviz  # pip3 install graphviz
 
@@ -75,16 +75,13 @@ subtree_nodes = [
     'SubTree',
 ]
 
-global xml_tree
 
-
-def main():
-    global xml_tree
+def main() -> None:
     args = parse_command_line()
-    xml_tree = xml.etree.ElementTree.parse(args.behavior_tree)
+    xml_tree = ET.parse(args.behavior_tree)
     root_tree_name = find_root_tree_name(xml_tree)
     behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
-    dot = convert2dot(behavior_tree)
+    dot = convert2dot(behavior_tree, xml_tree)
     if args.legend:
         legend = make_legend()
         legend.format = 'png'
@@ -96,7 +93,7 @@ def main():
     dot.render(args.image_out, view=args.display)
 
 
-def parse_command_line():
+def parse_command_line() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Convert a behavior tree XML file to an image'
     )
@@ -124,11 +121,15 @@ def parse_command_line():
     return parser.parse_args()
 
 
-def find_root_tree_name(xml_tree):
-    return xml_tree.getroot().get('main_tree_to_execute')
+def find_root_tree_name(xml_tree: ET.ElementTree) -> str:
+    root = xml_tree.getroot()
+    main_tree = root.get('main_tree_to_execute')
+    if main_tree is None:
+        raise RuntimeError('No main_tree_to_execute attribute found in XML root')
+    return main_tree
 
 
-def find_behavior_tree(xml_tree, tree_name):
+def find_behavior_tree(xml_tree: ET.ElementTree, tree_name: str) -> ET.Element:
     trees = xml_tree.findall('BehaviorTree')
     if len(trees) == 0:
         raise RuntimeError('No behavior trees were found in the XML file')
@@ -141,33 +142,50 @@ def find_behavior_tree(xml_tree, tree_name):
 
 
 # Generate a dot description of the root of the behavior tree.
-def convert2dot(behavior_tree):
+def convert2dot(behavior_tree: ET.Element, xml_tree: ET.ElementTree) -> graphviz.Digraph:
     dot = graphviz.Digraph()
     root = behavior_tree
     parent_dot_name = str(hash(root))
     dot.node(parent_dot_name, root.get('ID'), shape='box')
-    convert_subtree(dot, root, parent_dot_name)
+    convert_subtree(dot, root, parent_dot_name, xml_tree)
     return dot
 
 
 # Recursive function. We add the children to the dot file, and then recursively
 # call this function on the children. Nodes are given an ID that is the hash
 # of the node to ensure each is unique.
-def convert_subtree(dot, parent_node, parent_dot_name):
+def convert_subtree(
+    dot: graphviz.Digraph,
+    parent_node: ET.Element,
+    parent_dot_name: str,
+    xml_tree: ET.ElementTree,
+) -> None:
     if parent_node.tag == 'SubTree':
-        add_sub_tree(dot, parent_dot_name, parent_node)
+        add_sub_tree(dot, parent_dot_name, parent_node, xml_tree)
     else:
-        add_nodes(dot, parent_dot_name, parent_node)
+        add_nodes(dot, parent_dot_name, parent_node, xml_tree)
 
 
-def add_sub_tree(dot, parent_dot_name, parent_node):
+def add_sub_tree(
+    dot: graphviz.Digraph,
+    parent_dot_name: str,
+    parent_node: ET.Element,
+    xml_tree: ET.ElementTree,
+) -> None:
     root_tree_name = parent_node.get('ID')
+    if root_tree_name is None:
+        raise RuntimeError('SubTree node has no ID attribute')
     dot.node(parent_dot_name, root_tree_name, shape='box')
     behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
-    convert_subtree(dot, behavior_tree, parent_dot_name)
+    convert_subtree(dot, behavior_tree, parent_dot_name, xml_tree)
 
 
-def add_nodes(dot, parent_dot_name, parent_node):
+def add_nodes(
+    dot: graphviz.Digraph,
+    parent_dot_name: str,
+    parent_node: ET.Element,
+    xml_tree: ET.ElementTree,
+) -> None:
     for node in list(parent_node):
         label = make_label(node)
         dot.node(
@@ -179,27 +197,25 @@ def add_nodes(dot, parent_dot_name, parent_node):
         )
         dot_name = str(hash(node))
         dot.edge(parent_dot_name, dot_name)
-        convert_subtree(dot, node, dot_name)
+        convert_subtree(dot, node, dot_name, xml_tree)
 
 
 # The node label contains the:
 # type, the name if provided, and the parameters.
-def make_label(node):
+def make_label(node: ET.Element) -> str:
     label = "< <table border='0' cellspacing='0' cellpadding='0'>"
-    label += "<tr><td align='text'><i>' + node.tag + '</i></td></tr>"
+    label += f"<tr><td align='text'><i>{node.tag}</i></td></tr>"
     name = node.get('name')
     if name:
-        label += "<tr><td align='text'><b>' + name + '</b></td></tr>"
+        label += f"<tr><td align='text'><b>{name}</b></td></tr>"
 
-    for (param_name, value) in node.items():
-        label += (
-            "<tr><td align='left'><sub>' + param_name + '=' + value + '</sub></td></tr>"
-        )
+    for param_name, value in node.items():
+        label += f"<tr><td align='left'><sub>{param_name}={value}</sub></td></tr>"
     label += '</table> >'
     return label
 
 
-def node_color(node_type):
+def node_color(node_type: str) -> str:
     if node_type in control_nodes:
         return 'chartreuse4'
     if node_type in action_nodes:
@@ -215,7 +231,7 @@ def node_color(node_type):
 
 
 # creates a legend which can be provided with the other images.
-def make_legend():
+def make_legend() -> graphviz.Digraph:
     legend = graphviz.Digraph(graph_attr={'rankdir': 'LR'})
     legend.attr(label='Legend')
     legend.node('Unknown', shape='box', style='filled', color='grey')

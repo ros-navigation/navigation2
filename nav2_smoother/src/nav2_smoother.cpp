@@ -22,7 +22,7 @@
 
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
 #include "tf2_ros/create_timer_ros.h"
@@ -53,8 +53,6 @@ SmootherServer::SmootherServer(const rclcpp::NodeOptions & options)
     rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter("smoother_plugins", default_ids_);
-
-  declare_parameter("action_server_result_timeout", 10.0);
 }
 
 SmootherServer::~SmootherServer()
@@ -62,8 +60,8 @@ SmootherServer::~SmootherServer()
   smoothers_.clear();
 }
 
-nav2_util::CallbackReturn
-SmootherServer::on_configure(const rclcpp_lifecycle::State &)
+nav2::CallbackReturn
+SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring smoother server");
 
@@ -72,7 +70,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   get_parameter("smoother_plugins", smoother_ids_);
   if (smoother_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_types_[i]));
     }
@@ -85,7 +83,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
 
   std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_tolerance;
+  double transform_tolerance = 0.1;
   this->get_parameter("costmap_topic", costmap_topic);
   this->get_parameter("footprint_topic", footprint_topic);
   this->get_parameter("transform_tolerance", transform_tolerance);
@@ -100,27 +98,22 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State &)
     *costmap_sub_, *footprint_sub_, this->get_name());
 
   if (!loadSmootherPlugins()) {
-    return nav2_util::CallbackReturn::FAILURE;
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
   }
 
   // Initialize pubs & subs
-  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed", 1);
-
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+  plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan_smoothed");
 
   // Create the action server that we implement with our smoothPath method
-  action_server_ = std::make_unique<ActionServer>(
-    shared_from_this(),
+  action_server_ = create_action_server<Action>(
     "smooth_path",
     std::bind(&SmootherServer::smoothPlan, this),
     nullptr,
     std::chrono::milliseconds(500),
-    true, server_options);
+    true);
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool SmootherServer::loadSmootherPlugins()
@@ -132,7 +125,7 @@ bool SmootherServer::loadSmootherPlugins()
   for (size_t i = 0; i != smoother_ids_.size(); i++) {
     try {
       smoother_types_[i] =
-        nav2_util::get_plugin_type_param(node, smoother_ids_[i]);
+        nav2::get_plugin_type_param(node, smoother_ids_[i]);
       nav2_core::Smoother::Ptr smoother =
         lp_loader_.createUniqueInstance(smoother_types_[i]);
       RCLCPP_INFO(
@@ -161,8 +154,8 @@ bool SmootherServer::loadSmootherPlugins()
   return true;
 }
 
-nav2_util::CallbackReturn
-SmootherServer::on_activate(const rclcpp_lifecycle::State &)
+nav2::CallbackReturn
+SmootherServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
@@ -176,10 +169,10 @@ SmootherServer::on_activate(const rclcpp_lifecycle::State &)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 SmootherServer::on_deactivate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -194,10 +187,10 @@ SmootherServer::on_deactivate(const rclcpp_lifecycle::State &)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -218,14 +211,14 @@ SmootherServer::on_cleanup(const rclcpp_lifecycle::State &)
   costmap_sub_.reset();
   collision_checker_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 SmootherServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool SmootherServer::findSmootherId(
@@ -267,7 +260,7 @@ void SmootherServer::smoothPlan()
   try {
     auto goal = action_server_->get_current_goal();
     if (!goal) {
-      return;  //  if action_server_ is inactivate, goal would be a nullptr
+      return;  //  if action_server_ is deactivate, goal would be a nullptr
     }
 
     std::string c_name = goal->smoother_id;
@@ -303,23 +296,21 @@ void SmootherServer::smoothPlan()
 
     // Check for collisions
     if (goal->check_for_collisions) {
-      geometry_msgs::msg::Pose2D pose2d;
+      geometry_msgs::msg::Pose pose;
       bool fetch_data = true;
-      for (const auto & pose : result->path.poses) {
-        pose2d.x = pose.pose.position.x;
-        pose2d.y = pose.pose.position.y;
-        pose2d.theta = tf2::getYaw(pose.pose.orientation);
+      for (const auto & p : result->path.poses) {
+        pose = p.pose;
 
-        if (!collision_checker_->isCollisionFree(pose2d, fetch_data)) {
+        if (!collision_checker_->isCollisionFree(pose, fetch_data)) {
           RCLCPP_ERROR(
             get_logger(),
             "Smoothed path leads to a collision at x: %lf, y: %lf, theta: %lf",
-            pose2d.x, pose2d.y, pose2d.theta);
+            pose.position.x, pose.position.y, tf2::getYaw(pose.orientation));
           throw nav2_core::SmoothedPathInCollision(
                   "Smoothed Path collided at"
-                  "X: " + std::to_string(pose2d.x) +
-                  "Y: " + std::to_string(pose2d.y) +
-                  "Theta: " + std::to_string(pose2d.theta));
+                  "X: " + std::to_string(pose.position.x) +
+                  "Y: " + std::to_string(pose.position.y) +
+                  "Theta: " + std::to_string(tf2::getYaw(pose.orientation)));
         }
         fetch_data = false;
       }
@@ -331,37 +322,44 @@ void SmootherServer::smoothPlan()
 
     action_server_->succeeded_current(result);
   } catch (nav2_core::InvalidSmoother & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_SMOOTHER;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherTimedOut & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::TIMEOUT;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmoothedPathInCollision & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::SMOOTHED_PATH_IN_COLLISION;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToSmoothPath & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::FAILED_TO_SMOOTH_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::INVALID_PATH;
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::SmootherException & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & ex) {
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    result->error_msg = ex.what();
+    RCLCPP_ERROR(this->get_logger(), result->error_msg.c_str());
     result->error_code = ActionResult::UNKNOWN;
     action_server_->terminate_current(result);
     return;

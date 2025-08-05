@@ -111,7 +111,7 @@ TEST(map_2d, bresenham2DBoundariesCheck)
   MapTest mt(sz_x, sz_y);
   MapAction ma(mt.getMap(), mt.getSize());
 
-  // Initial point - some assymetrically standing point in order to cover most corner cases
+  // Initial point - some asymmetrically standing point in order to cover most corner cases
   const unsigned int x0 = 2;
   const unsigned int y0 = 4;
   // (x1, y1) point will move

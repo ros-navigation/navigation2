@@ -24,10 +24,13 @@ IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  initialized_(false)
+  max_cost_(254), consider_unknown_as_obstacle_(false)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  client_ = node_->create_client<nav2_msgs::srv::IsPathValid>("is_path_valid");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  client_ =
+    node_->create_client<nav2_msgs::srv::IsPathValid>(
+    "is_path_valid",
+    false /* Does not create and spin an internal executor*/);
 
   server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 }
@@ -35,12 +38,13 @@ IsPathValidCondition::IsPathValidCondition(
 void IsPathValidCondition::initialize()
 {
   getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-  initialized_ = true;
+  getInput<unsigned int>("max_cost", max_cost_);
+  getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 
@@ -50,14 +54,11 @@ BT::NodeStatus IsPathValidCondition::tick()
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
 
   request->path = path;
-  auto result = client_->async_send_request(request);
-
-  if (rclcpp::spin_until_future_complete(node_, result, server_timeout_) ==
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    if (result.get()->is_valid) {
-      return BT::NodeStatus::SUCCESS;
-    }
+  request->max_cost = max_cost_;
+  request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
+  auto response = client_->invoke(request, server_timeout_);
+  if (response->is_valid) {
+    return BT::NodeStatus::SUCCESS;
   }
   return BT::NodeStatus::FAILURE;
 }

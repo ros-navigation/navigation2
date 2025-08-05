@@ -18,6 +18,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -32,6 +33,7 @@ target_link_libraries(smooth_control_law PUBLIC
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   tf2::tf2
 )
 
@@ -52,6 +54,7 @@ target_include_directories(${library_name}
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
   nav2_costmap_2d::nav2_costmap_2d_core
   nav_2d_utils::tf_help
@@ -109,6 +112,7 @@ ament_export_dependencies(
   tf2
   tf2_ros
   visualization_msgs
+  nav2_ros_common
 )
 ament_export_targets(nav2_graceful_controller)
 

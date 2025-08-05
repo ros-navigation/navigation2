@@ -12,7 +12,12 @@ target_link_libraries(test_smoother_server
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
+  nav2_ros_common::nav2_ros_common
 )
+target_include_directories(test_smoother_server
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_add_gtest(test_simple_smoother
   test_simple_smoother.cpp
@@ -28,7 +33,12 @@ target_link_libraries(test_simple_smoother
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
+  nav2_ros_common::nav2_ros_common
 )
+target_include_directories(test_simple_smoother
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
 ament_add_gtest(test_savitzky_golay_smoother
   test_savitzky_golay_smoother.cpp
@@ -45,4 +55,9 @@ target_link_libraries(test_savitzky_golay_smoother
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
+target_include_directories(test_savitzky_golay_smoother
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")

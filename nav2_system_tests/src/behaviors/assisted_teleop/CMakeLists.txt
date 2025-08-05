@@ -9,14 +9,20 @@ target_link_libraries(${test_assisted_teleop_behavior}
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   ${std_msgs_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
-
+target_include_directories(${test_assisted_teleop_behavior}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
 ament_add_test(test_assisted_teleop_behavior
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_assisted_teleop_behavior_launch.py"

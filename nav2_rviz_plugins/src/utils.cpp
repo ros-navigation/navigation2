@@ -24,12 +24,12 @@ void pluginLoader(
   rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
   const std::string & plugin_type, QComboBox * combo_box)
 {
-  auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
-
   // Do not load the plugins if the combo box is already populated
   if (combo_box->count() > 0) {
     return;
   }
+
+  auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
 
   // Wait for the service to be available before calling it
   bool server_unavailable = false;
@@ -38,22 +38,20 @@ void pluginLoader(
       RCLCPP_ERROR(node->get_logger(), "Interrupted while waiting for the service. Exiting.");
       rclcpp::shutdown();
     }
-    RCLCPP_INFO(
-      node->get_logger(),
-      "%s service not available", server_name.c_str());
+    RCLCPP_INFO(node->get_logger(), "%s service not available", server_name.c_str());
     server_unavailable = true;
     server_failed = true;
     break;
   }
 
   // Loading the plugins into the combo box
-  // If server unavaialble, let the combo box be empty
+  // If server unavailable, let the combo box be empty
   if (server_unavailable) {
     return;
   }
-  combo_box->addItem("Default");
   auto parameters = parameter_client->get_parameters({plugin_type});
   auto str_arr = parameters[0].as_string_array();
+  combo_box->addItem("Default");
   for (auto str : str_arr) {
     combo_box->addItem(QString::fromStdString(str));
   }

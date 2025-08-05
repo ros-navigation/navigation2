@@ -69,6 +69,12 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
    * \brief Override required by the a BT action. Cancel the action and set the path output
    */
   void halt() override;
@@ -97,6 +103,8 @@ public:
           "success", "If the action was successful"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "Error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "Error message"),
         BT::OutputPort<ActionResult::_num_retries_type>(
           "num_retries", "The number of retries executed"),
       });

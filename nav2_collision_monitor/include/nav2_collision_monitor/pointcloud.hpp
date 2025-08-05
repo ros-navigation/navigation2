@@ -45,7 +45,7 @@ public:
    * considering the difference between current time and latest source time
    */
   PointCloud(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -88,13 +88,22 @@ protected:
    */
   void dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
+   */
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
   // ----- Variables -----
 
   /// @brief PointCloud data subscriber
-  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
+  nav2::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr data_sub_;
 
   // Minimum and maximum height of PointCloud projected to 2D space
   double min_height_, max_height_;
+  // Minimum range from sensor origin to filter out close points
+  double min_range_;
 
   /// @brief Latest data obtained from pointcloud
   sensor_msgs::msg::PointCloud2::ConstSharedPtr data_;

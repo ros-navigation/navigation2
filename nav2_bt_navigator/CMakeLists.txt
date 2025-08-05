@@ -16,6 +16,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -34,6 +35,7 @@ target_include_directories(${library_name}
 target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -56,6 +58,7 @@ target_include_directories(${executable_name}
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
@@ -69,6 +72,7 @@ target_link_libraries(nav2_navigate_to_pose_navigator PUBLIC
   nav2_core::nav2_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -92,6 +96,7 @@ target_link_libraries(nav2_navigate_through_poses PUBLIC
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
 )
@@ -128,6 +133,6 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name} nav2_navigate_to_pose_navigator nav2_navigate_through_poses)
-ament_export_dependencies(geometry_msgs nav2_core nav2_msgs nav2_util nav_msgs pluginlib rclcpp rclcpp_action tf2_ros)
+ament_export_dependencies(geometry_msgs nav2_core nav2_msgs nav2_util nav2_ros_common nav_msgs pluginlib rclcpp rclcpp_action tf2_ros)
 ament_export_targets(export_${library_name})
 ament_package()

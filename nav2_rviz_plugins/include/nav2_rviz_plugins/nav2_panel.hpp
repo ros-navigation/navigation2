@@ -102,7 +102,7 @@ private:
     std::vector<double> orientation);
   void startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> poses);
   void startNavigation(geometry_msgs::msg::PoseStamped);
-  void startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses);
+  void startNavThroughPoses(nav_msgs::msg::Goals poses);
   using NavigationGoalHandle =
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
   using WaypointFollowerGoalHandle =
@@ -113,27 +113,27 @@ private:
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
 
-  // Timeout value when waiting for action servers to respnd
+  // Timeout value when waiting for action servers to respond
   std::chrono::milliseconds server_timeout_;
 
   // A timer used to check on the completion status of the action
   QBasicTimer timer_;
 
   // The NavigateToPose action client
-  rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr
+  nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SharedPtr navigation_action_client_;
+  nav2::ActionClient<nav2_msgs::action::FollowWaypoints>::SharedPtr
     waypoint_follower_action_client_;
-  rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SharedPtr
+  nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SharedPtr
     nav_through_poses_action_client_;
 
   // Navigation action feedback subscribers
-  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
     navigation_feedback_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
     nav_through_poses_feedback_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
     navigation_goal_status_sub_;
-  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
+  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose
@@ -196,8 +196,8 @@ private:
   QState * accumulated_wp_{nullptr};
   QState * accumulated_nav_through_poses_{nullptr};
 
-  std::vector<geometry_msgs::msg::PoseStamped> acummulated_poses_;
-  std::vector<geometry_msgs::msg::PoseStamped> store_poses_;
+  nav_msgs::msg::Goals acummulated_poses_;
+  nav_msgs::msg::Goals store_poses_;
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();

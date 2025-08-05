@@ -115,7 +115,7 @@ void CostmapTester::compareCells(
 
   if (cell_cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
     // if the cell is a lethal obstacle,
-    // then we know that all its neighbors should have equal or slighlty less cost
+    // then we know that all its neighbors should have equal or slightly less cost
     unsigned char expected_lowest_cost = 0;
     EXPECT_TRUE(
       neighbor_cost >= expected_lowest_cost ||
@@ -162,7 +162,7 @@ void testCallback()
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = nav2::LifecycleNode::make_shared("costmap_tester");
   testing::InitGoogleTest(&argc, argv);
 
   tf_ = new tf2_ros::Buffer(node->get_clock());

@@ -24,7 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
 

@@ -19,8 +19,7 @@
 
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 namespace nav2_core
@@ -51,7 +50,7 @@ public:
    * @param plugin_name plugin name comes from parameters in yaml file
    */
   virtual void initialize(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) = 0;
 
   /**

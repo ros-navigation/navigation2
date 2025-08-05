@@ -27,7 +27,7 @@ namespace nav2_regulated_pure_pursuit_controller
 using namespace nav2_costmap_2d;  // NOLINT
 
 CollisionChecker::CollisionChecker(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   Parameters * params)
 {
@@ -41,7 +41,7 @@ CollisionChecker::CollisionChecker(
       FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_);
   footprint_collision_checker_->setCostmap(costmap_);
 
-  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc", 1);
+  carrot_arc_pub_ = node->create_publisher<nav_msgs::msg::Path>("lookahead_collision_arc");
   carrot_arc_pub_->on_activate();
 }
 
@@ -86,34 +86,43 @@ bool CollisionChecker::isCollisionImminent(
   }
 
   const geometry_msgs::msg::Point & robot_xy = robot_pose.pose.position;
-  geometry_msgs::msg::Pose2D curr_pose;
-  curr_pose.x = robot_pose.pose.position.x;
-  curr_pose.y = robot_pose.pose.position.y;
-  curr_pose.theta = tf2::getYaw(robot_pose.pose.orientation);
+  geometry_msgs::msg::Pose curr_pose;
+  curr_pose = robot_pose.pose;
 
   // only forward simulate within time requested
+  double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
+  if (params_->min_distance_to_obstacle > 0.0) {
+    max_allowed_time_to_collision_check = std::max(
+        params_->max_allowed_time_to_collision_up_to_carrot,
+        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel),
+        params_->min_approach_linear_velocity)
+    );
+  }
   int i = 1;
-  while (i * projection_time < params_->max_allowed_time_to_collision_up_to_carrot) {
+  while (i * projection_time < max_allowed_time_to_collision_check) {
     i++;
 
+    double theta = tf2::getYaw(curr_pose.orientation);
+
     // apply velocity at curr_pose over distance
-    curr_pose.x += projection_time * (linear_vel * cos(curr_pose.theta));
-    curr_pose.y += projection_time * (linear_vel * sin(curr_pose.theta));
-    curr_pose.theta += projection_time * angular_vel;
+    curr_pose.position.x += projection_time * (linear_vel * cos(theta));
+    curr_pose.position.y += projection_time * (linear_vel * sin(theta));
+    theta += projection_time * angular_vel;
+    curr_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
     // check if past carrot pose, where no longer a thoughtfully valid command
-    if (hypot(curr_pose.x - robot_xy.x, curr_pose.y - robot_xy.y) > carrot_dist) {
+    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {
       break;
     }
 
     // store it for visualization
-    pose_msg.pose.position.x = curr_pose.x;
-    pose_msg.pose.position.y = curr_pose.y;
+    pose_msg.pose.position.x = curr_pose.position.x;
+    pose_msg.pose.position.y = curr_pose.position.y;
     pose_msg.pose.position.z = 0.01;
     arc_pts_msg.poses.push_back(pose_msg);
 
     // check for collision at the projected pose
-    if (inCollision(curr_pose.x, curr_pose.y, curr_pose.theta)) {
+    if (inCollision(curr_pose.position.x, curr_pose.position.y, theta)) {
       carrot_arc_pub_->publish(arc_pts_msg);
       return true;
     }

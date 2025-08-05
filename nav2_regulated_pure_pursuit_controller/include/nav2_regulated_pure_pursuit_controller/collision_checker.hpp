@@ -21,15 +21,15 @@
 #include <algorithm>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -47,7 +47,7 @@ public:
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::CollisionChecker
    */
   CollisionChecker(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros, Parameters * params);
 
   /**
@@ -96,7 +96,7 @@ protected:
   std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
   footprint_collision_checker_;
   Parameters * params_;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> carrot_arc_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
   rclcpp::Clock::SharedPtr clock_;
 };
 

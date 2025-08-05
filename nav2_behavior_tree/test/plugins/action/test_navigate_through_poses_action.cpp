@@ -53,7 +53,7 @@ class NavigateThroughPosesActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("navigate_through_poses_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("navigate_through_poses_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -74,7 +74,7 @@ public:
       "wait_for_service_timeout",
       std::chrono::milliseconds(1000));
     config_->blackboard->set("initial_pose_received", false);
-    std::vector<geometry_msgs::msg::PoseStamped> poses;
+    nav_msgs::msg::Goals poses;
     config_->blackboard->set(
       "goals", poses);
 
@@ -106,13 +106,13 @@ public:
   static std::shared_ptr<NavigateThroughPosesActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr NavigateThroughPosesActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr NavigateThroughPosesActionTestFixture::node_ = nullptr;
 std::shared_ptr<NavigateThroughPosesActionServer>
 NavigateThroughPosesActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * NavigateThroughPosesActionTestFixture::config_ = nullptr;
@@ -132,10 +132,10 @@ TEST_F(NavigateThroughPosesActionTestFixture, test_tick)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
 
-  std::vector<geometry_msgs::msg::PoseStamped> poses;
-  poses.resize(1);
-  poses[0].pose.position.x = -2.5;
-  poses[0].pose.orientation.x = 1.0;
+  nav_msgs::msg::Goals poses;
+  poses.goals.resize(1);
+  poses.goals[0].pose.position.x = -2.5;
+  poses.goals[0].pose.orientation.x = 1.0;
   config_->blackboard->set("goals", poses);
 
   // tick until node succeeds

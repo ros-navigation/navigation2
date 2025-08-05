@@ -52,7 +52,7 @@ public:
    * @brief Run a sensor update on laser
    * @param pf Particle filter to use
    * @param data Laser data to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   virtual bool sensorUpdate(pf_t * pf, LaserData * data) = 0;
 
@@ -123,7 +123,7 @@ public:
    * @brief Run a sensor update on laser
    * @param pf Particle filter to use
    * @param data Laser data to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   bool sensorUpdate(pf_t * pf, LaserData * data);
 
@@ -153,7 +153,7 @@ public:
    * @brief Run a sensor update on laser
    * @param pf Particle filter to use
    * @param data Laser data to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   bool sensorUpdate(pf_t * pf, LaserData * data);
 
@@ -162,7 +162,7 @@ private:
    * @brief Perform the update function
    * @param data Laser data to use
    * @param pf Particle filter to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
 };
@@ -187,7 +187,7 @@ public:
    * @brief Run a sensor update on laser
    * @param pf Particle filter to use
    * @param data Laser data to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   bool sensorUpdate(pf_t * pf, LaserData * data);
 
@@ -196,7 +196,7 @@ private:
    * @brief Perform the update function
    * @param data Laser data to use
    * @param pf Particle filter to use
-   * @return if it was succesful
+   * @return if it was successful
    */
   static double sensorFunction(LaserData * data, pf_sample_set_t * set);
   bool do_beamskip_;

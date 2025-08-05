@@ -14,6 +14,9 @@ find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_ros_common REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 nav2_package()
 
@@ -41,8 +44,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_ros_common::nav2_ros_common
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE
   angles::angles
@@ -85,6 +91,7 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav_2d_msgs
   rclcpp
+  nav2_ros_common
 )
 ament_export_targets(${PROJECT_NAME})
 

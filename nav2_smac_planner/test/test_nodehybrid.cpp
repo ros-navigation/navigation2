@@ -22,22 +22,14 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/types.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(NodeHybridTest, test_node_hybrid)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -151,7 +143,7 @@ TEST(NodeHybridTest, test_node_hybrid)
 
 TEST(NodeHybridTest, test_obstacle_heuristic)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -312,7 +304,7 @@ TEST(NodeHybridTest, test_interpolation_prims2)
 
 TEST(NodeHybridTest, test_node_reeds_neighbors)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
   info.non_straight_penalty = 1.4;
@@ -417,4 +409,17 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
     unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
     EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

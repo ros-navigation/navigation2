@@ -13,6 +13,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -31,6 +32,7 @@ target_link_libraries(${library_name} PUBLIC
   bondcpp::bondcpp
   diagnostic_updater::diagnostic_updater
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   ${std_srvs_TARGETS}
@@ -52,6 +54,7 @@ target_include_directories(lifecycle_manager
 target_link_libraries(lifecycle_manager PRIVATE
   ${library_name}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")
@@ -85,7 +88,7 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp rclcpp_action std_srvs)
+ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp rclcpp_action std_srvs nav2_ros_common)
 ament_export_targets(${library_name})
 
 ament_package()

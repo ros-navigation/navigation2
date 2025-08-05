@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace dwb_plugins
@@ -141,7 +141,7 @@ class KinematicsHandler
 public:
   KinematicsHandler();
   ~KinematicsHandler();
-  void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
+  void initialize(const nav2::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
 
@@ -150,13 +150,13 @@ public:
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
 protected:
-  nav2_util::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   std::atomic<KinematicParameters *> kinematics_;
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(

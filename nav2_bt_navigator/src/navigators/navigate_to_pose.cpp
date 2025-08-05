@@ -23,53 +23,50 @@ namespace nav2_bt_navigator
 
 bool
 NavigateToPoseNavigator::configure(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+  nav2::LifecycleNode::WeakPtr parent_node,
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
 
-  if (!node->has_parameter("goal_blackboard_id")) {
-    node->declare_parameter("goal_blackboard_id", std::string("goal"));
-  }
-
-  goal_blackboard_id_ = node->get_parameter("goal_blackboard_id").as_string();
-
-  if (!node->has_parameter("path_blackboard_id")) {
-    node->declare_parameter("path_blackboard_id", std::string("path"));
-  }
-
-  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
+  goal_blackboard_id_ =
+    node->declare_or_get_parameter("goal_blackboard_id", std::string("goal"));
+  path_blackboard_id_ =
+    node->declare_or_get_parameter("path_blackboard_id", std::string("path"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
-  self_client_ = rclcpp_action::create_client<ActionT>(node, getName());
+  self_client_ = node->create_action_client<ActionT>(getName());
 
   goal_sub_ = node->create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose",
-    rclcpp::SystemDefaultsQoS(),
     std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
+  bool enable_groot_monitoring =
+    node->declare_or_get_parameter(getName() + ".enable_groot_monitoring", false);
+  int groot_server_port =
+    node->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
+
+  bt_action_server_->setGrootMonitoring(
+      enable_groot_monitoring,
+      groot_server_port);
+
   return true;
 }
 
 std::string
 NavigateToPoseNavigator::getDefaultBTFilepath(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node)
+  nav2::LifecycleNode::WeakPtr parent_node)
 {
-  std::string default_bt_xml_filename;
   auto node = parent_node.lock();
+  std::string pkg_share_dir =
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
 
-  if (!node->has_parameter("default_nav_to_pose_bt_xml")) {
-    std::string pkg_share_dir =
-      ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
-    node->declare_parameter<std::string>(
-      "default_nav_to_pose_bt_xml",
-      pkg_share_dir +
-      "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
-  }
-
-  node->get_parameter("default_nav_to_pose_bt_xml", default_bt_xml_filename);
+  auto default_bt_xml_filename = node->declare_or_get_parameter(
+    "default_nav_to_pose_bt_xml",
+    pkg_share_dir +
+    "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
 
   return default_bt_xml_filename;
 }
@@ -88,9 +85,8 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
   auto bt_xml_filename = goal->behavior_tree;
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
-    RCLCPP_ERROR(
-      logger_, "BT file not found: %s. Navigation canceled.",
-      bt_xml_filename.c_str());
+    bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Error loading XML file: ") + bt_xml_filename + ". Navigation canceled.");
     return false;
   }
 
@@ -99,9 +95,21 @@ NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 
 void
 NavigateToPoseNavigator::goalCompleted(
-  typename ActionT::Result::SharedPtr /*result*/,
+  typename ActionT::Result::SharedPtr result,
   const nav2_behavior_tree::BtStatus /*final_bt_status*/)
 {
+  if (result->error_code == 0) {
+    if (bt_action_server_->populateInternalError(result)) {
+      RCLCPP_WARN(logger_,
+        "NavigateToPoseNavigator::goalCompleted, internal error %d:%s.",
+        result->error_code,
+        result->error_msg.c_str());
+    }
+  } else {
+    RCLCPP_WARN(logger_, "NavigateToPoseNavigator::goalCompleted error %d:%s.",
+      result->error_code,
+      result->error_msg.c_str());
+  }
 }
 
 void
@@ -123,14 +131,10 @@ NavigateToPoseNavigator::onLoop()
 
   auto blackboard = bt_action_server_->getBlackboard();
 
-  try {
-    // Get current path points
-    nav_msgs::msg::Path current_path;
-    if (!blackboard->get(path_blackboard_id_, current_path) || current_path.poses.size() == 0u) {
-      // If no path set yet or not meaningful, can't compute ETA or dist remaining yet.
-      throw std::exception();
-    }
-
+  // Get current path points
+  nav_msgs::msg::Path current_path;
+  auto res = blackboard->get(path_blackboard_id_, current_path);
+  if (res && current_path.poses.size() > 0u) {
     // Find the closest pose to current pose on global path
     auto find_closest_pose_idx =
       [&current_pose, &current_path]() {
@@ -167,12 +171,10 @@ NavigateToPoseNavigator::onLoop()
 
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
-  } catch (...) {
-    // Ignore
   }
 
   int recovery_count = 0;
-  [[maybe_unused]] auto res = blackboard->get("number_recoveries", recovery_count);
+  res = blackboard->get("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
@@ -220,7 +222,8 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    RCLCPP_ERROR(logger_, "Initial robot pose is not available.");
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+      "Initial robot pose is not available.");
     return false;
   }
 
@@ -229,10 +232,12 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
       goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.transform_tolerance))
   {
-    RCLCPP_ERROR(
-      logger_,
-      "Failed to transform a goal pose provided with frame_id '%s' to the global frame '%s'.",
-      goal->pose.header.frame_id.c_str(), feedback_utils_.global_frame.c_str());
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+      "Failed to transform a goal pose provided with frame_id '" +
+      goal->pose.header.frame_id +
+      "' to the global frame '" +
+      feedback_utils_.global_frame +
+      "'.");
     return false;
   }
 

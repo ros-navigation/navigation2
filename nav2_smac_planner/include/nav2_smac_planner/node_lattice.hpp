@@ -27,6 +27,7 @@
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/utils.hpp"
+#include "nav2_smac_planner/nav2_smac_planner_common_visibility_control.hpp"
 
 namespace nav2_smac_planner
 {
@@ -140,7 +141,7 @@ public:
   /**
    * @brief operator== for comparisons
    * @param NodeLattice right hand side node reference
-   * @return If cell indicies are equal
+   * @return If cell indices are equal
    */
   bool operator==(const NodeLattice & rhs)
   {
@@ -314,7 +315,7 @@ public:
    */
   static float getHeuristicCost(
     const Coordinates & node_coords,
-    const Coordinates & goal_coordinates);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Initialize motion models
@@ -402,23 +403,23 @@ public:
 
   /**
    * @brief Set the starting pose for planning, as a node index
-   * @param path Reference to a vector of indicies of generated path
+   * @param path Reference to a vector of indices of generated path
    * @return whether the path was able to be backtraced
    */
   bool backtracePath(CoordinateVector & path);
 
   /**
-   * \brief add node to the path
-   * \param current_node
+   * @brief add node to the path
+   * @param current_node
    */
   void addNodeToPath(NodePtr current_node, CoordinateVector & path);
 
   NodeLattice * parent;
   Coordinates pose;
-  static LatticeMotionTable motion_table;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static LatticeMotionTable motion_table;
   // Dubin / Reeds-Shepp lookup and size for dereferencing
-  static LookupTable dist_heuristic_lookup_table;
-  static float size_lookup;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
 
 private:
   float _cell_cost;
@@ -427,6 +428,7 @@ private:
   bool _was_visited;
   MotionPrimitive * _motion_primitive;
   bool _backwards;
+  bool _is_node_valid{false};
 };
 
 }  // namespace nav2_smac_planner

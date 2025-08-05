@@ -43,8 +43,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/prefer_forward.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 static constexpr double default_penalty = 1.0;
 static constexpr double default_strafe_x = 0.1;
@@ -55,7 +56,7 @@ TEST(PreferForward, StartNode)
 {
   auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
   node->configure();
   node->activate();
 
@@ -143,7 +144,7 @@ TEST(PreferForward, NoneDefaultValues)
 {
   auto critic = std::make_shared<dwb_critics::PreferForwardCritic>();
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
   node->configure();
   node->activate();
 
@@ -155,16 +156,16 @@ TEST(PreferForward, NoneDefaultValues)
   std::string name = "test";
   std::string ns = "ns";
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, ns + "." + name + ".penalty",
     rclcpp::ParameterValue(penalty));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, ns + "." + name + ".strafe_x",
     rclcpp::ParameterValue(strafe_x));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, ns + "." + name + ".strafe_theta",
     rclcpp::ParameterValue(strafe_theta));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, ns + "." + name + ".theta_scale",
     rclcpp::ParameterValue(theta_scale));
 

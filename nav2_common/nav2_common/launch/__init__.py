@@ -13,13 +13,13 @@
 # limitations under the License.
 
 from .has_node_params import HasNodeParams
-from .parse_multirobot_pose import ParseMultiRobotPose
+from .launch_config_as_bool import LaunchConfigAsBool
 from .replace_string import ReplaceString
 from .rewritten_yaml import RewrittenYaml
 
 __all__ = [
     'HasNodeParams',
+    'LaunchConfigAsBool',
     'RewrittenYaml',
     'ReplaceString',
-    'ParseMultiRobotPose',
 ]

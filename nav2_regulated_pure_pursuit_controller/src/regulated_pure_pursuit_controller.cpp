@@ -23,7 +23,7 @@
 #include "angles/angles.h"
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -37,7 +37,7 @@ namespace nav2_regulated_pure_pursuit_controller
 {
 
 void RegulatedPurePursuitController::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -72,12 +72,12 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan", 1);
-  carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point", 1);
+  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
+  carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point");
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
-    "curvature_lookahead_point", 1);
+    "curvature_lookahead_point");
   is_rotating_to_heading_pub_ = node->create_publisher<std_msgs::msg::Bool>(
-    "is_rotating_to_heading", 1);
+    "is_rotating_to_heading");
 }
 
 void RegulatedPurePursuitController::cleanup()
@@ -187,6 +187,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
+  double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
   // Check for reverse driving
   if (params_->allow_reversing) {
@@ -196,6 +197,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     // if the lookahead distance is further than the cusp, use the cusp distance instead
     if (dist_to_cusp < lookahead_dist) {
       lookahead_dist = dist_to_cusp;
+    }
+    if (dist_to_cusp < curv_lookahead_dist) {
+      curv_lookahead_dist = dist_to_cusp;
     }
   }
 
@@ -211,7 +215,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double regulation_curvature = lookahead_curvature;
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = getLookAheadPoint(
-      params_->curvature_lookahead_dist,
+      curv_lookahead_dist,
       transformed_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
@@ -316,8 +320,21 @@ bool RegulatedPurePursuitController::shouldRotateToGoalHeading(
   const geometry_msgs::msg::PoseStamped & carrot_pose)
 {
   // Whether we should rotate robot to goal heading
-  double dist_to_goal = std::hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
-  return params_->use_rotate_to_heading && dist_to_goal < goal_dist_tol_;
+  if (!params_->use_rotate_to_heading) {
+    return false;
+  }
+
+  double dist_to_goal = std::hypot(
+    carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+
+  if (params_->stateful) {
+    if (!has_reached_xy_tolerance_ && dist_to_goal < goal_dist_tol_) {
+      has_reached_xy_tolerance_ = true;
+    }
+    return has_reached_xy_tolerance_;
+  }
+
+  return dist_to_goal < goal_dist_tol_;
 }
 
 void RegulatedPurePursuitController::rotateToHeading(
@@ -333,6 +350,12 @@ void RegulatedPurePursuitController::rotateToHeading(
   const double min_feasible_angular_speed = curr_speed.angular.z - params_->max_angular_accel * dt;
   const double max_feasible_angular_speed = curr_speed.angular.z + params_->max_angular_accel * dt;
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
+
+  // Check if we need to slow down to avoid overshooting
+  double max_vel_to_stop = std::sqrt(2 * params_->max_angular_accel * fabs(angle_to_path));
+  if (fabs(angular_vel) > max_vel_to_stop) {
+    angular_vel = sign * max_vel_to_stop;
+  }
 }
 
 geometry_msgs::msg::Point RegulatedPurePursuitController::circleSegmentIntersection(
@@ -462,6 +485,7 @@ void RegulatedPurePursuitController::applyConstraints(
 
 void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
 {
+  has_reached_xy_tolerance_ = false;
   path_handler_->setPlan(path);
 }
 
@@ -489,6 +513,7 @@ void RegulatedPurePursuitController::reset()
 {
   cancelling_ = false;
   finished_cancelling_ = false;
+  has_reached_xy_tolerance_ = false;
 }
 
 double RegulatedPurePursuitController::findVelocitySignChange(
@@ -506,7 +531,7 @@ double RegulatedPurePursuitController::findVelocitySignChange(
     double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
       transformed_plan.poses[pose_id].pose.position.y;
 
-    /* Checking for the existance of cusp, in the path, using the dot product
+    /* Checking for the existence of cusp, in the path, using the dot product
     and determine it's distance from the robot. If there is no cusp in the path,
     then just determine the distance to the goal location. */
     const double dot_prod = (oa_x * ab_x) + (oa_y * ab_y);

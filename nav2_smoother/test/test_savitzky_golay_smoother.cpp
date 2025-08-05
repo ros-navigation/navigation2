@@ -26,7 +26,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -34,18 +34,10 @@ using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(SmootherTest, test_sg_smoother_basics)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
   std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
     std::make_shared<nav2_msgs::msg::Costmap>();
@@ -56,9 +48,8 @@ TEST(SmootherTest, test_sg_smoother_basics)
   costmap_msg->metadata.size_x = 100;
   costmap_msg->metadata.size_y = 100;
 
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
@@ -66,7 +57,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
   smoother->activate();
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
@@ -118,8 +109,8 @@ TEST(SmootherTest, test_sg_smoother_basics)
 
 TEST(SmootherTest, test_sg_smoother_noisey_path)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
   std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
     std::make_shared<nav2_msgs::msg::Costmap>();
@@ -130,9 +121,8 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   costmap_msg->metadata.size_x = 100;
   costmap_msg->metadata.size_y = 100;
 
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
@@ -140,7 +130,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Given nominal irregular/noisey path, test that the output is shorter and smoother
@@ -201,7 +191,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
 
   // Test again with refinement, even shorter and smoother
   node->set_parameter(rclcpp::Parameter("test.do_refinement", rclcpp::ParameterValue(true)));
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
   nav_msgs::msg::Path noisey_path_refined = noisey_path_baseline;
   EXPECT_TRUE(smoother->smooth(noisey_path_refined, max_time));
 
@@ -219,8 +209,8 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
 
 TEST(SmootherTest, test_sg_smoother_reversing)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSGSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSGSmootherTest");
 
   std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
     std::make_shared<nav2_msgs::msg::Costmap>();
@@ -231,9 +221,8 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   costmap_msg->metadata.size_x = 100;
   costmap_msg->metadata.size_y = 100;
 
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
@@ -241,7 +230,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   node->declare_parameter("test.do_refinement", rclcpp::ParameterValue(false));
   auto smoother = std::make_unique<nav2_smoother::SavitzkyGolaySmoother>();
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
   rclcpp::Duration max_time = rclcpp::Duration::from_seconds(1.0);  // 1 seconds
 
   // Test reversing / multiple segments via a cusp
@@ -326,4 +315,17 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   }
 
   EXPECT_LT(length, base_length);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

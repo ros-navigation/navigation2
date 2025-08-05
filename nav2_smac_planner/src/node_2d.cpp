@@ -31,7 +31,8 @@ Node2D::Node2D(const uint64_t index)
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
-  _is_queued(false)
+  _is_queued(false),
+  _in_collision(false)
 {
 }
 
@@ -47,18 +48,21 @@ void Node2D::reset()
   _accumulated_cost = std::numeric_limits<float>::max();
   _was_visited = false;
   _is_queued = false;
+  _in_collision = false;
 }
 
 bool Node2D::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker)
 {
-  if (collision_checker->inCollision(this->getIndex(), traverse_unknown)) {
-    return false;
+  // Already found, we can return the result
+  if (!std::isnan(_cell_cost)) {
+    return !_in_collision;
   }
 
+  _in_collision = collision_checker->inCollision(this->getIndex(), traverse_unknown);
   _cell_cost = collision_checker->getCost();
-  return true;
+  return !_in_collision;
 }
 
 float Node2D::getTraversalCost(const NodePtr & child)
@@ -81,12 +85,12 @@ float Node2D::getTraversalCost(const NodePtr & child)
 
 float Node2D::getHeuristicCost(
   const Coordinates & node_coords,
-  const Coordinates & goal_coordinates)
+  const CoordinateVector & goals_coords)
 {
   // Using Moore distance as it more accurately represents the distances
   // even a Van Neumann neighborhood robot can navigate.
-  auto dx = goal_coordinates.x - node_coords.x;
-  auto dy = goal_coordinates.y - node_coords.y;
+  auto dx = goals_coords[0].x - node_coords.x;
+  auto dy = goals_coords[0].y - node_coords.y;
   return std::sqrt(dx * dx + dy * dy);
 }
 

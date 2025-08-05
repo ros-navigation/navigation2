@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/types.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/buffer.h"
 
@@ -43,7 +43,7 @@ public:
    * @param polygon_name Name of main polygon
    */
   VelocityPolygon(
-    const nav2_util::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
+    const nav2::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
     const tf2::Duration & transform_tolerance);
   /**
@@ -52,7 +52,7 @@ public:
   virtual ~VelocityPolygon();
 
   /**
-   * @brief Overriden getParameters function for VelocityPolygon parameters
+   * @brief Overridden getParameters function for VelocityPolygon parameters
    * @param polygon_sub_topic Not used in VelocityPolygon
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Not used in VelocityPolygon
@@ -63,14 +63,14 @@ public:
     std::string & /*footprint_topic*/) override;
 
   /**
-   * @brief Overriden updatePolygon function for VelocityPolygon
+   * @brief Overridden updatePolygon function for VelocityPolygon
    * @param cmd_vel_in Robot twist command input
    */
   void updatePolygon(const Velocity & cmd_vel_in) override;
 
 protected:
   /**
-    * @brief Custom struc to store the parameters of the sub-polygon
+    * @brief Custom struct to store the parameters of the sub-polygon
     * @param poly_ The points of the sub-polygon
     * @param velocity_polygon_name_ The name of the sub-polygon
     * @param linear_min_ The minimum linear velocity

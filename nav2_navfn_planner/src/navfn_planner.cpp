@@ -35,12 +35,12 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -61,7 +61,7 @@ NavfnPlanner::~NavfnPlanner()
 
 void
 NavfnPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -293,11 +293,13 @@ NavfnPlanner::makePlan(
       p.position.x = goal.position.x - tolerance;
       while (p.position.x <= goal.position.x + tolerance) {
         potential = getPointPotential(p.position);
-        double sdist = squared_distance(p, goal);
-        if (potential < POT_HIGH && sdist < best_sdist) {
-          best_sdist = sdist;
-          best_pose = p;
-          found_legal = true;
+        if (potential < POT_HIGH) {
+          double sdist = squared_distance(p, goal);
+          if (sdist < best_sdist) {
+            best_sdist = sdist;
+            best_pose = p;
+            found_legal = true;
+          }
         }
         p.position.x += resolution;
       }
@@ -366,6 +368,7 @@ NavfnPlanner::smoothApproachToGoal(
   }
   geometry_msgs::msg::PoseStamped goal_copy;
   goal_copy.pose = goal;
+  goal_copy.header = plan.header;
   plan.poses.push_back(goal_copy);
 }
 
@@ -415,6 +418,7 @@ NavfnPlanner::getPlanFromPotential(
     mapToWorld(x[i], y[i], world_x, world_y);
 
     geometry_msgs::msg::PoseStamped pose;
+    pose.header = plan.header;
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
     pose.pose.position.z = 0.0;
@@ -521,19 +525,21 @@ NavfnPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == name_ + ".tolerance") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + ".tolerance") {
         tolerance_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == name_ + ".use_astar") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + ".use_astar") {
         use_astar_ = parameter.as_bool();
-      } else if (name == name_ + ".allow_unknown") {
+      } else if (param_name == name_ + ".allow_unknown") {
         allow_unknown_ = parameter.as_bool();
-      } else if (name == name_ + ".use_final_approach_orientation") {
+      } else if (param_name == name_ + ".use_final_approach_orientation") {
         use_final_approach_orientation_ = parameter.as_bool();
       }
     }

@@ -21,11 +21,10 @@
 #include <algorithm>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_graceful_controller
 {
@@ -33,7 +32,8 @@ namespace nav2_graceful_controller
 struct Parameters
 {
   double transform_tolerance;
-  double motion_target_dist;
+  double min_lookahead;
+  double max_lookahead;
   double max_robot_pose_search_dist;
   double k_phi;
   double k_delta;
@@ -44,12 +44,15 @@ struct Parameters
   double v_linear_max_initial;
   double v_angular_max;
   double v_angular_max_initial;
+  double v_angular_min_in_place;
   double slowdown_radius;
   bool initial_rotation;
-  double initial_rotation_min_angle;
-  bool final_rotation;
+  double initial_rotation_tolerance;
+  bool prefer_final_rotation;
   double rotation_scaling_factor;
   bool allow_backward;
+  double in_place_collision_resolution;
+  bool use_collision_detection;
 };
 
 /**
@@ -63,7 +66,7 @@ public:
    * @brief Constructor for nav2_graceful_controller::ParameterHandler
    */
   ParameterHandler(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & plugin_name,
     rclcpp::Logger & logger, const double costmap_size_x);
 
@@ -77,7 +80,7 @@ public:
   Parameters * getParams() {return &params_;}
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
 
   /**
    * @brief Callback executed when a parameter change is detected

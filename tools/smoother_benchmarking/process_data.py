@@ -20,12 +20,16 @@ import os
 import pickle
 
 import matplotlib.pylab as plt
+from nav2_msgs.action import ComputePathToPose, SmoothPath
+from nav2_msgs.msg import Costmap
+from nav_msgs.msg import Path
 import numpy as np
+from numpy.typing import NDArray
 import seaborn as sns
 from tabulate import tabulate
 
 
-def getPaths(results):
+def getPaths(results: list[ComputePathToPose.Result | SmoothPath.Result]) -> list[Path]:
     paths = []
     for i in range(len(results)):
         if (i % 2) == 0:
@@ -38,7 +42,7 @@ def getPaths(results):
     return paths
 
 
-def getTimes(results):
+def getTimes(results: list[ComputePathToPose.Result | SmoothPath.Result]) -> list[float]:
     times = []
     for i in range(len(results)):
         if (i % 2) == 0:
@@ -56,7 +60,7 @@ def getTimes(results):
     return times
 
 
-def getMapCoordsFromPaths(paths, resolution):
+def getMapCoordsFromPaths(paths: list[Path], resolution: float) -> list[list[float]]:
     coords = []
     for path in paths:
         x = []
@@ -69,8 +73,8 @@ def getMapCoordsFromPaths(paths, resolution):
     return coords
 
 
-def getPathLength(path):
-    path_length = 0
+def getPathLength(path: Path) -> float:
+    path_length = 0.0
     x_prev = path.poses[0].pose.position.x
     y_prev = path.poses[0].pose.position.y
     for i in range(1, len(path.poses)):
@@ -85,14 +89,16 @@ def getPathLength(path):
 
 
 # Path smoothness calculations
-def getSmoothness(pt_prev, pt, pt_next):
+def getSmoothness(
+        pt_prev: NDArray[np.float64], pt: NDArray[np.float64],
+        pt_next: NDArray[np.float64]) -> float:
     d1 = pt - pt_prev
     d2 = pt_next - pt
     delta = d2 - d1
-    return np.linalg.norm(delta)
+    return float(np.linalg.norm(delta))
 
 
-def getPathSmoothnesses(paths):
+def getPathSmoothnesses(paths: list[Path]) -> list[float]:
     smoothnesses = []
     pm0 = np.array([0.0, 0.0])
     pm1 = np.array([0.0, 0.0])
@@ -112,7 +118,8 @@ def getPathSmoothnesses(paths):
 
 
 # Curvature calculations
-def arcCenter(pt_prev, pt, pt_next):
+def arcCenter(pt_prev: NDArray[np.float64], pt: NDArray[np.float64],
+              pt_next: NDArray[np.float64]) -> NDArray[np.float64]:
     cusp_thresh = -0.7
 
     d1 = pt - pt_prev
@@ -129,7 +136,7 @@ def arcCenter(pt_prev, pt, pt_next):
 
     det = d1[0] * d2[1] - d1[1] * d2[0]
     if abs(det) < 1e-4:  # straight line
-        return (float('inf'), float('inf'))
+        return np.array([float('inf'), float('inf')])
 
     # circle center is at the intersection of mirror axes of the segments:
     # http://paulbourke.net/geometry/circlesphere/
@@ -147,7 +154,7 @@ def arcCenter(pt_prev, pt, pt_next):
     return center
 
 
-def getPathCurvatures(paths):
+def getPathCurvatures(paths: list[Path]) -> list[float]:
     curvatures = []
     pm0 = np.array([0.0, 0.0])
     pm1 = np.array([0.0, 0.0])
@@ -169,7 +176,7 @@ def getPathCurvatures(paths):
     return curvatures
 
 
-def plotResults(costmap, paths):
+def plotResults(costmap: Costmap, paths: list[Path]) -> None:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
@@ -184,12 +191,14 @@ def plotResults(costmap, paths):
     plt.show()
 
 
-def averagePathCost(paths, costmap, num_of_planners):
+def averagePathCost(
+        paths: list[Path], costmap: Costmap,
+        num_of_planners: int) -> list[list[float]]:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
 
-    average_path_costs = []
+    average_path_costs: list[list[float]] = []
     for i in range(num_of_planners):
         average_path_costs.append([])
 
@@ -204,12 +213,14 @@ def averagePathCost(paths, costmap, num_of_planners):
     return average_path_costs
 
 
-def maxPathCost(paths, costmap, num_of_planners):
+def maxPathCost(
+        paths: list[Path], costmap: Costmap,
+        num_of_planners: int) -> list[list[float]]:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
 
-    max_path_costs = []
+    max_path_costs: list[list[float]] = []
     for i in range(num_of_planners):
         max_path_costs.append([])
 
@@ -226,7 +237,7 @@ def maxPathCost(paths, costmap, num_of_planners):
     return max_path_costs
 
 
-def main():
+def main() -> None:
     # Read the data
     benchmark_dir = os.getcwd()
     print('Read data')
@@ -244,21 +255,20 @@ def main():
 
     # Paths (planner and smoothers)
     paths = getPaths(results)
-    path_lengths = []
+    path_lengths_list = []
 
     for path in paths:
-        path_lengths.append(getPathLength(path))
-    path_lengths = np.asarray(path_lengths)
+        path_lengths_list.append(getPathLength(path))
+    path_lengths = np.asarray(path_lengths_list)
     total_paths = len(paths)
 
-    # [planner, smoothers] path lenghth in a row
+    # [planner, smoothers] path length in a row
     path_lengths.resize((int(total_paths / methods_num), methods_num))
     # [planner, smoothers] path length in a column
     path_lengths = path_lengths.transpose()
 
     # Times
-    times = getTimes(results)
-    times = np.asarray(times)
+    times = np.asarray(getTimes(results))
     times.resize((int(total_paths / methods_num), methods_num))
     times = np.transpose(times)
 
@@ -267,14 +277,12 @@ def main():
     max_path_costs = np.asarray(maxPathCost(paths, costmap, methods_num))
 
     # Smoothness
-    smoothnesses = getPathSmoothnesses(paths)
-    smoothnesses = np.asarray(smoothnesses)
+    smoothnesses = np.asarray(getPathSmoothnesses(paths))
     smoothnesses.resize((int(total_paths / methods_num), methods_num))
     smoothnesses = np.transpose(smoothnesses)
 
     # Curvatures
-    curvatures = getPathCurvatures(paths)
-    curvatures = np.asarray(curvatures)
+    curvatures = np.asarray(getPathCurvatures(paths))
     curvatures.resize((int(total_paths / methods_num), methods_num))
     curvatures = np.transpose(curvatures)
 

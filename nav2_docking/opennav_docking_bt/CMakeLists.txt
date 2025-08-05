@@ -12,6 +12,7 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -26,6 +27,7 @@ target_link_libraries(opennav_dock_action_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
 )
 
@@ -40,6 +42,7 @@ target_link_libraries(opennav_undock_action_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
+  nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
 )
 
@@ -69,6 +72,7 @@ ament_export_dependencies(
   behaviortree_cpp
   geometry_msgs
   nav2_behavior_tree
+  nav2_ros_common
   nav2_msgs
 )
 ament_export_targets(${PROJECT_NAME})

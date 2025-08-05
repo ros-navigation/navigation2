@@ -1,13 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(nav2_mppi_controller)
 
-add_definitions(-DXTENSOR_ENABLE_XSIMD)
-add_definitions(-DXTENSOR_USE_XSIMD)
-
-set(XTENSOR_USE_TBB 0)
-set(XTENSOR_USE_OPENMP 0)
-set(XTENSOR_USE_XSIMD 1)
-
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -24,29 +17,19 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(xsimd REQUIRED)
-find_package(xtensor REQUIRED)
+find_package(nav2_ros_common REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+include_directories(
+  include
+  ${EIGEN3_INCLUDE_DIR}
+)
 
 nav2_package()
 
 include(CheckCXXCompilerFlag)
 
-check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
-check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
-check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
 check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
-
-if(COMPILER_SUPPORTS_AVX512)
-  add_compile_options(-mno-avx512f)
-endif()
-
-if(COMPILER_SUPPORTS_SSE4)
-  add_compile_options(-msse4.2)
-endif()
-
-if(COMPILER_SUPPORTS_AVX2)
-  add_compile_options(-mavx2)
-endif()
 
 if(COMPILER_SUPPORTS_FMA)
   add_compile_options(-mfma)
@@ -63,16 +46,16 @@ add_library(mppi_controller SHARED
   src/path_handler.cpp
   src/trajectory_visualizer.cpp
 )
-target_compile_options(mppi_controller PUBLIC -fconcepts -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+target_compile_options(mppi_controller PUBLIC -O3)
 target_include_directories(mppi_controller
   PUBLIC
-    ${xsimd_INCLUDE_DIRS}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_controller PUBLIC
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav_msgs_TARGETS}
@@ -84,9 +67,6 @@ target_link_libraries(mppi_controller PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
-  xtensor
-  xtensor::optimize
-  xtensor::use_xsimd
 )
 
 add_library(mppi_critics SHARED
@@ -102,13 +82,41 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
 )
-target_compile_options(mppi_critics PUBLIC -fconcepts -O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
 target_include_directories(mppi_critics
   PUBLIC
-    ${xsimd_INCLUDE_DIRS}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(mppi_critics PUBLIC
+  angles::angles
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
+  nav2_costmap_2d::layers
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${std_msgs_TARGETS}
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::tf2_ros
+  ${visualization_msgs_TARGETS}
+)
+target_link_libraries(mppi_critics PRIVATE
+  pluginlib::pluginlib
+)
+
+add_library(mppi_trajectory_validators SHARED
+  src/trajectory_validators/optimal_trajectory_validator.cpp
+)
+target_compile_options(mppi_trajectory_validators PUBLIC -O3)
+target_include_directories(mppi_trajectory_validators
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+target_link_libraries(mppi_trajectory_validators PUBLIC
   angles::angles
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
@@ -122,15 +130,12 @@ target_link_libraries(mppi_critics PUBLIC
   tf2_geometry_msgs::tf2_geometry_msgs
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
-  xtensor
-  xtensor::optimize
-  xtensor::use_xsimd
 )
-target_link_libraries(mppi_critics PRIVATE
+target_link_libraries(mppi_trajectory_validators PRIVATE
   pluginlib::pluginlib
 )
 
-install(TARGETS mppi_controller mppi_critics
+install(TARGETS mppi_controller mppi_critics mppi_trajectory_validators
   EXPORT nav2_mppi_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -150,7 +155,7 @@ if(BUILD_TESTING)
   ament_find_gtest()
 
   add_subdirectory(test)
-  # add_subdirectory(benchmark)
+  add_subdirectory(benchmark)
 endif()
 
 ament_export_libraries(${libraries})
@@ -168,12 +173,14 @@ ament_export_dependencies(
   tf2_geometry_msgs
   tf2_ros
   visualization_msgs
-  xtensor
+  nav2_ros_common
+  Eigen3
 )
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_targets(nav2_mppi_controller)
 
 pluginlib_export_plugin_description_file(nav2_core mppic.xml)
 pluginlib_export_plugin_description_file(nav2_mppi_controller critics.xml)
+pluginlib_export_plugin_description_file(nav2_mppi_controller trajectory_validators.xml)
 
 ament_package()

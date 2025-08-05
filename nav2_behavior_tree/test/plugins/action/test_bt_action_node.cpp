@@ -25,6 +25,7 @@
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_behavior_tree/utils/loop_rate.hpp"
 
 #include "test_msgs/action/fibonacci.hpp"
 
@@ -162,7 +163,7 @@ class BTActionNodeTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("bt_action_node_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("bt_action_node_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -219,14 +220,14 @@ public:
   static std::shared_ptr<FibonacciActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
   static std::shared_ptr<std::thread> server_thread_;
 };
 
-rclcpp::Node::SharedPtr BTActionNodeTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr BTActionNodeTestFixture::node_ = nullptr;
 std::shared_ptr<FibonacciActionServer> BTActionNodeTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * BTActionNodeTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> BTActionNodeTestFixture::factory_ = nullptr;
@@ -260,7 +261,7 @@ TEST_F(BTActionNodeTestFixture, test_server_timeout_success)
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
   // BT loop execution rate
-  rclcpp::WallRate loopRate(10ms);
+  nav2_behavior_tree::LoopRate loopRate(10ms, tree_.get());
 
   // main BT execution loop
   while (rclcpp::ok() && result == BT::NodeStatus::RUNNING) {

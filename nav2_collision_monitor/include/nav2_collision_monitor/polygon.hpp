@@ -23,10 +23,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "tf2/time.h"
+#include "tf2/time.hpp"
 #include "tf2_ros/buffer.h"
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
@@ -51,7 +51,7 @@ public:
    * @param transform_tolerance Transform tolerance
    */
   Polygon(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -242,7 +242,7 @@ protected:
   /**
    * @brief Extracts Polygon points from a string with of the form [[x1,y1],[x2,y2],[x3,y3]...]
    * @param poly_string Input String containing the verteceis of the polygon
-   * @param polygon Output Point vector with all the vertecies of the polygon
+   * @param polygon Output Point vector with all the vertices of the polygon
    * @return True if all parameters were obtained or false in failure case
    */
   bool getPolygonFromString(std::string & poly_string, std::vector<Point> & polygon);
@@ -250,7 +250,7 @@ protected:
   // ----- Variables -----
 
   /// @brief Collision Monitor node
-  nav2_util::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
   /// @brief Dynamic parameters handler
@@ -275,10 +275,10 @@ protected:
   double simulation_time_step_;
   /// @brief Whether polygon is enabled
   bool enabled_;
-  /// @brief Wether the subscription to polygon topic has transient local QoS durability
+  /// @brief Whether the subscription to polygon topic has transient local QoS durability
   bool polygon_subscribe_transient_local_;
   /// @brief Polygon subscription
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   /// @brief Name of the observation sources to check for polygon
@@ -291,6 +291,8 @@ protected:
   std::string base_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Collision monitor node's clock
+  rclcpp::Clock::SharedPtr node_clock_;
 
   // Visualization
   /// @brief Whether to publish the polygon
@@ -298,7 +300,7 @@ protected:
   /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;

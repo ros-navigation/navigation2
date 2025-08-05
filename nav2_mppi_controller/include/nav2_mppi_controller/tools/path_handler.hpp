@@ -22,7 +22,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -66,7 +66,7 @@ public:
     * @param dynamic_parameter_handler Parameter handler object
     */
   void initialize(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+    nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
     std::shared_ptr<tf2_ros::Buffer>, ParametersHandler *);
 
@@ -89,6 +89,13 @@ public:
    * @return global plan in local frame
    */
   nav_msgs::msg::Path transformPath(const geometry_msgs::msg::PoseStamped & robot_pose);
+
+  /**
+   * @brief Get the global goal pose transformed to the local frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
 protected:
   /**

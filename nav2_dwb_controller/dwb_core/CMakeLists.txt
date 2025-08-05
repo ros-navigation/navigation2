@@ -19,6 +19,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(nav2_ros_common REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 nav2_package()
 
@@ -37,6 +39,7 @@ target_link_libraries(dwb_core PUBLIC
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
   ${nav_2d_msgs_TARGETS}
@@ -48,6 +51,7 @@ target_link_libraries(dwb_core PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
   tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
 )
 
@@ -91,7 +95,9 @@ ament_export_dependencies(
   rclcpp_lifecycle
   sensor_msgs
   tf2_ros
+  tf2_geometry_msgs
   visualization_msgs
+  nav2_ros_common
 )
 ament_export_targets(dwb_core)
 

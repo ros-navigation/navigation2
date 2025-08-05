@@ -18,13 +18,19 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 
 
 namespace opennav_docking_core
 {
+
+/**
+ * @enum DockDirection
+ * @brief An enum class representing the direction of the dock
+ */
+enum class DockDirection { UNKNOWN, FORWARD, BACKWARD };
 
 /**
  * @class ChargingDock
@@ -46,7 +52,7 @@ public:
    * @param  tf A pointer to a TF buffer
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
@@ -60,7 +66,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive Behavior and any threads involved in execution.
+   * @brief Method to deactivate Behavior and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 
@@ -123,10 +129,26 @@ public:
    */
   virtual bool isCharger() {return true;}
 
+  /**
+   * @brief Indicates the direction of the dock. This is used to determine if the
+   * robot should drive forwards or backwards onto the dock.
+   * @return DockDirection The direction of the dock
+   */
+  DockDirection getDockDirection() {return dock_direction_;}
+
+  /**
+   * @brief Determines whether the robot should rotate 180º to face away from the dock.
+   * For example, to perform a backward docking without detections.
+   * @return bool If the robot should rotate to face away from the dock.
+   */
+  bool shouldRotateToDock() {return rotate_to_dock_;}
+
   std::string getName() {return name_;}
 
 protected:
   std::string name_;
+  DockDirection dock_direction_{DockDirection::UNKNOWN};
+  bool rotate_to_dock_{false};
 };
 
 }  // namespace opennav_docking_core

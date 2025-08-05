@@ -8,6 +8,7 @@ find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -26,6 +27,7 @@ target_include_directories(${library_name}
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
@@ -76,5 +78,6 @@ ament_export_dependencies(
   nav2_util
   rclcpp
   rclcpp_lifecycle
+  nav2_ros_common
 )
 ament_package()

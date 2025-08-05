@@ -33,15 +33,15 @@ Neither is better than the other, it highly depends on the tasks your robot(s) a
 `nav2_waypoint_follower` provides an action server named `FollowGPSWaypoints` which accepts GPS waypoint following requests by using tools provided by `robot_localization` and `nav2_waypoint_follower` itself.
 
 `robot_localization`'s `navsat_transform_node` provides a service `fromLL`, which is used to convert pure GPS coordinates(longitude, latitude, alitude)
-to cartesian coordinates in map frame(x,y), then the existent action named `FollowWaypoints` from `nav2_waypoint_follower` is used to get robot go through each converted waypoints. 
+to cartesian coordinates in map frame(x,y), then the existent action named `FollowWaypoints` from `nav2_waypoint_follower` is used to get robot go through each converted waypoints.
 The action msg definition for GPS waypoint following can be found [here](../nav2_msgs/action/FollowGPSWaypoints.action).
 
-In a common use case, an client node can read a set of GPS waypoints from a YAML file an create a client to action server named as `FollowGPSWaypoints`.  
+In a common use case, an client node can read a set of GPS waypoints from a YAML file an create a client to action server named as `FollowGPSWaypoints`.
 For instance,
 
 ```cpp
 using ClientT = nav2_msgs::action::FollowGPSWaypoints;
-rclcpp_action::Client<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
+nav2::ActionClient<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
 gps_waypoint_follower_action_client_ = rclcpp_action::create_client<ClientT>(this, "follow_gps_waypoints");
 ```
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2025 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,27 +16,27 @@
 #ifndef NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 #define NAV2_MPPI_CONTROLLER__MOTION_MODELS_HPP_
 
+#include <Eigen/Dense>
+
 #include <cstdint>
 #include <string>
+#include <algorithm>
 
 #include "nav2_mppi_controller/models/control_sequence.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 
-// xtensor creates warnings that needs to be ignored as we are building with -Werror
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#include <xtensor/xmath.hpp>
-#include <xtensor/xmasked_view.hpp>
-#include <xtensor/xview.hpp>
-#include <xtensor/xnoalias.hpp>
-#pragma GCC diagnostic pop
-
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
 namespace mppi
 {
+
+// Forward declaration of utils method, since utils.hpp can't be included here due
+// to recursive inclusion.
+namespace utils
+{
+float clamp(const float lower_bound, const float upper_bound, const float input);
+}
 
 /**
  * @class mppi::MotionModel
@@ -71,43 +72,42 @@ public:
    */
   virtual void predict(models::State & state)
   {
-    // Previously completed via tensor views, but found to be 10x slower
-    // using namespace xt::placeholders;  // NOLINT
-    // xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
-    //   xt::noalias(xt::view(state.cvx, xt::all(), xt::range(0, -1)));
-    // xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
-    //   xt::noalias(xt::view(state.cwz, xt::all(), xt::range(0, -1)));
-    // if (isHolonomic()) {
-    //   xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
-    //     xt::noalias(xt::view(state.cvy, xt::all(), xt::range(0, -1)));
-    // }
-
     const bool is_holo = isHolonomic();
     float max_delta_vx = model_dt_ * control_constraints_.ax_max;
     float min_delta_vx = model_dt_ * control_constraints_.ax_min;
     float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
-    for (unsigned int i = 0; i != state.vx.shape(0); i++) {
-      float vx_last = state.vx(i, 0);
-      float vy_last = state.vy(i, 0);
-      float wz_last = state.wz(i, 0);
-      for (unsigned int j = 1; j != state.vx.shape(1); j++) {
-        float & cvx_curr = state.cvx(i, j - 1);
-        cvx_curr = std::clamp(cvx_curr, vx_last + min_delta_vx, vx_last + max_delta_vx);
-        state.vx(i, j) = cvx_curr;
-        vx_last = cvx_curr;
 
-        float & cwz_curr = state.cwz(i, j - 1);
-        cwz_curr = std::clamp(cwz_curr, wz_last - max_delta_wz, wz_last + max_delta_wz);
-        state.wz(i, j) = cwz_curr;
-        wz_last = cwz_curr;
+    unsigned int n_cols = state.vx.cols();
 
-        if (is_holo) {
-          float & cvy_curr = state.cvy(i, j - 1);
-          cvy_curr = std::clamp(cvy_curr, vy_last - max_delta_vy, vy_last + max_delta_vy);
-          state.vy(i, j) = cvy_curr;
-          vy_last = cvy_curr;
-        }
+    for (unsigned int i = 1; i < n_cols; i++) {
+      auto lower_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + min_delta_vx,
+        state.vx.col(i - 1) - max_delta_vx);
+      auto upper_bound_vx = (state.vx.col(i - 1) >
+        0).select(state.vx.col(i - 1) + max_delta_vx,
+        state.vx.col(i - 1) - min_delta_vx);
+
+      state.vx.col(i) = state.cvx.col(i - 1)
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
+
+      state.wz.col(i) = state.cwz.col(i - 1)
+        .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+        .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+
+      if (is_holo) {
+        auto lower_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + min_delta_vy,
+          state.vy.col(i - 1) - max_delta_vy);
+        auto upper_bound_vy = (state.vy.col(i - 1) >
+          0).select(state.vy.col(i - 1) + max_delta_vy,
+          state.vy.col(i - 1) - min_delta_vy);
+
+        state.vy.col(i) = state.cvy.col(i - 1)
+          .cwiseMax(lower_bound_vy)
+          .cwiseMin(upper_bound_vy);
       }
     }
   }
@@ -127,7 +127,7 @@ public:
 protected:
   float model_dt_{0.0};
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f};
+    0.0f, 0.0f};
 };
 
 /**
@@ -161,11 +161,14 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    auto & vx = control_sequence.vx;
-    auto & wz = control_sequence.wz;
-
-    auto view = xt::masked_view(wz, (xt::fabs(vx) / xt::fabs(wz)) < min_turning_r_);
-    view = xt::sign(wz) * xt::fabs(vx) / min_turning_r_;
+    const auto vx_ptr = control_sequence.vx.data();
+    auto wz_ptr = control_sequence.wz.data();
+    int steps = control_sequence.vx.size();
+    for(int i = 0; i < steps; i++) {
+      float wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
+      float & wz_curr = *(wz_ptr + i);
+      wz_curr = utils::clamp(-1 * wz_constrained, wz_constrained, wz_curr);
+    }
   }
 
   /**

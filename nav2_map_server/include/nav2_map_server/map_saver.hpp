@@ -21,8 +21,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 #include "map_io.hpp"
 
@@ -33,7 +34,7 @@ namespace nav2_map_server
  * @class nav2_map_server::MapSaver
  * @brief A class that provides map saving methods and services
  */
-class MapSaver : public nav2_util::LifecycleNode
+class MapSaver : public nav2::LifecycleNode
 {
 public:
   /**
@@ -62,31 +63,31 @@ public:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when node switched to active state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when node switched to inactive state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when it is required node clean-up
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 protected:
   /**
@@ -111,7 +112,7 @@ protected:
   // The name of the service for saving a map from topic
   const std::string save_map_service_name_{"save_map"};
   // A service to save the map to a file at run time (SaveMap)
-  rclcpp::Service<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
+  nav2::ServiceServer<nav2_msgs::srv::SaveMap>::SharedPtr save_map_service_;
 };
 
 }  // namespace nav2_map_server

@@ -33,7 +33,7 @@
 #include "nav2_msgs/srv/remove_shapes.hpp"
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/occ_grid_utils.hpp"
 
 #include "nav2_map_server/vector_object_server.hpp"
@@ -55,26 +55,26 @@ class VOServerWrapper : public nav2_map_server::VectorObjectServer
 public:
   void start()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_activate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_activate(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void configureFail()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::FAILURE);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::FAILURE);
   }
 
   void stop()
   {
-    ASSERT_EQ(on_deactivate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_cleanup(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_shutdown(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_deactivate(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_cleanup(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_shutdown(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void cleanup()
   {
-    ASSERT_EQ(on_cleanup(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_shutdown(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_cleanup(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_shutdown(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void setProcessMap(const bool process_map)
@@ -119,7 +119,7 @@ public:
 
   template<class T>
   typename T::Response::SharedPtr sendRequest(
-    typename rclcpp::Client<T>::SharedPtr client,
+    typename nav2::ServiceClient<T>::SharedPtr client,
     typename T::Request::SharedPtr request,
     const std::chrono::nanoseconds & timeout);
 
@@ -139,9 +139,9 @@ protected:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   // Service clients for calling AddShapes.srv, GetShapes.srv, RemoveShapes.srv
-  rclcpp::Client<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
-  rclcpp::Client<nav2_msgs::srv::GetShapes>::SharedPtr get_shapes_client_;
-  rclcpp::Client<nav2_msgs::srv::RemoveShapes>::SharedPtr remove_shapes_client_;
+  nav2::ServiceClient<nav2_msgs::srv::AddShapes>::SharedPtr add_shapes_client_;
+  nav2::ServiceClient<nav2_msgs::srv::GetShapes>::SharedPtr get_shapes_client_;
+  nav2::ServiceClient<nav2_msgs::srv::RemoveShapes>::SharedPtr remove_shapes_client_;
 
   // Output map subscriber
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr vo_map_sub_;
@@ -167,8 +167,8 @@ Tester::Tester()
     std::string(vo_server_->get_name()) + "/remove_shapes");
 
   vo_map_sub_ = vo_server_->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    "vo_map", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&Tester::mapCallback, this, std::placeholders::_1));
+    "vo_map", std::bind(&Tester::mapCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 
   // Transform buffer and listener initialization
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(vo_server_->get_clock());
@@ -394,11 +394,11 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
 
 template<class T>
 typename T::Response::SharedPtr Tester::sendRequest(
-  typename rclcpp::Client<T>::SharedPtr client,
+  typename nav2::ServiceClient<T>::SharedPtr client,
   typename T::Request::SharedPtr request,
   const std::chrono::nanoseconds & timeout)
 {
-  auto result_future = client->async_send_request(request).future.share();
+  auto result_future = client->async_call(request);
 
   rclcpp::Time start_time = vo_server_->now();
   while (rclcpp::ok() && vo_server_->now() - start_time <= rclcpp::Duration(timeout)) {

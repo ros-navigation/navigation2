@@ -29,10 +29,11 @@ using std::shared_ptr;
 using std::any_of;
 using ClearExceptRegion = nav2_msgs::srv::ClearCostmapExceptRegion;
 using ClearAroundRobot = nav2_msgs::srv::ClearCostmapAroundRobot;
+using ClearAroundPose = nav2_msgs::srv::ClearCostmapAroundPose;
 using ClearEntirely = nav2_msgs::srv::ClearEntireCostmap;
 
 ClearCostmapService::ClearCostmapService(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   Costmap2DROS & costmap)
 : costmap_(costmap)
 {
@@ -41,19 +42,25 @@ ClearCostmapService::ClearCostmapService(
   reset_value_ = costmap_.getCostmap()->getDefaultValue();
 
   clear_except_service_ = node->create_service<ClearExceptRegion>(
-    "clear_except_" + costmap_.getName(),
+    std::string("clear_except_") + costmap_.getName(),
     std::bind(
       &ClearCostmapService::clearExceptRegionCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   clear_around_service_ = node->create_service<ClearAroundRobot>(
-    "clear_around_" + costmap.getName(),
+    std::string("clear_around_") + costmap_.getName(),
     std::bind(
       &ClearCostmapService::clearAroundRobotCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+  clear_around_pose_service_ = node->create_service<ClearAroundPose>(
+    std::string("clear_around_pose_") + costmap_.getName(),
+    std::bind(
+      &ClearCostmapService::clearAroundPoseCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   clear_entire_service_ = node->create_service<ClearEntirely>(
-    "clear_entirely_" + costmap_.getName(),
+    std::string("clear_entirely_") + costmap_.getName(),
     std::bind(
       &ClearCostmapService::clearEntireCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -64,6 +71,7 @@ ClearCostmapService::~ClearCostmapService()
   // make sure services shutdown.
   clear_except_service_.reset();
   clear_around_service_.reset();
+  clear_around_pose_service_.reset();
   clear_entire_service_.reset();
 }
 
@@ -87,6 +95,18 @@ void ClearCostmapService::clearAroundRobotCallback(
   clearRegion(request->reset_distance, false);
 }
 
+void ClearCostmapService::clearAroundPoseCallback(
+  const shared_ptr<rmw_request_id_t>/*request_header*/,
+  const shared_ptr<ClearAroundPose::Request> request,
+  const shared_ptr<ClearAroundPose::Response>/*response*/)
+{
+  RCLCPP_INFO(
+    logger_, "%s",
+    ("Received request to clear around pose for " + costmap_.getName()).c_str());
+
+  clearAroundPose(request->pose, request->reset_distance);
+}
+
 void ClearCostmapService::clearEntireCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<ClearEntirely::Request>/*request*/,
@@ -97,6 +117,41 @@ void ClearCostmapService::clearEntireCallback(
     ("Received request to clear entirely the " + costmap_.getName()).c_str());
 
   clearEntirely();
+}
+
+void ClearCostmapService::clearAroundPose(
+  const geometry_msgs::msg::PoseStamped & pose,
+  const double reset_distance)
+{
+  double x, y;
+
+  // Transform pose to costmap frame if necessary
+  geometry_msgs::msg::PoseStamped global_pose;
+  try {
+    if (pose.header.frame_id == costmap_.getGlobalFrameID()) {
+      global_pose = pose;
+    } else {
+      costmap_.getTfBuffer()->transform(pose, global_pose, costmap_.getGlobalFrameID());
+    }
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR(
+      logger_,
+      "Cannot clear map around pose because pose cannot be transformed to costmap frame: %s",
+      ex.what());
+    return;
+  }
+
+  x = global_pose.pose.position.x;
+  y = global_pose.pose.position.y;
+
+  auto layers = costmap_.getLayeredCostmap()->getPlugins();
+
+  for (auto & layer : *layers) {
+    if (layer->isClearable()) {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+      clearLayerRegion(costmap_layer, x, y, reset_distance, false);
+    }
+  }
 }
 
 void ClearCostmapService::clearRegion(const double reset_distance, bool invert)
@@ -135,8 +190,8 @@ void ClearCostmapService::clearLayerRegion(
   double end_point_y = start_point_y + reset_distance;
 
   int start_x, start_y, end_x, end_y;
-  costmap->worldToMapEnforceBounds(start_point_x, start_point_y, start_x, start_y);
-  costmap->worldToMapEnforceBounds(end_point_x, end_point_y, end_x, end_y);
+  costmap->worldToMapNoBounds(start_point_x, start_point_y, start_x, start_y);
+  costmap->worldToMapNoBounds(end_point_x, end_point_y, end_x, end_y);
 
   costmap->clearArea(start_x, start_y, end_x, end_y, invert);
 

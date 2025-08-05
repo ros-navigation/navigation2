@@ -23,7 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav_2d_utils/tf_help.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
 
@@ -35,7 +35,7 @@ namespace nav2_controller
 {
 
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("controller_server", "", options),
+: nav2::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   default_progress_checker_ids_{"progress_checker"},
   default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
@@ -51,8 +51,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("controller_frequency", 20.0);
 
-  declare_parameter("action_server_result_timeout", 10.0);
-
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
@@ -64,12 +62,13 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
   declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
+  declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
   declare_parameter("costmap_update_timeout", 0.30);  // 300ms
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "local_costmap", std::string{get_namespace()}, "local_costmap",
-    get_parameter("use_sim_time").as_bool());
+    "local_costmap", std::string{get_namespace()},
+    get_parameter("use_sim_time").as_bool(), options);
 }
 
 ControllerServer::~ControllerServer()
@@ -80,8 +79,8 @@ ControllerServer::~ControllerServer()
   costmap_thread_.reset();
 }
 
-nav2_util::CallbackReturn
-ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
+nav2::CallbackReturn
+ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   auto node = shared_from_this();
 
@@ -91,7 +90,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("progress_checker_plugins", progress_checker_ids_);
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_progress_checker_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_progress_checker_types_[i]));
     }
@@ -101,7 +100,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("goal_checker_plugins", goal_checker_ids_);
   if (goal_checker_ids_ == default_goal_checker_ids_) {
     for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_goal_checker_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_goal_checker_types_[i]));
     }
@@ -110,7 +109,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("controller_plugins", controller_ids_);
   if (controller_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, default_ids_[i] + ".plugin",
         rclcpp::ParameterValue(default_types_[i]));
     }
@@ -130,14 +129,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   get_parameter("speed_limit_topic", speed_limit_topic);
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
+  get_parameter("publish_zero_velocity", publish_zero_velocity_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
-  costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
+  costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
-      progress_checker_types_[i] = nav2_util::get_plugin_type_param(
+      progress_checker_types_[i] = nav2::get_plugin_type_param(
         node, progress_checker_ids_[i]);
       nav2_core::ProgressChecker::Ptr progress_checker =
         progress_checker_loader_.createUniqueInstance(progress_checker_types_[i]);
@@ -150,7 +150,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create progress_checker. Exception: %s", ex.what());
-      return nav2_util::CallbackReturn::FAILURE;
+      on_cleanup(state);
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -164,7 +165,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
     try {
-      goal_checker_types_[i] = nav2_util::get_plugin_type_param(node, goal_checker_ids_[i]);
+      goal_checker_types_[i] = nav2::get_plugin_type_param(node, goal_checker_ids_[i]);
       nav2_core::GoalChecker::Ptr goal_checker =
         goal_checker_loader_.createUniqueInstance(goal_checker_types_[i]);
       RCLCPP_INFO(
@@ -176,7 +177,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create goal checker. Exception: %s", ex.what());
-      return nav2_util::CallbackReturn::FAILURE;
+      on_cleanup(state);
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -190,7 +192,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   for (size_t i = 0; i != controller_ids_.size(); i++) {
     try {
-      controller_types_[i] = nav2_util::get_plugin_type_param(node, controller_ids_[i]);
+      controller_types_[i] = nav2::get_plugin_type_param(node, controller_ids_[i]);
       nav2_core::Controller::Ptr controller =
         lp_loader_.createUniqueInstance(controller_types_[i]);
       RCLCPP_INFO(
@@ -204,7 +206,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       RCLCPP_FATAL(
         get_logger(),
         "Failed to create controller. Exception: %s", ex.what());
-      return nav2_util::CallbackReturn::FAILURE;
+      on_cleanup(state);
+      return nav2::CallbackReturn::FAILURE;
     }
   }
 
@@ -217,48 +220,43 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
-  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel", 1);
-
-  double action_server_result_timeout;
-  get_parameter("action_server_result_timeout", action_server_result_timeout);
-  rcl_action_server_options_t server_options = rcl_action_server_get_default_options();
-  server_options.result_timeout.nanoseconds = RCL_S_TO_NS(action_server_result_timeout);
+  vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
-  // This may throw due to real-time prioritzation if user doesn't have real-time permissions
+  // This may throw due to real-time prioritization if user doesn't have real-time permissions
   try {
-    action_server_ = std::make_unique<ActionServer>(
-      shared_from_this(),
+    action_server_ = create_action_server<Action>(
       "follow_path",
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, server_options, use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, use_realtime_priority_ /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
-    return nav2_util::CallbackReturn::FAILURE;
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
   }
 
-  // Set subscribtion to the speed limiting topic
+  // Set subscription to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic, rclcpp::QoS(10),
+    speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
@@ -275,10 +273,10 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // create bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -307,10 +305,10 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // destroy bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -335,14 +333,14 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_.reset();
   speed_limit_sub_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 ControllerServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool ControllerServer::findControllerId(
@@ -432,7 +430,7 @@ void ControllerServer::computeControl()
   try {
     auto goal = action_server_->get_current_goal();
     if (!goal) {
-      return;  //  goal would be nullptr if action_server_ is inactivate.
+      return;  //  goal would be nullptr if action_server_ is deactivate.
     }
 
     std::string c_name = goal->controller_id;
@@ -476,7 +474,7 @@ void ControllerServer::computeControl()
         if (controllers_[current_controller_]->cancel()) {
           RCLCPP_INFO(get_logger(), "Cancellation was successful. Stopping the robot.");
           action_server_->terminate_all();
-          publishZeroVelocity();
+          onGoalExit(true);
           return;
         } else {
           RCLCPP_INFO_THROTTLE(
@@ -513,72 +511,81 @@ void ControllerServer::computeControl()
     }
   } catch (nav2_core::InvalidController & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_CONTROLLER;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTFError & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::TF_ERROR;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::NoValidControl & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::NO_VALID_CONTROL;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::FailedToMakeProgress & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::FAILED_TO_MAKE_PROGRESS;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::PatienceExceeded & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::PATIENCE_EXCEEDED;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::InvalidPath & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::INVALID_PATH;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerTimedOut & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::CONTROLLER_TIMED_OUT;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (nav2_core::ControllerException & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   } catch (std::exception & e) {
     RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-    publishZeroVelocity();
+    onGoalExit(true);
     std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
     result->error_code = Action::Result::UNKNOWN;
+    result->error_msg = e.what();
     action_server_->terminate_current(result);
     return;
   }
 
   RCLCPP_DEBUG(get_logger(), "Controller succeeded, setting result");
 
-  publishZeroVelocity();
+  onGoalExit(false);
 
   // TODO(orduno) #861 Handle a pending preemption and set controller name
   action_server_->succeeded_current();
@@ -653,18 +660,31 @@ void ControllerServer::computeAndPublishVelocity()
     }
   }
 
+  RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
+  publishVelocity(cmd_vel_2d);
+
+  // Find the closest pose to current pose on global path
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
+  if (!nav_2d_utils::transformPose(
+          costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
+          robot_pose_in_path_frame, tolerance))
+  {
+    throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
+  }
+
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
   feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
 
-  // Find the closest pose to current pose on global path
   nav_msgs::msg::Path & current_path = current_path_;
-  auto find_closest_pose_idx =
-    [&pose, &current_path]() {
+  auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path]()
+    {
       size_t closest_pose_idx = 0;
       double curr_min_dist = std::numeric_limits<double>::max();
       for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-        double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-          pose, current_path.poses[curr_idx]);
+        double curr_dist =
+          nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
+          current_path.poses[curr_idx]);
         if (curr_dist < curr_min_dist) {
           curr_min_dist = curr_dist;
           closest_pose_idx = curr_idx;
@@ -673,12 +693,10 @@ void ControllerServer::computeAndPublishVelocity()
       return closest_pose_idx;
     };
 
-  feedback->distance_to_goal =
-    nav2_util::geometry_utils::calculate_path_length(current_path_, find_closest_pose_idx());
+  const std::size_t closest_pose_idx = find_closest_pose_idx();
+  feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
+      closest_pose_idx);
   action_server_->publish_feedback(feedback);
-
-  RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
-  publishVelocity(cmd_vel_2d);
 }
 
 void ControllerServer::updateGlobalPath()
@@ -690,20 +708,22 @@ void ControllerServer::updateGlobalPath()
     if (findControllerId(goal->controller_id, current_controller)) {
       current_controller_ = current_controller;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid controller %s requested.",
-        goal->controller_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid controller " +
+        goal->controller_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_goal_checker;
     if (findGoalCheckerId(goal->goal_checker_id, current_goal_checker)) {
       current_goal_checker_ = current_goal_checker;
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid goal checker %s requested.",
-        goal->goal_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid goal checker " +
+        goal->goal_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     std::string current_progress_checker;
@@ -716,10 +736,11 @@ void ControllerServer::updateGlobalPath()
         progress_checkers_[current_progress_checker_]->reset();
       }
     } else {
-      RCLCPP_INFO(
-        get_logger(), "Terminating action, invalid progress checker %s requested.",
-        goal->progress_checker_id.c_str());
-      action_server_->terminate_current();
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid progress checker " +
+        goal->progress_checker_id + " requested.";
+      action_server_->terminate_current(result);
       return;
     }
     setPlannerPath(goal->path);
@@ -729,6 +750,10 @@ void ControllerServer::updateGlobalPath()
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
 {
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>(velocity);
+  if (!nav2_util::validateTwist(cmd_vel->twist)) {
+    RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
+    return;
+  }
   if (vel_publisher_->is_activated() && vel_publisher_->get_subscription_count() > 0) {
     vel_publisher_->publish(std::move(cmd_vel));
   }
@@ -746,11 +771,17 @@ void ControllerServer::publishZeroVelocity()
   velocity.header.frame_id = costmap_ros_->getBaseFrameID();
   velocity.header.stamp = now();
   publishVelocity(velocity);
+}
 
-  // Reset the state of the controllers after the task has ended
-  ControllerMap::iterator it;
-  for (it = controllers_.begin(); it != controllers_.end(); ++it) {
-    it->second->reset();
+void ControllerServer::onGoalExit(bool force_stop)
+{
+  if (publish_zero_velocity_ || force_stop) {
+    publishZeroVelocity();
+  }
+
+  // Reset controller state
+  for (auto & controller : controllers_) {
+    controller.second->reset();
   }
 }
 
@@ -800,12 +831,12 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
   rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
     // If we are trying to change the parameter of a plugin we can just skip it at this point
     // as they handle parameter changes themselves and don't need to lock the mutex
-    if (name.find('.') != std::string::npos) {
+    if (param_name.find('.') != std::string::npos) {
       continue;
     }
 
@@ -819,16 +850,14 @@ ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       return result;
     }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == "controller_frequency") {
-        controller_frequency_ = parameter.as_double();
-      } else if (name == "min_x_velocity_threshold") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == "min_x_velocity_threshold") {
         min_x_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_y_velocity_threshold") {
+      } else if (param_name == "min_y_velocity_threshold") {
         min_y_velocity_threshold_ = parameter.as_double();
-      } else if (name == "min_theta_velocity_threshold") {
+      } else if (param_name == "min_theta_velocity_threshold") {
         min_theta_velocity_threshold_ = parameter.as_double();
-      } else if (name == "failure_tolerance") {
+      } else if (param_name == "failure_tolerance") {
         failure_tolerance_ = parameter.as_double();
       }
     }

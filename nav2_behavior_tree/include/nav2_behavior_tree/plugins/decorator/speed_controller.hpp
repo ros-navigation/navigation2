@@ -21,11 +21,13 @@
 #include <vector>
 #include <deque>
 
+#include "behaviortree_cpp/decorator_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
-
-#include "behaviortree_cpp/decorator_node.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -34,6 +36,8 @@ namespace nav2_behavior_tree
  * @brief A BT::DecoratorNode that ticks its child every at a rate proportional to
  * the speed of the robot. If the robot travels faster, this node will tick its child at a
  * higher frequency and reduce the tick frequency if the robot slows down
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class SpeedController : public BT::DecoratorNode
 {
@@ -53,12 +57,16 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
       BT::InputPort<double>("min_rate", 0.1, "Minimum rate"),
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),
       BT::InputPort<double>("min_speed", 0.0, "Minimum speed"),
       BT::InputPort<double>("max_speed", 0.5, "Maximum speed"),
-      BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
+      BT::InputPort<nav_msgs::msg::Goals>(
         "goals", "Vector of navigation goals"),
       BT::InputPort<geometry_msgs::msg::PoseStamped>(
         "goal", "Navigation goal"),
@@ -95,7 +103,7 @@ private:
     period_ = 1.0 / rate;
   }
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   // To keep track of time to reset
   rclcpp::Time start_;
@@ -120,7 +128,7 @@ private:
 
   // current goal
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  nav_msgs::msg::Goals goals_;
 };
 
 }  // namespace nav2_behavior_tree

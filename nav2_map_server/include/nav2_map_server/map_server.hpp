@@ -18,7 +18,8 @@
 #include <memory>
 #include <string>
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_server.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/srv/get_map.hpp"
 #include "nav2_msgs/srv/load_map.hpp"
@@ -33,7 +34,7 @@ namespace nav2_map_server
  * @brief Parses the map yaml file and creates a service and a publisher that
  * provides occupancy grid
  */
-class MapServer : public nav2_util::LifecycleNode
+class MapServer : public nav2::LifecycleNode
 {
 public:
   /**
@@ -53,31 +54,31 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Start publishing the map using the latched topic
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Stops publishing the latched topic
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets the member variables
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Load the map YAML, image from map file name and
@@ -125,13 +126,13 @@ protected:
   const std::string load_map_service_name_{"load_map"};
 
   // A service to provide the occupancy grid (GetMap) and the message to return
-  rclcpp::Service<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
+  nav2::ServiceServer<nav_msgs::srv::GetMap>::SharedPtr occ_service_;
 
   // A service to load the occupancy grid from file at run time (LoadMap)
-  rclcpp::Service<nav2_msgs::srv::LoadMap>::SharedPtr load_map_service_;
+  nav2::ServiceServer<nav2_msgs::srv::LoadMap>::SharedPtr load_map_service_;
 
   // A topic on which the occupancy grid will be published
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occ_pub_;
 
   // The frame ID used in the returned OccupancyGrid message
   std::string frame_id_;

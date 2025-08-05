@@ -24,11 +24,11 @@
 namespace nav2_regulated_pure_pursuit_controller
 {
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
+  nav2::LifecycleNode::SharedPtr node,
   std::string & plugin_name, rclcpp::Logger & logger,
   const double costmap_size_x)
 {
@@ -61,6 +61,9 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_distance_to_obstacle",
+    rclcpp::ParameterValue(-1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_regulated_linear_velocity_scaling", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
@@ -101,6 +104,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
@@ -129,6 +134,9 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot",
     params_.max_allowed_time_to_collision_up_to_carrot);
+  node->get_parameter(
+    plugin_name_ + ".min_distance_to_obstacle",
+    params_.min_distance_to_obstacle);
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     params_.use_regulated_linear_velocity_scaling);
@@ -181,6 +189,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
+  node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
@@ -189,104 +198,144 @@ ParameterHandler::ParameterHandler(
     params_.use_cost_regulated_linear_velocity_scaling = false;
   }
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &ParameterHandler::dynamicParametersCallback,
+      &ParameterHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 }
 
 ParameterHandler::~ParameterHandler()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
-
-rcl_interfaces::msg::SetParametersResult
-ParameterHandler::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-
+  result.successful = true;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".inflation_cost_scaling_factor") {
-        if (parameter.as_double() <= 0.0) {
-          RCLCPP_WARN(
-            logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
-            "it should be >0. Ignoring parameter update.");
-          continue;
-        }
-        params_.inflation_cost_scaling_factor = parameter.as_double();
-      } else if (name == plugin_name_ + ".desired_linear_vel") {
-        params_.desired_linear_vel = parameter.as_double();
-        params_.base_desired_linear_vel = parameter.as_double();
-      } else if (name == plugin_name_ + ".lookahead_dist") {
-        params_.lookahead_dist = parameter.as_double();
-      } else if (name == plugin_name_ + ".max_lookahead_dist") {
-        params_.max_lookahead_dist = parameter.as_double();
-      } else if (name == plugin_name_ + ".min_lookahead_dist") {
-        params_.min_lookahead_dist = parameter.as_double();
-      } else if (name == plugin_name_ + ".lookahead_time") {
-        params_.lookahead_time = parameter.as_double();
-      } else if (name == plugin_name_ + ".rotate_to_heading_angular_vel") {
-        params_.rotate_to_heading_angular_vel = parameter.as_double();
-      } else if (name == plugin_name_ + ".min_approach_linear_velocity") {
-        params_.min_approach_linear_velocity = parameter.as_double();
-      } else if (name == plugin_name_ + ".curvature_lookahead_dist") {
-        params_.curvature_lookahead_dist = parameter.as_double();
-      } else if (name == plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot") {
-        params_.max_allowed_time_to_collision_up_to_carrot = parameter.as_double();
-      } else if (name == plugin_name_ + ".cost_scaling_dist") {
-        params_.cost_scaling_dist = parameter.as_double();
-      } else if (name == plugin_name_ + ".cost_scaling_gain") {
-        params_.cost_scaling_gain = parameter.as_double();
-      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_radius") {
-        params_.regulated_linear_scaling_min_radius = parameter.as_double();
-      } else if (name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
-        params_.regulated_linear_scaling_min_speed = parameter.as_double();
-      } else if (name == plugin_name_ + ".max_angular_accel") {
-        params_.max_angular_accel = parameter.as_double();
-      } else if (name == plugin_name_ + ".cancel_deceleration") {
-        params_.cancel_deceleration = parameter.as_double();
-      } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
-        params_.rotate_to_heading_min_angle = parameter.as_double();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" &&
+        parameter.as_double() <= 0.0)
+      {
+        RCLCPP_WARN(
+        logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+        "it should be >0. Ignoring parameter update.");
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
-        params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
-        params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_fixed_curvature_lookahead") {
-        params_.use_fixed_curvature_lookahead = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
-        params_.use_cost_regulated_linear_velocity_scaling = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_collision_detection") {
-        params_.use_collision_detection = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_rotate_to_heading") {
-        params_.use_rotate_to_heading = parameter.as_bool();
-      } else if (name == plugin_name_ + ".use_cancel_deceleration") {
-        params_.use_cancel_deceleration = parameter.as_bool();
-      } else if (name == plugin_name_ + ".allow_reversing") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".allow_reversing") {
         if (params_.use_rotate_to_heading && parameter.as_bool()) {
           RCLCPP_WARN(
             logger_, "Both use_rotate_to_heading and allow_reversing "
             "parameter cannot be set to true. Rejecting parameter update.");
-          continue;
+          result.successful = false;
         }
-        params_.allow_reversing = parameter.as_bool();
       }
     }
   }
-
-  result.successful = true;
   return result;
+}
+void
+ParameterHandler::updateParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".inflation_cost_scaling_factor") {
+        params_.inflation_cost_scaling_factor = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".desired_linear_vel") {
+        params_.desired_linear_vel = parameter.as_double();
+        params_.base_desired_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".lookahead_dist") {
+        params_.lookahead_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_lookahead_dist") {
+        params_.max_lookahead_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_lookahead_dist") {
+        params_.min_lookahead_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".lookahead_time") {
+        params_.lookahead_time = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".rotate_to_heading_angular_vel") {
+        params_.rotate_to_heading_angular_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_approach_linear_velocity") {
+        params_.min_approach_linear_velocity = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".curvature_lookahead_dist") {
+        params_.curvature_lookahead_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_allowed_time_to_collision_up_to_carrot") {
+        params_.max_allowed_time_to_collision_up_to_carrot = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_distance_to_obstacle") {
+        params_.min_distance_to_obstacle = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".cost_scaling_dist") {
+        params_.cost_scaling_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".cost_scaling_gain") {
+        params_.cost_scaling_gain = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".regulated_linear_scaling_min_radius") {
+        params_.regulated_linear_scaling_min_radius = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
+        params_.regulated_linear_scaling_min_speed = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_angular_accel") {
+        params_.max_angular_accel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".cancel_deceleration") {
+        params_.cancel_deceleration = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".rotate_to_heading_min_angle") {
+        params_.rotate_to_heading_min_angle = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".transform_tolerance") {
+        params_.transform_tolerance = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_robot_pose_search_dist") {
+        params_.max_robot_pose_search_dist = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
+        params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
+        params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_fixed_curvature_lookahead") {
+        params_.use_fixed_curvature_lookahead = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_cost_regulated_linear_velocity_scaling") {
+        params_.use_cost_regulated_linear_velocity_scaling = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_collision_detection") {
+        params_.use_collision_detection = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".stateful") {
+        params_.stateful = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_rotate_to_heading") {
+        params_.use_rotate_to_heading = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_cancel_deceleration") {
+        params_.use_cancel_deceleration = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".allow_reversing") {
+        params_.allow_reversing = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".interpolate_curvature_after_goal") {
+        params_.interpolate_curvature_after_goal = parameter.as_bool();
+      }
+    }
+  }
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller

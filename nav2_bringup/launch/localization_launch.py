@@ -15,43 +15,34 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction
-from launch.actions import SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
-from launch.substitutions import EqualsSubstitution
-from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch.substitutions import NotEqualsSubstitution
-from launch_ros.actions import LoadComposableNodes, SetParameter
-from launch_ros.actions import Node
+from launch.substitutions import (EqualsSubstitution, LaunchConfiguration, NotEqualsSubstitution,
+                                  PythonExpression)
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
 
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
+    autostart = LaunchConfigAsBool('autostart')
     params_file = LaunchConfiguration('params_file')
-    use_composition = LaunchConfiguration('use_composition')
+    use_composition = LaunchConfigAsBool('use_composition')
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
-    use_respawn = LaunchConfiguration('use_respawn')
+    use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
     lifecycle_nodes = ['map_server', 'amcl']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     configured_params = ParameterFile(
@@ -103,7 +94,7 @@ def generate_launch_description():
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name',
         default_value='nav2_container',
-        description='the name of conatiner that nodes will load in if use composition',
+        description='the name of container that nodes will load in if use composition',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
@@ -119,6 +110,7 @@ def generate_launch_description():
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
+            PushROSNamespace(namespace),
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 condition=IfCondition(
@@ -177,6 +169,7 @@ def generate_launch_description():
     load_composable_nodes = GroupAction(
         condition=IfCondition(use_composition),
         actions=[
+            PushROSNamespace(namespace),
             SetParameter('use_sim_time', use_sim_time),
             LoadComposableNodes(
                 target_container=container_name_full,

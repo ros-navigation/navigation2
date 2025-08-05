@@ -26,10 +26,11 @@ DockDatabase::~DockDatabase()
 {
   dock_instances_.clear();
   dock_plugins_.clear();
+  reload_db_service_.reset();
 }
 
 bool DockDatabase::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::shared_ptr<tf2_ros::Buffer> tf)
 {
   node_ = parent;
@@ -58,7 +59,7 @@ bool DockDatabase::initialize(
     "~/reload_database",
     std::bind(
       &DockDatabase::reloadDbCb, this,
-      std::placeholders::_1, std::placeholders::_2));
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   return true;
 }
@@ -80,6 +81,7 @@ void DockDatabase::deactivate()
 }
 
 void DockDatabase::reloadDbCb(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Request> request,
   std::shared_ptr<nav2_msgs::srv::ReloadDockDatabase::Response> response)
 {
@@ -145,7 +147,7 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
 }
 
 bool DockDatabase::getDockPlugins(
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   std::shared_ptr<tf2_ros::Buffer> tf)
 {
   std::vector<std::string> docks_plugins;
@@ -164,7 +166,7 @@ bool DockDatabase::getDockPlugins(
 
   for (size_t i = 0; i != docks_plugins.size(); i++) {
     try {
-      std::string plugin_type = nav2_util::get_plugin_type_param(
+      std::string plugin_type = nav2::get_plugin_type_param(
         node, docks_plugins[i]);
       opennav_docking_core::ChargingDock::Ptr dock =
         dock_loader_.createUniqueInstance(plugin_type);
@@ -184,7 +186,7 @@ bool DockDatabase::getDockPlugins(
   return true;
 }
 
-bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
+bool DockDatabase::getDockInstances(const nav2::LifecycleNode::SharedPtr & node)
 {
   using rclcpp::ParameterType::PARAMETER_STRING;
   using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
@@ -199,7 +201,7 @@ bool DockDatabase::getDockInstances(const rclcpp_lifecycle::LifecycleNode::Share
       node->get_logger(), "Loading dock from database file  %s.", dock_filepath.c_str());
     try {
       return utils::parseDockFile(dock_filepath, node, dock_instances_);
-    } catch (YAML::ParserException & e) {
+    } catch (YAML::BadConversion & e) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock database (%s) is malformed: %s.", dock_filepath.c_str(), e.what());

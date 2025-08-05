@@ -10,5 +10,3 @@ As a Robot user I want to my robot to avoid colliding with people or objects so 
    - The user should be able to walk in front of a robot and it should avoid crashing into that person
 
 - Are there any non-functional requirements? (build system, tools, performance, etc)
-
-

@@ -18,17 +18,9 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 using namespace std::chrono_literals;
-
-// rclcpp::init can only be called once per process, so this needs to be a global variable
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 class TestAmclPose : public ::testing::Test
 {
@@ -69,7 +61,7 @@ private:
     pose_callback_ = true;
   }
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
+  nav2::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr subscription_;
   geometry_msgs::msg::PoseWithCovarianceStamped testPose_;
   double amcl_pose_x;
   double amcl_pose_y;
@@ -117,4 +109,17 @@ void TestAmclPose::initTestPose()
 TEST_F(TestAmclPose, SimpleAmclTest)
 {
   EXPECT_EQ(true, defaultAmclTest());
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

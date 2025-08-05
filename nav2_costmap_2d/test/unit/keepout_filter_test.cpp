@@ -21,7 +21,7 @@
 #include <functional>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -119,7 +119,7 @@ protected:
   std::vector<Point> keepout_points_;
 
 private:
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -208,7 +208,7 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 
 void TestNode::createKeepoutFilter(const std::string & global_frame)
 {
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -284,7 +284,7 @@ void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_
 
 void TestNode::testStandardScenario(unsigned char free_value, unsigned char keepout_value)
 {
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Intersection window: added 4 points
   keepout_filter_->process(*master_grid_, 2, 2, 5, 5, pose);
   keepout_points_.push_back(Point{3, 3});
@@ -292,7 +292,7 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   keepout_points_.push_back(Point{4, 3});
   keepout_points_.push_back(Point{4, 4});
   verifyMasterGrid(free_value, keepout_value);
-  // Two windows outside on the horisontal/vertical edge: no new points added
+  // Two windows outside on the horizontal/vertical edge: no new points added
   keepout_filter_->process(*master_grid_, 3, 6, 5, 7, pose);
   keepout_filter_->process(*master_grid_, 6, 3, 7, 5, pose);
   verifyMasterGrid(free_value, keepout_value);
@@ -308,9 +308,10 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   verifyMasterGrid(free_value, keepout_value);
 }
 
+
 void TestNode::testFramesScenario(unsigned char free_value, unsigned char keepout_value)
 {
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Intersection window: added all 9 points because of map->odom frame shift
   keepout_filter_->process(*master_grid_, 2, 2, 5, 5, pose);
   keepout_points_.push_back(Point{2, 2});
@@ -382,7 +383,7 @@ TEST_F(TestNode, testFreeKeepout)
   createKeepoutFilter("map");
 
   // Test KeepoutFilter
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Check whole area window
   keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
   // There should be no one point appeared on master_grid_ after process()
@@ -401,7 +402,7 @@ TEST_F(TestNode, testUnknownKeepout)
   createKeepoutFilter("map");
 
   // Test KeepoutFilter
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Check whole area window
   keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
   // There should be no one point appeared on master_grid_ after process()

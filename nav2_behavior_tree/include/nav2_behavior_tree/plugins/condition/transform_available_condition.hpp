@@ -19,7 +19,7 @@
 #include <atomic>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "behaviortree_cpp/condition_node.h"
 #include "tf2_ros/buffer.h"
 
@@ -29,6 +29,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS if there is a valid transform
  * between two specified frames and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class TransformAvailableCondition : public BT::ConditionNode
 {
@@ -73,14 +75,13 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   std::atomic<bool> was_found_;
 
   std::string child_frame_;
   std::string parent_frame_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

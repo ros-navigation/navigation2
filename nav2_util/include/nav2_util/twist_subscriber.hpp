@@ -28,8 +28,8 @@
 #include "rclcpp/qos.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 
-#include "lifecycle_node.hpp"
-#include "node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_util
 {
@@ -83,27 +83,27 @@ public:
     typename TwistStampedCallbackT
   >
   explicit TwistSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic,
-    const rclcpp::QoS & qos,
     TwistCallbackT && TwistCallback,
-    TwistStampedCallbackT && TwistStampedCallback
+    TwistStampedCallbackT && TwistStampedCallback,
+    const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS()
   )
   {
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(false));
+      rclcpp::ParameterValue(true));
     node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
-        qos,
-        std::forward<TwistStampedCallbackT>(TwistStampedCallback));
+        std::forward<TwistStampedCallbackT>(TwistStampedCallback),
+        qos);
     } else {
       twist_sub_ = node->create_subscription<geometry_msgs::msg::Twist>(
         topic,
-        qos,
-        std::forward<TwistCallbackT>(TwistCallback));
+        std::forward<TwistCallbackT>(TwistCallback),
+        qos);
     }
   }
 
@@ -117,21 +117,21 @@ public:
   */
   template<typename TwistStampedCallbackT>
   explicit TwistSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic,
-    const rclcpp::QoS & qos,
-    TwistStampedCallbackT && TwistStampedCallback
+    TwistStampedCallbackT && TwistStampedCallback,
+    const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS()
   )
   {
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, "enable_stamped_cmd_vel",
-      rclcpp::ParameterValue(false));
+      rclcpp::ParameterValue(true));
     node->get_parameter("enable_stamped_cmd_vel", is_stamped_);
     if (is_stamped_) {
       twist_stamped_sub_ = node->create_subscription<geometry_msgs::msg::TwistStamped>(
         topic,
-        qos,
-        std::forward<TwistStampedCallbackT>(TwistStampedCallback));
+        std::forward<TwistStampedCallbackT>(TwistStampedCallback),
+        qos);
     } else {
       throw std::invalid_argument(
               "enable_stamped_cmd_vel must be true when using this constructor!");
@@ -140,11 +140,11 @@ public:
 
 protected:
   //! @brief The user-configured value for ROS parameter enable_stamped_cmd_vel
-  bool is_stamped_{false};
+  bool is_stamped_{true};
   //! @brief The subscription when using Twist
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
+  nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_ {nullptr};
   //! @brief The subscription when using TwistStamped
-  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
+  nav2::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_stamped_sub_ {nullptr};
 };
 
 

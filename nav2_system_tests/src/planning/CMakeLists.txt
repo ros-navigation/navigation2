@@ -16,6 +16,12 @@ target_link_libraries(${test_planner_costmaps_exec}
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(${test_planner_costmaps_exec}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 set(test_planner_random_exec test_planner_random_node)
@@ -36,6 +42,12 @@ target_link_libraries(${test_planner_random_exec}
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(${test_planner_random_exec}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 ament_add_test(test_planner_costmaps
@@ -75,6 +87,12 @@ target_link_libraries(test_planner_plugins
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(test_planner_plugins
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 ament_add_gtest(test_planner_is_path_valid
@@ -91,4 +109,10 @@ target_link_libraries(test_planner_is_path_valid
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(test_planner_is_path_valid
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )

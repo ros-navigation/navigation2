@@ -27,7 +27,7 @@ class TransformAvailableConditionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_behavior_tree_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_behavior_tree_fixture");
     transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
@@ -82,14 +82,14 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static std::shared_ptr<nav2_behavior_tree::TransformHandler> transform_handler_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr TransformAvailableConditionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr TransformAvailableConditionTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::TransformHandler>
 TransformAvailableConditionTestFixture::transform_handler_ = nullptr;
 BT::NodeConfiguration * TransformAvailableConditionTestFixture::config_ = nullptr;

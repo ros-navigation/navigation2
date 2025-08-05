@@ -19,9 +19,9 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
-#include "tf2/transform_datatypes.h"
+#include "tf2/transform_datatypes.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/polygon_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/array_parser.hpp"
@@ -32,7 +32,7 @@ namespace nav2_collision_monitor
 {
 
 Polygon::Polygon(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -40,7 +40,8 @@ Polygon::Polygon(
 : node_(node), polygon_name_(polygon_name), action_type_(DO_NOTHING),
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
-  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance)
+  base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
+  node_clock_(nullptr)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
@@ -52,6 +53,7 @@ Polygon::~Polygon()
   polygon_pub_.reset();
   poly_.clear();
   dyn_params_handler_.reset();
+  node_clock_.reset();
 }
 
 bool Polygon::configure()
@@ -61,6 +63,7 @@ bool Polygon::configure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
+  node_clock_ = node->get_clock();
   std::string polygon_sub_topic, polygon_pub_topic, footprint_topic;
 
   if (!getParameters(polygon_sub_topic, polygon_pub_topic, footprint_topic)) {
@@ -92,9 +95,8 @@ bool Polygon::configure()
       polygon_.polygon.points.push_back(p_s);
     }
 
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
     polygon_pub_ = node->create_publisher<geometry_msgs::msg::PolygonStamped>(
-      polygon_pub_topic, polygon_qos);
+      polygon_pub_topic);
   }
 
   // Add callback for dynamic parameters
@@ -330,7 +332,7 @@ bool Polygon::getCommonParameters(
   try {
     // Get action type.
     // Leave it not initialized: the will cause an error if it will not set.
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".action_type", rclcpp::PARAMETER_STRING);
     const std::string at_str =
       node->get_parameter(polygon_name_ + ".action_type").as_string();
@@ -349,16 +351,16 @@ bool Polygon::getCommonParameters(
       return false;
     }
 
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
     enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
 
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
     min_points_ = node->get_parameter(polygon_name_ + ".min_points").as_int();
 
     try {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER);
       min_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int() + 1;
       RCLCPP_WARN(
@@ -371,42 +373,42 @@ bool Polygon::getCommonParameters(
     }
 
     if (action_type_ == SLOWDOWN) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".slowdown_ratio", rclcpp::ParameterValue(0.5));
       slowdown_ratio_ = node->get_parameter(polygon_name_ + ".slowdown_ratio").as_double();
     }
 
     if (action_type_ == LIMIT) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".linear_limit", rclcpp::ParameterValue(0.5));
       linear_limit_ = node->get_parameter(polygon_name_ + ".linear_limit").as_double();
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".angular_limit", rclcpp::ParameterValue(0.5));
       angular_limit_ = node->get_parameter(polygon_name_ + ".angular_limit").as_double();
     }
 
     if (action_type_ == APPROACH) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".time_before_collision", rclcpp::ParameterValue(2.0));
       time_before_collision_ =
         node->get_parameter(polygon_name_ + ".time_before_collision").as_double();
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".simulation_time_step", rclcpp::ParameterValue(0.1));
       simulation_time_step_ =
         node->get_parameter(polygon_name_ + ".simulation_time_step").as_double();
     }
 
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".visualize", rclcpp::ParameterValue(false));
     visualize_ = node->get_parameter(polygon_name_ + ".visualize").as_bool();
     if (visualize_) {
       // Get polygon topic parameter in case if it is going to be published
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name_ + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name_));
       polygon_pub_topic = node->get_parameter(polygon_name_ + ".polygon_pub_topic").as_string();
     }
 
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".polygon_subscribe_transient_local", rclcpp::ParameterValue(false));
     polygon_subscribe_transient_local_ =
       node->get_parameter(polygon_name_ + ".polygon_subscribe_transient_local").as_bool();
@@ -414,13 +416,13 @@ bool Polygon::getCommonParameters(
     if (use_dynamic_sub_topic) {
       if (action_type_ != APPROACH) {
         // Get polygon sub topic
-        nav2_util::declare_parameter_if_not_declared(
+        nav2::declare_parameter_if_not_declared(
           node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
         polygon_sub_topic =
           node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
       } else {
         // Obtain the footprint topic to make a footprint subscription for approach polygon
-        nav2_util::declare_parameter_if_not_declared(
+        nav2::declare_parameter_if_not_declared(
           node, polygon_name_ + ".footprint_topic",
           rclcpp::ParameterValue("local_costmap/published_footprint"));
         footprint_topic =
@@ -429,11 +431,11 @@ bool Polygon::getCommonParameters(
     }
 
     // By default, use all observation sources for polygon
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     const std::vector<std::string> observation_sources =
       node->get_parameter("observation_sources").as_string_array();
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".sources_names", rclcpp::ParameterValue(observation_sources));
     sources_names_ = node->get_parameter(polygon_name_ + ".sources_names").as_string_array();
 
@@ -478,7 +480,7 @@ bool Polygon::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter points fails, use dynamic subscription
   try {
     // Leave it uninitialized: it will throw an inner exception if the parameter is not set
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
     std::string poly_string =
       node->get_parameter(polygon_name_ + ".points").as_string();
@@ -519,13 +521,14 @@ void Polygon::createSubscription(std::string & polygon_sub_topic)
       logger_,
       "[%s]: Subscribing on %s topic for polygon",
       polygon_name_.c_str(), polygon_sub_topic.c_str());
-    rclcpp::QoS polygon_qos = rclcpp::SystemDefaultsQoS();  // set to default
+    rclcpp::QoS polygon_qos = nav2::qos::StandardTopicQoS();
     if (polygon_subscribe_transient_local_) {
       polygon_qos.transient_local();
     }
     polygon_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-      polygon_sub_topic, polygon_qos,
-      std::bind(&Polygon::polygonCallback, this, std::placeholders::_1));
+      polygon_sub_topic,
+      std::bind(&Polygon::polygonCallback, this, std::placeholders::_1),
+      polygon_qos);
   }
 }
 
@@ -576,7 +579,9 @@ Polygon::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if(param_name.find(polygon_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == polygon_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
@@ -589,9 +594,11 @@ Polygon::dynamicParametersCallback(
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
 {
-  RCLCPP_INFO(
+  RCLCPP_INFO_THROTTLE(
     logger_,
-    "[%s]: Polygon shape update has been arrived",
+    *node_clock_,
+    2000,
+    "[%s]: Polygon shape update has arrived",
     polygon_name_.c_str());
   updatePolygon(msg);
 }

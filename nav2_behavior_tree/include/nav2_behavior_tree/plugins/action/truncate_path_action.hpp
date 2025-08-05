@@ -19,9 +19,13 @@
 #include <memory>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
-
 #include "behaviortree_cpp/action_node.h"
+#include "behaviortree_cpp/json_export.h"
+#include "nav_msgs/msg/path.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -47,6 +51,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
       BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),

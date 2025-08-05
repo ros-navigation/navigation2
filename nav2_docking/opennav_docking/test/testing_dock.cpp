@@ -18,6 +18,7 @@
 
 #include "opennav_docking_core/charging_dock.hpp"
 #include "opennav_docking_core/docking_exceptions.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace opennav_docking
 {
@@ -31,13 +32,14 @@ public:
   {}
 
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     const std::string &, std::shared_ptr<tf2_ros::Buffer>)
   {
     node_ = parent.lock();
     if (!node_) {
       throw std::runtime_error{"Failed to lock node"};
     }
+    dock_direction_ = opennav_docking_core::DockDirection::FORWARD;
   }
 
   virtual void cleanup() {}
@@ -101,7 +103,7 @@ public:
   }
 
 protected:
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 };
 
 }  // namespace opennav_docking

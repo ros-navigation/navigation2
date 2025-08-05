@@ -21,7 +21,7 @@
 
 #include "behaviortree_cpp/condition_node.h"
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
@@ -32,6 +32,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS every time the robot
  * travels a specified distance and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class DistanceTraveledCondition : public BT::ConditionNode
 {
@@ -72,7 +74,7 @@ public:
   }
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
   geometry_msgs::msg::PoseStamped start_pose_;
@@ -80,7 +82,6 @@ private:
   double distance_;
   double transform_tolerance_;
   std::string global_frame_, robot_base_frame_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

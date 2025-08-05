@@ -26,25 +26,27 @@
 TEST(TwistSubscriber, Unstamped)
 {
   rclcpp::init(0, nullptr);
-  auto sub_node = std::make_shared<nav2_util::LifecycleNode>("sub_node", "");
+  auto sub_node = std::make_shared<nav2::LifecycleNode>("sub_node", "");
   sub_node->configure();
   sub_node->activate();
+  sub_node->declare_parameter("enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
-    sub_node, "cmd_vel", 1,
+    sub_node, "cmd_vel",
     [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
-    [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;}
+    [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;},
+    rclcpp::QoS(1)
   );
 
-  auto pub_node = std::make_shared<nav2_util::LifecycleNode>("pub_node", "");
+  auto pub_node = std::make_shared<nav2::LifecycleNode>("pub_node", "");
   pub_node->configure();
 
   geometry_msgs::msg::TwistStamped pub_msg {};
   pub_msg.twist.linear.x = 42.0;
 
   auto vel_pub =
-    pub_node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
+    pub_node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel");
 
   pub_node->activate();
   vel_pub->on_activate();
@@ -62,26 +64,26 @@ TEST(TwistSubscriber, Unstamped)
 TEST(TwistSubscriber, Stamped)
 {
   rclcpp::init(0, nullptr);
-  auto sub_node = std::make_shared<nav2_util::LifecycleNode>("sub_node", "");
+  auto sub_node = std::make_shared<nav2::LifecycleNode>("sub_node", "");
   sub_node->declare_parameter("enable_stamped_cmd_vel", true);
   sub_node->configure();
   sub_node->activate();
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
-    sub_node, "cmd_vel", 1,
+    sub_node, "cmd_vel",
     [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
     [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;}
   );
 
-  auto pub_node = std::make_shared<nav2_util::LifecycleNode>("pub_node", "");
+  auto pub_node = std::make_shared<nav2::LifecycleNode>("pub_node", "");
   pub_node->configure();
 
   geometry_msgs::msg::TwistStamped pub_msg {};
   pub_msg.twist.linear.x = 42.0;
 
   auto vel_pub =
-    pub_node->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel", 1);
+    pub_node->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel");
 
   pub_node->activate();
   vel_pub->on_activate();

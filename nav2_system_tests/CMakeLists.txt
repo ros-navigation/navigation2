@@ -31,6 +31,7 @@ if(BUILD_TESTING)
   find_package(std_msgs REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_geometry_msgs REQUIRED)
+  find_package(nav2_ros_common REQUIRED)
   find_package(tf2_ros REQUIRED)
   find_package(visualization_msgs REQUIRED)
 
@@ -44,11 +45,17 @@ if(BUILD_TESTING)
   target_link_libraries(${local_controller_plugin_lib} PRIVATE
     ${geometry_msgs_TARGETS}
     nav2_core::nav2_core
+    nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
     ${nav_msgs_TARGETS}
     pluginlib::pluginlib
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/controller_plugins.xml)
+  target_include_directories(${local_controller_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  )
 
   install(TARGETS ${local_controller_plugin_lib}
     ARCHIVE DESTINATION lib
@@ -66,10 +73,16 @@ if(BUILD_TESTING)
   target_link_libraries(${global_planner_plugin_lib} PRIVATE
     ${geometry_msgs_TARGETS}
     nav2_core::nav2_core ${nav_msgs_TARGETS}
+    nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_ros::tf2_ros
+  )
+  target_include_directories(${global_planner_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/planner_plugins.xml)
 
@@ -89,10 +102,16 @@ if(BUILD_TESTING)
   target_link_libraries(${smoother_plugin_lib} PRIVATE
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core
+    nav2_ros_common::nav2_ros_common
     ${nav_msgs_TARGETS}
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_ros::tf2_ros
+  )
+  target_include_directories(${smoother_plugin_lib}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
 
@@ -113,7 +132,8 @@ if(BUILD_TESTING)
   add_subdirectory(src/system_failure)
   add_subdirectory(src/updown)
   add_subdirectory(src/waypoint_follower)
-  # add_subdirectory(src/gps_navigation)
+  add_subdirectory(src/route)
+  add_subdirectory(src/gps_navigation)
   add_subdirectory(src/behaviors/wait)
   add_subdirectory(src/behaviors/spin)
   add_subdirectory(src/behaviors/backup)

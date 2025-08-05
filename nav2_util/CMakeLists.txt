@@ -12,12 +12,14 @@ find_package(nav_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(pluginlib REQUIRED)
 
 nav2_package()
 
@@ -56,6 +58,8 @@ ament_export_dependencies(
   tf2
   tf2_geometry_msgs
   tf2_ros
+  pluginlib
+  nav2_ros_common
 )
 ament_export_targets(${library_name})
 

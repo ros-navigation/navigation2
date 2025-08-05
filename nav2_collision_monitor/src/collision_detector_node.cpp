@@ -21,7 +21,7 @@
 
 #include "tf2_ros/create_timer_ros.h"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 using namespace std::chrono_literals;
 
@@ -29,7 +29,7 @@ namespace nav2_collision_monitor
 {
 
 CollisionDetector::CollisionDetector(const rclcpp::NodeOptions & options)
-: nav2_util::LifecycleNode("collision_detector", "", options)
+: nav2::LifecycleNode("collision_detector", options)
 {
 }
 
@@ -39,8 +39,8 @@ CollisionDetector::~CollisionDetector()
   sources_.clear();
 }
 
-nav2_util::CallbackReturn
-CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
+nav2::CallbackReturn
+CollisionDetector::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
@@ -53,20 +53,21 @@ CollisionDetector::on_configure(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   state_pub_ = this->create_publisher<nav2_msgs::msg::CollisionDetectorState>(
-    "collision_detector_state", rclcpp::SystemDefaultsQoS());
+    "collision_detector_state");
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "~/collision_points_marker", 1);
+    "~/collision_points_marker");
 
   // Obtaining ROS parameters
   if (!getParameters()) {
-    return nav2_util::CallbackReturn::FAILURE;
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
   }
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
@@ -88,10 +89,10 @@ CollisionDetector::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Creating bond connection
   createBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
@@ -111,10 +112,10 @@ CollisionDetector::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Destroying bond connection
   destroyBond();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
@@ -128,14 +129,14 @@ CollisionDetector::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_listener_.reset();
   tf_buffer_.reset();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+nav2::CallbackReturn
 CollisionDetector::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return nav2::CallbackReturn::SUCCESS;
 }
 
 bool CollisionDetector::getParameters()
@@ -146,24 +147,24 @@ bool CollisionDetector::getParameters()
 
   auto node = shared_from_this();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "frequency", rclcpp::ParameterValue(10.0));
   frequency_ = get_parameter("frequency").as_double();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
   base_frame_id = get_parameter("base_frame_id").as_string();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "odom_frame_id", rclcpp::ParameterValue("odom"));
   odom_frame_id = get_parameter("odom_frame_id").as_string();
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "transform_tolerance", rclcpp::ParameterValue(0.1));
   transform_tolerance =
     tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "source_timeout", rclcpp::ParameterValue(2.0));
   source_timeout =
     rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, "base_shift_correction", rclcpp::ParameterValue(true));
   const bool base_shift_correction =
     get_parameter("base_shift_correction").as_bool();
@@ -190,12 +191,12 @@ bool CollisionDetector::configurePolygons(
     auto node = shared_from_this();
 
     // Leave it to be not initialized: to intentionally cause an error if it will not set
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, "polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> polygon_names = get_parameter("polygons").as_string_array();
     for (std::string polygon_name : polygon_names) {
       // Leave it not initialized: the will cause an error if it will not set
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, polygon_name + ".type", rclcpp::PARAMETER_STRING);
       const std::string polygon_type = get_parameter(polygon_name + ".type").as_string();
 
@@ -254,11 +255,11 @@ bool CollisionDetector::configureSources(
     auto node = shared_from_this();
 
     // Leave it to be not initialized to intentionally cause an error if it will not set
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> source_names = get_parameter("observation_sources").as_string_array();
     for (std::string source_name : source_names) {
-      nav2_util::declare_parameter_if_not_declared(
+      nav2::declare_parameter_if_not_declared(
         node, source_name + ".type",
         rclcpp::ParameterValue("scan"));  // Laser scanner by default
       const std::string source_type = get_parameter(source_name + ".type").as_string();

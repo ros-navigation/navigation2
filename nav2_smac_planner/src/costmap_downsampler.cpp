@@ -34,7 +34,7 @@ CostmapDownsampler::~CostmapDownsampler()
 }
 
 void CostmapDownsampler::on_configure(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & global_frame,
   const std::string & topic_name,
   nav2_costmap_2d::Costmap2D * const costmap,

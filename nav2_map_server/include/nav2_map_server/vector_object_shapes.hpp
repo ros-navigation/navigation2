@@ -27,7 +27,7 @@
 
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_map_server/vector_object_utils.hpp"
 
@@ -50,7 +50,7 @@ public:
    * @brief Shape basic class constructor
    * @param node Vector Object server node pointer
    */
-  explicit Shape(const nav2_util::LifecycleNode::WeakPtr & node);
+  explicit Shape(const nav2::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Shape destructor
@@ -160,7 +160,7 @@ protected:
   ShapeType type_;
 
   /// @brief VectorObjectServer node
-  nav2_util::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
 };
 
 /// @brief Polygon shape class
@@ -172,7 +172,7 @@ public:
    * @param node Vector Object server node pointer
    * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  explicit Polygon(const nav2_util::LifecycleNode::WeakPtr & node);
+  explicit Polygon(const nav2::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Gets the value of the shape.
@@ -282,7 +282,7 @@ public:
    * @param node Vector Object server node pointer
    * @note setParams()/obtainParams() should be called after to configure the shape
    */
-  explicit Circle(const nav2_util::LifecycleNode::WeakPtr & node);
+  explicit Circle(const nav2::LifecycleNode::WeakPtr & node);
 
   /**
    * @brief Gets the value of the shape.

@@ -36,7 +36,7 @@ protected:
     goal_handle)
   {
     while (!goal_handle->is_canceling()) {
-      // Spining here until goal cancels
+      // Spinning here until goal cancels
       std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
   }
@@ -47,7 +47,7 @@ class CancelSpinActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("cancel_spin_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("cancel_spin_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -96,19 +96,19 @@ public:
   }
 
   static std::shared_ptr<CancelSpinServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::Spin>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::Spin>> client_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr CancelSpinActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr CancelSpinActionTestFixture::node_ = nullptr;
 std::shared_ptr<CancelSpinServer>
 CancelSpinActionTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::Spin>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::Spin>>
 CancelSpinActionTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelSpinActionTestFixture::config_ = nullptr;
@@ -127,7 +127,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::Spin>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<nav2_msgs::action::Spin>::SendGoalOptions();
 
   // Creating a dummy goal_msg
   auto goal_msg = nav2_msgs::action::Spin::Goal();
@@ -135,7 +135,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
   // Setting target yaw
   goal_msg.target_yaw = 1.57;
 
-  // Spining for server and sending a goal
+  // Spinning for server and sending a goal
   client_->wait_for_action_server();
   client_->async_send_goal(goal_msg, send_goal_options);
 
@@ -148,7 +148,7 @@ TEST_F(CancelSpinActionTestFixture, test_ports)
   // BT node should return success, once when the goal is cancelled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is infact cancelling
+  // Adding another test case to check if the goal is in fact cancelling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 

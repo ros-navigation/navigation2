@@ -15,24 +15,23 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, SetParameter, SetRemap
+from launch_ros.actions import Node, PushROSNamespace, SetParameter, SetRemap
 from launch_ros.descriptions import ParameterFile
-from nav2_common.launch import HasNodeParams, RewrittenYaml
+from nav2_common.launch import HasNodeParams, LaunchConfigAsBool, RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Input parameters declaration
     namespace = LaunchConfiguration('namespace')
     params_file = LaunchConfiguration('params_file')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
-    use_respawn = LaunchConfiguration('use_respawn')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
+    autostart = LaunchConfigAsBool('autostart')
+    use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
     # Variables
@@ -90,6 +89,7 @@ def generate_launch_description():
     # Nodes launching commands
     start_map_server = GroupAction(
         actions=[
+            PushROSNamespace(namespace),
             SetParameter('use_sim_time', use_sim_time),
             Node(
                 package='nav2_map_server',
@@ -121,6 +121,8 @@ def generate_launch_description():
     start_slam_toolbox_cmd = GroupAction(
 
         actions=[
+            PushROSNamespace(namespace),
+
             # Remapping required to have a slam session subscribe & publish in optional namespaces
             SetRemap(src='/scan', dst='scan'),
             SetRemap(src='/tf', dst='tf'),

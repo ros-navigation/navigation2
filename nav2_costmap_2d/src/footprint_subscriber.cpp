@@ -19,43 +19,11 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
 {
-
-FootprintSubscriber::FootprintSubscriber(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
-  const std::string & topic_name,
-  tf2_ros::Buffer & tf,
-  std::string robot_base_frame,
-  double transform_tolerance)
-: tf_(tf),
-  robot_base_frame_(robot_base_frame),
-  transform_tolerance_(transform_tolerance)
-{
-  auto node = parent.lock();
-  footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-    topic_name, rclcpp::SystemDefaultsQoS(),
-    std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
-}
-
-FootprintSubscriber::FootprintSubscriber(
-  const rclcpp::Node::WeakPtr & parent,
-  const std::string & topic_name,
-  tf2_ros::Buffer & tf,
-  std::string robot_base_frame,
-  double transform_tolerance)
-: tf_(tf),
-  robot_base_frame_(robot_base_frame),
-  transform_tolerance_(transform_tolerance)
-{
-  auto node = parent.lock();
-  footprint_sub_ = node->create_subscription<geometry_msgs::msg::PolygonStamped>(
-    topic_name, rclcpp::SystemDefaultsQoS(),
-    std::bind(&FootprintSubscriber::footprint_callback, this, std::placeholders::_1));
-}
 
 bool
 FootprintSubscriber::getFootprintRaw(
@@ -67,8 +35,7 @@ FootprintSubscriber::getFootprintRaw(
   }
 
   auto current_footprint = std::atomic_load(&footprint_);
-  footprint = toPointVector(
-    std::make_shared<geometry_msgs::msg::Polygon>(current_footprint->polygon));
+  footprint = toPointVector(current_footprint->polygon);
   footprint_header = current_footprint->header;
 
   return true;

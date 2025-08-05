@@ -6,6 +6,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -19,6 +20,7 @@ target_link_libraries(opennav_docking_core INTERFACE
   ${geometry_msgs_TARGETS}
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 
 install(TARGETS opennav_docking_core
@@ -43,6 +45,7 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(
   geometry_msgs
   rclcpp_lifecycle
+  nav2_ros_common
   tf2_ros
 )
 ament_export_targets(opennav_docking_core)

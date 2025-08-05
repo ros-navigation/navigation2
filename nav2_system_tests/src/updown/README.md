@@ -1,6 +1,6 @@
 # Nav2 Updown Test
 
-This is a 'top level' system test which tests the lifecycle bringup and shutdown of the system. 
+This is a 'top level' system test which tests the lifecycle bringup and shutdown of the system.
 
 ## To run the test
 ```
@@ -12,7 +12,7 @@ If the test passes, you should see this comment in the output:
 [test_updown-13] [INFO] [test_updown]: ****************************************************  TEST PASSED!
 ```
 
-To run the test in a loop 1000x, run the `test_updown_reliablity` script and log the output:
+To run the test in a loop 1000x, run the `test_updown_reliability` script and log the output:
 ```
 ./test_updown_reliability |& tee /tmp/updown.log
 ```

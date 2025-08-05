@@ -26,7 +26,8 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
-#include "nav2_util/service_client.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/service_client.hpp"
 
 namespace nav2_lifecycle_manager
 {
@@ -48,9 +49,25 @@ public:
    * @param name Managed node name
    * @param parent_node Node that execute the service calls
    */
+  template<typename NodeT>
   explicit LifecycleManagerClient(
     const std::string & name,
-    std::shared_ptr<rclcpp::Node> parent_node);
+    NodeT parent_node)
+  {
+    manage_service_name_ = name + std::string("/manage_nodes");
+    active_service_name_ = name + std::string("/is_active");
+
+    // Use parent node for service call and logging
+    logger_ = parent_node->get_logger();
+
+    // Create the service clients
+    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
+    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
+    manager_client_ = nav2::interfaces::create_client<ManageLifecycleNodes>(
+      parent_node, manage_service_name_, true /*creates and spins an internal executor*/);
+    is_active_client_ = nav2::interfaces::create_client<std_srvs::srv::Trigger>(
+      parent_node, active_service_name_, true /*creates and spins an internal executor*/);
+  }
 
   // Client-side interface to the Nav2 lifecycle manager
   /**
@@ -107,9 +124,10 @@ protected:
 
   // The node to use for the service call
   rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_lifecycle_manager_client")};
 
-  std::shared_ptr<nav2_util::ServiceClient<ManageLifecycleNodes>> manager_client_;
-  std::shared_ptr<nav2_util::ServiceClient<std_srvs::srv::Trigger>> is_active_client_;
+  nav2::ServiceClient<ManageLifecycleNodes>::SharedPtr manager_client_;
+  nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr is_active_client_;
   std::string manage_service_name_;
   std::string active_service_name_;
 };

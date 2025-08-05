@@ -19,12 +19,13 @@
 #include <vector>
 
 #include "yaml-cpp/yaml.h"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
 #include "opennav_docking/types.hpp"
-#include "tf2/utils.h"
+#include "opennav_docking_core/charging_dock.hpp"
+#include "tf2/utils.hpp"
 
 namespace utils
 {
@@ -33,6 +34,7 @@ using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
 using rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
 using nav2_util::geometry_utils::orientationAroundZAxis;
+using opennav_docking_core::DockDirection;
 
 /**
 * @brief Parse a yaml file to obtain docks
@@ -42,7 +44,7 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 */
 inline bool parseDockFile(
   const std::string & yaml_filepath,
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
   YAML::Node yaml_file;
@@ -114,7 +116,7 @@ inline bool parseDockFile(
 */
 inline bool parseDockParams(
   const std::vector<std::string> & docks_param,
-  const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
+  const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
   Dock curr_dock;
@@ -181,6 +183,21 @@ inline double l2Norm(const geometry_msgs::msg::Pose & a, const geometry_msgs::ms
     (a.position.x - b.position.x) * (a.position.x - b.position.x) +
     (a.position.y - b.position.y) * (a.position.y - b.position.y) +
     delta_angle * delta_angle);
+}
+
+inline DockDirection getDockDirectionFromString(const std::string & direction)
+{
+  auto upper_direction = direction;
+  std::transform(
+    upper_direction.begin(), upper_direction.end(), upper_direction.begin(), ::toupper);
+
+  if (upper_direction == "FORWARD") {
+    return DockDirection::FORWARD;
+  } else if (upper_direction == "BACKWARD") {
+    return DockDirection::BACKWARD;
+  } else {
+    return DockDirection::UNKNOWN;
+  }
 }
 
 }  // namespace utils

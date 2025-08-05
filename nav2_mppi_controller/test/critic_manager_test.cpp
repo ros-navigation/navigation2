@@ -21,14 +21,6 @@
 
 // Tests critic manager
 
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
-
 using namespace mppi;  // NOLINT
 using namespace mppi::critics;  // NOLINT
 
@@ -100,10 +92,11 @@ public:
 
 TEST(CriticManagerTests, BasicCriticOperations)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
-  ParametersHandler param_handler(node);
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
 
@@ -117,10 +110,11 @@ TEST(CriticManagerTests, BasicCriticOperations)
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   models::Path path;
-  xt::xtensor<float, 1> costs;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs;
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};
 
   data.fail_flag = true;
@@ -135,13 +129,14 @@ TEST(CriticManagerTests, BasicCriticOperations)
 
 TEST(CriticManagerTests, CriticLoadingTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter(
     "critic_manager.critics",
     rclcpp::ParameterValue(std::vector<std::string>{"ConstraintCritic", "PreferForwardCritic"}));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
-  ParametersHandler param_handler(node);
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -149,4 +144,17 @@ TEST(CriticManagerTests, CriticLoadingTest)
   CriticManagerWrapperEnum critic_manager;
   critic_manager.on_configure(node, "critic_manager", costmap_ros, &param_handler);
   EXPECT_EQ(critic_manager.getCriticNum(), 2u);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

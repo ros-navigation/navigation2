@@ -17,10 +17,8 @@ from copy import deepcopy
 
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
-
 import rclpy
 from rclpy.duration import Duration
-
 
 """
 Basic security route patrol demo. In this demonstration, the expectation
@@ -29,7 +27,7 @@ watched live by security staff.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -69,18 +67,18 @@ def main():
             pose.pose.position.x = pt[0]
             pose.pose.position.y = pt[1]
             route_poses.append(deepcopy(pose))
-        navigator.goThroughPoses(route_poses)
+        go_through_poses_task = navigator.goThroughPoses(route_poses)
 
         # Do something during our route (e.x. AI detection on camera images for anomalies)
-        # Simply print ETA for the demonstation
+        # Simply print ETA for the demonstration
         i = 0
-        while not navigator.isTaskComplete():
+        while not navigator.isTaskComplete(task=go_through_poses_task):
             i += 1
-            feedback = navigator.getFeedback()
+            feedback = navigator.getFeedback(task=go_through_poses_task)
             if feedback and i % 5 == 0:
                 print(
                     'Estimated time to complete current route: '
-                    + '{0:.0f}'.format(
+                    + '{:.0f}'.format(
                         Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
                         / 1e9
                     )
@@ -104,7 +102,9 @@ def main():
             print('Security route was canceled, exiting.')
             exit(1)
         elif result == TaskResult.FAILED:
-            print('Security route failed! Restarting from other side...')
+            (error_code, error_msg) = navigator.getTaskError()
+            print(f'Security route failed!:{error_code}:{error_msg}')
+            print('Restarting from other side...')
 
     exit(0)
 

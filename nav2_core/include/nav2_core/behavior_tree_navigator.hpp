@@ -23,7 +23,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 
@@ -124,7 +124,7 @@ public:
    * @return bool If successful
    */
   virtual bool on_configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+    nav2::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
     nav2_core::NavigatorMuxer * plugin_muxer,
@@ -152,7 +152,7 @@ public:
 /**
  * @class BehaviorTreeNavigator
  * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
- * All methods from NavigatorBase are marked as final so they may not be overrided by derived
+ * All methods from NavigatorBase are marked as final so they may not be overridden by derived
  * methods - instead, users should use the appropriate APIs provided after BT Action handling.
  */
 template<class ActionT>
@@ -186,7 +186,7 @@ public:
    * @return bool If successful
    */
   bool on_configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+    nav2::LifecycleNode::WeakPtr parent_node,
     const std::vector<std::string> & plugin_lib_names,
     const FeedbackUtils & feedback_utils,
     nav2_core::NavigatorMuxer * plugin_muxer,
@@ -202,7 +202,8 @@ public:
     std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
 
     // Create the Behavior Tree Action Server for this navigator
-    bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
+    bt_action_server_ =
+      std::make_unique<nav2_behavior_tree::BtActionServer<ActionT, nav2::LifecycleNode>>(
       node,
       getName(),
       plugin_lib_names,
@@ -273,7 +274,7 @@ public:
     return cleanup() && ok;
   }
 
-  virtual std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) = 0;
+  virtual std::string getDefaultBTFilepath(nav2::LifecycleNode::WeakPtr node) = 0;
 
   /**
    * @brief Get the action name of this navigator to expose
@@ -345,7 +346,7 @@ protected:
    * @param Method to configure resources.
    */
   virtual bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
+    nav2::LifecycleNode::WeakPtr /*node*/,
     std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
   {
     return true;
@@ -366,7 +367,8 @@ protected:
    */
   virtual bool deactivate() {return true;}
 
-  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT, nav2::LifecycleNode>>
+  bt_action_server_;
   rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;

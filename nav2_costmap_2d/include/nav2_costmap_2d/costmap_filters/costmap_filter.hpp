@@ -45,10 +45,11 @@
 #include <mutex>
 #include <memory>
 
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -151,7 +152,7 @@ public:
   virtual void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
-    const geometry_msgs::msg::Pose2D & pose) = 0;
+    const geometry_msgs::msg::Pose & pose) = 0;
 
   /**
    * @brief: Resets costmap filter. Stops all subscriptions
@@ -180,9 +181,23 @@ protected:
    */
   bool transformPose(
     const std::string global_frame,
-    const geometry_msgs::msg::Pose2D & global_pose,
+    const geometry_msgs::msg::Pose & global_pose,
     const std::string mask_frame,
-    geometry_msgs::msg::Pose2D & mask_pose) const;
+    geometry_msgs::msg::Pose & mask_pose) const;
+
+    /**
+   * @brief: Convert from world coordinates to mask coordinates.
+     Similar to Costmap2D::worldToMap() method but works directly with OccupancyGrid-s.
+   * @param  filter_mask Filter mask on which to convert
+   * @param  wx The x world coordinate
+   * @param  wy The y world coordinate
+   * @param  mx Will be set to the associated mask x coordinate
+   * @param  my Will be set to the associated mask y coordinate
+   * @return True if the conversion was successful (legal bounds) false otherwise
+   */
+  bool worldToMask(
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask,
+    double wx, double wy, unsigned int & mx, unsigned int & my) const;
 
   /**
    * @brief  Get the data of a cell in the filter mask
@@ -227,13 +242,13 @@ protected:
   /**
    * @brief: A service to enable/disable costmap filter
    */
-  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr enable_service_;
+  nav2::ServiceServer<std_srvs::srv::SetBool>::SharedPtr enable_service_;
 
 private:
   /**
    * @brief: Latest robot position
    */
-  geometry_msgs::msg::Pose2D latest_pose_;
+  geometry_msgs::msg::Pose latest_pose_;
 
   /**
    * @brief: Mutex for locking filter's resources

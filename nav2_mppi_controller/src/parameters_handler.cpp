@@ -18,12 +18,13 @@ namespace mppi
 {
 
 ParametersHandler::ParametersHandler(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent)
+  const nav2::LifecycleNode::WeakPtr & parent, std::string & name)
 {
   node_ = parent;
   auto node = node_.lock();
   node_name_ = node->get_name();
   logger_ = node->get_logger();
+  name_ = name;
 }
 
 ParametersHandler::~ParametersHandler()
@@ -38,13 +39,14 @@ ParametersHandler::~ParametersHandler()
 void ParametersHandler::start()
 {
   auto node = node_.lock();
+
+  auto get_param = getParamGetter(node_name_);
+  get_param(verbose_, "verbose", false);
+
   on_set_param_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &ParametersHandler::dynamicParamsCallback, this,
       std::placeholders::_1));
-
-  auto get_param = getParamGetter(node_name_);
-  get_param(verbose_, "verbose", false);
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -52,29 +54,41 @@ ParametersHandler::dynamicParamsCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "";
+
   std::lock_guard<std::mutex> lock(parameters_change_mutex_);
-
-  for (auto & pre_cb : pre_callbacks_) {
-    pre_cb();
-  }
-
+  std::vector<rclcpp::Parameter> plugin_params;
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    plugin_params.push_back(param);
+  }
 
-    if (auto callback = get_param_callbacks_.find(param_name);
-      callback != get_param_callbacks_.end())
-    {
-      callback->second(param);
-    } else {
-      RCLCPP_WARN(logger_, "Parameter %s not found", param_name.c_str());
+  if (!plugin_params.empty()) {
+    for (auto & pre_cb : pre_callbacks_) {
+      pre_cb();
+    }
+
+    for (auto & param : plugin_params) {
+      const std::string & param_name = param.get_name();
+      if (auto callback = get_param_callbacks_.find(param_name);
+        callback != get_param_callbacks_.end())
+      {
+        callback->second(param, result);
+      }
+    }
+
+    for (auto & post_cb : post_callbacks_) {
+      post_cb();
     }
   }
 
-  for (auto & post_cb : post_callbacks_) {
-    post_cb();
+  if (!result.successful) {
+    RCLCPP_ERROR(logger_, result.reason.c_str());
   }
-
-  result.successful = true;
   return result;
 }
 

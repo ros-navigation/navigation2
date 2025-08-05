@@ -48,7 +48,7 @@ class CancelDriveOnHeadingTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("cancel_drive_on_heading_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("cancel_drive_on_heading_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -99,19 +99,19 @@ public:
   }
 
   static std::shared_ptr<CancelDriveOnHeadingServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::DriveOnHeading>> client_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr CancelDriveOnHeadingTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr CancelDriveOnHeadingTestFixture::node_ = nullptr;
 std::shared_ptr<CancelDriveOnHeadingServer>
 CancelDriveOnHeadingTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::DriveOnHeading>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::DriveOnHeading>>
 CancelDriveOnHeadingTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelDriveOnHeadingTestFixture::config_ = nullptr;
@@ -152,7 +152,7 @@ TEST_F(CancelDriveOnHeadingTestFixture, test_ports)
   // BT node should return success, once when the goal is cancelled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is infact cancelling
+  // Adding another test case to check if the goal is in fact cancelling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 

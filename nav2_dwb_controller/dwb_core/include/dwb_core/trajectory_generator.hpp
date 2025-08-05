@@ -41,7 +41,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace dwb_core
 {
@@ -73,7 +73,7 @@ public:
    * @param nh NodeHandle to read parameters from
    */
   virtual void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const nav2::LifecycleNode::SharedPtr & nh,
     const std::string & plugin_name) = 0;
   virtual void reset() {}
   /**
@@ -120,7 +120,7 @@ public:
    * @param cmd_vel The desired command velocity
    */
   virtual dwb_msgs::msg::Trajectory2D generateTrajectory(
-    const geometry_msgs::msg::Pose2D & start_pose,
+    const geometry_msgs::msg::Pose & start_pose,
     const nav_2d_msgs::msg::Twist2D & start_vel,
     const nav_2d_msgs::msg::Twist2D & cmd_vel) = 0;
 

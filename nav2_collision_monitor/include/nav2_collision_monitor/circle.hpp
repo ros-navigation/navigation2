@@ -27,7 +27,7 @@ namespace nav2_collision_monitor
 {
 
 /**
- * @brief Circle shape implementaiton.
+ * @brief Circle shape implementation.
  * For STOP/SLOWDOWN/LIMIT model it represents zone around the robot
  * while for APPROACH model it represents robot footprint.
  */
@@ -43,7 +43,7 @@ public:
    * @param transform_tolerance Transform tolerance
    */
   Circle(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -115,7 +115,7 @@ protected:
   /// @brief (radius * radius) value. Stored for optimization.
   double radius_squared_ = -1.0;
   /// @brief Radius subscription
-  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr radius_sub_;
+  nav2::Subscription<std_msgs::msg::Float32>::SharedPtr radius_sub_;
 };  // class Circle
 
 }  // namespace nav2_collision_monitor

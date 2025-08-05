@@ -27,7 +27,7 @@
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "../testing_helper.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
@@ -35,7 +35,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
 
@@ -43,19 +43,11 @@ using namespace std::chrono_literals;
 using namespace std::placeholders;
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {}
@@ -76,7 +68,7 @@ class DummyFootprintSubscriber : public nav2_costmap_2d::FootprintSubscriber
 {
 public:
   DummyFootprintSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::string & topic_name,
     tf2_ros::Buffer & tf)
   : FootprintSubscriber(node, topic_name, tf)
@@ -89,7 +81,7 @@ public:
   }
 };
 
-class TestCollisionChecker : public nav2_util::LifecycleNode
+class TestCollisionChecker : public nav2::LifecycleNode
 {
 public:
   explicit TestCollisionChecker(std::string name)
@@ -107,7 +99,7 @@ public:
     declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_configure(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Configuring");
@@ -151,25 +143,25 @@ public:
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_callback_group(callback_group_, get_node_base_interface());
-    executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
-    return nav2_util::CallbackReturn::SUCCESS;
+    executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_activate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Activating");
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Deactivating");
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn
+  nav2::CallbackReturn
   on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Cleaning Up");
@@ -182,7 +174,7 @@ public:
     footprint_sub_.reset();
     costmap_sub_.reset();
 
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
   ~TestCollisionChecker() {}
@@ -191,10 +183,12 @@ public:
   {
     rclcpp::Time stamp = now();
     publishPose(x, y, theta, stamp);
-    geometry_msgs::msg::Pose2D pose;
-    pose.x = x;
-    pose.y = y;
-    pose.theta = theta;
+
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = 0.0;
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
     setPose(x, y, theta, stamp);
     publishFootprint();
@@ -292,7 +286,7 @@ protected:
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
-  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
+  std::unique_ptr<nav2::NodeThread> executor_thread_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
@@ -361,4 +355,17 @@ TEST_F(TestNode, CollisionSpace)
 
   // Partially in obstacle
   ASSERT_EQ(collision_checker_->testPose(4.5, 4.5, 0), false);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

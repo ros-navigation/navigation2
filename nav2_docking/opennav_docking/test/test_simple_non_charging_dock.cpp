@@ -20,24 +20,28 @@
 #include "opennav_docking/simple_non_charging_dock.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 // Testing the simple non-charging dock plugin
-
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
 
 namespace opennav_docking
 {
 
+class SimpleNonChargingDockShim : public opennav_docking::SimpleNonChargingDock
+{
+public:
+  SimpleNonChargingDockShim()
+  : opennav_docking::SimpleNonChargingDock() {}
+
+  std::vector<std::string> getStallJointNames()
+  {
+    return stall_joint_names_;
+  }
+};
+
 TEST(SimpleNonChargingDockTests, ObjectLifecycle)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
 
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
@@ -57,19 +61,28 @@ TEST(SimpleNonChargingDockTests, ObjectLifecycle)
 
 TEST(SimpleNonChargingDockTests, StallDetection)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto pub = node->create_publisher<sensor_msgs::msg::JointState>(
     "joint_states", rclcpp::QoS(1));
   pub->on_activate();
   node->declare_parameter("my_dock.use_stall_detection", rclcpp::ParameterValue(true));
-  std::vector<std::string> names = {"left_motor", "right_motor"};
-  node->declare_parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names));
+  node->declare_parameter("my_dock.stall_joint_names", rclcpp::PARAMETER_STRING_ARRAY);
   node->declare_parameter("my_dock.stall_velocity_threshold", rclcpp::ParameterValue(0.1));
   node->declare_parameter("my_dock.stall_effort_threshold", rclcpp::ParameterValue(5.0));
 
-  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
-
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDockShim>();
   dock->configure(node, "my_dock", nullptr);
+  // Check that the joint names are empty, showing the error
+  EXPECT_TRUE(dock->getStallJointNames().empty());
+  dock->cleanup();
+
+  // Now set the joint names
+  std::vector<std::string> names = {"left_motor", "right_motor"};
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names)));
+  dock->configure(node, "my_dock", nullptr);
+  EXPECT_EQ(dock->getStallJointNames(), names);
+
   dock->activate();
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
@@ -117,7 +130,7 @@ TEST(SimpleNonChargingDockTests, StallDetection)
 
 TEST(SimpleNonChargingDockTests, StagingPose)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -146,7 +159,7 @@ TEST(SimpleNonChargingDockTests, StagingPoseWithYawOffset)
     }
   );
 
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test", options);
+  auto node = std::make_shared<nav2::LifecycleNode>("test", "", options);
   auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
 
   dock->configure(node, "my_dock", nullptr);
@@ -168,7 +181,7 @@ TEST(SimpleNonChargingDockTests, StagingPoseWithYawOffset)
 
 TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
   auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
@@ -202,4 +215,164 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
   dock.reset();
 }
 
+TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", rclcpp::QoS(1));
+  pub->on_activate();
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+
+  // Create the TF
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_buffer->setUsingDedicatedThread(true);
+
+  dock->configure(node, "my_dock", tf_buffer);
+  dock->activate();
+
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Create a pose with a different frame_id
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "other_frame";
+
+  // It can not find a transform between the two frames
+  EXPECT_FALSE(dock->getRefinedPose(pose, ""));
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+  tf_buffer.reset();
+}
+
+TEST(SimpleNonChargingDockTests, IsDockedTransformException)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
+  auto pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+    "detected_dock_pose", rclcpp::QoS(1));
+  pub->on_activate();
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+
+  // Create the TF
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf_buffer->setUsingDedicatedThread(true);
+
+  dock->configure(node, "my_dock", tf_buffer);
+  dock->activate();
+
+  geometry_msgs::msg::PoseStamped detected_pose;
+  detected_pose.header.stamp = node->now();
+  detected_pose.header.frame_id = "my_frame";
+  detected_pose.pose.position.x = 1.0;
+  detected_pose.pose.position.y = 1.0;
+  pub->publish(detected_pose);
+  rclcpp::spin_some(node->get_node_base_interface());
+
+  // Create a pose with a different frame_id
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "other_frame";
+
+  // Set a transform between the two frames
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node->now();
+  transform.header.frame_id = "my_frame";
+  transform.child_frame_id = "other_frame";
+  tf_buffer->setTransform(transform, "test", true);
+
+  // It can find a transform between the two frames but it throws an exception in isDocked
+  EXPECT_TRUE(dock->getRefinedPose(pose, ""));
+  EXPECT_FALSE(dock->isDocked());
+
+  dock->deactivate();
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleNonChargingDockTests, GetDockDirection)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward"));
+
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::UNKNOWN);
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::FORWARD);
+  dock->cleanup();
+
+  // Now set to BACKWARD
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward")));
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::BACKWARD);
+  dock->cleanup();
+
+  // Now set to UNKNOWN
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("other")));
+  EXPECT_THROW(dock->configure(node, "my_dock", nullptr), std::runtime_error);
+  EXPECT_EQ(dock->getDockDirection(), opennav_docking_core::DockDirection::UNKNOWN);
+
+  dock->cleanup();
+  dock.reset();
+}
+
+TEST(SimpleChargingDockTests, ShouldRotateToDock)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+
+  // Case 1: Direction to BACKWARD and rotate_to_dock to true
+  node->declare_parameter("my_dock.dock_direction", rclcpp::ParameterValue("backward"));
+  node->declare_parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(true));
+
+  auto dock = std::make_unique<opennav_docking::SimpleNonChargingDock>();
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), true);
+  dock->cleanup();
+
+  // Case 2: Direction to BACKWARD and rotate_to_dock to false
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(false)));
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), false);
+
+  // Case 3: Direction to FORWARD and rotate_to_dock to true
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.dock_direction", rclcpp::ParameterValue("forward")));
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(true)));
+  EXPECT_THROW(dock->configure(node, "my_dock", nullptr), std::runtime_error);
+  EXPECT_EQ(dock->shouldRotateToDock(), true);
+  dock->cleanup();
+
+  // Case 4: Direction to FORWARD and rotate_to_dock to false
+  node->set_parameter(
+    rclcpp::Parameter("my_dock.rotate_to_dock", rclcpp::ParameterValue(false)));
+  EXPECT_NO_THROW(dock->configure(node, "my_dock", nullptr));
+  EXPECT_EQ(dock->shouldRotateToDock(), false);
+
+  dock->cleanup();
+  dock.reset();
+}
+
 }  // namespace opennav_docking
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
+}

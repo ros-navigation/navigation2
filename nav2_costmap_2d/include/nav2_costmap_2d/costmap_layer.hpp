@@ -38,6 +38,8 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_LAYER_HPP_
 
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
 #include <nav2_costmap_2d/layered_costmap.hpp>

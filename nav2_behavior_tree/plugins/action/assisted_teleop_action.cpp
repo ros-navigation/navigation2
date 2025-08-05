@@ -24,8 +24,7 @@ AssistedTeleopAction::AssistedTeleopAction(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf),
-  initialized_(false)
+: BtActionNode<nav2_msgs::action::AssistedTeleop>(xml_tag_name, action_name, conf)
 {}
 
 void AssistedTeleopAction::initialize()
@@ -36,12 +35,11 @@ void AssistedTeleopAction::initialize()
 
   // Populate the input message
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
-  initialized_ = true;
 }
 
 void AssistedTeleopAction::on_tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 
@@ -53,19 +51,28 @@ void AssistedTeleopAction::on_tick()
 BT::NodeStatus AssistedTeleopAction::on_success()
 {
   setOutput("error_code_id", ActionResult::NONE);
+  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus AssistedTeleopAction::on_aborted()
 {
   setOutput("error_code_id", result_.result->error_code);
+  setOutput("error_msg", result_.result->error_msg);
   return is_recovery_ ? BT::NodeStatus::FAILURE : BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus AssistedTeleopAction::on_cancelled()
 {
   setOutput("error_code_id", ActionResult::NONE);
+  setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
+}
+
+void AssistedTeleopAction::on_timeout()
+{
+  setOutput("error_code_id", ActionResult::TIMEOUT);
+  setOutput("error_msg", "Behavior Tree action client timed out waiting.");
 }
 
 }  // namespace nav2_behavior_tree

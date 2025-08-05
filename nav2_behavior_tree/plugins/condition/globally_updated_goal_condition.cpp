@@ -26,7 +26,7 @@ GloballyUpdatedGoalCondition::GloballyUpdatedGoalCondition(
 : BT::ConditionNode(condition_name, conf),
   first_time(true)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 }
 
 BT::NodeStatus GloballyUpdatedGoalCondition::tick()
@@ -38,7 +38,7 @@ BT::NodeStatus GloballyUpdatedGoalCondition::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  std::vector<geometry_msgs::msg::PoseStamped> current_goals;
+  nav_msgs::msg::Goals current_goals;
   BT::getInputOrBlackboard("goals", current_goals);
   geometry_msgs::msg::PoseStamped current_goal;
   BT::getInputOrBlackboard("goal", current_goal);

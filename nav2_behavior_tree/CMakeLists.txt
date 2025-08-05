@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -36,12 +37,14 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(nav2_compute_path_to_pose_action_bt_node SHARED plugins/action/compute_path_to_pose_action.cpp)
@@ -95,11 +98,17 @@ list(APPEND plugin_libs nav2_clear_costmap_service_bt_node)
 add_library(nav2_is_stuck_condition_bt_node SHARED plugins/condition/is_stuck_condition.cpp)
 list(APPEND plugin_libs nav2_is_stuck_condition_bt_node)
 
+add_library(nav2_is_stopped_condition_bt_node SHARED plugins/condition/is_stopped_condition.cpp)
+list(APPEND plugin_libs nav2_is_stopped_condition_bt_node)
+
 add_library(nav2_transform_available_condition_bt_node SHARED plugins/condition/transform_available_condition.cpp)
 list(APPEND plugin_libs nav2_transform_available_condition_bt_node)
 
 add_library(nav2_goal_reached_condition_bt_node SHARED plugins/condition/goal_reached_condition.cpp)
 list(APPEND plugin_libs nav2_goal_reached_condition_bt_node)
+
+add_library(nav2_are_poses_near_condition_bt_node SHARED plugins/condition/are_poses_near_condition.cpp)
+list(APPEND plugin_libs nav2_are_poses_near_condition_bt_node)
 
 add_library(nav2_globally_updated_goal_condition_bt_node SHARED plugins/condition/globally_updated_goal_condition.cpp)
 list(APPEND plugin_libs nav2_globally_updated_goal_condition_bt_node)
@@ -140,6 +149,9 @@ list(APPEND plugin_libs nav2_would_a_planner_recovery_help_condition_bt_node)
 add_library(nav2_would_a_smoother_recovery_help_condition_bt_node SHARED plugins/condition/would_a_smoother_recovery_help_condition.cpp)
 list(APPEND plugin_libs nav2_would_a_smoother_recovery_help_condition_bt_node)
 
+add_library(nav2_would_a_route_recovery_help_condition_bt_node SHARED plugins/condition/would_a_route_recovery_help_condition.cpp)
+list(APPEND plugin_libs nav2_would_a_route_recovery_help_condition_bt_node)
+
 add_library(nav2_reinitialize_global_localization_service_bt_node SHARED plugins/action/reinitialize_global_localization_service.cpp)
 list(APPEND plugin_libs nav2_reinitialize_global_localization_service_bt_node)
 
@@ -154,6 +166,9 @@ list(APPEND plugin_libs nav2_speed_controller_bt_node)
 
 add_library(nav2_truncate_path_action_bt_node SHARED plugins/action/truncate_path_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_action_bt_node)
+
+add_library(nav2_concatenate_paths_action_bt_node SHARED plugins/action/concatenate_paths_action.cpp)
+list(APPEND plugin_libs nav2_concatenate_paths_action_bt_node)
 
 add_library(nav2_truncate_path_local_action_bt_node SHARED plugins/action/truncate_path_local_action.cpp)
 list(APPEND plugin_libs nav2_truncate_path_local_action_bt_node)
@@ -179,14 +194,35 @@ list(APPEND plugin_libs nav2_remove_passed_goals_action_bt_node)
 add_library(nav2_remove_in_collision_goals_action_bt_node SHARED plugins/action/remove_in_collision_goals_action.cpp)
 list(APPEND plugin_libs nav2_remove_in_collision_goals_action_bt_node)
 
+add_library(nav2_append_goal_pose_to_goals_action_bt_node SHARED plugins/action/append_goal_pose_to_goals_action.cpp)
+list(APPEND plugin_libs nav2_append_goal_pose_to_goals_action_bt_node)
+
 add_library(nav2_get_pose_from_path_action_bt_node SHARED plugins/action/get_pose_from_path_action.cpp)
 list(APPEND plugin_libs nav2_get_pose_from_path_action_bt_node)
+
+add_library(nav2_extract_route_nodes_as_goals_action_bt_node SHARED plugins/action/extract_route_nodes_as_goals_action.cpp)
+list(APPEND plugin_libs nav2_extract_route_nodes_as_goals_action_bt_node)
+
+add_library(nav2_get_next_few_goals_action_bt_node SHARED plugins/action/get_next_few_goals_action.cpp)
+list(APPEND plugin_libs nav2_get_next_few_goals_action_bt_node)
+
+add_library(nav2_get_current_pose_action_bt_node SHARED plugins/action/get_current_pose_action.cpp)
+list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
+add_library(nav2_nonblocking_sequence_bt_node SHARED plugins/control/nonblocking_sequence.cpp)
+list(APPEND plugin_libs nav2_nonblocking_sequence_bt_node)
+
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+add_library(nav2_pause_resume_controller_bt_node SHARED plugins/control/pause_resume_controller.cpp)
+list(APPEND plugin_libs nav2_pause_resume_controller_bt_node)
+
+add_library(nav2_persistent_sequence_bt_node SHARED plugins/control/persistent_sequence.cpp)
+list(APPEND plugin_libs nav2_persistent_sequence_bt_node)
 
 add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
 list(APPEND plugin_libs nav2_single_trigger_bt_node)
@@ -209,6 +245,15 @@ list(APPEND plugin_libs nav2_progress_checker_selector_bt_node)
 add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_updated_controller.cpp)
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
+add_library(nav2_compute_and_track_route_cancel_bt_node SHARED plugins/action/compute_and_track_route_cancel_node.cpp)
+list(APPEND plugin_libs nav2_compute_and_track_route_cancel_bt_node)
+
+add_library(nav2_compute_and_track_route_bt_node SHARED plugins/action/compute_and_track_route_action.cpp)
+list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
+
+add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
+list(APPEND plugin_libs nav2_compute_route_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE
@@ -228,6 +273,7 @@ foreach(bt_plugin ${plugin_libs})
     tf2_ros::tf2_ros
     ${std_msgs_TARGETS}
     ${std_srvs_TARGETS}
+    nav2_ros_common::nav2_ros_common
   )
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
@@ -247,6 +293,7 @@ add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp
 target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
   behaviortree_cpp::behaviortree_cpp
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
 target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
@@ -295,6 +342,7 @@ ament_export_dependencies(
   std_srvs
   tf2
   tf2_ros
+  nav2_ros_common
 )
 ament_export_targets(${library_name})
 

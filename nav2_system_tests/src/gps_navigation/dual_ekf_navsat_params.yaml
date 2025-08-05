@@ -121,7 +121,7 @@ navsat_transform:
     magnetic_declination_radians: 0.0429351  # For lat/long 55.944831, -3.186998
     yaw_offset: 0.0
     zero_altitude: true
-    broadcast_utm_transform: true
+    broadcast_cartesian_transform: true
     publish_filtered_gps: true
     use_odometry_yaw: true
-    wait_for_datum: false 
+    wait_for_datum: false

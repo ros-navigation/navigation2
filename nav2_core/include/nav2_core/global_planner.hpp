@@ -17,12 +17,11 @@
 
 #include <memory>
 #include <string>
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/buffer.h"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_core
 {
@@ -48,7 +47,7 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) = 0;
 
@@ -63,7 +62,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive planner and any threads involved in execution.
+   * @brief Method to deactivate planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 

@@ -42,7 +42,7 @@ public:
     goal.header.stamp = node_->now();
     config_->blackboard->set("goal", goal);
 
-    std::vector<geometry_msgs::msg::PoseStamped> fake_poses;
+    nav_msgs::msg::Goals fake_poses;
     config_->blackboard->set("goals", fake_poses);  // NOLINT
 
     config_->input_ports["min_rate"] = 0.1;
@@ -86,7 +86,8 @@ SpeedControllerTestFixture::dummy_node_ = nullptr;
  */
 TEST_F(SpeedControllerTestFixture, test_behavior)
 {
-  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>("odom", 1);
+  auto odom_pub = node_->create_publisher<nav_msgs::msg::Odometry>("odom");
+  odom_pub->on_activate();
   nav_msgs::msg::Odometry odom_msg;
 
   auto time = node_->now();

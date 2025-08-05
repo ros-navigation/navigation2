@@ -23,6 +23,7 @@
 #include <string>
 
 // ROS
+#include "nav2_lifecycle_manager/lifecycle_manager_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
@@ -37,6 +38,9 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
+class InitialDockThread;
+
+/// Panel to interface to the docking server
 class DockingPanel : public rviz_common::Panel
 {
   Q_OBJECT
@@ -44,11 +48,19 @@ class DockingPanel : public rviz_common::Panel
 public:
   explicit DockingPanel(QWidget * parent = 0);
   virtual ~DockingPanel();
+
   void onInitialize() override;
 
+  /// Load and save configuration data
+  void load(const rviz_common::Config & config) override;
+  void save(rviz_common::Config config) const override;
+
 private Q_SLOTS:
+  void startThread();
   void onDockingButtonPressed();
   void onUndockingButtonPressed();
+  void onCancelDocking();
+  void onCancelUndocking();
   void dockIdCheckbox();
 
 private:
@@ -56,14 +68,6 @@ private:
   using Undock = nav2_msgs::action::UndockRobot;
   using DockGoalHandle = rclcpp_action::ClientGoalHandle<Dock>;
   using UndockGoalHandle = rclcpp_action::ClientGoalHandle<Undock>;
-
-  // Start the actions
-  void startDocking();
-  void startUndocking();
-
-  // Cancel the actions
-  void cancelDocking();
-  void cancelUndocking();
 
   // The (non-spinning) client node used to invoke the action client
   void timerEvent(QTimerEvent * event) override;
@@ -84,14 +88,33 @@ private:
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
+
+  // The Node pointer that we need to keep alive for the duration of this plugin.
+  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
+
   // Timeout value when waiting for action servers to respond
   std::chrono::milliseconds server_timeout_;
+
+  // A timer used to check on the completion status of the action
+  QBasicTimer action_timer_;
+
+  // The Dock and Undock action client
+  nav2::ActionClient<Dock>::SharedPtr dock_client_;
+  nav2::ActionClient<Undock>::SharedPtr undock_client_;
+
+  // Docking / Undocking action feedback subscribers
+  nav2::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
+  nav2::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
+  nav2::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
+  nav2::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
+
+  // Goal related state
+  DockGoalHandle::SharedPtr dock_goal_handle_;
+  UndockGoalHandle::SharedPtr undock_goal_handle_;
 
   // Flags to indicate if the plugins have been loaded
   bool plugins_loaded_ = false;
   bool server_failed_ = false;
-  bool tried_once_ = false;
-  QBasicTimer timer_;
 
   QVBoxLayout * main_layout_{nullptr};
   QHBoxLayout * info_layout_{nullptr};
@@ -121,20 +144,62 @@ private:
   bool undocking_in_progress_ = false;
   bool use_dock_id_ = false;
 
-  // The Dock and Undock action client
-  rclcpp_action::Client<Dock>::SharedPtr dock_client_;
-  rclcpp_action::Client<Undock>::SharedPtr undock_client_;
-  DockGoalHandle::SharedPtr dock_goal_handle_;
-  UndockGoalHandle::SharedPtr undock_goal_handle_;
+  QStateMachine state_machine_;
+  InitialDockThread * initial_thread_;
 
-  // The Node pointer that we need to keep alive for the duration of this plugin.
-  std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
+  QState * pre_initial_{nullptr};
+  QState * idle_{nullptr};
+  QState * docking_{nullptr};
+  QState * undocking_{nullptr};
+  QState * canceled_docking_{nullptr};
+  QState * canceled_undocking_{nullptr};
+};
 
-  // Docking / Undocking action feedback subscribers
-  rclcpp::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
-  rclcpp::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
-  rclcpp::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
-  rclcpp::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
+class InitialDockThread : public QThread
+{
+  Q_OBJECT
+
+public:
+  explicit InitialDockThread(
+    nav2::ActionClient<nav2_msgs::action::DockRobot>::SharedPtr & dock_client,
+    nav2::ActionClient<nav2_msgs::action::UndockRobot>::SharedPtr & undock_client)
+  : dock_client_(dock_client), undock_client_(undock_client)
+  {}
+
+  void run() override
+  {
+    while (!dock_active_) {
+      dock_active_ = dock_client_->wait_for_action_server(std::chrono::seconds(1));
+    }
+
+    while (!undock_active_) {
+      undock_active_ = undock_client_->wait_for_action_server(std::chrono::seconds(1));
+    }
+
+    if (dock_active_) {
+      emit dockingActive();
+    } else {
+      emit dockingInactive();
+    }
+
+    if (undock_active_) {
+      emit undockingActive();
+    } else {
+      emit undockingInactive();
+    }
+  }
+
+signals:
+  void dockingActive();
+  void dockingInactive();
+  void undockingActive();
+  void undockingInactive();
+
+private:
+  nav2::ActionClient<nav2_msgs::action::DockRobot>::SharedPtr dock_client_;
+  nav2::ActionClient<nav2_msgs::action::UndockRobot>::SharedPtr undock_client_;
+  bool dock_active_ = false;
+  bool undock_active_ = false;
 };
 
 }  // namespace nav2_rviz_plugins

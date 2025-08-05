@@ -31,7 +31,7 @@
 
 #include <string>
 #include <vector>
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -49,7 +49,7 @@ Layer::initialize(
   LayeredCostmap * parent,
   std::string name,
   tf2_ros::Buffer * tf,
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   rclcpp::CallbackGroup::SharedPtr callback_group)
 {
   layered_costmap_ = parent;
@@ -82,7 +82,7 @@ Layer::declareParameter(
     throw std::runtime_error{"Failed to lock node"};
   }
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, getFullName(param_name), value);
 }
 
@@ -96,7 +96,7 @@ Layer::declareParameter(
     throw std::runtime_error{"Failed to lock node"};
   }
   local_params_.insert(param_name);
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, getFullName(param_name), param_type);
 }
 
@@ -114,6 +114,24 @@ std::string
 Layer::getFullName(const std::string & param_name)
 {
   return std::string(name_ + "." + param_name);
+}
+
+
+std::string
+Layer::joinWithParentNamespace(const std::string & topic)
+{
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  if (topic[0] != '/') {
+    std::string node_namespace = node->get_namespace();
+    std::string parent_namespace = node_namespace.substr(0, node_namespace.rfind("/"));
+    return parent_namespace + "/" + topic;
+  }
+
+  return topic;
 }
 
 }  // end namespace nav2_costmap_2d

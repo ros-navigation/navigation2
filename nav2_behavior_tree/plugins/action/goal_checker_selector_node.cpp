@@ -32,20 +32,41 @@ GoalCheckerSelector::GoalCheckerSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  initialize();
+}
 
-  getInput("topic_name", topic_name_);
+void GoalCheckerSelector::initialize()
+{
+  createROSInterfaces();
+}
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+void GoalCheckerSelector::createROSInterfaces()
+{
+  std::string topic_new;
+  getInput("topic_name", topic_new);
+  if (topic_new != topic_name_ || !goal_checker_selector_sub_) {
+    topic_name_ = topic_new;
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_, qos, std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1));
+    goal_checker_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+      topic_name_,
+      std::bind(&GoalCheckerSelector::callbackGoalCheckerSelect, this, _1),
+      nav2::qos::LatchedSubscriptionQoS(),
+      callback_group_);
+  }
 }
 
 BT::NodeStatus GoalCheckerSelector::tick()
 {
-  rclcpp::spin_some(node_);
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
+  callback_group_executor_.spin_some();
 
   // This behavior always use the last selected goal checker received from the topic input.
   // When no input is specified it uses the default goal checker.

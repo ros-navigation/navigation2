@@ -34,7 +34,7 @@ namespace nav2_map_server
 
 // ---------- Shape ----------
 
-Shape::Shape(const nav2_util::LifecycleNode::WeakPtr & node)
+Shape::Shape(const nav2::LifecycleNode::WeakPtr & node)
 : type_(UNKNOWN), node_(node)
 {}
 
@@ -82,7 +82,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
 // ---------- Polygon ----------
 
 Polygon::Polygon(
-  const nav2_util::LifecycleNode::WeakPtr & node)
+  const nav2::LifecycleNode::WeakPtr & node)
 : Shape::Shape(node)
 {
   type_ = POLYGON;
@@ -297,7 +297,7 @@ bool Polygon::checkConsistency()
 // ---------- Circle ----------
 
 Circle::Circle(
-  const nav2_util::LifecycleNode::WeakPtr & node)
+  const nav2::LifecycleNode::WeakPtr & node)
 : Shape::Shape(node)
 {
   type_ = CIRCLE;

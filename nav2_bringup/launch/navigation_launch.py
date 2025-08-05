@@ -15,35 +15,37 @@
 import os
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, SetParameter
-from launch_ros.actions import Node
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
-from nav2_common.launch import RewrittenYaml
+from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
-def generate_launch_description():
+def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
 
     namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    autostart = LaunchConfiguration('autostart')
+    use_sim_time = LaunchConfigAsBool('use_sim_time')
+    autostart = LaunchConfigAsBool('autostart')
+    graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
-    use_composition = LaunchConfiguration('use_composition')
+    use_composition = LaunchConfigAsBool('use_composition')
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
-    use_respawn = LaunchConfiguration('use_respawn')
+    use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
+    use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
     lifecycle_nodes = [
         'controller_server',
         'smoother_server',
         'planner_server',
+        'route_server',
         'behavior_server',
         'velocity_smoother',
         'collision_monitor',
@@ -53,21 +55,30 @@ def generate_launch_description():
     ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {'autostart': autostart}
 
+    yaml_substitutions = {
+        'KEEPOUT_ZONE_ENABLED': use_keepout_zones,
+        'SPEED_ZONE_ENABLED': use_speed_zones,
+    }
+
+    # RewrittenYaml: Adds namespace to the parameters file as a root key
+    # Note: Make sure that all frames are correctly namespaced in the parameters file
+    # Do not add namespace to topics in the parameters file, as they will be remapped
+    # by the root key only if they are not prefixed with a forward slash.
+    # e.g. 'map' will be remapped to '/<namespace>/map', but '/map' will not be remapped.
+    # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under
+    # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured
+    # using ReplaceString <robot_namespace>
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
+            value_rewrites=yaml_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
@@ -93,6 +104,11 @@ def generate_launch_description():
         description='Full path to the ROS2 parameters file to use for all launched nodes',
     )
 
+    declare_graph_file_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value='', description='Path to the graph file to load'
+    )
+
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart',
         default_value='true',
@@ -108,7 +124,7 @@ def generate_launch_description():
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name',
         default_value='nav2_container',
-        description='the name of conatiner that nodes will load in if use composition',
+        description='the name of container that nodes will load in if use composition',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
@@ -121,10 +137,21 @@ def generate_launch_description():
         'log_level', default_value='info', description='log level'
     )
 
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
+    )
+
+    declare_use_speed_zones_cmd = DeclareLaunchArgument(
+        'use_speed_zones', default_value='True',
+        description='Whether to enable speed zones or not'
+    )
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -157,6 +184,16 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
+            Node(
+                package='nav2_route',
+                executable='route_server',
+                name='route_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params, {'graph_filepath': graph_filepath}],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
             Node(
                 package='nav2_behaviors',
                 executable='behavior_server',
@@ -239,6 +276,7 @@ def generate_launch_description():
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
@@ -263,6 +301,12 @@ def generate_launch_description():
                         parameters=[configured_params],
                         remappings=remappings,
                     ),
+                    ComposableNode(
+                        package='nav2_route',
+                        plugin='nav2_route::RouteServer',
+                        name='route_server',
+                        parameters=[configured_params, {'graph_filepath': graph_filepath}],
+                        remappings=remappings),
                     ComposableNode(
                         package='nav2_behaviors',
                         plugin='behavior_server::BehaviorServer',
@@ -330,10 +374,13 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
+    ld.add_action(declare_use_speed_zones_cmd)
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)

@@ -17,15 +17,7 @@
 
 #include "base_footprint_publisher.hpp"
 #include "gtest/gtest.h"
-#include "tf2/exceptions.h"
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
+#include "tf2/exceptions.hpp"
 
 TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
 {
@@ -69,4 +61,17 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   EXPECT_EQ(t.transform.translation.x, 1.0);
   EXPECT_EQ(t.transform.translation.y, 1.0);
   EXPECT_EQ(t.transform.translation.z, 0.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
