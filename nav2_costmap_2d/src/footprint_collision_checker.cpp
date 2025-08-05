@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cmath>
+
+#include <opencv2/imgproc.hpp>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
@@ -45,9 +48,11 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
 }
 
 template<typename CostmapT>
-double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & footprint)
+double FootprintCollisionChecker<CostmapT>::footprintCost(
+  const Footprint & footprint,
+  bool check_full_area)
 {
-  // now we really have to lay down the footprint in the costmap_ grid
+  // First check the perimeter
   unsigned int x0, x1, y0, y1;
   double footprint_cost = 0.0;
 
@@ -81,7 +86,66 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & foot
 
   // we also need to connect the first point in the footprint to the last point
   // the last iteration's x1, y1 are the last footprint point's coordinates
-  return std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
+  double perimeter_cost = std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
+
+  // If perimeter check found collision or full area check not requested, return perimeter result
+  if (perimeter_cost == static_cast<double>(LETHAL_OBSTACLE) || !check_full_area) {
+    return perimeter_cost;
+  }
+
+  // If no collision on perimeter and full area check requested, rasterize the full area
+
+  // Convert footprint to map coordinates for rasterization
+  std::vector<cv::Point> polygon_points;
+  polygon_points.reserve(footprint.size());
+
+  for (const auto & point : footprint) {
+    unsigned int mx, my;
+    if (!worldToMap(point.x, point.y, mx, my)) {
+      return static_cast<double>(NO_INFORMATION);
+    }
+    polygon_points.emplace_back(static_cast<int>(mx), static_cast<int>(my));
+  }
+
+  // Find bounding box for the polygon
+  cv::Rect bbox = cv::boundingRect(polygon_points);
+
+  // Create a mask for the polygon area
+  cv::Mat mask = cv::Mat::zeros(bbox.height, bbox.width, CV_8UC1);
+
+  // Translate polygon points to mask coordinates (relative to bounding box)
+  std::vector<cv::Point> mask_points;
+  mask_points.reserve(polygon_points.size());
+  for (const auto & pt : polygon_points) {
+    mask_points.emplace_back(pt.x - bbox.x, pt.y - bbox.y);
+  }
+
+  // Fill the polygon in the mask using OpenCV rasterization
+  cv::fillPoly(mask, std::vector<std::vector<cv::Point>>{mask_points}, cv::Scalar(255));
+
+  double max_cost = perimeter_cost;
+
+  // Iterate through the mask and check costs only for cells inside the polygon
+  for (int y = 0; y < mask.rows; ++y) {
+    for (int x = 0; x < mask.cols; ++x) {
+      if (mask.at<uint8_t>(y, x) > 0) {  // Cell is inside polygon
+        // Convert back to map coordinates
+        unsigned int map_x = static_cast<unsigned int>(bbox.x + x);
+        unsigned int map_y = static_cast<unsigned int>(bbox.y + y);
+
+        double cell_cost = pointCost(static_cast<int>(map_x), static_cast<int>(map_y));
+
+        // Early termination if lethal obstacle found
+        if (cell_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+          return cell_cost;
+        }
+
+        max_cost = std::max(max_cost, cell_cost);
+      }
+    }
+  }
+
+  return max_cost;
 }
 
 template<typename CostmapT>
@@ -127,7 +191,7 @@ void FootprintCollisionChecker<CostmapT>::setCostmap(CostmapT costmap)
 
 template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
-  double x, double y, double theta, const Footprint & footprint)
+  double x, double y, double theta, const Footprint & footprint, bool check_full_area)
 {
   double cos_th = cos(theta);
   double sin_th = sin(theta);
@@ -140,7 +204,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
     oriented_footprint.push_back(new_pt);
   }
 
-  return footprintCost(oriented_footprint);
+  return footprintCost(oriented_footprint, check_full_area);
 }
 
 // declare our valid template parameters
