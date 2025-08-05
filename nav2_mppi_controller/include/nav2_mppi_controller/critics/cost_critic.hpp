@@ -18,8 +18,8 @@
 #include <memory>
 #include <string>
 
-#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_mppi_controller/collision_checker.hpp"
 
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
@@ -48,47 +48,6 @@ public:
   void score(CriticData & data) override;
 
 protected:
-  /**
-    * @brief Checks if cost represents a collision
-    * @param cost Point cost at pose center
-    * @param x X of pose
-    * @param y Y of pose
-    * @param theta theta of pose
-    * @return bool if in collision
-    */
-  inline bool inCollision(float cost, float x, float y, float theta)
-  {
-    // If consider_footprint_ check footprint scort for collision
-    float score_cost = cost;
-    if (consider_footprint_ &&
-      (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
-    {
-      score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
-          static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-          costmap_ros_->getRobotFootprint()));
-    }
-
-    switch (static_cast<unsigned char>(score_cost)) {
-      case (nav2_costmap_2d::LETHAL_OBSTACLE):
-        return true;
-      case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
-        return consider_footprint_ ? false : true;
-      case (nav2_costmap_2d::NO_INFORMATION):
-        return is_tracking_unknown_ ? false : true;
-    }
-
-    return false;
-  }
-
-  /**
-    * @brief Find the min cost of the inflation decay function for which the robot MAY be
-    * in collision in any orientation
-    * @param costmap Costmap2DROS to get minimum inscribed cost (e.g. 128 in inflation layer documentation)
-    * @return double circumscribed cost, any higher than this and need to do full footprint collision checking
-    * since some element of the robot could be in collision
-    */
-  inline float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
-
   /**
     * @brief An implementation of worldToMap fully using floats
     * @param wx Float world X coord
@@ -123,14 +82,12 @@ protected:
     return my * size_x_ + mx;
   }
 
-  nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>
-  collision_checker_{nullptr};
+  std::unique_ptr<nav2_mppi_controller::MPPICollisionChecker> collision_checker_;
   float possible_collision_cost_;
+
 
   bool consider_footprint_{true};
   bool is_tracking_unknown_{true};
-  float circumscribed_radius_{0.0f};
-  float circumscribed_cost_{0.0f};
   float collision_cost_{0.0f};
   float critical_cost_{0.0f};
   unsigned int near_collision_cost_{253};
