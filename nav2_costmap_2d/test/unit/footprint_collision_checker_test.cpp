@@ -346,12 +346,12 @@ TEST(collision_footprint, test_full_area_check_no_collision) {
   nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
   collision_checker(costmap_);
 
-  // Test perimeter only check (default behavior)
-  auto perimeter_cost = collision_checker.footprintCost(footprint, false);
+  // Test perimeter only check at a valid position (5.0, 5.0) within the 10x10m costmap
+  auto perimeter_cost = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint, false);
   EXPECT_NEAR(perimeter_cost, 0.0, 0.001);
 
-  // Test full area check (new functionality)
-  auto full_area_cost = collision_checker.footprintCost(footprint, true);
+  // Test full area check at the same position
+  auto full_area_cost = collision_checker.footprintCostAtPose(5.0, 5.0, 0.0, footprint, true);
   EXPECT_NEAR(full_area_cost, 0.0, 0.001);
 
   // Both should be the same when no obstacles present
