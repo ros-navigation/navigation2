@@ -36,7 +36,6 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -65,8 +64,7 @@ void LimitedAccelGenerator::initialize(
     RCLCPP_WARN(
       rclcpp::get_logger("LimitedAccelGenerator"),
       "'sim_period' parameter is not set for %s", plugin_name.c_str());
-    double controller_frequency = nav_2d_utils::searchAndGetParam(
-      nh, "controller_frequency", 20.0);
+    double controller_frequency = nh->declare_or_get_parameter("controller_frequency", 20.0);
     if (controller_frequency > 0) {
       acceleration_time_ = 1.0 / controller_frequency;
     } else {

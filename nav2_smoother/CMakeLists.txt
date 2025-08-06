@@ -9,7 +9,6 @@ find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
@@ -45,8 +44,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(${library_name} PRIVATE
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
   rclcpp_components::component
   tf2::tf2
 )
