@@ -15,6 +15,7 @@
 
 #include <cmath>
 #include "nav2_util/controller_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_util
 {
@@ -128,11 +129,7 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       point.y - prev_pose_it->pose.position.y,
       point.x - prev_pose_it->pose.position.x);
 
-    geometry_msgs::msg::Quaternion orientation;
-    orientation.x = 0.0;
-    orientation.y = 0.0;
-    orientation.z = sin(yaw / 2.0);
-    orientation.w = cos(yaw / 2.0);
+    geometry_msgs::msg::Quaternion orientation = geometry_utils::orientationAroundZAxis(yaw);
 
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = prev_pose_it->header.frame_id;

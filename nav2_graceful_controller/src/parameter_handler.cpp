@@ -42,8 +42,6 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".interpolate_after_goal", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_robot_pose_search_dist",
     rclcpp::ParameterValue(costmap_size_x / 2.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".k_phi", rclcpp::ParameterValue(2.0));
@@ -78,7 +76,6 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
   node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
-  node->get_parameter(plugin_name_ + ".interpolate_after_goal", params_.interpolate_after_goal);
   node->get_parameter(
     plugin_name_ + ".max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
   if (params_.max_robot_pose_search_dist < 0.0) {
@@ -189,8 +186,6 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.initial_rotation = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".prefer_final_rotation") {
         params_.prefer_final_rotation = parameter.as_bool();
-      } else if (param_name == plugin_name_ + ".interpolate_after_goal") {
-        params_.interpolate_after_goal = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".allow_backward") {
         if (params_.initial_rotation && parameter.as_bool()) {
           RCLCPP_WARN(
