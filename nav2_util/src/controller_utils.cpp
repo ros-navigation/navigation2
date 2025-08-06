@@ -133,7 +133,7 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
     pose.header.frame_id = prev_pose_it->header.frame_id;
     pose.header.stamp = goal_pose_it->header.stamp;
     pose.pose.position = point;
-    pose.pose.orientation = geometry_utils::orientationAroundZAxis(yaw);;
+    pose.pose.orientation = geometry_utils::orientationAroundZAxis(yaw);
     return pose;
   }
 
