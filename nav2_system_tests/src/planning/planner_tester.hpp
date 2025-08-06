@@ -32,7 +32,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_planner/planner_server.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 namespace nav2_system_tests
 {

@@ -34,7 +34,7 @@
 #include "opennav_docking/dock_database.hpp"
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 
 namespace opennav_docking
 {

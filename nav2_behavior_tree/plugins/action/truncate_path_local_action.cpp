@@ -25,8 +25,8 @@
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
 
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
 

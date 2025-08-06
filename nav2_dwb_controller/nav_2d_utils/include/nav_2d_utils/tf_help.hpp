@@ -37,7 +37,7 @@
 
 #include <string>
 #include <memory>
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
