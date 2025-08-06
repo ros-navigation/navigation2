@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(dwb_core)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
