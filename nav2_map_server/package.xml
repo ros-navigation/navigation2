@@ -14,6 +14,7 @@
 
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
