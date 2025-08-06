@@ -81,29 +81,27 @@ bool SimpleSmoother::smooth(
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
-    if (path_segments[i].end - path_segments[i].start > 9) {
-      // Populate path segment
-      curr_path_segment.poses.clear();
-      std::copy(
-        path.poses.begin() + path_segments[i].start,
-        path.poses.begin() + path_segments[i].end + 1,
-        std::back_inserter(curr_path_segment.poses));
+    // Populate path segment
+    curr_path_segment.poses.clear();
+    std::copy(
+      path.poses.begin() + path_segments[i].start,
+      path.poses.begin() + path_segments[i].end + 1,
+      std::back_inserter(curr_path_segment.poses));
 
-      // Make sure we're still able to smooth with time remaining
-      steady_clock::time_point now = steady_clock::now();
-      time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
-      refinement_ctr_ = 0;
+    // Make sure we're still able to smooth with time remaining
+    steady_clock::time_point now = steady_clock::now();
+    time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
+    refinement_ctr_ = 0;
 
-      // Attempt to smooth the segment
-      // May throw SmootherTimedOut
-      smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
+    // Attempt to smooth the segment
+    // May throw SmootherTimedOut
+    smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
 
-      // Assemble the path changes to the main path
-      std::copy(
-        curr_path_segment.poses.begin(),
-        curr_path_segment.poses.end(),
-        path.poses.begin() + path_segments[i].start);
-    }
+    // Assemble the path changes to the main path
+    std::copy(
+      curr_path_segment.poses.begin(),
+      curr_path_segment.poses.end(),
+      path.poses.begin() + path_segments[i].start);
   }
 
   return true;
