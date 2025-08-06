@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2025 Angsa Robotics
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +20,6 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <opencv2/imgproc.hpp>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
@@ -32,6 +32,68 @@ using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
+
+// Simple 2D point structure
+struct Point2D
+{
+  int x, y;
+  Point2D(int x_val, int y_val)
+  : x(x_val), y(y_val) {}
+};
+
+// Simple rectangle structure
+struct Rectangle
+{
+  int x, y, width, height;
+  Rectangle(int x_val, int y_val, int w, int h)
+  : x(x_val), y(y_val), width(w), height(h) {}
+};
+
+// Calculate bounding rectangle for a set of points
+Rectangle calculateBoundingRect(const std::vector<Point2D> & points)
+{
+  if (points.empty()) {
+    return Rectangle(0, 0, 0, 0);
+  }
+
+  int min_x = points[0].x;
+  int max_x = points[0].x;
+  int min_y = points[0].y;
+  int max_y = points[0].y;
+
+  for (const auto & pt : points) {
+    min_x = std::min(min_x, pt.x);
+    max_x = std::max(max_x, pt.x);
+    min_y = std::min(min_y, pt.y);
+    max_y = std::max(max_y, pt.y);
+  }
+
+  return Rectangle(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1);
+}
+
+// Point-in-polygon test using ray casting algorithm
+bool isPointInPolygon(int x, int y, const std::vector<Point2D> & polygon)
+{
+  if (polygon.size() < 3) {
+    return false;
+  }
+
+  bool inside = false;
+  size_t j = polygon.size() - 1;
+
+  for (size_t i = 0; i < polygon.size(); i++) {
+    if (((polygon[i].y > y) != (polygon[j].y > y)) &&
+      (x <
+      (polygon[j].x - polygon[i].x) * (y - polygon[i].y) / (polygon[j].y - polygon[i].y) +
+      polygon[i].x))
+    {
+      inside = !inside;
+    }
+    j = i;
+  }
+
+  return inside;
+}
 
 template<typename CostmapT>
 FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker()
@@ -95,7 +157,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
   // If no collision on perimeter and full area check requested, rasterize the full area
 
   // Convert footprint to map coordinates for rasterization
-  std::vector<cv::Point> polygon_points;
+  std::vector<Point2D> polygon_points;
   polygon_points.reserve(footprint.size());
 
   for (const auto & point : footprint) {
@@ -107,27 +169,21 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
   }
 
   // Find bounding box for the polygon
-  cv::Rect bbox = cv::boundingRect(polygon_points);
+  Rectangle bbox = calculateBoundingRect(polygon_points);
 
-  // Create a mask for the polygon area
-  cv::Mat mask = cv::Mat::zeros(bbox.height, bbox.width, CV_8UC1);
-
-  // Translate polygon points to mask coordinates (relative to bounding box)
-  std::vector<cv::Point> mask_points;
-  mask_points.reserve(polygon_points.size());
+  // Translate polygon points to bounding box coordinates
+  std::vector<Point2D> bbox_polygon;
+  bbox_polygon.reserve(polygon_points.size());
   for (const auto & pt : polygon_points) {
-    mask_points.emplace_back(pt.x - bbox.x, pt.y - bbox.y);
+    bbox_polygon.emplace_back(pt.x - bbox.x, pt.y - bbox.y);
   }
-
-  // Fill the polygon in the mask using OpenCV rasterization
-  cv::fillPoly(mask, std::vector<std::vector<cv::Point>>{mask_points}, cv::Scalar(255));
 
   double max_cost = perimeter_cost;
 
-  // Iterate through the mask and check costs only for cells inside the polygon
-  for (int y = 0; y < mask.rows; ++y) {
-    for (int x = 0; x < mask.cols; ++x) {
-      if (mask.at<uint8_t>(y, x) > 0) {  // Cell is inside polygon
+  // Iterate through the bounding box and check costs only for cells inside the polygon
+  for (int y = 0; y < bbox.height; ++y) {
+    for (int x = 0; x < bbox.width; ++x) {
+      if (isPointInPolygon(x, y, bbox_polygon)) {  // Cell is inside polygon
         // Convert back to map coordinates
         unsigned int map_x = static_cast<unsigned int>(bbox.x + x);
         unsigned int map_y = static_cast<unsigned int>(bbox.y + y);

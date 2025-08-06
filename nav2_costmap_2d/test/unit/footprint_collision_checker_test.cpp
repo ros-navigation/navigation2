@@ -16,6 +16,9 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <chrono>
+#include <iostream>
+#include <iomanip>
 
 #include "gtest/gtest.h"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -596,4 +599,112 @@ TEST(collision_footprint, test_complex_polygon_full_area) {
   EXPECT_LT(perimeter_cost, 180.0);
   // Full area should detect it (demonstrating the value of full area checking)
   EXPECT_NEAR(full_area_cost, 180.0, 0.001);
+}
+
+// Performance test for footprint collision checking
+// Measures execution time for both perimeter and full-area checking methods
+// This test can be used to compare performance between different implementations
+TEST(collision_footprint, test_performance_benchmark) {
+  // Create a reasonably large costmap for performance testing
+  std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_ =
+    std::make_shared<nav2_costmap_2d::Costmap2D>(500, 500, 0.05, 0, 0, 0);
+
+  // Add some scattered obstacles to make the test more realistic
+  for (int i = 0; i < 1000; ++i) {
+    int x = rand() % 500;
+    int y = rand() % 500;
+    costmap_->setCost(x, y, rand() % 200 + 50);  // Random costs 50-249
+  }
+
+  // Create a complex polygon footprint (octagon)
+  std::vector<geometry_msgs::msg::Point> footprint;
+  const double radius = 1.0;
+  const int num_vertices = 8;
+  for (int i = 0; i < num_vertices; ++i) {
+    geometry_msgs::msg::Point p;
+    double angle = 2.0 * M_PI * i / num_vertices;
+    p.x = radius * cos(angle);
+    p.y = radius * sin(angle);
+    footprint.push_back(p);
+  }
+
+  nav2_costmap_2d::FootprintCollisionChecker<std::shared_ptr<nav2_costmap_2d::Costmap2D>>
+  collision_checker(costmap_);
+
+  const int num_iterations = 1000;
+  const double test_positions[][3] = {
+    {5.0, 5.0, 0.0},
+    {10.0, 10.0, M_PI/4},
+    {15.0, 15.0, M_PI/2},
+    {20.0, 20.0, M_PI},
+    {8.5, 12.3, M_PI/6}
+  };
+  const int num_positions = sizeof(test_positions) / sizeof(test_positions[0]);
+
+  // Benchmark perimeter-only checking
+  auto start_perimeter = std::chrono::high_resolution_clock::now();
+  for (int iter = 0; iter < num_iterations; ++iter) {
+    for (int pos = 0; pos < num_positions; ++pos) {
+      collision_checker.footprintCostAtPose(
+        test_positions[pos][0], 
+        test_positions[pos][1], 
+        test_positions[pos][2], 
+        footprint, 
+        false  // perimeter only
+      );
+    }
+  }
+  auto end_perimeter = std::chrono::high_resolution_clock::now();
+  auto perimeter_duration = std::chrono::duration_cast<std::chrono::microseconds>(
+    end_perimeter - start_perimeter);
+
+  // Benchmark full-area checking
+  auto start_full_area = std::chrono::high_resolution_clock::now();
+  for (int iter = 0; iter < num_iterations; ++iter) {
+    for (int pos = 0; pos < num_positions; ++pos) {
+      collision_checker.footprintCostAtPose(
+        test_positions[pos][0], 
+        test_positions[pos][1], 
+        test_positions[pos][2], 
+        footprint, 
+        true  // full area
+      );
+    }
+  }
+  auto end_full_area = std::chrono::high_resolution_clock::now();
+  auto full_area_duration = std::chrono::duration_cast<std::chrono::microseconds>(
+    end_full_area - start_full_area);
+
+  // Calculate statistics
+  int total_calls = num_iterations * num_positions;
+  double avg_perimeter_us = static_cast<double>(perimeter_duration.count()) / total_calls;
+  double avg_full_area_us = static_cast<double>(full_area_duration.count()) / total_calls;
+
+  // Print performance results
+  std::cout << "\n=== FOOTPRINT COLLISION CHECKER PERFORMANCE BENCHMARK ===" << std::endl;
+  std::cout << "Test configuration:" << std::endl;
+  std::cout << "  - Costmap size: 500x500 cells (25m x 25m @ 0.05m resolution)" << std::endl;
+  std::cout << "  - Footprint: Octagon with 1.0m radius" << std::endl;
+  std::cout << "  - Test positions: " << num_positions << std::endl;
+  std::cout << "  - Iterations per test: " << num_iterations << std::endl;
+  std::cout << "  - Total function calls per test: " << total_calls << std::endl;
+  std::cout << "  - Obstacles: 1000 random obstacles" << std::endl;
+  std::cout << "\nPerformance Results:" << std::endl;
+  std::cout << "  Perimeter-only checking:" << std::endl;
+  std::cout << "    - Total time: " << perimeter_duration.count() << " microseconds" << std::endl;
+  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2) 
+            << avg_perimeter_us << " microseconds" << std::endl;
+  std::cout << "  Full-area checking:" << std::endl;
+  std::cout << "    - Total time: " << full_area_duration.count() << " microseconds" << std::endl;
+  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2) 
+            << avg_full_area_us << " microseconds" << std::endl;
+  std::cout << "  Performance ratio (full-area / perimeter): " 
+            << std::fixed << std::setprecision(2) 
+            << (avg_full_area_us / avg_perimeter_us) << "x" << std::endl;
+  std::cout << "============================================================\n" << std::endl;
+
+  // Basic sanity checks - tests should complete in reasonable time
+  EXPECT_LT(avg_perimeter_us, 1000.0);  // Should be less than 1ms per call
+  EXPECT_LT(avg_full_area_us, 5000.0);  // Should be less than 5ms per call
+  EXPECT_GT(avg_full_area_us, avg_perimeter_us);  // Full area should take longer
 }
