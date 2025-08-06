@@ -19,7 +19,7 @@
 #include <memory>
 #include <vector>
 
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/node_utils.hpp"

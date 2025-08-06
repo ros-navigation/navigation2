@@ -24,7 +24,7 @@
 #include "nav2_msgs/msg/behavior_tree_log.hpp"
 #include "nav2_msgs/msg/behavior_tree_status_change.hpp"
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer_interface.h"
+#include "tf2_ros/buffer_interface.hpp"
 
 namespace nav2_behavior_tree
 {
