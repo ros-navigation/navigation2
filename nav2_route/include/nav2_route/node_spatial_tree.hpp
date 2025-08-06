@@ -55,7 +55,9 @@ struct GraphAdaptor
 };
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Simple_Adaptor<double, GraphAdaptor>, GraphAdaptor, DIMENSION> kd_tree_t;
+    nanoflann::L2_Simple_Adaptor<double, GraphAdaptor>, GraphAdaptor, DIMENSION,
+    unsigned int>
+    kd_tree_t;
 
 /**
  * @class nav2_route::NodeSpatialTree
