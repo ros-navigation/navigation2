@@ -49,10 +49,6 @@ namespace nav_2d_utils
 {
 geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_2d);
 nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel);
-geometry_msgs::msg::PoseStamped poseToPoseStamped(
-  const geometry_msgs::msg::Pose & pose,
-  const std::string & frame, const rclcpp::Time & stamp);
-nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses);
 nav_msgs::msg::Path posesToPath(
   const std::vector<geometry_msgs::msg::Pose> & poses,
   const std::string & frame, const rclcpp::Time & stamp);

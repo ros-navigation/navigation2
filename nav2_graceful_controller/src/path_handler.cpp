@@ -22,7 +22,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav_2d_utils/tf_help.hpp"
+#include "nav2_util/robot_utils.hpp"
 #include "nav2_graceful_controller/path_handler.hpp"
 
 namespace nav2_graceful_controller
@@ -31,7 +31,7 @@ namespace nav2_graceful_controller
 using nav2_util::geometry_utils::euclidean_distance;
 
 PathHandler::PathHandler(
-  tf2::Duration transform_tolerance,
+  double transform_tolerance,
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 : transform_tolerance_(transform_tolerance), tf_buffer_(tf), costmap_ros_(costmap_ros)
@@ -49,8 +49,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   // Let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav_2d_utils::transformPose(
-      tf_buffer_, global_plan_.header.frame_id, pose, robot_pose,
+  if (!nav2_util::transformPoseInTargetFrame(
+      pose, robot_pose, *tf_buffer_, global_plan_.header.frame_id,
       transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -88,9 +88,9 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.header.stamp = robot_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
-      if (!nav_2d_utils::transformPose(
-          tf_buffer_, costmap_ros_->getBaseFrameID(), stamped_pose,
-          transformed_pose, transform_tolerance_))
+      if (!nav2_util::transformPoseInTargetFrame(
+          stamped_pose, transformed_pose, *tf_buffer_,
+          costmap_ros_->getBaseFrameID(), transform_tolerance_))
       {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }

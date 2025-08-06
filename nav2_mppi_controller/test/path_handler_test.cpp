@@ -46,13 +46,6 @@ public:
     return getGlobalPlanConsideringBoundsInCostmapFrame(pose);
   }
 
-  bool transformPoseWrapper(
-    const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose) const
-  {
-    return transformPose(frame, in_pose, out_pose);
-  }
-
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrameWrapper(
     const geometry_msgs::msg::PoseStamped & pose)
   {
@@ -180,12 +173,10 @@ TEST(PathHandlerTests, TestTransforms)
     path.poses[i].header.frame_id = "map";
   }
 
-  geometry_msgs::msg::PoseStamped robot_pose, output_pose;
+  geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 2.5;
 
-  EXPECT_TRUE(handler.transformPoseWrapper("map", robot_pose, output_pose));
-  EXPECT_EQ(output_pose.pose.position.x, 2.5);
 
   EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
   handler.setPath(path);
