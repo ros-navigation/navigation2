@@ -163,7 +163,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
   for (const auto & point : footprint) {
     unsigned int mx, my;
     if (!worldToMap(point.x, point.y, mx, my)) {
-      return static_cast<double>(NO_INFORMATION);
+      return static_cast<double>(LETHAL_OBSTACLE);
     }
     polygon_points.emplace_back(static_cast<int>(mx), static_cast<int>(my));
   }
