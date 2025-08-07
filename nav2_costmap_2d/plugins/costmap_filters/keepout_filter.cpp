@@ -161,7 +161,8 @@ void KeepoutFilter::maskCallback(
   height_ = msg->info.height;
 }
 
-void KeepoutFilter::updateBounds(double robot_x, double robot_y, double robot_yaw,
+void KeepoutFilter::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
   if (!enabled_) {
@@ -170,8 +171,9 @@ void KeepoutFilter::updateBounds(double robot_x, double robot_y, double robot_ya
 
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
-  if(!has_updated_data_)
+  if(!has_updated_data_) {
     return;
+  }
 
   double wx, wy;
 

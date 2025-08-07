@@ -101,7 +101,8 @@ void BinaryFilter::initializeFilter(
   changeState(binary_state_);
 }
 
-void BinaryFilter::updateBounds(double robot_x, double robot_y, double robot_yaw,
+void BinaryFilter::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
   if (!enabled_) {

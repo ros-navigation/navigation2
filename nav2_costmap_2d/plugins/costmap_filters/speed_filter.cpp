@@ -95,7 +95,8 @@ void SpeedFilter::initializeFilter(
   percentage_ = false;
 }
 
-void SpeedFilter::updateBounds(double robot_x, double robot_y, double robot_yaw,
+void SpeedFilter::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
   if (!enabled_) {

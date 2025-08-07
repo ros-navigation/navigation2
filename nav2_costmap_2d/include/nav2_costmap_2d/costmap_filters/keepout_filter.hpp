@@ -79,8 +79,8 @@ public:
    * @param max_y Y max map coord of the window to update
    */
   void updateBounds(
-  double robot_x, double robot_y, double robot_yaw,
-  double * min_x, double * min_y, double * max_x, double * max_y) override;
+    double robot_x, double robot_y, double robot_yaw,
+    double * min_x, double * min_y, double * max_x, double * max_y) override;
 
   /**
    * @brief Process the keepout layer at the current pose / bounds / grid
