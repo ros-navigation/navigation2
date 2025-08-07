@@ -27,14 +27,14 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
-#include "nav_2d_utils/odom_subscriber.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "opennav_docking/controller.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/dock_database.hpp"
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 
 namespace opennav_docking
 {
@@ -264,7 +264,7 @@ protected:
   rclcpp::Time action_start_time_;
 
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
-  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
+  std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   typename DockingActionServer::SharedPtr docking_action_server_;
   typename UndockingActionServer::SharedPtr undocking_action_server_;
 

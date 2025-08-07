@@ -48,7 +48,7 @@ void GracefulController::configure(
 
   // Handles global path transformations
   path_handler_ = std::make_unique<PathHandler>(
-    tf2::durationFromSec(params_->transform_tolerance), tf_buffer_, costmap_ros_);
+    params_->transform_tolerance, tf_buffer_, costmap_ros_);
 
   // Handles the control law to generate the velocity commands
   control_law_ = std::make_unique<SmoothControlLaw>(

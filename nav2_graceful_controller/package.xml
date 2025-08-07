@@ -11,11 +11,11 @@
   <build_depend>nav2_common</build_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_util</depend>
-  <depend>nav_2d_utils</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>

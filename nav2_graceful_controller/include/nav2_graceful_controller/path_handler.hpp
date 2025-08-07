@@ -35,7 +35,7 @@ public:
    * @brief Constructor for nav2_graceful_controller::PathHandler
    */
   PathHandler(
-    tf2::Duration transform_tolerance,
+    double transform_tolerance,
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
 
@@ -71,7 +71,7 @@ public:
   nav_msgs::msg::Path getPlan() {return global_plan_;}
 
 protected:
-  rclcpp::Duration transform_tolerance_{0, 0};
+  double transform_tolerance_{0};
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
