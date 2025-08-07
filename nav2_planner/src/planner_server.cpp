@@ -30,6 +30,7 @@
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 
 #include "nav2_planner/planner_server.hpp"
 
@@ -82,6 +83,12 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
+
+  if (!costmap_ros_->getUseRadius()) {
+    collision_checker_ =
+      std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
+      costmap_);
+  }
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
@@ -585,16 +592,35 @@ void PlannerServer::isPathValid(
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-      costmap_->worldToMap(
-        request->path.poses[i].pose.position.x,
-        request->path.poses[i].pose.position.y, mx, my);
-      unsigned int cost = costmap_->getCost(mx, my);
 
-      if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+    bool use_radius = costmap_ros_->getUseRadius();
+
+    unsigned int cost = nav2_costmap_2d::FREE_SPACE;
+
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+      auto & position = request->path.poses[i].pose.position;
+      if (use_radius) {
+        if (costmap_->worldToMap(position.x, position.y, mx, my)) {
+          cost = costmap_->getCost(mx, my);
+        } else {
+          cost = nav2_costmap_2d::LETHAL_OBSTACLE;
+        }
+      } else {
+        nav2_costmap_2d::Footprint footprint = costmap_ros_->getRobotFootprint();
+        auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
+        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
+            position.x, position.y, theta, footprint));
+      }
+
+      if (use_radius &&
+        (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
+        break;
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
+        response->is_valid = false;
+        break;
       }
     }
   }
