@@ -99,10 +99,10 @@ inline void updateApproximatePathOrientations(
   reversing_segment = false;
 
   // Find if this path segment is in reverse
-  dx = path.poses[1].pose.position.x - path.poses[0].pose.position.x;
-  dy = path.poses[1].pose.position.y - path.poses[0].pose.position.y;
+  dx = path.poses[2].pose.position.x - path.poses[1].pose.position.x;
+  dy = path.poses[2].pose.position.y - path.poses[1].pose.position.y;
   theta = atan2(dy, dx);
-  pt_yaw = tf2::getYaw(path.poses[0].pose.orientation);
+  pt_yaw = tf2::getYaw(path.poses[1].pose.orientation);
   if (fabs(angles::shortest_angular_distance(pt_yaw, theta)) > M_PI_2) {
     reversing_segment = true;
   }
