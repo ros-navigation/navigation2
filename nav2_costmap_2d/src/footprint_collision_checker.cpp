@@ -113,50 +113,11 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
   const Footprint & footprint,
   bool check_full_area)
 {
-  // First check the perimeter
-  unsigned int x0, x1, y0, y1;
-  double footprint_cost = 0.0;
-
-  // get the cell coord of the first point
-  if (!worldToMap(footprint[0].x, footprint[0].y, x0, y0)) {
-    return static_cast<double>(LETHAL_OBSTACLE);
+  if (footprint.empty()) {
+    return static_cast<double>(NO_INFORMATION);
   }
 
-  // cache the start to eliminate a worldToMap call
-  unsigned int xstart = x0;
-  unsigned int ystart = y0;
-
-  // we need to rasterize each line in the footprint
-  for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
-    // get the cell coord of the second point
-    if (!worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1)) {
-      return static_cast<double>(LETHAL_OBSTACLE);
-    }
-
-    footprint_cost = std::max(lineCost(x0, x1, y0, y1), footprint_cost);
-
-    // the second point is next iteration's first point
-    x0 = x1;
-    y0 = y1;
-
-    // if in collision, no need to continue
-    if (footprint_cost == static_cast<double>(LETHAL_OBSTACLE)) {
-      return footprint_cost;
-    }
-  }
-
-  // we also need to connect the first point in the footprint to the last point
-  // the last iteration's x1, y1 are the last footprint point's coordinates
-  double perimeter_cost = std::max(lineCost(xstart, x1, ystart, y1), footprint_cost);
-
-  // If perimeter check found collision or full area check not requested, return perimeter result
-  if (perimeter_cost == static_cast<double>(LETHAL_OBSTACLE) || !check_full_area) {
-    return perimeter_cost;
-  }
-
-  // If no collision on perimeter and full area check requested, rasterize the full area
-
-  // Convert footprint to map coordinates for rasterization
+  // Pre-convert all footprint points to map coordinates once
   std::vector<Point2D> polygon_points;
   polygon_points.reserve(footprint.size());
 
@@ -168,8 +129,38 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
     polygon_points.emplace_back(static_cast<int>(mx), static_cast<int>(my));
   }
 
-  // Find bounding box for the polygon
+  // Check perimeter using pre-converted coordinates
+  double perimeter_cost = 0.0;
+  for (size_t i = 0; i < polygon_points.size(); ++i) {
+    size_t next_i = (i + 1) % polygon_points.size();
+    double line_cost = lineCost(
+      polygon_points[i].x, polygon_points[next_i].x,
+      polygon_points[i].y, polygon_points[next_i].y);
+    
+    perimeter_cost = std::max(perimeter_cost, line_cost);
+    
+    // Early termination if lethal obstacle found
+    if (perimeter_cost == static_cast<double>(LETHAL_OBSTACLE)) {
+      return perimeter_cost;
+    }
+  }
+
+  // If perimeter check found collision or full area check not requested, return perimeter result
+  if (perimeter_cost == static_cast<double>(LETHAL_OBSTACLE) || !check_full_area) {
+    return perimeter_cost;
+  }
+
+  // If no collision on perimeter and full area check requested, rasterize the full area
   Rectangle bbox = calculateBoundingRect(polygon_points);
+  
+  // Clamp bounding box to costmap dimensions for safety
+  unsigned int costmap_width = costmap_->getSizeInCellsX();
+  unsigned int costmap_height = costmap_->getSizeInCellsY();
+  
+  int min_x = std::max(0, bbox.x);
+  int min_y = std::max(0, bbox.y);
+  int max_x = std::min(static_cast<int>(costmap_width - 1), bbox.x + bbox.width - 1);
+  int max_y = std::min(static_cast<int>(costmap_height - 1), bbox.y + bbox.height - 1);
 
   // Translate polygon points to bounding box coordinates
   std::vector<Point2D> bbox_polygon;
@@ -180,15 +171,15 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
 
   double max_cost = perimeter_cost;
 
-  // Iterate through the bounding box and check costs only for cells inside the polygon
-  for (int y = 0; y < bbox.height; ++y) {
-    for (int x = 0; x < bbox.width; ++x) {
-      if (isPointInPolygon(x, y, bbox_polygon)) {  // Cell is inside polygon
-        // Convert back to map coordinates
-        unsigned int map_x = static_cast<unsigned int>(bbox.x + x);
-        unsigned int map_y = static_cast<unsigned int>(bbox.y + y);
-
-        double cell_cost = pointCost(static_cast<int>(map_x), static_cast<int>(map_y));
+  // Iterate through the clamped bounding box and check costs only for cells inside the polygon
+  for (int y = min_y; y <= max_y; ++y) {
+    for (int x = min_x; x <= max_x; ++x) {
+      // Convert to bounding box coordinates for polygon test
+      int bbox_x = x - bbox.x;
+      int bbox_y = y - bbox.y;
+      
+      if (isPointInPolygon(bbox_x, bbox_y, bbox_polygon)) {
+        double cell_cost = pointCost(x, y);
 
         // Early termination if lethal obstacle found
         if (cell_cost == static_cast<double>(LETHAL_OBSTACLE)) {
@@ -235,6 +226,13 @@ bool FootprintCollisionChecker<CostmapT>::worldToMap(
 template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 {
+  // Bounds checking to prevent segmentation faults
+  if (x < 0 || y < 0 || 
+      x >= static_cast<int>(costmap_->getSizeInCellsX()) || 
+      y >= static_cast<int>(costmap_->getSizeInCellsY())) {
+    return static_cast<double>(LETHAL_OBSTACLE);
+  }
+  
   return static_cast<double>(costmap_->getCost(x, y));
 }
 
