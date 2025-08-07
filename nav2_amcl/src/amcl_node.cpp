@@ -1512,7 +1512,7 @@ AmclNode::initTransforms()
     get_node_timers_interface(),
     callback_group_);
   tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, true);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
   sent_first_transform_ = false;
