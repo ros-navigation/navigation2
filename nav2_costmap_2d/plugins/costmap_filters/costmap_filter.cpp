@@ -114,10 +114,6 @@ void CostmapFilter::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * /*min_x*/, double * /*min_y*/, double * /*max_x*/, double * /*max_y*/)
 {
-  if (!enabled_) {
-    return;
-  }
-
   latest_pose_.position.x = robot_x;
   latest_pose_.position.y = robot_y;
   latest_pose_.position.z = 0.0;

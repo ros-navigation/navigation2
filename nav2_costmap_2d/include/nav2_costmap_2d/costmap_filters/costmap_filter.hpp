@@ -99,7 +99,7 @@ public:
    */
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
-    double * min_x, double * min_y, double * max_x, double * max_y) final;
+    double * min_x, double * min_y, double * max_x, double * max_y) override;
 
   /**
    * @brief Update the costs in the master costmap in the window
