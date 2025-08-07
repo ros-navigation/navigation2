@@ -26,21 +26,13 @@ class PauseResumeControllerTestFixture : public nav2_behavior_tree::BehaviorTree
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<nav2::LifecycleNode>("pause_resume_controller_test_fixture");
-    executor_ =
-      std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-    cb_group_ = node->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive, false);
-    executor_->add_callback_group(cb_group_, node->get_node_base_interface());
-    pause_client_ = node->create_client<std_srvs::srv::Trigger>(
-      "pause", rclcpp::ServicesQoS(), cb_group_);
-    resume_client_ = node->create_client<std_srvs::srv::Trigger>(
-      "resume", rclcpp::ServicesQoS(), cb_group_);
+    pause_client_ = node_->create_client<std_srvs::srv::Trigger>("pause");
+    resume_client_ = node_->create_client<std_srvs::srv::Trigger>("resume");
 
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node);
+    config_->blackboard->set<nav2::LifecycleNode::SharedPtr>("node", node_);
 
     factory_->registerNodeType<nav2_behavior_tree::PauseResumeController>("PauseResumeController");
 
@@ -58,25 +50,22 @@ public:
   }
 
 protected:
-  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
   static rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   static rclcpp::CallbackGroup::SharedPtr cb_group_;
-  static rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr pause_client_;
-  static rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr resume_client_;
+  static nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr pause_client_;
+  static nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr resume_client_;
 };
 
-nav2::LifecycleNode::SharedPtr
-PauseResumeControllerTestFixture::node_ = nullptr;
 rclcpp::executors::SingleThreadedExecutor::SharedPtr
 PauseResumeControllerTestFixture::executor_ = nullptr;
 rclcpp::CallbackGroup::SharedPtr
 PauseResumeControllerTestFixture::cb_group_ = nullptr;
-rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr
+nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr
 PauseResumeControllerTestFixture::pause_client_ = nullptr;
-rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr
+nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr
 PauseResumeControllerTestFixture::resume_client_ = nullptr;
 BT::NodeConfiguration * PauseResumeControllerTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> PauseResumeControllerTestFixture::factory_ = nullptr;
@@ -132,16 +121,16 @@ TEST_F(PauseResumeControllerTestFixture, test_unused_children)
   EXPECT_EQ(pause_bt_node->getState(), state_t::RESUMED);
 
   const auto & check_request_succeeded = [](
-    rclcpp::Client<std_srvs::srv::Trigger>::FutureAndRequestId & future)
+    const std::shared_future<std::shared_ptr<std_srvs::srv::Trigger::Response>> future)
     {
-      executor_->spin_until_future_complete(future, std::chrono::seconds(1));
+      rclcpp::spin_until_future_complete(node_, future, std::chrono::seconds(1));
       ASSERT_EQ(future.wait_for(std::chrono::seconds(0)), std::future_status::ready);
       EXPECT_EQ(future.get()->success, true);
     };
 
   // Call pause service, expect RUNNING and PAUSED
-  auto future = pause_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto future = pause_client_->async_call(req);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(pause_bt_node->getState(), state_t::PAUSED);
   check_request_succeeded(future);
@@ -151,8 +140,7 @@ TEST_F(PauseResumeControllerTestFixture, test_unused_children)
   EXPECT_EQ(pause_bt_node->getState(), state_t::PAUSED);
 
   // Call resume service, expect RUNNING and ON_RESUME
-  future = resume_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  future = resume_client_->async_call(req);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(pause_bt_node->getState(), state_t::RESUMED);
   check_request_succeeded(future);
@@ -210,8 +198,8 @@ TEST_F(PauseResumeControllerTestFixture, test_behavior)
   EXPECT_EQ(pause_bt_node->getState(), state_t::RESUMED);
 
   const auto & check_future_result = [](
-    rclcpp::Client<std_srvs::srv::Trigger>::FutureAndRequestId & future, bool success = true)
-    -> void
+    std::shared_future<std::shared_ptr<std_srvs::srv::Trigger::Response>> future,
+    bool success = true) -> void
     {
       executor_->spin_until_future_complete(future, std::chrono::seconds(1));
       ASSERT_EQ(future.wait_for(std::chrono::seconds(0)), std::future_status::ready);
@@ -219,8 +207,8 @@ TEST_F(PauseResumeControllerTestFixture, test_behavior)
     };
 
   // Call pause service, set ON_PAUSE child to RUNNING, expect RUNNING and ON_PAUSE
-  auto future = pause_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+  auto future = pause_client_->async_call(req);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(pause_bt_node->getState(), state_t::ON_PAUSE);
   check_future_result(future);
@@ -242,15 +230,13 @@ TEST_F(PauseResumeControllerTestFixture, test_behavior)
   EXPECT_EQ(pause_bt_node->getState(), state_t::PAUSED);
 
   // Call pause service again, expect RUNNING and PAUSED
-  future = pause_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  future = pause_client_->async_call(req);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::RUNNING);
   EXPECT_EQ(pause_bt_node->getState(), state_t::PAUSED);
   check_future_result(future, false);
 
   // Call resume service, change ON_RESUME child to FAILURE, expect FAILURE
-  future = resume_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  future = resume_client_->async_call(req);
   on_resume_child->changeStatus(BT::NodeStatus::FAILURE);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::FAILURE);
   check_future_result(future);
@@ -266,8 +252,7 @@ TEST_F(PauseResumeControllerTestFixture, test_behavior)
   EXPECT_EQ(pause_bt_node->getState(), state_t::RESUMED);
 
   // Call resume service again, expect RUNNING and RESUMED
-  future = resume_client_->async_send_request(
-    std::make_shared<std_srvs::srv::Trigger::Request>());
+  future = resume_client_->async_call(req);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(pause_bt_node->getState(), state_t::RESUMED);
   check_future_result(future, false);
