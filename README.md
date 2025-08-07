@@ -12,6 +12,7 @@ For detailed instructions on how to:
 - [Concepts](https://docs.nav2.org/concepts/index.html)
 - [Build](https://docs.nav2.org/development_guides/build_docs/index.html#build)
 - [Install](https://docs.nav2.org/development_guides/build_docs/index.html#install)
+- [API Docs](https://api.nav2.org/)
 - [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
 - [Configure](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
