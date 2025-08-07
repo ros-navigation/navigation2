@@ -110,7 +110,6 @@ public:
     const std::string & filename,
     const std::vector<std::string> & search_dirs)
   {
-
     if (!behaviorTreeFileValidation(filename)) {
       return false;
     }
