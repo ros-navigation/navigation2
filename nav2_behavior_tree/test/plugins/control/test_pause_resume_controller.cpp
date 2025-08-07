@@ -26,7 +26,7 @@ class PauseResumeControllerTestFixture : public nav2_behavior_tree::BehaviorTree
 public:
   static void SetUpTestCase()
   {
-    auto node = std::make_shared<rclcpp::Node>("pause_resume_controller_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("pause_resume_controller_test_fixture");
     executor_ =
       std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     cb_group_ = node->create_callback_group(
@@ -58,6 +58,7 @@ public:
   }
 
 protected:
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
@@ -67,6 +68,8 @@ protected:
   static rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr resume_client_;
 };
 
+nav2::LifecycleNode::SharedPtr
+PauseResumeControllerTestFixture::node_ = nullptr;
 rclcpp::executors::SingleThreadedExecutor::SharedPtr
 PauseResumeControllerTestFixture::executor_ = nullptr;
 rclcpp::CallbackGroup::SharedPtr

@@ -31,7 +31,7 @@ PauseResumeController::PauseResumeController(
   const BT::NodeConfiguration & conf)
 : BT::ControlNode(xml_tag_name, conf)
 {
-  auto node = this->config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   state_ = RESUMED;
 
   // Create a separate cb group with a separate executor to spin

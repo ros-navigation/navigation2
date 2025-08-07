@@ -26,6 +26,7 @@
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "behaviortree_cpp/control_node.h"
 #include "nav2_ros_common/service_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 // Interface definitions
 #include "std_srvs/srv/trigger.hpp"
