@@ -11,6 +11,7 @@
 
   <depend>nav2_common</depend>
 
+  <depend>backward_ros</depend>
   <depend>bond</depend>
   <depend>bondcpp</depend>
   <depend>builtin_interfaces</depend>

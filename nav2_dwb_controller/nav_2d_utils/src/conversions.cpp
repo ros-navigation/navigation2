@@ -72,34 +72,6 @@ nav_2d_msgs::msg::Twist2D twist3Dto2D(const geometry_msgs::msg::Twist & cmd_vel)
   return cmd_vel_2d;
 }
 
-
-geometry_msgs::msg::PoseStamped poseToPoseStamped(
-  const geometry_msgs::msg::Pose & pose_in,
-  const std::string & frame, const rclcpp::Time & stamp)
-{
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header.frame_id = frame;
-  pose.header.stamp = stamp;
-  pose.pose = pose_in;
-  return pose;
-}
-
-nav_msgs::msg::Path posesToPath(const std::vector<geometry_msgs::msg::PoseStamped> & poses)
-{
-  nav_msgs::msg::Path path;
-  if (poses.empty()) {
-    return path;
-  }
-  path.poses.resize(poses.size());
-  path.header.frame_id = poses[0].header.frame_id;
-  path.header.stamp = poses[0].header.stamp;
-  for (unsigned int i = 0; i < poses.size(); i++) {
-    path.poses[i] = poses[i];
-  }
-  return path;
-}
-
-
 nav_msgs::msg::Path posesToPath(
   const std::vector<geometry_msgs::msg::Pose> & poses,
   const std::string & frame, const rclcpp::Time & stamp)

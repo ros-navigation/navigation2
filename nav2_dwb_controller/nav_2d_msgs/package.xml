@@ -11,6 +11,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>rosidl_default_generators</depend>

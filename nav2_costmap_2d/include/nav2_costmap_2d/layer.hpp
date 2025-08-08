@@ -41,7 +41,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
