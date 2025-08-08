@@ -44,9 +44,9 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "tf2_ros/message_filter.h"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/message_filter.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 #define NEW_UNIFORM_SAMPLING 1
 

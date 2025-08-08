@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_route/types.hpp"

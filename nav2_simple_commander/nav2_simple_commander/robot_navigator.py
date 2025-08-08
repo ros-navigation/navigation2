@@ -34,7 +34,7 @@ from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ManageLifecycleNodes)
 from nav_msgs.msg import Goals, OccupancyGrid, Path
 import rclpy
-from rclpy.action import ActionClient  # type: ignore[attr-defined]
+from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.client import Client
 from rclpy.duration import Duration as rclpyDuration
@@ -1242,7 +1242,7 @@ class BasicNavigator(Node):
         return
 
     def warn(self, msg: str) -> None:
-        self.get_logger().warn(msg)
+        self.get_logger().warning(msg)
         return
 
     def error(self, msg: str) -> None:

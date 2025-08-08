@@ -20,6 +20,7 @@
   <build_depend>nav2_common</build_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>

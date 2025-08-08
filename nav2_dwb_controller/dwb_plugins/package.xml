@@ -6,12 +6,13 @@
       Standard implementations of the GoalChecker
       and TrajectoryGenerators for dwb_core
   </description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>dwb_core</depend>
   <depend>dwb_msgs</depend>
   <depend>geometry_msgs</depend>

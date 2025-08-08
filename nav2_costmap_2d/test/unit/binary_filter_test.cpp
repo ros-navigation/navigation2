@@ -24,9 +24,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
@@ -236,6 +236,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2D> master_grid_;
 
   bool default_state_;
+  bool binary_state_;
 
 private:
   void waitSome(const std::chrono::nanoseconds & duration);
@@ -703,12 +704,13 @@ void TestNode::testResetFilter()
   binary_state = waitBinaryState();
   verifyBinaryState(getSign(pose.position.x, pose.position.y, base,
     multiplier, flip_threshold), binary_state);
+  binary_state_ = binary_state->data;
 
   // Reset binary filter and check its state was reset to default
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
   ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, default_state_);
+  ASSERT_EQ(binary_state->data, binary_state_);
 }
 
 

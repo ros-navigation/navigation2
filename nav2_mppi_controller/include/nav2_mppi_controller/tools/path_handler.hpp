@@ -23,7 +23,7 @@
 #include <memory>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
@@ -98,17 +98,6 @@ public:
   geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
 protected:
-  /**
-    * @brief Transform a pose to another frame
-    * @param frame Frame to transform to
-    * @param in_pose Input pose
-    * @param out_pose Output pose
-    * @return Bool if successful
-    */
-  bool transformPose(
-    const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose) const;
-
   /**
     * @brief Get largest dimension of costmap (radially)
     * @return Max distance from center of costmap to edge

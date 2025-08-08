@@ -5,7 +5,7 @@ The Route Server is a Nav2 Task server to compliment the Planner Server's free-s
 * Augment the global planner with long-distance routing to a goal and using free-space feasible planning in a more localized fashion for the immediate 10m, 100m, etc future.
 
 This graph has very few rules associated with it and may be generated manually or automatically via AI, geometric, or probabilistic techniques.
-docs.nav2.org includes tutorials for how to generate such a graph by annotations on a grid map created via SLAM, but can also be procedurally generated.
+docs.nav2.org includes tutorials for how to generate such a graph by annotations on a grid map created via SLAM, but can also be procedurally generated using a tool like [NVIDIA's SWAGGER](https://github.com/nvidia-isaac/SWAGGER).
 This package then takes a planning request and uses this graph to find a valid route through the environment via an optimal search-based algorithm. It uses plugin-based scoring functions applied each edge based on arbitrary user-defined semantic information and the chosen optimization criteria(s).
 
 The Nav2 Route Server may also live monitor and analyze the route's process to execute custom behaviors on entering or leaving edges or achieving particular graph nodes. These behaviors are defined as another type of plugin and can leverage the graph's edges' and nodes' arbitrary semantic data.
@@ -427,3 +427,7 @@ A special condition of this when a routing or rerouting request is made up of on
 This is an application problem which can be addressed above but may have other creative solutions for your application. It is on you as an application developer to determine if this is a problem for you and what the most appropriate solution is, since different applications will have different levels of flexibility of deviating from the route or extremely strict route interpretations.
 
 Note that there are parameters like `prune_route`, `min_prune_distance_from_start` and `min_prune_distance_from_goal` which impact the pruning behavior while tracking a route using poses. There is also the option to request routes using NodeIDs instead of poses, which obviously would never have this issue since they are definitionally on the route graph at all times. That bypasses the entire issue if the goal(s) are always known to be on the graph.
+
+### Graph Generation
+
+There are tutorials on docs.nav2.org regarding how to generate a file for your application, please review those for more information on how to generate a graph file for your application.

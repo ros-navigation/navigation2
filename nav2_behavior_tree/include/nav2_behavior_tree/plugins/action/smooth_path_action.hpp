@@ -19,7 +19,7 @@
 #include <string>
 
 #include "nav2_msgs/action/smooth_path.hpp"
-#include "nav_msgs/msg/path.h"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

@@ -43,8 +43,8 @@
 #include <string>
 #include <vector>
 
-#include "geometry_msgs/msg/polygon.h"
-#include "geometry_msgs/msg/polygon_stamped.h"
+#include "geometry_msgs/msg/polygon.hpp"
+#include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
@@ -56,8 +56,8 @@
 #include "pluginlib/class_loader.hpp"
 #include "tf2/convert.hpp"
 #include "tf2/LinearMath/Transform.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include "tf2/time.hpp"
 #include "tf2/transform_datatypes.hpp"
 #include "nav2_ros_common/service_server.hpp"

@@ -81,7 +81,7 @@ bool SimpleSmoother::smooth(
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
-    if (path_segments[i].end - path_segments[i].start > 9) {
+    if (path_segments[i].end - path_segments[i].start > 3) {
       // Populate path segment
       curr_path_segment.poses.clear();
       std::copy(

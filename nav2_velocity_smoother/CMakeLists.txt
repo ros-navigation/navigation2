@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(nav2_velocity_smoother)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_util REQUIRED)

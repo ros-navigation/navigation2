@@ -21,8 +21,6 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav_2d_utils/conversions.hpp"
-#include "nav_2d_utils/tf_help.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
@@ -64,6 +62,9 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
   declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
   declare_parameter("costmap_update_timeout", 0.30);  // 300ms
+
+  declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
+  declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -125,8 +126,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  std::string speed_limit_topic;
+  std::string speed_limit_topic, odom_topic;
   get_parameter("speed_limit_topic", speed_limit_topic);
+  get_parameter("odom_topic", odom_topic);
+  double odom_duration;
+  get_parameter("odom_duration", odom_duration);
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
@@ -219,7 +223,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
-  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node);
+  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
   double costmap_update_timeout_dbl;
@@ -624,7 +628,7 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::FailedToMakeProgress("Failed to make progress");
   }
 
-  nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
+  geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
@@ -632,7 +636,7 @@ void ControllerServer::computeAndPublishVelocity()
     cmd_vel_2d =
       controllers_[current_controller_]->computeVelocityCommands(
       pose,
-      nav_2d_utils::twist2Dto3D(twist),
+      twist,
       goal_checkers_[current_goal_checker_].get());
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
@@ -665,10 +669,9 @@ void ControllerServer::computeAndPublishVelocity()
 
   // Find the closest pose to current pose on global path
   geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
-  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
-  if (!nav_2d_utils::transformPose(
-          costmap_ros_->getTfBuffer(), current_path_.header.frame_id, pose,
-          robot_pose_in_path_frame, tolerance))
+  if (!nav2_util::transformPoseInTargetFrame(
+          pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+          current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
   }
@@ -793,14 +796,12 @@ bool ControllerServer::isGoalReached()
     return false;
   }
 
-  nav_2d_msgs::msg::Twist2D twist = getThresholdedTwist(odom_sub_->getTwist());
-  geometry_msgs::msg::Twist velocity = nav_2d_utils::twist2Dto3D(twist);
+  geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::PoseStamped transformed_end_pose;
-  rclcpp::Duration tolerance(rclcpp::Duration::from_seconds(costmap_ros_->getTransformTolerance()));
-  nav_2d_utils::transformPose(
-    costmap_ros_->getTfBuffer(), costmap_ros_->getGlobalFrameID(),
-    end_pose_, transformed_end_pose, tolerance);
+  nav2_util::transformPoseInTargetFrame(
+    end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
+    costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
