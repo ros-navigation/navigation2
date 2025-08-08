@@ -188,6 +188,46 @@ inline int find_next_matching_goal_in_waypoint_statuses(
   return itr - waypoint_statuses.begin();
 }
 
+/**
+ * @brief Find the shortest distance from a point to a line segment
+ *
+ * Uses the closed-form solution for the distance from a point to a segment in 2D.
+ * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+ *
+ * @param point The point to measure from
+ * @param start The start pose of the segment
+ * @param end The end pose of the segment
+ * @return double The shortest distance
+ */
+inline double distance_to_segment(
+  const geometry_msgs::msg::Point & point,
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & end)
+{
+  const auto & p = point;
+  const auto & a = start.position;
+  const auto & b = end.position;
+
+  const double dx_seg = b.x - a.x;
+  const double dy_seg = b.y - a.y;
+
+  const double seg_len_sq = (dx_seg * dx_seg) + (dy_seg * dy_seg);
+
+  if (seg_len_sq <= 1e-9) {
+    return euclidean_distance(point, a);
+  }
+
+  const double dot = ((p.x - a.x) * dx_seg) + ((p.y - a.y) * dy_seg);
+  const double t = std::clamp(dot / seg_len_sq, 0.0, 1.0);
+
+  const double proj_x = a.x + t * dx_seg;
+  const double proj_y = a.y + t * dy_seg;
+
+  const double dx_proj = p.x - proj_x;
+  const double dy_proj = p.y - proj_y;
+  return std::hypot(dx_proj, dy_proj);
+}
+
 }  // namespace geometry_utils
 }  // namespace nav2_util
 
