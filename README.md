@@ -8,8 +8,7 @@
 </p>
 
 For detailed instructions on how to:
-- [Getting Started](https://docs.nav2.org/getting_started/index.html)
-- [Concepts](https://docs.nav2.org/concepts/index.html)
+- [Concepts](https://docs.nav2.org/concepts/index.html) and [Getting Started](https://docs.nav2.org/getting_started/index.html)
 - [First Time Setup Guide](https://docs.nav2.org/setup_guides/index.html)
 - [ROS Distribution Statuses](https://docs.nav2.org/#distributions)
 - [Build & Install](https://docs.nav2.org/development_guides/build_docs/index.html#build) and [Docker Containers](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
