@@ -95,16 +95,6 @@ void SpeedFilter::initializeFilter(
   percentage_ = false;
 }
 
-void SpeedFilter::updateBounds(
-  double robot_x, double robot_y, double robot_yaw,
-  double * min_x, double * min_y, double * max_x, double * max_y)
-{
-  if (!enabled_) {
-    return;
-  }
-  CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
-}
-
 void SpeedFilter::filterInfoCallback(
   const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
 {
