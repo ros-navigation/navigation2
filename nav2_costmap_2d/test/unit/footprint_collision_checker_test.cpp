@@ -634,10 +634,10 @@ TEST(collision_footprint, test_performance_benchmark) {
   const int num_iterations = 1000;
   const double test_positions[][3] = {
     {5.0, 5.0, 0.0},
-    {10.0, 10.0, M_PI/4},
-    {15.0, 15.0, M_PI/2},
+    {10.0, 10.0, M_PI / 4},
+    {15.0, 15.0, M_PI / 2},
     {20.0, 20.0, M_PI},
-    {8.5, 12.3, M_PI/6}
+    {8.5, 12.3, M_PI / 6}
   };
   const int num_positions = sizeof(test_positions) / sizeof(test_positions[0]);
 
@@ -646,10 +646,10 @@ TEST(collision_footprint, test_performance_benchmark) {
   for (int iter = 0; iter < num_iterations; ++iter) {
     for (int pos = 0; pos < num_positions; ++pos) {
       collision_checker.footprintCostAtPose(
-        test_positions[pos][0], 
-        test_positions[pos][1], 
-        test_positions[pos][2], 
-        footprint, 
+        test_positions[pos][0],
+        test_positions[pos][1],
+        test_positions[pos][2],
+        footprint,
         false  // perimeter only
       );
     }
@@ -663,10 +663,10 @@ TEST(collision_footprint, test_performance_benchmark) {
   for (int iter = 0; iter < num_iterations; ++iter) {
     for (int pos = 0; pos < num_positions; ++pos) {
       collision_checker.footprintCostAtPose(
-        test_positions[pos][0], 
-        test_positions[pos][1], 
-        test_positions[pos][2], 
-        footprint, 
+        test_positions[pos][0],
+        test_positions[pos][1],
+        test_positions[pos][2],
+        footprint,
         true  // full area
       );
     }
@@ -692,14 +692,14 @@ TEST(collision_footprint, test_performance_benchmark) {
   std::cout << "\nPerformance Results:" << std::endl;
   std::cout << "  Perimeter-only checking:" << std::endl;
   std::cout << "    - Total time: " << perimeter_duration.count() << " microseconds" << std::endl;
-  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2) 
+  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2)
             << avg_perimeter_us << " microseconds" << std::endl;
   std::cout << "  Full-area checking:" << std::endl;
   std::cout << "    - Total time: " << full_area_duration.count() << " microseconds" << std::endl;
-  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2) 
+  std::cout << "    - Average per call: " << std::fixed << std::setprecision(2)
             << avg_full_area_us << " microseconds" << std::endl;
-  std::cout << "  Performance ratio (full-area / perimeter): " 
-            << std::fixed << std::setprecision(2) 
+  std::cout << "  Performance ratio (full-area / perimeter): "
+            << std::fixed << std::setprecision(2)
             << (avg_full_area_us / avg_perimeter_us) << "x" << std::endl;
   std::cout << "============================================================\n" << std::endl;
 

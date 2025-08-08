@@ -136,9 +136,9 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
     double line_cost = lineCost(
       polygon_points[i].x, polygon_points[next_i].x,
       polygon_points[i].y, polygon_points[next_i].y);
-    
+
     perimeter_cost = std::max(perimeter_cost, line_cost);
-    
+
     // Early termination if lethal obstacle found
     if (perimeter_cost == static_cast<double>(LETHAL_OBSTACLE)) {
       return perimeter_cost;
@@ -152,11 +152,11 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
 
   // If no collision on perimeter and full area check requested, rasterize the full area
   Rectangle bbox = calculateBoundingRect(polygon_points);
-  
+
   // Clamp bounding box to costmap dimensions for safety
   unsigned int costmap_width = costmap_->getSizeInCellsX();
   unsigned int costmap_height = costmap_->getSizeInCellsY();
-  
+
   int min_x = std::max(0, bbox.x);
   int min_y = std::max(0, bbox.y);
   int max_x = std::min(static_cast<int>(costmap_width - 1), bbox.x + bbox.width - 1);
@@ -177,7 +177,7 @@ double FootprintCollisionChecker<CostmapT>::footprintCost(
       // Convert to bounding box coordinates for polygon test
       int bbox_x = x - bbox.x;
       int bbox_y = y - bbox.y;
-      
+
       if (isPointInPolygon(bbox_x, bbox_y, bbox_polygon)) {
         double cell_cost = pointCost(x, y);
 
@@ -227,12 +227,13 @@ template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 {
   // Bounds checking to prevent segmentation faults
-  if (x < 0 || y < 0 || 
-      x >= static_cast<int>(costmap_->getSizeInCellsX()) || 
-      y >= static_cast<int>(costmap_->getSizeInCellsY())) {
+  if (x < 0 || y < 0 ||
+    x >= static_cast<int>(costmap_->getSizeInCellsX()) ||
+    y >= static_cast<int>(costmap_->getSizeInCellsY()))
+  {
     return static_cast<double>(LETHAL_OBSTACLE);
   }
-  
+
   return static_cast<double>(costmap_->getCost(x, y));
 }
 
