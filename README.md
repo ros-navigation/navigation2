@@ -14,7 +14,7 @@ For detailed instructions on how to:
 - [ROS Distribution Statuses](https://docs.nav2.org/#distributions)
 - [Build & Install](https://docs.nav2.org/development_guides/build_docs/index.html#build) and [Docker Containers](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
-- [Configure](https://docs.nav2.org/configuration/index.html)
+- [Configuration Guide](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
 - [ROSCon Talks](https://docs.nav2.org/about/roscon.html) and [Citations](https://docs.nav2.org/citations.html)
 - [Migration Guides](https://docs.nav2.org/migration/index.html)
