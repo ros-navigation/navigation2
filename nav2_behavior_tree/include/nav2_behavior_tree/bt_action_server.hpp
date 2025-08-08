@@ -100,18 +100,11 @@ public:
   /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
+   * @param search_directories The directories to search for the BT XML files
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
-  bool loadBehaviorTree(const std::string & bt_xml_filename = "");
-
-  /**
-   * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
-   * if something went wrong, and previous BT is maintained
-   */
-  bool loadBehaviorTreesRecursive(
+  bool loadBehaviorTree(
     const std::string & bt_xml_filename = "",
     const std::vector<std::string> & search_directories = {});
 
