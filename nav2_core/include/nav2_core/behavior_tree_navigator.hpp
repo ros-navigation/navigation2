@@ -201,8 +201,11 @@ public:
     // get the default behavior tree for this navigator
     std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
 
-    auto search_directories = node->declare_or_get_parameter("bt_search_directories",
-        std::vector<std::string>{});
+    auto search_directories = node->declare_or_get_parameter(
+          "bt_search_directories",
+          std::vector<std::string>{ament_index_cpp::get_package_share_directory(
+          "nav2_bt_navigator") + "/behavior_trees"}
+    );
 
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ =
