@@ -173,7 +173,7 @@ void KeepoutFilter::updateBounds(
   }
 
   // If new keepout zone received
-  if(has_updated_data_){
+  if(has_updated_data_) {
     double wx, wy;
     layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
     *min_x = std::min(wx, *min_x);
@@ -186,7 +186,7 @@ void KeepoutFilter::updateBounds(
     has_updated_data_ = false;
     return;
   }
-  
+
   // Let's find the pose's cost if we are allowed to override the lethal cost
   is_pose_lethal_ = false;
   if (override_lethal_cost_) {
