@@ -153,6 +153,37 @@ void KeepoutFilter::maskCallback(
 
   // Store filter_mask_
   filter_mask_ = msg;
+  has_updated_data_ = true;
+  x_ = y_ = 0;
+  width_ = msg->info.width;
+  height_ = msg->info.height;
+}
+
+void KeepoutFilter::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
+  double * min_x, double * min_y, double * max_x, double * max_y)
+{
+  if (!enabled_) {
+    return;
+  }
+
+  CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
+  if(!has_updated_data_) {
+    return;
+  }
+
+  double wx, wy;
+
+  layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
+  *min_x = std::min(wx, *min_x);
+  *min_y = std::min(wy, *min_y);
+
+  layered_costmap_->getCostmap()->mapToWorld(x_ + width_, y_ + height_, wx, wy);
+  *max_x = std::max(wx, *max_x);
+  *max_y = std::max(wy, *max_y);
+
+  has_updated_data_ = false;
 }
 
 void KeepoutFilter::process(
