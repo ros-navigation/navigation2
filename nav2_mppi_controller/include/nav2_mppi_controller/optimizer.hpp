@@ -26,7 +26,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 #include "pluginlib/class_loader.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"

@@ -12,6 +12,7 @@
   <build_depend>eigen</build_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>libceres-dev</depend>
   <depend>nav2_core</depend>

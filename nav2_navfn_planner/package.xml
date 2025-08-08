@@ -12,6 +12,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>builtin_interfaces</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_costmap_2d</depend>

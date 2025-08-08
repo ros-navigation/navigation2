@@ -19,9 +19,9 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/create_timer_ros.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"

@@ -38,7 +38,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 

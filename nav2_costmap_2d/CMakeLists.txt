@@ -3,6 +3,7 @@ project(nav2_costmap_2d)
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(map_msgs REQUIRED)
