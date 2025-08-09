@@ -270,7 +270,6 @@ TEST(GracefulControllerTest, dynamicParameters) {
     {rclcpp::Parameter("test.transform_tolerance", 1.0),
       rclcpp::Parameter("test.min_lookahead", 1.0),
       rclcpp::Parameter("test.max_lookahead", 2.0),
-      rclcpp::Parameter("test.interpolate_after_goal", false),
       rclcpp::Parameter("test.k_phi", 4.0),
       rclcpp::Parameter("test.k_delta", 5.0),
       rclcpp::Parameter("test.beta", 6.0),
@@ -295,7 +294,6 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead").as_double(), 2.0);
-  EXPECT_EQ(node->get_parameter("test.interpolate_after_goal").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.k_phi").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.k_delta").as_double(), 5.0);
   EXPECT_EQ(node->get_parameter("test.beta").as_double(), 6.0);
