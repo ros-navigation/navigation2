@@ -5,13 +5,11 @@ find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(bondcpp REQUIRED)
 find_package(diagnostic_updater REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -35,7 +33,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
   ${std_srvs_TARGETS}
 )
 target_link_libraries(${library_name} PRIVATE
@@ -89,7 +86,7 @@ endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp rclcpp_action std_srvs nav2_ros_common)
+ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp std_srvs nav2_ros_common)
 ament_export_targets(${library_name})
 
 ament_package()

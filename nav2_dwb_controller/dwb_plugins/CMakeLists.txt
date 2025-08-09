@@ -7,13 +7,13 @@ find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
-find_package(nav2_util REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 nav2_package()
 
@@ -30,14 +30,13 @@ target_link_libraries(standard_traj_generator PUBLIC
   dwb_core::dwb_core
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
-  nav2_util::nav2_util_core
   nav2_ros_common::nav2_ros_common
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
   ${rcl_interfaces_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
 )
 target_link_libraries(standard_traj_generator PRIVATE
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 
@@ -50,8 +49,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   ament_find_gtest()
 
-  find_package(nav2_costmap_2d REQUIRED)
-  find_package(rclcpp_lifecycle REQUIRED)
   add_subdirectory(test)
 endif()
 
@@ -74,7 +71,6 @@ ament_export_dependencies(
   dwb_core
   dwb_msgs
   geometry_msgs
-  nav2_util
   nav_2d_msgs
   rclcpp
   rcl_interfaces

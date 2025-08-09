@@ -16,7 +16,6 @@ find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -215,7 +214,6 @@ ament_export_dependencies(
   nav2_voxel_grid
   pluginlib
   rclcpp
-  rmw
   std_msgs
   std_srvs
   tf2

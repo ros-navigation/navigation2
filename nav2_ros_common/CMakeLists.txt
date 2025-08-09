@@ -15,9 +15,6 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
 nav2_package()
@@ -37,9 +34,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
   rclcpp_action::rclcpp_action
-  tf2_geometry_msgs::tf2_geometry_msgs
   bondcpp::bondcpp
 )
 
@@ -76,9 +71,6 @@ ament_export_dependencies(
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
   pluginlib
 )
 

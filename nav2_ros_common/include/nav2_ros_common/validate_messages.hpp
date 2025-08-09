@@ -17,11 +17,18 @@
 #define  NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_
 
 #include <cmath>
-#include <iostream>
+#include <array>
+#include <cstddef>
 
-#include "nav_msgs/msg/occupancy_grid.hpp"
-#include "nav_msgs/msg/odometry.hpp"
+#include "builtin_interfaces/msg/time.hpp"
+#include "std_msgs/msg/header.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "geometry_msgs/msg/pose_with_covariance.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "nav_msgs/msg/map_meta_data.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 
 // @brief Validation Check

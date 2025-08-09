@@ -20,7 +20,6 @@
   <depend>nav2_util</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>rcl_interfaces</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
@@ -31,6 +30,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>nav2_regulated_pure_pursuit_controller</test_depend>
   <test_depend>nav2_controller</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

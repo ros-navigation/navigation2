@@ -16,7 +16,8 @@ find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
@@ -44,7 +45,6 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
-  tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
   ${lifecycle_msgs_TARGETS}
@@ -97,6 +97,8 @@ target_link_libraries(pose_progress_checker PUBLIC
   ${rcl_interfaces_TARGETS}
   nav2_ros_common::nav2_ros_common
   simple_progress_checker
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 target_link_libraries(pose_progress_checker PRIVATE
   angles::angles
@@ -216,7 +218,8 @@ ament_export_dependencies(
   rclcpp_lifecycle
   nav2_ros_common
   rcl_interfaces
-  tf2_ros
+  tf2
+  tf2_geometry_msgs
 )
 ament_export_targets(${library_name})
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)

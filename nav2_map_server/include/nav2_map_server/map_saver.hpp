@@ -19,7 +19,8 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/duration.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/srv/save_map.hpp"

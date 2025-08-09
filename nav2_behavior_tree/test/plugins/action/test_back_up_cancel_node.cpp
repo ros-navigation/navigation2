@@ -21,7 +21,6 @@
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/back_up_cancel_node.hpp"
-#include "lifecycle_msgs/srv/change_state.hpp"
 
 class CancelBackUpServer : public TestActionServer<nav2_msgs::action::BackUp>
 {

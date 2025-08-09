@@ -11,23 +11,15 @@ target_include_directories(${library_name}
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
-  bondcpp::bondcpp
   ${geometry_msgs_TARGETS}
   ${lifecycle_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
-  ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
-  rclcpp_action::rclcpp_action
-  rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}
-  pluginlib::pluginlib
   nav2_ros_common::nav2_ros_common
-)
-target_link_libraries(${library_name} PRIVATE
-  ${bond_TARGETS}
 )
 target_include_directories(${library_name} PUBLIC
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"

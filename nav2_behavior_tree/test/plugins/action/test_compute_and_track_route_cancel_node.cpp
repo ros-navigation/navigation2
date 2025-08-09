@@ -21,7 +21,6 @@
 
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/compute_and_track_route_cancel_node.hpp"
-#include "lifecycle_msgs/srv/change_state.hpp"
 
 class CancelComputeAndTrackRouteServer
   : public TestActionServer<nav2_msgs::action::ComputeAndTrackRoute>

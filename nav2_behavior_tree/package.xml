@@ -32,7 +32,6 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>lifecycle_msgs</test_depend>
   <test_depend>test_msgs</test_depend>
 
   <export>

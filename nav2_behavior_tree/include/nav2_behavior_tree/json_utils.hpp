@@ -20,8 +20,6 @@
 #include <set>
 #include <vector>
 
-#include "rclcpp/time.hpp"
-#include "rclcpp/node.hpp"
 #include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
