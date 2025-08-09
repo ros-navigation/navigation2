@@ -99,6 +99,12 @@ public:
   void resetGrootMonitor();
 
   /**
+   * @brief Function to register a BT from an XML file
+   * @param file_path Path to BT XML file
+   */
+  void registerTreeFromFile(const std::string & file_path);
+
+  /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param tree Tree to halt
    */
