@@ -30,7 +30,6 @@
 #include "nav2_msgs/action/assisted_teleop.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/empty.hpp"
 

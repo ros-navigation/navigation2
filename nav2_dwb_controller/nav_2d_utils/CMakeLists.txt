@@ -11,9 +11,6 @@ find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
 
@@ -30,7 +27,6 @@ target_link_libraries(conversions PUBLIC
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
   tf2::tf2
-  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(conversions PRIVATE
   nav2_util::nav2_util_core
@@ -46,7 +42,6 @@ target_include_directories(path_ops
 target_link_libraries(path_ops PUBLIC
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
-  nav2_ros_common::nav2_ros_common
   nav2_util::nav2_util_core
 )
 target_link_libraries(path_ops PRIVATE
@@ -70,6 +65,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(tf2_geometry_msgs REQUIRED)
+  find_package(nav2_ros_common REQUIRED)
 
   ament_find_gtest()
 
@@ -81,12 +78,9 @@ ament_export_libraries(conversions path_ops)
 ament_export_dependencies(
   geometry_msgs
   nav_2d_msgs
-  nav2_ros_common
   nav_msgs
   rclcpp
-  tf2
-  tf2_geometry_msgs
-  tf2_ros)
+  tf2)
 ament_export_targets(${PROJECT_NAME})
 
 ament_package()

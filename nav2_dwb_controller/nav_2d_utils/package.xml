@@ -18,12 +18,12 @@
   <depend>nav2_util</depend>
   <depend>rclcpp</depend>
   <depend>tf2</depend>
-  <depend>tf2_geometry_msgs</depend>
-  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>tf2_geometry_msgs</test_depend>
+  <test_depend>nav2_ros_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

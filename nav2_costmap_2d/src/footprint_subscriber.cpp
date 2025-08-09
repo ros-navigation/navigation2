@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include "tf2/utils.hpp"

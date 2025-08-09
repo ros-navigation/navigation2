@@ -38,15 +38,12 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
 namespace nav_2d_utils
 {
-using nav2_util::geometry_utils::orientationAroundZAxis;
 
 geometry_msgs::msg::Twist twist2Dto3D(const nav_2d_msgs::msg::Twist2D & cmd_vel_2d)
 {

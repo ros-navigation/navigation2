@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node_options.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"

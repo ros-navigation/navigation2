@@ -18,7 +18,7 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_update.hpp"

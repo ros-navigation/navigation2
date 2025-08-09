@@ -6,7 +6,6 @@ find_package(backward_ros REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(image_transport REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -96,7 +95,6 @@ target_include_directories(photo_at_waypoint PUBLIC
 target_link_libraries(photo_at_waypoint PUBLIC
   cv_bridge::cv_bridge
   ${geometry_msgs_TARGETS}
-  image_transport::image_transport
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   opencv_core
@@ -157,7 +155,6 @@ ament_export_dependencies(
   cv_bridge
   geographic_msgs
   geometry_msgs
-  image_transport
   nav2_core
   nav2_msgs
   OpenCV

@@ -36,6 +36,8 @@
 #include <vector>
 #include <tf2/LinearMath/Quaternion.hpp>
 
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
 #include "gtest/gtest.h"
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
