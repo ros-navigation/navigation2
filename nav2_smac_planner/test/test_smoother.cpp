@@ -110,6 +110,9 @@ TEST(SmootherTest, test_full_smoother)
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
+  RCLCPP_WARN(
+    rclcpp::get_logger("SmacPlannerSmoother"), "###############");
+
   // Convert to world coordinates and get length to compare to smoothed length
   nav_msgs::msg::Path plan;
   plan.header.stamp = node->now();
@@ -131,6 +134,25 @@ TEST(SmootherTest, test_full_smoother)
     initial_length += hypot(path[i].x - x_m, path[i].y - y_m);
     x_m = path[i].x;
     y_m = path[i].y;
+
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.position.x = %f;", path.size() - i - 1, pose.pose.position.x);
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.position.y = %f;", path.size() - i - 1, pose.pose.position.y);
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.orientation.x = %f;", path.size() - i - 1, pose.pose.orientation.x);
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.orientation.y = %f;", path.size() - i - 1, pose.pose.orientation.y);
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.orientation.z = %f;", path.size() - i - 1, pose.pose.orientation.z);
+    RCLCPP_WARN(
+      rclcpp::get_logger("SmacPlannerSmoother"),
+      "smac_path.poses[%ld].pose.orientation.w = %f;", path.size() - i - 1, pose.pose.orientation.w);
   }
 
   // Check that we accurately detect that this path has a reversing segment

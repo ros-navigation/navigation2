@@ -44,6 +44,10 @@ void SimpleSmoother::configure(
   declare_parameter_if_not_declared(
     node, name + ".w_smooth", rclcpp::ParameterValue(0.3));
   declare_parameter_if_not_declared(
+    node, name + ".is_holonomic", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
+  declare_parameter_if_not_declared(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
@@ -54,9 +58,15 @@ void SimpleSmoother::configure(
   node->get_parameter(name + ".max_its", max_its_);
   node->get_parameter(name + ".w_data", data_w_);
   node->get_parameter(name + ".w_smooth", smooth_w_);
+  node->get_parameter(name + ".is_holonomic", is_holonomic_);
+  node->get_parameter(name + ".minimum_turning_radius", min_turning_radius_);
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
   node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
+
+  if (!is_holonomic_) {
+    state_space_ = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius_);
+  }
 }
 
 bool SimpleSmoother::smooth(
@@ -80,6 +90,7 @@ bool SimpleSmoother::smooth(
 
   std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
+  bool success = true;
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 9) {
       // Populate path segment
@@ -94,9 +105,23 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
+      // Smooth path segment naively
+      const geometry_msgs::msg::Pose start_pose = curr_path_segment.poses.front().pose;
+      const geometry_msgs::msg::Pose goal_pose = curr_path_segment.poses.back().pose;
+
       // Attempt to smooth the segment
       // May throw SmootherTimedOut
-      smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
+      bool local_success = smoothImpl(curr_path_segment, reversing_segment, costmap.get(),
+          time_remaining);
+      success = success && local_success;
+
+      // Enforce boundary conditions
+      if (!is_holonomic_ && local_success) {
+        enforceStartBoundaryConditions(start_pose, curr_path_segment, state_space_,
+            min_turning_radius_, costmap.get(), reversing_segment);
+        enforceEndBoundaryConditions(goal_pose, curr_path_segment, state_space_,
+            min_turning_radius_, costmap.get(), reversing_segment);
+      }
 
       // Assemble the path changes to the main path
       std::copy(
@@ -106,10 +131,10 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  return true;
+  return success;
 }
 
-void SimpleSmoother::smoothImpl(
+bool SimpleSmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
@@ -137,8 +162,8 @@ void SimpleSmoother::smoothImpl(
         logger_,
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
-      updateApproximatePathOrientations(path, reversing_segment);
-      return;
+      updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+      return false;
     }
 
     // Make sure still have time left to process
@@ -149,7 +174,7 @@ void SimpleSmoother::smoothImpl(
         logger_,
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
-      updateApproximatePathOrientations(path, reversing_segment);
+      updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
       throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
     }
 
@@ -178,13 +203,13 @@ void SimpleSmoother::smoothImpl(
       }
 
       if (cost > nav2_costmap_2d::MAX_NON_OBSTACLE && cost != nav2_costmap_2d::NO_INFORMATION) {
-        RCLCPP_DEBUG(
+        RCLCPP_WARN(
           rclcpp::get_logger("SmacPlannerSmoother"),
           "Smoothing process resulted in an infeasible collision. "
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
-        updateApproximatePathOrientations(path, reversing_segment);
-        return;
+        updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
+        return false;
       }
     }
 
@@ -198,8 +223,10 @@ void SimpleSmoother::smoothImpl(
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
 
-  updateApproximatePathOrientations(new_path, reversing_segment);
+  updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
   path = new_path;
+
+  return true;
 }
 
 double SimpleSmoother::getFieldByDim(

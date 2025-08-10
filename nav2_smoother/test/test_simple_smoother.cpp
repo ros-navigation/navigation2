@@ -45,6 +45,20 @@ public:
   {
     max_its_ = 0;
   }
+
+  double getPathLength(const nav_msgs::msg::Path & path) {
+    if (path.poses.size() == 0) {
+      return 0.0;
+    }
+
+    double path_length = 0.0;
+    for (size_t i = 0; i < path.poses.size() - 1; ++i) {
+      double dx = path.poses[i + 1].pose.position.x - path.poses[i].pose.position.x;
+      double dy = path.poses[i + 1].pose.position.y - path.poses[i].pose.position.y;
+      path_length += std::hypot(dx, dy);
+    }
+    return path_length;
+  }
 };
 
 TEST(SmootherTest, test_simple_smoother)
@@ -196,7 +210,7 @@ TEST(SmootherTest, test_simple_smoother)
   collision_path.poses[9].pose.position.y = 1.4;
   collision_path.poses[10].pose.position.x = 1.5;
   collision_path.poses[10].pose.position.y = 1.5;
-  EXPECT_TRUE(smoother->smooth(collision_path, max_time));
+  EXPECT_FALSE(smoother->smooth(collision_path, max_time));
 
   // test cusp / reversing segments
   nav_msgs::msg::Path reversing_path;
@@ -248,6 +262,242 @@ TEST(SmootherTest, test_simple_smoother)
   approach_path.poses[2].pose.position.y = 0.2;
   EXPECT_TRUE(smoother->smooth(approach_path, max_time));
 
+  nav_msgs::msg::Path smac_path;
+  smac_path.poses[0].pose.position.x = 0.250000;
+  smac_path.poses[0].pose.position.y = 0.250000;
+  smac_path.poses[0].pose.orientation.x = 0.000000;
+  smac_path.poses[0].pose.orientation.y = 0.000000;
+  smac_path.poses[0].pose.orientation.z = 0.000000;
+  smac_path.poses[0].pose.orientation.w = 1.000000;
+  smac_path.poses[1].pose.position.x = 0.353528;
+  smac_path.poses[1].pose.position.y = 0.263630;
+  smac_path.poses[1].pose.orientation.x = 0.000000;
+  smac_path.poses[1].pose.orientation.y = 0.000000;
+  smac_path.poses[1].pose.orientation.z = 0.130526;
+  smac_path.poses[1].pose.orientation.w = 0.991445;
+  smac_path.poses[2].pose.position.x = 0.450000;
+  smac_path.poses[2].pose.position.y = 0.303590;
+  smac_path.poses[2].pose.orientation.x = 0.000000;
+  smac_path.poses[2].pose.orientation.y = 0.000000;
+  smac_path.poses[2].pose.orientation.z = 0.258819;
+  smac_path.poses[2].pose.orientation.w = 0.965926;
+  smac_path.poses[3].pose.position.x = 0.540431;
+  smac_path.poses[3].pose.position.y = 0.355800;
+  smac_path.poses[3].pose.orientation.x = 0.000000;
+  smac_path.poses[3].pose.orientation.y = 0.000000;
+  smac_path.poses[3].pose.orientation.z = 0.258819;
+  smac_path.poses[3].pose.orientation.w = 0.965926;
+  smac_path.poses[4].pose.position.x = 0.630862;
+  smac_path.poses[4].pose.position.y = 0.408011;
+  smac_path.poses[4].pose.orientation.x = 0.000000;
+  smac_path.poses[4].pose.orientation.y = 0.000000;
+  smac_path.poses[4].pose.orientation.z = 0.258819;
+  smac_path.poses[4].pose.orientation.w = 0.965926;
+  smac_path.poses[5].pose.position.x = 0.721294;
+  smac_path.poses[5].pose.position.y = 0.460221;
+  smac_path.poses[5].pose.orientation.x = 0.000000;
+  smac_path.poses[5].pose.orientation.y = 0.000000;
+  smac_path.poses[5].pose.orientation.z = 0.258819;
+  smac_path.poses[5].pose.orientation.w = 0.965926;
+  smac_path.poses[6].pose.position.x = 0.811725;
+  smac_path.poses[6].pose.position.y = 0.512432;
+  smac_path.poses[6].pose.orientation.x = 0.000000;
+  smac_path.poses[6].pose.orientation.y = 0.000000;
+  smac_path.poses[6].pose.orientation.z = 0.258819;
+  smac_path.poses[6].pose.orientation.w = 0.965926;
+  smac_path.poses[7].pose.position.x = 0.902156;
+  smac_path.poses[7].pose.position.y = 0.564642;
+  smac_path.poses[7].pose.orientation.x = 0.000000;
+  smac_path.poses[7].pose.orientation.y = 0.000000;
+  smac_path.poses[7].pose.orientation.z = 0.258819;
+  smac_path.poses[7].pose.orientation.w = 0.965926;
+  smac_path.poses[8].pose.position.x = 0.992587;
+  smac_path.poses[8].pose.position.y = 0.616853;
+  smac_path.poses[8].pose.orientation.x = 0.000000;
+  smac_path.poses[8].pose.orientation.y = 0.000000;
+  smac_path.poses[8].pose.orientation.z = 0.258819;
+  smac_path.poses[8].pose.orientation.w = 0.965926;
+  smac_path.poses[9].pose.position.x = 1.083018;
+  smac_path.poses[9].pose.position.y = 0.669063;
+  smac_path.poses[9].pose.orientation.x = 0.000000;
+  smac_path.poses[9].pose.orientation.y = 0.000000;
+  smac_path.poses[9].pose.orientation.z = 0.258819;
+  smac_path.poses[9].pose.orientation.w = 0.965926;
+  smac_path.poses[10].pose.position.x = 1.173450;
+  smac_path.poses[10].pose.position.y = 0.721274;
+  smac_path.poses[10].pose.orientation.x = 0.000000;
+  smac_path.poses[10].pose.orientation.y = 0.000000;
+  smac_path.poses[10].pose.orientation.z = 0.258819;
+  smac_path.poses[10].pose.orientation.w = 0.965926;
+  smac_path.poses[11].pose.position.x = 1.263881;
+  smac_path.poses[11].pose.position.y = 0.773484;
+  smac_path.poses[11].pose.orientation.x = 0.000000;
+  smac_path.poses[11].pose.orientation.y = 0.000000;
+  smac_path.poses[11].pose.orientation.z = 0.258819;
+  smac_path.poses[11].pose.orientation.w = 0.965926;
+  smac_path.poses[12].pose.position.x = 1.354312;
+  smac_path.poses[12].pose.position.y = 0.825695;
+  smac_path.poses[12].pose.orientation.x = 0.000000;
+  smac_path.poses[12].pose.orientation.y = 0.000000;
+  smac_path.poses[12].pose.orientation.z = 0.258819;
+  smac_path.poses[12].pose.orientation.w = 0.965926;
+  smac_path.poses[13].pose.position.x = 1.437155;
+  smac_path.poses[13].pose.position.y = 0.889262;
+  smac_path.poses[13].pose.orientation.x = 0.000000;
+  smac_path.poses[13].pose.orientation.y = 0.000000;
+  smac_path.poses[13].pose.orientation.z = 0.382683;
+  smac_path.poses[13].pose.orientation.w = 0.923880;
+  smac_path.poses[14].pose.position.x = 1.510992;
+  smac_path.poses[14].pose.position.y = 0.963099;
+  smac_path.poses[14].pose.orientation.x = 0.000000;
+  smac_path.poses[14].pose.orientation.y = 0.000000;
+  smac_path.poses[14].pose.orientation.z = 0.382683;
+  smac_path.poses[14].pose.orientation.w = 0.923880;
+  smac_path.poses[15].pose.position.x = 1.584828;
+  smac_path.poses[15].pose.position.y = 1.036936;
+  smac_path.poses[15].pose.orientation.x = 0.000000;
+  smac_path.poses[15].pose.orientation.y = 0.000000;
+  smac_path.poses[15].pose.orientation.z = 0.382683;
+  smac_path.poses[15].pose.orientation.w = 0.923880;
+  smac_path.poses[16].pose.position.x = 1.658665;
+  smac_path.poses[16].pose.position.y = 1.110772;
+  smac_path.poses[16].pose.orientation.x = 0.000000;
+  smac_path.poses[16].pose.orientation.y = 0.000000;
+  smac_path.poses[16].pose.orientation.z = 0.382683;
+  smac_path.poses[16].pose.orientation.w = 0.923880;
+  smac_path.poses[17].pose.position.x = 1.732502;
+  smac_path.poses[17].pose.position.y = 1.184609;
+  smac_path.poses[17].pose.orientation.x = 0.000000;
+  smac_path.poses[17].pose.orientation.y = 0.000000;
+  smac_path.poses[17].pose.orientation.z = 0.382683;
+  smac_path.poses[17].pose.orientation.w = 0.923880;
+  smac_path.poses[18].pose.position.x = 1.806339;
+  smac_path.poses[18].pose.position.y = 1.258446;
+  smac_path.poses[18].pose.orientation.x = 0.000000;
+  smac_path.poses[18].pose.orientation.y = 0.000000;
+  smac_path.poses[18].pose.orientation.z = 0.382683;
+  smac_path.poses[18].pose.orientation.w = 0.923880;
+  smac_path.poses[19].pose.position.x = 1.880175;
+  smac_path.poses[19].pose.position.y = 1.332283;
+  smac_path.poses[19].pose.orientation.x = 0.000000;
+  smac_path.poses[19].pose.orientation.y = 0.000000;
+  smac_path.poses[19].pose.orientation.z = 0.382683;
+  smac_path.poses[19].pose.orientation.w = 0.923880;
+  smac_path.poses[20].pose.position.x = 1.943743;
+  smac_path.poses[20].pose.position.y = 1.415126;
+  smac_path.poses[20].pose.orientation.x = 0.000000;
+  smac_path.poses[20].pose.orientation.y = 0.000000;
+  smac_path.poses[20].pose.orientation.z = 0.500000;
+  smac_path.poses[20].pose.orientation.w = 0.866025;
+  smac_path.poses[21].pose.position.x = 1.995953;
+  smac_path.poses[21].pose.position.y = 1.505557;
+  smac_path.poses[21].pose.orientation.x = 0.000000;
+  smac_path.poses[21].pose.orientation.y = 0.000000;
+  smac_path.poses[21].pose.orientation.z = 0.500000;
+  smac_path.poses[21].pose.orientation.w = 0.866025;
+  smac_path.poses[22].pose.position.x = 2.035913;
+  smac_path.poses[22].pose.position.y = 1.602029;
+  smac_path.poses[22].pose.orientation.x = 0.000000;
+  smac_path.poses[22].pose.orientation.y = 0.000000;
+  smac_path.poses[22].pose.orientation.z = 0.608761;
+  smac_path.poses[22].pose.orientation.w = 0.793353;
+  smac_path.poses[23].pose.position.x = 2.062939;
+  smac_path.poses[23].pose.position.y = 1.702892;
+  smac_path.poses[23].pose.orientation.x = 0.000000;
+  smac_path.poses[23].pose.orientation.y = 0.000000;
+  smac_path.poses[23].pose.orientation.z = 0.608761;
+  smac_path.poses[23].pose.orientation.w = 0.793353;
+  smac_path.poses[24].pose.position.x = 2.088483;
+  smac_path.poses[24].pose.position.y = 1.772004;
+  smac_path.poses[24].pose.orientation.x = 0.000000;
+  smac_path.poses[24].pose.orientation.y = 0.000000;
+  smac_path.poses[24].pose.orientation.z = 0.500000;
+  smac_path.poses[24].pose.orientation.w = 0.866025;
+  smac_path.poses[25].pose.position.x = 2.123730;
+  smac_path.poses[25].pose.position.y = 1.836797;
+  smac_path.poses[25].pose.orientation.x = 0.000000;
+  smac_path.poses[25].pose.orientation.y = 0.000000;
+  smac_path.poses[25].pose.orientation.z = 0.500000;
+  smac_path.poses[25].pose.orientation.w = 0.866025;
+  smac_path.poses[26].pose.position.x = 2.150105;
+  smac_path.poses[26].pose.position.y = 1.905596;
+  smac_path.poses[26].pose.orientation.x = 0.000000;
+  smac_path.poses[26].pose.orientation.y = 0.000000;
+  smac_path.poses[26].pose.orientation.z = 0.573576;
+  smac_path.poses[26].pose.orientation.w = 0.819152;
+  smac_path.poses[27].pose.position.x = 2.163413;
+  smac_path.poses[27].pose.position.y = 1.978065;
+  smac_path.poses[27].pose.orientation.x = 0.000000;
+  smac_path.poses[27].pose.orientation.y = 0.000000;
+  smac_path.poses[27].pose.orientation.z = 0.642788;
+  smac_path.poses[27].pose.orientation.w = 0.766044;
+  smac_path.poses[28].pose.position.x = 2.163204;
+  smac_path.poses[28].pose.position.y = 2.051746;
+  smac_path.poses[28].pose.orientation.x = 0.000000;
+  smac_path.poses[28].pose.orientation.y = 0.000000;
+  smac_path.poses[28].pose.orientation.z = 0.737277;
+  smac_path.poses[28].pose.orientation.w = 0.675590;
+  smac_path.poses[29].pose.position.x = 2.149483;
+  smac_path.poses[29].pose.position.y = 2.124139;
+  smac_path.poses[29].pose.orientation.x = 0.000000;
+  smac_path.poses[29].pose.orientation.y = 0.000000;
+  smac_path.poses[29].pose.orientation.z = 0.793353;
+  smac_path.poses[29].pose.orientation.w = 0.608761;
+  smac_path.poses[30].pose.position.x = 2.122717;
+  smac_path.poses[30].pose.position.y = 2.192787;
+  smac_path.poses[30].pose.orientation.x = 0.000000;
+  smac_path.poses[30].pose.orientation.y = 0.000000;
+  smac_path.poses[30].pose.orientation.z = 0.843391;
+  smac_path.poses[30].pose.orientation.w = 0.537300;
+  smac_path.poses[31].pose.position.x = 2.083813;
+  smac_path.poses[31].pose.position.y = 2.255361;
+  smac_path.poses[31].pose.orientation.x = 0.000000;
+  smac_path.poses[31].pose.orientation.y = 0.000000;
+  smac_path.poses[31].pose.orientation.z = 0.887011;
+  smac_path.poses[31].pose.orientation.w = 0.461749;
+  smac_path.poses[32].pose.position.x = 2.034093;
+  smac_path.poses[32].pose.position.y = 2.309737;
+  smac_path.poses[32].pose.orientation.x = 0.000000;
+  smac_path.poses[32].pose.orientation.y = 0.000000;
+  smac_path.poses[32].pose.orientation.z = 0.923880;
+  smac_path.poses[32].pose.orientation.w = 0.382683;
+  smac_path.poses[33].pose.position.x = 2.039769;
+  smac_path.poses[33].pose.position.y = 2.309702;
+  smac_path.poses[33].pose.orientation.x = 0.000000;
+  smac_path.poses[33].pose.orientation.y = 0.000000;
+  smac_path.poses[33].pose.orientation.z = 0.953717;
+  smac_path.poses[33].pose.orientation.w = 0.300706;
+  smac_path.poses[34].pose.position.x = 2.105753;
+  smac_path.poses[34].pose.position.y = 2.276914;
+  smac_path.poses[34].pose.orientation.x = 0.000000;
+  smac_path.poses[34].pose.orientation.y = 0.000000;
+  smac_path.poses[34].pose.orientation.z = 0.976296;
+  smac_path.poses[34].pose.orientation.w = 0.216440;
+  smac_path.poses[35].pose.position.x = 2.176632;
+  smac_path.poses[35].pose.position.y = 2.256786;
+  smac_path.poses[35].pose.orientation.x = 0.000000;
+  smac_path.poses[35].pose.orientation.y = 0.000000;
+  smac_path.poses[35].pose.orientation.z = 0.991445;
+  smac_path.poses[35].pose.orientation.w = 0.130526;
+  smac_path.poses[36].pose.position.x = 2.250000;
+  smac_path.poses[36].pose.position.y = 2.250000;
+  smac_path.poses[36].pose.orientation.x = 0.000000;
+  smac_path.poses[36].pose.orientation.y = -0.000000;
+  smac_path.poses[36].pose.orientation.z = 1.000000;
+  smac_path.poses[36].pose.orientation.w = -0.000000;
+
+  // Check that we accurately detect that this path has a reversing segment
+  auto path_segs = smoother->findDirectionalPathSegmentsWrapper(smac_path);
+  EXPECT_TRUE(path_segs.size() == 2u || path_segs.size() == 3u);
+
+  // Test smoother, should succeed with same number of points
+  // and shorter overall length, while still being collision free.
+  double initial_length = smoother->getPathLength(smac_path);
+  auto path_size_in = smac_path.poses.size();
+  EXPECT_TRUE(smoother->smooth(smac_path, max_time));
+  EXPECT_EQ(smac_path.poses.size(), path_size_in);  // Should have same number of poses
+  EXPECT_LT(smoother->getPathLength(smac_path), initial_length);  // Should be shorter
+
   // test max iterations
   smoother->setMaxItsToInvalid();
   nav_msgs::msg::Path max_its_path;
@@ -274,7 +524,7 @@ TEST(SmootherTest, test_simple_smoother)
   max_its_path.poses[9].pose.position.y = 0.9;
   max_its_path.poses[10].pose.position.x = 0.5;
   max_its_path.poses[10].pose.position.y = 1.0;
-  EXPECT_TRUE(smoother->smooth(max_its_path, max_time));
+  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
 }
 
 int main(int argc, char **argv)

@@ -16,6 +16,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(ompl REQUIRED)
 
 nav2_package()
 
@@ -65,7 +66,8 @@ add_library(simple_smoother SHARED
 target_include_directories(simple_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${OMPL_INCLUDE_DIRS})
 target_link_libraries(simple_smoother PUBLIC
   angles::angles
   nav2_core::nav2_core
@@ -78,6 +80,7 @@ target_link_libraries(simple_smoother PUBLIC
   tf2::tf2
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
+  ${OMPL_LIBRARIES}
 )
 target_link_libraries(simple_smoother PRIVATE
   pluginlib::pluginlib
@@ -90,7 +93,8 @@ add_library(savitzky_golay_smoother SHARED
 target_include_directories(savitzky_golay_smoother
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${OMPL_INCLUDE_DIRS})
 target_link_libraries(savitzky_golay_smoother PUBLIC
   angles::angles
   nav2_core::nav2_core
@@ -103,6 +107,7 @@ target_link_libraries(savitzky_golay_smoother PUBLIC
   tf2::tf2
   nav2_ros_common::nav2_ros_common
   tf2_ros::tf2_ros
+  ${OMPL_LIBRARIES}
 )
 target_link_libraries(savitzky_golay_smoother PRIVATE
   pluginlib::pluginlib
@@ -157,6 +162,7 @@ ament_export_dependencies(
   rclcpp_lifecycle
   tf2
   tf2_ros
+  ompl
 )
 ament_export_targets(${library_name})
 ament_package()

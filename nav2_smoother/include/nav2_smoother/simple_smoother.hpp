@@ -94,7 +94,7 @@ protected:
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
    */
-  void smoothImpl(
+  bool smoothImpl(
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
     const nav2_costmap_2d::Costmap2D * costmap,
@@ -120,9 +120,10 @@ protected:
     geometry_msgs::msg::PoseStamped & msg, const unsigned int dim,
     const double & value);
 
-  double tolerance_, data_w_, smooth_w_;
+  double tolerance_, data_w_, smooth_w_, min_turning_radius_;
   int max_its_, refinement_ctr_, refinement_num_;
-  bool do_refinement_, enforce_path_inversion_;
+  bool is_holonomic_, do_refinement_, enforce_path_inversion_;
+  ompl::base::StateSpacePtr state_space_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
 };
