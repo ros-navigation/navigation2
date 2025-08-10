@@ -20,7 +20,6 @@
 #include <string>
 
 #include "nav2_smac_planner/a_star.hpp"
-#include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -99,7 +98,6 @@ protected:
 
   std::unique_ptr<AStarAlgorithm<NodeHybrid>> _a_star;
   GridCollisionChecker _collision_checker;
-  std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerHybrid")};
   nav2_costmap_2d::Costmap2D * _costmap;
@@ -125,11 +123,8 @@ protected:
   MotionModel _motion_model;
   GoalHeadingMode _goal_heading_mode;
   int _coarse_search_resolution;
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
-  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    _smoothed_footprints_publisher;
   nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   std::mutex _mutex;

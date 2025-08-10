@@ -42,7 +42,6 @@ add_library(${library_name}_common SHARED
   src/node_basic.cpp
   src/node_hybrid.cpp
   src/node_lattice.cpp
-  src/smoother.cpp
 )
 # Add GenerateExportHeader support for symbol visibility, as we are using
 # static members we need to explicitly export them on Windows, as

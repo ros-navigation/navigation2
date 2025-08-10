@@ -63,16 +63,16 @@ void SimpleSmoother::configure(
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
   node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
-
-  if (!is_holonomic_) {
-    state_space_ = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius_);
-  }
 }
 
 bool SimpleSmoother::smooth(
   nav_msgs::msg::Path & path,
   const rclcpp::Duration & max_time)
 {
+  if (!is_holonomic_) {
+    state_space_ = std::make_unique<ompl::base::DubinsStateSpace>(min_turning_radius_);
+  }
+
   auto costmap = costmap_sub_->getCostmap();
 
   steady_clock::time_point start = steady_clock::now();

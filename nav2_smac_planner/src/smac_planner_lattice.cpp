@@ -31,7 +31,6 @@ using rcl_interfaces::msg::ParameterType;
 SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1, nullptr),
-  _smoother(nullptr),
   _costmap(nullptr)
 {
 }
@@ -61,7 +60,6 @@ void SmacPlannerLattice::configure(
 
   // General planner params
   double analytic_expansion_max_length_m;
-  bool smooth_path;
 
   nav2::declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(0.25));
@@ -78,9 +76,6 @@ void SmacPlannerLattice::configure(
   nav2::declare_parameter_if_not_declared(
     node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".smooth_path", smooth_path);
 
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2::declare_parameter_if_not_declared(
@@ -229,23 +224,10 @@ void SmacPlannerLattice::configure(
     lookup_table_dim,
     _metadata.number_of_headings);
 
-  // Initialize path smoother
-  if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
-    _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(_metadata.min_turning_radius);
-  }
-
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
-
   if (_debug_visualizations) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions");
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints");
-    _smoothed_footprints_publisher =
-      node->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "smoothed_footprints");
   }
 
   RCLCPP_INFO(
@@ -262,11 +244,9 @@ void SmacPlannerLattice::activate()
   RCLCPP_INFO(
     _logger, "Activating plugin %s of type SmacPlannerLattice",
     _name.c_str());
-  _raw_plan_publisher->on_activate();
   if (_debug_visualizations) {
     _expansions_publisher->on_activate();
     _planned_footprints_publisher->on_activate();
-    _smoothed_footprints_publisher->on_activate();
   }
   auto node = _node.lock();
   // Add callback for dynamic parameters
@@ -279,11 +259,9 @@ void SmacPlannerLattice::deactivate()
   RCLCPP_INFO(
     _logger, "Deactivating plugin %s of type SmacPlannerLattice",
     _name.c_str());
-  _raw_plan_publisher->on_deactivate();
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_deactivate();
-    _smoothed_footprints_publisher->on_deactivate();
   }
   // shutdown dyn_param_handler
   auto node = _node.lock();
@@ -300,12 +278,9 @@ void SmacPlannerLattice::cleanup()
     _name.c_str());
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();
   _a_star.reset();
-  _smoother.reset();
-  _raw_plan_publisher.reset();
   if (_debug_visualizations) {
     _expansions_publisher.reset();
     _planned_footprints_publisher.reset();
-    _smoothed_footprints_publisher.reset();
   }
 }
 
@@ -315,8 +290,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   std::function<bool()> cancel_checker)
 {
   std::lock_guard<std::mutex> lock_reinit(_mutex);
-  steady_clock::time_point a = steady_clock::now();
-
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
   // Set collision checker and costmap information
@@ -379,11 +352,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     pose.pose = start.pose;
     pose.pose.orientation = goal.pose.orientation;
     plan.poses.push_back(pose);
-
-    // Publish raw path for debug
-    if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
-    }
 
     return plan;
   }
@@ -449,11 +417,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     plan.poses.push_back(pose);
   }
 
-  // Publish raw path for debug
-  if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
-  }
-
   if (_debug_visualizations) {
     auto now = _clock->now();
     // Publish expansions for debug
@@ -477,7 +440,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
       marker_array->markers.push_back(clear_all_marker);
       _planned_footprints_publisher->publish(std::move(marker_array));
 
-      // Publish smoothed footprints for debug
+      // Publish planned footprints for debug
       marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
       for (size_t i = 0; i < plan.poses.size(); i++) {
         const std::vector<geometry_msgs::msg::Point> edge =
@@ -485,49 +448,6 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
         marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
       }
       _planned_footprints_publisher->publish(std::move(marker_array));
-    }
-  }
-
-  // Find how much time we have left to do smoothing
-  steady_clock::time_point b = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(b - a);
-  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-
-#ifdef BENCHMARK_TESTING
-  std::cout << "It took " << time_span.count() * 1000 <<
-    " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-
-  // Smooth plan
-  if (_smoother && num_iterations > 1) {
-    _smoother->smooth(plan, _costmap, time_remaining);
-  }
-
-#ifdef BENCHMARK_TESTING
-  steady_clock::time_point c = steady_clock::now();
-  duration<double> time_span2 = duration_cast<duration<double>>(c - b);
-  std::cout << "It took " << time_span2.count() * 1000 <<
-    " milliseconds to smooth path." << std::endl;
-#endif
-
-  if (_debug_visualizations) {
-    if (_smoothed_footprints_publisher->get_subscription_count() > 0) {
-      // Clear all markers first
-      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-      visualization_msgs::msg::Marker clear_all_marker;
-      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-      marker_array->markers.push_back(clear_all_marker);
-      _smoothed_footprints_publisher->publish(std::move(marker_array));
-
-      // Publish smoothed footprints for debug
-      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-      auto now = _clock->now();
-      for (size_t i = 0; i < plan.poses.size(); i++) {
-        const std::vector<geometry_msgs::msg::Point> edge =
-          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
-        marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
-      }
-      _smoothed_footprints_publisher->publish(std::move(marker_array));
     }
   }
 
@@ -541,7 +461,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   std::lock_guard<std::mutex> lock_reinit(_mutex);
 
   bool reinit_a_star = false;
-  bool reinit_smoother = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -594,12 +513,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (param_name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
         _search_info.allow_reverse_expansion = parameter.as_bool();
-      } else if (param_name == _name + ".smooth_path") {
-        if (parameter.as_bool()) {
-          reinit_smoother = true;
-        } else {
-          _smoother.reset();
-        }
       } else if (param_name == _name + ".analytic_expansion_max_cost_override") {
         _search_info.analytic_expansion_max_cost_override = parameter.as_bool();
         reinit_a_star = true;
@@ -647,9 +560,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
     } else if (param_type == ParameterType::PARAMETER_STRING) {
       if (param_name == _name + ".lattice_filepath") {
         reinit_a_star = true;
-        if (_smoother) {
-          reinit_smoother = true;
-        }
         _search_info.lattice_filepath = parameter.as_string();
         _metadata = LatticeMotionTable::getLatticeMetadata(_search_info.lattice_filepath);
         _search_info.minimum_turning_radius =
@@ -682,7 +592,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   }
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
-  if (reinit_a_star || reinit_smoother) {
+  if (reinit_a_star) {
     // convert to grid coordinates
     _search_info.minimum_turning_radius =
       _metadata.min_turning_radius / (_costmap->getResolution());
@@ -700,15 +610,6 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
         lookup_table_dim);
       lookup_table_dim += 1.0;
-    }
-
-    // Re-Initialize smoother
-    if (reinit_smoother) {
-      auto node = _node.lock();
-      SmootherParams params;
-      params.get(node, _name);
-      _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(_metadata.min_turning_radius);
     }
 
     // Re-Initialize A* template

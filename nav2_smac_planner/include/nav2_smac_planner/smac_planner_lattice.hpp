@@ -20,7 +20,6 @@
 #include <string>
 
 #include "nav2_smac_planner/a_star.hpp"
-#include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav2_core/global_planner.hpp"
@@ -98,7 +97,6 @@ protected:
 
   std::unique_ptr<AStarAlgorithm<NodeLattice>> _a_star;
   GridCollisionChecker _collision_checker;
-  std::unique_ptr<Smoother> _smoother;
   rclcpp::Clock::SharedPtr _clock;
   rclcpp::Logger _logger{rclcpp::get_logger("SmacPlannerLattice")};
   nav2_costmap_2d::Costmap2D * _costmap;
@@ -112,14 +110,11 @@ protected:
   int _max_on_approach_iterations;
   int _terminal_checking_interval;
   float _tolerance;
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   double _lookup_table_size;
   bool _debug_visualizations;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;
-  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-    _smoothed_footprints_publisher;
   nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     _expansions_publisher;
   GoalHeadingMode _goal_heading_mode;

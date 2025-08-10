@@ -41,12 +41,23 @@ public:
     return findDirectionalPathSegments(path);
   }
 
-  void setMaxItsToInvalid()
+  void setMaxIts(const int max_its)
   {
-    max_its_ = 0;
+    max_its_ = max_its;
   }
 
-  double getPathLength(const nav_msgs::msg::Path & path) {
+  void setIsHolonomic(const bool is_holonomic)
+  {
+    is_holonomic_ = is_holonomic;
+  }
+
+  void setMinimumTurningRadius(const double min_turning_radius)
+  {
+    min_turning_radius_ = min_turning_radius;
+  }
+
+  double getPathLength(const nav_msgs::msg::Path & path)
+  {
     if (path.poses.size() == 0) {
       return 0.0;
     }
@@ -262,7 +273,40 @@ TEST(SmootherTest, test_simple_smoother)
   approach_path.poses[2].pose.position.y = 0.2;
   EXPECT_TRUE(smoother->smooth(approach_path, max_time));
 
+  // test max iterations
+  smoother->setMaxIts(0.0);
+  nav_msgs::msg::Path max_its_path;
+  max_its_path.poses.resize(11);
+  max_its_path.poses[0].pose.position.x = 0.5;
+  max_its_path.poses[0].pose.position.y = 0.0;
+  max_its_path.poses[1].pose.position.x = 0.5;
+  max_its_path.poses[1].pose.position.y = 0.1;
+  max_its_path.poses[2].pose.position.x = 0.5;
+  max_its_path.poses[2].pose.position.y = 0.2;
+  max_its_path.poses[3].pose.position.x = 0.5;
+  max_its_path.poses[3].pose.position.y = 0.3;
+  max_its_path.poses[4].pose.position.x = 0.5;
+  max_its_path.poses[4].pose.position.y = 0.4;
+  max_its_path.poses[5].pose.position.x = 0.5;
+  max_its_path.poses[5].pose.position.y = 0.5;
+  max_its_path.poses[6].pose.position.x = 0.5;
+  max_its_path.poses[6].pose.position.y = 0.6;
+  max_its_path.poses[7].pose.position.x = 0.5;
+  max_its_path.poses[7].pose.position.y = 0.7;
+  max_its_path.poses[8].pose.position.x = 0.5;
+  max_its_path.poses[8].pose.position.y = 0.8;
+  max_its_path.poses[9].pose.position.x = 0.5;
+  max_its_path.poses[9].pose.position.y = 0.9;
+  max_its_path.poses[10].pose.position.x = 0.5;
+  max_its_path.poses[10].pose.position.y = 1.0;
+  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
+
+  // test nonholonomic
+  smoother->setIsHolonomic(false);
+  smoother->setMinimumTurningRadius(0.4);
+  smoother->setMaxIts(1000);
   nav_msgs::msg::Path smac_path;
+  smac_path.poses.resize(37);
   smac_path.poses[0].pose.position.x = 0.250000;
   smac_path.poses[0].pose.position.y = 0.250000;
   smac_path.poses[0].pose.orientation.x = 0.000000;
@@ -497,34 +541,6 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_TRUE(smoother->smooth(smac_path, max_time));
   EXPECT_EQ(smac_path.poses.size(), path_size_in);  // Should have same number of poses
   EXPECT_LT(smoother->getPathLength(smac_path), initial_length);  // Should be shorter
-
-  // test max iterations
-  smoother->setMaxItsToInvalid();
-  nav_msgs::msg::Path max_its_path;
-  max_its_path.poses.resize(11);
-  max_its_path.poses[0].pose.position.x = 0.5;
-  max_its_path.poses[0].pose.position.y = 0.0;
-  max_its_path.poses[1].pose.position.x = 0.5;
-  max_its_path.poses[1].pose.position.y = 0.1;
-  max_its_path.poses[2].pose.position.x = 0.5;
-  max_its_path.poses[2].pose.position.y = 0.2;
-  max_its_path.poses[3].pose.position.x = 0.5;
-  max_its_path.poses[3].pose.position.y = 0.3;
-  max_its_path.poses[4].pose.position.x = 0.5;
-  max_its_path.poses[4].pose.position.y = 0.4;
-  max_its_path.poses[5].pose.position.x = 0.5;
-  max_its_path.poses[5].pose.position.y = 0.5;
-  max_its_path.poses[6].pose.position.x = 0.5;
-  max_its_path.poses[6].pose.position.y = 0.6;
-  max_its_path.poses[7].pose.position.x = 0.5;
-  max_its_path.poses[7].pose.position.y = 0.7;
-  max_its_path.poses[8].pose.position.x = 0.5;
-  max_its_path.poses[8].pose.position.y = 0.8;
-  max_its_path.poses[9].pose.position.x = 0.5;
-  max_its_path.poses[9].pose.position.y = 0.9;
-  max_its_path.poses[10].pose.position.x = 0.5;
-  max_its_path.poses[10].pose.position.y = 1.0;
-  EXPECT_FALSE(smoother->smooth(max_its_path, max_time));
 }
 
 int main(int argc, char **argv)

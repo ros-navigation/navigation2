@@ -21,7 +21,6 @@
 #include <mutex>
 
 #include "nav2_smac_planner/a_star.hpp"
-#include "nav2_smac_planner/smoother.hpp"
 #include "nav2_smac_planner/utils.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -100,7 +99,6 @@ protected:
 
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   GridCollisionChecker _collision_checker;
-  std::unique_ptr<Smoother> _smoother;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<CostmapDownsampler> _costmap_downsampler;
   rclcpp::Clock::SharedPtr _clock;
