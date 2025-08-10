@@ -24,7 +24,6 @@
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 using std::hypot;

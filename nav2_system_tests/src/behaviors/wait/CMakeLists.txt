@@ -5,7 +5,6 @@ ament_add_gtest_executable(${test_wait_behavior_exec}
   wait_behavior_tester.cpp
 )
 target_link_libraries(${test_wait_behavior_exec}
-  angles::angles
   ${geometry_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core

@@ -17,6 +17,8 @@
 #include <set>
 #include <string>
 
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"

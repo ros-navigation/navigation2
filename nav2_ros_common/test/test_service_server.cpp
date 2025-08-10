@@ -17,7 +17,6 @@
 #include "nav2_ros_common/service_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include "std_msgs/msg/empty.hpp"
 #include "gtest/gtest.h"
 
 using nav2::ServiceServer;

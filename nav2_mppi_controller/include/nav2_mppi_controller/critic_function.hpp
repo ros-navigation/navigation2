@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"

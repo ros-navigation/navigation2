@@ -11,4 +11,5 @@ target_link_libraries(test_shim_controller
   nav2_controller::simple_goal_checker
   nav2_util::nav2_util_core
   tf2_ros::tf2_ros
+  rclcpp_lifecycle::rclcpp_lifecycle
 )

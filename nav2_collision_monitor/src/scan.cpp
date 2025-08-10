@@ -19,8 +19,6 @@
 
 #include "tf2/transform_datatypes.hpp"
 
-#include "nav2_util/robot_utils.hpp"
-
 namespace nav2_collision_monitor
 {
 

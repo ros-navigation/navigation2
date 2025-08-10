@@ -22,7 +22,6 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/create_timer_ros.hpp"

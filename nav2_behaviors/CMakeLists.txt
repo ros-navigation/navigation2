@@ -15,7 +15,6 @@ find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
@@ -48,7 +47,6 @@ target_link_libraries(nav2_spin_behavior PUBLIC
 )
 target_link_libraries(nav2_spin_behavior PRIVATE
   pluginlib::pluginlib
-  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 add_library(nav2_wait_behavior SHARED

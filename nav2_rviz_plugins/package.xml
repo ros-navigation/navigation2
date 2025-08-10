@@ -11,7 +11,6 @@
   <build_depend>nav2_common</build_depend>
   <build_depend>qtbase5-dev</build_depend>
 
-  <depend>ament_index_cpp</depend>
   <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_lifecycle_manager</depend>
@@ -27,7 +26,7 @@
   <depend>rviz_ogre_vendor</depend>
   <depend>rviz_rendering</depend>
   <depend>std_msgs</depend>
-  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>yaml_cpp_vendor</depend>
   <depend>nav2_ros_common</depend>

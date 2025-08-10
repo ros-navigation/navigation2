@@ -47,7 +47,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_2d_msgs/msg/twist2_d_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 

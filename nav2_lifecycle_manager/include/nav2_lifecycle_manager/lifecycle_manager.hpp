@@ -27,7 +27,6 @@
 #include "nav2_ros_common/node_thread.hpp"
 #include "nav2_ros_common/service_server.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "std_srvs/srv/empty.hpp"
 #include "nav2_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "bondcpp/bond.hpp"

@@ -39,9 +39,7 @@
   <test_depend>robot_state_publisher</test_depend>
   <test_depend>std_msgs</test_depend>
   <test_depend>tf2</test_depend>
-  <test_depend>tf2_geometry_msgs</test_depend>
   <test_depend>tf2_ros</test_depend>
-  <test_depend>visualization_msgs</test_depend>
   <test_depend>nav2_ros_common</test_depend>
 
   <export>

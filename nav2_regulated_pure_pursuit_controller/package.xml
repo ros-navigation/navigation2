@@ -20,7 +20,6 @@
   <depend>nav2_util</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>rcl_interfaces</depend>
   <depend>std_msgs</depend>
   <depend>tf2</depend>
@@ -31,6 +30,7 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>tf2_geometry_msgs</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

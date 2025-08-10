@@ -32,7 +32,6 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rviz_common/panel.hpp"
 #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "tf2_ros/transform_listener.hpp"

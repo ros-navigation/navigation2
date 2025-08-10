@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2

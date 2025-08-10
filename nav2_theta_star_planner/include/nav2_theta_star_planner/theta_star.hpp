@@ -20,7 +20,6 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 const double INF_COST = DBL_MAX;

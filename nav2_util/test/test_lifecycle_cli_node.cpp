@@ -21,6 +21,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/state.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

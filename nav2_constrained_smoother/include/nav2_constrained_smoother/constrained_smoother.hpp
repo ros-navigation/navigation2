@@ -25,8 +25,6 @@
 #include "nav2_core/smoother.hpp"
 #include "nav2_constrained_smoother/smoother.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_util/odometry_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_constrained_smoother
 {

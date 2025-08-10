@@ -15,7 +15,6 @@ find_package(nlohmann_json REQUIRED)
 find_package(ompl REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -68,7 +67,6 @@ target_link_libraries(${library_name}_common PUBLIC
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
   ${visualization_msgs_TARGETS}
 )
@@ -96,7 +94,6 @@ target_link_libraries(${library_name} PUBLIC
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
@@ -126,7 +123,6 @@ target_link_libraries(${library_name}_2d PUBLIC
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
@@ -156,7 +152,6 @@ target_link_libraries(${library_name}_lattice PUBLIC
   nlohmann_json::nlohmann_json
   ${OMPL_LIBRARIES}
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
@@ -194,6 +189,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
   find_package(ament_cmake_gtest REQUIRED)
   ament_find_gtest()
+  find_package(rclcpp_lifecycle REQUIRED)
   add_subdirectory(test)
 endif()
 
@@ -207,7 +203,6 @@ ament_export_dependencies(
   nlohmann_json
   ompl
   rclcpp
-  rclcpp_lifecycle
   rcl_interfaces
   tf2
   nav2_ros_common

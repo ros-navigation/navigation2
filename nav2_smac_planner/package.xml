@@ -13,7 +13,6 @@
   <depend>ament_index_cpp</depend>
   <depend>angles</depend>
   <depend>backward_ros</depend>
-  <depend>eigen</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_core</depend>
   <depend>nav2_costmap_2d</depend>
@@ -23,7 +22,6 @@
   <depend>ompl</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_lifecycle</depend>
   <depend>rcl_interfaces</depend>
   <depend>tf2_ros</depend>
   <depend>tf2</depend>
@@ -33,6 +31,7 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -15,9 +15,6 @@ target_link_libraries(test_node_utils
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
 )
 
@@ -35,9 +32,6 @@ target_link_libraries(test_service_client
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
   ${std_srvs_TARGETS}
 )
@@ -56,9 +50,6 @@ target_link_libraries(test_service_server
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
   ${std_srvs_TARGETS}
 )
@@ -77,9 +68,6 @@ target_link_libraries(test_actions
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
   ${test_msgs_TARGETS}
 )
@@ -98,9 +86,6 @@ target_link_libraries(test_lifecycle_node
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
 )
 
@@ -118,9 +103,6 @@ target_link_libraries(test_validation_messages
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
   ${builtin_interfaces_TARGETS}
   ${std_msgs_TARGETS}

@@ -15,7 +15,6 @@ target_link_libraries(${test_planner_costmaps_exec}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_costmaps_exec}
@@ -41,7 +40,6 @@ target_link_libraries(${test_planner_random_exec}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
   nav2_ros_common::nav2_ros_common
 )
 target_include_directories(${test_planner_random_exec}

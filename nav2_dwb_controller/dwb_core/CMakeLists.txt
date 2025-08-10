@@ -15,7 +15,6 @@ find_package(nav_2d_utils REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -48,7 +47,6 @@ target_link_libraries(dwb_core PUBLIC
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
   tf2_ros::tf2_ros
   tf2_geometry_msgs::tf2_geometry_msgs
@@ -92,7 +90,6 @@ ament_export_dependencies(
   nav_msgs
   pluginlib
   rclcpp
-  rclcpp_lifecycle
   sensor_msgs
   tf2_ros
   tf2_geometry_msgs

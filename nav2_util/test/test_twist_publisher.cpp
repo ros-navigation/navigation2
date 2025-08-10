@@ -18,7 +18,6 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 
 TEST(TwistPublisher, Unstamped)
 {

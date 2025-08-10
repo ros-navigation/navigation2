@@ -19,11 +19,8 @@
 #include <string>
 #include <utility>
 
-#include "nav2_util/geometry_utils.hpp"
-
 namespace nav2_lifecycle_manager
 {
-using nav2_util::geometry_utils::orientationAroundZAxis;
 
 bool
 LifecycleManagerClient::startup(const std::chrono::nanoseconds timeout)

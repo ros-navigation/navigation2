@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"

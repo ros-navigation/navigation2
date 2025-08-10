@@ -27,7 +27,6 @@
 #include "opencv2/core.hpp"
 #include "opencv2/opencv.hpp"
 #include "cv_bridge/cv_bridge.hpp"
-#include "image_transport/image_transport.hpp"
 
 
 namespace nav2_waypoint_follower

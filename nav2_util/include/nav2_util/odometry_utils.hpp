@@ -17,7 +17,6 @@
 #define NAV2_UTIL__ODOMETRY_UTILS_HPP_
 
 #include <cmath>
-#include <chrono>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -27,7 +26,9 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/duration.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_util

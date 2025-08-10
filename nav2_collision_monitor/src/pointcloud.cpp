@@ -20,7 +20,6 @@
 #include "tf2/transform_datatypes.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {

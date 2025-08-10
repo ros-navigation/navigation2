@@ -6,12 +6,9 @@ find_package(backward_ros REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(image_transport REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -21,7 +18,6 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(robot_localization REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
@@ -42,13 +38,10 @@ target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   ${nav2_msgs_TARGETS}
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
-  tf2_ros::tf2_ros
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
@@ -92,7 +85,6 @@ target_link_libraries(wait_at_waypoint PUBLIC
 )
 target_link_libraries(wait_at_waypoint PRIVATE
   pluginlib::pluginlib
-  nav2_util::nav2_util_core
 )
 
 add_library(photo_at_waypoint SHARED plugins/photo_at_waypoint.cpp)
@@ -103,7 +95,6 @@ target_include_directories(photo_at_waypoint PUBLIC
 target_link_libraries(photo_at_waypoint PUBLIC
   cv_bridge::cv_bridge
   ${geometry_msgs_TARGETS}
-  image_transport::image_transport
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
   opencv_core
@@ -112,7 +103,6 @@ target_link_libraries(photo_at_waypoint PUBLIC
   ${sensor_msgs_TARGETS}
 )
 target_link_libraries(photo_at_waypoint PRIVATE
-  nav2_util::nav2_util_core
   pluginlib::pluginlib
 )
 
@@ -131,7 +121,6 @@ target_link_libraries(input_at_waypoint PUBLIC
 )
 target_link_libraries(input_at_waypoint PRIVATE
   pluginlib::pluginlib
-  nav2_util::nav2_util_core
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_waypoint_follower::WaypointFollower")
@@ -166,11 +155,8 @@ ament_export_dependencies(
   cv_bridge
   geographic_msgs
   geometry_msgs
-  image_transport
   nav2_core
   nav2_msgs
-  nav2_util
-  nav_msgs
   OpenCV
   pluginlib
   rclcpp
@@ -180,7 +166,6 @@ ament_export_dependencies(
   robot_localization
   sensor_msgs
   std_msgs
-  tf2_ros
 )
 ament_export_targets(${PROJECT_NAME})
 pluginlib_export_plugin_description_file(nav2_waypoint_follower plugins.xml)

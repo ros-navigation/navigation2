@@ -20,7 +20,6 @@
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
-  <depend>rclcpp_action</depend>
   <depend>rclcpp_components</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>tf2_ros</depend>

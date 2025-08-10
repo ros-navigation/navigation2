@@ -27,7 +27,6 @@
 #include "nav2_core/global_planner.hpp"
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"

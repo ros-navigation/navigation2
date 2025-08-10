@@ -18,7 +18,6 @@
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_smac_planner/constants.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #ifndef NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_
 #define NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_

@@ -21,8 +21,6 @@
 #include <algorithm>
 #include <mutex>
 
-#include "nav2_util/odometry_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 

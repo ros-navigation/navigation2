@@ -2,6 +2,7 @@ ament_add_gtest(2d_utils_tests 2d_utils_test.cpp)
 target_link_libraries(2d_utils_tests
   conversions
   nav2_ros_common::nav2_ros_common
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 target_include_directories(2d_utils_tests
   PUBLIC

@@ -28,18 +28,13 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/action/follow_waypoints.hpp"
 #include "nav2_msgs/msg/waypoint_status.hpp"
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/string_utils.hpp"
 #include "nav2_msgs/action/follow_gps_waypoints.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_core/waypoint_task_executor.hpp"
 
 #include "robot_localization/srv/from_ll.hpp"
-#include "tf2_ros/buffer.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/transform_listener.hpp"
 
 namespace nav2_waypoint_follower
 {
