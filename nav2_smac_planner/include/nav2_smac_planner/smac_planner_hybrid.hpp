@@ -120,6 +120,7 @@ protected:
   double _max_planning_time;
   double _lookup_table_size;
   double _minimum_turning_radius_global_coords;
+  bool _use_swept_collision_checker;
   bool _debug_visualizations;
   std::string _motion_model_for_search;
   MotionModel _motion_model;

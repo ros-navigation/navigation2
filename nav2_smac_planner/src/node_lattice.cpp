@@ -39,6 +39,7 @@ namespace nav2_smac_planner
 LatticeMotionTable NodeLattice::motion_table;
 float NodeLattice::size_lookup = 25;
 LookupTable NodeLattice::dist_heuristic_lookup_table;
+bool NodeLattice::use_swept_collision_checker = false;
 
 // Each of these tables are the projected motion models through
 // time and space applied to the search on the current node in
@@ -226,6 +227,15 @@ bool NodeLattice::isNodeValid(
 {
   // Already found, we can return the result
   if (!std::isnan(_cell_cost)) {
+    return _is_node_valid;
+  }
+
+  if (use_swept_collision_checker && parent) {
+    _is_node_valid = !collision_checker->inCollision(
+      parent->pose.x, parent->pose.y, parent->pose.theta,
+      this->pose.x, this->pose.y, this->pose.theta,
+      traverse_unknown, motion_table.min_turning_radius);
+    _cell_cost = collision_checker->getCost();
     return _is_node_valid;
   }
 

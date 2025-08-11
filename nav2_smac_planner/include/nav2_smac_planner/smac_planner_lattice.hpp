@@ -115,6 +115,7 @@ protected:
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   double _lookup_table_size;
+  bool _use_swept_collision_checker;
   bool _debug_visualizations;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     _planned_footprints_publisher;

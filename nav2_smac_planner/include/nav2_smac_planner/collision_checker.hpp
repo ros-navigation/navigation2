@@ -93,6 +93,24 @@ public:
     const bool & traverse_unknown);
 
   /**
+   * @brief Check if in collision by sweeping between two poses
+   * @param x0 X coordinate of starting pose
+   * @param y0 Y coordinate of starting pose
+   * @param theta0 Angle bin number of starting pose (NOT radians)
+   * @param x1 X coordinate of ending pose
+   * @param y1 Y coordinate of ending pose
+   * @param theta1 Angle bin number of ending pose (NOT radians)
+   * @param traverse_unknown Whether or not to traverse in unknown space
+   * @param min_turning_radius Minimum turning radius in grid coordinates
+   * @return boolean if in collision or not
+   */
+  bool inCollision(
+    const float & x0, const float & y0, const float & theta0,
+    const float & x1, const float & y1, const float & theta1,
+    const bool & traverse_unknown,
+    const float & min_turning_radius);
+
+  /**
    * @brief Get cost at footprint pose in costmap
    * @return the cost at the pose in costmap
    */

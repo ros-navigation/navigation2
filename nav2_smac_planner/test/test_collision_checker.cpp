@@ -163,6 +163,69 @@ TEST(collision_footprint, test_footprint_at_pose_with_movement)
   delete costmap_;
 }
 
+TEST(collision_footprint, test_swept_collision)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testF");
+  nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
+
+  geometry_msgs::msg::Point p1;
+  p1.x = -0.5; p1.y = 0.0;
+  geometry_msgs::msg::Point p2;
+  p2.x = 0.0; p2.y = 0.5;
+  geometry_msgs::msg::Point p3;
+  p3.x = 0.5; p3.y = 0.0;
+  geometry_msgs::msg::Point p4;
+  p4.x = 0.0; p4.y = -0.5;
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+
+  costmap_->setCost(55, 50, 254);
+  // Make the start pose near an obstacle so sweeping is triggered
+  costmap_->setCost(50, 50, 200);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
+  collision_checker.setFootprint(footprint, false, 50.0);
+
+  EXPECT_TRUE(collision_checker.inCollision(50, 50, 0, 60, 50, 0, false, 1.0));
+
+  delete costmap_;
+}
+
+TEST(collision_footprint, test_swept_collision_skipped)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("testG");
+  nav2_costmap_2d::Costmap2D * costmap_ = new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0, 0, 0);
+
+  geometry_msgs::msg::Point p1;
+  p1.x = -0.5; p1.y = 0.0;
+  geometry_msgs::msg::Point p2;
+  p2.x = 0.0; p2.y = 0.5;
+  geometry_msgs::msg::Point p3;
+  p3.x = 0.5; p3.y = 0.0;
+  geometry_msgs::msg::Point p4;
+  p4.x = 0.0; p4.y = -0.5;
+  nav2_costmap_2d::Footprint footprint = {p1, p2, p3, p4};
+
+  // Obstacle along the path but start and end are in free space
+  costmap_->setCost(55, 50, 254);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmap_;
+
+  nav2_smac_planner::GridCollisionChecker collision_checker(costmap_ros, 72, node);
+  collision_checker.setFootprint(footprint, false, 50.0);
+
+  EXPECT_FALSE(collision_checker.inCollision(50, 50, 0, 60, 50, 0, false, 1.0));
+
+  delete costmap_;
+}
+
 TEST(collision_footprint, test_point_and_line_cost)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testE");

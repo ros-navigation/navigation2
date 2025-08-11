@@ -17,8 +17,8 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
-
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
+#include "nav2_smac_planner/node_lattice.hpp"
 
 // #define BENCHMARK_TESTING
 
@@ -32,7 +32,8 @@ SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1, nullptr),
   _smoother(nullptr),
-  _costmap(nullptr)
+  _costmap(nullptr),
+  _use_swept_collision_checker(false)
 {
 }
 
@@ -81,6 +82,12 @@ void SmacPlannerLattice::configure(
   nav2::declare_parameter_if_not_declared(
     node, name + ".smooth_path", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".smooth_path", smooth_path);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_swept_collision_check", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".use_swept_collision_check", _use_swept_collision_checker);
+  NodeLattice::use_swept_collision_checker = _use_swept_collision_checker;
 
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2::declare_parameter_if_not_declared(
@@ -591,6 +598,9 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       } else if (param_name == _name + ".cache_obstacle_heuristic") {
         reinit_a_star = true;
         _search_info.cache_obstacle_heuristic = parameter.as_bool();
+      } else if (param_name == _name + ".use_swept_collision_check") {
+        _use_swept_collision_checker = parameter.as_bool();
+        NodeLattice::use_swept_collision_checker = _use_swept_collision_checker;
       } else if (param_name == _name + ".allow_reverse_expansion") {
         reinit_a_star = true;
         _search_info.allow_reverse_expansion = parameter.as_bool();
