@@ -57,6 +57,12 @@ public:
     }
   }
 
+  ~LifecycleServiceClient()
+  {
+    change_state_.stop();
+    get_state_.stop();
+  }
+
   /// Trigger a state change
   /**
    * Throws std::runtime_error on failure
