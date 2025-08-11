@@ -218,6 +218,16 @@ public:
     return service_name_;
   }
 
+  /**
+  * @brief Stop any running spin operations on the internal executor
+  */
+  void stop()
+  {
+    if (client_) {
+      callback_group_executor_->cancel();
+    }
+  }
+
 protected:
   std::string service_name_;
   rclcpp::Clock::SharedPtr clock_;
