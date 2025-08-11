@@ -224,7 +224,7 @@ public:
   void stop()
   {
     if (client_) {
-      callback_group_executor_.cancel();
+      callback_group_executor_->cancel();
     }
   }
 
