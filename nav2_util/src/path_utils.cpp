@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "nav2_util/path_utils.hpp"
+
 #include <limits>
 #include <cmath>
+#include <stdexcept>
+
 #include "nav2_util/geometry_utils.hpp"
 namespace nav2_util
 {
@@ -29,26 +32,32 @@ PathSearchResult distance_from_path(
   result.closest_segment_index = start_index;
   result.distance = std::numeric_limits<double>::max();
 
-  if (path.poses.size() < 2) {
-    if (path.poses.empty()) {
-      return result;
-    }
+  if (path.poses.empty()) {
+    return result;
+  }
+
+  if (path.poses.size() == 1) {
     result.distance = nav2_util::geometry_utils::euclidean_distance(
-      robot_pose.pose, path.poses.front().pose);
+    robot_pose.pose, path.poses.front().pose);
     result.closest_segment_index = 0;
     return result;
   }
 
-  if (start_index >= path.poses.size() - 1) {
-    result.distance = nav2_util::geometry_utils::euclidean_distance(
-    robot_pose.pose,
-    path.poses.back().pose);
-    result.closest_segment_index = path.poses.size() - 1;
-    return result;
+  if (start_index >= path.poses.size()) {
+    throw std::invalid_argument(
+      "Invalid operation: requested start index (" + std::to_string(start_index) +
+      ") is greater than or equal to path size (" + std::to_string(path.poses.size()) +
+      "). Application is not properly managing state.");
+  }
+
+  if (path.header.frame_id != robot_pose.header.frame_id) {
+    throw std::invalid_argument(
+      "Invalid input, path frame (" + (path.header.frame_id) +
+      ") is not the same frame as robot frame (" + (robot_pose.header.frame_id) +
+      "). Use the same frame for both pose and path.");
   }
 
   double distance_traversed = 0.0;
-
   for (size_t i = start_index; i < path.poses.size() - 1; ++i) {
     if (distance_traversed > search_window_length) {
       break;
