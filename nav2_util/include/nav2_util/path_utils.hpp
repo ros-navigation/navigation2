@@ -39,7 +39,19 @@ struct PathSearchResult
   double distance;
   size_t closest_segment_index;
 };
-
+/**
+ * @brief Finds the minimum distance from a robot pose to a path segment.
+ *
+ * This function searches for the closest segment on the given path to the robot's pose,
+ * starting from a specified index and optionally limiting the search to a window length.
+ * It returns the minimum distance found and the index of the closest segment.
+ *
+ * @param path The path to search (sequence of poses).
+ * @param robot_pose The robot's current pose.
+ * @param start_index The index in the path to start searching from.
+ * @param search_window_length The maximum length (in meters) to search along the path.
+ * @return PathSearchResult Struct containing the minimum distance and the index of the closest segment.
+ */
 PathSearchResult distance_from_path(
   const nav_msgs::msg::Path & path,
   const geometry_msgs::msg::PoseStamped & robot_pose,
