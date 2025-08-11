@@ -36,7 +36,8 @@ SmacPlannerHybrid::SmacPlannerHybrid()
   _smoother(nullptr),
   _costmap(nullptr),
   _costmap_ros(nullptr),
-  _costmap_downsampler(nullptr)
+  _costmap_downsampler(nullptr),
+  _use_swept_collision_checker(false)
 {
 }
 
@@ -103,6 +104,10 @@ void SmacPlannerHybrid::configure(
   nav2::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
   node->get_parameter(name + ".minimum_turning_radius", _minimum_turning_radius_global_coords);
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_swept_collision_check", rclcpp::ParameterValue(false));
+  node->get_parameter(name + ".use_swept_collision_check", _use_swept_collision_checker);
+  NodeHybrid::use_swept_collision_checker = _use_swept_collision_checker;
   nav2::declare_parameter_if_not_declared(
     node, name + ".allow_primitive_interpolation", rclcpp::ParameterValue(false));
   node->get_parameter(
@@ -703,6 +708,9 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (param_name == _name + ".analytic_expansion_max_cost_override") {
         _search_info.analytic_expansion_max_cost_override = parameter.as_bool();
         reinit_a_star = true;
+      } else if (param_name == _name + ".use_swept_collision_check") {
+        _use_swept_collision_checker = parameter.as_bool();
+        NodeHybrid::use_swept_collision_checker = _use_swept_collision_checker;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == _name + ".downsampling_factor") {

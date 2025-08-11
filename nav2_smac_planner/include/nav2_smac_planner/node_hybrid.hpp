@@ -484,6 +484,7 @@ public:
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
   NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
+  NAV2_SMAC_PLANNER_COMMON_EXPORT static bool use_swept_collision_checker;
 
 private:
   float _cell_cost;

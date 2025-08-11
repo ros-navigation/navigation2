@@ -14,6 +14,12 @@
 
 #include "nav2_smac_planner/collision_checker.hpp"
 
+#include <unordered_set>
+#include <cmath>
+#include <algorithm>
+
+#include "nav2_util/line_iterator.hpp"
+
 namespace nav2_smac_planner
 {
 
@@ -180,6 +186,161 @@ bool GridCollisionChecker::inCollision(
 
   // if occupied or unknown and not to traverse unknown space
   return center_cost_ >= INSCRIBED_COST;
+}
+
+bool GridCollisionChecker::inCollision(
+  const float & x0, const float & y0, const float & theta0,
+  const float & x1, const float & y1, const float & theta1,
+  const bool & traverse_unknown,
+  const float & min_turning_radius)
+{
+  // Convert angle bins to radians
+  float start_theta = angles_[static_cast<unsigned int>(theta0)];
+  float end_theta = angles_[static_cast<unsigned int>(theta1)];
+  float dtheta = end_theta - start_theta;
+  if (dtheta > M_PI) {
+    dtheta -= 2.0f * static_cast<float>(M_PI);
+  } else if (dtheta < -M_PI) {
+    dtheta += 2.0f * static_cast<float>(M_PI);
+  }
+
+  // Quick checks to see if sweeping is necessary. If both poses are well
+  // clear of obstacles, fall back to the single pose check on the child node
+  const unsigned int size_x = costmap_->getSizeInCellsX();
+  const unsigned int size_y = costmap_->getSizeInCellsY();
+
+  if (outsideRange(size_x, x0) || outsideRange(size_y, y0) ||
+    outsideRange(size_x, x1) || outsideRange(size_y, y1))
+  {
+    return true;
+  }
+
+  unsigned int mx0 = static_cast<unsigned int>(x0 + 0.5f);
+  unsigned int my0 = static_cast<unsigned int>(y0 + 0.5f);
+  unsigned int mx1 = static_cast<unsigned int>(x1 + 0.5f);
+  unsigned int my1 = static_cast<unsigned int>(y1 + 0.5f);
+  float start_cost = static_cast<float>(costmap_->getCost(mx0, my0));
+  float end_cost = static_cast<float>(costmap_->getCost(mx1, my1));
+
+  bool parent_safe = possible_collision_cost_ > 0.0f &&
+    start_cost < possible_collision_cost_;
+  bool child_safe = possible_collision_cost_ > 0.0f &&
+    end_cost < possible_collision_cost_;
+
+  if (parent_safe && child_safe) {
+    return inCollision(x1, y1, theta1, traverse_unknown);
+  }
+
+  float dx = x1 - x0;
+  float dy = y1 - y0;
+  float distance = hypotf(dx, dy);
+  float arc = fabsf(dtheta) * min_turning_radius;
+  int steps = static_cast<int>(ceilf(std::max(std::max(distance, arc), 1.0f)));
+
+  std::unordered_set<unsigned int> cells;
+  float cx = 0.0f, cy = 0.0f;
+  const bool use_arc = fabsf(dtheta) > 1e-3f;
+  if (use_arc) {
+    if (dtheta > 0.0f) {
+      cx = x0 - min_turning_radius * sin(start_theta);
+      cy = y0 + min_turning_radius * cos(start_theta);
+    } else {
+      cx = x0 + min_turning_radius * sin(start_theta);
+      cy = y0 - min_turning_radius * cos(start_theta);
+    }
+  }
+
+  for (int step = 0; step <= steps; ++step) {
+    float t = static_cast<float>(step) / static_cast<float>(steps);
+    float xi, yi, theta;
+    if (use_arc) {
+      theta = start_theta + t * dtheta;
+      if (dtheta > 0.0f) {
+        xi = cx + min_turning_radius * sin(theta);
+        yi = cy - min_turning_radius * cos(theta);
+      } else {
+        xi = cx - min_turning_radius * sin(theta);
+        yi = cy + min_turning_radius * cos(theta);
+      }
+    } else {
+      xi = x0 + t * dx;
+      yi = y0 + t * dy;
+      theta = start_theta;
+    }
+
+    while (theta < 0.0f) {
+      theta += 2.0f * static_cast<float>(M_PI);
+    }
+    while (theta >= 2.0f * static_cast<float>(M_PI)) {
+      theta -= 2.0f * static_cast<float>(M_PI);
+    }
+    unsigned int angle_bin = static_cast<unsigned int>(theta / (2.0f * static_cast<float>(M_PI)) * angles_.size());
+    angle_bin %= angles_.size();
+
+    if (footprint_is_radius_) {
+      if (outsideRange(costmap_->getSizeInCellsX(), xi) ||
+        outsideRange(costmap_->getSizeInCellsY(), yi))
+      {
+        return true;
+      }
+      unsigned int mx = static_cast<unsigned int>(xi + 0.5f);
+      unsigned int my = static_cast<unsigned int>(yi + 0.5f);
+      cells.insert(my * size_x + mx);
+      continue;
+    }
+
+    // Always include center cell
+    if (outsideRange(costmap_->getSizeInCellsX(), xi) ||
+      outsideRange(costmap_->getSizeInCellsY(), yi))
+    {
+      return true;
+    }
+    unsigned int mx = static_cast<unsigned int>(xi + 0.5f);
+    unsigned int my = static_cast<unsigned int>(yi + 0.5f);
+    cells.insert(my * size_x + mx);
+
+    double wx, wy;
+    costmap_->mapToWorld(static_cast<double>(xi), static_cast<double>(yi), wx, wy);
+    const nav2_costmap_2d::Footprint & oriented = oriented_footprints_[angle_bin];
+
+    unsigned int x_prev, y_prev, x_curr, y_curr;
+    if (!worldToMap(wx + oriented[0].x, wy + oriented[0].y, x_prev, y_prev)) {
+      return true;
+    }
+    for (unsigned int i = 1; i < oriented.size(); ++i) {
+      if (!worldToMap(wx + oriented[i].x, wy + oriented[i].y, x_curr, y_curr)) {
+        return true;
+      }
+      for (nav2_util::LineIterator line(x_prev, y_prev, x_curr, y_curr); line.isValid(); line.advance()) {
+        cells.insert(line.getY() * size_x + line.getX());
+      }
+      x_prev = x_curr;
+      y_prev = y_curr;
+    }
+    if (!worldToMap(wx + oriented[0].x, wy + oriented[0].y, x_curr, y_curr)) {
+      return true;
+    }
+    for (nav2_util::LineIterator line(x_prev, y_prev, x_curr, y_curr); line.isValid(); line.advance()) {
+      cells.insert(line.getY() * size_x + line.getX());
+    }
+  }
+
+  float max_cost = 0.0f;
+  for (auto index : cells) {
+    center_cost_ = static_cast<float>(costmap_->getCost(index));
+    if (center_cost_ == UNKNOWN_COST && traverse_unknown) {
+      continue;
+    }
+    if (center_cost_ >= INSCRIBED_COST) {
+      return true;
+    }
+    if (center_cost_ > max_cost) {
+      max_cost = center_cost_;
+    }
+  }
+
+  center_cost_ = max_cost;
+  return false;
 }
 
 float GridCollisionChecker::getCost()
