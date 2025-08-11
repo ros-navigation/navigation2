@@ -3,6 +3,7 @@ add_library(${library_name} SHARED
   lifecycle_service_client.cpp
   string_utils.cpp
   robot_utils.cpp
+  controller_utils.cpp
   odometry_utils.cpp
   array_parser.cpp
 )
