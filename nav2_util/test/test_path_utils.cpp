@@ -29,7 +29,6 @@ geometry_msgs::msg::PoseStamped createPose(double x, double y)
   pose.pose.position.y = y;
   pose.pose.position.z = 0.0;
   pose.pose.orientation.w = 1.0;
-  pose.header.frame_id = "map";
   return pose;
 }
 
@@ -303,6 +302,6 @@ TEST(PathUtilsWindowedTest, EdgeCases)
   test_path.poses.push_back(createPose(0.0, 0.0));
   test_path.poses.push_back(createPose(10.0, 0.0));
 
-  auto result = nav2_util::distance_from_path(test_path, robot_pose, 1, 5.0);
-  EXPECT_NEAR(result.distance, 7.071, 0.01);
+  auto result = nav2_util::distance_from_path(test_path, robot_pose, 0, 5.0);
+  EXPECT_NEAR(result.distance, 5.0, 0.01);
 }
