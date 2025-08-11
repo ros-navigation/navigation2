@@ -136,6 +136,15 @@ public:
   }
 
   /**
+   * @brief Getter function for BT search
+   * @return string Containing BT search directories
+   */
+  std::vector<std::string> getSearchDirectories() const
+  {
+    return search_directories_;
+  }
+
+  /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
