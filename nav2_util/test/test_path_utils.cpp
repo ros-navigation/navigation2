@@ -156,8 +156,12 @@ protected:
   {
     for (int i = 0; i <= 10; ++i) {target_path.poses.push_back(createPose(i, 0.0));}
     for (int i = 9; i >= 0; --i) {target_path.poses.push_back(createPose(i, 0.0));}
-    for (int i = 0; i <= 10; ++i) {robot_trajectory.push_back(createPose(i, 0.5));}
-    for (int i = 9; i >= 0; --i) {robot_trajectory.push_back(createPose(i, 0.5));}
+    for (int i = 0; i <= 10; ++i) {
+      robot_trajectory.push_back(createPose(i, 0.5));
+    }
+    for (int i = 9; i >= 0; --i) {
+      robot_trajectory.push_back(createPose(i, 0.5));
+    }
   }
   nav_msgs::msg::Path target_path;
   std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
