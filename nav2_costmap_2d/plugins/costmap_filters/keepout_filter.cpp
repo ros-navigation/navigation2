@@ -330,10 +330,10 @@ void KeepoutFilter::process(
   }
 
   // unsigned<-signed conversions.
-  unsigned const int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
-  unsigned const int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
-  unsigned const int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
-  unsigned const int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
+  const unsigned int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
+  const unsigned int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
+  const unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
+  const unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
 
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
