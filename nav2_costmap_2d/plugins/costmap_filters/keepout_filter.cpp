@@ -172,6 +172,8 @@ void KeepoutFilter::updateBounds(
     return;
   }
 
+  CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
   // If new keepout zone received
   if(has_updated_data_) {
     double wx, wy;
