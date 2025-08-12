@@ -43,6 +43,7 @@
 
 #include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -84,6 +85,8 @@ void KeepoutFilter::initializeFilter(
   // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
   lethal_override_cost_ = \
     std::clamp<unsigned int>(lethal_override_cost_, FREE_SPACE, MAX_NON_OBSTACLE);
+  lethal_state_update_max_x_ = lethal_state_update_max_y_ = std::numeric_limits<double>::lowest();
+  lethal_state_update_min_x_ = lethal_state_update_min_y_ = std::numeric_limits<double>::max();
 }
 
 void KeepoutFilter::filterInfoCallback(
@@ -171,27 +174,70 @@ void KeepoutFilter::updateBounds(
 
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
-  if(!has_updated_data_) {
+  // If new keepout zone received
+  if(has_updated_data_) {
+    double wx, wy;
+    layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
+    *min_x = std::min(wx, *min_x);
+    *min_y = std::min(wy, *min_y);
+
+    layered_costmap_->getCostmap()->mapToWorld(x_ + width_, y_ + height_, wx, wy);
+    *max_x = std::max(wx, *max_x);
+    *max_y = std::max(wy, *max_y);
+
+    has_updated_data_ = false;
     return;
   }
 
-  double wx, wy;
+  // Let's find the pose's cost if we are allowed to override the lethal cost
+  is_pose_lethal_ = false;
+  if (override_lethal_cost_) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = robot_x;
+    pose.position.y = robot_y;
+    pose.position.z = 0.0;
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
+    geometry_msgs::msg::Pose mask_pose;
+    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+      unsigned int mask_robot_i, mask_robot_j;
+      if (worldToMask(filter_mask_, mask_pose.position.x, mask_pose.position.y, mask_robot_i,
+        mask_robot_j))
+      {
+        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
+        is_pose_lethal_ = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
+        if (is_pose_lethal_) {
+          RCLCPP_WARN_THROTTLE(
+            logger_, *(clock_), 2000,
+            "KeepoutFilter: Pose is in keepout zone, reducing cost override to navigate out.");
+        }
+      }
+    }
 
-  layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
-  *min_x = std::min(wx, *min_x);
-  *min_y = std::min(wy, *min_y);
-
-  layered_costmap_->getCostmap()->mapToWorld(x_ + width_, y_ + height_, wx, wy);
-  *max_x = std::max(wx, *max_x);
-  *max_y = std::max(wy, *max_y);
-
-  has_updated_data_ = false;
+    // If in lethal space or just exited lethal space,
+    // we need to update all possible spaces touched during this state
+    if (is_pose_lethal_ || (last_pose_lethal_ && !is_pose_lethal_)) {
+      lethal_state_update_min_x_ = std::min(*min_x, lethal_state_update_min_x_);
+      *min_x = lethal_state_update_min_x_;
+      lethal_state_update_min_y_ = std::min(*min_y, lethal_state_update_min_y_);
+      *min_y = lethal_state_update_min_y_;
+      lethal_state_update_max_x_ = std::max(*max_x, lethal_state_update_max_x_);
+      *max_x = lethal_state_update_max_x_;
+      lethal_state_update_max_y_ = std::max(*max_y, lethal_state_update_max_y_);
+      *max_y = lethal_state_update_max_y_;
+    } else {
+      // If out of lethal space, reset managed lethal state sizes
+      lethal_state_update_min_x_ = std::numeric_limits<double>::max();
+      lethal_state_update_min_y_ = std::numeric_limits<double>::max();
+      lethal_state_update_max_x_ = std::numeric_limits<double>::lowest();
+      lethal_state_update_max_y_ = std::numeric_limits<double>::lowest();
+    }
+  }
 }
 
 void KeepoutFilter::process(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j,
-  const geometry_msgs::msg::Pose & pose)
+  const geometry_msgs::msg::Pose & /*pose*/)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -286,49 +332,10 @@ void KeepoutFilter::process(
   }
 
   // unsigned<-signed conversions.
-  unsigned int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
-  unsigned int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
-  unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
-  unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
-
-  // Let's find the pose's cost if we are allowed to override the lethal cost
-  bool is_pose_lethal = false;
-  if (override_lethal_cost_) {
-    geometry_msgs::msg::Pose mask_pose;
-    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
-      unsigned int mask_robot_i, mask_robot_j;
-      if (worldToMask(filter_mask_, mask_pose.position.x, mask_pose.position.y, mask_robot_i,
-        mask_robot_j))
-      {
-        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
-        is_pose_lethal = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
-        if (is_pose_lethal) {
-          RCLCPP_WARN_THROTTLE(
-            logger_, *(clock_), 2000,
-            "KeepoutFilter: Pose is in keepout zone, reducing cost override to navigate out.");
-        }
-      }
-    }
-
-    // If in lethal space or just exited lethal space,
-    // we need to update all possible spaces touched during this state
-    if (is_pose_lethal || (last_pose_lethal_ && !is_pose_lethal)) {
-      lethal_state_update_min_x_ = std::min(mg_min_x_u, lethal_state_update_min_x_);
-      mg_min_x_u = lethal_state_update_min_x_;
-      lethal_state_update_min_y_ = std::min(mg_min_y_u, lethal_state_update_min_y_);
-      mg_min_y_u = lethal_state_update_min_y_;
-      lethal_state_update_max_x_ = std::max(mg_max_x_u, lethal_state_update_max_x_);
-      mg_max_x_u = lethal_state_update_max_x_;
-      lethal_state_update_max_y_ = std::max(mg_max_y_u, lethal_state_update_max_y_);
-      mg_max_y_u = lethal_state_update_max_y_;
-    } else {
-      // If out of lethal space, reset managed lethal state sizes
-      lethal_state_update_min_x_ = master_grid.getSizeInCellsX();
-      lethal_state_update_min_y_ = master_grid.getSizeInCellsY();
-      lethal_state_update_max_x_ = 0u;
-      lethal_state_update_max_y_ = 0u;
-    }
-  }
+  const unsigned int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
+  const unsigned int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
+  const unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
+  const unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
 
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
@@ -367,7 +374,7 @@ void KeepoutFilter::process(
         }
 
         if (data > old_data || old_data == NO_INFORMATION) {
-          if (override_lethal_cost_ && is_pose_lethal) {
+          if (override_lethal_cost_ && is_pose_lethal_) {
             master_array[index] = lethal_override_cost_;
           } else {
             master_array[index] = data;
@@ -377,7 +384,7 @@ void KeepoutFilter::process(
     }
   }
 
-  last_pose_lethal_ = is_pose_lethal;
+  last_pose_lethal_ = is_pose_lethal_;
 }
 
 void KeepoutFilter::resetFilter()
