@@ -25,8 +25,6 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-
 namespace nav2_util
 {
 
