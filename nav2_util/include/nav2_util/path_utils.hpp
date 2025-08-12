@@ -24,7 +24,6 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
