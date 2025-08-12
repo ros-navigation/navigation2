@@ -120,8 +120,9 @@ private:
   bool override_lethal_cost_{false};  // If true, lethal cost will be overridden
   unsigned char lethal_override_cost_{252};  // Value to override lethal cost with
   bool last_pose_lethal_{false};  // If true, last pose was lethal
-  unsigned int lethal_state_update_min_x_{999999u}, lethal_state_update_min_y_{999999u};
-  unsigned int lethal_state_update_max_x_{0u}, lethal_state_update_max_y_{0u};
+  bool is_pose_lethal_{false};
+  double lethal_state_update_min_x_, lethal_state_update_min_y_;
+  double lethal_state_update_max_x_, lethal_state_update_max_y_;
 
   unsigned int x_{0};
   unsigned int y_{0};
