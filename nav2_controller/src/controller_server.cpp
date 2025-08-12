@@ -28,6 +28,7 @@
 using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
+using nav2_util::geometry_utils::euclidean_distance;
 
 namespace nav2_controller
 {
@@ -39,7 +40,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   default_goal_checker_ids_{"goal_checker"},
-  default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"},
+  default_goal_checker_types_{"nav2_controller::PathCompleteGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"},
@@ -65,6 +66,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
   declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
+  declare_parameter("interpolate_curvature_after_goal", rclcpp::ParameterValue(false));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -134,10 +136,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
+  get_parameter("interpolate_curvature_after_goal", interpolate_curvature_after_goal_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
+  declare_parameter("max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_ros_->getCostmap()->getSizeInMetersX() / 2.0));
+  get_parameter("max_robot_pose_search_dist", max_robot_pose_search_dist_);
+  path_handler_ = std::make_unique<PathHandler>(
+   costmap_ros_->getTransformTolerance(), costmap_ros_->getTfBuffer(), costmap_ros_);
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
@@ -225,6 +232,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
+  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
@@ -267,6 +275,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
   vel_publisher_->on_activate();
+  global_path_pub_->on_activate();
   action_server_->activate();
 
   auto node = shared_from_this();
@@ -302,6 +311,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+  global_path_pub_->on_deactivate();
 
   remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
@@ -335,6 +345,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_sub_.reset();
   costmap_thread_.reset();
   vel_publisher_.reset();
+  global_path_pub_.reset();
   speed_limit_sub_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
@@ -604,6 +615,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     throw nav2_core::InvalidPath("Path is empty.");
   }
   controllers_[current_controller_]->setPlan(path);
+  path_handler_->setPlan(path);
 
   end_pose_ = path.poses.back();
   end_pose_.header.frame_id = path.header.frame_id;
@@ -630,6 +642,11 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
+  auto transformed_plan = path_handler_->transformGlobalPlan(
+    pose, max_robot_pose_search_dist_, interpolate_curvature_after_goal_);
+  // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(transformed_plan));
+  global_path_pub_->publish(transformed_plan);
+
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
   try {
@@ -637,7 +654,9 @@ void ControllerServer::computeAndPublishVelocity()
       controllers_[current_controller_]->computeVelocityCommands(
       pose,
       twist,
-      goal_checkers_[current_goal_checker_].get());
+      goal_checkers_[current_goal_checker_].get(),
+      transformed_plan
+      );
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
     cmd_vel_2d.header.stamp = last_valid_cmd_time_;
@@ -686,7 +705,7 @@ void ControllerServer::computeAndPublishVelocity()
       double curr_min_dist = std::numeric_limits<double>::max();
       for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
         double curr_dist =
-          nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
+          euclidean_distance(robot_pose_in_path_frame,
           current_path.poses[curr_idx]);
         if (curr_dist < curr_min_dist) {
           curr_min_dist = curr_dist;
@@ -806,7 +825,7 @@ bool ControllerServer::isGoalReached()
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
-    velocity);
+    velocity, local_path_);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
