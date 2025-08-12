@@ -24,7 +24,7 @@ namespace nav2_util
 
 PathSearchResult distance_from_path(
   const nav_msgs::msg::Path & path,
-  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::Pose & robot_pose,
   const size_t start_index,
   const double search_window_length)
 {
@@ -38,7 +38,7 @@ PathSearchResult distance_from_path(
 
   if (path.poses.size() == 1) {
     result.distance = nav2_util::geometry_utils::euclidean_distance(
-    robot_pose.pose, path.poses.front().pose);
+    robot_pose, path.poses.front().pose);
     result.closest_segment_index = 0;
     return result;
   }
@@ -50,13 +50,6 @@ PathSearchResult distance_from_path(
       "). Application is not properly managing state.");
   }
 
-  if (path.header.frame_id != robot_pose.header.frame_id) {
-    throw std::invalid_argument(
-      "Invalid input, path frame (" + (path.header.frame_id) +
-      ") is not the same frame as robot frame (" + (robot_pose.header.frame_id) +
-      "). Use the same frame for both pose and path.");
-  }
-
   double distance_traversed = 0.0;
   for (size_t i = start_index; i < path.poses.size() - 1; ++i) {
     if (distance_traversed > search_window_length) {
@@ -64,7 +57,7 @@ PathSearchResult distance_from_path(
     }
 
     const double current_distance = geometry_utils::distance_to_segment(
-      robot_pose.pose.position,
+      robot_pose.position,
       path.poses[i].pose,
       path.poses[i + 1].pose);
 
@@ -74,8 +67,8 @@ PathSearchResult distance_from_path(
     }
 
     distance_traversed += geometry_utils::euclidean_distance(
-      path.poses[i].pose,
-      path.poses[i + 1].pose);
+      path.poses[i],
+      path.poses[i + 1]);
   }
 
   return result;

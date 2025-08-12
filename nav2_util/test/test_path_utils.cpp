@@ -22,13 +22,23 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
 
-geometry_msgs::msg::PoseStamped createPose(double x, double y)
+geometry_msgs::msg::PoseStamped createPoseStamped(double x, double y)
 {
   geometry_msgs::msg::PoseStamped pose;
   pose.pose.position.x = x;
   pose.pose.position.y = y;
   pose.pose.position.z = 0.0;
   pose.pose.orientation.w = 1.0;
+  return pose;
+}
+
+geometry_msgs::msg::Pose createPose(double x, double y)
+{
+  geometry_msgs::msg::Pose pose;
+  pose.position.x = x;
+  pose.position.y = y;
+  pose.position.z = 0.0;
+  pose.orientation.w = 1.0;
   return pose;
 }
 
@@ -40,12 +50,25 @@ void generateCirclePath(
   const double angle_step = (end_angle - start_angle) / (num_points - 1);
   for (int i = 0; i < num_points; ++i) {
     const double angle = start_angle + i * angle_step;
-    path.poses.push_back(createPose(
+    path.poses.push_back(createPoseStamped(
       center_x + radius * std::cos(angle),
       center_y + radius * std::sin(angle)));
   }
 }
 
+void generateCircleTrajectory(
+  std::vector<geometry_msgs::msg::Pose> & path,
+  double center_x, double center_y, double radius,
+  int num_points, double start_angle = 0.0, double end_angle = 2.0 * M_PI)
+{
+  const double angle_step = (end_angle - start_angle) / (num_points - 1);
+  for (int i = 0; i < num_points; ++i) {
+    const double angle = start_angle + i * angle_step;
+    path.push_back(createPose(
+      center_x + radius * std::cos(angle),
+      center_y + radius * std::sin(angle)));
+  }
+}
 class CloverleafPathTest : public ::testing::Test
 {
 protected:
@@ -57,14 +80,14 @@ protected:
     generateCirclePath(target_path, 0.0, 5.0, 5.0, 50);
 
     // Robot trajectory now also travels all three leaves, but with a radius of 4.8
-    nav_msgs::msg::Path robot_path;
-    generateCirclePath(robot_path, 5.0, 0.0, 4.8, 50);
-    generateCirclePath(robot_path, -5.0, 0.0, 4.8, 50);
-    generateCirclePath(robot_path, 0.0, 5.0, 4.8, 50);
-    robot_trajectory = robot_path.poses;
+    std::vector<geometry_msgs::msg::Pose> robot_path;
+    generateCircleTrajectory(robot_path, 5.0, 0.0, 4.8, 50);
+    generateCircleTrajectory(robot_path, -5.0, 0.0, 4.8, 50);
+    generateCircleTrajectory(robot_path, 0.0, 5.0, 4.8, 50);
+    robot_trajectory = robot_path;
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
 };
 
 class RetracingCircleTest : public ::testing::Test
@@ -74,13 +97,13 @@ protected:
   {
     generateCirclePath(target_path, 0.0, 0.0, 5.0, 50, 0.0, 2.0 * M_PI);
     generateCirclePath(target_path, 0.0, 0.0, 5.0, 50, 2.0 * M_PI, 0.0);
-    nav_msgs::msg::Path robot_path;
-    generateCirclePath(robot_path, 0.0, 0.0, 5.2, 50, 0.0, 2.0 * M_PI);
-    generateCirclePath(robot_path, 0.0, 0.0, 5.2, 50, 2.0 * M_PI, 0.0);
-    robot_trajectory = robot_path.poses;
+    std::vector<geometry_msgs::msg::Pose> robot_path;
+    generateCircleTrajectory(robot_path, 0.0, 0.0, 5.2, 50, 0.0, 2.0 * M_PI);
+    generateCircleTrajectory(robot_path, 0.0, 0.0, 5.2, 50, 2.0 * M_PI, 0.0);
+    robot_trajectory = robot_path;
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
 };
 
 class ZigZagPathTest : public ::testing::Test
@@ -88,11 +111,11 @@ class ZigZagPathTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    target_path.poses.push_back(createPose(0.0, 0.0));
-    target_path.poses.push_back(createPose(10.0, 0.0));
-    target_path.poses.push_back(createPose(10.0, 5.0));
-    target_path.poses.push_back(createPose(0.0, 5.0));
-    target_path.poses.push_back(createPose(0.0, 10.0));
+    target_path.poses.push_back(createPoseStamped(0.0, 0.0));
+    target_path.poses.push_back(createPoseStamped(10.0, 0.0));
+    target_path.poses.push_back(createPoseStamped(10.0, 5.0));
+    target_path.poses.push_back(createPoseStamped(0.0, 5.0));
+    target_path.poses.push_back(createPoseStamped(0.0, 10.0));
 
     robot_trajectory = {
       createPose(1.0, 0.2), createPose(5.0, 0.2), createPose(9.0, 0.2),
@@ -102,7 +125,7 @@ protected:
     };
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
 };
 
 class HairpinTurnTest : public ::testing::Test
@@ -110,10 +133,10 @@ class HairpinTurnTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    target_path.poses.push_back(createPose(0.0, 1.0));
-    target_path.poses.push_back(createPose(10.0, 1.0));
-    target_path.poses.push_back(createPose(10.0, -1.0));
-    target_path.poses.push_back(createPose(0.0, -1.0));
+    target_path.poses.push_back(createPoseStamped(0.0, 1.0));
+    target_path.poses.push_back(createPoseStamped(10.0, 1.0));
+    target_path.poses.push_back(createPoseStamped(10.0, -1.0));
+    target_path.poses.push_back(createPoseStamped(0.0, -1.0));
 
     robot_trajectory = {
       createPose(1.0, 1.2), createPose(3.0, 1.2), createPose(5.0, 1.2),
@@ -124,7 +147,7 @@ protected:
     };
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
 };
 
 class CuttingCornerTest : public ::testing::Test
@@ -132,9 +155,9 @@ class CuttingCornerTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    target_path.poses.push_back(createPose(0.0, 0.0));
-    target_path.poses.push_back(createPose(10.0, 0.0));
-    target_path.poses.push_back(createPose(10.0, 10.0));
+    target_path.poses.push_back(createPoseStamped(0.0, 0.0));
+    target_path.poses.push_back(createPoseStamped(10.0, 0.0));
+    target_path.poses.push_back(createPoseStamped(10.0, 10.0));
 
     robot_trajectory = {
       createPose(0.0, 0.2), createPose(2.0, 0.2), createPose(4.0, 0.2),
@@ -145,7 +168,7 @@ protected:
     expected_distances = {0.2, 0.2, 0.2, 0.2, 0.2, 1.0, 0.2, 0.2, 0.2, 0.2, 0.2};
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
   std::vector<double> expected_distances;
 };
 
@@ -154,8 +177,8 @@ class RetracingPathTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    for (int i = 0; i <= 10; ++i) {target_path.poses.push_back(createPose(i, 0.0));}
-    for (int i = 9; i >= 0; --i) {target_path.poses.push_back(createPose(i, 0.0));}
+    for (int i = 0; i <= 10; ++i) {target_path.poses.push_back(createPoseStamped(i, 0.0));}
+    for (int i = 9; i >= 0; --i) {target_path.poses.push_back(createPoseStamped(i, 0.0));}
     for (int i = 0; i <= 10; ++i) {
       robot_trajectory.push_back(createPose(i, 0.5));
     }
@@ -164,7 +187,7 @@ protected:
     }
   }
   nav_msgs::msg::Path target_path;
-  std::vector<geometry_msgs::msg::PoseStamped> robot_trajectory;
+  std::vector<geometry_msgs::msg::Pose> robot_trajectory;
 };
 
 TEST(PathUtilsTest, EmptyAndSinglePointPaths)
@@ -176,7 +199,7 @@ TEST(PathUtilsTest, EmptyAndSinglePointPaths)
   EXPECT_EQ(result.distance, std::numeric_limits<double>::max());
 
   nav_msgs::msg::Path single_point_path;
-  single_point_path.poses.push_back(createPose(0.0, 0.0));
+  single_point_path.poses.push_back(createPoseStamped(0.0, 0.0));
   result = nav2_util::distance_from_path(single_point_path, robot_pose);
   EXPECT_NEAR(result.distance, 7.071, 0.01);
 }
@@ -303,8 +326,8 @@ TEST(PathUtilsWindowedTest, EdgeCases)
 {
   auto robot_pose = createPose(5.0, 5.0);
   nav_msgs::msg::Path test_path;
-  test_path.poses.push_back(createPose(0.0, 0.0));
-  test_path.poses.push_back(createPose(10.0, 0.0));
+  test_path.poses.push_back(createPoseStamped(0.0, 0.0));
+  test_path.poses.push_back(createPoseStamped(10.0, 0.0));
 
   auto result = nav2_util::distance_from_path(test_path, robot_pose, 0, 5.0);
   EXPECT_NEAR(result.distance, 5.0, 0.01);

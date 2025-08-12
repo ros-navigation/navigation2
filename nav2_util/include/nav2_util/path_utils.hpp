@@ -44,14 +44,14 @@ struct PathSearchResult
  * It returns the minimum distance found and the index of the closest segment.
  *
  * @param path The path to search (sequence of poses).
- * @param robot_pose The robot's current pose.
+ * @param robot_pose The robot's current pose in pose form.
  * @param start_index The index in the path to start searching from.
  * @param search_window_length The maximum length (in meters) to search along the path.
  * @return PathSearchResult Struct containing the minimum distance and the index of the closest segment.
  */
 PathSearchResult distance_from_path(
   const nav_msgs::msg::Path & path,
-  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::Pose & robot_pose,
   const size_t start_index = 0,
   const double search_window_length = std::numeric_limits<double>::max());
 
