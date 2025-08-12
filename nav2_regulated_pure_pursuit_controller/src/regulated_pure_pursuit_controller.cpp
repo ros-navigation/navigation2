@@ -398,7 +398,7 @@ void RegulatedPurePursuitController::rotateToHeading(
   angular_vel = std::clamp(angular_vel, min_feasible_angular_speed, max_feasible_angular_speed);
 
   // Check if we need to slow down to avoid overshooting
-  double max_vel_to_stop = std::sqrt(2 * params_->max_angular_accel * fabs(angle_to_path));
+  double max_vel_to_stop = std::sqrt(2 * max_angular_accel_ * fabs(angle_to_path));
   if (fabs(angular_vel) > max_vel_to_stop) {
     angular_vel = sign * max_vel_to_stop;
   }
