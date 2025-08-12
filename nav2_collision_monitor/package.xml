@@ -25,6 +25,8 @@
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>nav2_ros_common</depend>
+  <depend>point_cloud_transport</depend>
+  <depend>point_cloud_transport_plugins</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>
