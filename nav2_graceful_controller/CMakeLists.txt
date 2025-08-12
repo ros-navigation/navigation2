@@ -43,7 +43,6 @@ set(library_name nav2_graceful_controller)
 add_library(${library_name} SHARED
   src/graceful_controller.cpp
   src/parameter_handler.cpp
-  src/path_handler.cpp
   src/utils.cpp
 )
 target_include_directories(${library_name}

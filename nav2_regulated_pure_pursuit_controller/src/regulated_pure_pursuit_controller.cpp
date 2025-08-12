@@ -60,10 +60,6 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_, logger_, costmap_->getSizeInMetersX());
   params_ = param_handler_->getParams();
 
-  // Handles global path transformations
-  path_handler_ = std::make_unique<PathHandler>(
-    params_->transform_tolerance, tf_, costmap_ros_);
-
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
 
@@ -73,7 +69,6 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point");
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "curvature_lookahead_point");
@@ -88,7 +83,6 @@ void RegulatedPurePursuitController::cleanup()
     "Cleaning up controller: %s of type"
     " regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_.reset();
   carrot_pub_.reset();
   curvature_carrot_pub_.reset();
   is_rotating_to_heading_pub_.reset();
@@ -101,7 +95,6 @@ void RegulatedPurePursuitController::activate()
     "Activating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
   is_rotating_to_heading_pub_->on_activate();
@@ -114,7 +107,6 @@ void RegulatedPurePursuitController::deactivate()
     "Deactivating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   curvature_carrot_pub_->on_deactivate();
   is_rotating_to_heading_pub_->on_deactivate();
@@ -165,7 +157,8 @@ double calculateCurvature(geometry_msgs::msg::Point lookahead_point)
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  nav_msgs::msg::Path & transformed_plan)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
@@ -180,11 +173,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   } else {
     goal_dist_tol_ = pose_tolerance.position.x;
   }
-
-  // Transform path to robot base frame
-  auto transformed_plan = path_handler_->transformGlobalPlan(
-    pose, params_->max_robot_pose_search_dist, params_->interpolate_curvature_after_goal);
-  global_path_pub_->publish(transformed_plan);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
@@ -390,10 +378,9 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = sign * linear_vel;
 }
 
-void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
+void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & /*path*/)
 {
   has_reached_xy_tolerance_ = false;
-  path_handler_->setPlan(path);
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(

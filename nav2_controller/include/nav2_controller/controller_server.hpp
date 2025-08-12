@@ -36,6 +36,7 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_controller/path_handler.hpp"
 
 namespace nav2_controller
 {
@@ -282,6 +283,11 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
+  nav_msgs::msg::Path local_path_;
+  bool interpolate_curvature_after_goal_;
+  double max_robot_pose_search_dist_;
+  std::unique_ptr<nav2_controller::PathHandler> path_handler_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
 
 private:
   /**
