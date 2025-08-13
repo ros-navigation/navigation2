@@ -204,7 +204,7 @@ template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::on_activate()
 {
   resetInternalError();
-  if (!loadBehaviorTree(default_bt_xml_filename_, search_directories_)) {
+  if (!loadBehaviorTree(default_bt_xml_filename_)) {
     RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
     return false;
   }
@@ -247,8 +247,7 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 
 template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(
-  const std::string & bt_xml_filename,
-  const std::vector<std::string> & search_directories)
+  const std::string & bt_xml_filename)
 {
   namespace fs = std::filesystem;
 
@@ -274,7 +273,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(
   const auto canonical_main_bt = fs::canonical(filename);
 
   // Register all XML behavior Subtrees found in the given directories
-  for (const auto & directory : search_directories) {
+  for (const auto & directory : search_directories_) {
     try {
       for (const auto & entry : fs::directory_iterator(directory)) {
         if (entry.path().extension() == ".xml") {

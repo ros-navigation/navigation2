@@ -108,12 +108,13 @@ public:
 
   bool loadBehaviorTree(
     const std::string & filename,
-    const std::vector<std::string> & search_dirs)
+    const std::vector<std::string> & search_directories)
   {
     if (!behaviorTreeFileValidation(filename)) {
       return false;
     }
 
+    namespace fs = std::filesystem;
     const auto canonical_main_bt = fs::canonical(filename);
 
     // Register all XML behavior Subtrees found in the given directories
@@ -228,14 +229,14 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
   ASSERT_TRUE(std::filesystem::exists(root_dir));
   ASSERT_TRUE(std::filesystem::is_directory(root_dir));
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
   for (auto const & entry : std::filesystem::recursive_directory_iterator(root_dir)) {
     if (entry.is_regular_file() && entry.path().extension() == ".xml") {
       std::string main_bt = entry.path().string();
       std::cout << "Testing BT file: " << main_bt << std::endl;
 
-      EXPECT_TRUE(bt_handler->loadBehaviorTree(main_bt, search_dirs))
+      EXPECT_TRUE(bt_handler->loadBehaviorTree(main_bt, search_directories))
         << "Failed to load: " << main_bt;
     }
   }
@@ -255,9 +256,9 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dirs), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
 
@@ -306,9 +307,9 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dirs), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   // Set all action server to fail the first 100 times
   Ranges failureRange;
@@ -366,9 +367,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dir), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   // Set ComputePathToPose and FollowPath action servers to fail for the first action
   Ranges failureRange;
@@ -429,9 +430,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dir), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   // Set ComputePathToPose action server to fail for the first action
   Ranges plannerFailureRange;
@@ -531,9 +532,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dir), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   // Set FollowPath action server to fail for the first 2 actions
   Ranges controllerFailureRange;
@@ -603,9 +604,9 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
-  std::vector<std::string> search_dirs = {root_dir.string()};
+  std::vector<std::string> search_directories = {root_dir.string()};
 
-  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_dir), true);
+  EXPECT_EQ(bt_handler->loadBehaviorTree(bt_file.string(), search_directories), true);
 
   // Set FollowPath action server to fail for the first 2 actions
   Ranges controllerFailureRange;

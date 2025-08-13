@@ -100,13 +100,11 @@ public:
   /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @param search_directories The directories to search for the BT XML files
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
   bool loadBehaviorTree(
-    const std::string & bt_xml_filename = "",
-    const std::vector<std::string> & search_directories = {});
+    const std::string & bt_xml_filename = "");
 
   /**
    * @brief Getter function for BT Blackboard
@@ -135,14 +133,6 @@ public:
     return default_bt_xml_filename_;
   }
 
-  /**
-   * @brief Getter function for BT search
-   * @return string Containing BT search directories
-   */
-  std::vector<std::string> getSearchDirectories() const
-  {
-    return search_directories_;
-  }
 
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
