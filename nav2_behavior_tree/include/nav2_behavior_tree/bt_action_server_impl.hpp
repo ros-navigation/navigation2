@@ -246,8 +246,7 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 }
 
 template<class ActionT, class NodeT>
-bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(
-  const std::string & bt_xml_filename)
+bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   namespace fs = std::filesystem;
 
@@ -299,8 +298,9 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(
       blackboard->set("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
-      blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout",
-          wait_for_service_timeout_);
+      blackboard->set<std::chrono::milliseconds>(
+        "wait_for_service_timeout",
+        wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
@@ -310,6 +310,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(
 
   // Optional logging and monitoring
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+
+  current_bt_xml_filename_ = filename;
 
   if (enable_groot_monitoring_) {
     bt_->addGrootMonitoring(&tree_, groot_server_port_);

@@ -133,7 +133,6 @@ public:
     return default_bt_xml_filename_;
   }
 
-
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
