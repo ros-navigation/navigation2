@@ -126,7 +126,7 @@ public:
             if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
               continue;
             }
-            factory_->registerBehaviorTreeFromFile(entry.path().string());
+            factory_.registerBehaviorTreeFromFile(entry.path().string());
           }
         }
       } catch (const std::exception & e) {
