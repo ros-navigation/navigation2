@@ -1,12 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_mppi_controller)
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-# Use C++20 on Apple Clang to support Concepts natively and avoid -fconcepts
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)  # Use -std=c++20, not -std=gnu++20
-endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
@@ -90,8 +83,9 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
 )
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND APPLE)
     # Apple Clang: use C++20 and optimization, omit -fconcepts
+    target_compile_features(mppi_critics PUBLIC cxx_std_20)
     target_compile_options(mppi_critics PUBLIC -O3)
 else()
     target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
