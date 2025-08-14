@@ -609,18 +609,17 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     throw nav2_core::InvalidPath("Path is empty.");
   }
   controllers_[current_controller_]->setPlan(path);
-  
+
   end_pose_ = path.poses.back();
   end_pose_.header.frame_id = path.header.frame_id;
   goal_checkers_[current_goal_checker_]->reset();
-  
+
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
-    
+
   start_index_ = 0;
   current_path_ = path;
-
 }
 
 void ControllerServer::computeAndPublishVelocity()
@@ -770,16 +769,18 @@ void ControllerServer::publishTrackingState()
     return;
   }
 
-  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(robot_pose, end_pose_);
-  const auto path_search_result = nav2_util::distance_from_path(current_path_, robot_pose.pose, start_index_, search_window_);
+  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(robot_pose,
+      end_pose_);
+  const auto path_search_result = nav2_util::distance_from_path(current_path_, robot_pose.pose,
+      start_index_, search_window_);
   const size_t closest_idx = path_search_result.closest_segment_index;
   start_index_ = closest_idx;
 
-  const auto& segment_start = current_path_.poses[closest_idx];
-  const auto& segment_end = current_path_.poses[closest_idx + 1];
-  
+  const auto & segment_start = current_path_.poses[closest_idx];
+  const auto & segment_end = current_path_.poses[closest_idx + 1];
+
   double cross_product = nav2_util::geometry_utils::cross_product_2d(
-  robot_pose.pose.position, segment_start.pose,segment_end.pose);
+  robot_pose.pose.position, segment_start.pose, segment_end.pose);
 
   nav2_msgs::msg::TrackingError tracking_error_msg;
   tracking_error_msg.header.stamp = now();

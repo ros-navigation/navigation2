@@ -244,7 +244,7 @@ protected:
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
   rclcpp::Publisher<nav2_msgs::msg::TrackingError>::SharedPtr tracking_error_pub_;
-  
+
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
   ProgressCheckerMap progress_checkers_;
@@ -276,8 +276,8 @@ protected:
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
-  double search_window_ ;
-  int start_index_ ;
+  double search_window_;
+  int start_index_;
 
   double failure_tolerance_;
   bool use_realtime_priority_;
