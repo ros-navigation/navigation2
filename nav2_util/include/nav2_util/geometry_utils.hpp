@@ -229,11 +229,11 @@ inline double distance_to_segment(
 }
 
 /**
- * @brief Computes the 2D cross product between the vector from start to end and the vector from start to point. 
- * The sign of this calculation's result can be used to determine which side are you on of the track. 
- * 
+ * @brief Computes the 2D cross product between the vector from start to end and the vector from start to point.
+ * The sign of this calculation's result can be used to determine which side are you on of the track.
+ *
  * See: https://en.wikipedia.org/wiki/Cross_product
- * 
+ *
  * @param point The point to check relative to the segment.
  * @param start The starting pose of the segment.
  * @param end The ending pose of the segment.
