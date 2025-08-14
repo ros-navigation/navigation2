@@ -39,9 +39,12 @@ from rclpy.action.client import ClientGoalHandle
 from rclpy.client import Client
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
+from rclpy.time import Time
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.task import Future
 from rclpy.type_support import GetResultServiceResponse
+import tf2_ros
+from tf2_geometry_msgs import do_transform_pose
 
 
 # Task Result enum for the result of the task being executed
@@ -251,6 +254,10 @@ class BasicNavigator(Node):
             self.create_client(
             GetCostmap, 'local_costmap/get_costmap'
         )
+
+        # TF2 buffer and listener for pose transformations
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
     def destroyNode(self) -> None:
         self.destroy_node()
@@ -1181,6 +1188,28 @@ class BasicNavigator(Node):
                 rclpy.spin_until_future_complete(self, future)
                 future.result()
         return
+
+    def getRobotPose(self, base_frame: str = 'base_link', map_frame: str = 'map') -> Optional[PoseStamped]:
+        """Get the current robot pose from TF2 transformation."""
+        try:
+            # Get the transformation from map_frame to base_frame
+            transform = self.tf_buffer.lookup_transform(
+                map_frame, base_frame, Time(), timeout=rclpyDuration(seconds=1.0)
+            )
+
+            # Create a PoseStamped from the transform
+            pose_stamped = PoseStamped()
+            pose_stamped.header = transform.header
+            pose_stamped.pose.position.x = transform.transform.translation.x
+            pose_stamped.pose.position.y = transform.transform.translation.y
+            pose_stamped.pose.position.z = transform.transform.translation.z
+            pose_stamped.pose.orientation = transform.transform.rotation
+
+            return pose_stamped
+
+        except Exception as e:
+            self.warn(f'Failed to get robot pose: {str(e)}')
+            return None
 
     def _waitForNodeToActivate(self, node_name: str) -> None:
         # Waits for the node within the tester namespace to become active
