@@ -39,12 +39,10 @@ from rclpy.action.client import ClientGoalHandle
 from rclpy.client import Client
 from rclpy.duration import Duration as rclpyDuration
 from rclpy.node import Node
-from rclpy.time import Time
 from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from rclpy.task import Future
 from rclpy.type_support import GetResultServiceResponse
 import tf2_ros
-from tf2_geometry_msgs import do_transform_pose
 
 
 # Task Result enum for the result of the task being executed
@@ -1189,7 +1187,8 @@ class BasicNavigator(Node):
                 future.result()
         return
 
-    def getRobotPose(self, base_frame: str = 'base_link', map_frame: str = 'map') -> Optional[PoseStamped]:
+    def getRobotPose(
+        self, base_frame: str = 'base_link', map_frame: str = 'map') -> Optional[PoseStamped]:
         """Get the current robot pose from TF2 transformation."""
         try:
             # Get the transformation from map_frame to base_frame
