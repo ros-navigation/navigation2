@@ -1188,7 +1188,7 @@ class BasicNavigator(Node):
         return
 
     def getRobotPose(
-        self, base_frame: str = 'base_link', map_frame: str = 'map') -> Optional[PoseStamped]:
+            self, base_frame: str = 'base_link', map_frame: str = 'map') -> Optional[PoseStamped]:
         """Get the current robot pose from TF2 transformation."""
         try:
             # Get the transformation from map_frame to base_frame
