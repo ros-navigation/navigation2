@@ -1194,7 +1194,7 @@ class BasicNavigator(Node):
         try:
             # Get the transformation from map_frame to base_frame
             transform = self.tf_buffer.lookup_transform(
-                map_frame, base_frame, Time(), timeout=rclpyDuration(seconds=1.0)
+                map_frame, base_frame, self.get_clock().now(), timeout=rclpyDuration(seconds=0.2)
             )
 
             # Create a PoseStamped from the transform
