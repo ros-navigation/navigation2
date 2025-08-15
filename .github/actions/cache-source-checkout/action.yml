@@ -1,0 +1,57 @@
+name: "Cache Source Checkout"
+description: "GitHub Action to cache checkout of source repos"
+author: 'ros-navigation'
+branding:
+  icon: 'play-circle'
+  color: 'blue'
+
+inputs:
+  integration_repo:
+    required: true
+    type: string
+    description: The repository to checkout for running CI
+  overlay_ws:
+    required: true
+    type: string
+    description: The absolute path to the overlay workspace
+
+outputs:
+  checkout_cache_key:
+    description: 'Cache key to restore source checkout cache'
+    value: ${{ steps.cache_key_info.outputs.checkout_cache_key }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache key info
+      id: cache_key_info
+      shell: bash
+      run: |
+        checkout_cache_key="checkout-v1"\
+        "-${{ github.ref }}"\
+        "-${{ github.run_id }}"\
+        "-${{ github.run_number }}"\
+        "-${{ github.run_attempt }}"
+        echo "checkout_cache_key=${checkout_cache_key}" >> $GITHUB_OUTPUT
+  
+    - name: Checkout cache dance
+      id: cache_dance_info
+      shell: bash
+      run: |
+        overlay_ws_src="${{ inputs.overlay_ws }}/src"
+        echo "overlay_ws_src=${overlay_ws_src}" >> $GITHUB_OUTPUT
+        rm -rf $overlay_ws_src || true
+
+        integration_repo_name=$(basename ${{ inputs.integration_repo }})
+        integration_repo_path="$overlay_ws_src/$integration_repo_name"
+        mkdir -p $integration_repo_path
+
+        shopt -s dotglob
+        mv ${{ github.workspace }}/* $integration_repo_path
+
+    - name: Save checkout
+      id: save_checkout
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.cache_dance_info.outputs.overlay_ws_src }}/
+        key: ${{ steps.cache_key_info.outputs.checkout_cache_key }}

@@ -1,0 +1,14 @@
+# System tools
+build-essential
+ca-certificates
+ccache
+distcc
+gdb
+git
+git-lfs
+lld
+mesa-utils
+nano
+unzip
+valgrind
+yadm
