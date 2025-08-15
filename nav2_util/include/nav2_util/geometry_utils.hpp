@@ -254,7 +254,7 @@ inline double cross_product_2d(
   const double robot_vec_x = p.x - a.x;
   const double robot_vec_y = p.y - a.y;
 
-  return  (path_vec_x * robot_vec_y) - (path_vec_y * robot_vec_x);
+  return (path_vec_x * robot_vec_y) - (path_vec_y * robot_vec_x);
 }
 
 }  // namespace geometry_utils

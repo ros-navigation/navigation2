@@ -177,8 +177,12 @@ class RetracingPathTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    for (int i = 0; i <= 10; ++i) {target_path.poses.push_back(createPoseStamped(i, 0.0));}
-    for (int i = 9; i >= 0; --i) {target_path.poses.push_back(createPoseStamped(i, 0.0));}
+    for (int i = 0; i <= 10; ++i) {
+      target_path.poses.push_back(createPoseStamped(i, 0.0));
+    }
+    for (int i = 9; i >= 0; --i) {
+      target_path.poses.push_back(createPoseStamped(i, 0.0));
+    }
     for (int i = 0; i <= 10; ++i) {
       robot_trajectory.push_back(createPose(i, 0.5));
     }
