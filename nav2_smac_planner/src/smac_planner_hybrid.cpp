@@ -33,7 +33,6 @@ using std::placeholders::_1;
 SmacPlannerHybrid::SmacPlannerHybrid()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1, nullptr),
-  _smoother(nullptr),
   _costmap(nullptr),
   _costmap_ros(nullptr),
   _costmap_downsampler(nullptr)
@@ -65,7 +64,6 @@ void SmacPlannerHybrid::configure(
 
   int angle_quantizations;
   double analytic_expansion_max_length_m;
-  bool smooth_path;
 
   // General planner params
   nav2::declare_parameter_if_not_declared(
@@ -96,9 +94,6 @@ void SmacPlannerHybrid::configure(
   nav2::declare_parameter_if_not_declared(
     node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
   node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".smooth_path", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".smooth_path", smooth_path);
 
   nav2::declare_parameter_if_not_declared(
     node, name + ".minimum_turning_radius", rclcpp::ParameterValue(0.4));
@@ -272,29 +267,16 @@ void SmacPlannerHybrid::configure(
     _lookup_table_dim,
     _angle_quantizations);
 
-  // Initialize path smoother
-  if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
-    _smoother = std::make_unique<Smoother>(params);
-    _smoother->initialize(_minimum_turning_radius_global_coords);
-  }
-
   // Initialize costmap downsampler
   _costmap_downsampler = std::make_unique<CostmapDownsampler>();
   std::string topic_name = "downsampled_costmap";
   _costmap_downsampler->on_configure(
     node, _global_frame, topic_name, _costmap, _downsampling_factor);
 
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
-
   if (_debug_visualizations) {
     _expansions_publisher = node->create_publisher<geometry_msgs::msg::PoseArray>("expansions");
     _planned_footprints_publisher = node->create_publisher<visualization_msgs::msg::MarkerArray>(
       "planned_footprints");
-    _smoothed_footprints_publisher =
-      node->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "smoothed_footprints");
   }
 
   RCLCPP_INFO(
@@ -311,11 +293,9 @@ void SmacPlannerHybrid::activate()
   RCLCPP_INFO(
     _logger, "Activating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
-  _raw_plan_publisher->on_activate();
   if (_debug_visualizations) {
     _expansions_publisher->on_activate();
     _planned_footprints_publisher->on_activate();
-    _smoothed_footprints_publisher->on_activate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
@@ -340,11 +320,9 @@ void SmacPlannerHybrid::deactivate()
   RCLCPP_INFO(
     _logger, "Deactivating plugin %s of type SmacPlannerHybrid",
     _name.c_str());
-  _raw_plan_publisher->on_deactivate();
   if (_debug_visualizations) {
     _expansions_publisher->on_deactivate();
     _planned_footprints_publisher->on_deactivate();
-    _smoothed_footprints_publisher->on_deactivate();
   }
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
@@ -364,16 +342,13 @@ void SmacPlannerHybrid::cleanup()
     _name.c_str());
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();
   _a_star.reset();
-  _smoother.reset();
   if (_costmap_downsampler) {
     _costmap_downsampler->on_cleanup();
     _costmap_downsampler.reset();
   }
-  _raw_plan_publisher.reset();
   if (_debug_visualizations) {
     _expansions_publisher.reset();
     _planned_footprints_publisher.reset();
-    _smoothed_footprints_publisher.reset();
   }
 }
 
@@ -383,8 +358,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   std::function<bool()> cancel_checker)
 {
   std::lock_guard<std::mutex> lock_reinit(_mutex);
-  steady_clock::time_point a = steady_clock::now();
-
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
   // Downsample costmap, if required
@@ -471,11 +444,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     pose.pose.orientation = goal.pose.orientation;
     plan.poses.push_back(pose);
 
-    // Publish raw path for debug
-    if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
-    }
-
     return plan;
   }
 
@@ -526,11 +494,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     plan.poses.push_back(pose);
   }
 
-  // Publish raw path for debug
-  if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
-  }
-
   if (_debug_visualizations) {
     // Publish expansions for debug
     auto now = _clock->now();
@@ -554,7 +517,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       marker_array->markers.push_back(clear_all_marker);
       _planned_footprints_publisher->publish(std::move(marker_array));
 
-      // Publish smoothed footprints for debug
+      // Publish planned footprints for debug
       marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
       for (size_t i = 0; i < plan.poses.size(); i++) {
         const std::vector<geometry_msgs::msg::Point> edge =
@@ -562,49 +525,6 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
         marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
       }
       _planned_footprints_publisher->publish(std::move(marker_array));
-    }
-  }
-
-  // Find how much time we have left to do smoothing
-  steady_clock::time_point b = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(b - a);
-  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-
-#ifdef BENCHMARK_TESTING
-  std::cout << "It took " << time_span.count() * 1000 <<
-    " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-
-  // Smooth plan
-  if (_smoother && num_iterations > 1) {
-    _smoother->smooth(plan, costmap, time_remaining);
-  }
-
-#ifdef BENCHMARK_TESTING
-  steady_clock::time_point c = steady_clock::now();
-  duration<double> time_span2 = duration_cast<duration<double>>(c - b);
-  std::cout << "It took " << time_span2.count() * 1000 <<
-    " milliseconds to smooth path." << std::endl;
-#endif
-
-  if (_debug_visualizations) {
-    if (_smoothed_footprints_publisher->get_subscription_count() > 0) {
-      // Clear all markers first
-      auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-      visualization_msgs::msg::Marker clear_all_marker;
-      clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-      marker_array->markers.push_back(clear_all_marker);
-      _smoothed_footprints_publisher->publish(std::move(marker_array));
-
-      // Publish smoothed footprints for debug
-      marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
-      auto now = _clock->now();
-      for (size_t i = 0; i < plan.poses.size(); i++) {
-        const std::vector<geometry_msgs::msg::Point> edge =
-          transformFootprintToEdges(plan.poses[i].pose, _costmap_ros->getRobotFootprint());
-        marker_array->markers.push_back(createMarker(edge, i, _global_frame, now));
-      }
-      _smoothed_footprints_publisher->publish(std::move(marker_array));
     }
   }
 
@@ -620,7 +540,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   bool reinit_collision_checker = false;
   bool reinit_a_star = false;
   bool reinit_downsampler = false;
-  bool reinit_smoother = false;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -639,9 +558,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _lookup_table_size = parameter.as_double();
       } else if (param_name == _name + ".minimum_turning_radius") {
         reinit_a_star = true;
-        if (_smoother) {
-          reinit_smoother = true;
-        }
 
         if (parameter.as_double() < _costmap->getResolution() * _downsampling_factor) {
           RCLCPP_ERROR(
@@ -679,7 +595,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         reinit_collision_checker = true;
         reinit_a_star = true;
         reinit_downsampler = true;
-        reinit_smoother = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == _name + ".downsample_costmap") {
@@ -694,12 +609,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
       } else if (param_name == _name + ".allow_primitive_interpolation") {
         _search_info.allow_primitive_interpolation = parameter.as_bool();
         reinit_a_star = true;
-      } else if (param_name == _name + ".smooth_path") {
-        if (parameter.as_bool()) {
-          reinit_smoother = true;
-        } else {
-          _smoother.reset();
-        }
       } else if (param_name == _name + ".analytic_expansion_max_cost_override") {
         _search_info.analytic_expansion_max_cost_override = parameter.as_bool();
         reinit_a_star = true;
@@ -794,7 +703,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   }
 
   // Re-init if needed with mutex lock (to avoid re-init while creating a plan)
-  if (reinit_a_star || reinit_downsampler || reinit_collision_checker || reinit_smoother) {
+  if (reinit_a_star || reinit_downsampler || reinit_collision_checker) {
     // convert to grid coordinates
     if (!_downsample_costmap) {
       _downsampling_factor = 1;
@@ -850,14 +759,6 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         _costmap_ros->getRobotFootprint(),
         _costmap_ros->getUseRadius(),
         findCircumscribedCost(_costmap_ros));
-    }
-
-    // Re-Initialize smoother
-    if (reinit_smoother) {
-      SmootherParams params;
-      params.get(node, _name);
-      _smoother = std::make_unique<Smoother>(params);
-      _smoother->initialize(_minimum_turning_radius_global_coords);
     }
   }
   result.successful = true;

@@ -42,8 +42,6 @@ TEST(SmacTest, test_smac_2d) {
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  node2D->declare_parameter("test.smooth_path", true);
-  node2D->set_parameter(rclcpp::Parameter("test.smooth_path", true));
   node2D->declare_parameter("test.downsample_costmap", true);
   node2D->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
   node2D->declare_parameter("test.downsampling_factor", 2);

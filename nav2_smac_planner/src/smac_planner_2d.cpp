@@ -32,7 +32,6 @@ using std::placeholders::_1;
 SmacPlanner2D::SmacPlanner2D()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1, nullptr),
-  _smoother(nullptr),
   _costmap(nullptr),
   _costmap_downsampler(nullptr)
 {
@@ -132,20 +131,12 @@ void SmacPlanner2D::configure(
     0.0 /*unused for 2D*/,
     1.0 /*unused for 2D*/);
 
-  // Initialize path smoother
-  SmootherParams params;
-  params.get(node, name);
-  params.holonomic_ = true;  // So smoother will treat this as a grid search
-  _smoother = std::make_unique<Smoother>(params);
-  _smoother->initialize(1e-50 /*No valid minimum turning radius for 2D*/);
-
   // Initialize costmap downsampler
   std::string topic_name = "downsampled_costmap";
   _costmap_downsampler = std::make_unique<CostmapDownsampler>();
   _costmap_downsampler->on_configure(
     node, _global_frame, topic_name, _costmap, _downsampling_factor);
 
-  _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan");
 
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlanner2D with "
@@ -160,7 +151,6 @@ void SmacPlanner2D::activate()
   RCLCPP_INFO(
     _logger, "Activating plugin %s of type SmacPlanner2D",
     _name.c_str());
-  _raw_plan_publisher->on_activate();
   if (_costmap_downsampler) {
     _costmap_downsampler->on_activate();
   }
@@ -175,7 +165,6 @@ void SmacPlanner2D::deactivate()
   RCLCPP_INFO(
     _logger, "Deactivating plugin %s of type SmacPlanner2D",
     _name.c_str());
-  _raw_plan_publisher->on_deactivate();
   if (_costmap_downsampler) {
     _costmap_downsampler->on_deactivate();
   }
@@ -193,12 +182,10 @@ void SmacPlanner2D::cleanup()
     _logger, "Cleaning up plugin %s of type SmacPlanner2D",
     _name.c_str());
   _a_star.reset();
-  _smoother.reset();
   if (_costmap_downsampler) {
     _costmap_downsampler->on_cleanup();
     _costmap_downsampler.reset();
   }
-  _raw_plan_publisher.reset();
 }
 
 nav_msgs::msg::Path SmacPlanner2D::createPlan(
@@ -207,8 +194,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
   std::function<bool()> cancel_checker)
 {
   std::lock_guard<std::mutex> lock_reinit(_mutex);
-  steady_clock::time_point a = steady_clock::now();
-
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
   // Downsample costmap, if required
@@ -271,11 +256,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     }
     plan.poses.push_back(pose);
 
-    // Publish raw path for debug
-    if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
-    }
-
     return plan;
   }
 
@@ -305,24 +285,6 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
     pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
     plan.poses.push_back(pose);
   }
-
-  // Publish raw path for debug
-  if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
-  }
-
-  // Find how much time we have left to do smoothing
-  steady_clock::time_point b = steady_clock::now();
-  duration<double> time_span = duration_cast<duration<double>>(b - a);
-  double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
-
-#ifdef BENCHMARK_TESTING
-  std::cout << "It took " << time_span.count() * 1000 <<
-    " milliseconds with " << num_iterations << " iterations." << std::endl;
-#endif
-
-  // Smooth plan
-  _smoother->smooth(plan, costmap, time_remaining);
 
   // If use_final_approach_orientation=true, interpolate the last pose orientation from the
   // previous pose to set the orientation to the 'final approach' orientation of the robot so

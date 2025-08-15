@@ -166,7 +166,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
     }
   }
 
-  updateApproximatePathOrientations(path, reversing_segment);
+  updateApproximatePathOrientations(path, reversing_segment, false);
   return true;
 }
 

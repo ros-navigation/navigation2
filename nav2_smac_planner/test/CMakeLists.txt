@@ -111,21 +111,6 @@ target_link_libraries(test_smac_lattice
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
-# Test SMAC Smoother
-ament_add_gtest(test_smoother
-  test_smoother.cpp
-)
-target_link_libraries(test_smoother
-  ${library_name}_lattice
-  ${library_name}
-  ${library_name}_2d
-  ament_index_cpp::ament_index_cpp
-  ${geometry_msgs_TARGETS}
-  nav2_costmap_2d::nav2_costmap_2d_core
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-)
-
 # Test Lattice node
 ament_add_gtest(test_lattice_node test_nodelattice.cpp)
 target_link_libraries(test_lattice_node

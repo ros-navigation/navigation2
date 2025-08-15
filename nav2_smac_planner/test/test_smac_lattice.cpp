@@ -174,7 +174,6 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.analytic_expansion_ratio", 4.0),
       rclcpp::Parameter("test.max_planning_time", 10.0),
       rclcpp::Parameter("test.lookup_table_size", 30.0),
-      rclcpp::Parameter("test.smooth_path", false),
       rclcpp::Parameter("test.analytic_expansion_max_length", 42.0),
       rclcpp::Parameter("test.tolerance", 42.0),
       rclcpp::Parameter("test.rotation_penalty", 42.0),
