@@ -43,7 +43,7 @@ PathSearchResult distance_from_path(
     return result;
   }
 
-  if (start_index >= path.poses.size()) {
+  if (start_index >= path.poses.size() - 1) {
     throw std::invalid_argument(
       "Invalid operation: requested start index (" + std::to_string(start_index) +
       ") is greater than or equal to path size (" + std::to_string(path.poses.size()) +
