@@ -59,102 +59,89 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   const nav2_route::Graph & graph, const std::string & frame, const rclcpp::Time & now)
 {
   visualization_msgs::msg::MarkerArray msg;
-  visualization_msgs::msg::Marker curr_marker;
-  curr_marker.header.frame_id = frame;
-  curr_marker.header.stamp = now;
-  curr_marker.action = 0;
 
-  auto getSphereSize = []() {
-      geometry_msgs::msg::Vector3 v_msg;
-      v_msg.x = 0.05;
-      v_msg.y = 0.05;
-      v_msg.z = 0.05;
-      return v_msg;
-    };
+  visualization_msgs::msg::Marker nodes_marker;
+  nodes_marker.header.frame_id = frame;
+  nodes_marker.header.stamp = now;
+  nodes_marker.action = 0;
+  nodes_marker.ns = "route_graph_nodes";
+  nodes_marker.type = visualization_msgs::msg::Marker::POINTS;
+  nodes_marker.scale.x = 0.5;
+  nodes_marker.scale.y = 0.5;
+  nodes_marker.scale.z = 0.5;
+  nodes_marker.color.r = 1.0;
+  nodes_marker.color.a = 1.0;
+  nodes_marker.points.reserve(graph.size());
 
-  auto getSphereColor = []() {
-      std_msgs::msg::ColorRGBA c_msg;
-      c_msg.r = 1.0;
-      c_msg.g = 0.0;
-      c_msg.b = 0.0;
-      c_msg.a = 1.0;
-      return c_msg;
-    };
+  visualization_msgs::msg::Marker edges_marker;
+  edges_marker.header.frame_id = frame;
+  edges_marker.header.stamp = now;
+  edges_marker.action = 0;
+  edges_marker.ns = "route_graph_edges";
+  edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  edges_marker.scale.x = 0.1;  // Line width
+  edges_marker.color.g = 1.0;
+  edges_marker.color.a = 0.5;  // Semi-transparent green so bidirectional connections stand out
+  // Each edge has 2 points, each node is likely to have at least 2 edges.
+  // This likely under-reserves but saves some initial reallocations
+  edges_marker.points.reserve(graph.size() * 2 * 2);
 
-  auto getLineColor = []() {
-      std_msgs::msg::ColorRGBA c_msg;
-      c_msg.r = 0.0;
-      c_msg.g = 1.0;
-      c_msg.b = 0.0;
-      c_msg.a = 0.5;  // So bi-directional connections stand out overlapping
-      return c_msg;
-    };
+  geometry_msgs::msg::Point node_pos;
+  geometry_msgs::msg::Point edge_start;
+  geometry_msgs::msg::Point edge_end;
 
-  unsigned int marker_idx = 1;
-  for (unsigned int i = 0; i != graph.size(); i++) {
-    if (graph[i].nodeid == std::numeric_limits<int>::max()) {
-      continue;  // Skip "deleted" nodes
-    }
-    curr_marker.ns = "route_graph";
-    curr_marker.id = marker_idx++;
-    curr_marker.type = visualization_msgs::msg::Marker::SPHERE;
-    curr_marker.pose.position.x = graph[i].coords.x;
-    curr_marker.pose.position.y = graph[i].coords.y;
-    curr_marker.scale = getSphereSize();
-    curr_marker.color = getSphereColor();
-    msg.markers.push_back(curr_marker);
+  visualization_msgs::msg::Marker node_id_marker;
+  node_id_marker.ns = "route_graph_node_ids";
+  node_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  node_id_marker.scale.z = 0.1;
 
-    // Add text
-    curr_marker.ns = "route_graph_ids";
-    curr_marker.id = marker_idx++;
-    curr_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
-    curr_marker.pose.position.x = graph[i].coords.x + 0.07;
-    curr_marker.pose.position.y = graph[i].coords.y;
-    curr_marker.text = std::to_string(graph[i].nodeid);
-    curr_marker.scale.z = 0.1;
-    msg.markers.push_back(curr_marker);
+  visualization_msgs::msg::Marker edge_id_marker;
+  edge_id_marker.ns = "route_graph_edge_ids";
+  edge_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  edge_id_marker.scale.z = 0.1;
 
-    for (unsigned int j = 0; j != graph[i].neighbors.size(); j++) {
-      curr_marker.ns = "route_graph";
-      curr_marker.id = marker_idx++;
-      curr_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
-      curr_marker.pose.position.x = 0;  // Set to 0 since points are relative to this frame
-      curr_marker.pose.position.y = 0;  // Set to 0 since points are relative to this frame
-      curr_marker.points.resize(2);
-      curr_marker.points[0].x = graph[i].coords.x;
-      curr_marker.points[0].y = graph[i].coords.y;
-      curr_marker.points[1].x = graph[i].neighbors[j].end->coords.x;
-      curr_marker.points[1].y = graph[i].neighbors[j].end->coords.y;
-      curr_marker.scale.x = 0.03;
-      curr_marker.color = getLineColor();
-      msg.markers.push_back(curr_marker);
-      curr_marker.points.clear();  // Reset for next node marker
+  for (const auto & node : graph) {
+    node_pos.x = node.coords.x;
+    node_pos.y = node.coords.y;
+    nodes_marker.points.push_back(node_pos);
 
-      // Add text
-      curr_marker.ns = "route_graph_ids";
-      curr_marker.id = marker_idx++;
-      curr_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
-      curr_marker.pose.position.x =
-        graph[i].coords.x + ((graph[i].neighbors[j].end->coords.x - graph[i].coords.x) / 2.0) +
-        0.07;
+    // Add text for Node ID
+    node_id_marker.id++;
+    node_id_marker.pose.position.x = node.coords.x + 0.07;
+    node_id_marker.pose.position.y = node.coords.y;
+    node_id_marker.text = std::to_string(node.nodeid);
+    msg.markers.push_back(node_id_marker);
+
+    for (const auto & neighbor : node.neighbors) {
+      edge_start.x = node.coords.x;
+      edge_start.y = node.coords.y;
+      edge_end.x = neighbor.end->coords.x;
+      edge_end.y = neighbor.end->coords.y;
+      edges_marker.points.push_back(edge_start);
+      edges_marker.points.push_back(edge_end);
 
       // Deal with overlapping bi-directional text markers by offsetting locations
       float y_offset = 0.0;
-      if (graph[i].nodeid > graph[i].neighbors[j].end->nodeid) {
+      if (node.nodeid > neighbor.end->nodeid) {
         y_offset = 0.05;
       } else {
         y_offset = -0.05;
       }
+      const float x_offset = 0.07;
 
-      curr_marker.pose.position.y =
-        graph[i].coords.y + ((graph[i].neighbors[j].end->coords.y - graph[i].coords.y) / 2.0) +
-        y_offset;
-      curr_marker.text = std::to_string(graph[i].neighbors[j].edgeid);
-      curr_marker.scale.z = 0.1;
-      msg.markers.push_back(curr_marker);
+      // Add text for Edge ID
+      edge_id_marker.id++;
+      edge_id_marker.pose.position.x =
+        node.coords.x + ((neighbor.end->coords.x - node.coords.x) / 2.0) + x_offset;
+      edge_id_marker.pose.position.y =
+        node.coords.y + ((neighbor.end->coords.y - node.coords.y) / 2.0) + y_offset;
+      edge_id_marker.text = std::to_string(neighbor.edgeid);
+      msg.markers.push_back(edge_id_marker);
     }
   }
 
+  msg.markers.push_back(nodes_marker);
+  msg.markers.push_back(edges_marker);
   return msg;
 }
 
