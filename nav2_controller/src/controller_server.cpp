@@ -617,14 +617,6 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->setPlan(path);
   path_handler_->setPlan(path);
 
-  end_pose_ = path.poses.back();
-  end_pose_.header.frame_id = path.header.frame_id;
-  goal_checkers_[current_goal_checker_]->reset();
-
-  RCLCPP_DEBUG(
-    get_logger(), "Path end point is (%.2f, %.2f)",
-    end_pose_.pose.position.x, end_pose_.pose.position.y);
-
   current_path_ = path;
 }
 
@@ -646,6 +638,10 @@ void ControllerServer::computeAndPublishVelocity()
     pose, max_robot_pose_search_dist_, interpolate_curvature_after_goal_);
   // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(transformed_plan));
   global_path_pub_->publish(transformed_plan);
+  local_path_ = transformed_plan;
+  end_pose_ = local_path_.poses.back();
+  end_pose_.header.frame_id = local_path_.header.frame_id;
+  goal_checkers_[current_goal_checker_]->reset();
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
