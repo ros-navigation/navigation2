@@ -282,6 +282,10 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
   EXPECT_FALSE(bt_handler->loadBehaviorTree(invalid_file, search_directories));
 
+  // Test non existent search directory
+  search_directories = {"/tmp", "/tmp/does_not_exist"};
+  EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
+
   // Cleanup (RAII would be even better for larger tests)
   std::remove(subtree_file.c_str());
   std::remove(main_file.c_str());
