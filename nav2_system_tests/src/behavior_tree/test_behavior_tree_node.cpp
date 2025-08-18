@@ -242,6 +242,51 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
   }
 }
 
+TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
+{
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  // File paths
+  std::string subtree_file = "/tmp/test_subtree.xml";
+  std::string main_file = "/tmp/test_main_tree.xml";
+  std::string invalid_file = "/tmp/invalid_bt.xml";
+
+  // Write files
+  write_file(subtree_file,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "    <BehaviorTree ID=\"NoopTree\">\n"
+    "        <Sequence name=\"NoopSequence\">\n"
+    "            <AlwaysFailure name=\"force_failure\" />\n"
+    "        </Sequence>\n"
+    "    </BehaviorTree>\n"
+    "</root>\n");
+
+  write_file(main_file,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
+    "  <BehaviorTree ID=\"MainTree\">\n"
+    "    <Subtree ID=\"NoopTree\"/>\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  write_file(invalid_file, "<root><invalid></root>"); // Malformed XML
+
+  std::vector<std::string> search_directories = {"/tmp"};
+
+  // Should fail to load due to missing subtree include and invalid XML
+  EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
+  EXPECT_FALSE(bt_handler->loadBehaviorTree(invalid_file, search_directories));
+
+  // Cleanup (RAII would be even better for larger tests)
+  std::remove(subtree_file.c_str());
+  std::remove(main_file.c_str());
+  std::remove(invalid_file.c_str());
+}
+
 /**
  * Test scenario:
  *
