@@ -273,7 +273,8 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
     "  </BehaviorTree>\n"
     "</root>\n");
 
-  write_file(invalid_file, "<root><invalid></root>"); // Malformed XML
+  // Malformed XML
+  write_file(invalid_file, "<root><invalid></root>");
 
   std::vector<std::string> search_directories = {"/tmp"};
 
