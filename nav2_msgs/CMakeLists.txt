@@ -13,8 +13,10 @@ find_package(action_msgs REQUIRED)
 
 nav2_package()
 
-# TODO(jwallace42): This is a work around for https://github.com/ros2/rosidl_typesupport_fastrtps/issues/28
-add_compile_options(-Wno-error=deprecated)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  # TODO(jwallace42): This is a work around for https://github.com/ros2/rosidl_typesupport_fastrtps/issues/28
+  add_compile_options(-Wno-error=deprecated)
+endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/CollisionMonitorState.msg"
