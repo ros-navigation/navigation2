@@ -284,9 +284,10 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
   EXPECT_FALSE(bt_handler->loadBehaviorTree(malformed_main, search_directories));
 
-  std::remove(subtree_file.c_str());
+  std::remove(valid_subtree.c_str());
   std::remove(main_file.c_str());
-  std::remove(invalid_file.c_str());
+  std::remove(invalid_subtree.c_str());
+  std::remove(malformed_main.c_str());
 }
 
 /**
