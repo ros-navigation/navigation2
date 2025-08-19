@@ -29,10 +29,10 @@ NavigateToPoseNavigator::configure(
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
 
-  goal_blackboard_id_ =
-    node->declare_or_get_parameter("goal_blackboard_id", std::string("goal"));
-  path_blackboard_id_ =
-    node->declare_or_get_parameter("path_blackboard_id", std::string("path"));
+  goal_blackboard_id_ = node->declare_or_get_parameter(getName() + ".goal_blackboard_id",
+      std::string("goal"));
+  path_blackboard_id_ = node->declare_or_get_parameter(getName() + ".path_blackboard_id",
+      std::string("path"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
