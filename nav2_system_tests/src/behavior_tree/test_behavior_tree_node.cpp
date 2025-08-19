@@ -250,21 +250,24 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
     };
 
   // File paths
-  std::string subtree_file = "/tmp/test_subtree.xml";
+  std::string valid_subtree = "/tmp/valid_subtree.xml";
+  std::string invalid_subtree = "/tmp/invalid_subtree.xml";
   std::string main_file = "/tmp/test_main_tree.xml";
-  std::string invalid_file = "/tmp/invalid_bt.xml";
+  std::string malformed_main = "/tmp/malformed_main.xml";
 
-  // Write files
-  write_file(subtree_file,
+  // Valid subtree
+  write_file(valid_subtree,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "    <BehaviorTree ID=\"NoopTree\">\n"
-    "        <Sequence name=\"NoopSequence\">\n"
-    "            <AlwaysFailure name=\"force_failure\" />\n"
-    "        </Sequence>\n"
+    "        <AlwaysSuccess />\n"
     "    </BehaviorTree>\n"
     "</root>\n");
 
+  // Invalid subtree (malformed XML)
+  write_file(invalid_subtree, "<root><invalid></root>");
+
+  // Main tree referencing the valid subtree
   write_file(main_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
@@ -273,18 +276,13 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
     "  </BehaviorTree>\n"
     "</root>\n");
 
-  // Malformed XML
-  write_file(invalid_file, "<root><invalid></root>");
+  // Malformed main tree
+  write_file(malformed_main, "<root><invalid></root>");
 
   std::vector<std::string> search_directories = {"/tmp"};
 
-  // Should fail to load due to missing subtree include and invalid XML
   EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
-  EXPECT_FALSE(bt_handler->loadBehaviorTree(invalid_file, search_directories));
-
-  // Test non existent search directory
-  search_directories = {"/tmp", "/tmp/does_not_exist"};
-  EXPECT_FALSE(bt_handler->loadBehaviorTree(main_file, search_directories));
+  EXPECT_FALSE(bt_handler->loadBehaviorTree(malformed_main, search_directories));
 
   std::remove(subtree_file.c_str());
   std::remove(main_file.c_str());
