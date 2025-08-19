@@ -39,12 +39,14 @@ BtActionServer<ActionT>::BtActionServer(
   const std::string & action_name,
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
+  const std::vector<std::string> & search_directories,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback)
 : action_name_(action_name),
   default_bt_xml_filename_(default_bt_xml_filename),
+  search_directories_(search_directories),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
@@ -245,6 +247,8 @@ void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsign
 template<class ActionT>
 bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
+  namespace fs = std::filesystem;
+
   // Empty filename is default for backward compatibility
   auto filename = bt_xml_filename.empty() ? default_bt_xml_filename_ : bt_xml_filename;
 
@@ -254,19 +258,38 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     return true;
   }
 
-  // if a new tree is created, than the Groot2 Publisher must be destroyed
+  // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
-
   if (!xml_file.good()) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      "Couldn't open input XML file: " + filename);
+      "Couldn't open BT XML file: " + filename);
     return false;
   }
 
-  // Create the Behavior Tree from the XML input
+  const auto canonical_main_bt = fs::canonical(filename);
+
+  // Register all XML behavior Subtrees found in the given directories
+  for (const auto & directory : search_directories_) {
+    try {
+      for (const auto & entry : fs::directory_iterator(directory)) {
+        if (entry.path().extension() == ".xml") {
+          // Skip registering the main tree file
+          if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
+            continue;
+          }
+          bt_->registerTreeFromFile(entry.path().string());
+        }
+      }
+    } catch (const std::exception & e) {
+      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+        "Exception reading behavior tree directory: " + std::string(e.what()));
+      return false;
+    }
+  }
+
+  // Try to load the main BT tree
   try {
     tree_ = bt_->createTreeFromFile(filename, blackboard_);
     for (auto & subtree : tree_.subtrees) {
@@ -280,15 +303,15 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     }
   } catch (const std::exception & e) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Exception when loading BT: ") + e.what());
+      std::string("Exception when creating BT tree from file: ") + e.what());
     return false;
   }
 
+  // Optional logging and monitoring
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
 
-  // Enable monitoring with Groot2
   if (enable_groot_monitoring_) {
     bt_->addGrootMonitoring(&tree_, groot_server_port_);
     RCLCPP_DEBUG(
