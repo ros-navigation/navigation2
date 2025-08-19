@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_system_tests</name>
-  <version>1.4.0</version>
+  <version>1.4.1</version>
   <description>A sets of system-level tests for Nav2 usually involving full robot simulation</description>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
