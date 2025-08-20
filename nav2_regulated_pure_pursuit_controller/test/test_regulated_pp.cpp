@@ -549,13 +549,13 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // basic full speed at a speed
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
   EXPECT_EQ(lin_v, 0.0);
-  EXPECT_EQ(ang_v, 1.8);
+  EXPECT_EQ(ang_v, 1.6);  // hit slow down limit
 
   // negative direction
   angle_to_path = -0.4;
   curr_speed.angular.z = -1.75;
   ctrl->rotateToHeadingWrapper(lin_v, ang_v, angle_to_path, curr_speed);
-  EXPECT_EQ(ang_v, -1.8);
+  EXPECT_EQ(ang_v, -1.6);  // hit slow down limit
 
   // kinematic clamping, no speed, some speed accelerating, some speed decelerating
   angle_to_path = 0.4;
@@ -720,6 +720,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
       rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
       rclcpp::Parameter("test.max_allowed_time_to_collision_up_to_carrot", 2.0),
+      rclcpp::Parameter("test.min_distance_to_obstacle", 2.0),
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
@@ -749,6 +750,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(
     node->get_parameter(
       "test.max_allowed_time_to_collision_up_to_carrot").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.min_distance_to_obstacle").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);

@@ -15,7 +15,6 @@
 #include "nav2_rviz_plugins/route_tool.hpp"
 #include <QDesktopServices>
 #include <QUrl>
-#include <unistd.h>
 #include <sys/types.h>
 #include <QFileDialog>
 #include "rviz_common/display_context.hpp"

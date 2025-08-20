@@ -416,15 +416,17 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
 
-  double orientation_bin = std::round(tf2::getYaw(start.pose.orientation) / _angle_bin_size);
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
+  double start_orientation_bin = std::round(tf2::getYaw(start.pose.orientation) / _angle_bin_size);
+  while (start_orientation_bin < 0.0) {
+    start_orientation_bin += static_cast<float>(_angle_quantizations);
   }
   // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (start_orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    start_orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setStart(mx_start, my_start, static_cast<unsigned int>(orientation_bin));
+  unsigned int start_orientation_bin_int =
+    static_cast<unsigned int>(start_orientation_bin);
+  _a_star->setStart(mx_start, my_start, start_orientation_bin_int);
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMapContinuous(
@@ -437,15 +439,17 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
-  orientation_bin = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
+  double goal_orientation_bin = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
+  while (goal_orientation_bin < 0.0) {
+    goal_orientation_bin += static_cast<float>(_angle_quantizations);
   }
   // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (goal_orientation_bin >= static_cast<float>(_angle_quantizations)) {
+    goal_orientation_bin -= static_cast<float>(_angle_quantizations);
   }
-  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(orientation_bin),
+  unsigned int goal_orientation_bin_int =
+    static_cast<unsigned int>(goal_orientation_bin);
+  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
     _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
@@ -462,7 +466,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Corner case of start and goal being on the same cell
   if (std::floor(mx_start) == std::floor(mx_goal) &&
-    std::floor(my_start) == std::floor(my_goal))
+    std::floor(my_start) == std::floor(my_goal) &&
+    start_orientation_bin_int == goal_orientation_bin_int)
   {
     pose.pose = start.pose;
     pose.pose.orientation = goal.pose.orientation;

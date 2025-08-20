@@ -46,6 +46,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
+#include "nav2_util/node_utils.hpp"
 #include "rclcpp/version.h"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
@@ -100,6 +101,8 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
+  double tf_filter_tolerance = nav2_util::declare_or_get_parameter(node, name_ + "." +
+      "tf_filter_tolerance", 0.05);
 
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
@@ -268,7 +271,8 @@ void ObstacleLayer::onInitialize()
       observation_subscribers_.push_back(sub);
 
       observation_notifiers_.push_back(filter);
-      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(0.05));
+      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(
+          tf_filter_tolerance));
 
     } else {
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2,
