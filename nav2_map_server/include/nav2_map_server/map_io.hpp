@@ -99,6 +99,14 @@ bool saveMapToFile(
   const SaveParameters & save_parameters);
 
 /**
+ * @brief to_string_with_precision
+ * @param value
+ * @param precision
+ * @return
+ */
+std::string to_string_with_precision(double value, int precision);
+
+/**
  * @brief Expand ~/ to home user dir.
  * @param yaml_filename Name of input YAML file.
  * @param home_dir Expanded `~/`home dir or empty string if HOME not set

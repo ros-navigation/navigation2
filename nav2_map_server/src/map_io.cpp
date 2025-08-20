@@ -593,13 +593,15 @@ void tryWriteMapToFile(
     std::string image_name = mapdatafile.substr(file_name_index + 1);
 
     YAML::Emitter e;
-    e << YAML::Precision(3);
+    e << YAML::Precision(7);
     e << YAML::BeginMap;
     e << YAML::Key << "image" << YAML::Value << image_name;
     e << YAML::Key << "mode" << YAML::Value << map_mode_to_string(save_parameters.mode);
-    e << YAML::Key << "resolution" << YAML::Value << map.info.resolution;
-    e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq << map.info.origin.position.x <<
-      map.info.origin.position.y << yaw << YAML::EndSeq;
+    e << YAML::Key << "resolution" << YAML::Value << to_string_with_precision(map.info.resolution,
+        3);
+    e << YAML::Key << "origin" << YAML::Flow << YAML::BeginSeq <<
+      to_string_with_precision(map.info.origin.position.x, 3) <<
+      to_string_with_precision(map.info.origin.position.y, 3) << yaw << YAML::EndSeq;
     e << YAML::Key << "negate" << YAML::Value << 0;
 
     if (save_parameters.mode == MapMode::Trinary) {
@@ -610,8 +612,10 @@ void tryWriteMapToFile(
       e << YAML::Key << "occupied_thresh" << YAML::Value << 0.65;
       e << YAML::Key << "free_thresh" << YAML::Value << 0.196;
     } else {
-      e << YAML::Key << "occupied_thresh" << YAML::Value << save_parameters.occupied_thresh;
-      e << YAML::Key << "free_thresh" << YAML::Value << save_parameters.free_thresh;
+      e << YAML::Key << "occupied_thresh" << YAML::Value <<
+        to_string_with_precision(save_parameters.occupied_thresh, 3);
+      e << YAML::Key << "free_thresh" << YAML::Value <<
+        to_string_with_precision(save_parameters.free_thresh, 3);
     }
 
     if (!e.good()) {
@@ -645,6 +649,14 @@ bool saveMapToFile(
     return false;
   }
   return true;
+}
+
+std::string to_string_with_precision(double value, int precision)
+{
+  std::ostringstream out;
+  out << std::fixed << std::setprecision(precision) << value;
+
+  return out.str();
 }
 
 }  // namespace nav2_map_server
