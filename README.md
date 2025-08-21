@@ -8,16 +8,16 @@
 </p>
 
 For detailed instructions on how to:
-- [Getting Started](https://docs.nav2.org/getting_started/index.html)
-- [Concepts](https://docs.nav2.org/concepts/index.html)
-- [Build](https://docs.nav2.org/development_guides/build_docs/index.html#build)
-- [Install](https://docs.nav2.org/development_guides/build_docs/index.html#install)
+- [Concepts](https://docs.nav2.org/concepts/index.html) and [Getting Started](https://docs.nav2.org/getting_started/index.html)
+- [First Time Setup Guide](https://docs.nav2.org/setup_guides/index.html)
+- [ROS Distribution Statuses](https://docs.nav2.org/#distributions)
+- [Build & Install](https://docs.nav2.org/development_guides/build_docs/index.html#build) and [Docker Containers](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [General Tutorials](https://docs.nav2.org/tutorials/index.html) and [Algorithm Developer Tutorials](https://docs.nav2.org/plugin_tutorials/index.html)
-- [Configure](https://docs.nav2.org/configuration/index.html)
+- [Configuration Guide](https://docs.nav2.org/configuration/index.html)
 - [Navigation Plugins](https://docs.nav2.org/plugins/index.html)
-- [ROSCon Talks](https://docs.nav2.org/about/roscon.html)
+- [API Docs](https://api.nav2.org/)
+- [ROSCon Talks](https://docs.nav2.org/about/roscon.html) and [Citations](https://docs.nav2.org/citations.html)
 - [Migration Guides](https://docs.nav2.org/migration/index.html)
-- [Container Images for Building Nav2](https://github.com/orgs/ros-navigation/packages/container/package/navigation2)
 - [Contribute](https://docs.nav2.org/development_guides/involvement_docs/index.html)
 
 Please visit our [documentation site](https://docs.nav2.org/). [Please visit our community Slack here](https://join.slack.com/t/navigation2/shared_invite/zt-uj428p0x-jKx8U7OzK1IOWp5TnDS2rA) (if this link does not work, please contact maintainers to reactivate).

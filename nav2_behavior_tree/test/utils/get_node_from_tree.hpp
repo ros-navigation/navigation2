@@ -26,7 +26,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief Get node from tree by type and index, casted to NodeT type, const casted away
- * Returns true if the node was found, false otherwise
+ * Returns node if it was found, nullptr otherwise.
  */
 template<typename NodeT>
 NodeT * get_node_from_tree(

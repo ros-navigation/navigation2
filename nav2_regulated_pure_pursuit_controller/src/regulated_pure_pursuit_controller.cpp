@@ -61,7 +61,7 @@ void RegulatedPurePursuitController::configure(
 
   // Handles global path transformations
   path_handler_ = std::make_unique<PathHandler>(
-    tf2::durationFromSec(params_->transform_tolerance), tf_, costmap_ros_);
+    params_->transform_tolerance, tf_, costmap_ros_);
 
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
