@@ -201,9 +201,9 @@ void SmacPlannerLattice::configure(
     _metadata.number_of_headings);
 
   // Initialize path smoother
+  SmootherParams params;
+  params.get(node, name);
   if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
     _smoother->initialize(_metadata.min_turning_radius);
   }
