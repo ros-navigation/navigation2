@@ -57,7 +57,7 @@ VectorObjectServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   map_pub_ = create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    nav2::qos::LatchedPublisherQoS());
 
   add_shapes_service_ = create_service<nav2_msgs::srv::AddShapes>(
     "~/add_shapes",

@@ -24,7 +24,7 @@ vector_object_server:
 costmap_filter_info_server:
   ros__parameters:
     type: 0
-    filter_info_topic: "costmap_filter_info"
+    filter_info_topic: "vo_costmap_filter_info"
     mask_topic: "vo_map"
     base: 0.0
     multiplier: 1.0
