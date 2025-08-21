@@ -199,7 +199,7 @@ unsigned char CostmapFilter::getMaskCost(
 {
   const unsigned int index = my * filter_mask->info.width + mx;
 
-  const char data = filter_mask->data[index];
+  const signed char data = filter_mask->data[index];
   if (data == nav2_util::OCC_GRID_UNKNOWN) {
     return NO_INFORMATION;
   } else {

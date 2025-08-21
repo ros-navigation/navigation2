@@ -51,6 +51,7 @@
 #pragma GCC diagnostic pop
 
 #include "message_filters/subscriber.hpp"
+#include "point_cloud_transport/subscriber_filter.hpp"
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
