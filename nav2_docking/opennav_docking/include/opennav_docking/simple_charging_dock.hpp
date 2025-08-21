@@ -168,9 +168,7 @@ protected:
   bool subscribe_toggle_{false};
 
   // Client used to call the Trigger service
-  nav2_util::ServiceClient<
-    std_srvs::srv::Trigger,
-    rclcpp_lifecycle::LifecycleNode::SharedPtr>::SharedPtr detector_client_;
+  nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr detector_client_;
 
   // Dynamic subscription pointer (can be reset to release CPU/GPU)
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
