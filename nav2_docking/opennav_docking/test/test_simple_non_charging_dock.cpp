@@ -391,7 +391,7 @@ TEST(SimpleChargingDockTests, ShouldRotateToDock)
 
 TEST(SimpleNonChargingDockTests, DetectorLifecycle)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
 
   // Test with detector service configured
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
@@ -433,7 +433,7 @@ TEST(SimpleNonChargingDockTests, DetectorLifecycle)
 
 TEST(SimpleNonChargingDockTests, DetectorServiceConfiguration)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_detector_config");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_detector_config");
 
   // Configure with detector service
   node->declare_parameter("my_dock.use_external_detection_pose", true);
@@ -450,7 +450,7 @@ TEST(SimpleNonChargingDockTests, DetectorServiceConfiguration)
 
 TEST(SimpleNonChargingDockTests, SubscriptionCallback)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+  auto node = std::make_shared<nav2::LifecycleNode>(
     "test_subscription_reliable_non_charging");
 
   node->declare_parameter("my_dock.use_external_detection_pose", true);
@@ -489,7 +489,7 @@ TEST(SimpleNonChargingDockTests, SubscriptionCallback)
 
 TEST(SimpleNonChargingDockTests, DetectorServiceTimeout)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_detector_timeout");
+  auto node = std::make_shared<nav2::LifecycleNode>("test_detector_timeout");
 
   node->declare_parameter("my_dock.use_external_detection_pose", true);
   node->declare_parameter("my_dock.detector_service_name", "slow_service");
@@ -527,7 +527,7 @@ TEST(SimpleNonChargingDockTests, DetectorServiceFailure)
       // The client will time out after 100ms
       {"my_dock.detector_service_timeout", 0.1}
     });
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+  auto node = std::make_shared<nav2::LifecycleNode>(
     "test_detector_failure_non_charging", options);
 
   // Create a service that responds slower than the client's timeout.
@@ -559,7 +559,7 @@ TEST(SimpleNonChargingDockTests, SubscriptionPersistent)
       {"my_dock.use_external_detection_pose", true},
       {"my_dock.subscribe_toggle", false}  // The key parameter to test.
     });
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+  auto node = std::make_shared<nav2::LifecycleNode>(
     "test_sub_persistent_non_charging", options);
 
   auto dock = std::make_unique<SimpleNonChargingDockTestable>();
