@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_voxel_grid)
 
 find_package(ament_cmake REQUIRED)
