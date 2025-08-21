@@ -22,8 +22,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/remove_shapes.hpp"

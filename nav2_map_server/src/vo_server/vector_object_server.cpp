@@ -23,7 +23,7 @@
 
 #include "rclcpp/create_timer.hpp"
 
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 
 #include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"

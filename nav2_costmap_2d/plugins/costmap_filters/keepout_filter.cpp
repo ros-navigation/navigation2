@@ -202,8 +202,8 @@ void KeepoutFilter::updateBounds(
     geometry_msgs::msg::Pose mask_pose;
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
       unsigned int mask_robot_i, mask_robot_j;
-      if (nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y, mask_robot_i,
-        mask_robot_j))
+      if (nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
+        mask_robot_i, mask_robot_j))
       {
         auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
         is_pose_lethal_ = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);

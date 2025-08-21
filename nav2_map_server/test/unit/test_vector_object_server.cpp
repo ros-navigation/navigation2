@@ -24,9 +24,9 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "unique_identifier_msgs/msg/uuid.hpp"
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/get_shapes.hpp"
