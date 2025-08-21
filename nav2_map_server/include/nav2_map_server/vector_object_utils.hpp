@@ -95,7 +95,7 @@ enum class OverlayType : uint8_t
 /**
  * @brief Updates map value with shape's one according to the given overlay type
  * @param map_val Map value. To be updated with new value if overlay is involved
- * @param shape_val Vector object value to be overlayed on map
+ * @param shape_val Vector object value to be overlaid on map
  * @param overlay_type Type of overlay
  * @throw std::exception in case of unknown overlay type
  */

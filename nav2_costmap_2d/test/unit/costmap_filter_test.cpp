@@ -46,7 +46,7 @@ public:
   void resetFilter() {}
 };
 
-TEST(CostmapFilter, testWorldToMask)
+TEST(CostmapFilter, testWorldToMap)
 {
   // Create occupancy grid for test as follows:
   //

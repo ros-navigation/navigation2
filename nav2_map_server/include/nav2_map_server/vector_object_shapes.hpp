@@ -379,7 +379,7 @@ protected:
 
   /**
    * @brief Converts circle center to map coordinates
-   * considering FP-accuracy loosing on small values when using conventional
+   * considering FP-accuracy losing on small values when using conventional
    * nav2_util::worldToMap() approach
    * @param map Map pointer
    * @param mcx Output X-coordinate of associated circle center on map

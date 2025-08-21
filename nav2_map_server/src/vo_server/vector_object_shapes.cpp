@@ -533,7 +533,7 @@ bool Circle::centerToMap(
     return false;
   }
   // We need the circle center to be always shifted one cell less its logical center
-  // and to avoid any FP-accuracy loosing on small values, so we are using another
+  // and to avoid any FP-accuracy losing on small values, so we are using another
   // than nav2_util::worldToMap() approach
   mcx = static_cast<unsigned int>(
     std::round((center_->x - map->info.origin.position.x) / map->info.resolution)) - 1;
