@@ -199,8 +199,8 @@ void SpeedFilter::process(
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y, mask_robot_i,
-    mask_robot_j))
+  if (!nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
+    mask_robot_i, mask_robot_j))
   {
     return;
   }
