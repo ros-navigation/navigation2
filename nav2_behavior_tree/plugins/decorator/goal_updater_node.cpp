@@ -36,9 +36,6 @@ GoalUpdater::GoalUpdater(
   goals_updater_topic_("goals_update")
 {
   initialize();
-
-    // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
-  callback_group_executor_.spin_all(std::chrono::milliseconds(1));
 }
 
 void GoalUpdater::initialize()
@@ -91,6 +88,8 @@ inline BT::NodeStatus GoalUpdater::tick()
   getInput("input_goal", goal);
   getInput("input_goals", goals);
 
+  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
+  callback_group_executor_.spin_all(std::chrono::milliseconds(1));
   callback_group_executor_.spin_all(std::chrono::milliseconds(49));
 
   if (last_goal_received_set_) {
