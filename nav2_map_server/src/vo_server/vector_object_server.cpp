@@ -326,7 +326,7 @@ void VectorObjectServer::putVectorObjectsOnMap()
 
 void VectorObjectServer::publishMap()
 {
-  if (map_ && map_pub_->get_subscription_count() > 0) {
+  if (map_) {
     auto map = std::make_unique<nav_msgs::msg::OccupancyGrid>(*map_);
     map_pub_->publish(std::move(map));
   }
