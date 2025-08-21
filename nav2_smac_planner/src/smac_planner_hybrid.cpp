@@ -237,9 +237,9 @@ void SmacPlannerHybrid::configure(
     _angle_quantizations);
 
   // Initialize path smoother
+  SmootherParams params;
+  params.get(node, name);
   if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
     _smoother->initialize(_minimum_turning_radius_global_coords);
   }
