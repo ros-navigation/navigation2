@@ -29,7 +29,6 @@
 
 #include "opennav_docking_core/non_charging_dock.hpp"
 #include "opennav_docking/pose_filter.hpp"
-#include "nav2_util/service_client.hpp"
 
 namespace opennav_docking
 {

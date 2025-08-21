@@ -25,6 +25,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>rcl_interfaces</depend>
   <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
