@@ -323,7 +323,7 @@ TEST(DockingServerTests, testDockBackward)
 TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2_util::NodeThread(node);
+  auto node_thread = nav2::NodeThread(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client");
 
   // Configure docking server
@@ -373,7 +373,7 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 TEST(DockingServerTests, StopDetectionOnSuccess)
 {
   auto node = std::make_shared<DockingServerShim>();
-  auto node_thread = nav2_util::NodeThread(node);
+  auto node_thread = nav2::NodeThread(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client_success");
 
   // Configure the server with the test plugin
@@ -422,7 +422,7 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
 TEST(DockingServerTests, HandlesPluginStartFailure)
 {
   auto node = std::make_shared<DockingServerTFShim>();
-  auto node_thread = nav2_util::NodeThread(node);
+  auto node_thread = nav2::NodeThread(node);
   auto client_node = std::make_shared<rclcpp::Node>("test_client_start_failure");
 
   // Configure the server with the TestFailureDock plugin.
