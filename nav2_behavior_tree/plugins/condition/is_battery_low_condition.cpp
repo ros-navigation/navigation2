@@ -30,9 +30,6 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   is_battery_low_(false)
 {
   initialize();
-
-  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
-  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
 }
 
 void IsBatteryLowCondition::initialize()
@@ -71,7 +68,7 @@ BT::NodeStatus IsBatteryLowCondition::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
   if (is_battery_low_) {
     return BT::NodeStatus::SUCCESS;
   }

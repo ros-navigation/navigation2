@@ -65,7 +65,7 @@ BT::NodeStatus ProgressCheckerSelector::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
 
   // This behavior always use the last selected progress checker received from the topic input.
   // When no input is specified it uses the default goaprogressl checker.
