@@ -443,8 +443,8 @@ TEST(SimpleChargingDockTests, DetectorLifecycle)
   auto service = node->create_service<std_srvs::srv::Trigger>(
     "test_detector_service",
     [&service_called](std::shared_ptr<rmw_request_id_t>,
-                      std::shared_ptr<std_srvs::srv::Trigger::Request>,
-                      std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+    std::shared_ptr<std_srvs::srv::Trigger::Request>,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
     {
       service_called = true;
       response->success = true;
@@ -538,8 +538,8 @@ TEST(SimpleChargingDockTests, DetectorServiceTimeout)
   auto mock_service = node->create_service<std_srvs::srv::Trigger>(
     "slow_service",
     [](std::shared_ptr<rmw_request_id_t>,
-      std::shared_ptr<std_srvs::srv::Trigger::Request>,
-      std::shared_ptr<std_srvs::srv::Trigger::Response>)
+    std::shared_ptr<std_srvs::srv::Trigger::Request>,
+    std::shared_ptr<std_srvs::srv::Trigger::Response>)
     {
       std::this_thread::sleep_for(200ms);
     });
@@ -574,8 +574,8 @@ TEST(SimpleChargingDockTests, DetectorServiceFailure)
   auto slow_service = node->create_service<std_srvs::srv::Trigger>(
     service_name,
     [](std::shared_ptr<rmw_request_id_t>,
-      std::shared_ptr<std_srvs::srv::Trigger::Request>,
-      std::shared_ptr<std_srvs::srv::Trigger::Response>)
+    std::shared_ptr<std_srvs::srv::Trigger::Request>,
+    std::shared_ptr<std_srvs::srv::Trigger::Response>)
     {
       std::this_thread::sleep_for(200ms);
     });
