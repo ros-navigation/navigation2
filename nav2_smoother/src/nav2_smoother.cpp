@@ -23,9 +23,7 @@
 #include "nav2_core/smoother_exceptions.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav_2d_utils/conversions.hpp"
-#include "nav_2d_utils/tf_help.hpp"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 
 using namespace std::chrono_literals;
 
@@ -80,7 +78,7 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(), get_node_timers_interface());
   tf_->setCreateTimerInterface(timer_interface);
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_);
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
 
   std::string costmap_topic, footprint_topic, robot_base_frame;
   double transform_tolerance = 0.1;

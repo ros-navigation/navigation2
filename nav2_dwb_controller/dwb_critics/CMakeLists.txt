@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(dwb_critics)
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(costmap_queue REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)

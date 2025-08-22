@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_constrained_smoother)
 
 set(CMAKE_BUILD_TYPE Release) # significant Ceres optimization speedup
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)

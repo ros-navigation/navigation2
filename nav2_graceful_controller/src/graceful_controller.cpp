@@ -18,6 +18,7 @@
 #include "angles/angles.h"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/controller_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -48,7 +49,7 @@ void GracefulController::configure(
 
   // Handles global path transformations
   path_handler_ = std::make_unique<PathHandler>(
-    tf2::durationFromSec(params_->transform_tolerance), tf_buffer_, costmap_ros_);
+    params_->transform_tolerance, tf_buffer_, costmap_ros_);
 
   // Handles the control law to generate the velocity commands
   control_law_ = std::make_unique<SmoothControlLaw>(
@@ -195,46 +196,38 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     // Else, fall through and see if we should follow control law longer
   }
 
-  // Precompute distance to candidate poses
+  // Find a valid target pose and its trajectory
+  nav_msgs::msg::Path local_plan;
+  geometry_msgs::msg::PoseStamped target_pose;
+
+  double dist_to_target;
   std::vector<double> target_distances;
   computeDistanceAlongPath(transformed_plan.poses, target_distances);
 
-  // Work back from the end of plan to find valid target pose
+  bool is_first_iteration = true;
   for (int i = transformed_plan.poses.size() - 1; i >= 0; --i) {
-    // Underlying control law needs a single target pose, which should:
-    //  * Be as far away as possible from the robot (for smoothness)
-    //  * But no further than the max_lookahed_ distance
-    //  * Be feasible to reach in a collision free manner
-    geometry_msgs::msg::PoseStamped target_pose = transformed_plan.poses[i];
-    double dist_to_target = target_distances[i];
-
-    // Continue if target_pose is too far away from robot
-    if (dist_to_target > params_->max_lookahead) {continue;}
-
-    if (dist_to_goal < params_->max_lookahead) {
-      if (params_->prefer_final_rotation) {
-        // Avoid instability and big sweeping turns at the end of paths by
-        // ignoring final heading
-        double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-        target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
-      }
-    } else if (dist_to_target < params_->min_lookahead) {
-      // Make sure target is far enough away to avoid instability
-      break;
+    if (is_first_iteration) {
+      // Calculate target pose through lookahead interpolation to get most accurate
+      // lookahead point, if possible
+      dist_to_target = params_->max_lookahead;
+      // Interpolate after goal false for graceful controller
+      // Requires interpolating the orientation which is not yet implemented
+      // Updates dist_to_target for target_pose returned if using the point on the path
+      target_pose = nav2_util::getLookAheadPoint(dist_to_target, transformed_plan, false);
+      is_first_iteration = false;
+    } else {
+      // Underlying control law needs a single target pose, which should:
+      //  * Be as far away as possible from the robot (for smoothness)
+      //  * But no further than the max_lookahed_ distance
+      //  * Be feasible to reach in a collision free manner
+      dist_to_target = target_distances[i];
+      target_pose = transformed_plan.poses[i];
     }
 
-    // Flip the orientation of the motion target if the robot is moving backwards
-    bool reversing = false;
-    if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
-      reversing = true;
-      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        tf2::getYaw(target_pose.pose.orientation) + M_PI);
-    }
-
-    // Actually simulate our path
-    nav_msgs::msg::Path local_plan;
-    if (simulateTrajectory(target_pose, costmap_transform, local_plan, cmd_vel, reversing)) {
-      // Successfully simulated to target_pose - compute velocity at this moment
+    // Compute velocity at this moment if valid target pose is found
+    if (validateTargetPose(
+        target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel))
+    {
       // Publish the selected target_pose
       motion_target_pub_->publish(target_pose);
       // Publish marker for slowdown radius around motion target for debugging / visualization
@@ -281,6 +274,49 @@ void GracefulController::setSpeedLimit(
         speed_limit / params_->v_linear_max_initial;
     }
   }
+}
+
+bool GracefulController::validateTargetPose(
+  geometry_msgs::msg::PoseStamped & target_pose,
+  double dist_to_target,
+  double dist_to_goal,
+  nav_msgs::msg::Path & trajectory,
+  geometry_msgs::msg::TransformStamped & costmap_transform,
+  geometry_msgs::msg::TwistStamped & cmd_vel)
+{
+  // Continue if target_pose is too far away from robot
+  if (dist_to_target > params_->max_lookahead) {
+    return false;
+  }
+
+  if (dist_to_goal < params_->max_lookahead) {
+    if (params_->prefer_final_rotation) {
+      // Avoid instability and big sweeping turns at the end of paths by
+      // ignoring final heading
+      double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
+      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+    }
+  } else if (dist_to_target < params_->min_lookahead) {
+    // Make sure target is far enough away to avoid instability
+    return false;
+  }
+
+  // Flip the orientation of the motion target if the robot is moving backwards
+  bool reversing = false;
+  if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
+    reversing = true;
+    target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
+      tf2::getYaw(target_pose.pose.orientation) + M_PI);
+  }
+
+  // Actually simulate the path
+  if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
+    // Successfully simulated to target_pose
+    return true;
+  }
+
+  // Validation not successful
+  return false;
 }
 
 bool GracefulController::simulateTrajectory(

@@ -28,7 +28,7 @@
 #include <nav2_costmap_2d/costmap_2d.hpp>
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"

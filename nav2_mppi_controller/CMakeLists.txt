@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_mppi_controller)
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -83,7 +84,13 @@ add_library(mppi_critics SHARED
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
 )
-target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND APPLE)
+    # Apple Clang: use C++20 and optimization, omit -fconcepts
+    target_compile_features(mppi_critics PUBLIC cxx_std_20)
+    target_compile_options(mppi_critics PUBLIC -O3)
+else()
+    target_compile_options(mppi_critics PUBLIC -fconcepts -O3)
+endif()
 target_include_directories(mppi_critics
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

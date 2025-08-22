@@ -230,9 +230,9 @@ void SmacPlannerLattice::configure(
     _metadata.number_of_headings);
 
   // Initialize path smoother
+  SmootherParams params;
+  params.get(node, name);
   if (smooth_path) {
-    SmootherParams params;
-    params.get(node, name);
     _smoother = std::make_unique<Smoother>(params);
     _smoother->initialize(_metadata.min_turning_radius);
   }
@@ -338,9 +338,9 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
-  _a_star->setStart(
-    mx_start, my_start,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
+  unsigned int start_bin =
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation));
+  _a_star->setStart(mx_start, my_start, start_bin);
 
   // Set goal point, in A* bin search coordinates
   if (!_costmap->worldToMapContinuous(
@@ -353,9 +353,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
+  unsigned int goal_bin =
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
   _a_star->setGoal(
-    mx_goal, my_goal,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)),
+    mx_goal, my_goal, goal_bin,
       _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
@@ -372,7 +373,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Corner case of start and goal being on the same cell
   if (std::floor(mx_start) == std::floor(mx_goal) &&
-    std::floor(my_start) == std::floor(my_goal))
+    std::floor(my_start) == std::floor(my_goal) &&
+    start_bin == goal_bin)
   {
     pose.pose = start.pose;
     pose.pose.orientation = goal.pose.orientation;

@@ -47,10 +47,11 @@
 #include "laser_geometry/laser_geometry.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreorder"
-#include "tf2_ros/message_filter.h"
+#include "tf2_ros/message_filter.hpp"
 #pragma GCC diagnostic pop
 
 #include "message_filters/subscriber.hpp"
+#include "point_cloud_transport/subscriber_filter.hpp"
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"

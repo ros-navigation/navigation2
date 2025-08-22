@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_map_server)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake_modules)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(GRAPHICSMAGICKCPP REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)

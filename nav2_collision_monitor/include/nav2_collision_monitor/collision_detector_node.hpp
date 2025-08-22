@@ -23,8 +23,8 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"

@@ -35,7 +35,6 @@
 #include "dwb_critics/rotate_to_goal.hpp"
 #include <string>
 #include <vector>
-#include "nav_2d_utils/parameters.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/trajectory_utils.hpp"
@@ -58,19 +57,15 @@ void RotateToGoalCritic::onInit()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  xy_goal_tolerance_ = nav_2d_utils::searchAndGetParam(
-    node,
+  xy_goal_tolerance_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-  double stopped_xy_velocity = nav_2d_utils::searchAndGetParam(
-    node,
+  double stopped_xy_velocity = node->declare_or_get_parameter(
     dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
-  slowing_factor_ = nav_2d_utils::searchAndGetParam(
-    node,
+  slowing_factor_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + "." + name_ + ".slowing_factor", 5.0);
-  lookahead_time_ = nav_2d_utils::searchAndGetParam(
-    node,
+  lookahead_time_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + "." + name_ + ".lookahead_time", -1.0);
   reset();
 }

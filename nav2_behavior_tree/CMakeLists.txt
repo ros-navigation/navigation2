@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -122,8 +123,8 @@ list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
-add_library(nav2_path_expiring_timer_condition SHARED plugins/condition/path_expiring_timer_condition.cpp)
-list(APPEND plugin_libs nav2_path_expiring_timer_condition)
+add_library(nav2_path_expiring_timer_condition_bt_node SHARED plugins/condition/path_expiring_timer_condition.cpp)
+list(APPEND plugin_libs nav2_path_expiring_timer_condition_bt_node)
 
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
@@ -217,6 +218,12 @@ list(APPEND plugin_libs nav2_nonblocking_sequence_bt_node)
 
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+add_library(nav2_pause_resume_controller_bt_node SHARED plugins/control/pause_resume_controller.cpp)
+list(APPEND plugin_libs nav2_pause_resume_controller_bt_node)
+
+add_library(nav2_persistent_sequence_bt_node SHARED plugins/control/persistent_sequence.cpp)
+list(APPEND plugin_libs nav2_persistent_sequence_bt_node)
 
 add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
 list(APPEND plugin_libs nav2_single_trigger_bt_node)
