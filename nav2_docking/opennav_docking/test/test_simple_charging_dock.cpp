@@ -499,7 +499,7 @@ TEST(SimpleChargingDockTests, SubscriptionCallback)
   dock->activate();
 
   auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "detected_dock_pose", 1);
+    "detected_dock_pose", rclcpp::QoS(1));
   // A LifecyclePublisher must be activated to publish.
   publisher->on_activate();
 
@@ -604,7 +604,7 @@ TEST(SimpleChargingDockTests, SubscriptionPersistent)
 
   // The subscription should be active immediately after configuration.
   auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "detected_dock_pose", 1);
+    "detected_dock_pose", rclcpp::QoS(1));
   publisher->on_activate();
 
   int tries = 0;
