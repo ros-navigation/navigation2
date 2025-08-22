@@ -66,7 +66,7 @@ BT::NodeStatus PlannerSelector::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
 
   // This behavior always use the last selected planner received from the topic input.
   // When no input is specified it uses the default planner.

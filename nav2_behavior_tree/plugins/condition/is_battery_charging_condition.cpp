@@ -62,7 +62,7 @@ BT::NodeStatus IsBatteryChargingCondition::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
   if (is_battery_charging_) {
     return BT::NodeStatus::SUCCESS;
   }
