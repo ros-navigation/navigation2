@@ -308,7 +308,6 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   if (prim == nullptr) {
     return prim_length;
   }
-  //print cost penalty
 
   // Pure rotation in place 1 angular bin in either direction
   if (transition_prim->trajectory_length < 1e-4) {
