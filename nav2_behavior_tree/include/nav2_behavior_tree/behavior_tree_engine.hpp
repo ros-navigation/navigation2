@@ -86,6 +86,16 @@ public:
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
 
+    /**
+   * @brief Function to create a BT from a BehaviorTree ID
+   * @param tree_id BehaviorTree ID
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+    */
+  BT::Tree createTree(
+    const std::string & tree_id,
+    BT::Blackboard::Ptr blackboard);
+
   /**
    * @brief Add Groot2 monitor to publish BT status changes
    * @param tree BT to monitor
