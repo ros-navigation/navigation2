@@ -246,6 +246,31 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 }
 
 template<class ActionT, class NodeT>
+std::optional<std::string> IWBtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
+  const std::string & filename)
+{
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    std::cerr << "Error: Could not open file " << filename << std::endl;
+    return std::nullopt;
+  }
+
+  const std::regex id_regex("<BehaviorTree ID=\"(.*?)\"");
+
+  std::string line;
+  while (std::getline(file, line)) {
+    std::smatch match;
+    if (std::regex_search(line, match, id_regex)) {
+      if (match.size() > 1) {
+        return match[1].str();
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
+template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename)
 {
   namespace fs = std::filesystem;
@@ -290,9 +315,15 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     }
   }
 
+  auto bt_id = extractBehaviorTreeID(filename);
+  if(!bt_id) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Could not find BehaviorTree ID in file: " + filename);
+    return false;
+  }
   // Try to load the main BT tree
   try {
-    tree_ = bt_->createTreeFromFile(filename, blackboard_);
+    tree_ = bt_->createTree(*bt_id, blackboard_);
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
       blackboard->set("node", client_node_);
