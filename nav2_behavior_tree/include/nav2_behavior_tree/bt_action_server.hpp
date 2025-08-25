@@ -99,12 +99,12 @@ public:
 
   /**
    * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
+   * @param bt_xml_filename_or_id The file containing the new BT, uses default filename if empty or BT ID
+   * @return bool true if the resulting BT correspond to the one in bt_xml_filename_or_id. false
    * if something went wrong, and previous BT is maintained
    */
   bool loadBehaviorTree(
-    const std::string & bt_xml_filename = "");
+    const std::string & bt_xml_filename_or_id = "");
 
   /** @brief Extract BehaviorTree ID from XML file
    * @param filename The file containing the BT
