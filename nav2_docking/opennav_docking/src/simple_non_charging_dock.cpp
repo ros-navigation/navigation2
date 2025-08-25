@@ -110,6 +110,10 @@ void SimpleNonChargingDock::configure(
   node_->get_parameter(name + ".detector_service_timeout", detector_service_timeout_);
   node_->get_parameter(name + ".subscribe_toggle", subscribe_toggle_);
 
+  // Initialize detection state
+  detection_started_ = false;
+  initial_pose_received_ = false;
+
   // Create persistent subscription if toggling is disabled.
   if (use_external_detection_pose_ && !subscribe_toggle_) {
     dock_pose_.header.stamp = rclcpp::Time(0);
@@ -117,7 +121,7 @@ void SimpleNonChargingDock::configure(
       "detected_dock_pose",
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
-        detector_enabled_ = true;
+        initial_pose_received_ = true;
       },
       nav2::qos::StandardTopicQoS());
   }
@@ -203,7 +207,8 @@ bool SimpleNonChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pos
   }
 
   // Guard against using pose data before the first detection has arrived.
-  if (!detector_enabled_) {
+  if (!initial_pose_received_) {
+    RCLCPP_WARN(node_->get_logger(), "Waiting for first detected_dock_pose; none received yet");
     return false;
   }
 
@@ -321,7 +326,7 @@ void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointStat
 bool SimpleNonChargingDock::startDetection()
 {
   // Skip if already starting or ON
-  if (detector_enabled_) {
+  if (detection_started_) {
     return true;
   }
 
@@ -355,11 +360,12 @@ bool SimpleNonChargingDock::startDetection()
       "detected_dock_pose",
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
-        detector_enabled_ = true;
+        initial_pose_received_ = true;
       },
       nav2::qos::StandardTopicQoS());
   }
 
+  detection_started_ = true;
   RCLCPP_INFO(node_->get_logger(), "Detector START requested.");
   return true;
 }
@@ -367,7 +373,7 @@ bool SimpleNonChargingDock::startDetection()
 bool SimpleNonChargingDock::stopDetection()
 {
   // Skip if already OFF
-  if (!detector_enabled_) {
+  if (!detection_started_) {
     return true;
   }
 
@@ -400,7 +406,8 @@ bool SimpleNonChargingDock::stopDetection()
     detected_pose_sub_.reset();
   }
 
-  detector_enabled_ = false;
+  detection_started_ = false;
+  initial_pose_received_ = false;
   RCLCPP_INFO(node_->get_logger(), "Detector STOP requested");
   return true;
 }
