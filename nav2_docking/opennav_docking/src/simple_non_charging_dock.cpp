@@ -141,8 +141,8 @@ void SimpleNonChargingDock::configure(
   filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
 
   if (!detector_service_name_.empty()) {
-    detector_client_ = std::make_shared<nav2::ServiceClient<std_srvs::srv::Trigger>>(
-      detector_service_name_, node_);
+    detector_client_ = node_->create_client<std_srvs::srv::Trigger>(
+      detector_service_name_, false);
   }
 
   bool use_stall_detection;
