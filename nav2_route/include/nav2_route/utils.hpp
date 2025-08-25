@@ -82,9 +82,10 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   edges_marker.scale.x = 0.1;  // Line width
   edges_marker.color.g = 1.0;
   edges_marker.color.a = 0.5;  // Semi-transparent green so bidirectional connections stand out
-  // Each edge has 2 points, each node is likely to have at least 2 edges.
-  // This likely under-reserves but saves some initial reallocations
-  edges_marker.points.reserve(graph.size() * 2 * 2);
+  constexpr size_t points_per_edge = 2;
+  // This probably under-reserves but saves some initial reallocations
+  constexpr size_t likely_min_edges_per_node = 2;
+  edges_marker.points.reserve(graph.size() * points_per_edge * likely_min_edges_per_node);
 
   geometry_msgs::msg::Point node_pos;
   geometry_msgs::msg::Point edge_start;
