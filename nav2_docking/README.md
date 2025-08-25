@@ -266,6 +266,8 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
+When `use_external_detection_pose` is enabled, `getRefinedPose()` returns false until at least one `detected_dock_pose` message has been received. With `subscribe_toggle = false` (the default), the subscription stays active across the plugin lifecycle; with `true`, the subscription is created/destroyed when `startDetectionProcess()`/`stopDetectionProcess()` are called.
+
 ## Etc
 
 ### On Staging Poses
