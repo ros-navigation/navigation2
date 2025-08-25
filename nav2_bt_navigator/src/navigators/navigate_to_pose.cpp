@@ -82,10 +82,9 @@ NavigateToPoseNavigator::cleanup()
 bool
 NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  auto bt_xml_filename = goal->behavior_tree;
-  if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
+  if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
     bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Error loading XML file: ") + bt_xml_filename + ". Navigation canceled.");
+      std::string("Error loading XML file: ") + goal->behavior_tree + ". Navigation canceled.");
     return false;
   }
 
