@@ -105,9 +105,9 @@ protected:
 
   // Optionally subscribe to a detected dock pose topic
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
   // If subscribed to a detected pose topic, will contain latest message
   geometry_msgs::msg::PoseStamped detected_dock_pose_;
   // This is the actual dock pose once it has the specified translation/rotation applied
@@ -149,10 +149,11 @@ protected:
   nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr detector_client_;
 
   // Dynamic subscription pointer (can be reset to release CPU/GPU)
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
 
-  // Simple boolean to track detector status
-  bool detector_enabled_{false};
+  // Detection state flags
+  bool detection_started_{false};
+  bool initial_pose_received_{false};
 
   // Internally enable detector (service + subscribe)
   bool startDetection();
