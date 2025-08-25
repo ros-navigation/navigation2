@@ -141,6 +141,11 @@ void PathConverter::interpolateEdge(
   // Find number of points to populate by given density
   const float mag = hypotf(x1 - x0, y1 - y0);
   const unsigned int num_pts = ceil(mag / density_);
+  // For zero-length edges, we can just push the start point and return
+  if (num_pts < 1) {
+    return;
+  }
+
   const float iterpolated_dist = mag / num_pts;
 
   // Find unit vector direction
@@ -151,10 +156,6 @@ void PathConverter::interpolateEdge(
   float x = x0;
   float y = y0;
   poses.push_back(utils::toMsg(x, y));
-  // For zero-length edges, we can just push the start point and return
-  if (num_pts < 1) {
-    return;
-  }
 
   unsigned int pt_ctr = 0;
   while (pt_ctr < num_pts - 1) {
