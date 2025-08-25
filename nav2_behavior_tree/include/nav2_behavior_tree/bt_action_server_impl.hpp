@@ -247,11 +247,14 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 
 template<class ActionT, class NodeT>
 std::optional<std::string> IWBtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
-  const std::string & filename)
+  const std::string & file_or_id)
 {
-  std::ifstream file(filename);
+  if(!file_or_id.ends_with(".xml")) {
+    return file_or_id;
+  }
+  std::ifstream file(file_or_id);
   if (!file.is_open()) {
-    std::cerr << "Error: Could not open file " << filename << std::endl;
+    RCLCPP_ERROR(logger_, "Could not open file %s", file_or_id.c_str());
     return std::nullopt;
   }
 
@@ -276,10 +279,11 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
   namespace fs = std::filesystem;
 
   // Empty argument is default for backward compatibility
-  auto arg = bt_xml_filename_or_id.empty() ? default_bt_xml_filename_ : bt_xml_filename_or_id;
+  auto file_or_id =
+    bt_xml_filename_or_id.empty() ? default_bt_xml_filename_ : bt_xml_filename_or_id;
 
   // Use previous BT if it is the existing one and always reload flag is not set to true
-  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == arg) {
+  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == file_or_id) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml or ID is already loaded");
     return true;
   }
@@ -287,25 +291,11 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  std::optional<std::string> bt_id = arg;
-  bool is_xml = arg.ends_with(".xml");
-  std::optional<std::filesystem::path> canonical_main_bt;
-
-  if (is_xml) {
-    std::ifstream xml_file(arg);
-    if (!xml_file.good()) {
-      RCLCPP_ERROR(logger_, "Couldn't open BT XML file: %s", arg.c_str());
-      return false;
-    }
-    RCLCPP_INFO_STREAM(logger_, "Loading Behavior Tree from file: " << arg);
-
-    bt_id = extractBehaviorTreeID(arg);
-    if (!bt_id) {
-      RCLCPP_ERROR(logger_, "Could not find BehaviorTree ID in file: %s", arg.c_str());
-      return false;
-    }
-
-    const auto canonical_main_bt = fs::canonical(arg);
+  auto bt_id = extractBehaviorTreeID(file_or_id);
+  if (!bt_id) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Exception reading behavior tree directory: " + std::string(e.what()));
+    return false;
   }
 
   // Register all XML behavior Subtrees found in the given directories
@@ -313,19 +303,12 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
     try {
       for (const auto & entry : fs::directory_iterator(directory)) {
         if (entry.path().extension() == ".xml") {
-          // If XML, skip registering the main tree file; if ID, register all
-          if (is_xml && canonical_main_bt &&
-            std::filesystem::equivalent(
-                  std::filesystem::canonical(entry.path()), *canonical_main_bt))
-          {
-            continue;
-          }
           bt_->registerTreeFromFile(entry.path().string());
         }
       }
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(logger_, "Exception reading behavior tree directory '%s': %s", directory.c_str(),
-          e.what());
+      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+        "Exception reading behavior tree directory: " + std::string(e.what()));
       return false;
     }
   }
@@ -342,11 +325,21 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
           "wait_for_service_timeout", wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    RCLCPP_ERROR_STREAM(logger_, "Got exception: " << e.what());
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when creating BT tree from file: ") + e.what());
     return false;
   }
 
-  current_bt_xml_filename_ = arg;
+  // Optional logging and monitoring
+  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+  current_bt_xml_filename_ = file_or_id;
+
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
 
   return true;
 }
