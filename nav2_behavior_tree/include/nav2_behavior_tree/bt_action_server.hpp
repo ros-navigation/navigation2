@@ -110,7 +110,7 @@ public:
    * @param filename The file containing the BT
    * @return std::optional<std::string> BehaviorTree ID if found, std::nullopt otherwise
    */
-  std::optional<std::string> extractBehaviorTreeID(const std::string & filename);
+  std::optional<std::string> extractBehaviorTreeID(const std::string & file_or_id);
 
   /**
    * @brief Getter function for BT Blackboard
