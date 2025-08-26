@@ -667,6 +667,38 @@ void CollisionMonitor::publishPolygons() const
   }
 }
 
+void CollisionMonitor::toggleCMServiceCallback(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+  std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+{
+  if (robot_action_prev_.action_type == ActionType::STOP || robot_action_prev_.action_type == ActionType::SLOWDOWN) {
+    response->success = false;
+    response->message = "Cannot toggle collision monitor in STOP/SLOWDOWN state";
+    
+    return;
+  }
+
+  std::vector<rclcpp::Parameter> polygon_parameters{};
+  polygon_parameters.reserve(polygons_.size());
+
+  for (const auto& polygon : polygons_) {
+    auto parameter_name{polygon->getName() + "." + "enabled"};
+    polygon_parameters.emplace_back(parameter_name, !enabled_);
+  }
+
+  auto node = shared_from_this();
+  node->set_parameters(polygon_parameters);
+
+  enabled_ = !enabled_;
+
+  response->success = true;
+
+  std::stringstream message;
+  message << "Collision monitor toggled " << (enabled_ ? "on" : "off") << " successfully";
+  response->message = message.str();
+}
+
 }  // namespace nav2_collision_monitor
 
 #include "rclcpp_components/register_node_macro.hpp"
