@@ -25,6 +25,8 @@
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
+using namespace std::placeholders;
+
 namespace nav2_collision_monitor
 {
 
@@ -80,6 +82,13 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
+  
+  // Toggle service initialization
+  const std::string service_prefix = get_name() + std::string("/");
+
+  toggle_cm_service_ = create_service<std_srvs::srv::Trigger>(
+    service_prefix + std::string("toggle_collision_monitor"),
+    std::bind(&CollisionMonitor::toggleCMServiceCallback, this, _1, _2, _3));
 
   nav2::declare_parameter_if_not_declared(
     node, "use_realtime_priority", rclcpp::ParameterValue(false));
