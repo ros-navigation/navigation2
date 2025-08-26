@@ -44,6 +44,8 @@
 #include "nav2_collision_monitor/range.hpp"
 #include "nav2_collision_monitor/polygon_source.hpp"
 
+#include "std_srvs/srv/trigger.hpp"
+
 namespace nav2_collision_monitor
 {
 
@@ -200,6 +202,16 @@ protected:
    */
   void publishPolygons() const;
 
+  /**
+   * @brief Enable/disable collision monitor service callback
+   * @param request Service request
+   * @param response Service response
+   */
+  void toggleCMServiceCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response);
+
   // ----- Variables -----
 
   /// @brief TF buffer
@@ -227,6 +239,8 @@ protected:
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
 
+  /// @brief Enable/disable service
+  nav2::ServiceServer<std_srvs::srv::Trigger>::SharedPtr toggle_cm_service_;
   /// @brief Whether main routine is active
   bool process_active_;
 
