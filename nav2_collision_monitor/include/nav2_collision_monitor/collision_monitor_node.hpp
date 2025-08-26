@@ -241,6 +241,10 @@ protected:
 
   /// @brief Enable/disable service
   nav2::ServiceServer<std_srvs::srv::Trigger>::SharedPtr toggle_cm_service_;
+
+  /// @brief Whether collision monitor is enabled
+  bool enabled_;
+
   /// @brief Whether main routine is active
   bool process_active_;
 
