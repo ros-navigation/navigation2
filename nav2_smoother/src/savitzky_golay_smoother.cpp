@@ -49,23 +49,26 @@ void SavitzkyGolaySmoother::configure(
   node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
   node->get_parameter(name + ".window_size", window_size_);
   node->get_parameter(name + ".poly_order", poly_order_);
-
+  if (window_size_ % 2 == 0 || window_size_ <= 0) {
+    throw nav2_core::SmootherException(
+      "Savitzky-Golay Smoother requires a positive odd window size.");
+  }
   half_window_size_ = (window_size_ - 1) / 2;
   calculateCoefficients();
 }
 
 void SavitzkyGolaySmoother::calculateCoefficients()
 {
-  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(window_size_, -half_window_size_, half_window_size_);
+  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(window_size_, -half_window_size_,
+      half_window_size_);
   Eigen::MatrixXd x = Eigen::MatrixXd::Ones(window_size_, poly_order_ + 1);
-  for(int i = 1; i <= poly_order_; i++){
+  for(int i = 1; i <= poly_order_; i++) {
     x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
   }
   // (X^T * X)^-1 * X^T
   Eigen::MatrixXd coeff_mat = (x.transpose() * x).inverse() * x.transpose();
 
   sg_coeffs_ = coeff_mat.row(0).transpose();
-  std::cout << "Savitzky-Golay coefficients: " << sg_coeffs_.transpose() << std::endl;
 }
 
 bool SavitzkyGolaySmoother::smooth(
@@ -129,8 +132,8 @@ bool SavitzkyGolaySmoother::smoothImpl(
 
   // Convert PoseStamped to Eigen
   auto toEigenVec = [](const geometry_msgs::msg::PoseStamped & pose) -> Eigen::Vector2d {
-    return {pose.pose.position.x, pose.pose.position.y};
-  };
+      return {pose.pose.position.x, pose.pose.position.y};
+    };
 
   auto applyFilterOverAxes =
     [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
@@ -140,9 +143,9 @@ bool SavitzkyGolaySmoother::smoothImpl(
       for (unsigned int idx = 1; idx != path_size - 1; idx++) {
         Eigen::Vector2d accum(0.0, 0.0);
 
-        for(int j = -half_window_size_; j <= half_window_size_; j++){
+        for(int j = -half_window_size_; j <= half_window_size_; j++) {
           int path_idx = std::clamp<int>(idx + j, 0, path_size - 1);
-          accum += sg_coeffs_(j+half_window_size_) * init_plan_pts[path_idx];
+          accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[path_idx];
         }
         plan_pts[idx].pose.position.x = accum.x();
         plan_pts[idx].pose.position.y = accum.y();
