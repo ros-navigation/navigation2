@@ -43,6 +43,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
+  Eigen3::Eigen
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
