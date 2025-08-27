@@ -35,9 +35,7 @@ void GoalAngleCritic::initialize()
 
 void GoalAngleCritic::score(CriticData & data)
 {
-  if (!enabled_ || !utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.path))
-  {
+  if (!enabled_ || threshold_to_consider_ < data.path_length) {
     return;
   }
 

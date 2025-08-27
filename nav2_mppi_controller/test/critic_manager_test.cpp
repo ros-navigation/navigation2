@@ -121,7 +121,7 @@ TEST(CriticManagerTests, BasicCriticOperations)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
-    std::nullopt, std::nullopt};
+    std::nullopt, std::nullopt, 0.0};
 
   data.fail_flag = true;
   EXPECT_FALSE(critic_manager.getDummyCriticScored());

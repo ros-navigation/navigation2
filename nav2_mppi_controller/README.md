@@ -87,14 +87,14 @@ This process is then repeated a number of times and returns a converged solution
  | ---------------                  | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight                      | double | Default 3.0. Weight to apply to critic term.                                                                |
  | cost_power                       | int    | Default 1. Power order to apply to term.                                                                    |
- | threshold_to_consider            | double | Default 0.5. Minimal distance between robot and goal above which angle goal cost considered.               |
+ | threshold_to_consider            | double | Default 0.5. Remaining path length above which angle goal cost considered.               |
 
 #### Goal Critic
  | Parameter            | Type   | Definition                                                                                                  |
  | -------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight          | double | Default 5.0. Weight to apply to critic term.                                                                |
  | cost_power           | int    | Default 1. Power order to apply to term.                                                                    |
- | threshold_to_consider      | double | Default 1.4. Distance between robot and goal above which goal cost starts being considered                                    |
+ | threshold_to_consider      | double | Default 1.4. Remaining path length above which goal cost starts being considered                                    |
 
 
 #### Obstacles Critic
@@ -132,7 +132,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | ---------------            | ------ | -----------------------------------------------------------------------------------------------------------                        |
  | cost_weight                | double | Default 10.0. Weight to apply to critic term.                                                                                       |
  | cost_power                 | int    | Default 1. Power order to apply to term.                                                                                           |
- | threshold_to_consider      | double | Default 0.5. Distance between robot and goal above which path align cost stops being considered                                    |
+ | threshold_to_consider      | double | Default 0.5. Remaining path length above which path align cost stops being considered                                    |
  | offset_from_furthest      | double | Default 20. Checks that the candidate trajectories are sufficiently far along their way tracking the path to apply the alignment critic. This ensures that path alignment is only considered when actually tracking the path, preventing awkward initialization motions preventing the robot from leaving the path to achieve the appropriate heading.  |
  | trajectory_point_step      | int | Default 4. Step of trajectory points to evaluate for path distance to reduce compute time. Between 1-10 is typically reasonable.   |
  | max_path_occupancy_ratio   | double | Default 0.07 (7%). Maximum proportion of the path that can be occupied before this critic is not considered to allow the obstacle and path follow critics to avoid obstacles while following the path's intent in presence of dynamic objects in the scene.  |
@@ -143,7 +143,7 @@ Uses inflated costmap cost directly to avoid obstacles
  | ---------------           | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight               | double | Default 2.2. Weight to apply to critic term.                                                                |
  | cost_power                | int    | Default 1. Power order to apply to term.                                                                    |
- | threshold_to_consider     | double | Default 0.5. Distance between robot and goal above which path angle cost stops being considered             |
+ | threshold_to_consider     | double | Default 0.5. Remaining path length above which path angle cost stops being considered             |
  | offset_from_furthest      | int    | Default 4. Number of path points after furthest one any trajectory achieves to compute path angle relative to.  |
  | max_angle_to_furthest     | double | Default 0.785398. Angular distance between robot and goal above which path angle cost starts being considered           |
  | mode     | int | Default 0 (Forward Preference). Enum type for mode of operations for the path angle critic depending on path input types and behavioral desires. 0: Forward Preference, penalizes high path angles relative to the robot's orientation to incentivize turning towards the path. 1: No directional preference, penalizes high path angles relative to the robot's orientation or mirrored orientation (e.g. reverse), which ever is less, when a particular direction of travel is not preferable. 2: Consider feasible path orientation, when using a feasible path whereas the path points have orientation information (e.g. Smac Planners), consider the path's requested direction of travel to penalize path angles such that the robot will follow the path in the requested direction. |
@@ -155,14 +155,14 @@ Uses inflated costmap cost directly to avoid obstacles
  | cost_weight           | double | Default 5.0. Weight to apply to critic term.                                                                |
  | cost_power            | int    | Default 1. Power order to apply to term.   |
  | offset_from_furthest  | int    | Default 6. Number of path points after furthest one any trajectory achieves to drive path tracking relative to.     |
- | threshold_to_consider        | float  | Default 1.4. Distance between robot and goal above which path follow cost stops being considered  | 
+ | threshold_to_consider        | float  | Default 1.4. Remaining path length above which path follow cost stops being considered  | 
 
 #### Prefer Forward Critic
  | Parameter             | Type   | Definition                                                                                                  |
  | ---------------       | ------ | ----------------------------------------------------------------------------------------------------------- |
  | cost_weight           | double | Default 5.0. Weight to apply to critic term.                                                                |
  | cost_power            | int    | Default 1. Power order to apply to term.                                                                    |
- | threshold_to_consider | double | Default 0.5. Distance between robot and goal above which prefer forward cost stops being considered         |
+ | threshold_to_consider | double | Default 0.5. Remaining path length above which prefer forward cost stops being considered         |
 
 
 #### Twirling Critic

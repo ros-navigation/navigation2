@@ -74,7 +74,7 @@ TEST(CriticTests, ConstraintsCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -147,7 +147,7 @@ TEST(CriticTests, GoalAngleCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -165,16 +165,19 @@ TEST(CriticTests, GoalAngleCritic)
   path.x(9) = 10.0;
   path.y(9) = 0.0;
   path.yaws(9) = 3.14;
+  data.path_length = 9.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
 
   // Lets move it even closer, just to be sure it still doesn't trigger
   state.pose.pose.position.x = 9.2;
+  data.path_length = 0.8;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0, 1e-6);
 
   // provide state pose and path below `threshold_to_consider` to consider
   state.pose.pose.position.x = 9.7;
+  data.path_length = 0.3;
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0);
   EXPECT_NEAR(costs(0), 9.42, 0.02);  // (3.14 - 0.0) * 3.0 weight
@@ -199,7 +202,7 @@ TEST(CriticTests, GoalCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -216,6 +219,7 @@ TEST(CriticTests, GoalCritic)
   path.reset(10);
   path.x(9) = 10.0;
   path.y(9) = 0.0;
+  data.path_length = 9.0;
   critic.score(data);
   EXPECT_NEAR(costs(2), 0.0, 1e-6);  // (0 * 5.0 weight
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);  // Should all be 0 * 1000
@@ -224,6 +228,7 @@ TEST(CriticTests, GoalCritic)
   // provide state pose and path close
   path.x(9) = 0.5;
   path.y(9) = 0.0;
+  data.path_length = 0.5;
   critic.score(data);
   EXPECT_NEAR(costs(2), 2.5, 1e-6);  // (sqrt(10.0 * 10.0) * 5.0 weight
   EXPECT_NEAR(xt::sum(costs, immediate)(), 2500.0, 1e-6);  // should be 2.5 * 1000
@@ -249,7 +254,7 @@ TEST(CriticTests, PathAngleCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -267,11 +272,13 @@ TEST(CriticTests, PathAngleCritic)
   state.pose.pose.position.y = 0.0;
   path.reset(10);
   path.x(9) = 0.15;
+  data.path_length = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with less than PI/2 angular diff.
   path.x(9) = 0.95;
+  data.path_length = 0.95;
   data.furthest_reached_path_point = 2;  // So it grabs the 2 + offset_from_furthest_ = 6th point
   path.x(6) = 1.0;  // angle between path point and pose = 0 < max_angle_to_furthest_
   path.y(6) = 0.0;
@@ -364,7 +371,7 @@ TEST(CriticTests, PreferForwardCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
 
@@ -381,11 +388,13 @@ TEST(CriticTests, PreferForwardCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 10.0;
+  data.path_length = 9.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
 
   // provide state pose and path close to trigger behavior but with all forward motion
   path.x(9) = 0.15;
+  data.path_length = 0.85;
   state.vx = xt::ones<float>({1000, 30});
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0f, 1e-6f);
@@ -417,7 +426,7 @@ TEST(CriticTests, TwirlingCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -435,11 +444,13 @@ TEST(CriticTests, TwirlingCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 10.0;
+  data.path_length = 9.0;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path close to trigger behavior but with no angular variation
   path.x(9) = 0.15;
+  data.path_length = 0.85;
   state.wz = xt::zeros<float>({1000, 30});
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
@@ -477,7 +488,7 @@ TEST(CriticTests, PathFollowCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -495,12 +506,14 @@ TEST(CriticTests, PathFollowCritic)
   state.pose.pose.position.x = 2.0;
   path.reset(6);
   path.x(5) = 1.7;
+  data.path_length = 0.3;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path far enough to enable
   // pose differential is (0, 0) and (0.15, 0)
   path.x(5) = 0.15;
+  data.path_length = 1.85;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 750.0, 1e-2);  // 0.15 * 5 weight * 1000
 }
@@ -525,7 +538,7 @@ TEST(CriticTests, PathAlignCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
   TestGoalChecker goal_checker;  // from utils_tests tolerance of 0.25 positionally
   data.goal_checker = &goal_checker;
@@ -543,12 +556,14 @@ TEST(CriticTests, PathAlignCritic)
   state.pose.pose.position.x = 1.0;
   path.reset(10);
   path.x(9) = 0.85;
+  data.path_length = 0.15;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
   // provide state pose and path far enough to enable
   // but data furthest point reached is 0 and offset default is 20, so returns
   path.x(9) = 0.15;
+  data.path_length = 0.85;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -556,6 +571,7 @@ TEST(CriticTests, PathAlignCritic)
   // but with empty trajectories and paths, should still be zero
   *data.furthest_reached_path_point = 21;
   path.x(9) = 0.15;
+  data.path_length = 0.85;
   critic.score(data);
   EXPECT_NEAR(xt::sum(costs, immediate)(), 0.0, 1e-6);
 
@@ -586,6 +602,7 @@ TEST(CriticTests, PathAlignCritic)
   path.x(19) = 0.9;
   path.x(20) = 0.9;
   path.x(21) = 0.9;
+  data.path_length = 0.9;
   generated_trajectories.x = 0.66 * xt::ones<float>({1000, 30});
   critic.score(data);
   // 0.66 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
@@ -630,7 +647,7 @@ TEST(CriticTests, VelocityDeadbandCritic)
   float model_dt = 0.1;
   CriticData data =
   {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
-    std::nullopt};
+    std::nullopt, 1.0};
   data.motion_model = std::make_shared<OmniMotionModel>();
 
   // Initialization testing

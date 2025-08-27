@@ -701,6 +701,26 @@ struct Pose2D
   float x, y, theta;
 };
 
+
+inline double getPathLength(const nav_msgs::msg::Path & path)
+{
+  auto path_length = 0.0f;
+  if (path.poses.size() < 2) {
+    return path_length;
+  }
+
+  auto x_prev = path.poses.at(0).pose.position.x;
+  auto y_prev = path.poses.at(0).pose.position.y;
+  for (size_t i = 1; i < path.poses.size(); ++i) {
+    auto x_curr = path.poses.at(i).pose.position.x;
+    auto y_curr = path.poses.at(i).pose.position.y;
+    path_length += std::hypot(x_curr - x_prev, y_curr - y_prev);
+    x_prev = x_curr;
+    y_prev = y_curr;
+  }
+  return path_length;
+}
+
 }  // namespace mppi::utils
 
 #endif  // NAV2_MPPI_CONTROLLER__TOOLS__UTILS_HPP_

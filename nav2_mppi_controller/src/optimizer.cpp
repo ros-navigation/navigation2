@@ -211,6 +211,7 @@ void Optimizer::prepare(
   critics_data_.fail_flag = false;
   critics_data_.goal_checker = goal_checker;
   critics_data_.motion_model = motion_model_;
+  critics_data_.path_length = utils::getPathLength(plan);
   critics_data_.furthest_reached_path_point.reset();
   critics_data_.path_pts_valid.reset();
 }
