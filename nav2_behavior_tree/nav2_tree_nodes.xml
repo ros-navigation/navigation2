@@ -311,6 +311,12 @@
       <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
+    <Action ID="ToggleCollisionMonitor">
+      <input_port name="enable">Whether to enable collision monitoring</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
       <input_port name="goal">Destination</input_port>
