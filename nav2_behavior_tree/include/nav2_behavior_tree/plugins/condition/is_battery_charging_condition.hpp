@@ -18,6 +18,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <chrono>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
@@ -85,6 +86,7 @@ private:
   nav2::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   bool is_battery_charging_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

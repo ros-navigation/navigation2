@@ -34,9 +34,8 @@ SmootherSelector::SmootherSelector(
 : BT::SyncActionNode(name, conf)
 {
   initialize();
-
-  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
-  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 }
 
 void SmootherSelector::initialize()
@@ -70,7 +69,7 @@ BT::NodeStatus SmootherSelector::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(bt_loop_duration_);
 
   // This behavior always use the last selected smoother received from the topic input.
   // When no input is specified it uses the default smoother.

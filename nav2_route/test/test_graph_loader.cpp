@@ -107,7 +107,6 @@ TEST(GraphLoader, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::Rate(1).sleep();
   tf_broadcaster->sendTransform(transform);
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
   rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
 
   graph[0].coords.frame_id = "map_test";

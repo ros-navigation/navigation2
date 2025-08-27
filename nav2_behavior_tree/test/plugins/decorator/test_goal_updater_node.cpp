@@ -43,6 +43,9 @@ public:
     config_->blackboard->set(
       "node",
       node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
