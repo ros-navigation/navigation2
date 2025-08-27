@@ -163,3 +163,15 @@ TEST(PathConverterTest, test_path_converter_interpolation)
         poses[i].pose.position.y - poses[i + 1].pose.position.y), 0.05);
   }
 }
+
+TEST(PathConverterTest, test_path_converter_zero_length_edge)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  PathConverter converter;
+  converter.configure(node);
+
+  float x0 = 10.0, y0 = 10.0, x1 = 10.0, y1 = 10.0;
+  std::vector<geometry_msgs::msg::PoseStamped> poses;
+  converter.interpolateEdge(x0, y0, x1, y1, poses);
+  ASSERT_TRUE(poses.empty());
+}
