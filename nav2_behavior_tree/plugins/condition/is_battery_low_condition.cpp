@@ -30,6 +30,8 @@ IsBatteryLowCondition::IsBatteryLowCondition(
   is_battery_low_(false)
 {
   initialize();
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 }
 
 void IsBatteryLowCondition::initialize()
@@ -68,7 +70,7 @@ BT::NodeStatus IsBatteryLowCondition::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
+  callback_group_executor_.spin_all(bt_loop_duration_);
   if (is_battery_low_) {
     return BT::NodeStatus::SUCCESS;
   }

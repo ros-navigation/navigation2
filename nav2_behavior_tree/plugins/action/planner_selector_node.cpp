@@ -33,6 +33,8 @@ PlannerSelector::PlannerSelector(
 : BT::SyncActionNode(name, conf)
 {
   initialize();
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 }
 
 void PlannerSelector::initialize()
@@ -66,7 +68,7 @@ BT::NodeStatus PlannerSelector::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_all(std::chrono::milliseconds(50));
+  callback_group_executor_.spin_all(bt_loop_duration_);
 
   // This behavior always use the last selected planner received from the topic input.
   // When no input is specified it uses the default planner.
