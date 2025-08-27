@@ -319,8 +319,8 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
       blackboard->set("node", client_node_);
-      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_ms_);
-      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_ms_);
+      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
+      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->set<std::chrono::milliseconds>(
           "wait_for_service_timeout", wait_for_service_timeout_);
     }
