@@ -434,12 +434,10 @@ void PlannerServer::computePlanThroughPoses()
         // First path: add all poses
         concat_path.poses.insert(
           concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
-      } else {
+      } else if (curr_path.poses.size() > 1) {
         // Subsequent paths: skip the first pose to avoid duplication
-        if (curr_path.poses.size() > 1) {
-          concat_path.poses.insert(
-            concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
-        }
+        concat_path.poses.insert(
+          concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
       }
       concat_path.header = curr_path.header;
     }
