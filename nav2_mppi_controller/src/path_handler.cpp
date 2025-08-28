@@ -77,15 +77,18 @@ void PathHandler::calculatePathLengths(
   const PathIterator & closest_point)
 {
   // Calculate path length from closest point to end of global_plan_up_to_inversion_
-  auto start_idx_up_to_inversion = std::distance(global_plan_up_to_inversion_.poses.begin(), closest_point);
+  auto start_idx_up_to_inversion = std::distance(global_plan_up_to_inversion_.poses.begin(),
+      closest_point);
   global_plan_length_up_to_inversion_ = nav2_util::geometry_utils::calculate_path_length(
     global_plan_up_to_inversion_, start_idx_up_to_inversion);
-  
+
   if (enforce_path_inversion_ && inversion_locale_ != 0u) {
     // For paths with inversion: calculate length from closest point to end of full path
-    auto full_plan_start_idx = std::distance(global_plan_.poses.begin(), 
-      global_plan_.poses.begin() + std::distance(global_plan_up_to_inversion_.poses.begin(), closest_point));
-    global_plan_length_ = nav2_util::geometry_utils::calculate_path_length(global_plan_, full_plan_start_idx);
+    auto full_plan_start_idx = std::distance(global_plan_.poses.begin(),
+      global_plan_.poses.begin() + std::distance(global_plan_up_to_inversion_.poses.begin(),
+        closest_point));
+    global_plan_length_ = nav2_util::geometry_utils::calculate_path_length(global_plan_,
+        full_plan_start_idx);
   } else {
     global_plan_length_ = global_plan_length_up_to_inversion_;
   }
