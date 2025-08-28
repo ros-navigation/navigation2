@@ -15,6 +15,7 @@
 #ifndef NAV2_SMOOTHER__SAVITZKY_GOLAY_SMOOTHER_HPP_
 #define NAV2_SMOOTHER__SAVITZKY_GOLAY_SMOOTHER_HPP_
 
+#include <Eigen/Dense>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -85,6 +86,11 @@ public:
     nav_msgs::msg::Path & path,
     const rclcpp::Duration & max_time) override;
 
+  /**
+   * @brief Method to calculate SavitzkyGolay Coefficients
+   */
+  void calculateCoefficients();
+
 protected:
   /**
    * @brief Smoother method - does the smoothing on a segment
@@ -99,7 +105,8 @@ protected:
     bool & reversing_segment);
 
   bool do_refinement_, enforce_path_inversion_;
-  int refinement_num_;
+  int refinement_num_, window_size_, half_window_size_, poly_order_;
+  Eigen::VectorXd sg_coeffs_;
   rclcpp::Logger logger_{rclcpp::get_logger("SGSmoother")};
 };
 

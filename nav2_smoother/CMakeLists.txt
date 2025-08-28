@@ -16,6 +16,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 nav2_package()
 
@@ -42,6 +43,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
   nav2_ros_common::nav2_ros_common
+  Eigen3::Eigen
 )
 target_link_libraries(${library_name} PRIVATE
   rclcpp_components::component
@@ -157,6 +159,7 @@ ament_export_dependencies(
   rclcpp_lifecycle
   tf2
   tf2_ros
+  Eigen3
 )
 ament_export_targets(${library_name})
 ament_package()
