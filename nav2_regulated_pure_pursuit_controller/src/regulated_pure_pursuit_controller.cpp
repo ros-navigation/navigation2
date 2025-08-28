@@ -62,7 +62,7 @@ void RegulatedPurePursuitController::configure(
 
   // Handles global path transformations
   path_handler_ = std::make_unique<PathHandler>(
-    params_->transform_tolerance, tf_, costmap_ros_);
+    params_, tf_, costmap_ros_);
 
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
@@ -189,20 +189,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
   double curv_lookahead_dist = params_->curvature_lookahead_dist;
-
-  // Check for reverse driving
-  if (params_->allow_reversing) {
-    // Cusp check
-    const double dist_to_cusp = findVelocitySignChange(transformed_plan);
-
-    // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_cusp < lookahead_dist) {
-      lookahead_dist = dist_to_cusp;
-    }
-    if (dist_to_cusp < curv_lookahead_dist) {
-      curv_lookahead_dist = dist_to_cusp;
-    }
-  }
 
   // Get the particular point on the path at the lookahead distance
   auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, transformed_plan);

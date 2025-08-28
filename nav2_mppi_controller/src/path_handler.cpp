@@ -18,6 +18,7 @@
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/controller_utils.hpp"
 
 namespace mppi
 {
@@ -135,7 +136,7 @@ nav_msgs::msg::Path PathHandler::transformPath(
     if (isWithinInversionTolerances(global_pose)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
       global_plan_up_to_inversion_ = global_plan_;
-      inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+      inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
     }
   }
 
@@ -158,7 +159,7 @@ void PathHandler::setPath(const nav_msgs::msg::Path & plan)
   global_plan_ = plan;
   global_plan_up_to_inversion_ = global_plan_;
   if (enforce_path_inversion_) {
-    inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+    inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
   }
 }
 
