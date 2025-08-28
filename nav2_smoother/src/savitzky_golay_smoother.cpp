@@ -57,6 +57,8 @@ void SavitzkyGolaySmoother::configure(
   calculateCoefficients();
 }
 
+// For more details on calculating Savitzky–Golay filter coefficients,
+// see: https://www.colmryan.org/posts/savitsky_golay/
 void SavitzkyGolaySmoother::calculateCoefficients()
 {
   // We construct the Vandermonde matrix here
