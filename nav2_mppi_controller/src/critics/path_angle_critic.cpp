@@ -68,7 +68,7 @@ void PathAngleCritic::score(CriticData & data)
 
   float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
 
-  if (distance > threshold_to_consider_) {
+  if (distance < threshold_to_consider_) {
     return;
   }
 
