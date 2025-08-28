@@ -228,7 +228,7 @@ bool BtActionServer<ActionT, NodeT>::on_cleanup()
   action_server_.reset();
   topic_logger_.reset();
   plugin_lib_names_.clear();
-  current_bt_xml_filename_.clear();
+  current_bt_file_or_id_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_);
   bt_->resetGrootMonitor();
@@ -283,7 +283,7 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
     bt_xml_filename_or_id.empty() ? default_bt_xml_filename_ : bt_xml_filename_or_id;
 
   // Use previous BT if it is the existing one and always reload flag is not set to true
-  if (!always_reload_bt_xml_ && current_bt_xml_filename_ == file_or_id) {
+  if (!always_reload_bt_xml_ && current_bt_file_or_id_ == file_or_id) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml or ID is already loaded");
     return true;
   }
@@ -332,7 +332,7 @@ bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_x
 
   // Optional logging and monitoring
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
-  current_bt_xml_filename_ = file_or_id;
+  current_bt_file_or_id_ = file_or_id;
 
   if (enable_groot_monitoring_) {
     bt_->addGrootMonitoring(&tree_, groot_server_port_);
