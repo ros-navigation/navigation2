@@ -23,6 +23,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"

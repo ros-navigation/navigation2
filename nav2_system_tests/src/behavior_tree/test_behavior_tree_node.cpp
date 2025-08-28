@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <regex>
 
 #include "gtest/gtest.h"
 
@@ -96,12 +97,12 @@ public:
   std::optional<std::string> extractBehaviorTreeID(
     const std::string & file_or_id)
   {
-    if(!file_or_id.ends_with(".xml")) {
+    if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
       return file_or_id;
     }
     std::ifstream file(file_or_id);
     if (!file.is_open()) {
-      RCLCPP_ERROR(logger_, "Could not open file %s", file_or_id.c_str());
+      RCLCPP_ERROR(node_->get_logger(), "Could not open file %s", file_or_id.c_str());
       return std::nullopt;
     }
 
@@ -121,14 +122,14 @@ public:
   }
 
   bool loadBehaviorTree(
-    const std::string & file_or_id
+    const std::string & file_or_id,
     const std::vector<std::string> & search_directories)
   {
     namespace fs = std::filesystem;
     auto bt_id = extractBehaviorTreeID(file_or_id);
     if (!bt_id) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        "Exception reading behavior tree directory: " + std::string(e.what()));
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to extract BehaviorTree ID from: %s", file_or_id.c_str());
       return false;
     }
 
