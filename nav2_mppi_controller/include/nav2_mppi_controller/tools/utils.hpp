@@ -261,6 +261,17 @@ inline geometry_msgs::msg::Pose getCriticGoal(
   }
 }
 
+inline float getCriticGoalPathDistance(
+  const CriticData & data,
+  bool enforce_path_inversion)
+{
+  if (enforce_path_inversion) {
+    return data.path.plan_length_up_to_inversion;
+  } else {
+    return data.path.plan_length;
+  }
+}
+
 /**
  * @brief Check if the robot pose is within the Goal Checker's tolerances to goal
  * @param global_checker Pointer to the goal checker
