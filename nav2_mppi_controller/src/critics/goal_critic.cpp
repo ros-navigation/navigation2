@@ -48,7 +48,7 @@ void GoalCritic::score(CriticData & data)
     return;
   }
 
-  // Use euclidean distance for cost calculation instead of integral path distance because it's faster
+  // Use euclidean distance for cost calculation instead of integral path (it's faster)
   // When within threshold_to_consider_ of the goal, euclidean distance provides
   // a computationally efficient approximation with negligible accuracy loss.
   auto goal_x = goal.position.x;
