@@ -139,6 +139,21 @@ nav_msgs::msg::Path PathHandler::transformPath(
     }
   }
 
+  // Calculate distances using the original global plan
+  // Find the distance from lower_bound (closest point to robot) to the end of global_plan_up_to_inversion_
+  auto start_idx = std::distance(global_plan_up_to_inversion_.poses.begin(), lower_bound);
+  global_plan_length_up_to_inversion_ = nav2_util::geometry_utils::calculate_path_length(global_plan_up_to_inversion_, start_idx);
+  
+  if (enforce_path_inversion_ && inversion_locale_ != 0u) {
+    // For paths with inversion: length from closest point to robot to end of full path
+    auto full_plan_start_idx = std::distance(global_plan_.poses.begin(), 
+      global_plan_.poses.begin() + std::distance(global_plan_up_to_inversion_.poses.begin(), lower_bound));
+    global_plan_length_ = nav2_util::geometry_utils::calculate_path_length(global_plan_, full_plan_start_idx);
+  }
+  else {
+    global_plan_length_ = global_plan_length_up_to_inversion_;
+  }
+
   if (transformed_plan.poses.empty()) {
     throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
@@ -200,6 +215,16 @@ bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStam
     tf2::getYaw(last_pose.pose.orientation));
 
   return distance <= inversion_xy_tolerance_ && fabs(angle_distance) <= inversion_yaw_tolerance;
+}
+
+float PathHandler::getPlanLengthUpToInversion() const
+{
+  return global_plan_length_up_to_inversion_;
+}
+
+float PathHandler::getPlanLength() const
+{
+  return global_plan_length_;
 }
 
 }  // namespace mppi

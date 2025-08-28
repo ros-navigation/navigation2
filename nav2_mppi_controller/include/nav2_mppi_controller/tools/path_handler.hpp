@@ -97,6 +97,18 @@ public:
    */
   geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
+  /**
+   * @brief Get the length of the global plan up to inversion point
+   * @return Length of the global plan up to inversion point
+   */
+  float getPlanLengthUpToInversion() const;
+
+  /**
+   * @brief Get the total length of the global plan
+   * @return Total length of the global plan
+   */
+  float getPlanLength() const;
+
 protected:
   /**
     * @brief Get largest dimension of costmap (radially)
@@ -141,7 +153,9 @@ protected:
   ParametersHandler * parameters_handler_;
 
   nav_msgs::msg::Path global_plan_;
+  float global_plan_length_{0};
   nav_msgs::msg::Path global_plan_up_to_inversion_;
+  float global_plan_length_up_to_inversion_{0};
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   double max_robot_pose_search_dist_{0};

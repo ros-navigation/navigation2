@@ -130,11 +130,11 @@ void ObstaclesCritic::score(CriticData & data)
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
   }
 
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+  float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (utils::withinPositionGoalTolerance(near_goal_distance_, data.state.pose.pose, goal)) {
+  if (distance < near_goal_distance_) {
     near_goal = true;
   }
 

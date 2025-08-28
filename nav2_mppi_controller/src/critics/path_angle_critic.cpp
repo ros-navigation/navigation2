@@ -66,11 +66,9 @@ void PathAngleCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+  float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
 
-  if (utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, goal))
-  {
+  if (distance > threshold_to_consider_) {
     return;
   }
 
