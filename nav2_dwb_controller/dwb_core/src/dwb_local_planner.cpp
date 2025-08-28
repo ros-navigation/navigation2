@@ -233,7 +233,9 @@ DWBLocalPlanner::loadCritics()
 }
 
 void
-DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
+DWBLocalPlanner::setPlan(
+  const nav_msgs::msg::Path & path,
+  const std::vector<geometry_msgs::msg::PoseStamped> & /*key_poses*/)
 {
   for (TrajectoryCritic::Ptr & critic : critics_) {
     critic->reset();
