@@ -27,7 +27,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_graceful_controller/path_handler.hpp"
 #include "nav2_graceful_controller/parameter_handler.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
 #include "nav2_graceful_controller/utils.hpp"
@@ -89,7 +88,8 @@ public:
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * goal_checker) override;
+    nav2_core::GoalChecker * goal_checker,
+    nav_msgs::msg::Path & transformed_global_plan) override;
 
   /**
    * @brief nav2_core setPlan - Sets the global plan.
@@ -189,11 +189,9 @@ protected:
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
 
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_plan_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr local_plan_pub_;
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr motion_target_pub_;
   nav2::Publisher<visualization_msgs::msg::Marker>::SharedPtr slowdown_pub_;
-  std::unique_ptr<nav2_graceful_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_graceful_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
 };

@@ -19,13 +19,13 @@
 #include <vector>
 #include <utility>
 
+#include "nav2_controller/path_handler.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_graceful_controller/path_handler.hpp"
 
-namespace nav2_graceful_controller
+namespace nav2_controller
 {
 
 using nav2_util::geometry_utils::euclidean_distance;
@@ -34,30 +34,39 @@ PathHandler::PathHandler(
   double transform_tolerance,
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
-: transform_tolerance_(transform_tolerance), tf_buffer_(tf), costmap_ros_(costmap_ros)
+: transform_tolerance_(transform_tolerance), tf_(tf), costmap_ros_(costmap_ros)
 {
+}
+
+double PathHandler::getCostmapMaxExtent() const
+{
+  const double max_costmap_dim_meters = std::max(
+    costmap_ros_->getCostmap()->getSizeInMetersX(),
+    costmap_ros_->getCostmap()->getSizeInMetersY());
+  return max_costmap_dim_meters / 2.0;
 }
 
 nav_msgs::msg::Path PathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose,
-  double max_robot_pose_search_dist)
+  double max_robot_pose_search_dist,
+  bool reject_unit_path)
 {
-  // Check first if the plan is empty
   if (global_plan_.poses.empty()) {
     throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
-  // Let's get the pose of the robot in the frame of the plan
+  if (reject_unit_path && global_plan_.poses.size() == 1) {
+    throw nav2_core::InvalidPath("Received plan with length of one");
+  }
+
+  // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(
-      pose, robot_pose, *tf_buffer_, global_plan_.header.frame_id,
+  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_, global_plan_.header.frame_id,
       transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
-  // Find the first pose in the global plan that's further than max_robot_pose_search_dist
-  // from the robot using integrated distance
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), max_robot_pose_search_dist);
@@ -72,14 +81,21 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       return euclidean_distance(robot_pose, ps);
     });
 
+  // Make sure we always have at least 2 points on the transformed plan and that we don't prune
+  // the global plan below 2 points in order to have always enough point to interpolate the
+  // end of path direction
+  if (global_plan_.poses.begin() != closest_pose_upper_bound && global_plan_.poses.size() > 1 &&
+    transformation_begin == std::prev(closest_pose_upper_bound))
+  {
+    transformation_begin = std::prev(std::prev(closest_pose_upper_bound));
+  }
+
   // We'll discard points on the plan that are outside the local costmap
-  double dist_threshold = std::max(
-    costmap_ros_->getCostmap()->getSizeInMetersX(),
-    costmap_ros_->getCostmap()->getSizeInMetersY()) / 2.0;
+  const double max_costmap_extent = getCostmapMaxExtent();
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
     [&](const auto & global_plan_pose) {
-      return euclidean_distance(global_plan_pose, robot_pose) > dist_threshold;
+      return euclidean_distance(global_plan_pose, robot_pose) > max_costmap_extent;
     });
 
   // Lambda to transform a PoseStamped from global frame to local
@@ -88,9 +104,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.header.stamp = robot_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
-      if (!nav2_util::transformPoseInTargetFrame(
-          stamped_pose, transformed_pose, *tf_buffer_,
-          costmap_ros_->getBaseFrameID(), transform_tolerance_))
+      if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
+        costmap_ros_->getBaseFrameID(), transform_tolerance_))
       {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }
@@ -100,12 +115,12 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
-  transformed_plan.header.stamp = robot_pose.header.stamp;
   std::transform(
     transformation_begin, transformation_end,
     std::back_inserter(transformed_plan.poses),
     transformGlobalPoseToLocal);
+  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
+  transformed_plan.header.stamp = robot_pose.header.stamp;
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
@@ -118,9 +133,4 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
   return transformed_plan;
 }
 
-void PathHandler::setPlan(const nav_msgs::msg::Path & path)
-{
-  global_plan_ = path;
-}
-
-}  // namespace nav2_graceful_controller
+}  // namespace nav2_controller
