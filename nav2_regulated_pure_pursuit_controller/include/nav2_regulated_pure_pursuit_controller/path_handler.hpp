@@ -99,7 +99,6 @@ protected:
   nav_msgs::msg::Path global_plan_up_to_inversion_;
   unsigned int inversion_locale_{0u};
   Parameters * params_;
-
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

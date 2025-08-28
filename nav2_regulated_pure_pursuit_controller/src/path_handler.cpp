@@ -41,7 +41,7 @@ PathHandler::PathHandler(
   costmap_ros_ = costmap_ros;
   tf_ = tf;
 
-  if(params_->enforce_path_inversion){
+  if(params_->enforce_path_inversion) {
     inversion_locale_ = 0u;
   }
 }
@@ -71,14 +71,15 @@ bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStam
     tf2::getYaw(robot_pose.pose.orientation),
     tf2::getYaw(last_pose.pose.orientation));
 
-  return distance <= params_->inversion_xy_tolerance && fabs(angle_distance) <= params_->inversion_yaw_tolerance;
+  return distance <= params_->inversion_xy_tolerance &&
+         fabs(angle_distance) <= params_->inversion_yaw_tolerance;
 }
 
-void PathHandler::setPlan(const nav_msgs::msg::Path & path) 
+void PathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
   global_plan_up_to_inversion_ = global_plan_;
-  if(params_->enforce_path_inversion){
+  if(params_->enforce_path_inversion) {
     inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
   }
 }
@@ -98,7 +99,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_, global_plan_up_to_inversion_.header.frame_id,
+  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_,
+      global_plan_up_to_inversion_.header.frame_id,
       params_->transform_tolerance))
   {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -106,7 +108,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_up_to_inversion_.poses.begin(), global_plan_up_to_inversion_.poses.end(), max_robot_pose_search_dist);
+    global_plan_up_to_inversion_.poses.begin(), global_plan_up_to_inversion_.poses.end(),
+      max_robot_pose_search_dist);
 
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
@@ -121,7 +124,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
   // Make sure we always have at least 2 points on the transformed plan and that we don't prune
   // the global plan below 2 points in order to have always enough point to interpolate the
   // end of path direction
-  if (global_plan_up_to_inversion_.poses.begin() != closest_pose_upper_bound && global_plan_up_to_inversion_.poses.size() > 1 &&
+  if (global_plan_up_to_inversion_.poses.begin() != closest_pose_upper_bound &&
+    global_plan_up_to_inversion_.poses.size() > 1 &&
     transformation_begin == std::prev(closest_pose_upper_bound))
   {
     transformation_begin = std::prev(std::prev(closest_pose_upper_bound));
