@@ -190,22 +190,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double lookahead_dist = getLookAheadDistance(speed);
   double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
-  // Check for reverse driving
-  if (params_->allow_reversing) {
-    // Cusp check
-    const double dist_to_cusp = findVelocitySignChange(transformed_plan);
-
-    // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_cusp < lookahead_dist) {
-      std::cout << "11111111" << std::endl;
-      lookahead_dist = dist_to_cusp;
-    }
-    if (dist_to_cusp < curv_lookahead_dist) {
-      std::cout << "2222222" << std::endl;
-      curv_lookahead_dist = dist_to_cusp;
-    }
-  }
-
   // Get the particular point on the path at the lookahead distance
   auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, transformed_plan);
   auto rotate_to_path_carrot_pose = carrot_pose;

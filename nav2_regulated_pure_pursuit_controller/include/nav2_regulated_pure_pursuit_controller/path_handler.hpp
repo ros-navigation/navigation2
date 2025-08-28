@@ -93,7 +93,6 @@ protected:
   double getCostmapMaxExtent() const;
 
   rclcpp::Logger logger_ {rclcpp::get_logger("RPPPathHandler")};
-  double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
