@@ -249,7 +249,7 @@ template<class ActionT, class NodeT>
 std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
   const std::string & file_or_id)
 {
-  if(!file_or_id.ends_with(".xml")) {
+  if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
     return file_or_id;
   }
   std::ifstream file(file_or_id);
@@ -294,7 +294,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   auto bt_id = extractBehaviorTreeID(file_or_id);
   if (!bt_id) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      "Exception reading behavior tree directory: " + std::string(e.what()));
+      "Failed to extract BehaviorTree ID from: " + file_or_id);
     return false;
   }
 
