@@ -127,14 +127,14 @@ public:
    */
   std::string getCurrentBTFilename() const
   {
-    return current_bt_xml_filename_;
+    return current_bt_file_or_id_;
   }
 
   /**
    * @brief Getter function for default BT XML filename
    * @return string Containing default BT XML filename
    */
-  std::string getDefaultBTFilename() const
+  std::string getDefaultBTFilenameOrID() const
   {
     return default_bt_xml_filename_;
   }
@@ -251,7 +251,7 @@ protected:
   BT::Blackboard::Ptr blackboard_;
 
   // The XML file that contains the Behavior Tree to create
-  std::string current_bt_xml_filename_;
+  std::string current_bt_file_or_id_;
   std::string default_bt_xml_filename_;
   std::vector<std::string> search_directories_;
 
