@@ -40,6 +40,8 @@ struct Path
     x.setZero(size);
     y.setZero(size);
     yaws.setZero(size);
+    plan_length = 0.0f;
+    plan_length_up_to_inversion = 0.0f;
   }
 };
 
