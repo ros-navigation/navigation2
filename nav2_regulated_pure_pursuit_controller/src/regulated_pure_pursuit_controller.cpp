@@ -62,7 +62,7 @@ void RegulatedPurePursuitController::configure(
 
   // Handles global path transformations
   path_handler_ = std::make_unique<PathHandler>(
-    params_->transform_tolerance, tf_, costmap_ros_);
+    params_, tf_, costmap_ros_);
 
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
@@ -197,9 +197,11 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
     // if the lookahead distance is further than the cusp, use the cusp distance instead
     if (dist_to_cusp < lookahead_dist) {
+      std::cout << "11111111" << std::endl;
       lookahead_dist = dist_to_cusp;
     }
     if (dist_to_cusp < curv_lookahead_dist) {
+      std::cout << "2222222" << std::endl;
       curv_lookahead_dist = dist_to_cusp;
     }
   }

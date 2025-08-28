@@ -27,10 +27,12 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
+using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 
 /**
  * @class nav2_regulated_pure_pursuit_controller::PathHandler
@@ -43,7 +45,7 @@ public:
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::PathHandler
    */
   PathHandler(
-    double transform_tolerance,
+    Parameters * params,
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
 
@@ -65,9 +67,23 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     double max_robot_pose_search_dist, bool reject_unit_path = false);
 
-  void setPlan(const nav_msgs::msg::Path & path) {global_plan_ = path;}
+  void setPlan(const nav_msgs::msg::Path & path);
 
   nav_msgs::msg::Path getPlan() {return global_plan_;}
+
+  /**
+    * @brief Check if the robot pose is within the set inversion tolerances
+    * @param robot_pose Robot's current pose to check
+    * @return bool If the robot pose is within the set inversion tolerances
+    */
+  bool isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
+
+  /**
+    * @brief Prune a path to only interesting portions
+    * @param plan Plan to prune
+    * @param end Final path iterator
+    */
+  void prunePlan(nav_msgs::msg::Path & plan, const PathIterator end);
 
 protected:
   /**
@@ -81,6 +97,10 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
+  nav_msgs::msg::Path global_plan_up_to_inversion_;
+  unsigned int inversion_locale_{0u};
+  Parameters * params_;
+
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

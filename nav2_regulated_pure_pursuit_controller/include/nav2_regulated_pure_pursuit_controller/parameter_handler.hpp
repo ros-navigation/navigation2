@@ -63,6 +63,9 @@ struct Parameters
   bool use_collision_detection;
   double transform_tolerance;
   bool stateful;
+  bool enforce_path_inversion;
+  float inversion_xy_tolerance;
+  float inversion_yaw_tolerance;
 };
 
 /**
