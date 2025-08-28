@@ -150,6 +150,7 @@ void PathAngleCritic::score(CriticData & data)
         return;
       }
   }
+  return true;
 }
 
 }  // namespace mppi::critics
