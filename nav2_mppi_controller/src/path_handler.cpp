@@ -46,8 +46,7 @@ void PathHandler::initialize(
   }
 }
 
-std::pair<nav_msgs::msg::Path, PathIterator>
-PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
+std::pair<PathIterator, PathIterator> PathHandler::extractPathSegments(
   const geometry_msgs::msg::PoseStamped & global_pose)
 {
   using nav2_util::geometry_utils::euclidean_distance;
@@ -67,13 +66,42 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
       return euclidean_distance(global_pose, ps);
     });
 
-  nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_->getGlobalFrameID();
-  transformed_plan.header.stamp = global_pose.header.stamp;
-
   auto pruned_plan_end =
     nav2_util::geometry_utils::first_after_integrated_distance(
     closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
+
+  return {closest_point, pruned_plan_end};
+}
+
+void PathHandler::calculatePathLengths(
+  const PathIterator & closest_point)
+{
+  // Calculate path length from closest point to end of global_plan_up_to_inversion_
+  auto start_idx_up_to_inversion = std::distance(global_plan_up_to_inversion_.poses.begin(), closest_point);
+  global_plan_length_up_to_inversion_ = nav2_util::geometry_utils::calculate_path_length(
+    global_plan_up_to_inversion_, start_idx_up_to_inversion);
+  
+  if (enforce_path_inversion_ && inversion_locale_ != 0u) {
+    // For paths with inversion: calculate length from closest point to end of full path
+    auto full_plan_start_idx = std::distance(global_plan_.poses.begin(), 
+      global_plan_.poses.begin() + std::distance(global_plan_up_to_inversion_.poses.begin(), closest_point));
+    global_plan_length_ = nav2_util::geometry_utils::calculate_path_length(global_plan_, full_plan_start_idx);
+  } else {
+    global_plan_length_ = global_plan_length_up_to_inversion_;
+  }
+}
+
+std::pair<nav_msgs::msg::Path, PathIterator>
+PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
+  const geometry_msgs::msg::PoseStamped & global_pose)
+{
+  // Extract path segments and calculate lengths first
+  auto [closest_point, pruned_plan_end] = extractPathSegments(global_pose);
+  calculatePathLengths(closest_point);
+
+  nav_msgs::msg::Path transformed_plan;
+  transformed_plan.header.frame_id = costmap_->getGlobalFrameID();
+  transformed_plan.header.stamp = global_pose.header.stamp;
 
   unsigned int mx, my;
   // Find the furthest relevant pose on the path to consider within costmap
@@ -137,21 +165,6 @@ nav_msgs::msg::Path PathHandler::transformPath(
       global_plan_up_to_inversion_ = global_plan_;
       inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
     }
-  }
-
-  // Calculate distances using the original global plan
-  // Find the distance from lower_bound (closest point to robot) to the end of global_plan_up_to_inversion_
-  auto start_idx = std::distance(global_plan_up_to_inversion_.poses.begin(), lower_bound);
-  global_plan_length_up_to_inversion_ = nav2_util::geometry_utils::calculate_path_length(global_plan_up_to_inversion_, start_idx);
-  
-  if (enforce_path_inversion_ && inversion_locale_ != 0u) {
-    // For paths with inversion: length from closest point to robot to end of full path
-    auto full_plan_start_idx = std::distance(global_plan_.poses.begin(), 
-      global_plan_.poses.begin() + std::distance(global_plan_up_to_inversion_.poses.begin(), lower_bound));
-    global_plan_length_ = nav2_util::geometry_utils::calculate_path_length(global_plan_, full_plan_start_idx);
-  }
-  else {
-    global_plan_length_ = global_plan_length_up_to_inversion_;
   }
 
   if (transformed_plan.poses.empty()) {

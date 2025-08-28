@@ -134,6 +134,20 @@ protected:
     const geometry_msgs::msg::PoseStamped & global_pose);
 
   /**
+    * @brief Extract path segments (closest point and pruned end) from global plan
+    * @param global_pose Robot pose in global plan frame
+    * @return pair of iterators marking closest point and pruned end
+    */
+  std::pair<PathIterator, PathIterator> extractPathSegments(
+    const geometry_msgs::msg::PoseStamped & global_pose);
+
+  /**
+    * @brief Calculate path lengths for both full path and path up to inversion
+    * @param closest_point Iterator to closest point on path
+    */
+  void calculatePathLengths(const PathIterator & closest_point);
+
+  /**
     * @brief Prune a path to only interesting portions
     * @param plan Plan to prune
     * @param end Final path iterator
