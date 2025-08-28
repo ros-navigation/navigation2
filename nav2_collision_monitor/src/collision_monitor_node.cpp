@@ -25,6 +25,8 @@
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
+using namespace std::placeholders;
+
 namespace nav2_collision_monitor
 {
 
@@ -80,6 +82,13 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
+  
+  // Toggle service initialization
+  const std::string service_prefix = get_name() + std::string("/");
+
+  toggle_cm_service_ = create_service<nav2_msgs::srv::Toggle>(
+    service_prefix + std::string("toggle_collision_monitor"),
+    std::bind(&CollisionMonitor::toggleCMServiceCallback, this, _1, _2, _3));
 
   nav2::declare_parameter_if_not_declared(
     node, "use_realtime_priority", rclcpp::ParameterValue(false));
@@ -656,6 +665,38 @@ void CollisionMonitor::publishPolygons() const
       polygon->publish();
     }
   }
+}
+
+void CollisionMonitor::toggleCMServiceCallback(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::Toggle::Request> request,
+  std::shared_ptr<nav2_msgs::srv::Toggle::Response> response)
+{
+  if (robot_action_prev_.action_type == ActionType::STOP || robot_action_prev_.action_type == ActionType::SLOWDOWN) {
+    response->success = false;
+    response->message = "Cannot toggle collision monitor in STOP/SLOWDOWN state";
+    
+    return;
+  }
+
+  enabled_ = request->enable;
+
+  std::vector<rclcpp::Parameter> polygon_parameters{};
+  polygon_parameters.reserve(polygons_.size());
+
+  for (const auto& polygon : polygons_) {
+    auto parameter_name{polygon->getName() + "." + "enabled"};
+    polygon_parameters.emplace_back(parameter_name, enabled_);
+  }
+
+  auto node = shared_from_this();
+  node->set_parameters(polygon_parameters);
+
+  response->success = true;
+
+  std::stringstream message;
+  message << "Collision monitor toggled " << (enabled_ ? "on" : "off") << " successfully";
+  response->message = message.str();
 }
 
 }  // namespace nav2_collision_monitor
