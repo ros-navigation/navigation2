@@ -246,7 +246,7 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 }
 
 template<class ActionT, class NodeT>
-std::optional<std::string> IWBtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
+std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
   const std::string & file_or_id)
 {
   if(!file_or_id.ends_with(".xml")) {
@@ -274,7 +274,7 @@ std::optional<std::string> IWBtActionServer<ActionT, NodeT>::extractBehaviorTree
 }
 
 template<class ActionT, class NodeT>
-bool IWBtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename_or_id)
+bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename_or_id)
 {
   namespace fs = std::filesystem;
 
