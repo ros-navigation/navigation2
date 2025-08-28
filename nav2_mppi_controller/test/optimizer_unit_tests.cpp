@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "tf2_ros/buffer.hpp"
 
 // Tests main optimizer functions
@@ -119,7 +120,10 @@ public:
     const geometry_msgs::msg::Pose & goal,
     nav2_core::GoalChecker * goal_checker)
   {
-    prepare(robot_pose, robot_speed, plan, goal, goal_checker);
+    float plan_length = nav2_util::geometry_utils::calculate_path_length(plan);
+    float plan_length_up_to_inversion = plan_length;  // For test purposes, assume no inversion
+    prepare(robot_pose, robot_speed, plan, plan_length, plan_length_up_to_inversion, goal,
+      goal_checker);
 
     EXPECT_EQ(critics_data_.goal_checker, nullptr);
     EXPECT_NEAR(costs_.sum(), 0, 1e-6);  // should be reset

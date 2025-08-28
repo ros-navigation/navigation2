@@ -41,12 +41,14 @@ void TwirlingCritic::score(CriticData & data)
 
   float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
 
-  geometry_msgs::msg::Pose pose_tolerance;
-  geometry_msgs::msg::Twist velocity_tolerance;
-  data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance);
+  if (data.goal_checker != nullptr) {
+    geometry_msgs::msg::Pose pose_tolerance;
+    geometry_msgs::msg::Twist velocity_tolerance;
+    data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance);
 
-  if (distance < pose_tolerance.position.x) {
-    return;
+    if (distance < pose_tolerance.position.x) {
+      return;
+    }
   }
 
   if (power_ > 1u) {
