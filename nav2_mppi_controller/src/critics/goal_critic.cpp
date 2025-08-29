@@ -22,10 +22,7 @@ namespace mppi::critics
 void GoalCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
-
   auto getParam = parameters_handler_->getParamGetter(name_);
-
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0f);
   getParam(threshold_to_consider_, "threshold_to_consider", 1.4f);
