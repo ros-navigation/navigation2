@@ -40,8 +40,7 @@ void PathFollowCritic::score(CriticData & data)
     return;
   }
 
-  if (data.path.x.size() < 2 || utils::getIntegratedPathDistanceToGoal(data,
-      enforce_path_inversion_) < threshold_to_consider_)
+  if (data.path.x.size() < 2 || data.state.local_path_length < threshold_to_consider_)
   {
     return;
   }

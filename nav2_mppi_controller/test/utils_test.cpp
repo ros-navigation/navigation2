@@ -600,61 +600,6 @@ TEST(UtilsTests, getLastPathPoseTest)
   EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
 }
 
-TEST(UtilsTests, getCriticGoalTest)
-{
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = 10.0;
-  pose.position.y = 1.0;
-
-  nav_msgs::msg::Path path;
-  path.poses.resize(10);
-  path.poses[9].pose.position.x = 5.0;
-  path.poses[9].pose.position.y = 50.0;
-  path.poses[9].pose.orientation.x = 0.0;
-  path.poses[9].pose.orientation.y = 0.0;
-  path.poses[9].pose.orientation.z = 1.0;
-  path.poses[9].pose.orientation.w = 0.0;
-
-  geometry_msgs::msg::Pose goal;
-  goal.position.x = 6.0;
-  goal.position.y = 60.0;
-  goal.orientation.x = 0.0;
-  goal.orientation.y = 0.0;
-  goal.orientation.z = 0.0;
-  goal.orientation.w = 1.0;
-
-  // Create CriticData with state and goal initialized
-  models::State state;
-  state.pose.pose = pose;
-  models::Trajectories generated_trajectories;
-  models::Path path_t = toTensor(path);
-  Eigen::ArrayXf costs;
-  float model_dt;
-  CriticData data = {
-    state, generated_trajectories, path_t, goal,
-    costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
-
-  bool enforce_path_inversion = true;
-  geometry_msgs::msg::Pose target_goal = utils::getCriticGoal(data, enforce_path_inversion);
-
-  EXPECT_EQ(target_goal.position.x, 5);
-  EXPECT_EQ(target_goal.position.y, 50);
-  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.z, 1.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.w, 0.0, 1e-3);
-
-  enforce_path_inversion = false;
-  target_goal = utils::getCriticGoal(data, enforce_path_inversion);
-
-  EXPECT_EQ(target_goal.position.x, 6);
-  EXPECT_EQ(target_goal.position.y, 60);
-  EXPECT_NEAR(target_goal.orientation.x, 0.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.y, 0.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.z, 0.0, 1e-3);
-  EXPECT_NEAR(target_goal.orientation.w, 1.0, 1e-3);
-}
-
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -36,14 +36,11 @@ void GoalAngleCritic::initialize()
 
 void GoalAngleCritic::score(CriticData & data)
 {
-  if (!enabled_) {
+  if (!enabled_ || data.state.local_path_length > threshold_to_consider_) {
     return;
   }
 
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
-  if (utils::getIntegratedPathDistanceToGoal(data, enforce_path_inversion_) > threshold_to_consider_) {
-    return;
-  }
+  geometry_msgs::msg::Pose goal = utils::getLastPathPose(data.path);
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 

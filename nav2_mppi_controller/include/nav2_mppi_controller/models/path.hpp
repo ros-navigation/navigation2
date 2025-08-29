@@ -29,8 +29,6 @@ struct Path
   Eigen::ArrayXf x;
   Eigen::ArrayXf y;
   Eigen::ArrayXf yaws;
-  float plan_length;
-  float plan_length_up_to_inversion;
 
   /**
     * @brief Reset path data
@@ -40,8 +38,6 @@ struct Path
     x.setZero(size);
     y.setZero(size);
     yaws.setZero(size);
-    plan_length = 0.0f;
-    plan_length_up_to_inversion = 0.0f;
   }
 };
 

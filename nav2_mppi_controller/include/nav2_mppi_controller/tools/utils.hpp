@@ -244,41 +244,6 @@ inline geometry_msgs::msg::Pose getLastPathPose(const models::Path & path)
 }
 
 /**
- * @brief Get the target pose to be evaluated by the critic
- * @param data Data to use
- * @param enforce_path_inversion True to return the cusp point (last pose of the path)
- * instead of the original goal
- * @return geometry_msgs::msg::Pose Target pose for the critic
- */
-inline geometry_msgs::msg::Pose getCriticGoal(
-  const CriticData & data,
-  bool enforce_path_inversion)
-{
-  if (enforce_path_inversion) {
-    return getLastPathPose(data.path);
-  } else {
-    return data.goal;
-  }
-}
-
-/**
- * @brief Get the distance from the robot to the critic goal
- * @param data Data to use
- * @param enforce_path_inversion True to use the path inversion point
- * @return float Distance to the critic goal
- */
-inline float getIntegratedPathDistanceToGoal(
-  const CriticData & data,
-  bool enforce_path_inversion)
-{
-  if (enforce_path_inversion) {
-    return data.path.plan_length_up_to_inversion;
-  } else {
-    return data.path.plan_length;
-  }
-}
-
-/**
   * @brief normalize
   * Normalizes the angle to be -M_PIF circle to +M_PIF circle
   * It takes and returns radians.

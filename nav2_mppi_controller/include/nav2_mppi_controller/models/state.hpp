@@ -39,6 +39,7 @@ struct State
   Eigen::ArrayXXf cwz;
 
   geometry_msgs::msg::PoseStamped pose;
+  float local_path_length;
   geometry_msgs::msg::Twist speed;
 
   /**

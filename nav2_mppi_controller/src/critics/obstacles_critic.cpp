@@ -132,7 +132,7 @@ void ObstaclesCritic::score(CriticData & data)
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (utils::getIntegratedPathDistanceToGoal(data, enforce_path_inversion_) < near_goal_distance_) {
+  if (data.state.local_path_length < near_goal_distance_) {
     near_goal = true;
   }
 
