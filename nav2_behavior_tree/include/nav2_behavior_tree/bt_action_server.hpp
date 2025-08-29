@@ -99,12 +99,18 @@ public:
 
   /**
    * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
+   * @param bt_xml_filename_or_id The file containing the new BT, uses default filename if empty or BT ID
+   * @return bool true if the resulting BT correspond to the one in bt_xml_filename_or_id. false
    * if something went wrong, and previous BT is maintained
    */
   bool loadBehaviorTree(
-    const std::string & bt_xml_filename = "");
+    const std::string & bt_xml_filename_or_id = "");
+
+  /** @brief Extract BehaviorTree ID from XML file
+   * @param filename The file containing the BT
+   * @return std::optional<std::string> BehaviorTree ID if found, std::nullopt otherwise
+   */
+  std::optional<std::string> extractBehaviorTreeID(const std::string & file_or_id);
 
   /**
    * @brief Getter function for BT Blackboard
@@ -121,14 +127,14 @@ public:
    */
   std::string getCurrentBTFilename() const
   {
-    return current_bt_xml_filename_;
+    return current_bt_file_or_id_;
   }
 
   /**
    * @brief Getter function for default BT XML filename
    * @return string Containing default BT XML filename
    */
-  std::string getDefaultBTFilename() const
+  std::string getDefaultBTFilenameOrID() const
   {
     return default_bt_xml_filename_;
   }
@@ -245,7 +251,7 @@ protected:
   BT::Blackboard::Ptr blackboard_;
 
   // The XML file that contains the Behavior Tree to create
-  std::string current_bt_xml_filename_;
+  std::string current_bt_file_or_id_;
   std::string default_bt_xml_filename_;
   std::vector<std::string> search_directories_;
 

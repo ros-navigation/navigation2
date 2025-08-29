@@ -82,10 +82,9 @@ NavigateToPoseNavigator::cleanup()
 bool
 NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  auto bt_xml_filename = goal->behavior_tree;
-  if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
+  if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
     bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Error loading XML file: ") + bt_xml_filename + ". Navigation canceled.");
+      std::string("Error loading: ") + goal->behavior_tree + ". Navigation canceled.");
     return false;
   }
 
@@ -188,7 +187,7 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 
   if (goal->behavior_tree == bt_action_server_->getCurrentBTFilename() ||
     (goal->behavior_tree.empty() &&
-    bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilename()))
+    bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilenameOrID()))
   {
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file

@@ -102,6 +102,14 @@ BehaviorTreeEngine::createTreeFromFile(
   return factory_.createTreeFromFile(file_path, blackboard);
 }
 
+BT::Tree
+BehaviorTreeEngine::createTree(
+  const std::string & tree_id,
+  BT::Blackboard::Ptr blackboard)
+{
+  return factory_.createTree(tree_id, blackboard);
+}
+
 /// @brief Register a tree from an XML file and return the tree
 void BehaviorTreeEngine::registerTreeFromFile(
   const std::string & file_path)
