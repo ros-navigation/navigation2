@@ -41,7 +41,7 @@ void PreferForwardCritic::score(CriticData & data)
     return;
   }
 
-  if (utils::getCriticGoalPathDistance(data, enforce_path_inversion_) < threshold_to_consider_) {
+  if (utils::getIntegratedPathDistanceToGoal(data, enforce_path_inversion_) < threshold_to_consider_) {
     return;
   }
 
