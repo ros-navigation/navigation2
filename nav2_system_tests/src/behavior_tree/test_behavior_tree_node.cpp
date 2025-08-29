@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <regex>
+#include "tinyxml2.h" //NOLINT
 
 #include "gtest/gtest.h"
 
@@ -97,34 +97,29 @@ public:
   std::optional<std::string> extractBehaviorTreeID(
     const std::string & file_or_id)
   {
-    // If it’s not an .xml, treat it as a plain ID
-    if (file_or_id.size() < 4 || file_or_id.substr(file_or_id.size() - 4) != ".xml") {
-      return file_or_id;
-    }
-
-    std::ifstream file(file_or_id);
-    if (!file.is_open()) {
-      RCLCPP_ERROR(node_->get_logger(), "Could not open file %s", file_or_id.c_str());
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
+      RCLCPP_ERROR(logger_, "Error: Could not open or parse file %s", filename.c_str());
       return std::nullopt;
     }
-
-    const std::regex root_regex(R"(<root[^>]*main_tree_to_execute="(.*?)");
-    const std::regex id_regex(R"(<BehaviorTree\s+ID="(.*?)");
-
-    std::string line;
-    while (std::getline(file, line)) {
-      std::smatch match;
-      // First look for <root main_tree_to_execute="...">
-      if (std::regex_search(line, match, root_regex) && match.size() > 1) {
-        return match[1].str();
-      }
-      // Otherwise fall back to the first <BehaviorTree ID="...">
-      if (std::regex_search(line, match, id_regex) && match.size() > 1) {
-        return match[1].str();
-      }
+    tinyxml2::XMLElement * rootElement = doc.RootElement();
+    if (!rootElement) {
+      RCLCPP_ERROR(logger_, "Error: Root element not found in %s", filename.c_str());
+      return std::nullopt;
     }
-
-    return std::nullopt;
+    tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
+    if (!btElement) {
+      RCLCPP_ERROR(logger_, "Error: <BehaviorTree> element not found in %s", filename.c_str());
+      return std::nullopt;
+    }
+    const char * idValue = btElement->Attribute("ID");
+    if (idValue) {
+      return std::string(idValue);
+    } else {
+      RCLCPP_ERROR(logger_, "Error: ID attribute not found on <BehaviorTree> element in %s",
+          filename.c_str());
+      return std::nullopt;
+    }
   }
 
   bool loadBehaviorTree(
