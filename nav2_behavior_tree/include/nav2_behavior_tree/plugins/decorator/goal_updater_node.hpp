@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "behaviortree_cpp/decorator_node.h"
 #include "behaviortree_cpp/json_export.h"
@@ -110,6 +111,7 @@ private:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   std::string goal_updater_topic_;
   std::string goals_updater_topic_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

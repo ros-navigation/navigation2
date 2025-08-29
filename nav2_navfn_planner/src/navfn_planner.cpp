@@ -353,15 +353,20 @@ NavfnPlanner::smoothApproachToGoal(
   const geometry_msgs::msg::Pose & goal,
   nav_msgs::msg::Path & plan)
 {
-  // Replace the last pose of the computed path if it's actually further away
-  // to the second to last pose than the goal pose.
   if (plan.poses.size() >= 2) {
     auto second_to_last_pose = plan.poses.end()[-2];
     auto last_pose = plan.poses.back();
+    // Replace the last pose of the computed path if it's actually further away
+    // to the second to last pose than the goal pose.
     if (
       squared_distance(last_pose.pose, second_to_last_pose.pose) >
       squared_distance(goal, second_to_last_pose.pose))
     {
+      plan.poses.back().pose = goal;
+      return;
+    }
+    // Replace the last pose of the computed path if its position matches but orientation differs
+    if (squared_distance(last_pose.pose, goal) < 1e-6) {
       plan.poses.back().pose = goal;
       return;
     }

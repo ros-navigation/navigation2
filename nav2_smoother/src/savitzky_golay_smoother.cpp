@@ -40,9 +40,39 @@ void SavitzkyGolaySmoother::configure(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
   declare_parameter_if_not_declared(
     node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, name + ".window_size", rclcpp::ParameterValue(7));
+  declare_parameter_if_not_declared(
+    node, name + ".poly_order", rclcpp::ParameterValue(3));
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
   node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
+  node->get_parameter(name + ".window_size", window_size_);
+  node->get_parameter(name + ".poly_order", poly_order_);
+  if (window_size_ % 2 == 0 || window_size_ <= 2) {
+    throw nav2_core::SmootherException(
+      "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
+  }
+  half_window_size_ = (window_size_ - 1) / 2;
+  calculateCoefficients();
+}
+
+// For more details on calculating Savitzky–Golay filter coefficients,
+// see: https://www.colmryan.org/posts/savitsky_golay/
+void SavitzkyGolaySmoother::calculateCoefficients()
+{
+  // We construct the Vandermonde matrix here
+  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(window_size_, -half_window_size_,
+      half_window_size_);
+  Eigen::MatrixXd x = Eigen::MatrixXd::Ones(window_size_, poly_order_ + 1);
+  for(int i = 1; i <= poly_order_; i++) {
+    x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
+  }
+  // Compute the pseudoinverse of X, (X^T * X)^-1 * X^T
+  Eigen::MatrixXd coeff_mat = (x.transpose() * x).inverse() * x.transpose();
+
+  // Extract the smoothing coefficients
+  sg_coeffs_ = coeff_mat.row(0).transpose();
 }
 
 bool SavitzkyGolaySmoother::smooth(
@@ -62,8 +92,10 @@ bool SavitzkyGolaySmoother::smooth(
     path_segments = findDirectionalPathSegments(path);
   }
 
+  // Minimum point size to smooth is SG filter size + start + end
+  unsigned int minimum_points = window_size_ + 2;
   for (unsigned int i = 0; i != path_segments.size(); i++) {
-    if (path_segments[i].end - path_segments[i].start > 9) {
+    if (path_segments[i].end - path_segments[i].start > minimum_points) {
       // Populate path segment
       curr_path_segment.poses.clear();
       std::copy(
@@ -100,68 +132,41 @@ bool SavitzkyGolaySmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment)
 {
-  // Must be at least 10 in length to enter function
   const unsigned int & path_size = path.poses.size();
 
-  // 7-point SG filter
-  const std::array<double, 7> filter = {
-    -2.0 / 21.0,
-    3.0 / 21.0,
-    6.0 / 21.0,
-    7.0 / 21.0,
-    6.0 / 21.0,
-    3.0 / 21.0,
-    -2.0 / 21.0};
-
-  auto applyFilter = [&](const std::vector<geometry_msgs::msg::Point> & data)
-    -> geometry_msgs::msg::Point
-    {
-      geometry_msgs::msg::Point val;
-      for (unsigned int i = 0; i != filter.size(); i++) {
-        val.x += filter[i] * data[i].x;
-        val.y += filter[i] * data[i].y;
-      }
-      return val;
+  // Convert PoseStamped to Eigen
+  auto toEigenVec = [](const geometry_msgs::msg::PoseStamped & pose) -> Eigen::Vector2d {
+      return {pose.pose.position.x, pose.pose.position.y};
     };
 
   auto applyFilterOverAxes =
     [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
-    const std::vector<geometry_msgs::msg::PoseStamped> & init_plan_pts) -> void
+    const std::vector<Eigen::Vector2d> & init_plan_pts) -> void
     {
-      auto pt_m3 = init_plan_pts[0].pose.position;
-      auto pt_m2 = init_plan_pts[0].pose.position;
-      auto pt_m1 = init_plan_pts[0].pose.position;
-      auto pt = init_plan_pts[1].pose.position;
-      auto pt_p1 = init_plan_pts[2].pose.position;
-      auto pt_p2 = init_plan_pts[3].pose.position;
-      auto pt_p3 = init_plan_pts[4].pose.position;
-
       // First point is fixed
       for (unsigned int idx = 1; idx != path_size - 1; idx++) {
-        plan_pts[idx].pose.position = applyFilter({pt_m3, pt_m2, pt_m1, pt, pt_p1, pt_p2, pt_p3});
-        pt_m3 = pt_m2;
-        pt_m2 = pt_m1;
-        pt_m1 = pt;
-        pt = pt_p1;
-        pt_p1 = pt_p2;
-        pt_p2 = pt_p3;
+        Eigen::Vector2d accum(0.0, 0.0);
 
-        if (idx + 4 < path_size - 1) {
-          pt_p3 = init_plan_pts[idx + 4].pose.position;
-        } else {
-          // Return the last point
-          pt_p3 = init_plan_pts[path_size - 1].pose.position;
+        for(int j = -half_window_size_; j <= half_window_size_; j++) {
+          int path_idx = std::clamp<int>(idx + j, 0, path_size - 1);
+          accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[path_idx];
         }
+        plan_pts[idx].pose.position.x = accum.x();
+        plan_pts[idx].pose.position.y = accum.y();
       }
     };
 
-  const auto initial_path_poses = path.poses;
+  std::vector<Eigen::Vector2d> initial_path_poses(path.poses.size());
+  std::transform(path.poses.begin(), path.poses.end(),
+               initial_path_poses.begin(), toEigenVec);
   applyFilterOverAxes(path.poses, initial_path_poses);
 
   // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   if (do_refinement_) {
     for (int i = 0; i < refinement_num_; i++) {
-      const auto reined_initial_path_poses = path.poses;
+      std::vector<Eigen::Vector2d> reined_initial_path_poses(path.poses.size());
+      std::transform(path.poses.begin(), path.poses.end(),
+                       reined_initial_path_poses.begin(), toEigenVec);
       applyFilterOverAxes(path.poses, reined_initial_path_poses);
     }
   }

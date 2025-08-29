@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <chrono>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
@@ -93,6 +94,7 @@ private:
   double min_battery_;
   bool is_voltage_;
   bool is_battery_low_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

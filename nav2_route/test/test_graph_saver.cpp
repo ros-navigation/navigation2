@@ -143,7 +143,6 @@ TEST(GraphSaver, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::Rate(1).sleep();
   tf_broadcaster->sendTransform(transform);
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
   rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
 
   GraphSaver graph_saver(node, tf, frame);

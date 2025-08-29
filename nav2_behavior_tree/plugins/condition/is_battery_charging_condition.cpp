@@ -27,9 +27,8 @@ IsBatteryChargingCondition::IsBatteryChargingCondition(
   is_battery_charging_(false)
 {
   initialize();
-
-  // Spin multiple times due to rclcpp regression in Jazzy requiring a 'warm up' spin
-  callback_group_executor_.spin_some(std::chrono::nanoseconds(1));
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 }
 
 void IsBatteryChargingCondition::initialize()
@@ -65,7 +64,7 @@ BT::NodeStatus IsBatteryChargingCondition::tick()
     initialize();
   }
 
-  callback_group_executor_.spin_some();
+  callback_group_executor_.spin_all(bt_loop_duration_);
   if (is_battery_charging_) {
     return BT::NodeStatus::SUCCESS;
   }

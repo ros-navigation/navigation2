@@ -44,6 +44,9 @@ public:
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
     config_->blackboard->set("node", node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::SmootherSelector>(name, config);
