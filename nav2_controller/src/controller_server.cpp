@@ -799,6 +799,7 @@ bool ControllerServer::isGoalReached()
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::PoseStamped transformed_end_pose;
+  end_pose_.header.stamp = pose.header.stamp;
   nav2_util::transformPoseInTargetFrame(
     end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
     costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
