@@ -97,24 +97,30 @@ public:
   std::optional<std::string> extractBehaviorTreeID(
     const std::string & file_or_id)
   {
-    if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
+    // If it’s not an .xml, treat it as a plain ID
+    if (file_or_id.size() < 4 || file_or_id.substr(file_or_id.size() - 4) != ".xml") {
       return file_or_id;
     }
+
     std::ifstream file(file_or_id);
     if (!file.is_open()) {
       RCLCPP_ERROR(node_->get_logger(), "Could not open file %s", file_or_id.c_str());
       return std::nullopt;
     }
 
-    const std::regex id_regex("<BehaviorTree ID=\"(.*?)\"");
+    const std::regex root_regex(R"(<root[^>]*main_tree_to_execute="(.*?)");
+    const std::regex id_regex(R"(<BehaviorTree\s+ID="(.*?)");
 
     std::string line;
     while (std::getline(file, line)) {
       std::smatch match;
-      if (std::regex_search(line, match, id_regex)) {
-        if (match.size() > 1) {
-          return match[1].str();
-        }
+      // First look for <root main_tree_to_execute="...">
+      if (std::regex_search(line, match, root_regex) && match.size() > 1) {
+        return match[1].str();
+      }
+      // Otherwise fall back to the first <BehaviorTree ID="...">
+      if (std::regex_search(line, match, id_regex) && match.size() > 1) {
+        return match[1].str();
       }
     }
 
@@ -133,8 +139,7 @@ public:
       return false;
     }
 
-
-    // Register all XML behavior Subtrees found in the given directories
+    // Register all XML behavior subtrees in the directories
     for (const auto & directory : search_directories) {
       try {
         for (const auto & entry : fs::directory_iterator(directory)) {
@@ -152,12 +157,13 @@ public:
     // Create and populate the blackboard
     blackboard = setBlackboardVariables();
 
-    // Build the tree from the XML string
+    // Build the tree from the ID (resolved from <root> or <BehaviorTree ID>)
     try {
       tree = factory_.createTree(*bt_id, blackboard);
     } catch (BT::RuntimeError & exp) {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to create BT from %s: %s", file_or_id.c_str(),
-          exp.what());
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to create BT [%s] from %s: %s",
+        bt_id->c_str(), file_or_id.c_str(), exp.what());
       return false;
     }
 
