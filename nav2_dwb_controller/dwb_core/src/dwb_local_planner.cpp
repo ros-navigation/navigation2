@@ -542,7 +542,7 @@ DWBLocalPlanner::transformGlobalPlan(
       stamped_pose.pose = global_plan_pose.pose;
       if (!nav2_util::transformPoseInTargetFrame(
           stamped_pose, transformed_pose, *tf_,
-          costmap_ros_->getBaseFrameID(), transform_tolerance_))
+          transformed_plan.header.frame_id, transform_tolerance_))
       {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }
