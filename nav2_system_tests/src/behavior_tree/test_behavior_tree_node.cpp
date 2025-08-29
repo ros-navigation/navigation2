@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <regex>
 
 #include "gtest/gtest.h"
 
@@ -93,39 +94,51 @@ public:
     return blackboard;
   }
 
-  bool behaviorTreeFileValidation(
-    const std::string & filename)
+  std::optional<std::string> extractBehaviorTreeID(
+    const std::string & file_or_id)
   {
-    std::ifstream xml_file(filename);
-    if (!xml_file.good()) {
-      RCLCPP_ERROR(node_->get_logger(),
-        "Couldn't open BT XML file: %s", filename.c_str());
-      return false;
+    if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
+      return file_or_id;
     }
-    return true;
+    std::ifstream file(file_or_id);
+    if (!file.is_open()) {
+      RCLCPP_ERROR(node_->get_logger(), "Could not open file %s", file_or_id.c_str());
+      return std::nullopt;
+    }
+
+    const std::regex id_regex("<BehaviorTree ID=\"(.*?)\"");
+
+    std::string line;
+    while (std::getline(file, line)) {
+      std::smatch match;
+      if (std::regex_search(line, match, id_regex)) {
+        if (match.size() > 1) {
+          return match[1].str();
+        }
+      }
+    }
+
+    return std::nullopt;
   }
 
-
   bool loadBehaviorTree(
-    const std::string & filename,
+    const std::string & file_or_id,
     const std::vector<std::string> & search_directories)
   {
-    if (!behaviorTreeFileValidation(filename)) {
+    namespace fs = std::filesystem;
+    auto bt_id = extractBehaviorTreeID(file_or_id);
+    if (!bt_id) {
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to extract BehaviorTree ID from: %s", file_or_id.c_str());
       return false;
     }
 
-    namespace fs = std::filesystem;
-    const auto canonical_main_bt = fs::canonical(filename);
 
     // Register all XML behavior Subtrees found in the given directories
     for (const auto & directory : search_directories) {
       try {
         for (const auto & entry : fs::directory_iterator(directory)) {
           if (entry.path().extension() == ".xml") {
-          // Skip registering the main tree file
-            if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
-              continue;
-            }
             factory_.registerBehaviorTreeFromFile(entry.path().string());
           }
         }
@@ -141,9 +154,9 @@ public:
 
     // Build the tree from the XML string
     try {
-      tree = factory_.createTreeFromFile(filename, blackboard);
+      tree = factory_.createTree(*bt_id, blackboard);
     } catch (BT::RuntimeError & exp) {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to create BT from %s: %s", filename.c_str(),
+      RCLCPP_ERROR(node_->get_logger(), "Failed to create BT from %s: %s", file_or_id.c_str(),
           exp.what());
       return false;
     }
@@ -290,12 +303,53 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   std::remove(malformed_main.c_str());
 }
 
+TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
+{
+  // Helper for writing files
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  // 1. Valid XML with ID
+  std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
+  write_file(valid_xml,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"TestTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  auto id = bt_handler->extractBehaviorTreeID(valid_xml);
+  EXPECT_TRUE(id.has_value());
+  EXPECT_EQ(*id, "TestTree");
+
+  // 2. Not an XML file, just an ID string
+  auto direct_id = bt_handler->extractBehaviorTreeID("SomeTreeID");
+  EXPECT_TRUE(direct_id.has_value());
+  EXPECT_EQ(*direct_id, "SomeTreeID");
+
+  // 3. Malformed XML (no ID)
+  std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
+  write_file(malformed_xml, "<root><invalid></root>");
+  auto missing_id = bt_handler->extractBehaviorTreeID(malformed_xml);
+  EXPECT_FALSE(missing_id.has_value());
+
+  // 4. File does not exist
+  auto not_found = bt_handler->extractBehaviorTreeID("/tmp/does_not_exist.xml");
+  EXPECT_FALSE(not_found.has_value());
+
+  // Cleanup
+  std::remove(valid_xml.c_str());
+  std::remove(malformed_xml.c_str());
+}
+
 /**
- * Test scenario:
- *
- * ComputePathToPose and FollowPath return SUCCESS
- * The behavior tree should execute correctly and return SUCCESS
- */
+* Test scenario:
+*
+* ComputePathToPose and FollowPath return SUCCESS
+* The behavior tree should execute correctly and return SUCCESS
+*/
 TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
@@ -336,17 +390,17 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 }
 
 /**
- * Test scenario:
- *
- * ComputePathToPose returns FAILURE and ClearGlobalCostmap-Context returns FAILURE
- * PipelineSequence returns FAILURE and NavigateRecovery triggers RecoveryFallback
- * GoalUpdated returns FAILURE and RoundRobin is triggered
- * RoundRobin triggers ClearingActions Sequence which returns FAILURE
- * RoundRobin triggers Spin, Wait, and BackUp which return FAILURE
- * RoundRobin returns FAILURE hence RecoveryCallbackk returns FAILURE
- * Finally NavigateRecovery returns FAILURE
- * The behavior tree should return FAILURE
- */
+* Test scenario:
+*
+* ComputePathToPose returns FAILURE and ClearGlobalCostmap-Context returns FAILURE
+* PipelineSequence returns FAILURE and NavigateRecovery triggers RecoveryFallback
+* GoalUpdated returns FAILURE and RoundRobin is triggered
+* RoundRobin triggers ClearingActions Sequence which returns FAILURE
+* RoundRobin triggers Spin, Wait, and BackUp which return FAILURE
+* RoundRobin returns FAILURE hence RecoveryCallbackk returns FAILURE
+* Finally NavigateRecovery returns FAILURE
+* The behavior tree should return FAILURE
+*/
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
@@ -399,14 +453,14 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 }
 
 /**
- * Test scenario:
- *
- * ComputePathToPose returns FAILURE on the first try triggering the planner recovery
- * ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns SUCCESS when retried
- * FollowPath returns FAILURE on the first try triggering the controller recovery
- * ClearLocalCostmap-Context returns SUCCESS and FollowPath returns SUCCESS when retried
- * The behavior tree should return SUCCESS
- */
+* Test scenario:
+*
+* ComputePathToPose returns FAILURE on the first try triggering the planner recovery
+* ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns SUCCESS when retried
+* FollowPath returns FAILURE on the first try triggering the controller recovery
+* ClearLocalCostmap-Context returns SUCCESS and FollowPath returns SUCCESS when retried
+* The behavior tree should return SUCCESS
+*/
 TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
@@ -455,21 +509,21 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 }
 
 /**
- * Test scenario:
- *
- * ComputePathToPose returns FAILURE on the first try triggering the planner recovery
- * ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns SUCCESS when retried
- * FollowPath returns FAILURE on the first try triggering the controller recovery
- * ClearLocalCostmap-Context returns SUCCESS and FollowPath is retried
- * FollowPath returns FAILURE again and PipelineSequence returns FAILURE
- * NavigateRecovery triggers RecoveryFallback and GoalUpdated returns FAILURE
- * RoundRobin triggers ClearingActions Sequence which returns SUCCESS
- * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
- * PipelineSequence is triggered again and ComputePathToPose returns SUCCESS
- * FollowPath returns FAILURE on the third try triggering the controller recovery
- * ClearLocalCostmap-Context returns SUCCESS and FollowPath returns SUCCESS on the fourth try
- * The behavior tree should return SUCCESS
- */
+* Test scenario:
+*
+* ComputePathToPose returns FAILURE on the first try triggering the planner recovery
+* ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns SUCCESS when retried
+* FollowPath returns FAILURE on the first try triggering the controller recovery
+* ClearLocalCostmap-Context returns SUCCESS and FollowPath is retried
+* FollowPath returns FAILURE again and PipelineSequence returns FAILURE
+* NavigateRecovery triggers RecoveryFallback and GoalUpdated returns FAILURE
+* RoundRobin triggers ClearingActions Sequence which returns SUCCESS
+* RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
+* PipelineSequence is triggered again and ComputePathToPose returns SUCCESS
+* FollowPath returns FAILURE on the third try triggering the controller recovery
+* ClearLocalCostmap-Context returns SUCCESS and FollowPath returns SUCCESS on the fourth try
+* The behavior tree should return SUCCESS
+*/
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
@@ -525,53 +579,53 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 }
 
 /**
- * Test Scenario:
- *
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE, RoundRobin triggers ClearingActions Sequence which returns SUCCESS
- * RoundRobin returns SUCCESS and the recovery subtree returns SUCCESS
- *
- * RETRY 1
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE, RoundRobin triggers Spin which returns FAILURE
- * RoundRobin triggers Wait which returns SUCCESS
- * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
- *
- * RETRY 2
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE and RoundRobin triggers BackUp which returns FAILURE
- * RoundRobin triggers ClearingActions Sequence which returns SUCCESS
- * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
- *
- * RETRY 3
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE and RoundRobin triggers ClearingActions which returns SUCCESS
- * RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
- *
- * RETRY 4
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE and RoundRobin triggers Spin which returns SUCCESS
- *
- * RETRY 5
- * PipelineSequence returns FAILURE and triggers the Recovery subtree
- * NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
- * GoalUpdated returns FAILURE and RoundRobin triggers Wait which returns SUCCESS
- * RoundRobin triggers BackUp which returns SUCCESS
- *
- * RETRY 6
- * ComputePathToPose returns FAILURE on the first try triggering the planner recovery
- * ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns FAILURE when retried
- * PipelineSequence returns FAILURE and NavigateRecovery finally also returns FAILURE
- *
- * The behavior tree should return FAILURE
- *
- */
+* Test Scenario:
+*
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE, RoundRobin triggers ClearingActions Sequence which returns SUCCESS
+* RoundRobin returns SUCCESS and the recovery subtree returns SUCCESS
+*
+* RETRY 1
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE, RoundRobin triggers Spin which returns FAILURE
+* RoundRobin triggers Wait which returns SUCCESS
+* RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
+*
+* RETRY 2
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE and RoundRobin triggers BackUp which returns FAILURE
+* RoundRobin triggers ClearingActions Sequence which returns SUCCESS
+* RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
+*
+* RETRY 3
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE and RoundRobin triggers ClearingActions which returns SUCCESS
+* RoundRobin returns SUCCESS and RecoveryFallback returns SUCCESS
+*
+* RETRY 4
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE and RoundRobin triggers Spin which returns SUCCESS
+*
+* RETRY 5
+* PipelineSequence returns FAILURE and triggers the Recovery subtree
+* NavigateRecovery ticks the recovery subtree, WouldAControllerRecoveryHelp returns SUCCESS
+* GoalUpdated returns FAILURE and RoundRobin triggers Wait which returns SUCCESS
+* RoundRobin triggers BackUp which returns SUCCESS
+*
+* RETRY 6
+* ComputePathToPose returns FAILURE on the first try triggering the planner recovery
+* ClearGlobalCostmap-Context returns SUCCESS and ComputePathToPose returns FAILURE when retried
+* PipelineSequence returns FAILURE and NavigateRecovery finally also returns FAILURE
+*
+* The behavior tree should return FAILURE
+*
+*/
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
@@ -627,23 +681,23 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 }
 
 /**
- * Test scenario:
- *
- * The PipelineSequence return FAILURE due to FollowPath returning FAILURE
- * The NavigateRecovery triggers the recovery sub tree which returns SUCCESS
- * The PipelineSequence return FAILURE due to FollowPath returning FAILURE
- * The NavigateRecovery triggers the recovery sub tree which ticks the Spin recovery
- *
- * At this point a new goal is updated on the blackboard
- *
- * RecoveryFallback triggers GoalUpdated which returns SUCCESS this time
- * Since GoalUpdated returned SUCCESS, RoundRobin and hence Spin is halted
- * RecoveryFallback also returns SUCCESS and PipelineSequence is retried
- * PipelineSequence triggers ComputePathToPose which returns SUCCESS
- * FollowPath returns SUCCESS and NavigateRecovery finally also returns SUCCESS
- *
- * The behavior tree should return SUCCESS
- */
+* Test scenario:
+*
+* The PipelineSequence return FAILURE due to FollowPath returning FAILURE
+* The NavigateRecovery triggers the recovery sub tree which returns SUCCESS
+* The PipelineSequence return FAILURE due to FollowPath returning FAILURE
+* The NavigateRecovery triggers the recovery sub tree which ticks the Spin recovery
+*
+* At this point a new goal is updated on the blackboard
+*
+* RecoveryFallback triggers GoalUpdated which returns SUCCESS this time
+* Since GoalUpdated returned SUCCESS, RoundRobin and hence Spin is halted
+* RecoveryFallback also returns SUCCESS and PipelineSequence is retried
+* PipelineSequence triggers ComputePathToPose which returns SUCCESS
+* FollowPath returns SUCCESS and NavigateRecovery finally also returns SUCCESS
+*
+* The behavior tree should return SUCCESS
+*/
 TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
