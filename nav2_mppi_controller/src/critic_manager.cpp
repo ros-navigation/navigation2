@@ -76,7 +76,7 @@ void CriticManager::evalTrajectoriesScores(
   CriticData & data) const
 {
   nav2_msgs::msg::CriticsStats stats_msg;
-  
+
   if (publish_critics_stats_) {
     stats_msg.critics.reserve(critics_.size());
     stats_msg.changed.reserve(critics_.size());
