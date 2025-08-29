@@ -23,7 +23,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <regex>
+#include "tinyxml2.h" //NOLINT
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
@@ -250,28 +250,29 @@ template<class ActionT, class NodeT>
 std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
   const std::string & file_or_id)
 {
-  if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
-    return file_or_id;
-  }
-  std::ifstream file(file_or_id);
-  if (!file.is_open()) {
-    RCLCPP_ERROR(logger_, "Could not open file %s", file_or_id.c_str());
+  tinyxml2::XMLDocument doc;
+  if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
+    RCLCPP_ERROR(logger_, "Error: Could not open or parse file %s", filename.c_str());
     return std::nullopt;
   }
-
-  const std::regex id_regex("<BehaviorTree ID=\"(.*?)\"");
-
-  std::string line;
-  while (std::getline(file, line)) {
-    std::smatch match;
-    if (std::regex_search(line, match, id_regex)) {
-      if (match.size() > 1) {
-        return match[1].str();
-      }
-    }
+  tinyxml2::XMLElement * rootElement = doc.RootElement();
+  if (!rootElement) {
+    RCLCPP_ERROR(logger_, "Error: Root element not found in %s", filename.c_str());
+    return std::nullopt;
   }
-
-  return std::nullopt;
+  tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
+  if (!btElement) {
+    RCLCPP_ERROR(logger_, "Error: <BehaviorTree> element not found in %s", filename.c_str());
+    return std::nullopt;
+  }
+  const char * idValue = btElement->Attribute("ID");
+  if (idValue) {
+    return std::string(idValue);
+  } else {
+    RCLCPP_ERROR(logger_, "Error: ID attribute not found on <BehaviorTree> element in %s",
+        filename.c_str());
+    return std::nullopt;
+  }
 }
 
 template<class ActionT, class NodeT>
