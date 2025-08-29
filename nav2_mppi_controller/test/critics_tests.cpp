@@ -251,16 +251,19 @@ TEST(CriticTests, GoalAngleCritic)
   goal.orientation.y = 0.0;
   goal.orientation.z = 1.0;
   goal.orientation.w = 0.0;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 
   // Let's move it even closer, just to be sure it still doesn't trigger
   state.pose.pose.position.x = 9.2;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0, 1e-6);
 
   // provide state pose and path below `threshold_to_consider` to consider
   state.pose.pose.position.x = 9.7;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
   EXPECT_NEAR(costs(0), 9.42, 0.02);  // (3.14 - 0.0) * 3.0 weight
@@ -305,6 +308,7 @@ TEST(CriticTests, GoalCritic)
   path.x(9) = 10.0;
   path.y(9) = 0.0;
   goal.position.x = 10.0;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs(2), 0.0, 1e-6);  // (0 * 5.0 weight
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);  // Should all be 0 * 1000
@@ -314,6 +318,7 @@ TEST(CriticTests, GoalCritic)
   path.x(9) = 0.5;
   path.y(9) = 0.0;
   goal.position.x = 0.5;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs(2), 2.5, 1e-6);  // (sqrt(10.0 * 10.0) * 5.0 weight
   EXPECT_NEAR(costs.sum(), 2500.0, 1e-3);  // should be 2.5 * 1000
@@ -360,12 +365,14 @@ TEST(CriticTests, PathAngleCritic)
   state.pose.pose.position.y = 0.0;
   path.x(9) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close but outside of tol. with less than PI/2 angular diff.
   path.x(9) = 0.95;
   goal.position.x = 0.95;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   data.furthest_reached_path_point = 2;  // So it grabs the 2 + offset_from_furthest_ = 6th point
   path.x(6) = 1.0;  // angle between path point and pose = 0 < max_angle_to_furthest_
   path.y(6) = 0.0;
@@ -478,12 +485,14 @@ TEST(CriticTests, PreferForwardCritic)
   state.pose.pose.position.x = 1.0;
   path.x(9) = 10.0;
   goal.position.x = 10.0;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0f, 1e-6f);
 
   // provide state pose and path close to trigger behavior but with all forward motion
   path.x(9) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   state.vx.setOnes();
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0f, 1e-6f);
@@ -536,12 +545,14 @@ TEST(CriticTests, TwirlingCritic)
   state.pose.pose.position.x = 1.0;
   path.x(9) = 10.0;
   goal.position.x = 10.0;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
   // provide state pose and path close to trigger behavior but with no angular variation
   path.x(9) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   state.wz.setZero();
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
@@ -601,6 +612,7 @@ TEST(CriticTests, PathFollowCritic)
   state.pose.pose.position.x = 2.0;
   path.x(5) = 1.8;
   goal.position.x = 1.8;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
@@ -608,6 +620,7 @@ TEST(CriticTests, PathFollowCritic)
   // pose differential is (0, 0) and (0.15, 0)
   path.x(5) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 750.0, 1e-2);  // 0.15 * 5 weight * 1000
 }
@@ -653,6 +666,7 @@ TEST(CriticTests, PathAlignCritic)
   state.pose.pose.position.x = 1.0;
   path.x(9) = 0.85;
   goal.position.x = 0.85;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
@@ -660,6 +674,7 @@ TEST(CriticTests, PathAlignCritic)
   // but data furthest point reached is 0 and offset default is 20, so returns
   path.x(9) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
@@ -668,6 +683,7 @@ TEST(CriticTests, PathAlignCritic)
   *data.furthest_reached_path_point = 21;
   path.x(9) = 0.15;
   goal.position.x = 0.15;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 
@@ -699,6 +715,7 @@ TEST(CriticTests, PathAlignCritic)
   path.x(20) = 0.9;
   path.x(21) = 0.9;
   goal.position.x = 0.9;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   generated_trajectories.x.setConstant(0.66f);
   critic.score(data);
   // 0.66 * 1000 * 10 weight * 6 num pts eval / 6 normalization term
@@ -719,6 +736,7 @@ TEST(CriticTests, PathAlignCritic)
   path.x.setConstant(1.5f);
   path.y.setConstant(1.5f);
   goal.position.x = 1.5;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
   critic.score(data);
   EXPECT_NEAR(costs.sum(), 0.0, 1e-6);
 }
