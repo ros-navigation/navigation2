@@ -64,7 +64,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
         shape_name.c_str(), uuid_str.c_str());
       return false;
     }
-  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+  } catch (const std::exception &) {
     // If no UUID was specified, generate a new one
     uuid_generate(out_uuid);
 
