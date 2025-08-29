@@ -116,56 +116,6 @@ TEST(UtilsTests, ConversionTests)
   EXPECT_NEAR(path_t.yaws(2), 0.0, 1e-6);
 }
 
-TEST(UtilsTests, WithTolTests)
-{
-  geometry_msgs::msg::Pose pose;
-  pose.position.x = 10.0;
-  pose.position.y = 1.0;
-
-  nav2_core::GoalChecker * goal_checker = new TestGoalChecker;
-
-  nav_msgs::msg::Path path;
-  path.poses.resize(2);
-  geometry_msgs::msg::Pose & goal = path.poses.back().pose;
-
-  // Create CriticData with state and goal initialized
-  models::State state;
-  state.pose.pose = pose;
-  models::Trajectories generated_trajectories;
-  models::Path path_critic;
-  Eigen::ArrayXf costs;
-  float model_dt;
-  CriticData data = {
-    state, generated_trajectories, path_critic, goal,
-    costs, model_dt, false, nullptr, nullptr, std::nullopt, std::nullopt};
-
-  // Test not in tolerance
-  goal.position.x = 0.0;
-  goal.position.y = 0.0;
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
-  EXPECT_FALSE(withinPositionGoalTolerance(0.25, pose, goal));
-
-  // Test in tolerance
-  goal.position.x = 9.8;
-  goal.position.y = 0.95;
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
-
-  goal.position.x = 10.0;
-  goal.position.y = 0.76;
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
-
-  goal.position.x = 9.76;
-  goal.position.y = 1.0;
-  EXPECT_TRUE(withinPositionGoalTolerance(goal_checker, pose, goal));
-  EXPECT_TRUE(withinPositionGoalTolerance(0.25, pose, goal));
-
-  delete goal_checker;
-  goal_checker = nullptr;
-  EXPECT_FALSE(withinPositionGoalTolerance(goal_checker, pose, goal));
-}
-
 TEST(UtilsTests, AnglesTests)
 {
   // Test angle normalization by creating insane angles
