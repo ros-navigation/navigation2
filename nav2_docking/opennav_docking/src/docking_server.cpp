@@ -167,10 +167,8 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf2_buffer_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
-  if (dock_db_) {
-    dock_db_->deactivate();
-    dock_db_.reset();
-  }
+  dock_db_->deactivate();
+  dock_db_.reset();
   navigator_.reset();
   curr_dock_type_.clear();
   controller_.reset();
@@ -332,9 +330,9 @@ void DockingServer::dockRobot()
             }
             result->success = true;
             result->num_retries = num_retries_;
-            dock->plugin->stopDetectionProcess();
             stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
+            dock->plugin->stopDetectionProcess();
             docking_action_server_->succeeded_current(result);
             return;
           }
