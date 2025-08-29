@@ -251,18 +251,18 @@ std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID
   const std::string & file_or_id)
 {
   tinyxml2::XMLDocument doc;
-  if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
-    RCLCPP_ERROR(logger_, "Error: Could not open or parse file %s", filename.c_str());
+  if (doc.LoadFile(file_or_id.c_str()) != tinyxml2::XML_SUCCESS) {
+    RCLCPP_ERROR(logger_, "Error: Could not open or parse file %s", file_or_id.c_str());
     return std::nullopt;
   }
   tinyxml2::XMLElement * rootElement = doc.RootElement();
   if (!rootElement) {
-    RCLCPP_ERROR(logger_, "Error: Root element not found in %s", filename.c_str());
+    RCLCPP_ERROR(logger_, "Error: Root element not found in %s", file_or_id.c_str());
     return std::nullopt;
   }
   tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
   if (!btElement) {
-    RCLCPP_ERROR(logger_, "Error: <BehaviorTree> element not found in %s", filename.c_str());
+    RCLCPP_ERROR(logger_, "Error: <BehaviorTree> element not found in %s", file_or_id.c_str());
     return std::nullopt;
   }
   const char * idValue = btElement->Attribute("ID");
@@ -270,7 +270,7 @@ std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID
     return std::string(idValue);
   } else {
     RCLCPP_ERROR(logger_, "Error: ID attribute not found on <BehaviorTree> element in %s",
-        filename.c_str());
+        file_or_id.c_str());
     return std::nullopt;
   }
 }
