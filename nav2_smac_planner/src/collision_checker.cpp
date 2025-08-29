@@ -66,36 +66,60 @@ void GridCollisionChecker::setFootprint(
 
   footprint_is_radius_ = radius;
 
-  // Use radius, no caching required
-  if (radius) {
+  precomputed_collision_cells_.clear();
+  precomputed_collision_cells_.reserve(angles_.size());
+
+  if (footprint_is_radius_) {
+    // For circular footprint, all angles have the same single center cell
+    std::vector<std::pair<int, int>> center_cell = {{0, 0}};
+    for (unsigned int i = 0; i != angles_.size(); i++) {
+      precomputed_collision_cells_.push_back(center_cell);
+    }
     return;
   }
 
-  // No change, no updates required
-  if (footprint == unoriented_footprint_) {
-    return;
-  }
+  // Resolution inverse
+  const double inv_resolution = 1.0 / costmap_->getResolution();
 
-  oriented_footprints_.clear();
-  oriented_footprints_.reserve(angles_.size());
-  double sin_th, cos_th;
-  geometry_msgs::msg::Point new_pt;
-  const unsigned int footprint_size = footprint.size();
-
-  // Precompute the orientation bins for checking to use
   for (unsigned int i = 0; i != angles_.size(); i++) {
-    sin_th = sin(angles_[i]);
-    cos_th = cos(angles_[i]);
-    nav2_costmap_2d::Footprint oriented_footprint;
-    oriented_footprint.reserve(footprint_size);
+    robin_hood::unordered_set<std::pair<int, int>, PairHash> unique_cells;
 
-    for (unsigned int j = 0; j < footprint_size; j++) {
-      new_pt.x = footprint[j].x * cos_th - footprint[j].y * sin_th;
-      new_pt.y = footprint[j].x * sin_th + footprint[j].y * cos_th;
-      oriented_footprint.push_back(new_pt);
+    // Rotate footprint vertices for this angle
+    nav2_costmap_2d::Footprint oriented_footprint;
+    oriented_footprint.reserve(footprint.size());
+    nav2_costmap_2d::transformFootprint(0.0, 0.0, angles_[i], footprint, oriented_footprint);
+
+    // Convert footprint vertices to map coordinates (assuming robot at origin)
+    std::vector<std::pair<int, int>> footprint_cells;
+    footprint_cells.reserve(oriented_footprint.size());
+
+    for (const auto & vertex : oriented_footprint) {
+      // Convert world coordinates to map cell coordinates
+      const int mx = static_cast<int>(std::lround(vertex.x * inv_resolution));
+      const int my = static_cast<int>(std::lround(vertex.y * inv_resolution));
+      footprint_cells.emplace_back(mx, my);
     }
 
-    oriented_footprints_.push_back(oriented_footprint);
+      // Rasterize all edges using LineIterator and collect unique cells
+    for (unsigned int j = 0; j < footprint_cells.size(); j++) {
+      const unsigned int next_j = (j + 1) % footprint_cells.size();
+      const auto & start = footprint_cells[j];
+      const auto & end = footprint_cells[next_j];
+
+      // Use LineIterator to get all cells along this edge
+      for (nav2_util::LineIterator line_it(start.first, start.second, end.first, end.second);
+        line_it.isValid(); line_it.advance())
+      {
+        unique_cells.emplace(line_it.getX(), line_it.getY());
+      }
+    }
+
+    // Convert robin_hood set to vector
+    std::vector<std::pair<int, int>> cells_for_angle;
+    cells_for_angle.reserve(unique_cells.size());
+    cells_for_angle.assign(unique_cells.begin(), unique_cells.end());
+
+    precomputed_collision_cells_.push_back(std::move(cells_for_angle));
   }
 
   unoriented_footprint_ = footprint;
@@ -114,9 +138,12 @@ bool GridCollisionChecker::inCollision(
     return true;
   }
 
+  // Calculate robot cell coordinates
+  const int robot_mx = static_cast<int>(x + 0.5f);
+  const int robot_my = static_cast<int>(y + 0.5f);
+
   // Assumes setFootprint already set
-  center_cost_ = static_cast<float>(costmap_->getCost(
-    static_cast<unsigned int>(x + 0.5f), static_cast<unsigned int>(y + 0.5f)));
+  center_cost_ = static_cast<float>(costmap_->getCost(robot_mx, robot_my));
 
   if (!footprint_is_radius_) {
     // if footprint, then we check for the footprint's points, but first see
@@ -136,21 +163,30 @@ bool GridCollisionChecker::inCollision(
     }
 
     // if possible inscribed, need to check actual footprint pose.
-    // Use precomputed oriented footprints are done on initialization,
-    // offset by translation value to collision check
-    double wx, wy;
-    costmap_->mapToWorld(static_cast<double>(x), static_cast<double>(y), wx, wy);
-    geometry_msgs::msg::Point new_pt;
-    const nav2_costmap_2d::Footprint & oriented_footprint = oriented_footprints_[angle_bin];
-    nav2_costmap_2d::Footprint current_footprint;
-    current_footprint.reserve(oriented_footprint.size());
-    for (unsigned int i = 0; i < oriented_footprint.size(); ++i) {
-      new_pt.x = wx + oriented_footprint[i].x;
-      new_pt.y = wy + oriented_footprint[i].y;
-      current_footprint.push_back(new_pt);
+    // Use precomputed collision cells
+    const unsigned int angle_idx = static_cast<unsigned int>(angle_bin);
+    const auto & cells_to_check = precomputed_collision_cells_[angle_idx];
+
+    // Bounds
+    const int max_x = static_cast<int>(costmap_->getSizeInCellsX());
+    const int max_y = static_cast<int>(costmap_->getSizeInCellsY());
+    unsigned char max_footprint_cost = 0;
+
+    for (const auto & cell_offset : cells_to_check) {
+      const int check_mx = robot_mx + cell_offset.first;
+      const int check_my = robot_my + cell_offset.second;
+
+      // Bounds check for each footprint cell
+      if (check_mx < 0 || check_mx >= max_x || check_my < 0 || check_my >= max_y) {
+        // Out of bounds cells are treated as lethal obstacles
+        return true;
+      }
+
+      const unsigned char cell_cost = costmap_->getCost(check_mx, check_my);
+      max_footprint_cost = std::max(max_footprint_cost, cell_cost);
     }
 
-    float footprint_cost = static_cast<float>(footprintCost(current_footprint));
+    const float footprint_cost = static_cast<float>(max_footprint_cost);
 
     if (footprint_cost == UNKNOWN_COST && traverse_unknown) {
       return false;

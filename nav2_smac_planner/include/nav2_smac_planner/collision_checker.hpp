@@ -13,11 +13,14 @@
 // limitations under the License. Reserved.
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_smac_planner/thirdparty/robin_hood.h"
 #include "nav2_smac_planner/constants.hpp"
+#include "nav2_util/line_iterator.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #ifndef NAV2_SMAC_PLANNER__COLLISION_CHECKER_HPP_
@@ -25,6 +28,18 @@
 
 namespace nav2_smac_planner
 {
+
+/**
+ * @struct PairHash
+ * @brief Hash function for std::pair<int, int> to use with robin_hood hash
+ */
+struct PairHash
+{
+  std::size_t operator()(const std::pair<int, int> & p) const noexcept
+  {
+    return robin_hood::hash_bytes(&p, sizeof(p));
+  }
+};
 
 /**
  * @class nav2_smac_planner::GridCollisionChecker
@@ -124,7 +139,7 @@ public:
 
 protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  std::vector<nav2_costmap_2d::Footprint> oriented_footprints_;
+  std::vector<std::vector<std::pair<int, int>>> precomputed_collision_cells_;
   nav2_costmap_2d::Footprint unoriented_footprint_;
   float center_cost_;
   bool footprint_is_radius_{false};
