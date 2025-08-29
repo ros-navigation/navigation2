@@ -21,6 +21,7 @@
   <depend>action_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>geographic_msgs</depend>
+  <depend>unique_identifier_msgs</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 
