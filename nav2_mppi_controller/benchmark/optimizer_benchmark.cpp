@@ -29,7 +29,6 @@
 #include <nav2_costmap_2d/costmap_2d_ros.hpp>
 #include <nav2_core/goal_checker.hpp>
 #include "tf2_ros/buffer.hpp"
-#include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
@@ -93,8 +92,7 @@ void prepareAndRunBenchmark(
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
   for (auto _ : state) {
-    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path,
-      path.poses.back().pose,
+    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, path.poses.back().pose,
       dummy_goal_checker);
   }
 }
