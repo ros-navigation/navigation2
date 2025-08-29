@@ -10,8 +10,8 @@
   It also has recovery actions specific to planning / control as well as general system issues.
 -->
 
-<root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="NavigateOnRouteGraphWRecovery">
+  <BehaviorTree ID="NavigateOnRouteGraphWRecovery">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
@@ -19,7 +19,7 @@
         <RecoveryNode number_of_retries="1" name="ComputeRoute">
           <RateController hz="0.5" name="ComputeRouteRateController">
               <Fallback>
-                <!-- Compute a new route if a new goal is found or the path is no longer valid -->
+              <!-- Compute a new route if a new goal is found or the path is no longer valid -->
                 <ReactiveSequence>
                   <Inverter>
                     <GlobalUpdatedGoal/>
@@ -27,10 +27,9 @@
                   <IsPathValid path="{path}"/> <!-- Base it on the complete connected 'path', not simply the 'route_path' -->
                 </ReactiveSequence>
                 <Sequence name="ComputeAndSmoothRoute">
-                  <!-- Compute the route -->
+                <!-- Compute the route -->
                   <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true" error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>
-
-                  <!-- Find if the route start node is far from the robot's current pose; if so, connect them for 'first mile'. -->
+                <!-- Find if the route start node is far from the robot's current pose; if so, connect them for 'first mile'. -->
                   <ReactiveSequence>
                     <GetCurrentPose current_pose="{current_pose}"/>
                     <GetPoseFromPath path="{route_path}" index="0" pose="{route_start_pose}"/>
@@ -40,8 +39,7 @@
                     <ComputePathToPose goal="{route_start_pose}" path="{first_mile_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
                     <ConcatenatePaths input_path1="{first_mile_path}" input_path2="{route_path}" output_path="{route_path}"/>
                   </ReactiveSequence>
-
-                  <!-- Find if the route end node is far from the goal pose; if so, connect them for 'last mile'. -->
+                <!-- Find if the route end node is far from the goal pose; if so, connect them for 'last mile'. -->
                   <ReactiveSequence>
                     <GetPoseFromPath path="{route_path}" index="-1" pose="{route_end_pose}"/>
                     <Inverter>
@@ -50,8 +48,7 @@
                     <ComputePathToPose start="{route_end_pose}" goal="{goal}" path="{last_mile_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
                     <ConcatenatePaths input_path1="{route_path}" input_path2="{last_mile_path}" output_path="{route_path}"/>
                   </ReactiveSequence>
-
-                  <!-- Smooth the completed route -->
+                <!-- Smooth the completed route -->
                   <SmoothPath unsmoothed_path="{route_path}" smoothed_path="{path}" smoother_id="route_smoother" error_code_id="{smoother_error_code}" error_msg="{smoother_error_msg}"/>
                 </Sequence>
               </Fallback>
