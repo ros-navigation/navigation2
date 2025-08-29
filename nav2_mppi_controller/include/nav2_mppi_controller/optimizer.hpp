@@ -33,6 +33,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_mppi_controller/models/optimizer_settings.hpp"
 #include "nav2_mppi_controller/motion_models.hpp"
@@ -90,8 +91,6 @@ public:
    * @param robot_pose Pose of the robot at given time
    * @param robot_speed Speed of the robot at given time
    * @param plan Path plan to track
-   * @param plan_length Length of the global plan from current robot position to the end
-   * @param plan_length_up_to_inversion Length of the plan from current robot position up to the inversion point (if any)
    * @param goal Given Goal pose to reach.
    * @param goal_checker Object to check if goal is completed
    * @return Tuple of [TwistStamped command, optimal trajectory]
@@ -99,7 +98,6 @@ public:
   std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> evalControl(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed, const nav_msgs::msg::Path & plan,
-    const float & plan_length, const float & plan_length_up_to_inversion,
     const geometry_msgs::msg::Pose & goal, nav2_core::GoalChecker * goal_checker);
 
   /**
@@ -153,16 +151,12 @@ protected:
    * @param robot_pose Pose of the robot at given time
    * @param robot_speed Speed of the robot at given time
    * @param plan Path plan to track
-   * @param plan_length Length of the global plan from current robot position to the end
-   * @param plan_length_up_to_inversion Length of the plan from current robot position up to the inversion point (if any)
    * @param goal_checker Object to check if goal is completed
    */
   void prepare(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     const nav_msgs::msg::Path & plan,
-    const float & plan_length,
-    const float & plan_length_up_to_inversion,
     const geometry_msgs::msg::Pose & goal, nav2_core::GoalChecker * goal_checker);
 
   /**

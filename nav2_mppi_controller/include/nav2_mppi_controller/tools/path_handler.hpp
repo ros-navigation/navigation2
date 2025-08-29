@@ -97,18 +97,6 @@ public:
    */
   geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
-  /**
-   * @brief Get the length of the global plan up to inversion point
-   * @return Length of the global plan up to inversion point
-   */
-  float getPlanLengthUpToInversion() const;
-
-  /**
-   * @brief Get the total length of the global plan
-   * @return Total length of the global plan
-   */
-  float getPlanLength() const;
-
 protected:
   /**
     * @brief Get largest dimension of costmap (radially)
@@ -134,20 +122,6 @@ protected:
     const geometry_msgs::msg::PoseStamped & global_pose);
 
   /**
-    * @brief Extract path segments (closest point and pruned end) from global plan
-    * @param global_pose Robot pose in global plan frame
-    * @return pair of iterators marking closest point and pruned end
-    */
-  std::pair<PathIterator, PathIterator> extractPathSegments(
-    const geometry_msgs::msg::PoseStamped & global_pose);
-
-  /**
-    * @brief Calculate path lengths for both full path and path up to inversion
-    * @param closest_point Iterator to closest point on path
-    */
-  void calculatePathLengths(const PathIterator & closest_point);
-
-  /**
     * @brief Prune a path to only interesting portions
     * @param plan Plan to prune
     * @param end Final path iterator
@@ -167,9 +141,7 @@ protected:
   ParametersHandler * parameters_handler_;
 
   nav_msgs::msg::Path global_plan_;
-  float global_plan_length_{0};
   nav_msgs::msg::Path global_plan_up_to_inversion_;
-  float global_plan_length_up_to_inversion_{0};
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   double max_robot_pose_search_dist_{0};

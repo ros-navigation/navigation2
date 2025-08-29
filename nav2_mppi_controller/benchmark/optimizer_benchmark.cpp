@@ -93,11 +93,10 @@ void prepareAndRunBenchmark(
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
   float plan_length = nav2_util::geometry_utils::calculate_path_length(path);
-  float plan_length_up_to_inversion = plan_length;  // assume no inversion
 
   for (auto _ : state) {
     auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, plan_length,
-      plan_length_up_to_inversion, path.poses.back().pose,
+      path.poses.back().pose,
       dummy_goal_checker);
   }
 }
