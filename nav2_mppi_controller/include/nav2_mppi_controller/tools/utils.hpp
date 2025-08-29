@@ -267,7 +267,7 @@ inline geometry_msgs::msg::Pose getCriticGoal(
  * @param enforce_path_inversion True to use the path inversion point
  * @return float Distance to the critic goal
  */
-inline float getCriticGoalPathDistance(
+inline float getIntegratedPathDistanceToGoal(
   const CriticData & data,
   bool enforce_path_inversion)
 {
