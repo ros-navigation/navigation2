@@ -22,7 +22,7 @@
 #include "tf2/transform_datatypes.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_util/polygon_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/array_parser.hpp"
 
@@ -230,7 +230,7 @@ int Polygon::getPointsInside(const std::vector<Point> & points) const
 {
   int num = 0;
   for (const Point & point : points) {
-    if (nav2_util::isPointInsidePolygon<Point>(point.x, point.y, poly_)) {
+    if (nav2_util::geometry_utils::isPointInsidePolygon(point.x, point.y, poly_)) {
       num++;
     }
   }

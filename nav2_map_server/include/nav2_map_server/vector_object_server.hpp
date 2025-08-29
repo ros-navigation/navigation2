@@ -220,7 +220,7 @@ protected:
   /// @beirf Topic name where the output map to be published to
   std::string map_topic_;
   /// @brief Output map publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
+  nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
 };
 
 }  // namespace nav2_map_server

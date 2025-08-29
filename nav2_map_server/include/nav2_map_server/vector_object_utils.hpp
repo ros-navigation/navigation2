@@ -43,45 +43,6 @@ inline std::string unparseUUID(const unsigned char * uuid)
   return std::string(uuid_str);
 }
 
-// ---------- Working with ROS-parameters ----------
-
-/**
- * @brief Declares and obtains ROS-parameter from given node
- * @param node LifecycleNode pointer where the parameter belongs to
- * @param param_name Parameter name string
- * @param default_val Default value of the parameter (for the case if parameter is not set)
- * @return Obtained parameter value
- */
-template<typename ValT>
-inline rclcpp::Parameter getParameter(
-  nav2::LifecycleNode::SharedPtr node,
-  const std::string & param_name,
-  const ValT & default_val)
-{
-  nav2::declare_parameter_if_not_declared(
-    node, param_name, rclcpp::ParameterValue(default_val));
-  return node->get_parameter(param_name);
-}
-
-/**
- * @brief Declares and obtains ROS-parameter from given node
- * @param node LifecycleNode pointer where the parameter belongs to
- * @param param_name Parameter name string
- * @param val_type Type of obtained parameter
- * @return Obtained parameter value
- * @throw std::exception if parameter is not set
- */
-template<>
-inline rclcpp::Parameter getParameter<rclcpp::ParameterType>(
-  nav2::LifecycleNode::SharedPtr node,
-  const std::string & param_name,
-  const rclcpp::ParameterType & val_type)
-{
-  nav2::declare_parameter_if_not_declared(
-    node, param_name, val_type);
-  return node->get_parameter(param_name);
-}
-
 // ---------- Working with shapes' overlays ----------
 
 /// @brief Type of overlay between different vector objects and map

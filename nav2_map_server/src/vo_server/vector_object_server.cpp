@@ -96,9 +96,6 @@ VectorObjectServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
 
-  // Destroying bond connection
-  destroyBond();
-
   if (map_timer_) {
     map_timer_->cancel();
     map_timer_.reset();
@@ -106,6 +103,9 @@ VectorObjectServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   process_map_ = false;
 
   map_pub_->on_deactivate();
+
+  // Destroying bond connection
+  destroyBond();
 
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -134,7 +134,6 @@ nav2::CallbackReturn
 VectorObjectServer::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -143,21 +142,22 @@ bool VectorObjectServer::obtainParams()
   auto node = shared_from_this();
 
   // Main ROS-parameters
-  map_topic_ = getParameter(node, "map_topic", "vo_map").as_string();
-  global_frame_id_ = getParameter(node, "global_frame_id", "map").as_string();
-  resolution_ = getParameter(node, "resolution", 0.05).as_double();
-  default_value_ = getParameter(node, "default_value", nav2_util::OCC_GRID_UNKNOWN).as_int();
-  overlay_type_ = static_cast<OverlayType>(getParameter(node, "overlay_type",
-      static_cast<int>(OverlayType::OVERLAY_SEQ)).as_int());
-  update_frequency_ = getParameter(node, "update_frequency", 1.0).as_double();
-  transform_tolerance_ = getParameter(node, "transform_tolerance", 0.1).as_double();
+  map_topic_ = nav2::declare_or_get_parameter(node, "map_topic", std::string{"vo_map"});
+  global_frame_id_ = nav2::declare_or_get_parameter(node, "global_frame_id", std::string{"map"});
+  resolution_ = nav2::declare_or_get_parameter(node, "resolution", 0.05);
+  default_value_ = nav2::declare_or_get_parameter(node, "default_value",
+      static_cast<int>(nav2_util::OCC_GRID_UNKNOWN));
+  overlay_type_ = static_cast<OverlayType>(nav2::declare_or_get_parameter(node, "overlay_type",
+      static_cast<int>(OverlayType::OVERLAY_SEQ)));
+  update_frequency_ = nav2::declare_or_get_parameter(node, "update_frequency", 1.0);
+  transform_tolerance_ = nav2::declare_or_get_parameter(node, "transform_tolerance", 0.1);
 
   // Shapes
-  auto shape_names = getParameter(node, "shapes", std::vector<std::string>()).as_string_array();
+  auto shape_names = nav2::declare_or_get_parameter(node, "shapes", std::vector<std::string>());
   for (std::string shape_name : shape_names) {
     std::string shape_type;
     try {
-      shape_type = getParameter(node, shape_name + ".type", rclcpp::PARAMETER_STRING).as_string();
+      shape_type = nav2::declare_or_get_parameter<std::string>(node, shape_name + ".type", rclcpp::PARAMETER_STRING);
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(
         get_logger(), "Error while getting shape %s type: %s", shape_name.c_str(), ex.what());

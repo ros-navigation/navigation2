@@ -25,7 +25,7 @@
 
 #include "nav2_util/occ_grid_utils.hpp"
 #include "nav2_util/occ_grid_values.hpp"
-#include "nav2_util/polygon_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_util/robot_utils.hpp"
 
@@ -55,8 +55,8 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
 
   try {
     // Try to get shape UUID from ROS-parameters
-    std::string uuid_str = getParameter(
-      node, shape_name + ".uuid", rclcpp::PARAMETER_STRING).as_string();
+    std::string uuid_str = nav2::declare_or_get_parameter<std::string>(
+      node, shape_name + ".uuid", rclcpp::PARAMETER_STRING);
     if (uuid_parse(uuid_str.c_str(), out_uuid) != 0) {
       RCLCPP_ERROR(
         node->get_logger(),
@@ -127,18 +127,17 @@ bool Polygon::obtainParams(const std::string & shape_name)
     polygon_ = std::make_shared<geometry_msgs::msg::Polygon>();
   }
 
-  params_->header.frame_id = getParameter(
-    node, shape_name + ".frame_id", "map").as_string();
-  params_->value = getParameter(
-    node, shape_name + ".value", nav2_util::OCC_GRID_OCCUPIED).as_int();
-
-  params_->closed = getParameter(
-    node, shape_name + ".closed", true).as_bool();
+  params_->header.frame_id = nav2::declare_or_get_parameter(
+    node, shape_name + ".frame_id", std::string{"map"});
+  params_->value = nav2::declare_or_get_parameter(
+    node, shape_name + ".value", static_cast<int>(nav2_util::OCC_GRID_OCCUPIED));
+  params_->closed = nav2::declare_or_get_parameter(
+    node, shape_name + ".closed", true);
 
   std::vector<double> poly_row;
   try {
-    poly_row = getParameter(
-      node, shape_name + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY).as_double_array();
+    poly_row = nav2::declare_or_get_parameter<std::vector<double>>(
+      node, shape_name + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       node->get_logger(),
@@ -240,7 +239,7 @@ void Polygon::getBoundaries(double & min_x, double & min_y, double & max_x, doub
 
 bool Polygon::isPointInside(const double px, const double py) const
 {
-  return nav2_util::isPointInsidePolygon<geometry_msgs::msg::Point32>(px, py, polygon_->points);
+  return nav2_util::geometry_utils::isPointInsidePolygon(px, py, polygon_->points);
 }
 
 void Polygon::putBorders(
@@ -342,20 +341,19 @@ bool Circle::obtainParams(const std::string & shape_name)
     center_ = std::make_shared<geometry_msgs::msg::Point32>();
   }
 
-  params_->header.frame_id = getParameter(
-    node, shape_name + ".frame_id", "map").as_string();
-  params_->value = getParameter(
-    node, shape_name + ".value", nav2_util::OCC_GRID_OCCUPIED).as_int();
-
-  params_->fill = getParameter(
-    node, shape_name + ".fill", true).as_bool();
+  params_->header.frame_id = nav2::declare_or_get_parameter(
+    node, shape_name + ".frame_id", std::string{"map"});
+  params_->value = nav2::declare_or_get_parameter(
+    node, shape_name + ".value", static_cast<int>(nav2_util::OCC_GRID_OCCUPIED));
+  params_->fill = nav2::declare_or_get_parameter(
+    node, shape_name + ".fill", true);
 
   std::vector<double> center_row;
   try {
-    center_row = getParameter(
-      node, shape_name + ".center", rclcpp::PARAMETER_DOUBLE_ARRAY).as_double_array();
-    params_->radius = getParameter(
-      node, shape_name + ".radius", rclcpp::PARAMETER_DOUBLE).as_double();
+    center_row = nav2::declare_or_get_parameter<std::vector<double>>(
+      node, shape_name + ".center", rclcpp::PARAMETER_DOUBLE_ARRAY);
+    params_->radius = nav2::declare_or_get_parameter<double>(
+      node, shape_name + ".radius", rclcpp::PARAMETER_DOUBLE);
     if (params_->radius < 0) {
       RCLCPP_ERROR(
         node->get_logger(),
