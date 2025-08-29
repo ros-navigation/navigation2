@@ -261,6 +261,12 @@ inline geometry_msgs::msg::Pose getCriticGoal(
   }
 }
 
+/**
+ * @brief Get the distance from the robot to the critic goal
+ * @param data Data to use
+ * @param enforce_path_inversion True to use the path inversion point
+ * @return float Distance to the critic goal
+ */
 inline float getCriticGoalPathDistance(
   const CriticData & data,
   bool enforce_path_inversion)
