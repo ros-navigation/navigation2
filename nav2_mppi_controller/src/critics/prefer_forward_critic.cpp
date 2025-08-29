@@ -39,8 +39,7 @@ void PreferForwardCritic::score(CriticData & data)
     return;
   }
 
-  if (data.state.local_path_length < threshold_to_consider_)
-  {
+  if (data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 
