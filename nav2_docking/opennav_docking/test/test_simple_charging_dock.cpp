@@ -49,7 +49,7 @@ public:
   using opennav_docking::SimpleChargingDock::SimpleChargingDock;
 
    // Expose detector state for test verification
-  bool isDetectorActive() const { return initial_pose_received_; }
+  bool isDetectorActive() const {return initial_pose_received_;}
 };
 
 TEST(SimpleChargingDockTests, ObjectLifecycle)
