@@ -42,9 +42,8 @@ void GoalCritic::score(CriticData & data)
   }
 
   geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
-  float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
 
-  if (distance > threshold_to_consider_) {
+  if (utils::getCriticGoalPathDistance(data, enforce_path_inversion_) > threshold_to_consider_) {
     return;
   }
 

@@ -135,8 +135,6 @@ void CostCritic::score(CriticData & data)
     return;
   }
 
-  float distance = utils::getCriticGoalPathDistance(data, enforce_path_inversion_);
-
   // Setup cost information for various parts of the critic
   is_tracking_unknown_ = costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
   auto * costmap = collision_checker_.getCostmap();
@@ -153,7 +151,7 @@ void CostCritic::score(CriticData & data)
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
   bool near_goal = false;
-  if (distance < near_goal_distance_) {
+  if (utils::getCriticGoalPathDistance(data, enforce_path_inversion_) < near_goal_distance_) {
     near_goal = true;
   }
 
