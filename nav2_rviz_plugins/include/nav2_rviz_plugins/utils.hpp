@@ -33,10 +33,11 @@ namespace nav2_rviz_plugins
    * @param server_name The name of the server to load plugins for
    * @param plugin_type The type of plugin to load
    * @param combo_box The combo box to add the loaded plugins to
+   * @param executor The executor to pass to the SyncParameterClient
    */
 void pluginLoader(
   rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
-  const std::string & plugin_type, QComboBox * combo_box);
+  const std::string & plugin_type, QComboBox * combo_box, rclcpp::Executor::SharedPtr executor = nullptr);
 
 // Create label string from goal status msg
 QString getGoalStatusLabel(
