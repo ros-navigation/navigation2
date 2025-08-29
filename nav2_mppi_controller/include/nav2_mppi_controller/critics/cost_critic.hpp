@@ -144,7 +144,6 @@ protected:
   std::string inflation_layer_name_;
 
   unsigned int power_{0};
-  bool enforce_path_inversion_{false};
 };
 
 }  // namespace mppi::critics

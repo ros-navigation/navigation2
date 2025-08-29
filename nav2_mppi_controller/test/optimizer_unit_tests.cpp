@@ -120,8 +120,7 @@ public:
     const geometry_msgs::msg::Pose & goal,
     nav2_core::GoalChecker * goal_checker)
   {
-    float plan_length = nav2_util::geometry_utils::calculate_path_length(plan);
-    prepare(robot_pose, robot_speed, plan, plan_length, goal,
+    prepare(robot_pose, robot_speed, plan, goal,
       goal_checker);
 
     EXPECT_EQ(critics_data_.goal_checker, nullptr);

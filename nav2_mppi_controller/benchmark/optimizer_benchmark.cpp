@@ -92,10 +92,8 @@ void prepareAndRunBenchmark(
   auto path = getIncrementalDummyPath(node, path_settings);
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
-  float plan_length = nav2_util::geometry_utils::calculate_path_length(path);
-
   for (auto _ : state) {
-    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, plan_length,
+    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path,
       path.poses.back().pose,
       dummy_goal_checker);
   }
