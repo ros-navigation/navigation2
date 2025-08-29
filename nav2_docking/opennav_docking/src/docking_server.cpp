@@ -402,9 +402,7 @@ void DockingServer::dockRobot()
   }
 
   // Store dock state for later undocking and delete temp dock, if applicable
-  if (dock) {
-    dock->plugin->stopDetectionProcess();
-  }
+  dock->plugin->stopDetectionProcess();
   stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
   publishZeroVelocity();
