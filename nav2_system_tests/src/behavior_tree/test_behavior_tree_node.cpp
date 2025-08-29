@@ -97,6 +97,9 @@ public:
   std::optional<std::string> extractBehaviorTreeID(
     const std::string & file_or_id)
   {
+    if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
+      return file_or_id;
+    }
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile(file_or_id.c_str()) != tinyxml2::XML_SUCCESS) {
       RCLCPP_ERROR(node_->get_logger(), "Error: Could not open or parse file %s",
