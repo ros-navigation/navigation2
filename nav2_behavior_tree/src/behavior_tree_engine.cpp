@@ -95,14 +95,6 @@ BehaviorTreeEngine::createTreeFromText(
 }
 
 BT::Tree
-BehaviorTreeEngine::createTreeFromFile(
-  const std::string & file_path,
-  BT::Blackboard::Ptr blackboard)
-{
-  return factory_.createTreeFromFile(file_path, blackboard);
-}
-
-BT::Tree
 BehaviorTreeEngine::createTree(
   const std::string & tree_id,
   BT::Blackboard::Ptr blackboard)
