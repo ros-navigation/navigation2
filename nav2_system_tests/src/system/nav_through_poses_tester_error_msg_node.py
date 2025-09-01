@@ -281,11 +281,11 @@ def run_all_tests(robot_tester: NavTester) -> bool:
         robot_tester.info_msg('Test non existing behavior_tree xml file')
         result = robot_tester.runNavigateAction(
             goal_pose=pose_out_of_bounds,
-            behavior_tree="behavior_tree_that_does_not_exist.xml",
+            behavior_tree='behavior_tree_that_does_not_exist.xml',
             expected_error_code=NavigateThroughPoses.Result.FAILED_TO_LOAD_BEHAVIOR_TREE,
             expected_error_msg=(
-                "Error loading BT: behavior_tree_that_does_not_exist.xml. "
-                "Navigation canceled."
+                'Error loading BT: behavior_tree_that_does_not_exist.xml. '
+                'Navigation canceled.'
             ),
         )
 
