@@ -206,7 +206,7 @@ bool BtActionServer<ActionT, NodeT>::on_activate()
 {
   resetInternalError();
   if (!loadBehaviorTree(default_bt_xml_filename_)) {
-    RCLCPP_ERROR(logger_, "Error loading XML file: %s", default_bt_xml_filename_.c_str());
+    RCLCPP_ERROR(logger_, "Error loading BT: %s", default_bt_xml_filename_.c_str());
     return false;
   }
   action_server_->activate();
