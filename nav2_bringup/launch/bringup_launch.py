@@ -25,6 +25,8 @@ from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
+# This launch file provides a comprehensive Nav2 stack bringup with flexible configuration options.
+# It supports both SLAM and localization modes, optional keepout/speed zones, and composition-based launching.
 
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
