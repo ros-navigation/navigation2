@@ -230,7 +230,7 @@ bool NodeLattice::isNodeValid(
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
-  const double & angle = motion_table.getAngleFromBin(this->pose.theta) / bin_size;
+  const double angle = std::fmod(motion_table.getAngleFromBin(this->pose.theta), 2.0 * M_PI) / bin_size;
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
@@ -269,7 +269,7 @@ bool NodeLattice::isNodeValid(
         if (is_backwards) {
           prim_pose._theta = std::fmod(it->_theta + M_PI, 2.0 * M_PI);
         } else {
-          prim_pose._theta = it->_theta;
+          prim_pose._theta = std::fmod(it->_theta, 2.0 * M_PI);
         }
         if (collision_checker->inCollision(
             prim_pose._x,
