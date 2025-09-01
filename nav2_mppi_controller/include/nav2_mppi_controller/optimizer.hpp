@@ -152,6 +152,8 @@ protected:
    */
   void optimize();
 
+  void computeControlSequenceAccel(const models::ControlSequence& control_sequence);
+
   /**
    * @brief Prepare state information on new request for trajectory rollouts
    * @param robot_pose Pose of the robot at given time
