@@ -82,8 +82,12 @@ void ConstraintCritic::score(CriticData & data)
   if (acker != nullptr) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
-    float min_turning_rad = acker->getMinTurningRadius();
-    auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz.abs())).max(0.0f);
+    const float min_turning_rad = acker->getMinTurningRadius();
+
+    const float epsilon = 1e-6f;
+    auto wz_safe = wz.abs().max(epsilon); // Replace small wz values with epsilon to avoid division by 0
+    auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
+
     if (power_ > 1u) {
       data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() *
