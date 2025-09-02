@@ -40,6 +40,8 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
 
+### [3Laws Robotics](https://3laws.io/) provide Supervisor ROS and Pro, easy-to-use dynamic collision avoidance solutions to improve safety and application throughput.
+
 ## Citation
 
 If you use the navigation framework, an algorithm from this repository, or ideas from it
