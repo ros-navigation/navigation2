@@ -1,0 +1,27 @@
+name: Docker Hub Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop, master, release/*]
+    tags: [carma-system-*]
+
+jobs:
+  publish:
+    uses: usdot-fhwa-stol/actions/.github/workflows/dockerhub.yml@main
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN:   ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      context: .
+      file: ./Dockerfile
+      image_name: navigation2
+      tag_name_suffix: humble
+      replace_suffix: false
+      remove_suffix: false
+      runner: ubuntu-latest-16-cores
+      additional_build_args: |
+        FROM_IMAGE=ros:humble
+        UNDERLAY_MIXINS=release ccache lld
+        OVERLAY_MIXINS=release ccache lld
+        FAIL_ON_TEST_FAILURE=True

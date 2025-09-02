@@ -1,0 +1,20 @@
+name: Docker build
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    uses: usdot-fhwa-stol/actions/.github/workflows/docker.yml@main
+    with:
+      context: .
+      file: ./Dockerfile
+      runner: ubuntu-latest        
+      tag_name_suffix: humble      
+      replace_suffix: false
+      additional_build_args: |
+        FROM_IMAGE=ros:humble
+        UNDERLAY_MIXINS=release ccache lld
+        OVERLAY_MIXINS=release ccache lld
+        FAIL_ON_TEST_FAILURE=True

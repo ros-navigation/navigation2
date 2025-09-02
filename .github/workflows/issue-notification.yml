@@ -1,0 +1,12 @@
+name: Issue Notification Dispatcher
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  notify:
+    uses: usdot-fhwa-stol/actions/.github/workflows/issue-notification.yml@main

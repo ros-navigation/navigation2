@@ -44,7 +44,7 @@ APT::Install-Recommends "0";\n\
 APT::Install-Suggests "0";\n\
 ' > /etc/apt/apt.conf.d/01norecommend
 ENV PYTHONUNBUFFERED 1
-
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 # install CI dependencies
 ARG RTI_NC_LICENSE_ACCEPTED=yes
 RUN apt-get update && \
@@ -54,6 +54,8 @@ RUN apt-get update && \
       lcov \
       lld \
       python3-pip \
+      nlohmann-json3-dev \
+      libnanoflann-dev \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
@@ -76,6 +78,8 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
       --from-paths src \
       --skip-keys " \
         slam_toolbox \
+        nlohmann-json \
+        lib-nanoflann \
         " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
@@ -101,6 +105,8 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --from-paths src \
       --skip-keys " \
         slam_toolbox \
+        nlohmann-json \
+        lib-nanoflann \
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
