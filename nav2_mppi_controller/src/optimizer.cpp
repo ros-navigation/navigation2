@@ -602,11 +602,6 @@ void Optimizer::updateControlSequence()
 
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
 
-  // Debugging output for control sequence before motion model constraints
-  std::cout << "Control Sequence Before Motion Model Constraints:\n";
-  std::cout << "vx: " << control_sequence_.vx.transpose() << "\n";
-  std::cout << "wz: " << control_sequence_.wz.transpose() << "\n";
-
   applyControlSequenceConstraints();
 }
 
