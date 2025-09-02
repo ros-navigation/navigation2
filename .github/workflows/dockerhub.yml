@@ -3,7 +3,7 @@ name: Docker Hub Build
 on:
   workflow_dispatch:
   push:
-    branches: [develop, master, release/*]
+    branches: [nav2_route_tool, master, release/*]
     tags: [carma-system-*]
 
 jobs:
@@ -24,4 +24,5 @@ jobs:
         FROM_IMAGE=ros:humble
         UNDERLAY_MIXINS=release ccache lld
         OVERLAY_MIXINS=release ccache lld
+
         FAIL_ON_TEST_FAILURE=True
