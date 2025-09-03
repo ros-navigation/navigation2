@@ -48,7 +48,7 @@ namespace nav2_util
  */
 inline int sign(int x)
 {
-  return x > 0 ? 1.0 : -1.0;
+  return x > 0 ? 1 : -1;
 }
 
 /**
