@@ -97,7 +97,11 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   node_id_marker.action = 0;
   node_id_marker.ns = "route_graph_node_ids";
   node_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  node_id_marker.scale.x = 0.1;
+  node_id_marker.scale.y = 0.1;
   node_id_marker.scale.z = 0.1;
+  node_id_marker.color.a = 1.0;
+  node_id_marker.color.r = 1.0;
 
   visualization_msgs::msg::Marker edge_id_marker;
   edge_id_marker.header.frame_id = frame;
@@ -105,7 +109,11 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   edge_id_marker.action = 0;
   edge_id_marker.ns = "route_graph_edge_ids";
   edge_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  edge_id_marker.scale.x = 0.1;
+  edge_id_marker.scale.y = 0.1;
   edge_id_marker.scale.z = 0.1;
+  edge_id_marker.color.a = 1.0;
+  edge_id_marker.color.g = 1.0;
 
   for (const auto & node : graph) {
     node_pos.x = node.coords.x;
