@@ -65,10 +65,10 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   nodes_marker.header.stamp = now;
   nodes_marker.action = 0;
   nodes_marker.ns = "route_graph_nodes";
-  nodes_marker.type = visualization_msgs::msg::Marker::POINTS;
-  nodes_marker.scale.x = 0.5;
-  nodes_marker.scale.y = 0.5;
-  nodes_marker.scale.z = 0.5;
+  nodes_marker.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  nodes_marker.scale.x = 0.1;
+  nodes_marker.scale.y = 0.1;
+  nodes_marker.scale.z = 0.1;
   nodes_marker.color.r = 1.0;
   nodes_marker.color.a = 1.0;
   nodes_marker.points.reserve(graph.size());
@@ -79,7 +79,7 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   edges_marker.action = 0;
   edges_marker.ns = "route_graph_edges";
   edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
-  edges_marker.scale.x = 0.1;  // Line width
+  edges_marker.scale.x = 0.05;  // Line width
   edges_marker.color.g = 1.0;
   edges_marker.color.a = 0.5;  // Semi-transparent green so bidirectional connections stand out
   constexpr size_t points_per_edge = 2;
@@ -92,14 +92,28 @@ inline visualization_msgs::msg::MarkerArray toMsg(
   geometry_msgs::msg::Point edge_end;
 
   visualization_msgs::msg::Marker node_id_marker;
+  node_id_marker.header.frame_id = frame;
+  node_id_marker.header.stamp = now;
+  node_id_marker.action = 0;
   node_id_marker.ns = "route_graph_node_ids";
   node_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  node_id_marker.scale.x = 0.1;
+  node_id_marker.scale.y = 0.1;
   node_id_marker.scale.z = 0.1;
+  node_id_marker.color.a = 1.0;
+  node_id_marker.color.r = 1.0;
 
   visualization_msgs::msg::Marker edge_id_marker;
+  edge_id_marker.header.frame_id = frame;
+  edge_id_marker.header.stamp = now;
+  edge_id_marker.action = 0;
   edge_id_marker.ns = "route_graph_edge_ids";
   edge_id_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  edge_id_marker.scale.x = 0.1;
+  edge_id_marker.scale.y = 0.1;
   edge_id_marker.scale.z = 0.1;
+  edge_id_marker.color.a = 1.0;
+  edge_id_marker.color.g = 1.0;
 
   for (const auto & node : graph) {
     node_pos.x = node.coords.x;
@@ -141,8 +155,8 @@ inline visualization_msgs::msg::MarkerArray toMsg(
     }
   }
 
-  msg.markers.push_back(nodes_marker);
   msg.markers.push_back(edges_marker);
+  msg.markers.push_back(nodes_marker);
   return msg;
 }
 
