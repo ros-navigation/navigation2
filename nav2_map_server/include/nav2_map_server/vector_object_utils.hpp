@@ -32,7 +32,7 @@ namespace nav2_map_server
 // ---------- Working with UUID-s ----------
 
 /**
- * @beirf Converts UUID from input array to unparsed string
+ * @brief Converts UUID from input array to unparsed string
  * @param uuid Input UUID in array format
  * @return Unparsed UUID string
  */
