@@ -267,21 +267,20 @@ void Optimizer::computeControlSequenceAccel(const models::ControlSequence& contr
 
   std::cout << std::endl;
   for (long int i = 1; i < control_sequence.vx.size(); ++i) {
-    // Compute accelerations
-    float ax = (control_sequence.vx(i) - control_sequence.vx(i - 1)) / s.model_dt;
-    // float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
+    constexpr float epsilon = 1e-4f;
 
     // Check if accelerations exceed constraints
-    constexpr float epsilon = 1e-4f;
+    float ax = (control_sequence.vx(i) - control_sequence.vx(i - 1)) / s.model_dt;
     if (std::abs(ax) > s.constraints.ax_max + epsilon) {
       std::cout << "Acceleration constraint violated at index " << i << ":\n";
       std::cout << "vx[i-1]: " << control_sequence.vx(i - 1) << ", vx[i]: " << control_sequence.vx(i) << ", ax: " << ax << "\n";
     }
 
-    // if (std::abs(wz_accel) > s.constraints.az_max + epsilon) {
-    //   std::cout << "Angular acceleration constraint violated at index " << i << ":\n";
-    //   std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
-    // }
+    float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
+    if (std::abs(wz_accel) > s.constraints.az_max + epsilon) {
+      std::cout << "Angular acceleration constraint violated at index " << i << ":\n";
+      std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
+    }
   }
   std::cout << std::endl;
 }
