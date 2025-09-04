@@ -203,7 +203,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
       node_pose.pose.position.x = node_data.coords.x;
       node_pose.pose.position.y = node_data.coords.y;
       node_pose.header.frame_id = node_data.coords.frame_id;
-      node_pose.header.stamp = start_pose.header.stamp;
+      node_pose.header.stamp = goal_pose.header.stamp;
       candidate_nodes.push_back(transformPose(node_pose, costmap_frame_id));
     }
 
