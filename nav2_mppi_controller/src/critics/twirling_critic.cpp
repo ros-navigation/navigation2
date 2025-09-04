@@ -22,10 +22,7 @@ namespace mppi::critics
 void TwirlingCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
-
   auto getParam = parameters_handler_->getParamGetter(name_);
-
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 10.0f);
 
@@ -39,12 +36,14 @@ void TwirlingCritic::score(CriticData & data)
     return;
   }
 
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
+  if (data.goal_checker != nullptr) {
+    geometry_msgs::msg::Pose pose_tolerance;
+    geometry_msgs::msg::Twist velocity_tolerance;
+    data.goal_checker->getTolerances(pose_tolerance, velocity_tolerance);
 
-  if (utils::withinPositionGoalTolerance(
-      data.goal_checker, data.state.pose.pose, goal))
-  {
-    return;
+    if (data.state.local_path_length < pose_tolerance.position.x) {
+      return;
+    }
   }
 
   if (power_ > 1u) {
