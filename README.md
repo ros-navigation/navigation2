@@ -29,7 +29,7 @@ Please visit our [documentation site](https://docs.nav2.org/). [Please visit our
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community.
 
 <p align="center">
-  <img src="doc/sponsors_july_2025.png" />
+  <img src="doc/sponsors_sept_2025.png" />
 </p>
 
 ### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
@@ -39,6 +39,8 @@ Please thank our amazing sponsors for their generous support of Nav2 on behalf o
 ### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
+
+### [3Laws Robotics](https://3laws.io/) provide Supervisor ROS and Pro, easy-to-use dynamic collision avoidance solutions to improve safety and application throughput.
 
 ## Citation
 
