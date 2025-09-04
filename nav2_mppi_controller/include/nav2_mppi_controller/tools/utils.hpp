@@ -491,14 +491,14 @@ inline void savitskyGolayFilter(
 
   // Filter trajectories
 
-  std::cout << "**** SGF:\n";
-  std::cout << "wz before: " << control_sequence.wz(Eigen::seq(0, 9)).transpose() << "\n";
-  std::cout << "control_history ";
-  for (const auto& e : control_history)
-  {
-    std::cout << e.wz << " , ";
-  }
-  std::cout << std::endl;
+  // std::cout << "**** SGF:\n";
+  // std::cout << "wz before: " << control_sequence.wz(Eigen::seq(0, 9)).transpose() << "\n";
+  // std::cout << "control_history ";
+  // for (const auto& e : control_history)
+  // {
+  //   // std::cout << e.wz << " , ";
+  // }
+  // std::cout << std::endl;
 
   const models::ControlSequence initial_control_sequence = control_sequence;
   applyFilterOverAxis(
@@ -511,13 +511,13 @@ inline void savitskyGolayFilter(
     control_sequence.wz, initial_control_sequence.wz, control_history[0].wz,
     control_history[1].wz, control_history[2].wz, control_history[3].wz);
 
-  std::cout << "after wz: " << control_sequence.wz(Eigen::seq(0, 9)).transpose() << "\n";
-  std::cout << "control_history ";
-  for (const auto& e : control_history)
-  {
-    std::cout << e.wz << " , ";
-  }
-  std::cout << std::endl;
+  // std::cout << "after wz: " << control_sequence.wz(Eigen::seq(0, 9)).transpose() << "\n";
+  // std::cout << "control_history ";
+  // for (const auto& e : control_history)
+  // {
+  //   // std::cout << e.wz << " , ";
+  // }
+  // std::cout << std::endl;
 
   // Update control history
   unsigned int offset = settings.shift_control_sequence ? 1 : 0;

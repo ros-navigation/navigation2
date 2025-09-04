@@ -269,18 +269,19 @@ void Optimizer::computeControlSequenceAccel(const models::ControlSequence& contr
   for (long int i = 1; i < control_sequence.vx.size(); ++i) {
     // Compute accelerations
     float ax = (control_sequence.vx(i) - control_sequence.vx(i - 1)) / s.model_dt;
-    float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
+    // float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
 
     // Check if accelerations exceed constraints
-    if (std::abs(ax) > s.constraints.ax_max) {
+    constexpr float epsilon = 1e-4f;
+    if (std::abs(ax) > s.constraints.ax_max + epsilon) {
       std::cout << "Acceleration constraint violated at index " << i << ":\n";
       std::cout << "vx[i-1]: " << control_sequence.vx(i - 1) << ", vx[i]: " << control_sequence.vx(i) << ", ax: " << ax << "\n";
     }
 
-    if (std::abs(wz_accel) > s.constraints.az_max) {
-      std::cout << "Angular acceleration constraint violated at index " << i << ":\n";
-      std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
-    }
+    // if (std::abs(wz_accel) > s.constraints.az_max + epsilon) {
+    //   std::cout << "Angular acceleration constraint violated at index " << i << ":\n";
+    //   std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
+    // }
   }
   std::cout << std::endl;
 }
@@ -582,15 +583,15 @@ void Optimizer::updateControlSequence()
     costs_ += (gamma_vy * (bounded_noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
   }
 
-  std::cout << "costs_: " << costs_(Eigen::seq(0, 9)).transpose() << "\n";
+  // std::cout << "costs_: " << costs_(Eigen::seq(0, 9)).transpose() << "\n";
 
   auto costs_normalized = costs_ - costs_.minCoeff();
   const float inv_temp = 1.0f / s.temperature;
   auto softmaxes = (-inv_temp * costs_normalized).exp().eval();
   softmaxes /= softmaxes.sum();
 
-  std::cout << "costs_normalized: " << costs_normalized(Eigen::seq(0, 9)).transpose() << "\n";
-  std::cout << "softmaxes: " << softmaxes(Eigen::seq(0, 9)).transpose() << "\n";
+  // std::cout << "costs_normalized: " << costs_normalized(Eigen::seq(0, 9)).transpose() << "\n";
+  // std::cout << "softmaxes: " << softmaxes(Eigen::seq(0, 9)).transpose() << "\n";
 
   auto softmax_mat = softmaxes.matrix();
   control_sequence_.vx = state_.cvx.transpose().matrix() * softmax_mat;
