@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "tinyxml2.h" //NOLINT
 
 #include "gtest/gtest.h"
 
@@ -35,6 +36,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"
+#include "nav2_behavior_tree/behavior_tree_engine.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
@@ -65,6 +67,7 @@ public:
     odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
 
     nav2_util::Tokens plugin_libs = nav2_util::split(nav2::details::BT_BUILTIN_PLUGINS, ';');
+    bt_engine_ = std::make_shared<nav2_behavior_tree::BehaviorTreeEngine>(plugin_libs, node_);
 
     for (const auto & p : plugin_libs) {
       factory_.registerFromPlugin(BT::SharedLibrary::getOSName(p));
@@ -93,39 +96,28 @@ public:
     return blackboard;
   }
 
-  bool behaviorTreeFileValidation(
-    const std::string & filename)
+  std::string extractBehaviorTreeID(const std::string & file_or_id)
   {
-    std::ifstream xml_file(filename);
-    if (!xml_file.good()) {
-      RCLCPP_ERROR(node_->get_logger(),
-        "Couldn't open BT XML file: %s", filename.c_str());
-      return false;
-    }
-    return true;
+    return bt_engine_->extractBehaviorTreeID(file_or_id);
   }
 
-
   bool loadBehaviorTree(
-    const std::string & filename,
+    const std::string & file_or_id,
     const std::vector<std::string> & search_directories)
   {
-    if (!behaviorTreeFileValidation(filename)) {
+    namespace fs = std::filesystem;
+    auto bt_id = bt_engine_->extractBehaviorTreeID(file_or_id);
+    if (bt_id.empty()) {
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to extract BehaviorTree ID from: %s", file_or_id.c_str());
       return false;
     }
 
-    namespace fs = std::filesystem;
-    const auto canonical_main_bt = fs::canonical(filename);
-
-    // Register all XML behavior Subtrees found in the given directories
+    // Register all XML behavior subtrees in the directories
     for (const auto & directory : search_directories) {
       try {
         for (const auto & entry : fs::directory_iterator(directory)) {
           if (entry.path().extension() == ".xml") {
-          // Skip registering the main tree file
-            if (fs::equivalent(fs::canonical(entry.path()), canonical_main_bt)) {
-              continue;
-            }
             factory_.registerBehaviorTreeFromFile(entry.path().string());
           }
         }
@@ -139,12 +131,13 @@ public:
     // Create and populate the blackboard
     blackboard = setBlackboardVariables();
 
-    // Build the tree from the XML string
+    // Build the tree from the ID (resolved from <root> or <BehaviorTree ID>)
     try {
-      tree = factory_.createTreeFromFile(filename, blackboard);
+      tree = factory_.createTree(bt_id, blackboard);
     } catch (BT::RuntimeError & exp) {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to create BT from %s: %s", filename.c_str(),
-          exp.what());
+      RCLCPP_ERROR(node_->get_logger(),
+        "Failed to create BT [%s] from %s: %s",
+        bt_id.c_str(), file_or_id.c_str(), exp.what());
       return false;
     }
 
@@ -175,6 +168,8 @@ private:
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 
   BT::BehaviorTreeFactory factory_;
+
+  std::shared_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_engine_;
 };
 
 class BehaviorTreeTestFixture : public ::testing::Test
@@ -289,6 +284,84 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   std::remove(invalid_subtree.c_str());
   std::remove(malformed_main.c_str());
 }
+
+TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
+{
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  // 1. Empty string input → triggers "Empty filename/BT_ID" branch
+  auto empty_id = bt_handler->extractBehaviorTreeID("");
+  EXPECT_TRUE(empty_id.empty());
+
+  // 2. Valid XML with ID
+  std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
+  write_file(valid_xml,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"TestTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  auto id = bt_handler->extractBehaviorTreeID(valid_xml);
+  EXPECT_FALSE(id.empty());
+  EXPECT_EQ(id, "TestTree");
+
+  // 2. Not an XML file, just an ID string
+  auto direct_id = bt_handler->extractBehaviorTreeID("SomeTreeID");
+  EXPECT_FALSE(direct_id.empty());
+  EXPECT_EQ(direct_id, "SomeTreeID");
+
+  // 3. Malformed XML (parser error)
+  std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
+  write_file(malformed_xml, "<root><invalid></root>");
+  auto missing_id = bt_handler->extractBehaviorTreeID(malformed_xml);
+  EXPECT_TRUE(missing_id.empty());
+
+  // 4. File does not exist
+  auto not_found = bt_handler->extractBehaviorTreeID("/tmp/does_not_exist.xml");
+  EXPECT_TRUE(not_found.empty());
+
+  // 6. No root element
+  std::string no_root_file = "/tmp/extract_bt_id_no_root.xml";
+  write_file(no_root_file,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<!-- no root element, just a comment -->\n");
+  auto no_root_id = bt_handler->extractBehaviorTreeID(no_root_file);
+  EXPECT_TRUE(no_root_id.empty());
+
+  // 7. No <BehaviorTree> child
+  std::string no_bt_element = "/tmp/extract_bt_id_no_bt.xml";
+  write_file(no_bt_element,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <Dummy />\n"
+    "</root>\n");
+  auto no_bt_id = bt_handler->extractBehaviorTreeID(no_bt_element);
+  EXPECT_TRUE(no_bt_id.empty());
+
+  // 8. No ID attribute
+  std::string no_id_attr = "/tmp/extract_bt_id_no_id.xml";
+  write_file(no_id_attr,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree>\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  auto no_id = bt_handler->extractBehaviorTreeID(no_id_attr);
+  EXPECT_TRUE(no_id.empty());
+
+  // Cleanup
+  std::remove(valid_xml.c_str());
+  std::remove(malformed_xml.c_str());
+  std::remove(no_root_file.c_str());
+  std::remove(no_bt_element.c_str());
+  std::remove(no_id_attr.c_str());
+}
+
 
 /**
  * Test scenario:

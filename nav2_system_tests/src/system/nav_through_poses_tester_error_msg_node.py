@@ -283,8 +283,11 @@ def run_all_tests(robot_tester: NavTester) -> bool:
             goal_pose=pose_out_of_bounds,
             behavior_tree='behavior_tree_that_does_not_exist.xml',
             expected_error_code=NavigateThroughPoses.Result.FAILED_TO_LOAD_BEHAVIOR_TREE,
-            expected_error_msg=('Error loading XML file: behavior_tree_that_does_not_exist.xml. '
-                                'Navigation canceled.'))
+            expected_error_msg=(
+                'Error loading BT: behavior_tree_that_does_not_exist.xml. '
+                'Navigation canceled.'
+            ),
+        )
 
     if result:
         robot_tester.info_msg('Test goal out of bounds')
