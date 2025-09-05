@@ -46,6 +46,7 @@ struct Parameters
   double v_angular_max_initial;
   double v_angular_min_in_place;
   double slowdown_radius;
+  double deceleration_max;
   bool initial_rotation;
   double initial_rotation_tolerance;
   bool prefer_final_rotation;

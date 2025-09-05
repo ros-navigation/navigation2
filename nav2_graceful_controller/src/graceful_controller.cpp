@@ -53,7 +53,8 @@ void GracefulController::configure(
 
   // Handles the control law to generate the velocity commands
   control_law_ = std::make_unique<SmoothControlLaw>(
-    params_->k_phi, params_->k_delta, params_->beta, params_->lambda, params_->slowdown_radius,
+    params_->k_phi, params_->k_delta, params_->beta, params_->lambda,
+    params_->slowdown_radius, params_->deceleration_max,
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
@@ -134,6 +135,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   control_law_->setCurvatureConstants(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
   control_law_->setSlowdownRadius(params_->slowdown_radius);
+  control_law_->setMaxDeceleration(params_->deceleration_max);
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Transform path to robot base frame
@@ -310,7 +312,9 @@ bool GracefulController::validateTargetPose(
   }
 
   // Actually simulate the path
-  if (simulateTrajectory(target_pose, costmap_transform, dist_to_target, trajectory, cmd_vel, reversing)) {
+  if (simulateTrajectory(target_pose, costmap_transform, dist_to_target, trajectory, cmd_vel,
+      reversing))
+  {
     // Successfully simulated to target_pose
     return true;
   }

@@ -121,7 +121,8 @@ protected:
   // Smooth control law
   std::unique_ptr<nav2_graceful_controller::SmoothControlLaw> control_law_;
   double k_phi_, k_delta_, beta_, lambda_;
-  double slowdown_radius_, v_linear_min_, v_linear_max_, v_angular_max_;
+  double slowdown_radius_, deceleration_max_;
+  double v_linear_min_, v_linear_max_, v_angular_max_;
   double rotate_to_heading_angular_vel_, rotate_to_heading_max_angular_accel_;
 
   // The trajectory of the robot while dock / undock for visualization / debug purposes

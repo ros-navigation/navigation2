@@ -59,6 +59,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".slowdown_radius", rclcpp::ParameterValue(1.5));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".deceleration_max", rclcpp::ParameterValue(3.0));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".initial_rotation_tolerance", rclcpp::ParameterValue(0.75));
@@ -97,6 +99,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".v_angular_min_in_place", params_.v_angular_min_in_place);
   node->get_parameter(plugin_name_ + ".slowdown_radius", params_.slowdown_radius);
+  node->get_parameter(plugin_name_ + ".deceleration_max", params_.deceleration_max);
   node->get_parameter(plugin_name_ + ".initial_rotation", params_.initial_rotation);
   node->get_parameter(
     plugin_name_ + ".initial_rotation_tolerance", params_.initial_rotation_tolerance);
@@ -168,6 +171,8 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
         params_.v_angular_min_in_place = parameter.as_double();
       } else if (param_name == plugin_name_ + ".slowdown_radius") {
         params_.slowdown_radius = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".deceleration_max") {
+        params_.deceleration_max = parameter.as_double();
       } else if (param_name == plugin_name_ + ".initial_rotation_tolerance") {
         params_.initial_rotation_tolerance = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotation_scaling_factor") {

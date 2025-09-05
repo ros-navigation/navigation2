@@ -27,15 +27,17 @@ class SCLFixture : public nav2_graceful_controller::SmoothControlLaw
 public:
   SCLFixture(
     double k_phi, double k_delta, double beta, double lambda,
-    double slowdown_radius, double v_linear_min, double v_linear_max, double v_angular_max)
+    double slowdown_radius, double deceleration_max,
+    double v_linear_min, double v_linear_max, double v_angular_max)
   : nav2_graceful_controller::SmoothControlLaw(k_phi, k_delta, beta, lambda,
-      slowdown_radius, v_linear_min, v_linear_max, v_angular_max) {}
+      slowdown_radius, deceleration_max, v_linear_min, v_linear_max, v_angular_max) {}
 
   double getCurvatureKPhi() {return k_phi_;}
   double getCurvatureKDelta() {return k_delta_;}
   double getCurvatureBeta() {return beta_;}
   double getCurvatureLambda() {return lambda_;}
   double getSlowdownRadius() {return slowdown_radius_;}
+  double getMaxDeceleration() {return deceleration_max_;}
   double getSpeedLinearMin() {return v_linear_min_;}
   double getSpeedLinearMax() {return v_linear_max_;}
   double getSpeedAngularMax() {return v_angular_max_;}
@@ -84,7 +86,7 @@ public:
 
 TEST(SmoothControlLawTest, setCurvatureConstants) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
   // Set curvature constants
   scl.setCurvatureConstants(1.0, 2.0, 3.0, 4.0);
@@ -100,9 +102,20 @@ TEST(SmoothControlLawTest, setCurvatureConstants) {
   EXPECT_EQ(scl.getSlowdownRadius(), 5.0);
 }
 
+TEST(SmoothControlLawTest, setMaxDeceleration) {
+  // Initialize SmoothControlLaw
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+  // Set max deceleration
+  scl.setMaxDeceleration(3.0);
+
+  // Check results
+  EXPECT_EQ(scl.getMaxDeceleration(), 3.0);
+}
+
 TEST(SmoothControlLawTest, setSpeedLimits) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  SCLFixture scl(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
   // Set speed limits
   scl.setSpeedLimit(1.0, 2.0, 3.0);
@@ -115,7 +128,7 @@ TEST(SmoothControlLawTest, setSpeedLimits) {
 
 TEST(SmoothControlLawTest, calculateCurvature) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 3.0, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -150,7 +163,7 @@ TEST(SmoothControlLawTest, calculateCurvature) {
 
 TEST(SmoothControlLawTest, calculateRegularVelocity) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 3.0, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -163,7 +176,8 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
   current.position.y = 0.0;
   current.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   // Calculate velocity
-  auto cmd_vel = scl.calculateRegularVelocity(target, current);
+  double target_distance = 5.0;
+  auto cmd_vel = scl.calculateRegularVelocity(target, current, target_distance);
 
   // Check results: both linear and angular velocity must be positive
   EXPECT_NEAR(cmd_vel.linear.x, 0.1460446, 0.0001);
@@ -178,7 +192,8 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
   current.position.y = 0.0;
   current.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   // Calculate velocity
-  cmd_vel = scl.calculateRegularVelocity(target, current);
+  target_distance = 4.995;
+  cmd_vel = scl.calculateRegularVelocity(target, current, target_distance);
 
   // Check results: linear velocity must be positive and angular velocity must be negative
   EXPECT_NEAR(cmd_vel.linear.x, 0.96651200, 0.0001);
@@ -187,7 +202,7 @@ TEST(SmoothControlLawTest, calculateRegularVelocity) {
 
 TEST(SmoothControlLawTest, calculateNextPose) {
   // Initialize SmoothControlLaw
-  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 0.0, 1.0, 1.0);
+  SCLFixture scl(1.0, 10.0, 0.2, 2.0, 0.1, 3.0, 0.0, 1.0, 1.0);
 
   // Initialize target
   geometry_msgs::msg::Pose target;
@@ -201,7 +216,8 @@ TEST(SmoothControlLawTest, calculateNextPose) {
   current.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   // Calculate next pose
   float dt = 0.1;
-  auto next_pose = scl.calculateNextPose(dt, target, current);
+  double target_distance = 5.0;
+  auto next_pose = scl.calculateNextPose(dt, target, current, target_distance);
 
   // Check results
   EXPECT_NEAR(next_pose.position.x, 0.1, 0.1);
