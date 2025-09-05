@@ -82,12 +82,10 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
-  
-  // Toggle service initialization
-  const std::string service_prefix = get_name() + std::string("/");
 
+  // Toggle service initialization
   toggle_cm_service_ = create_service<nav2_msgs::srv::Toggle>(
-    service_prefix + std::string("toggle_collision_monitor"),
+    "~/toggle",
     std::bind(&CollisionMonitor::toggleCMServiceCallback, this, _1, _2, _3));
 
   nav2::declare_parameter_if_not_declared(
