@@ -1,0 +1,6 @@
+# Add/update vector objects on map
+
+CircleObject[] circles
+PolygonObject[] polygons
+---
+bool success
