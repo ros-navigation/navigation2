@@ -7,6 +7,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -56,6 +57,7 @@ target_link_libraries(mppi_controller PUBLIC
   nav2_core::nav2_core
   nav2_costmap_2d::layers
   nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
