@@ -76,6 +76,7 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
+      publish_critics_stats: true
       visualize: true
       regenerate_noises: true
       TrajectoryVisualizer:
