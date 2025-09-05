@@ -479,11 +479,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    if (!enabled_) {
-      break;
-    }
-
-    if (!polygon->getEnabled()) {
+    if (!polygon->getEnabled() || !enabled_) {
       continue;
     }
     if (robot_action.action_type == STOP) {
