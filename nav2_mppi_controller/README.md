@@ -330,6 +330,26 @@ As you increase or decrease your weights on the Obstacle, you may notice the afo
 
 Once you have your obstacle avoidance behavior tuned and matched with an appropriate path following penalty, tune the Path Align critic to align with the path. If you design exact-path-alignment behavior, its possible to skip the obstacle critic step as highly tuning the system to follow the path will give it less ability to deviate to avoid obstacles (though it'll slow and stop). Tuning the critic weight for the Obstacle critic high will do the job to avoid near-collisions but the repulsion weight is largely unnecessary to you. For others wanting more dynamic behavior, it _can_ be beneficial to slowly lower the weight on the obstacle critic to give the path alignment critic some more room to work. If your path was generated with a cost-aware planner (like all provided by Nav2) and providing paths sufficiently far from obstacles for your satisfaction, the impact of a slightly reduced Obstacle critic with a Path Alignment critic will do you well. Not over-weighting the path align critic will allow the robot to  deviate from the path to get around dynamic obstacles in the scene or other obstacles not previous considered during path planning. It is subjective as to the best behavior for your application, but it has been shown that MPPI can be an exact path tracker and/or avoid dynamic obstacles very fluidly and everywhere in between. The defaults provided are in the generally right regime for a balanced initial trade-off.
 
+### Critic costs debugging
+
+The `publish_critics_stats` parameter enables publishing of statistics about each critic's performance, which can be visualized using tools like PlotJuggler or Foxglove to analyze and debug critic behavior.
+
+The published `nav2_msgs::msg::CriticsStats` message contains the following fields:
+
+- **stamp**: Timestamp of when the statistics were computed
+- **critics**: Array of critic names that were evaluated (e.g., "ConstraintCritic", "GoalCritic", "ObstaclesCritic")
+- **changed**: Boolean array indicating whether each critic modified the trajectory costs. `true` means the critic added non-zero costs, `false` means it had no effect
+- **costs_sum**: Array of the total cost contribution from each critic. This represents the sum of all costs added by that specific critic across all trajectory candidates
+
+This data is invaluable for understanding:
+- Which critics are actively influencing trajectory selection
+- The relative impact of each critic on the final trajectory choice
+- Whether critics are working as expected or if parameter tuning is needed (e.g. `threshold_to_consider`)
+
+More detailed statistics could be added in the future.
+
+![critics_stats](media/critics_stats.png)
+
 ### MFMA and AVX2 Optimizations
 
 This MPPI is made possible to run on CPU-only by using a very well optimized implementation that rely on CPU vectorization through AVX2 and MFMA. All even remotely modern computers support this (2013+), but if using a very old computer you may not be able to use the plugin. Note that MPC is computationally heavy to begin with, so computers circa-2013 even if it were to have those compiler flags available probably wouldn't run it at a satisfactory rate anyway.
