@@ -49,6 +49,8 @@ Controller::Controller(
   nav2::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2::declare_parameter_if_not_declared(
+    node, "controller.deceleration_max", rclcpp::ParameterValue(0.1));
+  nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
   nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
@@ -77,9 +79,10 @@ Controller::Controller(
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
+  node->get_parameter("controller.deceleration_max", deceleration_max_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
-    v_angular_max_);
+    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, deceleration_max_,
+    v_linear_min_, v_linear_max_, v_angular_max_);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(

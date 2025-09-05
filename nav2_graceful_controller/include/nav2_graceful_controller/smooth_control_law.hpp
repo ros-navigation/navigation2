@@ -40,12 +40,14 @@ public:
    * @param beta Constant factor applied to the path curvature: dropping velocity.
    * @param lambda Constant factor applied to the path curvature for sharpness.
    * @param slowdown_radius Radial threshold applied to the slowdown rule.
+   * @param deceleration_max Maximum deceleration.
    * @param v_linear_min Minimum linear velocity.
    * @param v_linear_max Maximum linear velocity.
    * @param v_angular_max Maximum angular velocity.
    */
   SmoothControlLaw(
-    double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
+    double k_phi, double k_delta, double beta, double lambda,
+    double slowdown_radius, double deceleration_max,
     double v_linear_min, double v_linear_max, double v_angular_max);
 
   /**
@@ -72,6 +74,13 @@ public:
   void setSlowdownRadius(const double slowdown_radius);
 
   /**
+   * @brief Set the max deceleration
+   *
+   * @param deceleration_max Maximum deceleration possible.
+   */
+  void setMaxDeceleration(const double deceleration_max);
+
+  /**
    * @brief Update the velocity limits.
    *
    * @param v_linear_min The minimum absolute velocity in the linear direction.
@@ -86,12 +95,14 @@ public:
    *
    * @param target Pose of the target in the robot frame.
    * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
    * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return Velocity command.
    */
   geometry_msgs::msg::Twist calculateRegularVelocity(
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current,
+    const double & target_distance,
     const bool & backward = false);
 
   /**
@@ -111,6 +122,7 @@ public:
    * @param dt Time step.
    * @param target Pose of the target in the robot frame.
    * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
    * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return geometry_msgs::msg::Pose
    */
@@ -118,6 +130,7 @@ public:
     const double dt,
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current,
+    const double & target_distance,
     const bool & backward = false);
 
 protected:
@@ -169,6 +182,11 @@ protected:
    * @brief Radial threshold applied to the slowdown rule.
    */
   double slowdown_radius_;
+
+  /**
+   * @brief Maximum deceleration.
+   */
+  double deceleration_max_;
 
   /**
    * @brief Minimum linear velocity.
