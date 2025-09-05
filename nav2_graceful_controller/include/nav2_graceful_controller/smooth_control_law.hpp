@@ -43,10 +43,11 @@ public:
    * @param v_linear_min Minimum linear velocity.
    * @param v_linear_max Maximum linear velocity.
    * @param v_angular_max Maximum angular velocity.
+   * @param deceleration_max Maximum deceleration.
    */
   SmoothControlLaw(
     double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
-    double v_linear_min, double v_linear_max, double v_angular_max);
+    double v_linear_min, double v_linear_max, double v_angular_max, double deceleration_max);
 
   /**
    * @brief Destructor for nav2_graceful_controller::SmoothControlLaw
@@ -86,12 +87,14 @@ public:
    *
    * @param target Pose of the target in the robot frame.
    * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
    * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return Velocity command.
    */
   geometry_msgs::msg::Twist calculateRegularVelocity(
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current,
+    const double & target_distance,
     const bool & backward = false);
 
   /**
