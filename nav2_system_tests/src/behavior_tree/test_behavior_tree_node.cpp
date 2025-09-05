@@ -288,11 +288,15 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
 TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 {
   auto write_file = [](const std::string & path, const std::string & content) {
-      std::ofstream ofs(path);
-      ofs << content;
-    };
+    std::ofstream ofs(path);
+    ofs << content;
+  };
 
-  // 1. Valid XML with ID
+  // 1. Empty string input → triggers "Empty filename/BT_ID" branch
+  auto empty_id = bt_handler->extractBehaviorTreeID("");
+  EXPECT_TRUE(empty_id.empty());
+
+  // 2. Valid XML with ID
   std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
   write_file(valid_xml,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -320,13 +324,15 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   auto not_found = bt_handler->extractBehaviorTreeID("/tmp/does_not_exist.xml");
   EXPECT_TRUE(not_found.empty());
 
-  // 5. No root element
-  std::string no_root = "/tmp/extract_bt_id_no_root.xml";
-  write_file(no_root, "");
-  auto no_root_id = bt_handler->extractBehaviorTreeID(no_root);
+  // 6. No root element
+  std::string no_root_file = "/tmp/extract_bt_id_no_root.xml";
+  write_file(no_root_file,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<!-- no root element, just a comment -->\n");
+  auto no_root_id = bt_handler->extractBehaviorTreeID(no_root_file);
   EXPECT_TRUE(no_root_id.empty());
 
-  // 6. No <BehaviorTree> child
+  // 7. No <BehaviorTree> child
   std::string no_bt_element = "/tmp/extract_bt_id_no_bt.xml";
   write_file(no_bt_element,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -336,7 +342,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   auto no_bt_id = bt_handler->extractBehaviorTreeID(no_bt_element);
   EXPECT_TRUE(no_bt_id.empty());
 
-  // 7. No ID attribute
+  // 8. No ID attribute
   std::string no_id_attr = "/tmp/extract_bt_id_no_id.xml";
   write_file(no_id_attr,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -351,7 +357,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   // Cleanup
   std::remove(valid_xml.c_str());
   std::remove(malformed_xml.c_str());
-  std::remove(no_root.c_str());
+  std::remove(no_root_file.c_str());
   std::remove(no_bt_element.c_str());
   std::remove(no_id_attr.c_str());
 }
