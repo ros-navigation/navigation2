@@ -76,7 +76,6 @@ void CriticManager::evalTrajectoriesScores(
   CriticData & data) const
 {
   std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
-
   if (publish_critics_stats_) {
     stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
     stats_msg->critics.reserve(critics_.size());
@@ -99,21 +98,18 @@ void CriticManager::evalTrajectoriesScores(
 
     // Calculate statistics if publishing is enabled
     if (publish_critics_stats_) {
-      std::string critic_name = critic_names_[i];
-      stats_msg->critics.push_back(critic_name);
+      stats_msg->critics.push_back(critic_names_[i]);
 
       // Calculate sum of costs added by this individual critic
       Eigen::ArrayXf cost_diff = data.costs - costs_before;
       float costs_sum = cost_diff.sum();
       stats_msg->costs_sum.push_back(costs_sum);
-
-      bool costs_changed = costs_sum != 0.0f;
-      stats_msg->changed.push_back(costs_changed);
+      stats_msg->changed.push_back(costs_sum != 0.0f);
     }
   }
 
   // Publish statistics if enabled
-  if (publish_critics_stats_ && critics_effect_pub_) {
+  if (critics_effect_pub_) {
     auto node = parent_.lock();
     stats_msg->stamp = node->get_clock()->now();
     critics_effect_pub_->publish(std::move(stats_msg));
