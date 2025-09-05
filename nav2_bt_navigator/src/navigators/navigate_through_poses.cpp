@@ -205,9 +205,9 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(logger_, "Received goal preemption request");
 
-  if (goal->behavior_tree == bt_action_server_->getCurrentBTFilename() ||
+  if (goal->behavior_tree == bt_action_server_->getCurrentBTFilenameOrID() ||
     (goal->behavior_tree.empty() &&
-    bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilenameOrID()))
+    bt_action_server_->getCurrentBTFilenameOrID() == bt_action_server_->getDefaultBTFilenameOrID()))
   {
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file

@@ -23,7 +23,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "tinyxml2.h" //NOLINT
 
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
@@ -46,7 +45,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback)
 : action_name_(action_name),
-  default_bt_xml_filename_(default_bt_xml_filename),
+  default_bt_xml_filename_or_id_(default_bt_xml_filename),
   search_directories_(search_directories),
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
@@ -179,7 +178,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   int wait_for_service_timeout;
   node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
   wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
-  node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
+  node->get_parameter("always_reload_bt_xml", always_reload_bt_);
 
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
@@ -205,8 +204,8 @@ template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::on_activate()
 {
   resetInternalError();
-  if (!loadBehaviorTree(default_bt_xml_filename_)) {
-    RCLCPP_ERROR(logger_, "Error loading BT: %s", default_bt_xml_filename_.c_str());
+  if (!loadBehaviorTree(default_bt_xml_filename_or_id_)) {
+    RCLCPP_ERROR(logger_, "Error loading BT: %s", default_bt_xml_filename_or_id_.c_str());
     return false;
   }
   action_server_->activate();
@@ -247,48 +246,16 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 }
 
 template<class ActionT, class NodeT>
-std::optional<std::string> BtActionServer<ActionT, NodeT>::extractBehaviorTreeID(
-  const std::string & file_or_id)
-{
-  if (file_or_id.length() < 4 || file_or_id.substr(file_or_id.length() - 4) != ".xml") {
-    return file_or_id;
-  }
-  tinyxml2::XMLDocument doc;
-  if (doc.LoadFile(file_or_id.c_str()) != tinyxml2::XML_SUCCESS) {
-    RCLCPP_ERROR(logger_, "Error: Could not open or parse file %s", file_or_id.c_str());
-    return std::nullopt;
-  }
-  tinyxml2::XMLElement * rootElement = doc.RootElement();
-  if (!rootElement) {
-    RCLCPP_ERROR(logger_, "Error: Root element not found in %s", file_or_id.c_str());
-    return std::nullopt;
-  }
-  tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
-  if (!btElement) {
-    RCLCPP_ERROR(logger_, "Error: <BehaviorTree> element not found in %s", file_or_id.c_str());
-    return std::nullopt;
-  }
-  const char * idValue = btElement->Attribute("ID");
-  if (idValue) {
-    return std::string(idValue);
-  } else {
-    RCLCPP_ERROR(logger_, "Error: ID attribute not found on <BehaviorTree> element in %s",
-        file_or_id.c_str());
-    return std::nullopt;
-  }
-}
-
-template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename_or_id)
 {
   namespace fs = std::filesystem;
 
   // Empty argument is default for backward compatibility
   auto file_or_id =
-    bt_xml_filename_or_id.empty() ? default_bt_xml_filename_ : bt_xml_filename_or_id;
+    bt_xml_filename_or_id.empty() ? default_bt_xml_filename_or_id_ : bt_xml_filename_or_id;
 
   // Use previous BT if it is the existing one and always reload flag is not set to true
-  if (!always_reload_bt_xml_ && current_bt_file_or_id_ == file_or_id) {
+  if (!always_reload_bt_ && current_bt_file_or_id_ == file_or_id) {
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml or ID is already loaded");
     return true;
   }
@@ -296,8 +263,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  auto bt_id = extractBehaviorTreeID(file_or_id);
-  if (!bt_id) {
+  auto bt_id = bt_->extractBehaviorTreeID(file_or_id);
+  if (bt_id.empty()) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       "Failed to extract BehaviorTree ID from: " + file_or_id);
     return false;
@@ -319,7 +286,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
   // Try to load the main BT tree (by ID)
   try {
-    tree_ = bt_->createTree(*bt_id, blackboard_);
+    tree_ = bt_->createTree(bt_id, blackboard_);
 
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;

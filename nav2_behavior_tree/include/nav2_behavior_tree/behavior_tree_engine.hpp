@@ -76,6 +76,23 @@ public:
     const std::string & xml_string,
     BT::Blackboard::Ptr blackboard);
 
+  /**
+   * @brief Function to create a BT from an XML file
+   * @param file_path Path to BT XML file
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+   */
+  BT::Tree createTreeFromFile(
+    const std::string & file_path,
+    BT::Blackboard::Ptr blackboard);
+
+  /**
+   * @brief Extract BehaviorTree ID from BT file path or BT ID
+   * @param file_or_id
+   * @return std::string
+   */
+  std::string extractBehaviorTreeID(const std::string & file_or_id);
+
     /**
    * @brief Function to create a BT from a BehaviorTree ID
    * @param tree_id BehaviorTree ID

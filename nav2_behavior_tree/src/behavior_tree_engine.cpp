@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "tinyxml2.h" //NOLINT
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/json_export.h"
@@ -92,6 +93,56 @@ BehaviorTreeEngine::createTreeFromText(
   BT::Blackboard::Ptr blackboard)
 {
   return factory_.createTreeFromText(xml_string, blackboard);
+}
+
+BT::Tree
+BehaviorTreeEngine::createTreeFromFile(
+  const std::string & file_path,
+  BT::Blackboard::Ptr blackboard)
+{
+  return factory_.createTreeFromFile(file_path, blackboard);
+}
+
+std::string BehaviorTreeEngine::extractBehaviorTreeID(
+  const std::string & file_or_id)
+{
+  if(file_or_id.empty()) {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
+        "Error: Empty filename/BT_ID passed to extractBehaviorTreeID");
+    return "";
+  }
+  if ((!file_or_id.empty() && file_or_id.length() < 4) ||
+    file_or_id.substr(file_or_id.length() - 4) != ".xml")
+  {
+    return file_or_id;
+  }
+  tinyxml2::XMLDocument doc;
+  if (doc.LoadFile(file_or_id.c_str()) != tinyxml2::XML_SUCCESS) {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Error: Could not open or parse file %s",
+        file_or_id.c_str());
+    return "";
+  }
+  tinyxml2::XMLElement * rootElement = doc.RootElement();
+  if (!rootElement) {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Error: Root element not found in %s",
+        file_or_id.c_str());
+    return "";
+  }
+  tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
+  if (!btElement) {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
+        "Error: <BehaviorTree> element not found in %s", file_or_id.c_str());
+    return "";
+  }
+  const char * idValue = btElement->Attribute("ID");
+  if (idValue) {
+    return std::string(idValue);
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
+        "Error: ID attribute not found on <BehaviorTree> element in %s",
+        file_or_id.c_str());
+    return "";
+  }
 }
 
 BT::Tree

@@ -108,9 +108,9 @@ public:
 
   /** @brief Extract BehaviorTree ID from XML file
    * @param filename The file containing the BT
-   * @return std::optional<std::string> BehaviorTree ID if found, std::nullopt otherwise
+   * @return std::string BehaviorTree ID if found, empty string otherwise
    */
-  std::optional<std::string> extractBehaviorTreeID(const std::string & file_or_id);
+  std::string extractBehaviorTreeID(const std::string & file_or_id);
 
   /**
    * @brief Getter function for BT Blackboard
@@ -125,18 +125,18 @@ public:
    * @brief Getter function for current BT XML filename
    * @return string Containing current BT XML filename
    */
-  std::string getCurrentBTFilename() const
+  std::string getCurrentBTFilenameOrID() const
   {
     return current_bt_file_or_id_;
   }
 
   /**
-   * @brief Getter function for default BT XML filename
-   * @return string Containing default BT XML filename
+   * @brief Getter function for default BT XML filename or ID
+   * @return string Containing default BT XML filename or ID
    */
   std::string getDefaultBTFilenameOrID() const
   {
-    return default_bt_xml_filename_;
+    return default_bt_xml_filename_or_id_;
   }
 
   /**
@@ -252,7 +252,7 @@ protected:
 
   // The XML file that contains the Behavior Tree to create
   std::string current_bt_file_or_id_;
-  std::string default_bt_xml_filename_;
+  std::string default_bt_xml_filename_or_id_;
   std::vector<std::string> search_directories_;
 
   // The wrapper class for the BT functionality
@@ -289,7 +289,7 @@ protected:
   std::chrono::milliseconds wait_for_service_timeout_;
 
   // should the BT be reloaded even if the same xml filename is requested?
-  bool always_reload_bt_xml_ = false;
+  bool always_reload_bt_ = false;
 
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;
