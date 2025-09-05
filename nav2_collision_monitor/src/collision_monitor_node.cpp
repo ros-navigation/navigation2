@@ -479,6 +479,10 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
+    if (!enabled_) {
+      break;
+    }
+
     if (!polygon->getEnabled()) {
       continue;
     }
@@ -658,6 +662,10 @@ void CollisionMonitor::notifyActionState(
 
 void CollisionMonitor::publishPolygons() const
 {
+  if (!enabled_) {
+    return;
+  }
+
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (polygon->getEnabled()) {
       polygon->publish();
@@ -666,34 +674,16 @@ void CollisionMonitor::publishPolygons() const
 }
 
 void CollisionMonitor::toggleCMServiceCallback(
-  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<nav2_msgs::srv::Toggle::Request> request,
   std::shared_ptr<nav2_msgs::srv::Toggle::Response> response)
 {
-  if (robot_action_prev_.action_type == ActionType::STOP || robot_action_prev_.action_type == ActionType::SLOWDOWN) {
-    response->success = false;
-    response->message = "Cannot toggle collision monitor in STOP/SLOWDOWN state";
-    
-    return;
-  }
-
   enabled_ = request->enable;
-
-  std::vector<rclcpp::Parameter> polygon_parameters{};
-  polygon_parameters.reserve(polygons_.size());
-
-  for (const auto& polygon : polygons_) {
-    auto parameter_name{polygon->getName() + "." + "enabled"};
-    polygon_parameters.emplace_back(parameter_name, enabled_);
-  }
-
-  auto node = shared_from_this();
-  node->set_parameters(polygon_parameters);
-
-  response->success = true;
 
   std::stringstream message;
   message << "Collision monitor toggled " << (enabled_ ? "on" : "off") << " successfully";
+
+  response->success = true;
   response->message = message.str();
 }
 
