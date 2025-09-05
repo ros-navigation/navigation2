@@ -114,6 +114,7 @@ public:
    * @param dt Time step.
    * @param target Pose of the target in the robot frame.
    * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
    * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return geometry_msgs::msg::Pose
    */
@@ -121,6 +122,7 @@ public:
     const double dt,
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current,
+    const double & target_distance,
     const bool & backward = false);
 
 protected:

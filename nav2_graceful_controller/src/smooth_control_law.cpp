@@ -96,16 +96,19 @@ geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
 geometry_msgs::msg::Twist SmoothControlLaw::calculateRegularVelocity(
   const geometry_msgs::msg::Pose & target, const bool & backward)
 {
-  return calculateRegularVelocity(target, geometry_msgs::msg::Pose(), 0, backward);
+  double current_pose = geometry_msgs::msg::Pose();
+  double target_distance = euclidean_distance(target, current_pose);
+  return calculateRegularVelocity(target, current_pose, target_distance, backward);
 }
 
 geometry_msgs::msg::Pose SmoothControlLaw::calculateNextPose(
   const double dt,
   const geometry_msgs::msg::Pose & target,
   const geometry_msgs::msg::Pose & current,
+  const double & target_distance,
   const bool & backward)
 {
-  geometry_msgs::msg::Twist vel = calculateRegularVelocity(target, current, backward);
+  geometry_msgs::msg::Twist vel = calculateRegularVelocity(target, current, target_distance, backward);
   geometry_msgs::msg::Pose next;
   double yaw = tf2::getYaw(current.orientation);
   next.position.x = current.position.x + vel.linear.x * dt * cos(yaw);
