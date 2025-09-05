@@ -28,7 +28,6 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_core/planner_exceptions.hpp"
 
-#include "nav2_smac_planner/thirdparty/robin_hood.h"
 #include "nav2_smac_planner/analytic_expansion.hpp"
 #include "nav2_smac_planner/node_2d.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
@@ -36,6 +35,13 @@
 #include "nav2_smac_planner/node_basic.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/constants.hpp"
+
+#ifdef _MSC_VER
+  #define SELECTED_UNORDERED_MAP std::unordered_map
+#else
+  #include "nav2_smac_planner/thirdparty/robin_hood.h"
+  #define SELECTED_UNORDERED_MAP robin_hood::unordered_node_map
+#endif
 
 namespace nav2_smac_planner
 {
@@ -49,7 +55,7 @@ class AStarAlgorithm
 {
 public:
   typedef NodeT * NodePtr;
-  typedef robin_hood::unordered_node_map<uint64_t, NodeT> Graph;
+  typedef SELECTED_UNORDERED_MAP<uint64_t, NodeT> Graph;
   typedef std::vector<NodePtr> NodeVector;
   typedef std::pair<float, NodeBasic<NodeT>> NodeElement;
   typedef typename NodeT::Coordinates Coordinates;
