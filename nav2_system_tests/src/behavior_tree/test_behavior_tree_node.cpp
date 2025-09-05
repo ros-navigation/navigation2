@@ -288,9 +288,9 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
 TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 {
   auto write_file = [](const std::string & path, const std::string & content) {
-    std::ofstream ofs(path);
-    ofs << content;
-  };
+      std::ofstream ofs(path);
+      ofs << content;
+    };
 
   // 1. Empty string input → triggers "Empty filename/BT_ID" branch
   auto empty_id = bt_handler->extractBehaviorTreeID("");
