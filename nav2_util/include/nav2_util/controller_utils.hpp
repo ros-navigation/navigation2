@@ -78,6 +78,20 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
     if (dot_product < 0.0f) {
       return idx + 1;
     }
+
+    if (
+      (hypot(oa_x, oa_y) == 0.0 &&
+      path.poses[idx - 1].pose.orientation !=
+      path.poses[idx].pose.orientation)
+      ||
+      (hypot(ab_x, ab_y) == 0.0 &&
+      path.poses[idx].pose.orientation !=
+      path.poses[idx + 1].pose.orientation))
+    {
+      // returning the distance since the points overlap
+      // but are not simply duplicate points (e.g. in place rotation)
+      return idx + 1;
+    }
   }
 
   return path.poses.size();
