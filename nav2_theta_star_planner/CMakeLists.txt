@@ -84,7 +84,8 @@ ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_core
-  nav2_costmap_2dnav2_util
+  nav2_costmap_2d
+  nav2_util
   nav_msgs
   rclcpp
   rclcpp_lifecycle
