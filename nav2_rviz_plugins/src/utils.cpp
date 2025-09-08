@@ -50,17 +50,16 @@ void pluginLoader(
     return;
   }
   auto parameters = parameter_client->get_parameters({plugin_type});
-  if(executor){
-    if (executor->spin_until_future_complete(parameters) != rclcpp::FutureReturnCode::SUCCESS){
+  if(executor) {
+    if (executor->spin_until_future_complete(parameters) != rclcpp::FutureReturnCode::SUCCESS) {
+      return;
+    }
+  } else {
+    if (rclcpp::spin_until_future_complete(node, parameters) != rclcpp::FutureReturnCode::SUCCESS) {
       return;
     }
   }
-  else{
-    if (rclcpp::spin_until_future_complete(node, parameters) != rclcpp::FutureReturnCode::SUCCESS){
-      return;
-    }
-  }
-  
+
   auto str_arr = parameters.get()[0].as_string_array();
   combo_box->addItem("Default");
   for (auto str : str_arr) {
