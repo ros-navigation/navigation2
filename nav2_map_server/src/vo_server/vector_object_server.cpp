@@ -419,7 +419,8 @@ void VectorObjectServer::addShapesCallback(
       if (!polygon->setParams(new_params)) {
         RCLCPP_ERROR(
           get_logger(),
-          "Failed to update existing polygon object (UUID: %s) with new params. Reverting to old polygon params.",
+          "Failed to update existing polygon object (UUID: %s) with new params. "
+          "Reverting to old polygon params.",
           (*it)->getUUID().c_str());
         // Restore old parameters
         polygon->setParams(old_params);
@@ -465,7 +466,8 @@ void VectorObjectServer::addShapesCallback(
       if (!circle->setParams(new_params)) {
         RCLCPP_ERROR(
           get_logger(),
-          "Failed to update existing circle object (UUID: %s) with new params. Reverting to old circle params.",
+          "Failed to update existing circle object (UUID: %s) with new params. "
+          "Reverting to old circle params.",
           (*it)->getUUID().c_str());
         // Restore old parameters
         circle->setParams(old_params);
