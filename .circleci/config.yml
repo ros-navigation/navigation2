@@ -234,6 +234,10 @@ _commands:
             name: Test Workspace | << parameters.workspace >>
             working_directory: << parameters.workspace >>
             command: |
+              # Start zenohd daemon only if using rmw_zenoh_cpp  
+              if [ "$RMW_IMPLEMENTATION" = "rmw_zenoh_cpp" ]; then  
+                ros2 run rmw_zenoh_cpp rmw_zenohd &
+              fi  
               TEST_UNPASSED=$(
                 colcon list \
                   --names-only \
@@ -503,7 +507,7 @@ _jobs:
         type: boolean
         default: false
       rmw:
-        default: "rmw_cyclonedds_cpp"
+        default: "rmw_zenoh_cpp"
         type: string
     parallelism: 1
     environment:
@@ -564,6 +568,7 @@ workflows:
               rmw:
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
+                - rmw_zenoh_cpp
     triggers:
       - schedule:
           cron: "0 13 * * *"
