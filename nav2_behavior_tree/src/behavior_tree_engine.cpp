@@ -111,7 +111,8 @@ std::string BehaviorTreeEngine::extractBehaviorTreeID(
         "Error: Empty filename/BT_ID passed to extractBehaviorTreeID");
     return "";
   }
-  if ((!file_or_id.empty() && file_or_id.length() < 4) ||
+  // This is a behavior tree ID rather than a filepath
+  if ((file_or_id.length() < 4) ||
     file_or_id.substr(file_or_id.length() - 4) != ".xml")
   {
     return file_or_id;
