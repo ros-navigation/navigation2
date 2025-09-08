@@ -405,7 +405,7 @@ void VectorObjectServer::addShapesCallback(
       if ((*it)->getType() != POLYGON) {
         RCLCPP_ERROR(
           get_logger(),
-          "Shape (UUID: %s) is not a polygon type",
+          "Shape (UUID: %s) is not a polygon type for a polygon update. Not adding shape.",
           (*it)->getUUID().c_str());
         response->success = false;
         // Do not add this shape
@@ -417,6 +417,10 @@ void VectorObjectServer::addShapesCallback(
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::PolygonObject::SharedPtr old_params = polygon->getParams();
       if (!polygon->setParams(new_params)) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to update existing polygon object (UUID: %s) with new params. Reverting to old polygon params.",
+          (*it)->getUUID().c_str());
         // Restore old parameters
         polygon->setParams(old_params);
         // ... and set the failure to return
@@ -428,6 +432,8 @@ void VectorObjectServer::addShapesCallback(
       if (polygon->setParams(new_params)) {
         shapes_.push_back(polygon);
       } else {
+        RCLCPP_ERROR(
+          get_logger(), "Failed to create a new polygon object using the provided params.");
         response->success = false;
       }
     }
@@ -445,7 +451,7 @@ void VectorObjectServer::addShapesCallback(
       if ((*it)->getType() != CIRCLE) {
         RCLCPP_ERROR(
           get_logger(),
-          "Shape (UUID: %s) is not a circle type",
+          "Shape (UUID: %s) is not a circle type for a circle update. Not adding shape.",
           (*it)->getUUID().c_str());
         response->success = false;
         // Do not add this shape
@@ -457,6 +463,10 @@ void VectorObjectServer::addShapesCallback(
       // Preserving old parameters for the case, if new ones to be incorrect
       nav2_msgs::msg::CircleObject::SharedPtr old_params = circle->getParams();
       if (!circle->setParams(new_params)) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to update existing circle object (UUID: %s) with new params. Reverting to old circle params.",
+          (*it)->getUUID().c_str());
         // Restore old parameters
         circle->setParams(old_params);
         // ... and set the failure to return
@@ -468,6 +478,8 @@ void VectorObjectServer::addShapesCallback(
       if (circle->setParams(new_params)) {
         shapes_.push_back(circle);
       } else {
+        RCLCPP_ERROR(
+          get_logger(), "Failed to create a new circle object using the provided params.");
         response->success = false;
       }
     }
