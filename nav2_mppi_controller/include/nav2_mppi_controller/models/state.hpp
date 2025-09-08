@@ -40,6 +40,7 @@ struct State
 
   geometry_msgs::msg::PoseStamped pose;
   geometry_msgs::msg::Twist speed;
+  float local_path_length;
 
   /**
     * @brief Reset state data

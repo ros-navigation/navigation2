@@ -81,7 +81,6 @@ protected:
 
   unsigned int power_{0};
   float weight_{0};
-  bool enforce_path_inversion_{false};
 };
 
 }  // namespace mppi::critics
