@@ -12,82 +12,79 @@
   The trajectory planner then follows the plan from the global planner, per usual.
   It also has recovery actions specific to planning / control as well as general system issues.
 -->
+
 <root BTCPP_format="4" main_tree_to_execute="NavigateWRoutingGlobalPlanningAndControlWRecovery">
   <BehaviorTree ID="NavigateWRoutingGlobalPlanningAndControlWRecovery">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath"
-          topic_name="controller_selector" />
-        <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector" />
-        <!-- Compute a new route if a new goal is found or the path is no longer valid, with contextual recoveries. Stores its
-        node as `goals` -->
+        <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+        <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+
+        <!-- Compute a new route if a new goal is found or the path is no longer valid, with contextual recoveries. Stores its node as `goals` -->
         <RecoveryNode number_of_retries="1" name="ComputeRoute">
           <RateController hz="0.5" name="ComputeRouteRateController">
-            <Fallback>
-              <ReactiveSequence>
-                <Inverter>
-                  <GlobalUpdatedGoal />
-                </Inverter>
-                <!-- Recompute route if route path is blocked (if not also using Route Tracking, who's collision monitor would do
-                this for you) -->
-                <IsPathValid path="{route_path}" />
-              </ReactiveSequence>
-              <Sequence>
-                <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true"
-                  error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}" />
-                <!-- Set these route nodes as goals for navigating through, including the final goal pose of the action request -->
-                <ExtractRouteNodesAsGoals route="{route}" goals="{route_goals}" />
-                <AppendGoalPoseToGoals input_goals="{route_goals}" output_goals="{route_goals}" goal_pose="{goal}" />
-              </Sequence>
-            </Fallback>
-          </RateController>
+              <Fallback>
+                <ReactiveSequence>
+                  <Inverter>
+                    <GlobalUpdatedGoal/>
+                  </Inverter>
+                  <!-- Recompute route if route path is blocked (if not also using Route Tracking, who's collision monitor would do this for you) -->
+                  <IsPathValid path="{route_path}"/>
+                </ReactiveSequence>
+                <Sequence>
+                  <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true" error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>
+                  <!-- Set these route nodes as goals for navigating through, including the final goal pose of the action request -->
+                  <ExtractRouteNodesAsGoals route="{route}" goals="{route_goals}"/>
+                  <AppendGoalPoseToGoals input_goals="{route_goals}" output_goals="{route_goals}" goal_pose="{goal}"/>
+                </Sequence>
+              </Fallback>
+            </RateController>
           <Sequence>
             <Fallback>
-              <WouldARouteRecoveryHelp error_code="{compute_route_error_code}" />
+              <WouldARouteRecoveryHelp error_code="{compute_route_error_code}"/>
             </Fallback>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap" />
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
         </RecoveryNode>
-        <!-- Compute a path through the next couple of route nodes to consider environmental conditions and behavioral
-        constraints, with contextual recoveries -->
+
+        <!-- Compute a path through the next couple of route nodes to consider environmental conditions and behavioral constraints, with contextual recoveries -->
         <RateController hz="1.0">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence>
-              <RemovePassedGoals input_goals="{route_goals}" output_goals="{route_goals}" radius="3.0" />
-              <GetNextFewGoals input_goals="{route_goals}" num_goals="2" output_goals="{planning_goals}" />
-              <ComputePathThroughPoses goals="{planning_goals}" path="{path}" planner_id="{selected_planner}"
-                error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}" />
+              <RemovePassedGoals input_goals="{route_goals}" output_goals="{route_goals}" radius="3.0"/>
+              <GetNextFewGoals input_goals="{route_goals}" num_goals="2" output_goals="{planning_goals}"/>
+              <ComputePathThroughPoses goals="{planning_goals}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
             </Sequence>
             <Sequence>
-              <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}" />
-              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap" />
+              <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
             </Sequence>
           </RecoveryNode>
         </RateController>
+
         <!-- Follow the path computed by the planner, with contextual recoveries -->
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}"
-            error_msg="{follow_path_error_msg}" />
+          <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
           <Sequence>
-            <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}" />
-            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap" />
+            <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
           </Sequence>
         </RecoveryNode>
       </PipelineSequence>
       <Sequence>
         <Fallback>
-          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}" />
-          <WouldAPlannerRecoveryHelp error_code="{compute_route_error_code}" />
+          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+          <WouldAPlannerRecoveryHelp error_code="{compute_route_error_code}"/>
         </Fallback>
         <ReactiveFallback name="RecoveryFallback">
-          <GoalUpdated />
+          <GoalUpdated/>
           <RoundRobin name="RecoveryActions">
             <Sequence name="ClearingActions">
-              <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap" />
-              <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap" />
+              <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
             </Sequence>
-            <Wait wait_duration="5.0" error_code_id="{wait_error_code}" error_msg="{wait_error_msg}" />
-            <BackUp backup_dist="0.30" backup_speed="0.15" error_code_id="{backup_error_code}" error_msg="{backup_error_msg}" />
+            <Wait wait_duration="5.0" error_code_id="{wait_error_code}" error_msg="{wait_error_msg}"/>
+            <BackUp backup_dist="0.30" backup_speed="0.15" error_code_id="{backup_error_code}" error_msg="{backup_error_msg}"/>
           </RoundRobin>
         </ReactiveFallback>
       </Sequence>
