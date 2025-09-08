@@ -236,6 +236,7 @@ _commands:
             command: |
               # Start zenohd daemon only if using rmw_zenoh_cpp
               if [ "$RMW_IMPLEMENTATION" = "rmw_zenoh_cpp" ]; then
+                . /opt/ros/$ROS_DISTRO/setup.sh
                 ros2 run rmw_zenoh_cpp rmw_zenohd &
               fi
               TEST_UNPASSED=$(
