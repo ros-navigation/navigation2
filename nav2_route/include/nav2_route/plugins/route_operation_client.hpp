@@ -169,7 +169,7 @@ protected:
         }
         auto client =
           node->create_client<SrvT>(srv_name, true);
-        response = callService(main_client_, req);
+        response = callService(client, req);
       }
     } catch (const std::exception & e) {
       throw nav2_core::OperationFailed(
