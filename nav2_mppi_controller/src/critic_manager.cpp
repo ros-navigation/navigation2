@@ -75,10 +75,10 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data) const
 {
-  std::cout << "evalTrajectoriesScores:" << std::endl;
-  std::cout << "data.state.vx: " << data.state.vx(Eigen::seq(0, 9), 0).transpose() << "\n";
-  std::cout << "data.state.cvx: " << data.state.cvx(Eigen::seq(0, 9), 0).transpose() << "\n";
-  std::cout << "data.trajectories.x: " << data.trajectories.x(Eigen::seq(0, 9), 0).transpose() << "\n";
+  // std::cout << "evalTrajectoriesScores:" << std::endl;
+  // std::cout << "data.state.vx: " << data.state.vx(Eigen::seq(0, 9), 0).transpose() << "\n";
+  // std::cout << "data.state.cvx: " << data.state.cvx(Eigen::seq(0, 9), 0).transpose() << "\n";
+  // std::cout << "data.trajectories.x: " << data.trajectories.x(Eigen::seq(0, 9), 0).transpose() << "\n";
 
   std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
   if (publish_critics_stats_) {
