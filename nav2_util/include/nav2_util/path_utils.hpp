@@ -42,6 +42,8 @@ struct PathSearchResult
  * This function searches for the closest segment on the given path to the robot's pose,
  * starting from a specified index and optionally limiting the search to a window length.
  * It returns the minimum distance found and the index of the closest segment.
+ * If possible start_index should be provided. The main optimized version of this
+ * function is the one using local search. Also it's better to use it with frame check.
  *
  * @param path The path to search (sequence of poses).
  * @param robot_pose The robot's current pose in pose form.

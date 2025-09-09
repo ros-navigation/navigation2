@@ -618,6 +618,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
 
+  // start from zero with every new path
   start_index_ = 0;
   current_path_ = path;
 }
@@ -769,18 +770,40 @@ void ControllerServer::publishTrackingState()
     return;
   }
 
-  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(robot_pose,
-      end_pose_);
-  const auto path_search_result = nav2_util::distance_from_path(current_path_, robot_pose.pose,
-      start_index_, search_window_);
+// Frame checks
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform robot pose to path frame.");
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped end_pose_in_robot_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        end_pose_, end_pose_in_robot_frame, *costmap_ros_->getTfBuffer(),
+        robot_pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform end pose to robot frame.");
+    return;
+  }
+
+  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose, end_pose_in_robot_frame);
+
+  const auto path_search_result = nav2_util::distance_from_path(
+    current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+
   const size_t closest_idx = path_search_result.closest_segment_index;
   start_index_ = closest_idx;
 
   const auto & segment_start = current_path_.poses[closest_idx];
   const auto & segment_end = current_path_.poses[closest_idx + 1];
 
+  // Cross product is for getting which side of the track
   double cross_product = nav2_util::geometry_utils::cross_product_2d(
-  robot_pose.pose.position, segment_start.pose, segment_end.pose);
+    robot_pose_in_path_frame.pose.position, segment_start.pose, segment_end.pose);
 
   nav2_msgs::msg::TrackingError tracking_error_msg;
   tracking_error_msg.header.stamp = now();
