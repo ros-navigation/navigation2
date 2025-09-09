@@ -48,7 +48,7 @@ TEST(GraphLoader, test_invalid_plugin)
   nav2_util::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin));
 
-  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), pluginlib::PluginlibException);
+  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), std::runtime_error);
 }
 
 TEST(GraphLoader, test_api)

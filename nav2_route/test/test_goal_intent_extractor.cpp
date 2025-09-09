@@ -85,7 +85,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
   tf2_ros::TransformBroadcaster broadcaster(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
-  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "map","base_link");
+  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "map", "base_link");
 
   // Test transformations same frame, should pass
   geometry_msgs::msg::PoseStamped pose;
@@ -374,7 +374,8 @@ TEST(GoalIntentExtractorTest, test_pruning)
   goal.pose.position.y = -0.4;
   GoalIntentExtractorWrapper extractor2;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber2 = nullptr;
-  extractor2.configure(node, graph, &id_map, nullptr, costmap_subscriber2, "map", "map", "base_link");
+  extractor2.configure(
+    node, graph, &id_map, nullptr, costmap_subscriber2, "map", "map", "base_link");
   extractor2.setStartAndGoal(start, goal);
   rtn = extractor2.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
