@@ -1,0 +1,33 @@
+#goal definition
+uint16 start_id
+geometry_msgs/PoseStamped start
+uint16 goal_id
+geometry_msgs/PoseStamped goal
+
+bool use_start # Whether to use the start field or find the start pose in TF
+bool use_poses # Whether to use the poses or the IDs fields for request
+---
+#result definition
+
+# Error codes
+uint16 NONE=0
+uint16 UNKNOWN=400
+uint16 TF_ERROR=401
+uint16 NO_VALID_GRAPH=402
+uint16 INDETERMINANT_NODES_ON_GRAPH=403
+uint16 TIMEOUT=404
+uint16 NO_VALID_ROUTE=405
+uint16 OPERATION_FAILED=406
+uint16 INVALID_EDGE_SCORER_USE=407
+
+builtin_interfaces/Duration execution_duration
+uint16 error_code 0
+---
+#feedback definition
+uint16 last_node_id
+uint16 next_node_id
+uint16 current_edge_id
+Route route
+nav_msgs/Path path
+string[] operations_triggered
+bool rerouted
