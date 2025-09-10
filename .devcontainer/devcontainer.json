@@ -1,48 +1,100 @@
 {
     "name": "Nav2",
-    "build": {
-        "dockerfile": "../Dockerfile",
-        "context": "..",
-        "target": "dever",
-        "cacheFrom": "ghcr.io/ros-navigation/navigation2:main"
-    },
+    "initializeCommand": ".devcontainer/initialize-command.sh dever", // Bakes to tag nav2:devcontainer
+    "image": "nav2:devcontainer",
     "runArgs": [
-        "--name=nav2"
         // "--cap-add=SYS_PTRACE", // enable debugging, e.g. gdb
         // "--ipc=host", // shared memory transport with host, e.g. rviz GUIs
         // "--network=host", // network access to host interfaces, e.g. eth0
         // "--pid=host", // DDS discovery with host, without --network=host
         // "--privileged", // device access to host peripherals, e.g. USB
         // "--security-opt=seccomp=unconfined", // enable debugging, e.g. gdb
-        // "--volume=/tmp/.X11-unix:/tmp/.X11-unix", // X11 socket for GUI applications
-        // "--gpus=all" // access to all GPUs, e.g. for GPU-accelerated applications
+        // "--device=/dev/dri", // enable Intel integrated graphics
+        // "--ulimit", "nofile=1024:4096", // increase file descriptor limit for valgrind
+        // 
+        "--runtime=nvidia", // enable NVIDIA Container Toolkit
+            "--env=NVIDIA_VISIBLE_DEVICES=all", // enable GPUs with env as --gpus doesn't parse nicely
+            "--env=NVIDIA_DRIVER_CAPABILITIES=all", // enable all capabilities, including `graphics`
     ],
-    "workspaceFolder": "/opt/overlay_ws/src/navigation2",
+    "workspaceFolder": "/opt/nav2_ws/src/navigation2",
     "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
     "onCreateCommand": ".devcontainer/on-create-command.sh",
     "updateContentCommand": ".devcontainer/update-content-command.sh",
     "postCreateCommand": ".devcontainer/post-create-command.sh",
     "remoteEnv": {
+        "CCACHE_DIR": "/opt/nav2_ws/.ccache",
+        // Explicitly set DISPLAY for NVIDIA Container Toolkit
+        "DISPLAY": "${localEnv:DISPLAY}",
         "OVERLAY_MIXINS": "release ccache lld",
-        "CCACHE_DIR": "/tmp/.ccache"
-        // "QT_X11_NO_MITSHM": "1", // disable MIT-SHM for X11 forwarding
-        // "DISPLAY": "${localEnv:DISPLAY}", // X11 forwarding
+        // Explicitly set SSH_AUTH_SOCK for devcontainer CLI
+        "SSH_AUTH_SOCK": "${localEnv:SSH_AUTH_SOCK}",
     },
+    "remoteUser": "ubuntu",
     "mounts": [
+        // ################################################################################
+        // # MARK: Cache mounts - for development
+        // ################################################################################
         {
-            "source": "ccache-${devcontainerId}",
-            "target": "/tmp/.ccache",
+            // Cache apt downloads
+            "source": "apt-cache",
+            "target": "/var/cache/apt",
             "type": "volume"
         },
         {
-            "source": "overlay-${devcontainerId}",
-            "target": "/opt/overlay_ws",
+            // Cache ccache caches
+            "source": "ccache",
+            "target": "/opt/nav2_ws/.ccache",
             "type": "volume"
+        },
+        {
+            // Cache colcon workspace
+            "source": "nav2-ws-${devcontainerId}",
+            "target": "/opt/nav2_ws",
+            "type": "volume"
+        },
+        // ################################################################################
+        // # MARK: Personal mounts - for convenience
+        // ################################################################################
+        {
+            // Mount home dotfiles
+            "source": "nav2-home-${localEnv:USER}",
+            "target": "/home/ubuntu",
+            "type": "volume"
+        },
+        // {
+        //     // Mount home nav2
+        //     "source": "${localEnv:HOME}/nav2/",
+        //     "target": "/home/ubuntu/nav2",
+        //     "type": "bind"
+        // },
+        // ################################################################################
+        // # MARK: Socket mounts - for tooling
+        // ################################################################################
+        {
+            // Mount docker socket
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker-host.sock",
+            "type": "bind"
+        },
+        {
+            // Explicitly mount X11 socket for NVIDIA Container Toolkit
+            // as setting NVIDIA_DRIVER_CAPABILITIES to include `graphics`
+            // interferes with VSCode's default X11 forwarding behavior
+            "source": "/tmp/.X11-unix",
+            "target": "/tmp/.X11-unix",
+            "type": "bind"
+        },
+        {
+            // Explicitly mount SSH socket for devcontainer CLI
+            "source": "${localEnv:SSH_AUTH_SOCK}",
+            "target": "${localEnv:SSH_AUTH_SOCK}",
+            "type": "bind"
         }
     ],
     "features": {
         // "ghcr.io/devcontainers/features/desktop-lite:1": {},
-        "ghcr.io/devcontainers/features/github-cli:1": {}
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {},
     },
     "customizations": {
         "codespaces": {
@@ -57,9 +109,11 @@
                 "eamodio.gitlens",
                 "esbenp.prettier-vscode",
                 "GitHub.copilot",
+                "hashicorp.hcl",
+                "ms-azuretools.vscode-docker",
                 "ms-iot.vscode-ros",
                 "streetsidesoftware.code-spell-checker",
-                "twxs.cmake"
+                "vitaliymaz.vscode-svg-previewer",
             ]
         }
     }
