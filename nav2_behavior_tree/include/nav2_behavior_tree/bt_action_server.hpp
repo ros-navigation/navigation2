@@ -53,11 +53,11 @@ public:
     const std::string & action_name,
     const std::vector<std::string> & plugin_lib_names,
     const std::string & default_bt_xml_filename,
-    const std::vector<std::string> & search_directories,
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
     OnPreemptCallback on_preempt_callback,
-    OnCompletionCallback on_completion_callback);
+    OnCompletionCallback on_completion_callback,
+    const std::vector<std::string> & search_directories = std::vector<std::string>{});
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
