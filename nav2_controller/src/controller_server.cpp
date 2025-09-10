@@ -55,6 +55,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
   declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
+  declare_parameter("search_window", rclcpp::ParameterValue(5.0));
 
   declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
 
@@ -134,6 +135,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
+  get_parameter("search_window", search_window_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -225,6 +227,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingError>("tracking_error", 10);
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
@@ -500,6 +503,8 @@ void ControllerServer::computeControl()
 
       computeAndPublishVelocity();
 
+      publishTrackingState();
+
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
@@ -613,6 +618,8 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
 
+  // start from zero with every new path
+  start_index_ = 0;
   current_path_ = path;
 }
 
@@ -748,6 +755,66 @@ void ControllerServer::updateGlobalPath()
     }
     setPlannerPath(goal->path);
   }
+}
+
+void ControllerServer::publishTrackingState()
+{
+  if (current_path_.poses.size() < 2) {
+    RCLCPP_DEBUG(get_logger(), "Path has fewer than 2 points, cannot compute tracking error.");
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  if (!getRobotPose(robot_pose)) {
+    RCLCPP_WARN(get_logger(), "Failed to obtain robot pose, skipping tracking error publication.");
+    return;
+  }
+
+// Frame checks
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform robot pose to path frame.");
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped end_pose_in_robot_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        end_pose_, end_pose_in_robot_frame, *costmap_ros_->getTfBuffer(),
+        robot_pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform end pose to robot frame.");
+    return;
+  }
+
+  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose, end_pose_in_robot_frame);
+
+  const auto path_search_result = nav2_util::distance_from_path(
+    current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+
+  const size_t closest_idx = path_search_result.closest_segment_index;
+  start_index_ = closest_idx;
+
+  const auto & segment_start = current_path_.poses[closest_idx];
+  const auto & segment_end = current_path_.poses[closest_idx + 1];
+
+  // Cross product is for getting which side of the track
+  double cross_product = nav2_util::geometry_utils::cross_product_2d(
+    robot_pose_in_path_frame.pose.position, segment_start.pose, segment_end.pose);
+
+  nav2_msgs::msg::TrackingError tracking_error_msg;
+  tracking_error_msg.header.stamp = now();
+  tracking_error_msg.header.frame_id = robot_pose.header.frame_id;
+  tracking_error_msg.tracking_error = path_search_result.distance;
+  tracking_error_msg.last_index = closest_idx;
+  tracking_error_msg.cross_product = cross_product;
+  tracking_error_msg.distance_to_goal = distance_to_goal;
+  tracking_error_msg.robot_pose = robot_pose;
+
+  tracking_error_pub_->publish(tracking_error_msg);
 }
 
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)

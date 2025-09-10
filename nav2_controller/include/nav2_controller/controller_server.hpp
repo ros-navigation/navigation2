@@ -29,10 +29,12 @@
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
+#include "nav2_msgs/msg/tracking_error.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
@@ -168,6 +170,10 @@ protected:
    */
   void updateGlobalPath();
   /**
+   * @brief Calculates and publishes the TrackingError's all components
+   */
+  void publishTrackingState();
+  /**
    * @brief Calls velocity publisher to publish the velocity on "cmd_vel" topic
    * @param velocity Twist velocity to be published
    */
@@ -236,6 +242,7 @@ protected:
   std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+  rclcpp::Publisher<nav2_msgs::msg::TrackingError>::SharedPtr tracking_error_pub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
@@ -268,6 +275,8 @@ protected:
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
+  double search_window_;
+  int start_index_;
 
   double failure_tolerance_;
   bool use_realtime_priority_;
