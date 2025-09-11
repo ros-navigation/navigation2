@@ -131,6 +131,11 @@ public:
     }
     return false;
   }
+
+  bool isEnabled()
+  {
+    return enabled_;
+  }
 };  // CollisionMonitorWrapper
 
 class Tester : public ::testing::Test
@@ -180,6 +185,9 @@ public:
     const std::chrono::nanoseconds & timeout);
   bool waitActionState(const std::chrono::nanoseconds & timeout);
   bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
+  bool waitToggle(
+    rclcpp::Client<nav2_msgs::srv::Toggle>::SharedFuture result_future,
+    const std::chrono::nanoseconds & timeout);
 
 protected:
   void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
@@ -217,6 +225,9 @@ protected:
 
   // Service client for setting CollisionMonitor parameters
   nav2::ServiceClient<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
+
+  // Service client for toggling collision monitor
+  nav2::ServiceClient<nav2_msgs::srv::Toggle>::SharedPtr toggle_client_;
 };  // Tester
 
 Tester::Tester()
@@ -258,6 +269,8 @@ Tester::Tester()
     cm_->create_client<rcl_interfaces::srv::SetParameters>(
     std::string(
       cm_->get_name()) + "/set_parameters");
+
+  toggle_client_ = cm_->create_client<nav2_msgs::srv::Toggle>("~/toggle");
 }
 
 Tester::~Tester()
@@ -759,6 +772,22 @@ bool Tester::waitFuture(
   return false;
 }
 
+bool Tester::waitToggle(
+  rclcpp::Client<nav2_msgs::srv::Toggle>::SharedFuture result_future,
+  const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = cm_->now();
+  while (rclcpp::ok() && cm_->now() - start_time <= rclcpp::Duration(timeout)) {
+    std::future_status status = result_future.wait_for(10ms);
+    if (status == std::future_status::ready) {
+      return true;
+    }
+    rclcpp::spin_some(cm_->get_node_base_interface());
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
 bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
 {
   rclcpp::Time start_time = cm_->now();
@@ -798,6 +827,38 @@ void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPt
 void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
 {
   collision_points_marker_msg_ = msg;
+}
+
+TEST_F(Tester, testToggleService)
+{
+  // Set parameters for collision monitor
+  setCommonParameters();
+  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addSource(SCAN_NAME, SCAN);
+  setVectors({"Stop"}, {SCAN_NAME});
+
+  // Start collision monitor node
+  cm_->start();
+
+  auto request = std::make_shared<nav2_msgs::srv::Toggle::Request>();
+
+  // Disable test
+  request->enable = false;
+  {
+    auto result_future = toggle_client_->async_call(request);
+    ASSERT_TRUE(waitToggle(result_future, 2s));
+  }
+  ASSERT_FALSE(cm_->isEnabled());
+
+  // Enable test
+  request->enable = true;
+  {
+    auto result_future = toggle_client_->async_call(request);
+    ASSERT_TRUE(waitToggle(result_future, 2s));
+  }
+  ASSERT_TRUE(cm_->isEnabled());
+
+  cm_->stop();
 }
 
 TEST_F(Tester, testProcessStopSlowdownLimit)
