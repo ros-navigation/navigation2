@@ -105,7 +105,13 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
+    node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".enforce_path_inversion", rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".inversion_xy_tolerance", rclcpp::ParameterValue(0.2));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".inversion_yaw_tolerance", rclcpp::ParameterValue(0.4));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
@@ -190,6 +196,10 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
   node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
+  node->get_parameter(plugin_name_ + ".enforce_path_inversion", params_.enforce_path_inversion);
+  node->get_parameter(plugin_name_ + ".inversion_xy_tolerance", params_.inversion_xy_tolerance);
+  node->get_parameter(plugin_name_ + ".inversion_yaw_tolerance", params_.inversion_yaw_tolerance);
+
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
@@ -311,6 +321,10 @@ ParameterHandler::updateParametersCallback(
         params_.transform_tolerance = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_robot_pose_search_dist") {
         params_.max_robot_pose_search_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".inversion_xy_tolerance") {
+        params_.inversion_xy_tolerance = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".inversion_yaw_tolerance") {
+        params_.inversion_yaw_tolerance = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
@@ -333,6 +347,8 @@ ParameterHandler::updateParametersCallback(
         params_.allow_reversing = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".interpolate_curvature_after_goal") {
         params_.interpolate_curvature_after_goal = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".enforce_path_inversion") {
+        params_.enforce_path_inversion = parameter.as_bool();
       }
     }
   }
