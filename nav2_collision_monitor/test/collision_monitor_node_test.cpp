@@ -132,7 +132,7 @@ public:
     return false;
   }
 
-  bool isEnabled()
+  bool isEnabled() const
   {
     return enabled_;
   }
@@ -858,6 +858,7 @@ TEST_F(Tester, testToggleService)
   }
   ASSERT_TRUE(cm_->isEnabled());
 
+  // Stop the collision monitor
   cm_->stop();
 }
 
