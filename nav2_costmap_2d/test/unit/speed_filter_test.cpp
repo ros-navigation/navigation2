@@ -257,7 +257,6 @@ private:
   std::shared_ptr<MaskPublisher> mask_publisher_;
   std::shared_ptr<SpeedLimitSubscriber> speed_limit_subscriber_;
   rclcpp::executors::SingleThreadedExecutor speed_limit_subscriber_executor_;
-
 };
 
 void TestNode::createMaps(const std::string & mask_frame)
