@@ -376,6 +376,52 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   std::remove(no_id_attr.c_str());
 }
 
+TEST_F(BehaviorTreeTestFixture, TestLoadBehaviorTreeMissingAndDuplicateIDs)
+{
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  std::string tmp_dir = "/tmp/bt_test_dir";
+  std::filesystem::create_directories(tmp_dir);
+
+  // 1. File with missing ID (should be skipped)
+  std::string missing_id_file = tmp_dir + "/missing_id.xml";
+  write_file(missing_id_file,
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree>\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  // 2. Two files with the same ID (should trigger duplicate warning)
+  std::string dup1_file = tmp_dir + "/dup1.xml";
+  std::string dup2_file = tmp_dir + "/dup2.xml";
+  std::string dup_bt_content =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"DuplicateTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+  write_file(dup1_file, dup_bt_content);
+  write_file(dup2_file, dup_bt_content);
+
+  // Call loadBehaviorTree with search directory
+  std::vector<std::string> search_dirs = {tmp_dir};
+  bool result = bt_handler->loadBehaviorTree("DuplicateTree", search_dirs);
+
+  EXPECT_TRUE(result);  // Tree should still load, despite warnings/errors
+
+  // Cleanup
+  std::remove(missing_id_file.c_str());
+  std::remove(dup1_file.c_str());
+  std::remove(dup2_file.c_str());
+  std::filesystem::remove_all(tmp_dir);
+}
+
 TEST_F(BehaviorTreeTestFixture, TestLoadByIdInsteadOfFile)
 {
   const auto root_dir = std::filesystem::path(
