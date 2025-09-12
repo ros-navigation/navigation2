@@ -202,8 +202,10 @@ public:
     action_server_ = std::make_shared<FibonacciActionServer>();
     server_thread_ = std::make_shared<std::thread>(
       []() {
+        rclcpp::executors::SingleThreadedExecutor executor;
+        executor.add_node(action_server_);
         while (rclcpp::ok() && BTActionNodeTestFixture::action_server_ != nullptr) {
-          rclcpp::spin_some(BTActionNodeTestFixture::action_server_);
+          executor.spin_some();
           std::this_thread::sleep_for(100ns);
         }
       });
@@ -211,6 +213,8 @@ public:
 
   void TearDown() override
   {
+    // Sleep for some time to avoid race condition
+    std::this_thread::sleep_for(std::chrono::milliseconds(80));
     action_server_.reset();
     tree_.reset();
     server_thread_->join();

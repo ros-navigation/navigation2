@@ -55,6 +55,8 @@ TEST(VelocitySmootherTest, openLoopTestTimer6dof)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   std::vector<double> deadbands{0.2, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<double> min_velocity{-0.5, -0.5, -0.5, -2.5, -2.5, -2.5};
   std::vector<double> max_velocity{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
@@ -96,7 +98,7 @@ TEST(VelocitySmootherTest, openLoopTestTimer6dof)
   // Process velocity smoothing and send updated odometry based on commands
   auto start = smoother->now();
   while (smoother->now() - start < 1.5s) {
-    rclcpp::spin_some(smoother->get_node_base_interface());
+    executor.spin_some();
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
@@ -125,6 +127,8 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   std::vector<double> deadbands{0.2, 0.0, 0.0};
   smoother->declare_parameter("scale_velocities", rclcpp::ParameterValue(true));
   smoother->set_parameter(rclcpp::Parameter("scale_velocities", true));
@@ -152,7 +156,7 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
   // Process velocity smoothing and send updated odometry based on commands
   auto start = smoother->now();
   while (smoother->now() - start < 1.5s) {
-    rclcpp::spin_some(smoother->get_node_base_interface());
+    executor.spin_some();
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
@@ -181,6 +185,8 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   smoother->declare_parameter("feedback", rclcpp::ParameterValue(std::string("CLOSED_LOOP")));
   smoother->set_parameter(rclcpp::Parameter("feedback", std::string("CLOSED_LOOP")));
   rclcpp_lifecycle::State state;
@@ -222,7 +228,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
       odom_msg.twist.twist.linear.x = linear_vels.back();
     }
     odom_pub->publish(odom_msg);
-    rclcpp::spin_some(smoother->get_node_base_interface());
+    executor.spin_some();
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
@@ -633,10 +639,12 @@ TEST(VelocitySmootherTest, testCommandCallback)
 
   auto pub = smoother->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
   msg->twist.linear.x = 100.0;
   pub->publish(std::move(msg));
-  rclcpp::spin_some(smoother->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(smoother->hasCommandMsg());
   EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);

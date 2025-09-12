@@ -79,6 +79,7 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
 
   // Publishers
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr initial_pose_pub_;

@@ -47,9 +47,10 @@ TEST(TwistPublisher, Unstamped)
   auto my_sub = sub_node->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel",
     [&](const geometry_msgs::msg::Twist msg) {sub_msg = msg;});
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(sub_node->get_node_base_interface());
   vel_publisher->publish(std::move(pub_msg));
-  rclcpp::spin_some(sub_node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_EQ(pub_msg_copy.linear.x, sub_msg.linear.x);
   EXPECT_EQ(vel_publisher->get_subscription_count(), 1);
@@ -86,9 +87,10 @@ TEST(TwistPublisher, Stamped)
   auto my_sub = sub_node->create_subscription<geometry_msgs::msg::TwistStamped>(
     "cmd_vel",
     [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;});
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(sub_node->get_node_base_interface());
   vel_publisher->publish(std::move(pub_msg));
-  rclcpp::spin_some(sub_node->get_node_base_interface());
+  executor.spin_some();
   ASSERT_EQ(vel_publisher->get_subscription_count(), 1);
   EXPECT_EQ(pub_msg_copy, sub_msg);
   pub_node->deactivate();

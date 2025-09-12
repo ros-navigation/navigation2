@@ -205,6 +205,8 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
   auto costmapPublisher = std::make_shared<nav2_costmap_2d::Costmap2DPublisher>(
     node, costmapToSend.get(), "", topicName, always_send_full_costmap);
   costmapPublisher->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   for (const auto & mapChange : mapChanges) {
     for (const auto & observation : mapChange.observations) {
@@ -220,7 +222,7 @@ TEST_F(TestCostmapSubscriberShould, handleFullCostmapMsgs)
     expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     receivedCostmaps.emplace_back(getCurrentCharMapFromSubscriber());
   }
 
@@ -252,6 +254,9 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
   std::uint32_t yn = costmapToSend->getSizeInCellsY();
   bool first_iteration = true;
 
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
   for (const auto & mapChange : mapChanges) {
     for (const auto & observation : mapChange.observations) {
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
@@ -272,7 +277,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
     expectedGrids.emplace_back(grid);
     costmapPublisher->updateBounds(mapChange.x0, mapChange.xn, mapChange.y0, mapChange.yn);
     costmapPublisher->publishCostmap();
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     receivedCostmaps.emplace_back(getUpdatedCharMapFromSubscriber(x0, xn, y0, yn));
     first_iteration = false;
   }

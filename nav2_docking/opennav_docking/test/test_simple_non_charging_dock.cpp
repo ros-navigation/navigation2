@@ -84,6 +84,9 @@ TEST(SimpleNonChargingDockTests, StallDetection)
   EXPECT_EQ(dock->getStallJointNames(), names);
 
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
 
@@ -95,7 +98,7 @@ TEST(SimpleNonChargingDockTests, StallDetection)
   pub->publish(msg);
   rclcpp::Rate r(2);
   r.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -107,7 +110,7 @@ TEST(SimpleNonChargingDockTests, StallDetection)
   pub->publish(msg2);
   rclcpp::Rate r1(2);
   r1.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -119,7 +122,7 @@ TEST(SimpleNonChargingDockTests, StallDetection)
   pub->publish(msg3);
   rclcpp::Rate r2(2);
   r2.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(dock->isDocked());
 
@@ -190,6 +193,8 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
 
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped pose;
 
@@ -203,7 +208,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseTest)
   detected_pose.pose.position.x = 0.1;
   detected_pose.pose.position.y = -0.5;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   pose.header.frame_id = "my_frame";
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
@@ -230,6 +235,8 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -237,7 +244,7 @@ TEST(SimpleNonChargingDockTests, RefinedPoseNotTransform)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
@@ -267,6 +274,8 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -274,7 +283,7 @@ TEST(SimpleNonChargingDockTests, IsDockedTransformException)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;

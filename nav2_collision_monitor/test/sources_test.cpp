@@ -375,6 +375,7 @@ protected:
   void checkPolygon(const std::vector<nav2_collision_monitor::Point> & data);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   std::shared_ptr<ScanWrapper> scan_;
   std::shared_ptr<PointCloudWrapper> pointcloud_;
   std::shared_ptr<RangeWrapper> range_;
@@ -384,6 +385,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(test_node_->get_node_base_interface());
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
@@ -506,7 +509,7 @@ bool Tester::waitScan(const std::chrono::nanoseconds & timeout)
     if (scan_->dataReceived()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -519,7 +522,7 @@ bool Tester::waitPointCloud(const std::chrono::nanoseconds & timeout)
     if (pointcloud_->dataReceived()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -532,7 +535,7 @@ bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
     if (range_->dataReceived()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -545,7 +548,7 @@ bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
     if (polygon_->dataReceived()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;

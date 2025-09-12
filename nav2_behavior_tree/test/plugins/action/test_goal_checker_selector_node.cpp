@@ -31,6 +31,8 @@ public:
   static void SetUpTestCase()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("goal_checker_selector_test_fixture");
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_->get_node_base_interface());
 
     // Configure and activate the lifecycle node
     node_->configure();
@@ -67,6 +69,7 @@ public:
     config_ = nullptr;
     node_.reset();
     factory_.reset();
+    executor_.reset();
   }
 
   void TearDown() override
@@ -76,12 +79,15 @@ public:
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
+  static rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
 nav2::LifecycleNode::SharedPtr GoalCheckerSelectorTestFixture::node_ = nullptr;
+rclcpp::executors::SingleThreadedExecutor::SharedPtr GoalCheckerSelectorTestFixture::executor_ =
+  nullptr;
 
 BT::NodeConfiguration * GoalCheckerSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> GoalCheckerSelectorTestFixture::factory_ = nullptr;
@@ -127,7 +133,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
     tree_->rootNode()->executeTick();
     goal_checker_selector_pub->publish(selected_goal_checker_cmd);
 
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor_->spin_some();
   }
 
   // check goal_checker updated
@@ -175,7 +181,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
     tree_->rootNode()->executeTick();
     goal_checker_selector_pub->publish(selected_goal_checker_cmd);
 
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor_->spin_some();
   }
 
   // check goal_checker updated

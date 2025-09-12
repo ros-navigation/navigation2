@@ -61,19 +61,21 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
   auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
   auto pub = node->create_publisher<std_msgs::msg::Empty>("input_at_waypoint/input");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
   auto publish_message =
     [&]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<std_msgs::msg::Empty>();
       pub->publish(std::move(msg));
-      rclcpp::spin_some(node->shared_from_this()->get_node_base_interface());
+      executor.spin_some();
     };
 
   std::unique_ptr<nav2_waypoint_follower::InputAtWaypoint> iaw(
     new nav2_waypoint_follower::InputAtWaypoint
   );
   iaw->initialize(node, std::string("IAW"));
+  executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   auto start_time = node->now();
 
@@ -103,6 +105,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
   auto pub = node->create_publisher<sensor_msgs::msg::Image>("/camera/color/image_raw");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
   std::condition_variable cv;
   std::mutex mtx;
   std::unique_lock<std::mutex> lck(mtx, std::defer_lock);
@@ -124,7 +127,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
         msg->data.push_back(fake_data++);
       }
       pub->publish(std::move(msg));
-      rclcpp::spin_some(node->shared_from_this()->get_node_base_interface());
+      executor.spin_some();
       lck.lock();
       data_published = true;
       cv.notify_one();
@@ -135,6 +138,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
     new nav2_waypoint_follower::PhotoAtWaypoint
   );
   paw->initialize(node, std::string("PAW"));
+  executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   // no images, throws because can't write
   geometry_msgs::msg::PoseStamped pose;

@@ -83,6 +83,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
   );
 
   stamp_ = node_->now();
+  executor_.add_node(node_);
 }
 
 AssistedTeleopBehaviorTester::~AssistedTeleopBehaviorTester()
@@ -103,7 +104,7 @@ void AssistedTeleopBehaviorTester::activate()
     RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
     sendInitialPose();
     std::this_thread::sleep_for(100ms);
-    rclcpp::spin_some(node_);
+    executor_.spin_some();
   }
 
   // Wait for lifecycle_manager_navigation to activate behavior_server
@@ -146,7 +147,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
 
   auto goal_handle_future = client_ptr_->async_send_goal(nav2_msgs::action::AssistedTeleop::Goal());
 
-  if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
+  if (executor_.spin_until_future_complete(goal_handle_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "send goal call failed :(");
@@ -182,7 +183,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
       return false;
     }
 
-    rclcpp::spin_some(node_);
+    executor_.spin_some();
     r.sleep();
   }
 
@@ -190,7 +191,7 @@ bool AssistedTeleopBehaviorTester::defaultAssistedTeleopTest(
   preempt_pub_->publish(preempt_msg);
 
   RCLCPP_INFO(node_->get_logger(), "Waiting for result");
-  if (rclcpp::spin_until_future_complete(node_, result_future) !=
+  if (executor_.spin_until_future_complete(result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(node_->get_logger(), "get result call failed :(");

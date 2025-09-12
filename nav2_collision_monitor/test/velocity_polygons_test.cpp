@@ -92,20 +92,6 @@ public:
     polygon_received_ = msg;
   }
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
-    const std::chrono::nanoseconds & timeout)
-  {
-    rclcpp::Time start_time = this->now();
-    while (rclcpp::ok() && this->now() - start_time <= rclcpp::Duration(timeout)) {
-      if (polygon_received_) {
-        return polygon_received_;
-      }
-      rclcpp::spin_some(this->get_node_base_interface());
-      std::this_thread::sleep_for(10ms);
-    }
-    return nullptr;
-  }
-
 private:
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
@@ -167,6 +153,7 @@ protected:
     std::vector<nav2_collision_monitor::Point> & poly);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
@@ -177,6 +164,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(test_node_->get_node_base_interface());
   test_node_->configure();
   test_node_->activate();
 
@@ -382,7 +371,7 @@ bool Tester::waitPolygon(
     if (poly.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;

@@ -29,6 +29,8 @@ public:
   static void SetUpTestCase()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("test_is_battery_charging");
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_->get_node_base_interface());
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -58,10 +60,12 @@ public:
     battery_pub_.reset();
     node_.reset();
     factory_.reset();
+    executor_.reset();
   }
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
+  static rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static nav2::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
@@ -69,6 +73,8 @@ protected:
 };
 
 nav2::LifecycleNode::SharedPtr IsBatteryChargingConditionTestFixture::node_ = nullptr;
+rclcpp::executors::SingleThreadedExecutor::SharedPtr IsBatteryChargingConditionTestFixture::
+executor_ = nullptr;
 BT::NodeConfiguration * IsBatteryChargingConditionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> IsBatteryChargingConditionTestFixture::factory_ = nullptr;
 nav2::Publisher<sensor_msgs::msg::BatteryState>::SharedPtr
@@ -90,32 +96,32 @@ TEST_F(IsBatteryChargingConditionTestFixture, test_behavior_power_supply_status)
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_->get_node_base_interface());
+  executor_->spin_some();
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_->get_node_base_interface());
+  executor_->spin_some();
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_DISCHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_->get_node_base_interface());
+  executor_->spin_some();
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status =
     sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_->get_node_base_interface());
+  executor_->spin_some();
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 
   battery_msg.power_supply_status = sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_FULL;
   battery_pub_->publish(battery_msg);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  rclcpp::spin_some(node_->get_node_base_interface());
+  executor_->spin_some();
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 }
 

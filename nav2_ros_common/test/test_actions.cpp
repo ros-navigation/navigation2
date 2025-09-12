@@ -173,8 +173,10 @@ public:
   {
     auto node = std::make_shared<FibonacciServerNode>();
     node->on_init();
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node->get_node_base_interface());
     while (rclcpp::ok() && !stop_.load()) {
-      rclcpp::spin_some(node->get_node_base_interface());
+      executor.spin_some();
       std::this_thread::sleep_for(10ms);
     }
     node->on_term();

@@ -244,6 +244,7 @@ private:
   const double resolution_ = 1.0;
 
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::executors::SingleThreadedExecutor node_executor_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -255,6 +256,7 @@ private:
   std::shared_ptr<InfoPublisher> info_publisher_;
   std::shared_ptr<MaskPublisher> mask_publisher_;
   std::shared_ptr<SpeedLimitSubscriber> speed_limit_subscriber_;
+  rclcpp::executors::SingleThreadedExecutor speed_limit_subscriber_executor_;
 };
 
 void TestNode::createMaps(const std::string & mask_frame)
@@ -308,7 +310,7 @@ void TestNode::rePublishMask()
 nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::getSpeedLimit()
 {
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(speed_limit_subscriber_);
+  speed_limit_subscriber_executor_.spin_some();
   return speed_limit_subscriber_->getSpeedLimit();
 }
 
@@ -323,7 +325,7 @@ nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::waitSpeedLimit()
       speed_limit_subscriber_->resetSpeedLimitIndicator();
       return speed_limit_subscriber_->getSpeedLimit();
     }
-    rclcpp::spin_some(speed_limit_subscriber_);
+    speed_limit_subscriber_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return nullptr;
@@ -333,8 +335,8 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 {
   rclcpp::Time start_time = node_->now();
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node_->get_node_base_interface());
-    rclcpp::spin_some(speed_limit_subscriber_);
+    node_executor_.spin_some();
+    speed_limit_subscriber_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
@@ -366,6 +368,8 @@ bool TestNode::createSpeedFilter(const std::string & global_frame)
   speed_filter_->initializeFilter(INFO_TOPIC);
 
   speed_limit_subscriber_ = std::make_shared<SpeedLimitSubscriber>(SPEED_LIMIT_TOPIC);
+  speed_limit_subscriber_executor_.add_node(speed_limit_subscriber_);
+  node_executor_.add_node(node_->get_node_base_interface());
 
   // Wait until mask will be received by SpeedFilter
   const std::chrono::nanoseconds timeout = 500ms;
@@ -374,7 +378,7 @@ bool TestNode::createSpeedFilter(const std::string & global_frame)
     if (node_->now() - start_time > rclcpp::Duration(timeout)) {
       return false;
     }
-    rclcpp::spin_some(node_->get_node_base_interface());
+    node_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return true;

@@ -455,6 +455,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "--remap", "__node:=rviz_navigation_dialog_action_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(client_node_);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
     "lifecycle_manager_navigation", client_node_);
@@ -989,7 +991,7 @@ Nav2Panel::onCancelButtonPressed()
   if (navigation_goal_handle_) {
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -1002,7 +1004,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
@@ -1015,7 +1017,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel =
       nav_through_poses_action_client_->async_cancel_goal(nav_through_poses_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel nav through pose action");
@@ -1137,7 +1139,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = waypoint_follower_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1158,7 +1160,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = nav_through_poses_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1179,7 +1181,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = navigation_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1236,7 +1238,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -1288,7 +1290,7 @@ Nav2Panel::startNavThroughPoses(nav_msgs::msg::Goals poses)
 
   auto future_goal_handle =
     nav_through_poses_action_client_->async_send_goal(nav_through_poses_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -1334,7 +1336,7 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");

@@ -35,9 +35,11 @@ using namespace std::chrono_literals;  // NOLINT
 template<typename TNode>
 void waitSome(const std::chrono::nanoseconds & duration, TNode & node)
 {
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   rclcpp::Time start_time = node->now();
   while (rclcpp::ok() && node->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(3ms);
   }
 }

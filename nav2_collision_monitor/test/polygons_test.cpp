@@ -162,18 +162,9 @@ public:
     polygon_received_ = msg;
   }
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
-    const std::chrono::nanoseconds & timeout)
+  geometry_msgs::msg::PolygonStamped::SharedPtr getPolygonReceived()
   {
-    rclcpp::Time start_time = this->now();
-    while (rclcpp::ok() && this->now() - start_time <= rclcpp::Duration(timeout)) {
-      if (polygon_received_) {
-        return polygon_received_;
-      }
-      rclcpp::spin_some(this->get_node_base_interface());
-      std::this_thread::sleep_for(10ms);
-    }
-    return nullptr;
+    return polygon_received_;
   }
 
 private:
@@ -265,6 +256,9 @@ protected:
     const std::chrono::nanoseconds & timeout,
     std::vector<nav2_collision_monitor::Point> & poly);
 
+  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
+    const std::chrono::nanoseconds & timeout);
+
   // Wait until circle polygon radius will be received
   bool waitRadius(const std::chrono::nanoseconds & timeout);
 
@@ -274,6 +268,7 @@ protected:
     std::vector<nav2_collision_monitor::Point> & footprint);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -285,6 +280,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(test_node_->get_node_base_interface());
   test_node_->configure();
   test_node_->activate();
 
@@ -471,6 +468,21 @@ void Tester::sendTransforms(double shift)
   tf_broadcaster->sendTransform(transform);
 }
 
+geometry_msgs::msg::PolygonStamped::SharedPtr Tester::waitPolygonReceived(
+  const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+    auto polygon = test_node_->getPolygonReceived();
+    if (polygon) {
+      return polygon;
+    }
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return nullptr;
+}
+
 bool Tester::waitPolygon(
   const std::chrono::nanoseconds & timeout,
   std::vector<nav2_collision_monitor::Point> & poly)
@@ -481,7 +493,7 @@ bool Tester::waitPolygon(
     if (poly.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -494,7 +506,7 @@ bool Tester::waitRadius(const std::chrono::nanoseconds & timeout)
     if (circle_->isShapeSet()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -512,7 +524,7 @@ bool Tester::waitFootprint(
     if (footprint.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -956,8 +968,7 @@ TEST_F(Tester, testPolygonPublish)
 {
   createPolygon("stop", true);
   polygon_->publish();
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received =
-    test_node_->waitPolygonReceived(500ms);
+  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received = waitPolygonReceived(500ms);
 
   ASSERT_NE(polygon_received, nullptr);
   ASSERT_EQ(polygon_received->polygon.points.size(), 4u);
@@ -996,7 +1007,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   polygon_->publish();
 
   // Wait for polygon: it should not be published
-  ASSERT_EQ(test_node_->waitPolygonReceived(100ms), nullptr);
+  ASSERT_EQ(waitPolygonReceived(100ms), nullptr);
 }
 
 TEST_F(Tester, testPolygonInvalidPointsString)

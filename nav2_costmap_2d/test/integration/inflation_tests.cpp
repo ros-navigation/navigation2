@@ -102,8 +102,10 @@ std::vector<Point> TestNode::setRadii(
 
 void TestNode::waitForMap(std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer)
 {
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
   while (!slayer->isCurrent()) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor.spin_some();
   }
 }
 
