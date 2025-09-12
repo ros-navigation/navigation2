@@ -150,6 +150,7 @@ protected:
 
   // Vector Object server node
   std::shared_ptr<VOServerWrapper> vo_server_;
+  rclcpp::executors::SingleThreadedExecutor executor_;
 };  // Tester
 
 Tester::Tester()
@@ -174,6 +175,7 @@ Tester::Tester()
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(vo_server_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  executor_.add_node(vo_server_->get_node_base_interface());
 }
 
 Tester::~Tester()
@@ -406,7 +408,7 @@ typename T::Response::SharedPtr Tester::sendRequest(
     if (status == std::future_status::ready) {
       return result_future.get();
     }
-    rclcpp::spin_some(vo_server_->get_node_base_interface());
+    executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return nullptr;
@@ -424,7 +426,7 @@ bool Tester::waitMap(const std::chrono::nanoseconds & timeout)
     if (map_) {
       return true;
     }
-    rclcpp::spin_some(vo_server_->get_node_base_interface());
+    executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
