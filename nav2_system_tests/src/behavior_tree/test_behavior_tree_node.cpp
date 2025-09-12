@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 #include "tinyxml2.h" //NOLINT
 
 #include "gtest/gtest.h"
@@ -106,18 +107,32 @@ public:
     const std::vector<std::string> & search_directories)
   {
     namespace fs = std::filesystem;
-    auto bt_id = bt_engine_->extractBehaviorTreeID(file_or_id);
-    if (bt_id.empty()) {
-      RCLCPP_ERROR(node_->get_logger(),
-        "Failed to extract BehaviorTree ID from: %s", file_or_id.c_str());
-      return false;
+    bool is_bt_id = false;
+    if ((file_or_id.length() < 4) ||
+      file_or_id.substr(file_or_id.length() - 4) != ".xml")
+    {
+      is_bt_id = true;
     }
-
     // Register all XML behavior subtrees in the directories
+    std::unordered_set<std::string> used_bt_id;
     for (const auto & directory : search_directories) {
       try {
         for (const auto & entry : fs::directory_iterator(directory)) {
           if (entry.path().extension() == ".xml") {
+            auto current_bt_id = bt_engine_->extractBehaviorTreeID(entry.path().string());
+            if (current_bt_id.empty()) {
+              RCLCPP_ERROR(node_->get_logger(), "Skipping BT file %s (missing ID)",
+                entry.path().string().c_str());
+              continue;
+            }
+            auto [it, inserted] = used_bt_id.insert(current_bt_id);
+            if (!inserted) {
+              RCLCPP_WARN(
+                node_->get_logger(),
+                "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
+                "ID: %s File: %s",
+                current_bt_id.c_str(), entry.path().string().c_str());
+            }
             factory_.registerBehaviorTreeFromFile(entry.path().string());
           }
         }
@@ -133,11 +148,16 @@ public:
 
     // Build the tree from the ID (resolved from <root> or <BehaviorTree ID>)
     try {
-      tree = factory_.createTree(bt_id, blackboard);
+      if(!is_bt_id) {
+        tree = factory_.createTreeFromFile(file_or_id, blackboard);
+        RCLCPP_WARN(node_->get_logger(),
+          "Loading BT using file path. This is deprecated. Please use the BT ID instead.");
+      } else {
+        tree = factory_.createTree(file_or_id, blackboard);
+      }
     } catch (BT::RuntimeError & exp) {
       RCLCPP_ERROR(node_->get_logger(),
-        "Failed to create BT [%s] from %s: %s",
-        bt_id.c_str(), file_or_id.c_str(), exp.what());
+        "Failed to create BT %s: %s", file_or_id.c_str(), exp.what());
       return false;
     }
 
@@ -229,7 +249,6 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
   for (auto const & entry : std::filesystem::recursive_directory_iterator(root_dir)) {
     if (entry.is_regular_file() && entry.path().extension() == ".xml") {
       std::string main_bt = entry.path().string();
-      std::cout << "Testing BT file: " << main_bt << std::endl;
 
       EXPECT_TRUE(bt_handler->loadBehaviorTree(main_bt, search_directories))
         << "Failed to load: " << main_bt;
@@ -292,7 +311,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
       ofs << content;
     };
 
-  // 1. Empty string input → triggers "Empty filename/BT_ID" branch
+  // 1. Empty string input triggers "Empty file branch
   auto empty_id = bt_handler->extractBehaviorTreeID("");
   EXPECT_TRUE(empty_id.empty());
 
@@ -308,11 +327,6 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   auto id = bt_handler->extractBehaviorTreeID(valid_xml);
   EXPECT_FALSE(id.empty());
   EXPECT_EQ(id, "TestTree");
-
-  // 2. Not an XML file, just an ID string
-  auto direct_id = bt_handler->extractBehaviorTreeID("SomeTreeID");
-  EXPECT_FALSE(direct_id.empty());
-  EXPECT_EQ(direct_id, "SomeTreeID");
 
   // 3. Malformed XML (parser error)
   std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
@@ -362,6 +376,17 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   std::remove(no_id_attr.c_str());
 }
 
+TEST_F(BehaviorTreeTestFixture, TestLoadByIdInsteadOfFile)
+{
+  const auto root_dir = std::filesystem::path(
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    ) / "behavior_trees";
+  std::vector<std::string> search_directories = {root_dir.string()};
+
+  // Load by BT ID instead of file
+  EXPECT_TRUE(bt_handler->loadBehaviorTree("NavigateToPoseWReplanningAndRecovery",
+      search_directories));
+}
 
 /**
  * Test scenario:
