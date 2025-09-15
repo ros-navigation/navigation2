@@ -12,6 +12,8 @@
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
+  <depend>benchmark</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
