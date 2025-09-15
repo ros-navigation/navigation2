@@ -50,7 +50,7 @@ void pluginLoader(
     return;
   }
   auto parameters = parameter_client->get_parameters({plugin_type});
-  if(executor) {
+  if (executor) {
     if (executor->spin_until_future_complete(parameters) != rclcpp::FutureReturnCode::SUCCESS) {
       return;
     }
