@@ -28,6 +28,7 @@ import launch_testing.actions
 import launch_testing.asserts
 import launch_testing.markers
 import launch_testing.util
+from lifecycle_msgs.srv import GetState
 from nav2_common.launch import RewrittenYaml
 from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
 from nav_msgs.msg import Odometry
@@ -36,6 +37,7 @@ import rclpy
 from rclpy.action.client import ActionClient
 from rclpy.action.server import ActionServer, ServerGoalHandle
 from sensor_msgs.msg import BatteryState
+import tf2_ros
 from tf2_ros import TransformBroadcaster
 
 # This test can be run standalone with:
@@ -127,7 +129,27 @@ class TestDockingServer(unittest.TestCase):
         self.command = Twist()
         self.node = rclpy.create_node('test_docking_server')
         # Publish odometry
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
         self.odom_pub = self.node.create_publisher(Odometry, 'odom', 10)
+
+    def wait_for_node_to_be_active(self, node_name, timeout_sec=10.0):
+        """Wait for a managed node to become active."""
+        client = self.node.create_client(GetState, f'{node_name}/get_state')
+        if not client.wait_for_service(timeout_sec=2.0):
+            self.fail(f'Service get_state for {node_name} not available.')
+
+        start_time = time.time()
+        while time.time() - start_time < timeout_sec:
+            req = GetState.Request()
+            future = client.call_async(req)
+            rclpy.spin_until_future_complete(self.node, future, timeout_sec=1.0)
+            if future.result() and future.result().current_state.id == 3:  # 3 = ACTIVE
+                self.node.get_logger().info(f'Node {node_name} is active.')
+                return
+            time.sleep(0.5)
+        # raises AssertionError
+        self.fail(f'Node {node_name} did not become active within {timeout_sec} seconds.')
 
     def tearDown(self) -> None:
         self.node.destroy_node()
@@ -206,6 +228,7 @@ class TestDockingServer(unittest.TestCase):
     def test_docking_server(self) -> None:
         # Publish TF for odometry
         self.tf_broadcaster = TransformBroadcaster(self.node)
+        time.sleep(0.5)
 
         # Create a timer to run "control loop" at 20hz
         self.timer = self.node.create_timer(0.05, self.timer_callback)
@@ -245,10 +268,19 @@ class TestDockingServer(unittest.TestCase):
         # Publish transform
         self.publish()
 
-        # Run for 1 seconds to allow tf to propagate
-        for _ in range(10):
+        # Wait until the transform is available.
+        self.node.get_logger().info('Waiting for TF odom->base_link to be available...')
+        start_time = time.time()
+        timeout = 10.0
+        while not self.tf_buffer.can_transform('odom', 'base_link', rclpy.time.Time()):
+            if time.time() - start_time > timeout:
+                self.fail('TF transform odom->base_link not available after 10s')
             rclpy.spin_once(self.node, timeout_sec=0.1)
             time.sleep(0.1)
+        self.node.get_logger().info('TF is ready, proceeding with test.')
+
+        # Wait until the docking server is active.
+        self.wait_for_node_to_be_active('docking_server')
 
         # Test docking action
         self.action_result = []

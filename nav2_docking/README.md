@@ -36,12 +36,14 @@ The `ChargingDock` and `NonChargingDock` plugins are the heart of the customizab
 The docking procedure is as follows:
 1. Take action request and obtain the dock's plugin and its pose
 2. If the robot is not within the prestaging tolerance of the dock's staging pose, navigate to the staging pose
-3. Use the dock's plugin to initially detect the dock and return the docking pose
-4. Enter a vision-control loop where the robot attempts to reach the docking pose while its actively being refined by the vision system
-5. Exit the vision-control loop once contact has been detected or charging has started
-6. Wait until charging starts (if applicable) and return success.
+3. Call the dock's plugin `startDetectionProcess()` method to activate any external detection mechanisms.
+4. Use the dock's plugin to initially detect the dock (`getRefinedPose`) and return the docking pose.
+5. Enter a vision-control loop where the robot attempts to reach the docking pose while it's actively being refined by the vision system.
+6. Exit the vision-control loop once contact has been detected or charging has started (if applicable).
+7. Wait until charging starts (if applicable) and return success.
+8. Call the dock's plugin `stopDetectionProcess()` method to deactivate any external detection mechanisms.
 
-If anywhere this procedure is unsuccessful, `N` retries may be made by driving back to the dock's staging pose and trying again. If still unsuccessful, it will return a failure code to indicate what kind of failure occurred to the client.
+If anywhere this procedure is unsuccessful (before step 8), `N` retries may be made, driving back to the dock's staging pose, and then restarting the process from step 3. If still unsuccessful after retries, it will return a failure code to indicate what kind of failure occurred to the client.
 
 Undocking works more simply:
 1. If previously docked, use the known dock information to get the dock type. If not, use the undock action request's indicated dock type
@@ -175,8 +177,9 @@ some robots.
 `getStagingPose` applies a parameterized translational and rotational offset to the dock pose to obtain the staging pose.
 
 `getRefinedPose` can be used in two ways.
-1. A blind approach where the returned dock pose will simply be equal to whatever was passed in from the dock database. This may work with a reduced success rate on a real robot (due to global localization error), but is useful for initial testing and simulation.
+1. A blind approach where the returned dock pose will simply be equal to whatever was passed in from the dock database. This may work with a reduced success rate on a real robot (due to global localization error), but is useful for initial testing and simulation. The `start/stopDetectionProcess` methods would typically do nothing in this case.
 2. The more realistic use case is to use an AR marker, dock pose detection algorithm, etc. The plugin will subscribe to a `geometry_msgs/PoseStamped` topic `detected_dock_pose`. This can be used with the `image_proc/TrackMarkerNode` for Apriltags or other custom detectors for your dock. It is unlikely the detected pose is actually the pose you want to dock with, so several parameters are supplied to represent your docked pose relative to the detected feature's pose.
+The subscription to `detected_dock_pose` can be managed dynamically (see `subscribe_toggle` parameter). Additionally, an external detector process can be triggered via a service call (see `detector_service_name`). The `DockingServer` calls `startDetectionProcess()` before `getRefinedPose` (which is called in a loop) and `stopDetectionProcess()` after the docking action concludes (successfully or not). This allows plugins to manage resources like GPU usage by only running detection when needed.
 
 During the docking approach, there are two options for detecting `isDocked`:
 1. We can check the joint states of the wheels if the current has spiked above a set threshold to indicate that the robot has made contact with the dock or other physical object.
@@ -257,6 +260,9 @@ Note: `dock_plugins` and either `docks` or `dock_database` are required.
 | staging_yaw_offset        | Staging pose angle relative to dock pose (rad)    | double |  0.0    |
 | dock_direction        | Whether the robot is docking with the dock forward or backward in motion | string |  "forward"  or "backward"    |
 | rotate_to_dock        | Enables backward docking without requiring a sensor for detection during the final approach. When enabled, the robot approaches the staging pose facing forward with sensor coverage for dock detection; after detection, it rotates and backs into the dock using only the initially detected pose for dead reckoning. | bool |  false      |
+| detector_service_name      | Trigger service name to start/stop the detector (e.g., a camera node or an AprilTag detector node). Leave empty to disable service calls. | string | ""    |
+| detector_service_timeout   | Timeout (seconds) to wait for the detector service (if `detector_service_name` is set) to become available or respond. | double | 5.0   |
+| subscribe_toggle           | If true, dynamically subscribe/unsubscribe to `detected_dock_pose` topic when `start/stopDetectionProcess` are called. If false, the subscription is kept alive throughout the plugin's lifecycle if `use_external_detection_pose` is true. This can be useful if the detector node is always running and publishing. | bool   | false  |
 
 Note: The external detection rotation angles are setup to work out of the box with Apriltags detectors in `image_proc` and `isaac_ros`.
 
