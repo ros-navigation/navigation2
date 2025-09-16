@@ -149,7 +149,7 @@ protected:
   nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr detector_client_;
 
   // Detection state flags
-  bool detection_started_{false};
+  bool detection_active_{false};
   bool initial_pose_received_{false};
 };
 

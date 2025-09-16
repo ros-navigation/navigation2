@@ -121,7 +121,7 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".subscribe_toggle", subscribe_toggle_);
 
   // Initialize detection state
-  detection_started_ = false;
+  detection_active_ = false;
   initial_pose_received_ = false;
 
   // Create persistent subscription if toggling is disabled.
@@ -358,8 +358,8 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
 
 bool SimpleChargingDock::startDetectionProcess()
 {
-  // Skip if already starting or ON
-  if (detection_started_) {
+  // Skip if already active
+  if (detection_active_) {
     return true;
   }
 
@@ -398,7 +398,7 @@ bool SimpleChargingDock::startDetectionProcess()
       nav2::qos::StandardTopicQoS());
   }
 
-  detection_started_ = true;
+  detection_active_ = true;
   RCLCPP_INFO(node_->get_logger(), "External detector activation requested.");
   return true;
 }
@@ -406,7 +406,7 @@ bool SimpleChargingDock::startDetectionProcess()
 bool SimpleChargingDock::stopDetectionProcess()
 {
   // Skip if already OFF
-  if (!detection_started_) {
+  if (!detection_active_) {
     return true;
   }
 
@@ -439,7 +439,7 @@ bool SimpleChargingDock::stopDetectionProcess()
     dock_pose_sub_.reset();
   }
 
-  detection_started_ = false;
+  detection_active_ = false;
   initial_pose_received_ = false;
   RCLCPP_INFO(node_->get_logger(), "External detector deactivation requested.");
   return true;
