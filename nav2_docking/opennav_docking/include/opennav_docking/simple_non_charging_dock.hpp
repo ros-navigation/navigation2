@@ -151,7 +151,6 @@ protected:
   // Detection state flags
   bool detection_started_{false};
   bool initial_pose_received_{false};
-
 };
 
 }  // namespace opennav_docking
