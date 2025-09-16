@@ -445,11 +445,19 @@ bool SimpleChargingDock::stopDetectionProcess()
   return true;
 }
 
-void SimpleChargingDock::activate() {}
+void SimpleChargingDock::activate()
+{
+  dock_pose_pub_->on_activate();
+  filtered_dock_pose_pub_->on_activate();
+  staging_pose_pub_->on_activate();
+}
 
 void SimpleChargingDock::deactivate()
 {
   stopDetectionProcess();
+  dock_pose_pub_->on_deactivate();
+  filtered_dock_pose_pub_->on_deactivate();
+  staging_pose_pub_->on_deactivate();
   RCLCPP_DEBUG(node_->get_logger(), "SimpleChargingDock deactivated");
 }
 
