@@ -167,7 +167,6 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf2_buffer_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
-  dock_db_->deactivate();
   dock_db_.reset();
   navigator_.reset();
   curr_dock_type_.clear();
