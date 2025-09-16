@@ -127,7 +127,7 @@ void SimpleChargingDock::configure(
   // Create persistent subscription if toggling is disabled.
   if (use_external_detection_pose_ && !subscribe_toggle_) {
     dock_pose_.header.stamp = rclcpp::Time(0);
-    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+    dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       "detected_dock_pose",
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
@@ -388,8 +388,8 @@ bool SimpleChargingDock::startDetectionProcess()
 
   // 2. Subscription toggle
   //    Only subscribe once; will set state to ON on first message
-  if (subscribe_toggle_ && !detected_pose_sub_) {
-    detected_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+  if (subscribe_toggle_ && !dock_pose_sub_) {
+    dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       "detected_dock_pose",
       [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
         detected_dock_pose_ = *pose;
@@ -435,8 +435,8 @@ bool SimpleChargingDock::stopDetectionProcess()
 
   // 2. Unsubscribe to release resources
   //    reset() will tear down the topic subscription immediately
-  if (subscribe_toggle_ && detected_pose_sub_) {
-    detected_pose_sub_.reset();
+  if (subscribe_toggle_ && dock_pose_sub_) {
+    dock_pose_sub_.reset();
   }
 
   detection_started_ = false;
@@ -464,7 +464,7 @@ void SimpleChargingDock::deactivate()
 void SimpleChargingDock::cleanup()
 {
   detector_client_.reset();
-  detected_pose_sub_.reset();
+  dock_pose_sub_.reset();
   RCLCPP_DEBUG(node_->get_logger(), "SimpleChargingDock cleaned up");
 }
 

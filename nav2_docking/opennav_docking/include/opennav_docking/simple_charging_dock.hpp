@@ -170,9 +170,6 @@ protected:
   // Client used to call the Trigger service
   nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr detector_client_;
 
-  // Dynamic subscription pointer (can be reset to release CPU/GPU)
-  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr detected_pose_sub_;
-
   // Detection state flags
   bool detection_started_{false};
   bool initial_pose_received_{false};
