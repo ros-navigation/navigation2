@@ -62,9 +62,7 @@ void PathAngleCritic::score(CriticData & data)
     return;
   }
 
-  if (utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
-  {
+  if (utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path)) {
     return;
   }
 
