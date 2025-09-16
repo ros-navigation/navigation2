@@ -36,13 +36,15 @@ void GoalCritic::initialize()
 void GoalCritic::score(CriticData & data)
 {
   if (!enabled_ || !utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, data.goal))
+      threshold_to_consider_, data.state.pose.pose, data.path))
   {
     return;
   }
 
-  const auto & goal_x = data.goal.position.x;
-  const auto & goal_y = data.goal.position.y;
+  const auto goal_idx = data.path.x.shape(0) - 1;
+
+  const auto goal_x = data.path.x(goal_idx);
+  const auto goal_y = data.path.y(goal_idx);
 
   const auto traj_x = xt::view(data.trajectories.x, xt::all(), xt::all());
   const auto traj_y = xt::view(data.trajectories.y, xt::all(), xt::all());
