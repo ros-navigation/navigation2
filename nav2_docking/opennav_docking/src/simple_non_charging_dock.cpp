@@ -365,7 +365,7 @@ bool SimpleNonChargingDock::startDetectionProcess()
   }
 
   detection_started_ = true;
-  RCLCPP_INFO(node_->get_logger(), "Detector START requested.");
+  RCLCPP_INFO(node_->get_logger(), "External detector activation requested.");
   return true;
 }
 
@@ -407,7 +407,7 @@ bool SimpleNonChargingDock::stopDetectionProcess()
 
   detection_started_ = false;
   initial_pose_received_ = false;
-  RCLCPP_INFO(node_->get_logger(), "Detector STOP requested");
+  RCLCPP_INFO(node_->get_logger(), "External detector deactivation requested.");
   return true;
 }
 
