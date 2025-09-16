@@ -357,7 +357,7 @@ void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::
   is_stalled_ = (velocity < stall_velocity_threshold_) && (effort > stall_effort_threshold_);
 }
 
-bool SimpleChargingDock::startDetection()
+bool SimpleChargingDock::startDetectionProcess()
 {
   // Skip if already starting or ON
   if (detection_started_) {
@@ -404,7 +404,7 @@ bool SimpleChargingDock::startDetection()
   return true;
 }
 
-bool SimpleChargingDock::stopDetection()
+bool SimpleChargingDock::stopDetectionProcess()
 {
   // Skip if already OFF
   if (!detection_started_) {

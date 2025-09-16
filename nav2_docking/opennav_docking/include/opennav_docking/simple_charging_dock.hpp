@@ -108,12 +108,12 @@ public:
   /**
    * @brief Start external detection process (service call + subscribe).
    */
-  bool startDetectionProcess() override {return startDetection();}
+  bool startDetectionProcess() override;
 
   /**
    * @brief Stop external detection process.
    */
-  bool stopDetectionProcess() override {return stopDetection();}
+  bool stopDetectionProcess() override;
 
 protected:
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
@@ -177,11 +177,6 @@ protected:
   bool detection_started_{false};
   bool initial_pose_received_{false};
 
-  // Internally enable detector (service + subscribe)
-  bool startDetection();
-
-  // Internally disable detector (service + unsubscribe)
-  bool stopDetection();
 };
 
 }  // namespace opennav_docking
