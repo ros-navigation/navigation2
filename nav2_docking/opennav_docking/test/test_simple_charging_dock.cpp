@@ -71,6 +71,9 @@ TEST(SimpleChargingDockTests, BatteryState)
 
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
 
@@ -80,7 +83,7 @@ TEST(SimpleChargingDockTests, BatteryState)
   pub->publish(msg);
   rclcpp::Rate r(2);
   r.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isCharging());
   EXPECT_TRUE(dock->hasStoppedCharging());
@@ -91,7 +94,7 @@ TEST(SimpleChargingDockTests, BatteryState)
   pub->publish(msg2);
   rclcpp::Rate r1(2);
   r1.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(dock->isCharging());
   EXPECT_FALSE(dock->hasStoppedCharging());
@@ -124,6 +127,9 @@ TEST(SimpleChargingDockTests, StallDetection)
     rclcpp::Parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names)));
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+
   EXPECT_EQ(dock->getStallJointNames(), names);
 
   // Stopped, but below effort threshold
@@ -134,7 +140,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg);
   rclcpp::Rate r(2);
   r.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -146,7 +152,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg2);
   rclcpp::Rate r1(2);
   r1.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -158,7 +164,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg3);
   rclcpp::Rate r2(2);
   r2.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(dock->isDocked());
 
@@ -229,6 +235,8 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
 
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped pose;
 
@@ -242,7 +250,7 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   detected_pose.pose.position.x = 0.1;
   detected_pose.pose.position.y = -0.5;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   pose.header.frame_id = "my_frame";
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
@@ -269,6 +277,8 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -276,7 +286,7 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
@@ -306,6 +316,8 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -313,7 +325,7 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
