@@ -465,6 +465,8 @@ void SimpleChargingDock::cleanup()
 {
   detector_client_.reset();
   dock_pose_sub_.reset();
+  detection_active_ = false;
+  initial_pose_received_ = false;
   RCLCPP_DEBUG(node_->get_logger(), "SimpleChargingDock cleaned up");
 }
 
