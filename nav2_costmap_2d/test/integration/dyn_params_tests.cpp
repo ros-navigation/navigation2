@@ -32,6 +32,10 @@ TEST(DynParamTestNode, testDynParamsSet)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("dyn_param_tester");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  rclcpp::executors::SingleThreadedExecutor node_executor;
+  node_executor.add_node(node->get_node_base_interface());
+  rclcpp::executors::SingleThreadedExecutor costmap_executor;
+  costmap_executor.add_node(costmap->get_node_base_interface());
   costmap->on_configure(rclcpp_lifecycle::State());
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
@@ -76,8 +80,8 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
   });
 
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
-  rclcpp::spin_all(costmap->get_node_base_interface(), std::chrono::milliseconds(50));
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
 
   EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
   EXPECT_EQ(costmap->get_parameter("footprint_padding").as_double(), 2.345);

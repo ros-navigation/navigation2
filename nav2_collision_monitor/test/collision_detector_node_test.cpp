@@ -155,6 +155,7 @@ public:
 protected:
   // CollisionDetector node
   std::shared_ptr<CollisionDetectorWrapper> cd_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   // Data source publishers
   nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr
@@ -178,6 +179,8 @@ protected:
 Tester::Tester()
 {
   cd_ = std::make_shared<CollisionDetectorWrapper>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(cd_->get_node_base_interface());
 
   scan_pub_ = cd_->create_publisher<sensor_msgs::msg::LaserScan>(
     SCAN_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
@@ -213,6 +216,7 @@ Tester::~Tester()
   collision_points_marker_sub_.reset();
 
   cd_.reset();
+  executor_.reset();
 }
 
 bool Tester::waitState(const std::chrono::nanoseconds & timeout)
@@ -222,7 +226,7 @@ bool Tester::waitState(const std::chrono::nanoseconds & timeout)
     if (state_msg_) {
       return true;
     }
-    rclcpp::spin_some(cd_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -236,7 +240,7 @@ bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
     if (collision_points_marker_msg_) {
       return true;
     }
-    rclcpp::spin_some(cd_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -544,7 +548,7 @@ bool Tester::waitData(
     if (cd_->correctDataReceived(expected_dist, stamp)) {
       return true;
     }
-    rclcpp::spin_some(cd_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;

@@ -251,6 +251,7 @@ private:
   const double resolution_ = 1.0;
 
   nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::executors::SingleThreadedExecutor node_executor_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -262,6 +263,7 @@ private:
   std::shared_ptr<InfoPublisher> info_publisher_;
   std::shared_ptr<MaskPublisher> mask_publisher_;
   std::shared_ptr<BinaryStateSubscriber> binary_state_subscriber_;
+  rclcpp::executors::SingleThreadedExecutor binary_state_subscriber_executor_;
 };
 
 void TestNode::createMaps(const std::string & mask_frame)
@@ -318,8 +320,8 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 {
   rclcpp::Time start_time = node_->now();
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node_->get_node_base_interface());
-    rclcpp::spin_some(binary_state_subscriber_);
+    node_executor_.spin_some();
+    binary_state_subscriber_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
@@ -327,7 +329,7 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 std_msgs::msg::Bool::SharedPtr TestNode::getBinaryState()
 {
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(binary_state_subscriber_);
+  binary_state_subscriber_executor_.spin_some();
   return binary_state_subscriber_->getBinaryState();
 }
 
@@ -342,7 +344,7 @@ std_msgs::msg::Bool::SharedPtr TestNode::waitBinaryState()
       binary_state_subscriber_->resetBinaryStateIndicator();
       return binary_state_subscriber_->getBinaryState();
     }
-    rclcpp::spin_some(binary_state_subscriber_);
+    binary_state_subscriber_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return nullptr;
@@ -389,6 +391,8 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
 
   binary_state_subscriber_ =
     std::make_shared<BinaryStateSubscriber>(BINARY_STATE_TOPIC, default_state_);
+  binary_state_subscriber_executor_.add_node(binary_state_subscriber_);
+  node_executor_.add_node(node_->get_node_base_interface());
 
   // Wait until mask will be received by BinaryFilter
   const std::chrono::nanoseconds timeout = 500ms;
@@ -397,7 +401,7 @@ bool TestNode::createBinaryFilter(const std::string & global_frame, double flip_
     if (node_->now() - start_time > rclcpp::Duration(timeout)) {
       return false;
     }
-    rclcpp::spin_some(node_->get_node_base_interface());
+    node_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return true;
