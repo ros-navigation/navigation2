@@ -116,7 +116,6 @@ void SimpleChargingDock::configure(
   node_->get_parameter(name + ".staging_x_offset", staging_x_offset_);
   node_->get_parameter(name + ".staging_yaw_offset", staging_yaw_offset_);
 
-  // Reader parameters to control external detector service and subscription
   node_->get_parameter(name + ".detector_service_name", detector_service_name_);
   node_->get_parameter(name + ".detector_service_timeout", detector_service_timeout_);
   node_->get_parameter(name + ".subscribe_toggle", subscribe_toggle_);
