@@ -43,6 +43,7 @@
 #include <vector>
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav2_util/raytrace_line_2d.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -462,14 +463,15 @@ void Costmap2D::polygonOutlineCells(
 {
   PolygonOutlineCells cell_gatherer(*this, costmap_, polygon_cells);
   for (unsigned int i = 0; i < polygon.size() - 1; ++i) {
-    raytraceLine(cell_gatherer, polygon[i].x, polygon[i].y, polygon[i + 1].x, polygon[i + 1].y);
+    nav2_util::raytraceLine(
+      cell_gatherer, polygon[i].x, polygon[i].y, polygon[i + 1].x, polygon[i + 1].y, size_x_);
   }
   if (!polygon.empty()) {
     unsigned int last_index = polygon.size() - 1;
     // we also need to close the polygon by going from the last point to the first
-    raytraceLine(
+    nav2_util::raytraceLine(
       cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x,
-      polygon[0].y);
+      polygon[0].y, size_x_);
   }
 }
 

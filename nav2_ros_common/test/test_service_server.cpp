@@ -51,7 +51,6 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
   for (const auto & mode : introspection_modes) {
     int a = 0;
     auto node = rclcpp::Node::make_shared("test_node_" + mode);
-
     node->declare_parameter("introspection_mode", mode);
 
     auto callback = [&a](const std::shared_ptr<rmw_request_id_t>,
@@ -64,13 +63,17 @@ TEST(ServiceServer, can_handle_all_introspection_modes)
 
     auto client_node = rclcpp::Node::make_shared("client_node_" + mode);
     auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_" + mode);
+    rclcpp::executors::SingleThreadedExecutor node_executor;
+    node_executor.add_node(node);
+    rclcpp::executors::SingleThreadedExecutor client_node_executor;
+    client_node_executor.add_node(client_node);
 
     ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(1)));
 
     auto req = std::make_shared<std_srvs::srv::Empty::Request>();
     auto result = client->async_send_request(req);
-    rclcpp::spin_some(node);
-    rclcpp::spin_some(client_node);
+    node_executor.spin_some();
+    client_node_executor.spin_some();
     ASSERT_EQ(a, 1);
   }
 }

@@ -214,13 +214,13 @@ public:
       getName(),
       plugin_lib_names,
       default_bt_xml_filename,
-      search_directories,
       std::bind(&BehaviorTreeNavigator::onGoalReceived, this, std::placeholders::_1),
       std::bind(&BehaviorTreeNavigator::onLoop, this),
       std::bind(&BehaviorTreeNavigator::onPreempt, this, std::placeholders::_1),
       std::bind(
         &BehaviorTreeNavigator::onCompletion, this,
-        std::placeholders::_1, std::placeholders::_2));
+        std::placeholders::_1, std::placeholders::_2),
+      search_directories);
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {

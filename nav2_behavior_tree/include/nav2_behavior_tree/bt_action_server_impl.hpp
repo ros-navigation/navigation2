@@ -39,11 +39,11 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   const std::string & action_name,
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
-  const std::vector<std::string> & search_directories,
   OnGoalReceivedCallback on_goal_received_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
-  OnCompletionCallback on_completion_callback)
+  OnCompletionCallback on_completion_callback,
+  const std::vector<std::string> & search_directories)
 : action_name_(action_name),
   default_bt_xml_filename_(default_bt_xml_filename),
   search_directories_(search_directories),

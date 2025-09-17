@@ -22,14 +22,14 @@ namespace nav2_rviz_plugins
 
 void pluginLoader(
   rclcpp::Node::SharedPtr node, bool & server_failed, const std::string & server_name,
-  const std::string & plugin_type, QComboBox * combo_box)
+  const std::string & plugin_type, QComboBox * combo_box, rclcpp::Executor::SharedPtr executor)
 {
   // Do not load the plugins if the combo box is already populated
   if (combo_box->count() > 0) {
     return;
   }
 
-  auto parameter_client = std::make_shared<rclcpp::SyncParametersClient>(node, server_name);
+  auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(node, server_name);
 
   // Wait for the service to be available before calling it
   bool server_unavailable = false;
@@ -50,7 +50,23 @@ void pluginLoader(
     return;
   }
   auto parameters = parameter_client->get_parameters({plugin_type});
-  auto str_arr = parameters[0].as_string_array();
+  if (executor) {
+    if (executor->spin_until_future_complete(parameters) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR(node->get_logger(),
+      "Failed to get parameter '%s' from server '%s'",
+      plugin_type.c_str(), server_name.c_str());
+      return;
+    }
+  } else {
+    if (rclcpp::spin_until_future_complete(node, parameters) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR(node->get_logger(),
+      "Failed to get parameter '%s' from server '%s'",
+      plugin_type.c_str(), server_name.c_str());
+      return;
+    }
+  }
+
+  auto str_arr = parameters.get()[0].as_string_array();
   combo_box->addItem("Default");
   for (auto str : str_arr) {
     combo_box->addItem(QString::fromStdString(str));

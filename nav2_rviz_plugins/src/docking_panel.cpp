@@ -170,6 +170,8 @@ DockingPanel::DockingPanel(QWidget * parent)
   undocking_->addTransition(undockingTransition);
 
   client_node_ = std::make_shared<rclcpp::Node>("nav2_rviz_docking_panel_node");
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(client_node_);
 
   state_machine_.addState(pre_initial_);
   state_machine_.addState(idle_);
@@ -252,7 +254,7 @@ DockingPanel::DockingPanel(QWidget * parent)
       if (!plugins_loaded_) {
         RCLCPP_INFO(client_node_->get_logger(), "Loading dock plugins");
         nav2_rviz_plugins::pluginLoader(
-          client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_);
+          client_node_, server_failed_, "docking_server", "dock_plugins", dock_type_, executor_);
         plugins_loaded_ = true;
       }
     });
@@ -451,7 +453,7 @@ void DockingPanel::onUndockingButtonPressed()
     };
 
   auto future_goal_handle = undock_client_->async_send_goal(goal_msg, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -490,7 +492,7 @@ void DockingPanel::onCancelDocking()
   if (dock_goal_handle_) {
     auto future_cancel = dock_client_->async_cancel_goal(dock_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -507,7 +509,7 @@ void DockingPanel::onCancelUndocking()
   if (undock_goal_handle_) {
     auto future_cancel = undock_client_->async_cancel_goal(undock_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -530,7 +532,7 @@ void DockingPanel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = dock_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -549,7 +551,7 @@ void DockingPanel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = undock_goal_handle_->get_status();
 
       // Check if the goal is still executing

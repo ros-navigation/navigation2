@@ -200,8 +200,10 @@ void TestNode::rePublishMask()
 void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 {
   rclcpp::Time start_time = node_->now();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
@@ -229,8 +231,10 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
   keepout_filter_->initializeFilter(INFO_TOPIC);
 
   // Wait until mask will be received by KeepoutFilter
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
   while (!keepout_filter_->isActive()) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
