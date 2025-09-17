@@ -92,13 +92,21 @@ std::shared_ptr<BT::BehaviorTreeFactory>
 ToggleCollisionMonitorTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> ToggleCollisionMonitorTestFixture::tree_ = nullptr;
 
-TEST_F(ToggleCollisionMonitorTestFixture, test_tick_enable_collision_monitor)
+class ToggleParamTest
+  : public ToggleCollisionMonitorTestFixture,
+    public ::testing::WithParamInterface<bool> {};
+
+TEST_P(ToggleParamTest, test_tick)
 {
+  const bool enable = GetParam();
+
   std::string xml_txt =
-    R"(
+    std::string(R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable="true"/>
+            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable=")") 
+    + std::string(enable ? "true" : "false") +
+    R"(" />
         </BehaviorTree>
       </root>)";
 
@@ -106,19 +114,7 @@ TEST_F(ToggleCollisionMonitorTestFixture, test_tick_enable_collision_monitor)
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
-TEST_F(ToggleCollisionMonitorTestFixture, test_tick_disable_collision_monitor)
-{
-  std::string xml_txt =
-    R"(
-      <root BTCPP_format="4">
-        <BehaviorTree ID="MainTree">
-            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable="false"/>
-        </BehaviorTree>
-      </root>)";
-
-  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
-}
+INSTANTIATE_TEST_SUITE_P(EnableDisable, ToggleParamTest, ::testing::Values(true, false));
 
 int main(int argc, char ** argv)
 {
