@@ -5,8 +5,8 @@
   make the robot wait for a specific time, to see if the obstacle clears out before
   navigating along a significantly longer path to reach the goal location.
 -->
-<root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="NavigateToPoseWReplanningGoalPatienceAndRecovery">
+  <BehaviorTree ID="NavigateToPoseWReplanningGoalPatienceAndRecovery">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
