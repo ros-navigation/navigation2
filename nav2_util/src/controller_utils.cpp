@@ -129,6 +129,27 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       point.y - prev_pose_it->pose.position.y,
       point.x - prev_pose_it->pose.position.x);
 
+    // Path tangent vector (prev -> goal)
+    double tx = goal_pose_it->pose.position.x - prev_pose_it->pose.position.x;
+    double ty = goal_pose_it->pose.position.y - prev_pose_it->pose.position.y;
+    double tangent_len = std::hypot(tx, ty);
+    tx /= tangent_len;
+    ty /= tangent_len;
+
+    // Forward vector from raw_yaw
+    double fx = std::cos(yaw);
+    double fy = std::sin(yaw);
+
+    // If forward vector points opposite the tangent, flip by PI
+    double dot = fx * tx + fy * ty;
+    if (dot < 0.0) {
+      yaw += M_PI;
+    }
+
+    // Normalize yaw into [-pi, pi)
+    while (yaw <= -M_PI) {yaw += 2.0 * M_PI;}
+    while (yaw > M_PI) {yaw -= 2.0 * M_PI;}
+
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = prev_pose_it->header.frame_id;
     pose.header.stamp = goal_pose_it->header.stamp;
