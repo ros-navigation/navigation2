@@ -303,8 +303,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   try {
     if(!is_bt_id) {
       tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
-      RCLCPP_WARN(logger_,
-        "Loading BT using file path. This is deprecated. Please use the BT ID instead.");
     } else {
       tree_ = bt_->createTree(file_or_id, blackboard_);
     }

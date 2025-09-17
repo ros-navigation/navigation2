@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <iostream>
+#include <sstream>
+#include <streambuf>
 #include <chrono>
 #include <fstream>
 #include <filesystem>
@@ -121,17 +124,16 @@ public:
           if (entry.path().extension() == ".xml") {
             auto current_bt_id = bt_engine_->extractBehaviorTreeID(entry.path().string());
             if (current_bt_id.empty()) {
-              RCLCPP_ERROR(node_->get_logger(), "Skipping BT file %s (missing ID)",
-                entry.path().string().c_str());
+              std::cerr << "[behavior_tree_handler]: Skipping BT file "
+                        << entry.path().string() << " (missing ID)\n";
               continue;
             }
             auto [it, inserted] = used_bt_id.insert(current_bt_id);
             if (!inserted) {
-              RCLCPP_WARN(
-                node_->get_logger(),
-                "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
-                "ID: %s File: %s",
-                current_bt_id.c_str(), entry.path().string().c_str());
+              std::cout << "[behavior_tree_handler]: Warning: Duplicate BT IDs found. "
+                "Make sure to have all BT IDs unique! "
+                        << "ID: " << current_bt_id
+                        << " File: " << entry.path().string() << "\n";
             }
             factory_.registerBehaviorTreeFromFile(entry.path().string());
           }
@@ -409,16 +411,38 @@ TEST_F(BehaviorTreeTestFixture, TestLoadBehaviorTreeMissingAndDuplicateIDs)
   write_file(dup1_file, dup_bt_content);
   write_file(dup2_file, dup_bt_content);
 
-  // Call loadBehaviorTree with search directory
+  // Redirect cout and cerr to a stringstream
+  std::stringstream captured_output;
+  std::streambuf * old_cout_buf = std::cout.rdbuf();
+  std::streambuf * old_cerr_buf = std::cerr.rdbuf();
+
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
   std::vector<std::string> search_dirs = {tmp_dir};
   bool result = bt_handler->loadBehaviorTree("DuplicateTree", search_dirs);
 
-  EXPECT_TRUE(result);  // Tree should still load, despite warnings/errors
+  // Restore cout and cerr
+  std::cout.rdbuf(old_cout_buf);
+  std::cerr.rdbuf(old_cerr_buf);
+
+  // Check the captured output for the expected log messages
+  std::string log_output = captured_output.str();
+
+  // Assert that the function returned true
+  EXPECT_TRUE(result);
+
+  // Assert that the error log for the missing ID was found
+  EXPECT_NE(log_output.find("[behavior_tree_handler]: Skipping BT file " + missing_id_file +
+      " (missing ID)"), std::string::npos);
+
+  // Assert that the warning log for the duplicate ID was found
+  EXPECT_NE(
+    log_output.find(
+      "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
+      "ID: DuplicateTree File: "), std::string::npos);
 
   // Cleanup
-  std::remove(missing_id_file.c_str());
-  std::remove(dup1_file.c_str());
-  std::remove(dup2_file.c_str());
   std::filesystem::remove_all(tmp_dir);
 }
 
