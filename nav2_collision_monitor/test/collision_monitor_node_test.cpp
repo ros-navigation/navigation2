@@ -188,6 +188,7 @@ protected:
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   // Footprint publisher
   nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
@@ -222,6 +223,8 @@ protected:
 Tester::Tester()
 {
   cm_ = std::make_shared<CollisionMonitorWrapper>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(cm_->get_node_base_interface());
   cm_->declare_parameter("enable_stamped_cmd_vel", rclcpp::ParameterValue(false));
 
   footprint_pub_ = cm_->create_publisher<geometry_msgs::msg::PolygonStamped>(
@@ -281,6 +284,7 @@ Tester::~Tester()
   collision_points_marker_sub_.reset();
 
   cm_.reset();
+  executor_.reset();
 }
 
 void Tester::setCommonParameters()
@@ -724,7 +728,7 @@ bool Tester::waitData(
     if (cm_->correctDataReceived(expected_dist, stamp)) {
       return true;
     }
-    rclcpp::spin_some(cm_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -737,7 +741,7 @@ bool Tester::waitCmdVel(const std::chrono::nanoseconds & timeout)
     if (cmd_vel_out_) {
       return true;
     }
-    rclcpp::spin_some(cm_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -753,7 +757,7 @@ bool Tester::waitFuture(
     if (status == std::future_status::ready) {
       return true;
     }
-    rclcpp::spin_some(cm_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -766,7 +770,7 @@ bool Tester::waitActionState(const std::chrono::nanoseconds & timeout)
     if (action_state_) {
       return true;
     }
-    rclcpp::spin_some(cm_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -779,7 +783,7 @@ bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
     if (collision_points_marker_msg_) {
       return true;
     }
-    rclcpp::spin_some(cm_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;

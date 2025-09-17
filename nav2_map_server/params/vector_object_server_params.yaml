@@ -1,0 +1,30 @@
+vector_object_server:
+  ros__parameters:
+    map_topic: "vo_map"
+    global_frame_id: "map"
+    resolution: 0.05
+    default_value: -1
+    overlay_type: 0
+    update_frequency: 1.0
+    transform_tolerance: 0.1
+    shapes: ["Poly", "Circle"]
+    Poly:
+      type: "polygon"
+      frame_id: "map"
+      closed: True
+      value: 100
+      points: [0.3, 0.5, -0.4, 1.2, -0.4, -0.2]
+    Circle:
+      type: "circle"
+      frame_id: "map"
+      fill: True
+      value: 100
+      center: [1.5, 0.5]
+      radius: 0.7
+costmap_filter_info_server:
+  ros__parameters:
+    type: 0
+    filter_info_topic: "vo_costmap_filter_info"
+    mask_topic: "vo_map"
+    base: 0.0
+    multiplier: 1.0

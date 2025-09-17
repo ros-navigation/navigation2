@@ -68,12 +68,13 @@ void WaitBehaviorTester::activate()
     throw std::runtime_error("Trying to activate while already active");
     return;
   }
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_);
   while (!initial_pose_received_) {
     RCLCPP_WARN(node_->get_logger(), "Initial pose not received");
     sendInitialPose();
     std::this_thread::sleep_for(100ms);
-    rclcpp::spin_some(node_);
+    executor.spin_some();
   }
 
   // Wait for lifecycle_manager_navigation to activate behavior_server
