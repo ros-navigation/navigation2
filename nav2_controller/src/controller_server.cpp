@@ -23,6 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
 
 using namespace std::chrono_literals;
@@ -228,6 +229,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingError>("tracking_error", 10);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
@@ -500,6 +502,8 @@ void ControllerServer::computeControl()
 
       computeAndPublishVelocity();
 
+      publishTrackingState();
+
       if (isGoalReached()) {
         RCLCPP_INFO(get_logger(), "Reached the goal!");
         break;
@@ -748,6 +752,66 @@ void ControllerServer::updateGlobalPath()
     }
     setPlannerPath(goal->path);
   }
+}
+
+void ControllerServer::publishTrackingState()
+{
+  if (current_path_.poses.size() < 2) {
+    RCLCPP_DEBUG(get_logger(), "Path has fewer than 2 points, cannot compute tracking error.");
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  if (!getRobotPose(robot_pose)) {
+    RCLCPP_WARN(get_logger(), "Failed to obtain robot pose, skipping tracking error publication.");
+    return;
+  }
+
+// Frame checks
+  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform robot pose to path frame.");
+    return;
+  }
+
+  geometry_msgs::msg::PoseStamped end_pose_in_robot_frame;
+  if (!nav2_util::transformPoseInTargetFrame(
+        end_pose_, end_pose_in_robot_frame, *costmap_ros_->getTfBuffer(),
+        robot_pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform end pose to robot frame.");
+    return;
+  }
+
+  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose, end_pose_in_robot_frame);
+
+  const auto path_search_result = nav2_util::distance_from_path(
+    current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+
+  const size_t closest_idx = path_search_result.closest_segment_index;
+  start_index_ = closest_idx;
+
+  const auto & segment_start = current_path_.poses[closest_idx];
+  const auto & segment_end = current_path_.poses[closest_idx + 1];
+
+  // Cross product is for getting which side of the track
+  double cross_product = nav2_util::geometry_utils::cross_product_2d(
+    robot_pose_in_path_frame.pose.position, segment_start.pose, segment_end.pose);
+
+  nav2_msgs::msg::TrackingError tracking_error_msg;
+  tracking_error_msg.header.stamp = now();
+  tracking_error_msg.header.frame_id = robot_pose.header.frame_id;
+  tracking_error_msg.tracking_error = path_search_result.distance;
+  tracking_error_msg.last_index = closest_idx;
+  tracking_error_msg.cross_product = cross_product;
+  tracking_error_msg.distance_to_goal = distance_to_goal;
+  tracking_error_msg.robot_pose = robot_pose;
+
+  tracking_error_pub_->publish(tracking_error_msg);
 }
 
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)

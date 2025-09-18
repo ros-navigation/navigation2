@@ -28,6 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/msg/tracking_error.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
