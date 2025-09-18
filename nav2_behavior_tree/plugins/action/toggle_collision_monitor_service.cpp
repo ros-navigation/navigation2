@@ -37,5 +37,6 @@ void ToggleCollisionMonitorService::on_tick()
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::ToggleCollisionMonitorService>("ToggleCollisionMonitor");
+  factory.registerNodeType<nav2_behavior_tree::ToggleCollisionMonitorService>(
+    "ToggleCollisionMonitor");
 }

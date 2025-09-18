@@ -94,18 +94,20 @@ std::shared_ptr<BT::Tree> ToggleCollisionMonitorTestFixture::tree_ = nullptr;
 
 class ToggleParamTest
   : public ToggleCollisionMonitorTestFixture,
-    public ::testing::WithParamInterface<bool> {};
+  public ::testing::WithParamInterface<bool> {};
 
 TEST_P(ToggleParamTest, test_tick)
 {
   const bool enable = GetParam();
 
   std::string xml_txt =
-    std::string(R"(
+    std::string(
+    R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable=")") 
-    + std::string(enable ? "true" : "false") +
+            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable=")")
+    +
+    std::string(enable ? "true" : "false") +
     R"(" />
         </BehaviorTree>
       </root>)";
