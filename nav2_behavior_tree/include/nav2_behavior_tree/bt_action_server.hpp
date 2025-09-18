@@ -311,6 +311,8 @@ protected:
   std::string internal_error_msg_;
 
   std::atomic_bool muxer_preemption_requested_{false};
+  // To keep track of the execution number
+  uint64_t run_id_ = 0;
 };
 
 }  // namespace nav2_behavior_tree

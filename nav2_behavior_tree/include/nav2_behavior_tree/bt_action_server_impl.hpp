@@ -189,7 +189,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
     wait_for_service_timeout_);
-
+  blackboard_->set<uint64_t>("run_id", run_id_);  // NOLINT
   return true;
 }
 
@@ -410,6 +410,9 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
     cleanErrorCodes();
     return;
   }
+
+  run_id_++;
+  blackboard_->set<uint64_t>("run_id", run_id_);
 
   auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
