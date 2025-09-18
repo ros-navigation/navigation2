@@ -304,6 +304,9 @@ protected:
   // internal error tracking (IOW not behaviorTree blackboard errors)
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
+
+  // To keep track of the execution number
+  uint64_t run_id_ = 0;
 };
 
 }  // namespace nav2_behavior_tree
