@@ -23,6 +23,6 @@ uint16 error_code
 string error_msg
 ---
 #feedback definition
-float32 distance_to_goal
-float32 speed
-float32 tracking_error
+#Real-time tracking_error and decides which side of the path the robot is on
+#If the tracking_error is positive, the robot is to the left of the path
+nav2_msgs/TrackingError tracking_error

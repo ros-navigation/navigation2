@@ -6,3 +6,5 @@ std_msgs/Header header
 float32 tracking_error
 uint32 current_path_index
 geometry_msgs/PoseStamped robot_pose
+float32 distance_to_goal
+float32 speed
