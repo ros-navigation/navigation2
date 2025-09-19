@@ -50,7 +50,7 @@ void CriticManager::loadCritics()
   auto node = parent_.lock();
   if (publish_critics_stats_) {
     critics_effect_pub_ = node->create_publisher<nav2_msgs::msg::CriticsStats>(
-    "~/critics_stats");
+    "~/critics_stats", 10);
     critics_effect_pub_->on_activate();
   }
 
