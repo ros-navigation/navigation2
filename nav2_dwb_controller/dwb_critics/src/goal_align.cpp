@@ -37,7 +37,6 @@
 #include <string>
 #include "dwb_critics/alignment_util.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav_2d_utils/parameters.hpp"
 
 namespace dwb_critics
 {
@@ -52,31 +51,31 @@ void GoalAlignCritic::onInit()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  forward_point_distance_ = nav_2d_utils::searchAndGetParam(
-    node,
-    dwb_plugin_name_ + "." + name_ + ".forward_point_distance", 0.325);
+  forward_point_distance_ = node->declare_or_get_parameter(dwb_plugin_name_ + "." + name_ +
+      ".forward_point_distance", 0.325);
 }
 
 bool GoalAlignCritic::prepare(
-  const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-  const geometry_msgs::msg::Pose2D & goal,
-  const nav_2d_msgs::msg::Path2D & global_plan)
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+  const geometry_msgs::msg::Pose & goal,
+  const nav_msgs::msg::Path & global_plan)
 {
   // we want the robot nose to be drawn to its final position
   // (before robot turns towards goal orientation), not the end of the
   // path for the robot center. Choosing the final position after
   // turning towards goal orientation causes instability when the
   // robot needs to make a 180 degree turn at the end
-  double angle_to_goal = atan2(goal.y - pose.y, goal.x - pose.x);
+  double angle_to_goal = atan2(goal.position.y - pose.position.y,
+    goal.position.x - pose.position.x);
 
-  nav_2d_msgs::msg::Path2D target_poses = global_plan;
-  target_poses.poses.back().x += forward_point_distance_ * cos(angle_to_goal);
-  target_poses.poses.back().y += forward_point_distance_ * sin(angle_to_goal);
+  nav_msgs::msg::Path target_poses = global_plan;
+  target_poses.poses.back().pose.position.x += forward_point_distance_ * cos(angle_to_goal);
+  target_poses.poses.back().pose.position.y += forward_point_distance_ * sin(angle_to_goal);
 
   return GoalDistCritic::prepare(pose, vel, goal, target_poses);
 }
 
-double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose2D & pose)
+double GoalAlignCritic::scorePose(const geometry_msgs::msg::Pose & pose)
 {
   return GoalDistCritic::scorePose(getForwardPose(pose, forward_point_distance_));
 }

@@ -46,6 +46,7 @@
 #include "nav2_msgs/msg/voxel_grid.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_util/execution_timer.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 struct Cell
 {
@@ -153,10 +154,10 @@ int main(int argc, char ** argv)
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 
   pub = g_node->create_publisher<visualization_msgs::msg::Marker>(
-    "visualization_marker", 1);
+    "visualization_marker", nav2::qos::StandardTopicQoS());
 
   auto sub = g_node->create_subscription<nav2_msgs::msg::VoxelGrid>(
-    "voxel_grid", rclcpp::SystemDefaultsQoS(), voxelCallback);
+    "voxel_grid", nav2::qos::StandardTopicQoS(), voxelCallback);
 
   rclcpp::spin(g_node->get_node_base_interface());
 }

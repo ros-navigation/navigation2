@@ -40,13 +40,14 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/twirling.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 TEST(TwirlingTests, Scoring)
 {
   std::shared_ptr<dwb_critics::TwirlingCritic> critic =
     std::make_shared<dwb_critics::TwirlingCritic>();
 
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("costmap_tester");
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_global_costmap");
   costmap_ros->configure();

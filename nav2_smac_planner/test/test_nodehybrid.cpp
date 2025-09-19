@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,22 +22,14 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/types.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(NodeHybridTest, test_node_hybrid)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -50,15 +43,22 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   // Check defaulted constants
   nav2_smac_planner::NodeHybrid testA(49);
-  EXPECT_EQ(testA.travel_distance_cost, sqrt(2));
+  EXPECT_EQ(testA.travel_distance_cost, sqrtf(2));
 
   nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   // test construction
@@ -143,7 +143,7 @@ TEST(NodeHybridTest, test_node_hybrid)
 
 TEST(NodeHybridTest, test_obstacle_heuristic)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 0.1;
   info.non_straight_penalty = 1.1;
@@ -177,8 +177,15 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
       costmapA->setCost(i, j, 254);
     }
   }
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmapA, 72, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   nav2_smac_planner::NodeHybrid testA(0);
@@ -193,10 +200,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
 
   // first block the high-cost passage to make sure the cost spreads through the better path
   for (unsigned int j = 61; j <= 70; ++j) {
-    costmapA->setCost(50, j, 254);
+    costmap->setCost(50, j, 254);
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
-    costmapA, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
   float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
     testB.pose,
@@ -208,10 +215,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   // (it should, since the unblocked narrow path will have higher cost than the wide one
   //  and thus lower bound of the path cost should be unchanged)
   for (unsigned int j = 61; j <= 70; ++j) {
-    costmapA->setCost(50, j, 250);
+    costmap->setCost(50, j, 250);
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
-    costmapA,
+    costmap_ros,
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
   float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
@@ -221,6 +228,7 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
   delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(NodeHybridTest, test_node_debin_neighbors)
@@ -296,7 +304,7 @@ TEST(NodeHybridTest, test_interpolation_prims2)
 
 TEST(NodeHybridTest, test_node_reeds_neighbors)
 {
-  auto lnode = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test");
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
   info.non_straight_penalty = 1.4;
@@ -335,12 +343,19 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._theta, 3, 0.01);
 
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = costmapA;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(&costmapA, 72, lnode);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
   nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
-  std::function<bool(const unsigned int &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::NodeHybrid * & neighbor_rtn) -> bool
+  std::function<bool(const uint64_t &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
+    [](const uint64_t &, nav2_smac_planner::NodeHybrid * &) -> bool
     {
       // because we don't return a real object
       return false;
@@ -352,4 +367,59 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
 
   // should be empty since totally invalid
   EXPECT_EQ(neighbors.size(), 0u);
+}
+
+TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
+{
+  // Tests to check getClosestAngularBin behavior for different input types
+  nav2_smac_planner::HybridMotionTable motion_table;
+
+  {
+    motion_table.bin_size = 3.1415926;
+    motion_table.num_angle_quantization = 2;
+    double test_theta = 3.1415926;
+    unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = M_PI;
+    motion_table.num_angle_quantization = 2;
+    double test_theta = M_PI / 2.0 - 0.000001;
+    unsigned int expected_angular_bin = 0;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = M_PI;
+    motion_table.num_angle_quantization = 2;
+    float test_theta = M_PI;
+    unsigned int expected_angular_bin = 1;
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+
+  {
+    motion_table.bin_size = 0.0872664675;
+    motion_table.num_angle_quantization = 72;
+    double test_theta = 6.28317530718;  // 0.0001 less than 2 pi
+    unsigned int expected_angular_bin = 0;  // should be closer to wrap around
+    unsigned int calculated_angular_bin = motion_table.getClosestAngularBin(test_theta);
+    EXPECT_EQ(expected_angular_bin, calculated_angular_bin);
+  }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

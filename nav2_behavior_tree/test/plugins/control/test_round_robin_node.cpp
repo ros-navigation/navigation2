@@ -114,6 +114,33 @@ TEST_F(RoundRobinNodeTestFixture, test_behavior)
   EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
 }
 
+TEST_F(RoundRobinNodeTestFixture, test_skikpped)
+{
+  first_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  second_child_->changeStatus(BT::NodeStatus::SUCCESS);
+  third_child_->changeStatus(BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
+
+  first_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  second_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  third_child_->changeStatus(BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
+
+  first_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  second_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  third_child_->changeStatus(BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -162,7 +162,7 @@ TEST(costmap, testResetForStaticMap) {
   }
   ASSERT_EQ(hitCount, 36);
 
-  // Veriy that we have 64 non-leathal
+  // Veriy that we have 64 non-lethal
   hitCount = 0;
   for (unsigned int i = 0; i < 10; ++i) {
     for (unsigned int j = 0; j < 10; ++j) {
@@ -356,7 +356,7 @@ TEST(costmap, testWindowCopy) {
   ASSERT_EQ(windowCopy.getSizeInCellsX(), (unsigned int)6);
   ASSERT_EQ(windowCopy.getSizeInCellsY(), (unsigned int)6);
 
-  // check that we actually get the windo that we expect
+  // check that we actually get the window that we expect
   for (unsigned int i = 0; i < windowCopy.getSizeInCellsX(); ++i) {
     for (unsigned int j = 0; j < windowCopy.getSizeInCellsY(); ++j) {
       ASSERT_EQ(windowCopy.getCost(i, j), map.getCost(i + 2, j + 2));
@@ -616,7 +616,7 @@ TEST(costmap, testStaticMap) {
   ASSERT_EQ(worldToIndex(map, 9.99, 9.99), (unsigned int)99);
   ASSERT_EQ(worldToIndex(map, 8.2, 3.4), (unsigned int)38);
 
-  // Ensure we hit the middle of the cell for world co-ordinates
+  // Ensure we hit the middle of the cell for world coordinates
   double wx, wy;
   indexToWorld(map, 99, wx, wy);
   ASSERT_EQ(wx, 9.5);
@@ -915,7 +915,7 @@ TEST(costmap, testInflation2) {
     ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS,
     10.0, MAX_Z, 10.0, 25, MAP_10_BY_10, THRESHOLD);
 
-  // Creat a small L-Shape all at once
+  // Create a small L-Shape all at once
   pcl::PointCloud<pcl::PointXYZ> c0;
   c0.points.resize(3);
   c0.points[0].x = 1;
@@ -1039,7 +1039,7 @@ TEST(costmap, testRaytracing2) {
     100.0, MAX_Z, 100.0, 1, MAP_10_BY_10, THRESHOLD);
 
   // The sensor origin will be <0,0>. So if we add an obstacle at 9,9, we would expect cells
-  // <0, 0> thru <8, 8> to be traced through
+  // <0, 0> through <8, 8> to be traced through
   pcl::PointCloud<pcl::PointXYZ> c0;
   c0.points.resize(1);
   c0.points[0].x = 9.5;
@@ -1092,7 +1092,7 @@ TEST(costmap, testRaytracing2) {
 }
 
 /**
- * Within a certian radius of the robot, the cost map most propagate obstacles. This
+ * Within a certain radius of the robot, the cost map most propagate obstacles. This
  * is to avoid a case where a hit on a far obstacle clears inscribed radius around a
  * near one.
  */

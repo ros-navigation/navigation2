@@ -22,8 +22,8 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "tf2_ros/buffer.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
@@ -66,7 +66,7 @@ public:
     * @param dynamic_parameter_handler Parameter handler object
     */
   void initialize(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+    nav2::LifecycleNode::WeakPtr parent, const std::string & name,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
     std::shared_ptr<tf2_ros::Buffer>, ParametersHandler *);
 
@@ -90,18 +90,14 @@ public:
    */
   nav_msgs::msg::Path transformPath(const geometry_msgs::msg::PoseStamped & robot_pose);
 
-protected:
   /**
-    * @brief Transform a pose to another frame
-    * @param frame Frame to transform to
-    * @param in_pose Input pose
-    * @param out_pose Output pose
-    * @return Bool if successful
-    */
-  bool transformPose(
-    const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose) const;
+   * @brief Get the global goal pose transformed to the local frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
+protected:
   /**
     * @brief Get largest dimension of costmap (radially)
     * @return Max distance from center of costmap to edge

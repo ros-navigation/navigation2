@@ -17,29 +17,27 @@
 import os
 import sys
 
-from launch import LaunchDescription
-from launch import LaunchService
+from launch import LaunchDescription, LaunchService
 from launch.actions import ExecuteProcess
-
 from launch_testing.legacy import LaunchTestService
 
 
-def main(argv=sys.argv[1:]):
-    testExecutable = os.getenv('TEST_EXECUTABLE')
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
+    testExecutable = os.getenv('TEST_EXECUTABLE', '')
 
     ld = LaunchDescription([])
 
     test1_action = ExecuteProcess(
         cmd=[testExecutable, '--ros-args -p use_sim_time:=True'],
         name='test_planner_random_node',
-        output='screen'
+        output='screen',
     )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':

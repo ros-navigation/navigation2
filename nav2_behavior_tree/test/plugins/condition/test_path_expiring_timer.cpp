@@ -18,6 +18,7 @@
 #include <set>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 #include "utils/test_behavior_tree_fixture.hpp"
@@ -31,10 +32,13 @@ class PathExpiringTimerConditionTestFixture : public nav2_behavior_tree::Behavio
 public:
   void SetUp()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_path_expiring_condition");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_path_expiring_condition");
     config_ = new BT::NodeConfiguration();
+    config_->input_ports["seconds"] = 1.0;
+    config_->input_ports["path"] = "";
+
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     bt_node_ = std::make_shared<nav2_behavior_tree::PathExpiringTimerCondition>(
       "time_expired", *config_);
   }
@@ -48,12 +52,12 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition> bt_node_;
   static BT::NodeConfiguration * config_;
 };
 
-rclcpp::Node::SharedPtr PathExpiringTimerConditionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr PathExpiringTimerConditionTestFixture::node_ = nullptr;
 std::shared_ptr<nav2_behavior_tree::PathExpiringTimerCondition>
 PathExpiringTimerConditionTestFixture::bt_node_ = nullptr;
 BT::NodeConfiguration * PathExpiringTimerConditionTestFixture::config_ = nullptr;
@@ -78,7 +82,7 @@ TEST_F(PathExpiringTimerConditionTestFixture, test_behavior)
   pose.pose.position.x = 1.0;
   path.poses.push_back(pose);
 
-  config_->blackboard->set<nav_msgs::msg::Path>("path", path);
+  config_->blackboard->set("path", path);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
   rclcpp::sleep_for(1500ms);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);

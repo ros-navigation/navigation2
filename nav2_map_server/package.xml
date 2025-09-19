@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_map_server</name>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
   <description>
     Refactored map server for ROS2 Navigation
   </description>
@@ -14,6 +14,7 @@
 
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>nav_msgs</depend>
   <depend>std_msgs</depend>
@@ -21,10 +22,15 @@
   <depend>yaml_cpp_vendor</depend>
   <depend>launch_ros</depend>
   <depend>launch_testing</depend>
+  <depend>geometry_msgs</depend>
   <depend>tf2</depend>
+  <depend>tf2_ros</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>graphicsmagick</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>nav2_ros_common</depend>
+  <depend>uuid</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

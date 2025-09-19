@@ -38,8 +38,9 @@
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
-#include "nav_2d_utils/conversions.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "eigen3/Eigen/Geometry"
 
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
@@ -52,27 +53,27 @@ void checkMacro(
   bool expected_result)
 {
   gc.reset();
-  geometry_msgs::msg::Pose2D pose0, pose1;
-  pose0.x = x0;
-  pose0.y = y0;
-  pose0.theta = theta0;
-  pose1.x = x1;
-  pose1.y = y1;
-  pose1.theta = theta1;
-  nav_2d_msgs::msg::Twist2D v;
-  v.x = xv;
-  v.y = yv;
-  v.theta = thetav;
+
+  geometry_msgs::msg::Pose pose0, pose1;
+  pose0.position.x = x0;
+  pose0.position.y = y0;
+  pose0.position.z = 0.0;
+  pose0.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta0);
+
+  pose1.position.x = x1;
+  pose1.position.y = y1;
+  pose1.position.z = 0.0;
+  pose1.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta1);
+
+  geometry_msgs::msg::Twist v;
+  v.linear.x = xv;
+  v.linear.y = yv;
+  v.angular.z = thetav;
+
   if (expected_result) {
-    EXPECT_TRUE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
   } else {
-    EXPECT_FALSE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
   }
 }
 
@@ -96,42 +97,42 @@ void trueFalse(
   checkMacro(gc0, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, true);
   checkMacro(gc1, x0, y0, theta0, x1, y1, theta1, xv, yv, thetav, false);
 }
-class TestLifecycleNode : public nav2_util::LifecycleNode
+class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
   explicit TestLifecycleNode(const std::string & name)
-  : nav2_util::LifecycleNode(name)
+  : nav2::LifecycleNode(name)
   {
   }
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onError(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 };
 
@@ -237,9 +238,117 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(pose_tol.position.y, 200.0);
 }
 
+TEST(StoppedGoalChecker, is_reached)
+{
+  auto x = std::make_shared<TestLifecycleNode>("goal_checker");
+
+  SimpleGoalChecker gc;
+  StoppedGoalChecker sgc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  sgc.initialize(x, "test", costmap);
+  gc.initialize(x, "test2", costmap);
+  geometry_msgs::msg::Pose goal_pose;
+  geometry_msgs::msg::Twist velocity;
+  geometry_msgs::msg::Pose current_pose;
+
+  // Current linear x position is tolerance away from goal
+  current_pose.position.x = 0.25;
+  velocity.linear.x = 0.25;
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear x speed exceeds tolerance
+  velocity.linear.x = 0.25 + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear x position is further than tolerance away from goal
+  current_pose.position.x = 0.25 + std::numeric_limits<double>::epsilon();
+  velocity.linear.x = 0.25;
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+  current_pose.position.x = 0.0;
+  velocity.linear.x = 0.0;
+
+  // Current linear position is tolerance away from goal
+  current_pose.position.x = 0.25 / std::sqrt(2);
+  current_pose.position.y = 0.25 / std::sqrt(2);
+  velocity.linear.x = 0.25 / std::sqrt(2);
+  velocity.linear.y = 0.25 / std::sqrt(2);
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear speed exceeds tolerance
+  velocity.linear.x = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  velocity.linear.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current linear position is further than tolerance away from goal
+  current_pose.position.x = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  current_pose.position.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
+  velocity.linear.x = 0.25 / std::sqrt(2);
+  velocity.linear.y = 0.25 / std::sqrt(2);
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  current_pose.position.x = 0.0;
+  velocity.linear.x = 0.0;
+
+
+  // Current angular position is tolerance away from goal
+  auto quat =
+    (Eigen::AngleAxisd::Identity() * Eigen::AngleAxisd(0.25, Eigen::Vector3d::UnitZ())).coeffs();
+  // epsilon for orientation is a lot bigger than double limit, probably from TF getYaw
+  auto quat_epsilon =
+    (Eigen::AngleAxisd::Identity() *
+    Eigen::AngleAxisd(0.25 + 1.0E-15, Eigen::Vector3d::UnitZ())).coeffs();
+
+  current_pose.orientation.z = quat[2];
+  current_pose.orientation.w = quat[3];
+  velocity.angular.z = 0.25;
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current angular speed exceeds tolerance
+  velocity.angular.z = 0.25 + std::numeric_limits<double>::epsilon();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  sgc.reset();
+  gc.reset();
+
+  // Current angular position is further than tolerance away from goal
+  current_pose.orientation.z = quat_epsilon[2];
+  current_pose.orientation.w = quat_epsilon[3];
+  velocity.angular.z = 0.25;
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+}
+
 int main(int argc, char ** argv)
 {
+  ::testing::InitGoogleTest(&argc, argv);
+
   rclcpp::init(argc, argv);
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

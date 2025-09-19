@@ -72,11 +72,11 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
   footprint_(std::make_shared<std::vector<geometry_msgs::msg::Point>>())
 {
   if (track_unknown) {
-    primary_costmap_.setDefaultValue(255);
-    combined_costmap_.setDefaultValue(255);
+    primary_costmap_.setDefaultValue(NO_INFORMATION);
+    combined_costmap_.setDefaultValue(NO_INFORMATION);
   } else {
-    primary_costmap_.setDefaultValue(0);
-    combined_costmap_.setDefaultValue(0);
+    primary_costmap_.setDefaultValue(FREE_SPACE);
+    combined_costmap_.setDefaultValue(FREE_SPACE);
   }
 }
 

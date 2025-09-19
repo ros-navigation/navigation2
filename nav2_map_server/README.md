@@ -3,7 +3,7 @@
 The `Map Server` provides maps to the rest of the Nav2 system using both topic and
 service interfaces. Map server will expose maps on the node bringup, but can also change maps using a `load_map` service during run-time, as well as save maps using a `save_map` server.
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-map-server.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-map-server.html) for additional parameter descriptions.
 
 ### Architecture
 
@@ -96,7 +96,7 @@ $ process_with_multiple_map_servers __params:=combined_params.yaml
 
 
 The parameter for the initial map (yaml_filename) has to be set, but an empty string can be used if no initial map should be loaded. In this case, no map is loaded during
-on_configure or published during on_activate. The _load_map_-service should the be used to load and publish a map. 
+on_configure or published during on_activate. The _load_map_-service should the be used to load and publish a map.
 
 
 #### Map Saver
@@ -140,4 +140,3 @@ Service usage examples:
 $ ros2 service call /map_server/load_map nav2_msgs/srv/LoadMap "{map_url: /ros/maps/map.yaml}"
 $ ros2 service call /map_saver/save_map nav2_msgs/srv/SaveMap "{map_topic: map, map_url: my_map, image_format: pgm, map_mode: trinary, free_thresh: 0.25, occupied_thresh: 0.65}"
 ```
-

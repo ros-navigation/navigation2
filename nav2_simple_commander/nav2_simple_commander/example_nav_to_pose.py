@@ -23,7 +23,7 @@ Basic navigation demo to go to pose.
 """
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -32,10 +32,10 @@ def main():
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 3.45
-    initial_pose.pose.position.y = 2.15
-    initial_pose.pose.orientation.z = 1.0
-    initial_pose.pose.orientation.w = 0.0
+    initial_pose.pose.position.x = 0.0
+    initial_pose.pose.position.y = 0.0
+    initial_pose.pose.orientation.z = 0.0
+    initial_pose.pose.orientation.w = 1.0
     navigator.setInitialPose(initial_pose)
 
     # Activate navigation, if not autostarted. This should be called after setInitialPose()
@@ -58,17 +58,18 @@ def main():
     goal_pose = PoseStamped()
     goal_pose.header.frame_id = 'map'
     goal_pose.header.stamp = navigator.get_clock().now().to_msg()
-    goal_pose.pose.position.x = -2.0
-    goal_pose.pose.position.y = -0.5
+    goal_pose.pose.position.x = 17.86
+    goal_pose.pose.position.y = -0.77
     goal_pose.pose.orientation.w = 1.0
+    goal_pose.pose.orientation.z = 0.0
 
     # sanity check a valid path exists
     # path = navigator.getPath(initial_pose, goal_pose)
 
-    navigator.goToPose(goal_pose)
+    go_to_pose_task = navigator.goToPose(goal_pose)
 
     i = 0
-    while not navigator.isTaskComplete():
+    while not navigator.isTaskComplete(task=go_to_pose_task):
         ################################################
         #
         # Implement some code here for your application!
@@ -77,11 +78,16 @@ def main():
 
         # Do something with the feedback
         i = i + 1
-        feedback = navigator.getFeedback()
+        feedback = navigator.getFeedback(task=go_to_pose_task)
         if feedback and i % 5 == 0:
-            print('Estimated time of arrival: ' + '{0:.0f}'.format(
-                  Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
-                  + ' seconds.')
+            print(
+                'Estimated time of arrival: '
+                + '{:.0f}'.format(
+                    Duration.from_msg(feedback.estimated_time_remaining).nanoseconds
+                    / 1e9
+                )
+                + ' seconds.'
+            )
 
             # Some navigation timeout to demo cancellation
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
@@ -89,8 +95,9 @@ def main():
 
             # Some navigation request change to demo preemption
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=18.0):
-                goal_pose.pose.position.x = -3.0
-                navigator.goToPose(goal_pose)
+                goal_pose.pose.position.x = 0.0
+                goal_pose.pose.position.y = 0.0
+                go_to_pose_task = navigator.goToPose(goal_pose)
 
     # Do something depending on the return code
     result = navigator.getResult()
@@ -99,7 +106,8 @@ def main():
     elif result == TaskResult.CANCELED:
         print('Goal was canceled!')
     elif result == TaskResult.FAILED:
-        print('Goal failed!')
+        (error_code, error_msg) = navigator.getTaskError()
+        print('Goal failed!{error_code}:{error_msg}')
     else:
         print('Goal has an invalid return status!')
 

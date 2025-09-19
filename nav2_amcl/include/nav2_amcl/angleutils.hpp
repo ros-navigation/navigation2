@@ -22,7 +22,7 @@
 #ifndef NAV2_AMCL__ANGLEUTILS_HPP_
 #define NAV2_AMCL__ANGLEUTILS_HPP_
 
-#include <math.h>
+#include <cmath>
 
 namespace nav2_amcl
 {

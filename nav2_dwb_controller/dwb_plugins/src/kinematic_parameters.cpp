@@ -38,11 +38,10 @@
 #include <string>
 #include <vector>
 
-#include "nav_2d_utils/parameters.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -56,13 +55,19 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
+  auto node = node_.lock();
+  if (dyn_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
+  dyn_params_handler_.reset();
   delete kinematics_.load();
 }
 
 void KinematicsHandler::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
+  node_ = nh;
   plugin_name_ = plugin_name;
 
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
@@ -171,43 +176,46 @@ KinematicsHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   KinematicParameters kinematics(*kinematics_.load());
 
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".min_vel_x") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".min_vel_x") {
         kinematics.min_vel_x_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".min_vel_y") {
+      } else if (param_name == plugin_name_ + ".min_vel_y") {
         kinematics.min_vel_y_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".max_vel_x") {
+      } else if (param_name == plugin_name_ + ".max_vel_x") {
         kinematics.max_vel_x_ = parameter.as_double();
         kinematics.base_max_vel_x_ = kinematics.max_vel_x_;
-      } else if (name == plugin_name_ + ".max_vel_y") {
+      } else if (param_name == plugin_name_ + ".max_vel_y") {
         kinematics.max_vel_y_ = parameter.as_double();
         kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
-      } else if (name == plugin_name_ + ".max_vel_theta") {
+      } else if (param_name == plugin_name_ + ".max_vel_theta") {
         kinematics.max_vel_theta_ = parameter.as_double();
         kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
-      } else if (name == plugin_name_ + ".min_speed_xy") {
+      } else if (param_name == plugin_name_ + ".min_speed_xy") {
         kinematics.min_speed_xy_ = parameter.as_double();
         kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
-      } else if (name == plugin_name_ + ".max_speed_xy") {
+      } else if (param_name == plugin_name_ + ".max_speed_xy") {
         kinematics.max_speed_xy_ = parameter.as_double();
         kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
-      } else if (name == plugin_name_ + ".min_speed_theta") {
+      } else if (param_name == plugin_name_ + ".min_speed_theta") {
         kinematics.min_speed_theta_ = parameter.as_double();
         kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
-      } else if (name == plugin_name_ + ".acc_lim_x") {
+      } else if (param_name == plugin_name_ + ".acc_lim_x") {
         kinematics.acc_lim_x_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".acc_lim_y") {
+      } else if (param_name == plugin_name_ + ".acc_lim_y") {
         kinematics.acc_lim_y_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".acc_lim_theta") {
+      } else if (param_name == plugin_name_ + ".acc_lim_theta") {
         kinematics.acc_lim_theta_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".decel_lim_x") {
+      } else if (param_name == plugin_name_ + ".decel_lim_x") {
         kinematics.decel_lim_x_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".decel_lim_y") {
+      } else if (param_name == plugin_name_ + ".decel_lim_y") {
         kinematics.decel_lim_y_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".decel_lim_theta") {
+      } else if (param_name == plugin_name_ + ".decel_lim_theta") {
         kinematics.decel_lim_theta_ = parameter.as_double();
       }
     }

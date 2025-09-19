@@ -21,20 +21,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 // Simple wrapper to be able to call a private member
 class LatticeWrap : public nav2_smac_planner::SmacPlannerLattice
@@ -44,6 +36,26 @@ public:
   {
     dynamicParametersCallback(parameters);
   }
+
+  int getCoarseSearchResolution()
+  {
+    return _coarse_search_resolution;
+  }
+
+  int getMaxIterations()
+  {
+    return _max_iterations;
+  }
+
+  int getMaxOnApproachIterations()
+  {
+    return _max_on_approach_iterations;
+  }
+
+  nav2_smac_planner::GoalHeadingMode getGoalHeadingMode()
+  {
+    return _goal_heading_mode;
+  }
 };
 
 // SMAC smoke tests for plugin-level issues rather than algorithms
@@ -52,12 +64,17 @@ public:
 
 TEST(SmacTest, test_smac_lattice)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nav2::LifecycleNode::SharedPtr nodeLattice =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeTest");
+  nodeLattice->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   geometry_msgs::msg::PoseStamped start, goal;
   start.pose.position.x = 0.0;
@@ -66,18 +83,53 @@ TEST(SmacTest, test_smac_lattice)
   goal.pose.position.x = 1.0;
   goal.pose.position.y = 1.0;
   goal.pose.orientation.w = 1.0;
-  auto planner = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
+  auto planner = std::make_unique<LatticeWrap>();
   try {
+    // invalid goal heading mode
+    nodeLattice->declare_parameter("test.goal_heading_mode", std::string("UNKNOWN"));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("UNKNOWN")));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
+    nodeLattice->set_parameter(rclcpp::Parameter("test.goal_heading_mode", std::string("DEFAULT")));
+
+    // invalid Configuration resolution
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
+
+    EXPECT_NO_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros));
+    EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+    EXPECT_EQ(planner->getMaxIterations(), std::numeric_limits<int>::max());
+    EXPECT_EQ(planner->getMaxOnApproachIterations(), std::numeric_limits<int>::max());
+
+
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_iterations", 1000000));
+    nodeLattice->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", 1000));
+
+    // Coarse search resolution will throw, not multiple of number of heading(16 default)
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 3));
+    EXPECT_THROW(planner->configure(nodeLattice, "test", nullptr, costmap_ros), std::runtime_error);
+
+    // Valid configuration
+    nodeLattice->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", 4));
     // Expect to throw due to invalid prims file in param
     planner->configure(nodeLattice, "test", nullptr, costmap_ros);
+    EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
   } catch (...) {
   }
   planner->activate();
 
   try {
-    planner->createPlan(start, goal);
+    planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  // corner case where the start and goal are on the same cell
+  goal.pose.position.x = 0.01;
+  goal.pose.position.y = 0.01;
+
+  nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
+  EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
   planner->deactivate();
   planner->cleanup();
@@ -90,8 +142,8 @@ TEST(SmacTest, test_smac_lattice)
 
 TEST(SmacTest, test_smac_lattice_reconfigure)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr nodeLattice =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeTest");
+  nav2::LifecycleNode::SharedPtr nodeLattice =
+    std::make_shared<nav2::LifecycleNode>("SmacLatticeTest");
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
@@ -127,6 +179,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       rclcpp::Parameter("test.tolerance", 42.0),
       rclcpp::Parameter("test.rotation_penalty", 42.0),
       rclcpp::Parameter("test.max_on_approach_iterations", 42),
+      rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.allow_reverse_expansion", true)});
 
   try {
@@ -138,9 +191,54 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
       results);
   } catch (...) {
   }
-
-  // So instead, lets call manually on a change
+  // test edge cases Goal heading mode, make sure we don't reset the goal when invalid
   std::vector<rclcpp::Parameter> parameters;
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")));
+  parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test coarse resolution edge cases.
+  // Negative coarse search resolution
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", -1));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // test value when coarse resolution
+  // is not multiple number_of_headings
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 5));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+  // Similar modulous test but when the issue is from the  number
+  // of heading, test output includes number of heading 15
+  parameters.clear();
+
+  parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
+  parameters.push_back(rclcpp::Parameter("test.lattice_filepath",
+    ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+    "/sample_primitives/test/output.json"));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+
+
+  // So instead, let's call manually on a change
+  parameters.clear();
   parameters.push_back(rclcpp::Parameter("test.lattice_filepath", std::string("HI")));
   EXPECT_THROW(planner->callDynamicParams(parameters), std::runtime_error);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

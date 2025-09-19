@@ -38,10 +38,9 @@
 #include <memory>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "dwb_plugins/kinematic_parameters.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace dwb_plugins
 {
@@ -50,7 +49,7 @@ class VelocityIterator
 public:
   virtual ~VelocityIterator() {}
   virtual void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const nav2::LifecycleNode::SharedPtr & nh,
     KinematicsHandler::Ptr kinematics,
     const std::string & plugin_name) = 0;
   virtual void startNewIteration(const nav_2d_msgs::msg::Twist2D & current_velocity, double dt) = 0;

@@ -18,7 +18,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -37,7 +37,7 @@ InputAtWaypoint::~InputAtWaypoint()
 }
 
 void InputAtWaypoint::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   auto node = parent.lock();
@@ -51,16 +51,16 @@ void InputAtWaypoint::initialize(
 
   double timeout;
   std::string input_topic;
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".timeout",
     rclcpp::ParameterValue(10.0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".input_topic",
     rclcpp::ParameterValue("input_at_waypoint/input"));
-  node->get_parameter(plugin_name + ".timeout", timeout);
+  timeout = node->get_parameter(plugin_name + ".timeout").as_double();
   node->get_parameter(plugin_name + ".enabled", is_enabled_);
   node->get_parameter(plugin_name + ".input_topic", input_topic);
 
@@ -69,7 +69,7 @@ void InputAtWaypoint::initialize(
   RCLCPP_INFO(
     logger_, "InputAtWaypoint: Subscribing to input topic %s.", input_topic.c_str());
   subscription_ = node->create_subscription<std_msgs::msg::Empty>(
-    input_topic, 1, std::bind(&InputAtWaypoint::Cb, this, _1));
+    input_topic, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
 void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr /*msg*/)

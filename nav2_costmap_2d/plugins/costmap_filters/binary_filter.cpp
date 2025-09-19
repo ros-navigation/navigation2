@@ -44,6 +44,7 @@
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/occ_grid_values.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -60,7 +61,7 @@ void BinaryFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -81,23 +82,24 @@ void BinaryFilter::initializeFilter(
     "BinaryFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1));
+    filter_info_topic_,
+    std::bind(&BinaryFilter::filterInfoCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 
   // Get global frame required for binary state publisher
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
   // Create new binary state publisher
   binary_state_pub_ = node->create_publisher<std_msgs::msg::Bool>(
-    binary_state_topic, rclcpp::QoS(10));
+    binary_state_topic);
   binary_state_pub_->on_activate();
 
   // Reset parameters
   base_ = BASE_DEFAULT;
   multiplier_ = MULTIPLIER_DEFAULT;
 
-  // Initialize state as "false" by-default
-  changeState(default_state_);
+  // Initialize state binary_state_ which at start its equal to default_state_
+  changeState(binary_state_);
 }
 
 void BinaryFilter::filterInfoCallback(
@@ -105,7 +107,7 @@ void BinaryFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -140,8 +142,9 @@ void BinaryFilter::filterInfoCallback(
     "BinaryFilter: Subscribing to \"%s\" topic for filter mask...",
     mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&BinaryFilter::maskCallback, this, std::placeholders::_1));
+    mask_topic_,
+    std::bind(&BinaryFilter::maskCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 }
 
 void BinaryFilter::maskCallback(
@@ -167,7 +170,7 @@ void BinaryFilter::maskCallback(
 void BinaryFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
-  const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose & pose)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -179,7 +182,7 @@ void BinaryFilter::process(
     return;
   }
 
-  geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
+  geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
   if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
@@ -188,7 +191,9 @@ void BinaryFilter::process(
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+  if (!nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
+    mask_robot_i, mask_robot_j))
+  {
     // Robot went out of mask range. Set "false" state by-default
     RCLCPP_WARN(
       logger_,
@@ -208,6 +213,7 @@ void BinaryFilter::process(
       mask_robot_i, mask_robot_j);
     return;
   }
+
   // Check and flip binary state, if necessary
   if (base_ + mask_data * multiplier_ > flip_threshold_) {
     if (binary_state_ == default_state_) {
@@ -224,8 +230,11 @@ void BinaryFilter::resetFilter()
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  RCLCPP_INFO(logger_, "BinaryFilter: Resetting the filter to default state");
-  changeState(default_state_);
+  // Publishing new BinaryState ib reset
+  std::unique_ptr<std_msgs::msg::Bool> msg =
+    std::make_unique<std_msgs::msg::Bool>();
+  msg->data = binary_state_;
+  binary_state_pub_->publish(std::move(msg));
 
   filter_info_sub_.reset();
   mask_sub_.reset();

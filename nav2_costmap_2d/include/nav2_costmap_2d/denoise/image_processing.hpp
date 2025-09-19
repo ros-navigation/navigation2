@@ -81,7 +81,7 @@ void morphologyOperation(
 
 using ShapeBuffer3x3 = std::array<uint8_t, 9>;  // NOLINT
 inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
-} // namespace imgproc_impl
+}  // namespace imgproc_impl
 
 /**
  * @brief Perform morphological dilation
@@ -416,7 +416,8 @@ public:
     }
 
     // Label 0 is reserved for the background pixels, i.e. labels[0] is always 0
-    labels_ = {0};
+    labels_.clear();
+    labels_.resize(1, 0);
     next_free_ = 1;
   }
 

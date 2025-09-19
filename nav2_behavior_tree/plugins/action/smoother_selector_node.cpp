@@ -33,29 +33,43 @@ SmootherSelector::SmootherSelector(
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(name, conf)
 {
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-  callback_group_ = node_->create_callback_group(
-    rclcpp::CallbackGroupType::MutuallyExclusive,
-    false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  initialize();
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
+}
 
-  getInput("topic_name", topic_name_);
+void SmootherSelector::initialize()
+{
+  createROSInterfaces();
+}
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+void SmootherSelector::createROSInterfaces()
+{
+  std::string topic_new;
+  getInput("topic_name", topic_new);
+  if (topic_new != topic_name_ || !smoother_selector_sub_) {
+    topic_name_ = topic_new;
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    callback_group_ = node_->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive,
+      false);
+    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  rclcpp::SubscriptionOptions sub_option;
-  sub_option.callback_group = callback_group_;
-  smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
-    topic_name_,
-    qos,
-    std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
-    sub_option);
+    smoother_selector_sub_ = node_->create_subscription<std_msgs::msg::String>(
+      topic_name_,
+      std::bind(&SmootherSelector::callbackSmootherSelect, this, _1),
+      nav2::qos::LatchedSubscriptionQoS(),
+      callback_group_);
+  }
 }
 
 BT::NodeStatus SmootherSelector::tick()
 {
-  callback_group_executor_.spin_some();
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
+  callback_group_executor_.spin_all(bt_loop_duration_);
 
   // This behavior always use the last selected smoother received from the topic input.
   // When no input is specified it uses the default smoother.
@@ -85,7 +99,7 @@ SmootherSelector::callbackSmootherSelect(const std_msgs::msg::String::SharedPtr 
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::SmootherSelector>("SmootherSelector");

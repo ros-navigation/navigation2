@@ -29,6 +29,7 @@ public:
   {
     config_->input_ports["global_frame"] = "map";
     config_->input_ports["robot_base_frame"] = "base_link";
+    config_->input_ports["distance"] = 1.0;
     bt_node_ = std::make_shared<nav2_behavior_tree::DistanceTraveledCondition>(
       "distance_traveled", *config_);
   }
@@ -89,6 +90,5 @@ int main(int argc, char ** argv)
 
   // shutdown ROS
   rclcpp::shutdown();
-
   return all_successful;
 }

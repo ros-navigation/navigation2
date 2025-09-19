@@ -16,7 +16,7 @@
 #include <string>
 #include <memory>
 
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 #include "nav2_behavior_tree/plugins/condition/time_expired_condition.hpp"
 
@@ -29,19 +29,27 @@ TimeExpiredCondition::TimeExpiredCondition(
 : BT::ConditionNode(condition_name, conf),
   period_(1.0)
 {
+}
+
+void TimeExpiredCondition::initialize()
+{
   getInput("seconds", period_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   start_ = node_->now();
 }
 
 BT::NodeStatus TimeExpiredCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
+  if (!BT::isStatusActive(status())) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }
 
-  // Determine how long its been since we've started this iteration
+  // Determine how long it's been since we've started this iteration
   auto elapsed = node_->now() - start_;
 
   // Now, get that in seconds
@@ -57,7 +65,7 @@ BT::NodeStatus TimeExpiredCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::TimeExpiredCondition>("TimeExpired");

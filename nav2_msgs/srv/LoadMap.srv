@@ -3,7 +3,7 @@
 # Or, relative to a ROS package: package://my_ros_package/maps/floor2.yaml
 string map_url
 ---
-# Result code defintions
+# Result code definitions
 uint8 RESULT_SUCCESS=0
 uint8 RESULT_MAP_DOES_NOT_EXIST=1
 uint8 RESULT_INVALID_MAP_DATA=2

@@ -42,12 +42,12 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
-#include "nav_2d_msgs/msg/path2_d.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "dwb_msgs/msg/trajectory2_d.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace dwb_core
 {
@@ -93,7 +93,7 @@ public:
    * @param costmap_ros Pointer to the costmap
    */
   void initialize(
-    const nav2_util::LifecycleNode::SharedPtr & nh,
+    const nav2::LifecycleNode::SharedPtr & nh,
     const std::string & name,
     const std::string & ns,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
@@ -131,9 +131,9 @@ public:
    * @param global_plan Transformed global plan in costmap frame, possibly cropped to nearby points
    */
   virtual bool prepare(
-    const geometry_msgs::msg::Pose2D &, const nav_2d_msgs::msg::Twist2D &,
-    const geometry_msgs::msg::Pose2D &,
-    const nav_2d_msgs::msg::Path2D &)
+    const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+    const geometry_msgs::msg::Pose &,
+    const nav_msgs::msg::Path &)
   {
     return true;
   }
@@ -182,7 +182,7 @@ protected:
   std::string dwb_plugin_name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   double scale_;
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
 };
 
 }  // namespace dwb_core

@@ -49,7 +49,7 @@ typedef std::vector<geometry_msgs::msg::Point> Footprint;
  * @return oriented footprint
  */
 Footprint getOrientedFootprint(
-  const geometry_msgs::msg::Pose2D & pose,
+  const geometry_msgs::msg::Pose & pose,
   const Footprint & footprint_spec);
 
 /**
@@ -60,17 +60,17 @@ Footprint getOrientedFootprint(
  * efficiency. This is valid if the obstacles in the local costmap are inflated.
  *
  * A more robust class could check every cell within the robot's footprint without inflating the obstacles,
- * at some computational cost. That is left as an excercise to the reader.
+ * at some computational cost. That is left as an exercise to the reader.
  */
 class ObstacleFootprintCritic : public BaseObstacleCritic
 {
 public:
   bool prepare(
-    const geometry_msgs::msg::Pose2D & pose, const nav_2d_msgs::msg::Twist2D & vel,
-    const geometry_msgs::msg::Pose2D & goal, const nav_2d_msgs::msg::Path2D & global_plan) override;
-  double scorePose(const geometry_msgs::msg::Pose2D & pose) override;
+    const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
+    const geometry_msgs::msg::Pose & goal, const nav_msgs::msg::Path & global_plan) override;
+  double scorePose(const geometry_msgs::msg::Pose & pose) override;
   virtual double scorePose(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     const Footprint & oriented_footprint);
   double getScale() const override {return costmap_->getResolution() * scale_;}
 

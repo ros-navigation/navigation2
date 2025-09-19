@@ -10,7 +10,7 @@ DWB improves on DWA in a few major ways:
 
 It is possible to tune DWB to gain both DWA and base local planner behaviors, as well as expansions using new plugins for totally use-case specific behaviors. The current trajectory generator plugins work for omnidirectional and differential drive robots, though an ackermann generator would be trivial to add. The current critic plugins work for both circular and non-circular robots and include many of the cost functions needed to build a path tracking system with various attributes.
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-dwb-controller.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-dwb-controller.html) for additional parameter descriptions.
 
 ## DWB Plugins
 

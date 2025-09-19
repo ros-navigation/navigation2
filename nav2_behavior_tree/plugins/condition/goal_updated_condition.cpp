@@ -27,16 +27,16 @@ GoalUpdatedCondition::GoalUpdatedCondition(
 
 BT::NodeStatus GoalUpdatedCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
-    config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", goals_);
-    config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", goal_);
+  if (!BT::isStatusActive(status())) {
+    BT::getInputOrBlackboard("goals", goals_);
+    BT::getInputOrBlackboard("goal", goal_);
     return BT::NodeStatus::FAILURE;
   }
 
-  std::vector<geometry_msgs::msg::PoseStamped> current_goals;
-  config().blackboard->get<std::vector<geometry_msgs::msg::PoseStamped>>("goals", current_goals);
+  nav_msgs::msg::Goals current_goals;
   geometry_msgs::msg::PoseStamped current_goal;
-  config().blackboard->get<geometry_msgs::msg::PoseStamped>("goal", current_goal);
+  BT::getInputOrBlackboard("goals", current_goals);
+  BT::getInputOrBlackboard("goal", current_goal);
 
   if (goal_ != current_goal || goals_ != current_goals) {
     goal_ = current_goal;
@@ -49,7 +49,7 @@ BT::NodeStatus GoalUpdatedCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::GoalUpdatedCondition>("GoalUpdated");

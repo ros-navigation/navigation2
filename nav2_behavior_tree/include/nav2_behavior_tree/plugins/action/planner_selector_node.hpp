@@ -18,12 +18,13 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "std_msgs/msg/string.hpp"
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -34,6 +35,7 @@ namespace nav2_behavior_tree
  * to get the decision about what planner must be used. It is usually used before of
  * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
  * input port of the ComputePathToPoseAction
+ * @note This is an Asynchronous node. It will re-initialize when halted.
  */
 class PlannerSelector : public BT::SyncActionNode
 {
@@ -72,6 +74,15 @@ public:
 
 private:
   /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
+  /**
    * @brief Function to perform some user-defined operation on tick
    */
   BT::NodeStatus tick() override;
@@ -84,15 +95,16 @@ private:
   void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
 
 
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
+  nav2::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;
 
   std::string last_selected_planner_;
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   std::string topic_name_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

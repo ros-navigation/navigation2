@@ -19,8 +19,9 @@
 #include <string>
 
 #include "nav2_msgs/action/smooth_path.hpp"
-#include "nav_msgs/msg/path.h"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -66,11 +67,20 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("unsmoothed_path", "Path to be smoothed"),
@@ -87,6 +97,8 @@ public:
           "was_completed", "True if smoothing was not interrupted by time limit"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The smooth path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The smooth path error msg"),
       });
   }
 };

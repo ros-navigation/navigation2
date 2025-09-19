@@ -18,8 +18,8 @@
 #include "nav2_costmap_2d/denoise/image_processing.hpp"
 #include "image_tests_helper.hpp"
 
-using namespace nav2_costmap_2d;
-using namespace imgproc_impl;
+using namespace nav2_costmap_2d;  // NOLINT
+using namespace imgproc_impl;  // NOLINT
 
 struct ImageProcTester : public ::testing::Test
 {

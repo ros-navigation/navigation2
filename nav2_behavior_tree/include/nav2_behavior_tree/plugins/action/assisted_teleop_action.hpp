@@ -20,12 +20,15 @@
 
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/assisted_teleop.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::AssistedTeleop
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class AssistedTeleopAction : public BtActionNode<nav2_msgs::action::AssistedTeleop>
 {
@@ -65,6 +68,17 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -75,7 +89,9 @@ public:
         BT::InputPort<double>("time_allowance", 10.0, "Allowed time for running assisted teleop"),
         BT::InputPort<bool>("is_recovery", false, "If true the recovery count will be incremented"),
         BT::OutputPort<ActionResult::_error_code_type>(
-          "error_code_id", "The assisted teleop behavior server error code")
+          "error_code_id", "The assisted teleop behavior server error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The assisted teleop behavior server error msg"),
       });
   }
 

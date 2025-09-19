@@ -20,12 +20,15 @@
 
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowPath
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
@@ -65,6 +68,12 @@ public:
   BT::NodeStatus on_cancelled() override;
 
   /**
+   * @brief Function to perform work in a BT Node when the action server times out
+   * Such as setting the error code ID status to timed out for action clients.
+   */
+  void on_timeout() override;
+
+  /**
    * @brief Function to perform some user-defined operation after a timeout
    * waiting for a result that hasn't been received yet
    * @param feedback shared_ptr to latest feedback message
@@ -78,6 +87,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("path", "Path to follow"),
@@ -86,6 +98,8 @@ public:
         BT::InputPort<std::string>("progress_checker_id", ""),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
+        BT::OutputPort<std::string>(
+          "error_msg", "The follow path error msg"),
       });
   }
 };

@@ -222,7 +222,7 @@ pf_kdtree_node_t * pf_kdtree_insert_node(
   int i;
   int split, max_split;
 
-  // If the node doesnt exist yet...
+  // If the node doesn't exist yet...
   if (node == NULL) {
     assert(self->node_count < self->node_max_count);
     node = self->nodes + self->node_count++;

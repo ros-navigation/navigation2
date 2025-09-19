@@ -24,7 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
@@ -49,6 +49,15 @@ public:
     std::string name = "collision_checker");
 
   /**
+   * @brief Alternative constructor with a footprint string instead of a subscriber. It needs to be
+   * defined relative to the robot frame
+   */
+  CostmapTopicCollisionChecker(
+    CostmapSubscriber & costmap_sub,
+    std::string footprint_string,
+    std::string name = "collision_checker");
+
+  /**
    * @brief A destructor
    */
   ~CostmapTopicCollisionChecker() = default;
@@ -61,7 +70,7 @@ public:
    * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   double scorePose(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_costmap_and_footprint = true);
 
   /**
@@ -72,7 +81,7 @@ public:
    * data should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   bool isCollisionFree(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_costmap_and_footprint = true);
 
 protected:
@@ -84,16 +93,17 @@ protected:
    * footprint should be fetched in the first check but fetching can be skipped in consequent checks for speedup
    */
   Footprint getFootprint(
-    const geometry_msgs::msg::Pose2D & pose,
+    const geometry_msgs::msg::Pose & pose,
     bool fetch_latest_footprint = true);
 
   // Name used for logging
   std::string name_;
   CostmapSubscriber & costmap_sub_;
-  FootprintSubscriber & footprint_sub_;
+  FootprintSubscriber * footprint_sub_ = nullptr;
   FootprintCollisionChecker<std::shared_ptr<Costmap2D>> collision_checker_;
   rclcpp::Clock::SharedPtr clock_;
   Footprint footprint_;
+  std::string footprint_string_;
 };
 
 }  // namespace nav2_costmap_2d

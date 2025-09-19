@@ -45,7 +45,7 @@ FootprintCollisionChecker<CostmapT>::FootprintCollisionChecker(
 }
 
 template<typename CostmapT>
-double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint footprint)
+double FootprintCollisionChecker<CostmapT>::footprintCost(const Footprint & footprint)
 {
   // now we really have to lay down the footprint in the costmap_ grid
   unsigned int x0, x1, y0, y1;
@@ -116,7 +116,7 @@ bool FootprintCollisionChecker<CostmapT>::worldToMap(
 template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::pointCost(int x, int y) const
 {
-  return costmap_->getCost(x, y);
+  return static_cast<double>(costmap_->getCost(x, y));
 }
 
 template<typename CostmapT>
@@ -127,13 +127,14 @@ void FootprintCollisionChecker<CostmapT>::setCostmap(CostmapT costmap)
 
 template<typename CostmapT>
 double FootprintCollisionChecker<CostmapT>::footprintCostAtPose(
-  double x, double y, double theta, const Footprint footprint)
+  double x, double y, double theta, const Footprint & footprint)
 {
   double cos_th = cos(theta);
   double sin_th = sin(theta);
   Footprint oriented_footprint;
+  oriented_footprint.reserve(footprint.size());
+  geometry_msgs::msg::Point new_pt;
   for (unsigned int i = 0; i < footprint.size(); ++i) {
-    geometry_msgs::msg::Point new_pt;
     new_pt.x = x + (footprint[i].x * cos_th - footprint[i].y * sin_th);
     new_pt.y = y + (footprint[i].x * sin_th + footprint[i].y * cos_th);
     oriented_footprint.push_back(new_pt);

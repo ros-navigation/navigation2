@@ -2,12 +2,13 @@ add_executable(dummy_planner_node
   src/dummy_planner/main.cpp
   src/dummy_planner/dummy_planner.cpp
 )
-
-ament_target_dependencies(dummy_planner_node
-  rclcpp
-  std_msgs
-  nav2_util
-  nav2_behavior_tree
-  nav2_msgs
-  nav_msgs
+target_link_libraries(dummy_planner_node PRIVATE
+  nav2_behavior_tree::nav2_behavior_tree
+  rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(dummy_planner_node
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )

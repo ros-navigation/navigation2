@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_dwb_controller)
 
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
+find_package(nav2_common REQUIRED)
+
+nav2_package()
 
 ament_package()

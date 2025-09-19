@@ -18,13 +18,14 @@
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 Source::Source(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -61,16 +62,16 @@ void Source::getCommonParameters(std::string & source_topic)
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".topic",
-    rclcpp::ParameterValue("scan"));  // Set deafult topic for laser scanner
+    rclcpp::ParameterValue("scan"));  // Set default topic for laser scanner
   source_topic = node->get_parameter(source_name_ + ".topic").as_string();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
   enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".source_timeout",
     rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
   source_timeout_ = rclcpp::Duration::from_seconds(
@@ -120,7 +121,9 @@ Source::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if(param_name.find(source_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == source_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
@@ -129,6 +132,32 @@ Source::dynamicParametersCallback(
   }
   result.successful = true;
   return result;
+}
+
+bool Source::getTransform(
+  const rclcpp::Time & curr_time,
+  const std_msgs::msg::Header & data_header,
+  tf2::Transform & tf_transform) const
+{
+  if (base_shift_correction_) {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, data_header.stamp,
+        base_frame_id_, curr_time, global_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  } else {
+    if (
+      !nav2_util::getTransform(
+        data_header.frame_id, base_frame_id_,
+        transform_tolerance_, tf_buffer_, tf_transform))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace nav2_collision_monitor

@@ -36,18 +36,22 @@ BT::NodeStatus RoundRobinNode::tick()
   const auto num_children = children_nodes_.size();
 
   setStatus(BT::NodeStatus::RUNNING);
+  unsigned num_skipped_children = 0;
 
-  while (num_failed_children_ < num_children) {
+  while (num_failed_children_ + num_skipped_children < num_children) {
     TreeNode * child_node = children_nodes_[current_child_idx_];
     const BT::NodeStatus child_status = child_node->executeTick();
+
+    if (child_status != BT::NodeStatus::RUNNING) {
+      // Increment index and wrap around to the first child
+      if (++current_child_idx_ == num_children) {
+        current_child_idx_ = 0;
+      }
+    }
 
     switch (child_status) {
       case BT::NodeStatus::SUCCESS:
         {
-          // Wrap around to the first child
-          if (++current_child_idx_ >= num_children) {
-            current_child_idx_ = 0;
-          }
           num_failed_children_ = 0;
           ControlNode::haltChildren();
           return BT::NodeStatus::SUCCESS;
@@ -55,27 +59,27 @@ BT::NodeStatus RoundRobinNode::tick()
 
       case BT::NodeStatus::FAILURE:
         {
-          if (++current_child_idx_ >= num_children) {
-            current_child_idx_ = 0;
-          }
           num_failed_children_++;
           break;
         }
 
-      case BT::NodeStatus::RUNNING:
+      case BT::NodeStatus::SKIPPED:
         {
-          return BT::NodeStatus::RUNNING;
+          num_skipped_children++;
+          break;
         }
+      case BT::NodeStatus::RUNNING:
+        return BT::NodeStatus::RUNNING;
 
       default:
-        {
-          throw BT::LogicError("Invalid status return from BT node");
-        }
+        throw BT::LogicError("Invalid status return from BT node");
     }
   }
 
+  const bool all_skipped = (num_skipped_children == num_children);
   halt();
-  return BT::NodeStatus::FAILURE;
+  // If all the children were skipped, this node is considered skipped
+  return all_skipped ? BT::NodeStatus::SKIPPED : BT::NodeStatus::FAILURE;
 }
 
 void RoundRobinNode::halt()

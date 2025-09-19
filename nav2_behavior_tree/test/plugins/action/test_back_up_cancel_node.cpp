@@ -17,9 +17,9 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/back_up_cancel_node.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
 
@@ -47,7 +47,7 @@ class CancelBackUpActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("cancel_back_up_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("cancel_back_up_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -55,7 +55,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -64,6 +64,9 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     client_ = rclcpp_action::create_client<nav2_msgs::action::BackUp>(
       node_, "back_up");
 
@@ -93,19 +96,19 @@ public:
   }
 
   static std::shared_ptr<CancelBackUpServer> action_server_;
-  static std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::BackUp>> client_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr CancelBackUpActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr CancelBackUpActionTestFixture::node_ = nullptr;
 std::shared_ptr<CancelBackUpServer>
 CancelBackUpActionTestFixture::action_server_ = nullptr;
-std::shared_ptr<rclcpp_action::Client<nav2_msgs::action::BackUp>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::BackUp>>
 CancelBackUpActionTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelBackUpActionTestFixture::config_ = nullptr;
@@ -117,14 +120,14 @@ TEST_F(CancelBackUpActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
              <CancelBackUp name="BackUpCancel"/>
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::BackUp>::SendGoalOptions();
+  auto send_goal_options = nav2::ActionClient<nav2_msgs::action::BackUp>::SendGoalOptions();
 
   // Creating a dummy goal_msg
   auto goal_msg = nav2_msgs::action::BackUp::Goal();
@@ -145,7 +148,7 @@ TEST_F(CancelBackUpActionTestFixture, test_ports)
   // BT node should return success, once when the goal is cancelled
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
 
-  // Adding another test case to check if the goal is infact cancelling
+  // Adding another test case to check if the goal is in fact cancelling
   EXPECT_EQ(action_server_->isGoalCancelled(), true);
 }
 

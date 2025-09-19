@@ -20,8 +20,10 @@
 #include <memory>
 #include <set>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "test_transform_handler.hpp"
 #include "test_dummy_tree_node.hpp"
@@ -34,7 +36,12 @@ class BehaviorTreeTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_behavior_tree_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_behavior_tree_fixture");
+
+    // Configure and activate the lifecycle node
+    node_->configure();
+    node_->activate();
+
     transform_handler_ = std::make_shared<nav2_behavior_tree::TransformHandler>(node_);
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
@@ -43,10 +50,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
-    config_->blackboard->set<std::shared_ptr<tf2_ros::Buffer>>(
+    config_->blackboard->set(
       "tf_buffer",
       transform_handler_->getBuffer());
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -55,7 +62,7 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set("initial_pose_received", false);
 
     transform_handler_->activate();
     transform_handler_->waitForTransform();
@@ -64,6 +71,11 @@ public:
   static void TearDownTestCase()
   {
     transform_handler_->deactivate();
+
+    // Properly deactivate and cleanup the lifecycle node
+    node_->deactivate();
+    node_->cleanup();
+
     delete config_;
     config_ = nullptr;
     transform_handler_.reset();
@@ -72,7 +84,7 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static std::shared_ptr<nav2_behavior_tree::TransformHandler> transform_handler_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
@@ -80,7 +92,7 @@ protected:
 
 }  // namespace nav2_behavior_tree
 
-rclcpp::Node::SharedPtr nav2_behavior_tree::BehaviorTreeTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr nav2_behavior_tree::BehaviorTreeTestFixture::node_ = nullptr;
 
 std::shared_ptr<nav2_behavior_tree::TransformHandler>
 nav2_behavior_tree::BehaviorTreeTestFixture::transform_handler_ = nullptr;

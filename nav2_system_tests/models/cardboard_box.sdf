@@ -1,0 +1,9 @@
+<sdf version="1.6">
+     <model name='cardboard_box'>
+      <include>
+      <uri>
+      https://fuel.gazebosim.org/1.0/OpenRobotics/models/Cardboard box
+      </uri>
+      </include>
+    </model>
+</sdf>

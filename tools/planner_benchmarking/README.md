@@ -10,15 +10,15 @@ planner_server:
     expected_planner_frequency: 20.0
     planner_plugins: ["SmacHybrid", "Smac2d", "SmacLattice", "Navfn", "ThetaStar"]
     SmacHybrid:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      plugin: "nav2_smac_planner::SmacPlannerHybrid"
     Smac2d:
-      plugin: "nav2_smac_planner/SmacPlanner2D"
+      plugin: "nav2_smac_planner::SmacPlanner2D"
     SmacLattice:
-      plugin: "nav2_smac_planner/SmacPlannerLattice"
+      plugin: "nav2_smac_planner::SmacPlannerLattice"
     Navfn:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
+      plugin: "nav2_navfn_planner::NavfnPlanner"
     ThetaStar:
-      plugin: "nav2_theta_star_planner/ThetaStarPlanner"
+      plugin: "nav2_theta_star_planner::ThetaStarPlanner"
 ```
 
 Set global costmap settings to those desired for benchmarking. The global map will be automatically set in the script. Inside of `metrics.py`, you can modify the map or set of planners to use.

@@ -21,7 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_behavior_tree_fixture.hpp"
 #include "nav2_behavior_tree/plugins/action/truncate_path_local_action.hpp"
@@ -107,7 +107,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePathLocal
             distance_forward="2.0"
@@ -138,7 +138,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -160,7 +160,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -182,7 +182,7 @@ TEST_F(TruncatePathLocalTestFixture, test_tick)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -201,7 +201,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePathLocal
             distance_forward="2.0"
@@ -233,7 +233,7 @@ TEST_F(TruncatePathLocalTestFixture, test_success_on_empty_path)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(path, truncated_path);
@@ -245,7 +245,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePathLocal
             distance_forward="2.0"
@@ -276,7 +276,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_no_pose)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   SUCCEED();
@@ -287,7 +287,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePathLocal
             distance_forward="2.0"
@@ -317,7 +317,7 @@ TEST_F(TruncatePathLocalTestFixture, test_failure_on_invalid_robot_frame)
     tree_->rootNode()->executeTick();
   }
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
   SUCCEED();
@@ -328,7 +328,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePathLocal
             distance_forward="2.0"
@@ -362,7 +362,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -395,7 +395,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);
@@ -428,7 +428,7 @@ TEST_F(TruncatePathLocalTestFixture, test_path_pruning)
   {
     tree_->rootNode()->executeTick();
   }
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_NE(path, truncated_path);

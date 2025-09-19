@@ -18,28 +18,27 @@
 #include <cstdlib>
 #include <memory>
 #include "gtest/gtest.h"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/lifecycle_utils.hpp"
-#include "nav2_util/node_thread.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_thread.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-class DummyNode : public nav2_util::LifecycleNode
+class DummyNode : public nav2::LifecycleNode
 {
 public:
   DummyNode()
-  : nav2_util::LifecycleNode("nav2_test_cli", "")
+  : nav2::LifecycleNode("nav2_test_cli", "")
   {
     activated = false;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/)
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & /*state*/)
   {
     activated = true;
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
   bool activated;
@@ -51,7 +50,7 @@ public:
   Handle()
   {
     node = std::make_shared<DummyNode>();
-    thread = std::make_shared<nav2_util::NodeThread>(node->get_node_base_interface());
+    thread = std::make_shared<nav2::NodeThread>(node->get_node_base_interface());
   }
   ~Handle()
   {
@@ -59,27 +58,11 @@ public:
     node.reset();
   }
 
-  std::shared_ptr<nav2_util::NodeThread> thread;
+  std::shared_ptr<nav2::NodeThread> thread;
   std::shared_ptr<DummyNode> node;
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  ~RclCppFixture()
-  {
-    rclcpp::shutdown();
-  }
-};
-
-RclCppFixture g_rclcppfixture;
-
-TEST(LifeycleCLI, fails_no_node_name)
+TEST(LifecycleCLI, fails_no_node_name)
 {
   Handle handle;
   auto rc = system("ros2 run nav2_util lifecycle_bringup");
@@ -94,7 +77,7 @@ TEST(LifeycleCLI, fails_no_node_name)
   SUCCEED();
 }
 
-TEST(LifeycleCLI, succeeds_node_name)
+TEST(LifecycleCLI, succeeds_node_name)
 {
   Handle handle;
   auto rc = system("ros2 run nav2_util lifecycle_bringup nav2_test_cli");
@@ -107,6 +90,19 @@ TEST(LifeycleCLI, succeeds_node_name)
   (void)rc;
   EXPECT_EQ(handle.node->activated, true);
   SUCCEED();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
 
 #endif  // NAV2_UTIL__TEST__TEST_LIFECYCLE_CLI_NODE_HPP_

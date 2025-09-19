@@ -1,6 +1,7 @@
 #goal definition
 float32 target_yaw
 builtin_interfaces/Duration time_allowance
+bool disable_collision_checks False
 ---
 #result definition
 
@@ -14,6 +15,7 @@ uint16 COLLISION_AHEAD=703
 
 builtin_interfaces/Duration total_elapsed_time
 uint16 error_code
+string error_msg
 ---
 #feedback definition
 float32 angular_distance_traveled

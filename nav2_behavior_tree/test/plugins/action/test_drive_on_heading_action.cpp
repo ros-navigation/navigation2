@@ -18,9 +18,9 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
 
 class DriveOnHeadingActionServer : public TestActionServer<nav2_msgs::action::DriveOnHeading>
@@ -53,14 +53,14 @@ class DriveOnHeadingActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("drive_on_heading_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("drive_on_heading_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
 
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -69,7 +69,10 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -98,13 +101,13 @@ public:
   static std::shared_ptr<DriveOnHeadingActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr DriveOnHeadingActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr DriveOnHeadingActionTestFixture::node_ = nullptr;
 std::shared_ptr<DriveOnHeadingActionServer>
 DriveOnHeadingActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * DriveOnHeadingActionTestFixture::config_ = nullptr;
@@ -115,7 +118,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading />
         </BehaviorTree>
@@ -125,25 +128,27 @@ TEST_F(DriveOnHeadingActionTestFixture, test_ports)
   EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 0.15);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.025);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("time_allowance"), 10.0);
+  EXPECT_EQ(tree_->rootNode()->getInput<bool>("disable_collision_checks"), false);
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <DriveOnHeading dist_to_travel="2" speed="0.26" />
+            <DriveOnHeading dist_to_travel="2" speed="0.26" disable_collision_checks="true" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   EXPECT_EQ(tree_->rootNode()->getInput<double>("dist_to_travel"), 2.0);
   EXPECT_EQ(tree_->rootNode()->getInput<double>("speed"), 0.26);
+  EXPECT_EQ(tree_->rootNode()->getInput<bool>("disable_collision_checks"), true);
 }
 
 TEST_F(DriveOnHeadingActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>
@@ -166,7 +171,7 @@ TEST_F(DriveOnHeadingActionTestFixture, test_failure)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <DriveOnHeading dist_to_travel="2" speed="0.26" />
         </BehaviorTree>

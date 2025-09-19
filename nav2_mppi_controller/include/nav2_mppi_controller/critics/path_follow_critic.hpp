@@ -27,7 +27,7 @@ namespace mppi::critics
  * @class mppi::critics::ConstraintCritic
  * @brief Critic objective function for following the path approximately
  * To allow for deviation from path in case of dynamic obstacles. Path Align
- * is what aligns the trajectories to the path more or less precisely, if desireable.
+ * is what aligns the trajectories to the path more or less precisely, if desirable.
  * A higher weight here with an offset > 1 will accelerate the samples to full speed
  * faster and push the follow point further ahead, creating some shortcutting.
  */

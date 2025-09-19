@@ -16,8 +16,8 @@
 #include <vector>
 #include <memory>
 
-#include <nav2_costmap_2d/costmap_2d_ros.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 TEST(CostmapPluginsTester, checkPluginAPIOrder)
 {
@@ -47,7 +47,13 @@ TEST(CostmapPluginsTester, checkPluginAPIOrder)
 
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

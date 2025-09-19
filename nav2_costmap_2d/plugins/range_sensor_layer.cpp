@@ -130,6 +130,7 @@ void RangeSensorLayer::onInitialize()
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
+    topic_name = joinWithParentNamespace(topic_name);
     if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,
@@ -151,9 +152,11 @@ void RangeSensorLayer::onInitialize()
     }
     range_subs_.push_back(
       node->create_subscription<sensor_msgs::msg::Range>(
-        topic_name, rclcpp::SensorDataQoS(), std::bind(
+        topic_name,
+        std::bind(
           &RangeSensorLayer::bufferIncomingRangeMsg, this,
-          std::placeholders::_1)));
+          std::placeholders::_1),
+        nav2::qos::SensorDataQoS()));
 
     RCLCPP_INFO(
       logger_, "RangeSensorLayer: subscribed to "
@@ -522,7 +525,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
+  RCLCPP_DEBUG(logger_, "Resetting range sensor layer...");
   deactivate();
   resetMaps();
   was_reset_ = true;

@@ -20,13 +20,13 @@
 #include <string>
 #include <memory>
 
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_smac_planner
 {
 
-typedef std::pair<float, unsigned int> NodeHeuristicPair;
+typedef std::pair<float, uint64_t> NodeHeuristicPair;
 
 /**
  * @struct nav2_smac_planner::SearchInfo
@@ -43,6 +43,8 @@ struct SearchInfo
   float rotation_penalty{5.0};
   float analytic_expansion_ratio{3.5};
   float analytic_expansion_max_length{60.0};
+  float analytic_expansion_max_cost{200.0};
+  bool analytic_expansion_max_cost_override{false};
   std::string lattice_filepath;
   bool cache_obstacle_heuristic{false};
   bool allow_reverse_expansion{false};
@@ -70,27 +72,27 @@ struct SmootherParams
    * @param node Ptr to node
    * @param name Name of plugin
    */
-  void get(std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node, const std::string & name)
+  void get(nav2::LifecycleNode::SharedPtr node, const std::string & name)
   {
     std::string local_name = name + std::string(".smoother.");
 
     // Smoother params
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "tolerance", rclcpp::ParameterValue(1e-10));
     node->get_parameter(local_name + "tolerance", tolerance_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "max_iterations", rclcpp::ParameterValue(1000));
     node->get_parameter(local_name + "max_iterations", max_its_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "w_data", rclcpp::ParameterValue(0.2));
     node->get_parameter(local_name + "w_data", w_data_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "w_smooth", rclcpp::ParameterValue(0.3));
     node->get_parameter(local_name + "w_smooth", w_smooth_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "do_refinement", rclcpp::ParameterValue(true));
     node->get_parameter(local_name + "do_refinement", do_refinement_);
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       node, local_name + "refinement_num", rclcpp::ParameterValue(2));
     node->get_parameter(local_name + "refinement_num", refinement_num_);
   }
@@ -108,7 +110,7 @@ struct SmootherParams
  * @struct nav2_smac_planner::TurnDirection
  * @brief A struct with the motion primitive's direction embedded
  */
-enum struct TurnDirection
+enum class TurnDirection
 {
   UNKNOWN = 0,
   FORWARD = 1,
@@ -184,6 +186,17 @@ struct MotionPrimitive
   float straight_length;
   bool left_turn;
   MotionPoses poses;
+};
+
+/**
+ * @struct nav2_smac_planner::GoalState
+ * @brief A struct to store the goal state
+ */
+template<typename NodeT>
+struct GoalState
+{
+  NodeT * goal = nullptr;
+  bool is_valid = true;
 };
 
 typedef std::vector<MotionPrimitive> MotionPrimitives;

@@ -15,9 +15,10 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITIC_DATA_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITIC_DATA_HPP_
 
+#include <Eigen/Dense>
+
 #include <memory>
 #include <vector>
-#include <xtensor/xtensor.hpp>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/goal_checker.hpp"
@@ -32,16 +33,17 @@ namespace mppi
 
 /**
  * @struct mppi::CriticData
- * @brief Data to pass to critics for scoring, including state, trajectories, path, costs, and
- * important parameters to share
+ * @brief Data to pass to critics for scoring, including state, trajectories,
+ * pruned path, global goal, costs, and important parameters to share
  */
 struct CriticData
 {
   const models::State & state;
   const models::Trajectories & trajectories;
   const models::Path & path;
+  const geometry_msgs::msg::Pose & goal;
 
-  xt::xtensor<float, 1> & costs;
+  Eigen::ArrayXf & costs;
   float & model_dt;
 
   bool fail_flag;

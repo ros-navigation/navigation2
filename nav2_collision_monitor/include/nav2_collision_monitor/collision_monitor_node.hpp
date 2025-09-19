@@ -18,25 +18,31 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
-#include "tf2/time.h"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2/time.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/twist_publisher.hpp"
+#include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
+#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/source.hpp"
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -44,7 +50,7 @@ namespace nav2_collision_monitor
 /**
  * @brief Collision Monitor ROS2 node
  */
-class CollisionMonitor : public nav2_util::LifecycleNode
+class CollisionMonitor : public nav2::LifecycleNode
 {
 public:
   /**
@@ -64,44 +70,46 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Activates LifecyclePublishers, polygons and main processor, creates bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Deactivates LifecyclePublishers, polygons and main processor, destroys bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Resets all subscribers/publishers, polygons/data sources arrays
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called in shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 protected:
   /**
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
-  void cmdVelInCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
+  void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg);
   /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.
    * @param robot_action Robot action to publish
+   * @param header TwistStamped header to use
    */
-  void publishVelocity(const Action & robot_action);
+  void publishVelocity(const Action & robot_action, const std_msgs::msg::Header & header);
 
   /**
    * @brief Supporting routine obtaining all ROS-parameters
@@ -145,34 +153,37 @@ protected:
   /**
    * @brief Main processing routine
    * @param cmd_vel_in Input desired robot velocity
+   * @param header Twist header
    */
-  void process(const Velocity & cmd_vel_in);
+  void process(const Velocity & cmd_vel_in, const std_msgs::msg::Header & header);
 
   /**
    * @brief Processes the polygon of STOP, SLOWDOWN and LIMIT action type
    * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key and
+   * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processStopSlowdownLimit(
     const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
     Action & robot_action) const;
 
   /**
    * @brief Processes APPROACH action type
    * @param polygon Polygon to process
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key and
+   * array of source's 2D obstacle points as value
    * @param velocity Desired robot velocity
    * @param robot_action Output processed robot action
    * @return True if returned action is caused by current polygon, otherwise false
    */
   bool processApproach(
     const std::shared_ptr<Polygon> polygon,
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity,
     Action & robot_action) const;
 
@@ -203,17 +214,17 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
 
   // Input/output speed controls
-  /// @beirf Input cmd_vel subscriber
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_sub_;
+  /// @brief Input cmd_vel subscriber
+  std::unique_ptr<nav2_util::TwistSubscriber> cmd_vel_in_sub_;
   /// @brief Output cmd_vel publisher
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_pub_;
+  std::unique_ptr<nav2_util::TwistPublisher> cmd_vel_out_pub_;
 
   /// @brief CollisionMonitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
+  nav2::Publisher<nav2_msgs::msg::CollisionMonitorState>::SharedPtr
     state_pub_;
 
   /// @brief Collision points marker publisher
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
 
   /// @brief Whether main routine is active

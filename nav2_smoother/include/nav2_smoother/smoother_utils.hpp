@@ -27,10 +27,10 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace smoother_utils
 {
@@ -67,7 +67,7 @@ inline std::vector<PathSegment> findDirectionalPathSegments(
     double ab_y = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
 
-    // Checking for the existance of cusp, in the path, using the dot product.
+    // Checking for the existence of cusp, in the path, using the dot product.
     double dot_product = (oa_x * ab_x) + (oa_y * ab_y);
     if (dot_product < 0.0) {
       curr_segment.end = idx;
@@ -75,7 +75,7 @@ inline std::vector<PathSegment> findDirectionalPathSegments(
       curr_segment.start = idx;
     }
 
-    // Checking for the existance of a differential rotation in place.
+    // Checking for the existence of a differential rotation in place.
     double cur_theta = tf2::getYaw(path.poses[idx].pose.orientation);
     double next_theta = tf2::getYaw(path.poses[idx + 1].pose.orientation);
     double dtheta = angles::shortest_angular_distance(cur_theta, next_theta);

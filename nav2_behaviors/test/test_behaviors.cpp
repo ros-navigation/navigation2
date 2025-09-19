@@ -57,10 +57,10 @@ public:
     // The output is defined by the tester class on the command string.
     if (command_ == "Testing success" || command_ == "Testing failure on run") {
       initialized_ = true;
-      return ResultStatus{Status::SUCCEEDED, 0};
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return ResultStatus{Status::FAILED, 0};
+    return ResultStatus{Status::FAILED, 0, "failed"};
   }
 
   ResultStatus onCycleUpdate() override
@@ -70,7 +70,7 @@ public:
     // was completed.
 
     if (command_ != "Testing success" || !initialized_) {
-      return ResultStatus{Status::FAILED, 0};
+      return ResultStatus{Status::FAILED, 0, "failed"};
     }
 
     // For testing, pretend the robot takes some fixed
@@ -80,10 +80,10 @@ public:
 
     if (current_time - start_time_ >= motion_duration) {
       // Movement was completed
-      return ResultStatus{Status::SUCCEEDED, 0};
+      return ResultStatus{Status::SUCCEEDED, 0, ""};
     }
 
-    return ResultStatus{Status::RUNNING, 0};
+    return ResultStatus{Status::RUNNING, 0, ""};
   }
 
   /**
@@ -109,7 +109,7 @@ protected:
   void SetUp() override
   {
     node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
+      std::make_shared<nav2::LifecycleNode>(
       "LifecycleBehaviorTestNode", rclcpp::NodeOptions());
     node_lifecycle_->declare_parameter(
       "local_costmap_topic",
@@ -233,9 +233,9 @@ protected:
     return future_result.get();
   }
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
+  nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<DummyBehavior> behavior_;
-  std::shared_ptr<rclcpp_action::Client<BehaviorAction>> client_;
+  std::shared_ptr<nav2::ActionClient<BehaviorAction>> client_;
   std::shared_ptr<rclcpp_action::ClientGoalHandle<BehaviorAction>> goal_handle_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

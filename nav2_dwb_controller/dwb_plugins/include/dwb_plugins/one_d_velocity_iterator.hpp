@@ -48,7 +48,7 @@ const double EPSILON = 1E-5;
  *
  * @param v0 Initial velocity
  * @param accel The acceleration rate
- * @param decel The decceleration rate
+ * @param decel The deceleration rate
  * @param dt Delta time - amount of time to project into the future
  * @param target target velocity
  * @return The velocity dt seconds after v0.

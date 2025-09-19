@@ -1,0 +1,158 @@
+// Copyright (c) 2024 Open Navigation LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_
+#define OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_
+
+#include <string>
+#include <memory>
+#include <vector>
+
+#include "std_srvs/srv/trigger.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "sensor_msgs/msg/battery_state.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2/utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+
+#include "opennav_docking_core/non_charging_dock.hpp"
+#include "opennav_docking/pose_filter.hpp"
+
+namespace opennav_docking
+{
+
+class SimpleNonChargingDock : public opennav_docking_core::NonChargingDock
+{
+public:
+  /**
+   * @brief Constructor
+   */
+  SimpleNonChargingDock()
+  : NonChargingDock()
+  {}
+
+  /**
+   * @param  parent pointer to user's node
+   * @param  name The name of this planner
+   * @param  tf A pointer to a TF buffer
+   */
+  virtual void configure(
+    const nav2::LifecycleNode::WeakPtr & parent,
+    const std::string & name, std::shared_ptr<tf2_ros::Buffer> tf);
+
+  /**
+   * @brief Method to cleanup resources used on shutdown.
+   */
+  void cleanup() override;
+
+   /**
+    * @brief Method to active Behavior and any threads involved in execution.
+    */
+  void activate() override;
+
+   /**
+    * @brief Method to deactivate Behavior and any threads involved in execution.
+    */
+  void deactivate() override;
+
+  /**
+   * @brief Method to obtain the dock's staging pose. This method should likely
+   * be using TF and the dock's pose information to find the staging pose from
+   * a static or parameterized staging pose relative to the docking pose
+   * @param pose Dock with pose
+   * @param frame Dock's frame of pose
+   * @return PoseStamped of staging pose in the specified frame
+   */
+  virtual geometry_msgs::msg::PoseStamped getStagingPose(
+    const geometry_msgs::msg::Pose & pose, const std::string & frame);
+
+  /**
+   * @brief Method to obtain the refined pose of the dock, usually based on sensors
+   * @param pose The initial estimate of the dock pose.
+   * @param frame The frame of the initial estimate.
+   */
+  virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose, std::string id);
+
+  /**
+   * @copydoc opennav_docking_core::ChargingDock::isDocked
+   */
+  virtual bool isDocked();
+
+  /**
+   * @brief Start external detection process (service call + subscribe).
+   */
+  bool startDetectionProcess() override;
+
+  /**
+   * @brief Stop external detection process.
+   */
+  bool stopDetectionProcess() override;
+
+protected:
+  void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
+
+  // Optionally subscribe to a detected dock pose topic
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_sub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_dock_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr staging_pose_pub_;
+  // If subscribed to a detected pose topic, will contain latest message
+  geometry_msgs::msg::PoseStamped detected_dock_pose_;
+  // This is the actual dock pose once it has the specified translation/rotation applied
+  // If not subscribed to a topic, this is simply the database dock pose
+  geometry_msgs::msg::PoseStamped dock_pose_;
+
+  // Optionally subscribe to joint state message, used to determine if stalled
+  nav2::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
+  std::vector<std::string> stall_joint_names_;
+  double stall_velocity_threshold_, stall_effort_threshold_;
+  bool is_stalled_;
+
+  // An external reference (such as image_proc::TrackMarkerNode) can be used to detect dock
+  bool use_external_detection_pose_;
+  double external_detection_timeout_;
+  tf2::Quaternion external_detection_rotation_;
+  double external_detection_translation_x_;
+  double external_detection_translation_y_;
+
+  // Filtering of detected poses
+  std::shared_ptr<PoseFilter> filter_;
+
+  // If not using an external pose reference, this is the distance threshold
+  double docking_threshold_;
+  std::string base_frame_id_;
+  // Offset for staging pose relative to dock pose
+  double staging_x_offset_;
+  double staging_yaw_offset_;
+
+  nav2::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+
+  // Detector control parameters
+  std::string detector_service_name_;
+  double detector_service_timeout_{5.0};
+  bool subscribe_toggle_{false};
+
+  // Client used to call the Trigger service
+  nav2::ServiceClient<std_srvs::srv::Trigger>::SharedPtr detector_client_;
+
+  // Detection state flags
+  bool detection_active_{false};
+  bool initial_pose_received_{false};
+};
+
+}  // namespace opennav_docking
+
+#endif  // OPENNAV_DOCKING__SIMPLE_NON_CHARGING_DOCK_HPP_

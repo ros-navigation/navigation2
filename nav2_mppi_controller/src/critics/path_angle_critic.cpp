@@ -20,29 +20,27 @@
 namespace mppi::critics
 {
 
-using xt::evaluation_strategy::immediate;
-
 void PathAngleCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
   float vx_min;
   getParentParam(vx_min, "vx_min", -0.35);
-  if (fabs(vx_min) < 1e-6) {  // zero
+  if (fabs(vx_min) < 1e-6f) {  // zero
     reversing_allowed_ = false;
-  } else if (vx_min < 0.0) {   // reversing possible
+  } else if (vx_min < 0.0f) {   // reversing possible
     reversing_allowed_ = true;
   }
 
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(offset_from_furthest_, "offset_from_furthest", 4);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 2.0);
+  getParam(weight_, "cost_weight", 2.2f);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.5);
+    "threshold_to_consider", 0.5f);
   getParam(
     max_angle_to_furthest_,
-    "max_angle_to_furthest", 1.2);
+    "max_angle_to_furthest", 0.785398f);
 
   int mode = 0;
   getParam(mode, "mode", mode);
@@ -63,19 +61,18 @@ void PathAngleCritic::initialize()
 
 void PathAngleCritic::score(CriticData & data)
 {
-  if (!enabled_ ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
-  {
+  if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 
   utils::setPathFurthestPointIfNotSet(data);
-  auto offseted_idx = std::min(
-    *data.furthest_reached_path_point + offset_from_furthest_, data.path.x.shape(0) - 1);
+  auto offsetted_idx = std::min(
+    *data.furthest_reached_path_point + offset_from_furthest_,
+      static_cast<size_t>(data.path.x.size()) - 1);
 
-  const float goal_x = xt::view(data.path.x, offseted_idx);
-  const float goal_y = xt::view(data.path.y, offseted_idx);
-  const float goal_yaw = xt::view(data.path.yaws, offseted_idx);
+  const float goal_x = data.path.x(offsetted_idx);
+  const float goal_y = data.path.y(offsetted_idx);
+  const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   switch (mode_) {
@@ -98,36 +95,51 @@ void PathAngleCritic::score(CriticData & data)
       throw nav2_core::ControllerException("Invalid path angle mode!");
   }
 
-  auto yaws_between_points = xt::atan2(
-    goal_y - data.trajectories.y,
-    goal_x - data.trajectories.x);
-
-  auto yaws =
-    xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points));
+  int last_idx = data.trajectories.y.cols() - 1;
+  auto diff_y = goal_y - data.trajectories.y.col(last_idx);
+  auto diff_x = goal_x - data.trajectories.x.col(last_idx);
+  auto yaws_between_points = diff_y.binaryExpr(
+    diff_x, [&](const float & y, const float & x){return atan2f(y, x);}).eval();
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
       {
-        data.costs += xt::pow(xt::mean(yaws, {1}, immediate) * weight_, power_);
+        auto last_yaws = data.trajectories.yaws.col(last_idx);
+        auto yaws = utils::shortest_angular_distance(
+          last_yaws, yaws_between_points).abs();
+        if (power_ > 1u) {
+          data.costs += (yaws * weight_).pow(power_);
+        } else {
+          data.costs += yaws * weight_;
+        }
         return;
       }
     case PathAngleMode::NO_DIRECTIONAL_PREFERENCE:
       {
-        const auto yaws_between_points_corrected = xt::where(
-          yaws < M_PI_2, yaws_between_points, utils::normalize_angles(yaws_between_points + M_PI));
-        const auto corrected_yaws = xt::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
-        data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        auto last_yaws = data.trajectories.yaws.col(last_idx);
+        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+          yaws_between_points);
+        auto corrected_yaws = utils::shortest_angular_distance(
+          last_yaws, yaws_between_points_corrected).abs();
+        if (power_ > 1u) {
+          data.costs += (corrected_yaws * weight_).pow(power_);
+        } else {
+          data.costs += corrected_yaws * weight_;
+        }
         return;
       }
     case PathAngleMode::CONSIDER_FEASIBLE_PATH_ORIENTATIONS:
       {
-        const auto yaws_between_points_corrected = xt::where(
-          xt::abs(utils::shortest_angular_distance(yaws_between_points, goal_yaw)) < M_PI_2,
-          yaws_between_points, utils::normalize_angles(yaws_between_points + M_PI));
-        const auto corrected_yaws = xt::abs(
-          utils::shortest_angular_distance(data.trajectories.yaws, yaws_between_points_corrected));
-        data.costs += xt::pow(xt::mean(corrected_yaws, {1}, immediate) * weight_, power_);
+        auto last_yaws = data.trajectories.yaws.col(last_idx);
+        auto yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_yaw,
+          yaws_between_points);
+        auto corrected_yaws = utils::shortest_angular_distance(
+          last_yaws, yaws_between_points_corrected).abs();
+        if (power_ > 1u) {
+          data.costs += (corrected_yaws * weight_).pow(power_);
+        } else {
+          data.costs += corrected_yaws * weight_;
+        }
         return;
       }
   }

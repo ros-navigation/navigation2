@@ -36,23 +36,22 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include "nav_2d_utils/parameters.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace dwb_plugins
 {
 
 void LimitedAccelGenerator::initialize(
-  const nav2_util::LifecycleNode::SharedPtr & nh,
+  const nav2::LifecycleNode::SharedPtr & nh,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
   StandardTrajectoryGenerator::initialize(nh, plugin_name_);
 
   try {
-    nav2_util::declare_parameter_if_not_declared(
+    nav2::declare_parameter_if_not_declared(
       nh, plugin_name + ".sim_period", rclcpp::PARAMETER_DOUBLE);
     if (!nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
       // This actually should never appear, since declare_parameter_if_not_declared()
@@ -65,8 +64,7 @@ void LimitedAccelGenerator::initialize(
     RCLCPP_WARN(
       rclcpp::get_logger("LimitedAccelGenerator"),
       "'sim_period' parameter is not set for %s", plugin_name.c_str());
-    double controller_frequency = nav_2d_utils::searchAndGetParam(
-      nh, "controller_frequency", 20.0);
+    double controller_frequency = nh->declare_or_get_parameter("controller_frequency", 20.0);
     if (controller_frequency > 0) {
       acceleration_time_ = 1.0 / controller_frequency;
     } else {

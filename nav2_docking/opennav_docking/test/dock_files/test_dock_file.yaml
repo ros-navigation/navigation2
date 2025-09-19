@@ -1,0 +1,9 @@
+docks:
+  dock1:
+    type: "dockv3"
+    frame: "mapA"
+    pose: [0.3, 0.3, 0.0]
+  dock2:
+    type: "dockv1"
+    pose: [0.0, 0.0, 0.4]
+    id: "2"

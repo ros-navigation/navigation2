@@ -37,7 +37,7 @@ The directory to save the visualizations can be specified by passing in a path w
 Note: None of these parameters have defaults. They all must be specified through the [config.json](config.json) file.
 
 **motion_model** (string)
-    
+
 The type of motion model used. Accepted values:
 - `ackermann`: Only forward and reversing trajectories
 - `diff`: Forward moving trajectories + rotation in place by a single angular bin
@@ -119,22 +119,22 @@ A list of dictionaries where each dictionary represents an individual motion pri
 This section describes how the various portions of the generation algorithm works.
 
 ### Angle Discretization
-Dividing a full turn into uniform angular headings presents several problems. The biggest problem is that it will create angles for which a straight trajectory does not land nicely on an endpoint that aligns with the grid. Instead we discretize the angles in a way that ensures straight paths will land on endpoints aligned with the grid. 
+Dividing a full turn into uniform angular headings presents several problems. The biggest problem is that it will create angles for which a straight trajectory does not land nicely on an endpoint that aligns with the grid. Instead we discretize the angles in a way that ensures straight paths will land on endpoints aligned with the grid.
 
 ![ ](docs/angle_discretization.png)
 
-The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8.  
+The image shows how the angular headings are generated. The same idea can be extended to a higher number of headings. As a result, the number of headings parameter is restricted to multiples of 8.
 
 ### Trajectory Generator
 1. Create two lines. Line 1 passes through start point with angle of start angle, and line 2 passes through the end point with angle of end angle
 
 2. Find the intersection point I of lines 1 and 2
 
-3. Calculate the distance beween I and the origin (let this be d1). Also calculate the distance between I and the end point (let this be d2)
+3. Calculate the distance between I and the origin (let this be d1). Also calculate the distance between I and the end point (let this be d2)
 
 4. If d1 and d2 are equal then proceed to step 5. Otherwise, create intermediate points for each line that are min(d1, d2) distance away along the lines from I. So there should be an intermediate point on line 1 and an intermediate point on line 2. One of these intermediate points should align with either the origin or the end point by nature of how the distance was calculated.
 
-5. Create perpindicular lines for line 1 and line 2 that pass through the respective intermediate points. The intersection of these perpindicular lines is the centre of the circle whose arc represents the curved portion of the trajectory.
+5. Create perpendicular lines for line 1 and line 2 that pass through the respective intermediate points. The intersection of these perpendicular lines is the centre of the circle whose arc represents the curved portion of the trajectory.
 
 6. Finally, if needed append straight segments to the path to ensure we start at the origin and end at the end point.
 
@@ -159,7 +159,7 @@ The lattice generator is generally based on the generation of the control set as
 
 4. Steps 2-3 are repeated for the next wavefront which is a grid resolution step further away from the origin.
 
-5. Steps 1-4 are repeated untill all trajectories are being removed. The generator will continue for a few more wavefront steps until N wavefronts have been searched with no new trajectories. At this point the generator terminates and returns the computed minimal set.
+5. Steps 1-4 are repeated until all trajectories are being removed. The generator will continue for a few more wavefront steps until N wavefronts have been searched with no new trajectories. At this point the generator terminates and returns the computed minimal set.
 
     - The number N is the stopping_threshold parameter
 

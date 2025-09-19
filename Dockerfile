@@ -57,7 +57,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-fastrtps-cpp \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    && pip3 install \
+    && pip3 install --break-system-packages \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
       git+https://github.com/ruffsl/colcon-clean.git@a7f1074d1ebc1a54a6508625b117974f2672f2a9 \
@@ -96,6 +96,7 @@ ARG OVERLAY_WS
 ENV OVERLAY_WS $OVERLAY_WS
 WORKDIR $OVERLAY_WS
 COPY --from=cacher /tmp/$OVERLAY_WS ./
+
 RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
@@ -145,7 +146,7 @@ RUN apt-get update && \
       bash-completion \
       gdb \
       wget && \
-    pip3 install \
+    pip3 install --break-system-packages \
       bottle \
       glances
 
@@ -167,9 +168,7 @@ RUN mkdir -p $ROOT_SRV
 
 # install demo dependencies
 RUN apt-get update && apt-get install -y \
-      ros-$ROS_DISTRO-aws-robomaker-small-warehouse-world \
-      ros-$ROS_DISTRO-rviz2 \
-      ros-$ROS_DISTRO-turtlebot3-simulations
+      ros-$ROS_DISTRO-rviz2
 
 # install gzweb dependacies
 RUN apt-get install -y --no-install-recommends \

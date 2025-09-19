@@ -18,8 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
+#include "nav_msgs/msg/goals.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
+
 
 namespace nav2_behavior_tree
 {
@@ -27,6 +31,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that returns SUCCESS when goal is
  * updated on the blackboard and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class GoalUpdatedCondition : public BT::ConditionNode
 {
@@ -54,12 +60,21 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return {};
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
+    return {
+      BT::InputPort<nav_msgs::msg::Goals>(
+        "goals", "Vector of navigation goals"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>(
+        "goal", "Navigation goal"),
+    };
   }
 
 private:
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  nav_msgs::msg::Goals goals_;
 };
 
 }  // namespace nav2_behavior_tree

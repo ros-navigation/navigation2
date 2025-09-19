@@ -19,7 +19,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -34,7 +34,7 @@ WaitAtWaypoint::~WaitAtWaypoint()
 }
 
 void WaitAtWaypoint::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   auto node = parent.lock();
@@ -42,11 +42,12 @@ void WaitAtWaypoint::initialize(
     throw std::runtime_error{"Failed to lock node in wait at waypoint plugin!"};
   }
   logger_ = node->get_logger();
-  nav2_util::declare_parameter_if_not_declared(
+  clock_ = node->get_clock();
+  nav2::declare_parameter_if_not_declared(
     node,
     plugin_name + ".waypoint_pause_duration",
     rclcpp::ParameterValue(0));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node,
     plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
@@ -77,7 +78,7 @@ bool WaitAtWaypoint::processAtWaypoint(
     logger_, "Arrived at %i'th waypoint, sleeping for %i milliseconds",
     curr_waypoint_index,
     waypoint_pause_duration_);
-  rclcpp::sleep_for(std::chrono::milliseconds(waypoint_pause_duration_));
+  clock_->sleep_for(std::chrono::milliseconds(waypoint_pause_duration_));
   return true;
 }
 }  // namespace nav2_waypoint_follower

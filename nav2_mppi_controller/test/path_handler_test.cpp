@@ -18,17 +18,9 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/path_handler.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 // Tests path handling
-
-class RosLockGuard
-{
-public:
-  RosLockGuard() {rclcpp::init(0, nullptr);}
-  ~RosLockGuard() {rclcpp::shutdown();}
-};
-RosLockGuard g_rclcpp;
 
 using namespace mppi;  // NOLINT
 
@@ -52,13 +44,6 @@ public:
   getGlobalPlanConsideringBoundsInCostmapFrameWrapper(const geometry_msgs::msg::PoseStamped & pose)
   {
     return getGlobalPlanConsideringBoundsInCostmapFrame(pose);
-  }
-
-  bool transformPoseWrapper(
-    const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose) const
-  {
-    return transformPose(frame, in_pose, out_pose);
   }
 
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrameWrapper(
@@ -105,14 +90,15 @@ TEST(PathHandlerTests, GetAndPrunePath)
 TEST(PathHandlerTests, TestBounds)
 {
   PathHandlerWrapper handler;
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", true);
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
-  ParametersHandler param_handler(node);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -156,11 +142,12 @@ TEST(PathHandlerTests, TestBounds)
 TEST(PathHandlerTests, TestTransforms)
 {
   PathHandlerWrapper handler;
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
-  ParametersHandler param_handler(node);
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -186,12 +173,10 @@ TEST(PathHandlerTests, TestTransforms)
     path.poses[i].header.frame_id = "map";
   }
 
-  geometry_msgs::msg::PoseStamped robot_pose, output_pose;
+  geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 2.5;
 
-  EXPECT_TRUE(handler.transformPoseWrapper("map", robot_pose, output_pose));
-  EXPECT_EQ(output_pose.pose.position.x, 2.5);
 
   EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
   handler.setPath(path);
@@ -246,4 +231,17 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   // Offset spatially + off angled but both within tolerances
   robot_pose.pose.position.x = 9.10;
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

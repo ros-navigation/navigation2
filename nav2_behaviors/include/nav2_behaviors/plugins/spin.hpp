@@ -22,6 +22,7 @@
 #include "nav2_behaviors/timed_behavior.hpp"
 #include "nav2_msgs/action/spin.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 namespace nav2_behaviors
 {
@@ -79,8 +80,8 @@ protected:
    */
   bool isCollisionFree(
     const double & distance,
-    geometry_msgs::msg::Twist * cmd_vel,
-    geometry_msgs::msg::Pose2D & pose2d);
+    const geometry_msgs::msg::Twist & cmd_vel,
+    geometry_msgs::msg::Pose & pose);
 
   SpinAction::Feedback::SharedPtr feedback_;
 
@@ -88,6 +89,7 @@ protected:
   double max_rotational_vel_;
   double rotational_acc_lim_;
   double cmd_yaw_;
+  bool cmd_disable_collision_checks_;
   double prev_yaw_;
   double relative_yaw_;
   double simulate_ahead_time_;

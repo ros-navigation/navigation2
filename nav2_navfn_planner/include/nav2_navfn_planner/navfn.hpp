@@ -43,6 +43,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <functional>
 
 namespace nav2_navfn_planner
 {
@@ -131,14 +132,16 @@ public:
 
   /**
    * @brief  Calculates a plan using the A* heuristic, returns true if one is found
+   * @param cancelChecker Function to check if the task has been canceled
    * @return True if a plan is found, false otherwise
    */
-  bool calcNavFnAstar();
+  bool calcNavFnAstar(std::function<bool()> cancelChecker);
 
   /**
-   * @brief Caclulates the full navigation function using Dijkstra
+   * @brief Calculates the full navigation function using Dijkstra
+   * @param cancelChecker Function to check if the task has been canceled
    */
-  bool calcNavFnDijkstra(bool atStart = false);
+  bool calcNavFnDijkstra(std::function<bool()> cancelChecker, bool atStart = false);
 
   /**
    * @brief  Accessor for the x-coordinates of a path
@@ -178,6 +181,9 @@ public:
   /** block priority thresholds */
   float curT;  /**< current threshold */
   float priInc;  /**< priority threshold increment */
+
+  /**< number of cycles between checks for cancellation */
+  static constexpr int terminal_checking_interval = 5000;
 
   /** goal and start positions */
   /**
@@ -229,18 +235,20 @@ public:
    * @brief  Run propagation for <cycles> iterations, or until start is reached using
    * breadth-first Dijkstra method
    * @param cycles The maximum number of iterations to run for
+   * @param cancelChecker Function to check if the task has been canceled
    * @param atStart Whether or not to stop when the start point is reached
    * @return true if the start point is reached
    */
-  bool propNavFnDijkstra(int cycles, bool atStart = false);
+  bool propNavFnDijkstra(int cycles, std::function<bool()> cancelChecker, bool atStart = false);
 
   /**
    * @brief  Run propagation for <cycles> iterations, or until start is reached using
    * the best-first A* method with Euclidean distance heuristic
    * @param cycles The maximum number of iterations to run for
+   * @param cancelChecker Function to check if the task has been canceled
    * @return true if the start point is reached
    */
-  bool propNavFnAstar(int cycles);  /**< returns true if start point found */
+  bool propNavFnAstar(int cycles, std::function<bool()> cancelChecker);
 
   /** gradient and paths */
   float * gradx, * grady;  /**< gradient arrays, size of potential array */
@@ -251,9 +259,9 @@ public:
   float last_path_cost_;  /**< Holds the cost of the path found the last time A* was called */
 
   /**
-   * @brief  Calculates the path for at mose <n> cycles
+   * @brief  Calculates the path for at most <n> cycles
    * @param n The maximum number of cycles to run for
-   * @return The lenght of the path found, 0 if none
+   * @return The length of the path found, 0 if none
    */
   int calcPath(int n, int * st = NULL);
 

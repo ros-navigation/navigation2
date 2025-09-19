@@ -2,29 +2,28 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_navfn_planner</name>
-  <version>1.2.0</version>
-  <description>TODO</description>
+  <version>1.4.0</version>
+  <description>Nav2 NavFn planner</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carlos.a.orduno@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>nav2_common</build_depend>
 
-  <depend>rclcpp</depend>
-  <depend>rclcpp_action</depend>
-  <depend>rclcpp_lifecycle</depend>
-  <depend>visualization_msgs</depend>
-  <depend>nav2_util</depend>
-  <depend>nav2_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>geometry_msgs</depend>
+  <depend>backward_ros</depend>
   <depend>builtin_interfaces</depend>
-  <depend>nav2_common</depend>
-  <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
   <depend>nav2_costmap_2d</depend>
   <depend>nav2_core</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>tf2_ros</depend>
+  <depend>nav2_ros_common</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

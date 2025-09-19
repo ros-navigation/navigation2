@@ -1,0 +1,18 @@
+<class_libraries>
+  <library path="simple_charging_dock">
+    <class type="opennav_docking::SimpleChargingDock"  base_class_type="opennav_docking_core::ChargingDock">
+      <description>A simple charging dock plugin.</description>
+    </class>
+  </library>
+  <library path="simple_non_charging_dock">
+    <class type="opennav_docking::SimpleNonChargingDock"  base_class_type="opennav_docking_core::ChargingDock">
+      <description>A simple non-charging dock plugin.</description>
+    </class>
+  </library>
+  <library path="test_dock">
+      <class type="opennav_docking::TestFailureDock"
+            base_class_type="opennav_docking_core::ChargingDock">
+          <description>Test dock plugin for failures in unit testing.</description>
+      </class>
+  </library>
+</class_libraries>

@@ -53,58 +53,42 @@ using std::none_of;
 using std::pair;
 using std::string;
 
-class RclCppFixture
-{
-public:
-  RclCppFixture()
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  ~RclCppFixture()
-  {
-    rclcpp::shutdown();
-  }
-};
-
-RclCppFixture g_rclcppfixture;
-
-class TestLifecycleNode : public nav2_util::LifecycleNode
+class TestLifecycleNode : public nav2::LifecycleNode
 {
 public:
   explicit TestLifecycleNode(const string & name)
-  : nav2_util::LifecycleNode(name)
+  : nav2::LifecycleNode(name)
   {
   }
 
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onShutdown(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2_util::CallbackReturn onError(const rclcpp_lifecycle::State &)
+  nav2::CallbackReturn onError(const rclcpp_lifecycle::State &)
   {
-    return nav2_util::CallbackReturn::SUCCESS;
+    return nav2::CallbackReturn::SUCCESS;
   }
 };
 
@@ -187,7 +171,7 @@ TEST_F(TestNode, testClearingAtMaxRange) {
 }
 
 // Testing fixed scan with robot forward motion
-TEST_F(TestNode, testProbabalisticModelForward) {
+TEST_F(TestNode, testProbabilisticModelForward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -240,7 +224,7 @@ TEST_F(TestNode, testProbabalisticModelForward) {
 }
 
 // Testing fixed motion with downward movement
-TEST_F(TestNode, testProbabalisticModelDownward) {
+TEST_F(TestNode, testProbabilisticModelDownward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -291,4 +275,17 @@ TEST_F(TestNode, testProbabalisticModelDownward) {
   ASSERT_EQ(layers.getCostmap()->getCost(3, 5), 254);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 6), 0);
   ASSERT_EQ(layers.getCostmap()->getCost(3, 7), 254);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

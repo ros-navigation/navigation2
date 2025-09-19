@@ -43,11 +43,11 @@
 #include <vector>
 
 #include "map_msgs/msg/occupancy_grid_update.hpp"
-#include "message_filters/subscriber.h"
+#include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -154,11 +154,32 @@ protected:
   unsigned char interpretValue(unsigned char value);
 
   /**
+   * @brief Check if two double values are equal within a given epsilon
+   * @param a First double value
+   * @param b Second double value
+   * @param epsilon The tolerance for equality check
+   * @return True if the values are equal within the tolerance, false otherwise
+   */
+  bool isEqual(double a, double b, double epsilon);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  std::vector<geometry_msgs::msg::Point> transformed_footprint_;
+  bool footprint_clearing_enabled_;
+  bool restore_cleared_footprint_;
+  /**
+   * @brief Clear costmap layer info below the robot's footprint
+   */
+  void updateFootprint(
+    double robot_x, double robot_y, double robot_yaw, double * min_x,
+    double * min_y,
+    double * max_x,
+    double * max_y);
 
   std::string global_frame_;  ///< @brief The global frame for the costmap
   std::string map_frame_;  /// @brief frame that map is located in
@@ -170,8 +191,8 @@ protected:
   unsigned int width_{0};
   unsigned int height_{0};
 
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-  rclcpp::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
+  nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+  nav2::Subscription<map_msgs::msg::OccupancyGridUpdate>::SharedPtr map_update_sub_;
 
   // Parameters
   std::string map_topic_;

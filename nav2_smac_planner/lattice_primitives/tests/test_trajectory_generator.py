@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License. Reserved.
 
+from typing import cast
 import unittest
 
+from nav2_smac_planner.lattice_primitives.trajectory import Trajectory
+from nav2_smac_planner.lattice_primitives.trajectory_generator import (
+    TrajectoryGenerator, TrajectoryGeneratorConfigDict)
 import numpy as np
-from trajectory_generator import TrajectoryGenerator
 
 TURNING_RADIUS = 1
 STEP_DISTANCE = 0.1
@@ -25,14 +28,18 @@ class TestTrajectoryGenerator(unittest.TestCase):
     """Contains the unit tests for the TrajectoryGenerator."""
 
     def setUp(self) -> None:
-        config = {'turning_radius': TURNING_RADIUS}
+        config: TrajectoryGeneratorConfigDict = {'turning_radius': TURNING_RADIUS}
         self.trajectory_generator = TrajectoryGenerator(config)
 
-    def test_generate_trajectory_only_arc(self):
+    def test_generate_trajectory_only_arc(self) -> None:
         # Quadrant 1
         end_point = np.array([1, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -40,7 +47,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 2
         end_point = np.array([-1, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -48,7 +59,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 3
         end_point = np.array([-1, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -56,16 +71,24 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 4
         end_point = np.array([1, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
 
-    def test_generate_trajectory_only_line(self):
+    def test_generate_trajectory_only_line(self) -> None:
         # Quadrant 1
         end_point = np.array([1, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(45), np.deg2rad(45), STEP_DISTANCE)
+            end_point, np.deg2rad(45), np.deg2rad(45), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -73,7 +96,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 2
         end_point = np.array([-1, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(135), np.deg2rad(135), STEP_DISTANCE)
+            end_point, np.deg2rad(135), np.deg2rad(135), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -81,7 +108,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 3
         end_point = np.array([-1, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(135), -np.deg2rad(135), STEP_DISTANCE)
+            end_point, -np.deg2rad(135), -np.deg2rad(135), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -89,16 +120,24 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 4
         end_point = np.array([1, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(45), -np.deg2rad(45), STEP_DISTANCE)
+            end_point, -np.deg2rad(45), -np.deg2rad(45), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
 
-    def test_generate_trajectory_line_to_arc(self):
+    def test_generate_trajectory_line_to_arc(self) -> None:
         # Quadrant 1
         end_point = np.array([2, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -106,7 +145,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 2
         end_point = np.array([-2, 1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -114,7 +157,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 3
         end_point = np.array([-2, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -122,16 +169,24 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 1
         end_point = np.array([2, -1])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
 
-    def test_generate_trajectory_line_to_end(self):
+    def test_generate_trajectory_line_to_end(self) -> None:
         # Quadrant 1
         end_point = np.array([1, 2])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -139,7 +194,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 2
         end_point = np.array([-1, 2])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -147,7 +206,11 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 3
         end_point = np.array([-1, -2])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -155,45 +218,57 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 4
         end_point = np.array([1, -2])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
 
-    def test_generate_trajectory_radius_too_small(self):
+    def test_generate_trajectory_radius_too_small(self) -> None:
         # Quadrant 1
-        end_point = np.array([.9, .9])
+        end_point = np.array([0.9, 0.9])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(90), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 
         # Quadrant 2
-        end_point = np.array([-.9, -.9])
+        end_point = np.array([-0.9, -0.9])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), np.deg2rad(90), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 
         # Quadrant 3
-        end_point = np.array([-.9, -.9])
+        end_point = np.array([-0.9, -0.9])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(90), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 
         # Quadrant 4
-        end_point = np.array([.9, -.9])
+        end_point = np.array([0.9, -0.9])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE)
+            end_point, np.deg2rad(0), -np.deg2rad(90), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 
-    def test_generate_trajectory_parallel_lines_coincident(self):
+    def test_generate_trajectory_parallel_lines_coincident(self) -> None:
         # Quadrant 1
         end_point = np.array([5, 0])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(0), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(0), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
@@ -201,23 +276,29 @@ class TestTrajectoryGenerator(unittest.TestCase):
         # Quadrant 2
         end_point = np.array([-5, 0])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(180), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(180), STEP_DISTANCE
+        )
+
+        self.assertIsNotNone(trajectory)
+        trajectory = cast(Trajectory, trajectory)
 
         self.assertEqual(len(trajectory.path.xs), len(trajectory.path.ys))
         self.assertGreater(len(trajectory.path.xs), 0)
 
-    def test_generate_trajectory_parallel_lines_not_coincident(self):
+    def test_generate_trajectory_parallel_lines_not_coincident(self) -> None:
         # Quadrant 1
         end_point = np.array([0, 3])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, np.deg2rad(0), np.deg2rad(0), STEP_DISTANCE)
+            end_point, np.deg2rad(0), np.deg2rad(0), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 
         # Quadrant 2
         end_point = np.array([0, 3])
         trajectory = self.trajectory_generator.generate_trajectory(
-            end_point, -np.deg2rad(180), -np.deg2rad(180), STEP_DISTANCE)
+            end_point, -np.deg2rad(180), -np.deg2rad(180), STEP_DISTANCE
+        )
 
         self.assertEqual(trajectory, None)
 

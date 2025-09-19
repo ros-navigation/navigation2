@@ -58,9 +58,23 @@ void ClearCostmapAroundRobotService::on_tick()
   increment_recovery_count();
 }
 
+ClearCostmapAroundPoseService::ClearCostmapAroundPoseService(
+  const std::string & service_node_name,
+  const BT::NodeConfiguration & conf)
+: BtServiceNode<nav2_msgs::srv::ClearCostmapAroundPose>(service_node_name, conf)
+{
+}
+
+void ClearCostmapAroundPoseService::on_tick()
+{
+  getInput("pose", request_->pose);
+  getInput("reset_distance", request_->reset_distance);
+  increment_recovery_count();
+}
+
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
@@ -68,4 +82,6 @@ BT_REGISTER_NODES(factory)
     "ClearCostmapExceptRegion");
   factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
     "ClearCostmapAroundRobot");
+  factory.registerNodeType<nav2_behavior_tree::ClearCostmapAroundPoseService>(
+    "ClearCostmapAroundPose");
 }

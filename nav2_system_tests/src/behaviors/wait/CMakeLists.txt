@@ -4,9 +4,22 @@ ament_add_gtest_executable(${test_wait_behavior_exec}
   test_wait_behavior_node.cpp
   wait_behavior_tester.cpp
 )
-
-ament_target_dependencies(${test_wait_behavior_exec}
-  ${dependencies}
+target_link_libraries(${test_wait_behavior_exec}
+  angles::angles
+  ${geometry_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  tf2::tf2
+  tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_include_directories(${test_wait_behavior_exec}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 ament_add_test(test_wait_behavior
@@ -15,9 +28,6 @@ ament_add_test(test_wait_behavior
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   TIMEOUT 180
   ENV
-    TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map_circular.yaml
     TEST_EXECUTABLE=$<TARGET_FILE:${test_wait_behavior_exec}>
-    TEST_WORLD=${PROJECT_SOURCE_DIR}/worlds/turtlebot3_ros2_demo.world
-    GAZEBO_MODEL_PATH=${PROJECT_SOURCE_DIR}/models
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_behavior.xml
 )

@@ -16,47 +16,68 @@
 
 import os
 import sys
+from typing import TypedDict
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription, LaunchService
-from launch.actions import (ExecuteProcess, GroupAction,
-                            IncludeLaunchDescription, SetEnvironmentVariable)
+from launch.actions import (ExecuteProcess, GroupAction, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import TextSubstitution
 from launch_ros.actions import Node, PushROSNamespace
-
 from launch_testing.legacy import LaunchTestService
 
 
-def generate_launch_description():
-    map_yaml_file = os.getenv('TEST_MAP')
-    world = os.getenv('TEST_WORLD')
-    urdf = os.getenv('TEST_URDF')
-    sdf = os.getenv('TEST_SDF')
+class RobotConfig(TypedDict):
+    """TypedDict for robot configuration."""
 
-    bt_xml_file = os.path.join(get_package_share_directory('nav2_bt_navigator'),
-                               'behavior_trees',
-                               os.getenv('BT_NAVIGATOR_XML'))
+    name: str
+    x_pose: float
+    y_pose: float
+    z_pose: float
+
+
+def generate_launch_description() -> LaunchDescription:
+    map_yaml_file = os.getenv('TEST_MAP', '')
+    world = os.getenv('TEST_WORLD', '')
+    urdf = os.getenv('TEST_URDF', '')
+    sdf = os.getenv('TEST_SDF', '')
+
+    bt_xml_file = os.path.join(
+        get_package_share_directory('nav2_bt_navigator'),
+        'behavior_trees',
+        os.getenv('BT_NAVIGATOR_XML', ''),
+    )
 
     bringup_dir = get_package_share_directory('nav2_bringup')
-    robot1_params_file = os.path.join(bringup_dir,  # noqa: F841
-                                      'params/nav2_multirobot_params_1.yaml')
-    robot2_params_file = os.path.join(bringup_dir,  # noqa: F841
-                                      'params/nav2_multirobot_params_2.yaml')
+    robot1_params_file = os.path.join(  # noqa: F841
+        bringup_dir, 'params/nav2_params.yaml'
+    )
+    robot2_params_file = os.path.join(  # noqa: F841
+        bringup_dir, 'params/nav2_params.yaml'
+    )
 
     # Names and poses of the robots
-    robots = [
+    robots: list[RobotConfig] = [
         {'name': 'robot1', 'x_pose': 0.0, 'y_pose': 0.5, 'z_pose': 0.01},
-        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01}]
+        {'name': 'robot2', 'x_pose': 0.0, 'y_pose': -0.5, 'z_pose': 0.01},
+    ]
 
     # Launch Gazebo server for simulation
     start_gazebo_cmd = ExecuteProcess(
-            cmd=['gzserver', '-s', 'libgazebo_ros_init.so',
-                 '-s', 'libgazebo_ros_factory.so', '--minimal_comms', world],
-            output='screen')
+        cmd=[
+            'gzserver',
+            '-s',
+            'libgazebo_ros_init.so',
+            '-s',
+            'libgazebo_ros_factory.so',
+            '--minimal_comms',
+            world,
+        ],
+        output='screen',
+    )
 
-    # Define commands for spawing the robots into Gazebo
+    # Define commands for spawning the robots into Gazebo
     spawn_robots_cmds = []
     for robot in robots:
         spawn_robots_cmds.append(
@@ -65,13 +86,21 @@ def generate_launch_description():
                 executable='spawn_entity.py',
                 output='screen',
                 arguments=[
-                    '-entity', TextSubstitution(text=robot['name']),
-                    '-robot_namespace', TextSubstitution(text=robot['name']),
-                    '-file', TextSubstitution(text=sdf),
-                    '-x', TextSubstitution(text=str(robot['x_pose'])),
-                    '-y', TextSubstitution(text=str(robot['y_pose'])),
-                    '-z', TextSubstitution(text=str(robot['z_pose']))]
-            ))
+                    '-entity',
+                    TextSubstitution(text=robot['name']),
+                    '-robot_namespace',
+                    TextSubstitution(text=robot['name']),
+                    '-file',
+                    TextSubstitution(text=sdf),
+                    '-x',
+                    TextSubstitution(text=str(robot['x_pose'])),
+                    '-y',
+                    TextSubstitution(text=str(robot['y_pose'])),
+                    '-z',
+                    TextSubstitution(text=str(robot['z_pose'])),
+                ],
+            )
+        )
 
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
@@ -85,35 +114,48 @@ def generate_launch_description():
                 executable='robot_state_publisher',
                 namespace=TextSubstitution(text=robot['name']),
                 output='screen',
-                parameters=[{'use_sim_time': True, 'robot_description': robot_description}],
-                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]))
+                parameters=[
+                    {'use_sim_time': True, 'robot_description': robot_description}
+                ],
+                remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')],
+            )
+        )
 
     # Define commands for launching the navigation instances
     nav_instances_cmds = []
     for robot in robots:
         params_file = eval(f"{robot['name']}_params_file")
 
-        group = GroupAction([
-            # Instances use the robot's name for namespace
-            PushROSNamespace(robot['name']),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(bringup_dir, 'launch', 'bringup_launch.py')),
-                launch_arguments={
-                                  'namespace': robot['name'],
-                                  'map': map_yaml_file,
-                                  'use_sim_time': 'True',
-                                  'params_file': params_file,
-                                  'bt_xml_file': bt_xml_file,
-                                  'autostart': 'True',
-                                  'use_composition': 'False',
-                                  'use_remappings': 'True'}.items())
-        ])
+        group = GroupAction(
+            [
+                # Instances use the robot's name for namespace
+                PushROSNamespace(robot['name']),
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        os.path.join(bringup_dir, 'launch', 'bringup_launch.py')
+                    ),
+                    launch_arguments={
+                        'namespace': robot['name'],
+                        'map': map_yaml_file,
+                        'use_sim_time': 'True',
+                        'params_file': params_file,
+                        'bt_xml_file': bt_xml_file,
+                        'autostart': 'True',
+                        'use_composition': 'False',
+                        'use_remappings': 'True',
+                    }.items(),
+                ),
+            ]
+        )
         nav_instances_cmds.append(group)
 
     ld = LaunchDescription()
-    ld.add_action(SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),)
-    ld.add_action(SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),)
+    ld.add_action(
+        SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
+    )
+    ld.add_action(
+        SetEnvironmentVariable('RCUTILS_LOGGING_USE_STDOUT', '1'),
+    )
     ld.add_action(start_gazebo_cmd)
     for spawn_robot in spawn_robots_cmds:
         ld.add_action(spawn_robot)
@@ -125,23 +167,37 @@ def generate_launch_description():
     return ld
 
 
-def main(argv=sys.argv[1:]):
+def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ld = generate_launch_description()
 
     # TODO(orduno) remove duplicated definition of robots on `generate_launch_description`
     test1_action = ExecuteProcess(
-        cmd=[os.path.join(os.getenv('TEST_DIR'), os.getenv('TESTER')),
-             '-rs', 'robot1', '0.0', '0.5', '1.0', '0.5',
-             '-rs', 'robot2', '0.0', '-0.5', '1.0', '-0.5',
-             '-e', 'True'],
+        cmd=[
+            os.path.join(os.getenv('TEST_DIR', ''), os.getenv('TESTER', '')),
+            '-rs',
+            'robot1',
+            '0.0',
+            '0.5',
+            '1.0',
+            '0.5',
+            '-rs',
+            'robot2',
+            '0.0',
+            '-0.5',
+            '1.0',
+            '-0.5',
+            '-e',
+            'True',
+        ],
         name='tester_node',
-        output='screen')
+        output='screen',
+    )
 
-    lts = LaunchTestService()
-    lts.add_test_action(ld, test1_action)
+    lts = LaunchTestService()  # type: ignore[no-untyped-call]
+    lts.add_test_action(ld, test1_action)  # type: ignore[no-untyped-call]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
-    return lts.run(ls)
+    return lts.run(ls)  # type: ignore[no-untyped-call]
 
 
 if __name__ == '__main__':

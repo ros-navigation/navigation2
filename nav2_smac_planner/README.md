@@ -17,7 +17,11 @@ We have users reporting using this on:
 - Vertical farming
 - Solar farms
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-smac-planner.html) for additional parameter descriptions.
+
+Want to learn more? Checkout the ROSCon 2022 talk on the Smac Planner by clicking on the image below!
+
+[![IMAGE ALT TEXT](https://github.com/user-attachments/assets/95717450-2ff8-4576-ae38-88e7f266e8c6)](https://vimeo.com/showcase/9954564/video/767157646)
 
 ## Introduction
 
@@ -43,7 +47,7 @@ The `SmacPlanner2D` is designed to work with:
 - Circular, differential or omnidirectional robots
 - Relatively small robots with respect to environment size (e.g. RC car in a hallway or large robot in a convention center) that can be approximated by circular footprint.
 
-## Features 
+## Features
 
 We further improve on Hybrid-A\* in the following ways:
 - Remove need for upsampling by searching with 10x smaller motion primitives (same as their upsampling ratio).
@@ -84,13 +88,13 @@ An example of the 3 planners can be seen below, planning a roughly 75 m path.
 
 ## Design
 
-The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the hueristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
+The basic design centralizes a templated A\* implementation that handles the search of a graph of nodes. The implementation is templated by the nodes, `NodeT`, which contain the methods needed to compute the heuristics, travel costs, and search neighborhoods. The outcome of this design is then a standard A\* implementation that can be used to traverse any type of graph as long as a node template can be created for it.
 
 We provide 3 nodes by default currently. The 2D node template (`Node2D`) which does 2D grid-search with either 4 or 8-connected neighborhoods. We also provide a Hybrid A\* node template (`NodeHybrid`) which does SE2 (X, Y, theta) search and collision checking on Dubin or Reeds-Shepp motion models. We also provide the Lattice (`NodeLattice`) node for state lattice planning making use of the wider range of velocity options available to differential and omnidirectional robots. Additional templates could be easily made and included for 3D grid search and non-grid base searching like routing.
 
 In the ROS2 facing plugin, we take in the global goals and pre-process the data to feed into the templated A\* used. This includes processing any requests to downsample the costmap to another resolution to speed up search and smoothing the resulting A\* path (not available for State Lattice due to the lattices generated are dependent on costmap resolution). For the `SmacPlannerHybrid` and `SmacPlannerLattice` plugins, the path is promised to be kinematically feasible due to the kinematically valid models used in branching search. The 2D A\* is also promised to be feasible for differential and omni-directional robots.
 
-We isolated the A\*, costmap downsampler, smoother, and Node template objects from ROS2 to allow them to be easily testable independently of ROS or the planner. The only place ROS is used is in the planner plugins themselves. 
+We isolated the A\*, costmap downsampler, smoother, and Node template objects from ROS2 to allow them to be easily testable independently of ROS or the planner. The only place ROS is used is in the planner plugins themselves.
 
 ## Parameters
 
@@ -102,19 +106,22 @@ planner_server:
     planner_plugins: ["GridBased"]
 
     GridBased:
-      plugin: "nav2_smac_planner/SmacPlannerHybrid"
+      plugin: "nav2_smac_planner::SmacPlannerHybrid"
       tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters
       downsample_costmap: false           # whether or not to downsample the map
       downsampling_factor: 1              # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
       allow_unknown: false                # allow traveling in unknown space
       max_iterations: 1000000             # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
       max_on_approach_iterations: 1000    # maximum number of iterations to attempt to reach goal once in tolerance
+      terminal_checking_interval: 5000     # number of iterations between checking if the goal has been cancelled or planner timed out
       max_planning_time: 3.5              # max time in s for planner to plan, smooth, and upsample. Will scale maximum smoothing and upsampling times based on remaining time after planning.
-      motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Redds-Shepp
+      motion_model_for_search: "DUBIN"    # For Hybrid Dubin, Reeds-Shepp
       cost_travel_multiplier: 2.0         # For 2D: Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
       angle_quantization_bins: 64         # For Hybrid nodes: Number of angle bins for search, must be 1 for 2D node (no angle search)
       analytic_expansion_ratio: 3.5       # For Hybrid/Lattice nodes: The ratio to attempt analytic expansions during search for final approach.
       analytic_expansion_max_length: 3.0    # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting (in meters). This should be scaled with minimum turning radius and be no less than 4-5x the minimum radius
+      analytic_expansion_max_cost: 200   # For Hybrid/Lattice nodes: The maximum single cost for any part of an analytic expansion to contain and be valid (except when necessary on approach to goal)
+      analytic_expansion_max_cost_override: false # For Hybrid/Lattice nodes: Whether or not to override the maximum cost setting if within critical distance to goal (ie probably required). If expansion is within 2*pi*min_r of the goal, then it will override the max cost if ``false``.
       minimum_turning_radius: 0.40        # For Hybrid/Lattice nodes: minimum turning radius in m of path / vehicle
       reverse_penalty: 2.1                # For Reeds-Shepp model: penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # For Hybrid nodes: penalty to apply if motion is changing directions, must be >= 0
@@ -123,15 +130,15 @@ planner_server:
       retrospective_penalty: 0.025        # For Hybrid/Lattice nodes: penalty to prefer later maneuvers before earlier along the path. Saves search time since earlier nodes are not expanded until it is necessary. Must be >= 0.0 and <= 1.0
       rotation_penalty: 5.0               # For Lattice node: Penalty to apply only to pure rotate in place commands when using minimum control sets containing rotate in place primitives. This should always be set sufficiently high to weight against this action unless strictly necessary for obstacle avoidance or there may be frequent discontinuities in the plan where it requests the robot to rotate in place to short-cut an otherwise smooth path for marginal path distance savings.
       lookup_table_size: 20.0               # For Hybrid nodes: Size of the dubin/reeds-sheep distance window to cache, in meters.
-      cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.  
-      allow_reverse_expansion: False      # For Lattice nodes: Whether to expand state lattice graph in forward primitives or reverse as well, will double the branching factor at each step.   
+      cache_obstacle_heuristic: True      # For Hybrid nodes: Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
+      allow_reverse_expansion: False      # For Lattice nodes: Whether to expand state lattice graph in forward primitives or reverse as well, will double the branching factor at each step.
       smooth_path: True                   # For Lattice/Hybrid nodes: Whether or not to smooth the path, always true for 2D nodes.
-      debug_visualizations: True                # For Hybrid nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance. 
+      debug_visualizations: True                # For Hybrid/Lattice nodes: Whether to publish expansions on the /expansions topic as an array of poses (the orientation has no meaning) and the path's footprints on the /planned_footprints topic. WARNING: heavy to compute and to display, for debug only as it degrades the performance.
       smoother:
         max_iterations: 1000
         w_smooth: 0.3
         w_data: 0.2
-        tolerance: 1e-10
+        tolerance: 1.0e-10
         do_refinement: true               # Whether to recursively run the smoother 3 times on the results from prior runs to refine the results further
 ```
 
@@ -152,33 +159,33 @@ sudo apt-get install ros-<ros2-distro>-nav2-smac-planner
 
 ### Potential Fields
 
-Many users and default navigation configuration files I find are really missing the point of the inflation layer. While it's true that you can simply inflate a small radius around the walls, the _true_ value of the inflation layer is creating a consistent potential field around the entire map. 
+Many users and default navigation configuration files I find are really missing the point of the inflation layer. While it's true that you can simply inflate a small radius around the walls, the _true_ value of the inflation layer is creating a consistent potential field around the entire map.
 
-Some of the most popular tuning guides for Navigation / Nav2 even [call this out specifically](https://arxiv.org/pdf/1706.09068.pdf) that there's substantial benefit to creating a gentle potential field across the width of the map - after inscribed costs are applied - yet very few users do this. 
+Some of the most popular tuning guides for Navigation / Nav2 even [call this out specifically](https://arxiv.org/pdf/1706.09068.pdf) that there's substantial benefit to creating a gentle potential field across the width of the map - after inscribed costs are applied - yet very few users do this.
 
 This habit actually results in paths produced by NavFn, Global Planner, and now SmacPlanner to be somewhat suboptimal. They really want to look for a smooth potential field rather than wide open 0-cost spaces in order to stay in the middle of spaces and deal with close-by moving obstacles better.
 
-So it is my recommendation in using this package, as well as all other cost-aware search planners available in ROS, to increase your inflation layer cost scale in order to adequately produce a smooth potential across the entire map. For very large open spaces, its fine to have 0-cost areas in the middle, but for halls, aisles, and similar; **please create a smooth potential to provide the best performance**. 
+So it is my recommendation in using this package, as well as all other cost-aware search planners available in ROS, to increase your inflation layer cost scale in order to adequately produce a smooth potential across the entire map. For very large open spaces, its fine to have 0-cost areas in the middle, but for halls, aisles, and similar; **please create a smooth potential to provide the best performance**.
 
 ### Hybrid-A* and State Lattice Turning Radius'
 
-A very reasonable and logical assumption would be to set the `minimum_turning_radius` to the kinematic limits of your vehicle. For an ackermann car, that's a physical quantity; while for differential or omni robots, its a bit of a dance around what kind of turns you'd like your robot to be able to make. Obviously setting this to something insanely small (like 20 cm) means you have alot of options, but also probably means the raw output plans won't be very straight and smooth when you have 2+ meter wide aisles to work in.
+A very reasonable and logical assumption would be to set the `minimum_turning_radius` to the kinematic limits of your vehicle. For an ackermann car, that's a physical quantity; while for differential or omni robots, its a bit of a dance around what kind of turns you'd like your robot to be able to make. Obviously setting this to something insanely small (like 20 cm) means you have a lot of options, but also probably means the raw output plans won't be very straight and smooth when you have 2+ meter wide aisles to work in.
 
-I assert that you should also consider the environment you operate within when setting this. While you should **absolutely not** set this to be any smaller than the actual limits of your vehicle, there are some useful side effects of increasing this value in practical use. If you work in an area wider than the turning circle of your robot, you have some options that will ultimately improve the performance of the planner (in terms of CPU and compute time) as well as generate paths that are more "smooth" directly out of the planner -- not requiring any explicit path smoothing. 
+I assert that you should also consider the environment you operate within when setting this. While you should **absolutely not** set this to be any smaller than the actual limits of your vehicle, there are some useful side effects of increasing this value in practical use. If you work in an area wider than the turning circle of your robot, you have some options that will ultimately improve the performance of the planner (in terms of CPU and compute time) as well as generate paths that are more "smooth" directly out of the planner -- not requiring any explicit path smoothing.
 
 By default, `0.4m` is the setting which I think is "reasonable" for the smaller scale industrial grade robots (think Simbe, the small Fetch, or Locus robots) resulting in faster plans and less "wobbly" motions that do not require post-smoothing -- further improving CPU performance. I selected `0.4m` as a trade off between practical robots mentioned above and hobbyist users with a tiny-little-turtlebot-3 which might still need to navigate around some smaller cavities.
 
 ### Costmap Resolutions
 
-We provide for the Hybrid-A\*, State Lattice, and 2D A\* implementations a costmap downsampler option. This can be **incredible** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For long and complex paths, I was able to get it << 100ms at only a 2x downsample rate from a plan that otherwise took upward of 400ms.
+We provide for the Hybrid-A\*, State Lattice, and 2D A\* implementations a costmap downsampler option. This can be **incredibly** beneficial when planning very long paths in larger spaces. The motion models for SE2 planning and neighborhood search in 2D planning is proportional to the costmap resolution. By downsampling it, you can N^2 reduce the number of expansions required to achieve a particular goal. However, the lower the resolution, the larger small obstacles appear and you won't be able to get super close to obstacles. This is a trade-off to make and test. Some numbers I've seen are 2-4x drops in planning CPU time for a 2-3x downsample rate. For long and complex paths, I was able to get it << 100ms at only a 2x downsample rate from a plan that otherwise took upward of 400ms.
 
 I recommend users using a 5cm resolution costmap and playing with the different values of downsampling rate until they achieve what they think is optimal performance (lowest number of expansions vs. necessity to achieve fine goal poses). Then, I would recommend to change the global costmap resolution to this new value. That way you don't own the compute of downsampling and maintaining a higher-resolution costmap that isn't used.
 
-Remember, the global costmap is **only** there to provide an environment for the planner to work in. It is not there for human-viewing even if a more fine resolution costmap is more human "pleasing". If you use multiple planners in the planner server, then you will want to use the highest resolution for the most needed planner and then use the downsampler to downsample to the Hybrid-A* resolution. 
+Remember, the global costmap is **only** there to provide an environment for the planner to work in. It is not there for human-viewing even if a more fine resolution costmap is more human "pleasing". If you use multiple planners in the planner server, then you will want to use the highest resolution for the most needed planner and then use the downsampler to downsample to the Hybrid-A* resolution.
 
 ### Penalty Function Tuning
 
-The penalty function defaults are tuned for all of the planners based on a 5cm costmap. While some change in this should not largely impact default behavior, it may be good to tune for your specific application and needs. The default values were tuned to have decent out of the box behavior for a large number of platforms and resolutions. In most situations, you should not need to play with them. 
+The penalty function defaults are tuned for all of the planners based on a 5cm costmap. While some change in this should not largely impact default behavior, it may be good to tune for your specific application and needs. The default values were tuned to have decent out of the box behavior for a large number of platforms and resolutions. In most situations, you should not need to play with them.
 
 **However**, due to the nature of the State Lattice planner being able to use any number of custom generated minimum control sets, this planner may require more tuning to get good behavior. The defaults for State Lattice were generated using the 5cm Ackermann files you can find in this package as initial examples. After a change in formulation for the Hybrid-A* planner, the default of change penalty off seems to produce good results, but please tune to your application need and run-time speed requirements.
 
@@ -194,17 +201,17 @@ Note that change penalty must be greater than 0.0. The non-straight, reverse, an
 
 Before addressing the section below, make sure you have an appropriately set max iterations parameter. If you have a 1 km2 sized warehouse, clearly 5000 expansions will be insufficient. Try increasing this value if you're unable to achieve goals or disable it with the `-1` value to see if you are now able to plan within a reasonable time period. If you still have issues, there is a secondary effect which could be happening that is good to be aware of.
 
-In maps with small gaps or holes, you may see an issue planning to certain regions. If there are gaps small enough to be untraversible yet large enough that inflation doesn't close it up with inflated costs, then it is recommended to lightly touch up the map or increase your inflation to remove those spaces from non-lethal space. 
+In maps with small gaps or holes, you may see an issue planning to certain regions. If there are gaps small enough to be untraversible yet large enough that inflation doesn't close it up with inflated costs, then it is recommended to lightly touch up the map or increase your inflation to remove those spaces from non-lethal space.
 
-Seeing the figures below, you'll see an attempt to plan into a "U" shaped region across the map. The first figure shows the small gap in the map (from an imperfect SLAM session) which is nearly traversible, but not quite. From the starting location, that gap yeilds the shortest path to the goal, so the heuristics will attempt to route the paths in that direction. However, it is not possible to actually pass with a kinematically valid path with the footprint set. As a result, the planner expands all of its maximum 1,000,000 iterations attempting to fit through it (visualized in red). If an infinite number of iterations were allowed, eventually a valid path would be found, but might take significant time.
+Seeing the figures below, you'll see an attempt to plan into a "U" shaped region across the map. The first figure shows the small gap in the map (from an imperfect SLAM session) which is nearly traversable, but not quite. From the starting location, that gap yields the shortest path to the goal, so the heuristics will attempt to route the paths in that direction. However, it is not possible to actually pass with a kinematically valid path with the footprint set. As a result, the planner expands all of its maximum 1,000,000 iterations attempting to fit through it (visualized in red). If an infinite number of iterations were allowed, eventually a valid path would be found, but might take significant time.
 
-By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassible), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
+By simply increasing the footprint (a bit hackier, the best solution is to edit the map to make this area impassable), then that gap is now properly blocked as un-navigable. In the second figure, you can see that the heuristics influence the expansion down a navigable route and is able to find a path in less than 10,000 iterations (or about 110ms). It is easy now!
 
-As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you dont want your robot actually using B) probably isnt actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that. 
+As such, it is recommended if you have sparse SLAM maps, gaps or holes in your map, that you lightly post-process them to fill those gaps or increasing your footprint's padding or radius to make these areas invalid. Without it, it might waste expansions on this small corridor that: A) you don't want your robot actually using B) probably isn't actually valid and a SLAM artifact and C) if there's a more open space, you'd rather it use that.
 
 ![](media/A.png)
 ![](media/B.png)
 
 One interesting thing to note from the second figure is that you see a number of expansions in open space. This is due to travel / heuristic values being so similar, tuning values of the penalty weights can have a decent impact there. The defaults are set as a good middle ground between large open spaces and confined aisles (environment specific tuning could be done to reduce the number of expansions for a specific map, speeding up the planner). The planner actually runs substantially faster the more confined the areas of search / environments are -- but still plenty fast for even wide open areas!
 
-Sometimes visualizing the expansions is very useful to debug potential concerns (why does this goal take longer to compute, why can't I find a path, etc), should you on rare occasion run into an issue. You can enable the publication of the expansions on the `/expansions` topic for SmacHybrid with the parameter `viz_expansions: True`, beware that it should be used only for debug as it increases a lot the CPU usage.
+Sometimes visualizing the expansions is very useful to debug potential concerns (why does this goal take longer to compute, why can't I find a path, etc), should you on rare occasion run into an issue. You can enable the publication of the expansions on the `/expansions` topic for SmacHybrid with the parameter `debug_visualizations: True`, beware that it should be used only for debug as it increases a lot the CPU usage.

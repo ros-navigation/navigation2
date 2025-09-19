@@ -24,14 +24,16 @@ through the points of a line.
 from cmath import sqrt
 
 
-class LineIterator():
+class LineIterator:
     """
     LineIterator.
 
     LineIterator Python3 API for iterating along the points of a given line
     """
 
-    def __init__(self, x0, y0, x1, y1, step_size=1.0):
+    def __init__(self, x0: float, y0: float,
+                 x1: float, y1: float,
+                 step_size: float = 1.0) -> None:
         """
         Initialize the LineIterator.
 
@@ -77,84 +79,89 @@ class LineIterator():
 
         if x1 != x0 and y1 != y0:
             self.valid_ = True
-            self.m_ = (y1-y0)/(x1-x0)
-            self.b_ = y1 - (self.m_*x1)
+            self.m_ = (y1 - y0) / (x1 - x0)
+            self.b_ = y1 - (self.m_ * x1)
         elif x1 == x0 and y1 != y0:
             self.valid_ = True
         elif y1 == y1 and x1 != x0:
             self.valid_ = True
-            self.m_ = (y1-y0)/(x1-x0)
-            self.b_ = y1 - (self.m_*x1)
+            self.m_ = (y1 - y0) / (x1 - x0)
+            self.b_ = y1 - (self.m_ * x1)
         else:
             self.valid_ = False
             raise ValueError(
-                'Line has zero length (All 4 points have same coordinates)')
+                'Line has zero length (All 4 points have same coordinates)'
+            )
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """Check if line is valid."""
         return self.valid_
 
-    def advance(self):
+    def advance(self) -> None:
         """Advance to the next point in the line."""
         if self.x1_ > self.x0_:
             if self.x_ < self.x1_:
-                self.x_ = round(self.clamp(
-                    self.x_ + self.step_size_, self.x0_, self.x1_), 5)
+                self.x_ = round(
+                    self.clamp(self.x_ + self.step_size_, self.x0_, self.x1_), 5
+                )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         elif self.x1_ < self.x0_:
             if self.x_ > self.x1_:
-                self.x_ = round(self.clamp(
-                    self.x_ - self.step_size_, self.x1_, self.x0_), 5)
+                self.x_ = round(
+                    self.clamp(self.x_ - self.step_size_, self.x1_, self.x0_), 5
+                )
                 self.y_ = round(self.m_ * self.x_ + self.b_, 5)
             else:
                 self.valid_ = False
         else:
             if self.y1_ > self.y0_:
                 if self.y_ < self.y1_:
-                    self.y_ = round(self.clamp(
-                        self.y_ + self.step_size_, self.y0_, self.y1_), 5)
+                    self.y_ = round(
+                        self.clamp(self.y_ + self.step_size_, self.y0_, self.y1_), 5
+                    )
                 else:
                     self.valid_ = False
             elif self.y1_ < self.y0_:
                 if self.y_ > self.y1_:
-                    self.y_ = round(self.clamp(
-                        self.y_ - self.step_size_, self.y1_, self.y0_), 5)
+                    self.y_ = round(
+                        self.clamp(self.y_ - self.step_size_, self.y1_, self.y0_), 5
+                    )
                 else:
                     self.valid_ = False
             else:
                 self.valid_ = False
 
-    def getX(self):
+    def getX(self) -> float:
         """Get the abscissa of the current point."""
         return self.x_
 
-    def getY(self):
+    def getY(self) -> float:
         """Get the ordinate of the current point."""
         return self.y_
 
-    def getX0(self):
+    def getX0(self) -> float:
         """Get the abscissa of the initial point."""
         return self.x0_
 
-    def getY0(self):
-        """Get the ordinate of the intial point."""
+    def getY0(self) -> float:
+        """Get the ordinate of the initial point."""
         return self.y0_
 
-    def getX1(self):
+    def getX1(self) -> float:
         """Get the abscissa of the final point."""
         return self.x1_
 
-    def getY1(self):
+    def getY1(self) -> float:
         """Get the ordinate of the final point."""
         return self.y1_
 
-    def get_line_length(self):
+    def get_line_length(self) -> complex:
         """Get the length of the line."""
         return sqrt(pow(self.x1_ - self.x0_, 2) + pow(self.y1_ - self.y0_, 2))
 
-    def clamp(self, n, min_n, max_n):
+    def clamp(self, n: float, min_n: float, max_n: float) -> float:
         """
         Clamp n to be between min_n and max_n.
 

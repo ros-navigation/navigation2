@@ -2,7 +2,7 @@
 
 The Nav2 waypoint follower is an example application of how to use the navigation action to complete some sort of orchestrated task. In this example, that task is to take a given set of waypoints and navigate to a set of positions in the order provided in the action request. The last waypoint in the waypoint array is the final position. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/).
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-waypoint-follower.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-waypoint-follower.html) for additional parameter descriptions.
 
 The package exposes the `follow_waypoints` action server of type `nav2_msgs/FollowWaypoints`.
  It is given an array of waypoints to visit, gives feedback about the current index of waypoint it is processing, and returns a list of waypoints it was unable to complete.
@@ -33,15 +33,15 @@ Neither is better than the other, it highly depends on the tasks your robot(s) a
 `nav2_waypoint_follower` provides an action server named `FollowGPSWaypoints` which accepts GPS waypoint following requests by using tools provided by `robot_localization` and `nav2_waypoint_follower` itself.
 
 `robot_localization`'s `navsat_transform_node` provides a service `fromLL`, which is used to convert pure GPS coordinates(longitude, latitude, alitude)
-to cartesian coordinates in map frame(x,y), then the existent action named `FollowWaypoints` from `nav2_waypoint_follower` is used to get robot go through each converted waypoints. 
+to cartesian coordinates in map frame(x,y), then the existent action named `FollowWaypoints` from `nav2_waypoint_follower` is used to get robot go through each converted waypoints.
 The action msg definition for GPS waypoint following can be found [here](../nav2_msgs/action/FollowGPSWaypoints.action).
 
-In a common use case, an client node can read a set of GPS waypoints from a YAML file an create a client to action server named as `FollowGPSWaypoints`.  
+In a common use case, an client node can read a set of GPS waypoints from a YAML file an create a client to action server named as `FollowGPSWaypoints`.
 For instance,
 
 ```cpp
 using ClientT = nav2_msgs::action::FollowGPSWaypoints;
-rclcpp_action::Client<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
+nav2::ActionClient<ClientT>::SharedPtr gps_waypoint_follower_action_client_;
 gps_waypoint_follower_action_client_ = rclcpp_action::create_client<ClientT>(this, "follow_gps_waypoints");
 ```
 

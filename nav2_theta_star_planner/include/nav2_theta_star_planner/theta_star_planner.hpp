@@ -28,10 +28,10 @@
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_theta_star_planner/theta_star.hpp"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -44,7 +44,7 @@ class ThetaStarPlanner : public nav2_core::GlobalPlanner
 {
 public:
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -54,9 +54,17 @@ public:
 
   void deactivate() override;
 
+  /**
+   * @brief Creating a plan from start and goal poses
+   * @param start Start pose
+   * @param goal Goal pose
+   * @param cancel_checker Function to check if the action has been canceled
+   * @return nav2_msgs::Path of the generated path
+   */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) override;
 
 protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -66,7 +74,7 @@ protected:
   bool use_final_approach_orientation_;
 
   // parent node weak ptr
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node_;
+  nav2::LifecycleNode::WeakPtr parent_node_;
 
   std::unique_ptr<theta_star::ThetaStar> planner_;
 
@@ -76,9 +84,10 @@ protected:
 
   /**
    * @brief the function responsible for calling the algorithm and retrieving a path from it
+   * @param cancel_checker is a function to check if the action has been canceled
    * @return global_path is the planned path to be taken
    */
-  void getPlan(nav_msgs::msg::Path & global_path);
+  void getPlan(nav_msgs::msg::Path & global_path, std::function<bool()> cancel_checker);
 
   /**
    * @brief interpolates points between the consecutive waypoints of the path
@@ -91,7 +100,7 @@ protected:
     const double & dist_bw_points);
 
   /**
-   * @brief Callback executed when a paramter change is detected
+   * @brief Callback executed when a parameter change is detected
    * @param parameters list of changed parameters
    */
   rcl_interfaces::msg::SetParametersResult

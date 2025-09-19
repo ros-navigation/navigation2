@@ -19,15 +19,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
+#include "tf2_ros/transform_broadcaster.hpp"
 
 class DynParamTestNode
 {
@@ -38,8 +30,12 @@ public:
 
 TEST(DynParamTestNode, testDynParamsSet)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("dyn_param_tester");
+  auto node = std::make_shared<nav2::LifecycleNode>("dyn_param_tester");
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  rclcpp::executors::SingleThreadedExecutor node_executor;
+  node_executor.add_node(node->get_node_base_interface());
+  rclcpp::executors::SingleThreadedExecutor costmap_executor;
+  costmap_executor.add_node(costmap->get_node_base_interface());
   costmap->on_configure(rclcpp_lifecycle::State());
 
   // Set tf between default global_frame and robot_base_frame in order not to block in on_activate
@@ -57,9 +53,10 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_activate(rclcpp_lifecycle::State());
 
   auto parameter_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    node->shared_from_this(),
-    "/test_costmap/test_costmap",
-    rmw_qos_profile_parameters);
+    costmap->get_node_base_interface(), costmap->get_node_topics_interface(),
+    costmap->get_node_graph_interface(),
+    costmap->get_node_services_interface());
+
   auto results1 = parameter_client->set_parameters_atomically(
   {
     rclcpp::Parameter("robot_radius", 1.234),
@@ -83,7 +80,8 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("robot_base_frame", "wrong_test_frame"),
   });
 
-  rclcpp::spin_some(costmap->get_node_base_interface());
+  node_executor.spin_all(std::chrono::milliseconds(50));
+  costmap_executor.spin_all(std::chrono::milliseconds(50));
 
   EXPECT_EQ(costmap->get_parameter("robot_radius").as_double(), 1.234);
   EXPECT_EQ(costmap->get_parameter("footprint_padding").as_double(), 2.345);
@@ -102,4 +100,17 @@ TEST(DynParamTestNode, testDynParamsSet)
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
   costmap->on_shutdown(rclcpp_lifecycle::State());
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

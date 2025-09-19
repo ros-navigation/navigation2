@@ -30,9 +30,9 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
-#include "tf2/utils.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "tf2/utils.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 namespace nav2_smac_planner
@@ -59,7 +59,7 @@ public:
    * @param costmap_ros Costmap2DROS object
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -82,11 +82,13 @@ public:
    * @brief Creating a plan from start and goal poses
    * @param start Start pose
    * @param goal Goal pose
+   * @param cancel_checker Function to check if the action has been canceled
    * @return nav2_msgs::Path of the generated path
    */
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
-    const geometry_msgs::msg::PoseStamped & goal) override;
+    const geometry_msgs::msg::PoseStamped & goal,
+    std::function<bool()> cancel_checker) override;
 
 protected:
   /**
@@ -107,17 +109,18 @@ protected:
   float _tolerance;
   int _downsampling_factor;
   bool _downsample_costmap;
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr _raw_plan_publisher;
   double _max_planning_time;
   bool _allow_unknown;
   int _max_iterations;
   int _max_on_approach_iterations;
+  int _terminal_checking_interval;
   bool _use_final_approach_orientation;
   SearchInfo _search_info;
   std::string _motion_model_for_search;
   MotionModel _motion_model;
   std::mutex _mutex;
-  rclcpp_lifecycle::LifecycleNode::WeakPtr _node;
+  nav2::LifecycleNode::WeakPtr _node;
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;

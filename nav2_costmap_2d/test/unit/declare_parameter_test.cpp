@@ -20,14 +20,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class LayerWrapper : public nav2_costmap_2d::Layer
 {
   void reset() {}
@@ -39,8 +31,8 @@ class LayerWrapper : public nav2_costmap_2d::Layer
 TEST(DeclareParameter, useValidParameter)
 {
   LayerWrapper layer;
-  nav2_util::LifecycleNode::SharedPtr node =
-    std::make_shared<nav2_util::LifecycleNode>("test_node");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("test_node");
   tf2_ros::Buffer tf(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
@@ -58,8 +50,8 @@ TEST(DeclareParameter, useValidParameter)
 TEST(DeclareParameter, useInvalidParameter)
 {
   LayerWrapper layer;
-  nav2_util::LifecycleNode::SharedPtr node =
-    std::make_shared<nav2_util::LifecycleNode>("test_node");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("test_node");
   tf2_ros::Buffer tf(node->get_clock());
   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
@@ -72,4 +64,17 @@ TEST(DeclareParameter, useInvalidParameter)
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     SUCCEED();
   }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }
