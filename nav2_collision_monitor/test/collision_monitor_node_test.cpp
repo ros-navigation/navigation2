@@ -832,7 +832,7 @@ TEST_F(Tester, testToggleService)
   request->enable = false;
   {
     auto result_future = toggle_client_->async_send_request(request);
-    ASSERT_TRUE(waitToggle(result_future, 2s));
+    ASSERT_TRUE(waitToggle(result_future.share(), 2s));
   }
   ASSERT_FALSE(cm_->isEnabled());
 
@@ -840,7 +840,7 @@ TEST_F(Tester, testToggleService)
   request->enable = true;
   {
     auto result_future = toggle_client_->async_send_request(request);
-    ASSERT_TRUE(waitToggle(result_future, 2s));
+    ASSERT_TRUE(waitToggle(result_future.share(), 2s));
   }
   ASSERT_TRUE(cm_->isEnabled());
 
