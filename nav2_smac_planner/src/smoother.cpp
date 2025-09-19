@@ -64,7 +64,7 @@ bool Smoother::smooth(
   bool success = true, reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
-  std::vector<PathSegment> path_segments = nav2_util::findDirectionalPathSegments(path);
+  std::vector<PathSegment> path_segments = nav2_util::findDirectionalPathSegments(path, is_holonomic_);
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 10) {
@@ -132,7 +132,7 @@ bool Smoother::smoothImpl(
         rclcpp::get_logger("SmacPlannerSmoother"),
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
-      nav2_util::updateApproximatePathOrientations(path, reversing_segment);
+      nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
       return false;
     }
 
@@ -144,7 +144,7 @@ bool Smoother::smoothImpl(
         rclcpp::get_logger("SmacPlannerSmoother"),
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
-      nav2_util::updateApproximatePathOrientations(path, reversing_segment);
+      nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
       return false;
     }
 
@@ -178,7 +178,7 @@ bool Smoother::smoothImpl(
           "Smoothing process resulted in an infeasible collision. "
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
-        nav2_util::updateApproximatePathOrientations(path, reversing_segment);
+        nav2_util::updateApproximatePathOrientations(path, reversing_segment, is_holonomic_);
         return false;
       }
     }
@@ -193,7 +193,7 @@ bool Smoother::smoothImpl(
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
 
-  nav2_util::updateApproximatePathOrientations(new_path, reversing_segment);
+  nav2_util::updateApproximatePathOrientations(new_path, reversing_segment, is_holonomic_);
   path = new_path;
   return true;
 }
