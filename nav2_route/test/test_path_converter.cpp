@@ -166,7 +166,7 @@ TEST(PathConverterTest, test_path_converter_interpolation)
 
 TEST(PathConverterTest, test_path_converter_zero_length_edge)
 {
-  auto node = std::make_shared<nav2::LifecycleNode>("edge_scorer_test");
+  auto node = std::make_shared<nav2_util::LifecycleNode>("edge_scorer_test");
   PathConverter converter;
   converter.configure(node);
 
