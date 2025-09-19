@@ -1,10 +1,10 @@
-#goal definition
+# goal definition
 nav_msgs/Path path
 string controller_id
 string goal_checker_id
 string progress_checker_id
 ---
-#result definition
+# result definition
 
 # Error codes
 # Note: The expected priority order of the errors should match the message order
@@ -22,7 +22,7 @@ std_msgs/Empty result
 uint16 error_code
 string error_msg
 ---
-#feedback definition
-#Real-time tracking_error and decides which side of the path the robot is on
-#If the tracking_error is positive, the robot is to the left of the path
+# feedback definition
+# Real-time tracking error indicating which side of the path the robot is on
+# If the tracking_error is positive, the robot is to the left of the path
 nav2_msgs/TrackingError tracking_error
