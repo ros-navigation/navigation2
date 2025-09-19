@@ -704,6 +704,7 @@ void ControllerServer::computeAndPublishVelocity()
   feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
       closest_pose_idx);
   action_server_->publish_feedback(feedback);
+  feedback->tracking_error = signed_distance_;
 }
 
 void ControllerServer::updateGlobalPath()
@@ -786,9 +787,6 @@ void ControllerServer::publishTrackingState()
     return;
   }
 
-  const double distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-    robot_pose, end_pose_in_robot_frame);
-
   const auto path_search_result = nav2_util::distance_from_path(
     current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
@@ -802,16 +800,14 @@ void ControllerServer::publishTrackingState()
   double cross_product = nav2_util::geometry_utils::cross_product_2d(
     robot_pose_in_path_frame.pose.position, segment_start.pose, segment_end.pose);
 
-  nav2_msgs::msg::TrackingError tracking_error_msg;
-  tracking_error_msg.header.stamp = now();
-  tracking_error_msg.header.frame_id = robot_pose.header.frame_id;
-  tracking_error_msg.tracking_error = path_search_result.distance;
-  tracking_error_msg.last_index = closest_idx;
-  tracking_error_msg.cross_product = cross_product;
-  tracking_error_msg.distance_to_goal = distance_to_goal;
-  tracking_error_msg.robot_pose = robot_pose;
-
-  tracking_error_pub_->publish(tracking_error_msg);
+  signed_distance_ = path_search_result.distance * (cross_product >= 0.0 ? 1.0 : -1.0);
+  auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingError>();
+  tracking_error_msg->header.stamp = now();
+  tracking_error_msg->header.frame_id = robot_pose.header.frame_id;
+  tracking_error_msg->tracking_error = signed_distance_;
+  tracking_error_msg->current_path_index = closest_idx;
+  tracking_error_msg->robot_pose = robot_pose;
+  tracking_error_pub_->publish(std::move(tracking_error_msg));
 }
 
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)

@@ -25,3 +25,4 @@ string error_msg
 #feedback definition
 float32 distance_to_goal
 float32 speed
+float32 tracking_error

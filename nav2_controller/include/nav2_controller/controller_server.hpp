@@ -241,7 +241,7 @@ protected:
   std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
-    rclcpp::Publisher<nav2_msgs::msg::TrackingError>::SharedPtr tracking_error_pub_;
+  nav2::Publisher<nav2_msgs::msg::TrackingError>::SharedPtr tracking_error_pub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
@@ -290,6 +290,9 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
+
+  // Last tracking error
+  double signed_distance_ = 0;
 
 private:
   /**
