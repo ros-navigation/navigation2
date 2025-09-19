@@ -64,7 +64,8 @@ bool Smoother::smooth(
   bool success = true, reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
-  std::vector<PathSegment> path_segments = nav2_util::findDirectionalPathSegments(path, is_holonomic_);
+  std::vector<PathSegment> path_segments = nav2_util::findDirectionalPathSegments(path,
+      is_holonomic_);
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
     if (path_segments[i].end - path_segments[i].start > 10) {

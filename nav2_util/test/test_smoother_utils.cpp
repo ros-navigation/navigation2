@@ -15,8 +15,10 @@
 #include <memory>
 #include <cmath>
 #include "nav2_util/smoother_utils.hpp"
-#include "geometry_msgs/msg/point.hpp"
 #include "gtest/gtest.h"
+
+using nav2_util::findDirectionalPathSegments;
+using nav2_util::updateApproximatePathOrientations;
 
 geometry_msgs::msg::PoseStamped makePose(double x, double y, double yaw = 0.0)
 {
@@ -43,10 +45,8 @@ TEST(SmootherUtils, HolonomicSingleSegment)
 TEST(SmootherUtils, ForwardAndReverseSegments)
 {
   nav_msgs::msg::Path path;
-  // Forward
   path.poses.push_back(makePose(0, 0));
   path.poses.push_back(makePose(1, 0));
-  // Reverse (backwards)
   path.poses.push_back(makePose(0, 0));
   path.poses.push_back(makePose(-1, 0));
 
@@ -87,10 +87,9 @@ TEST(SmootherUtils, UpdateApproximatePathForward)
 TEST(SmootherUtils, UpdateApproximatePathReverse)
 {
   nav_msgs::msg::Path path;
-  // Start poses oriented backwards relative to path direction
-  path.poses.push_back(makePose(0, 0, M_PI));
-  path.poses.push_back(makePose(-1, 0, M_PI));
-  path.poses.push_back(makePose(-2, 0, M_PI));
+  path.poses.push_back(makePose(0, 0, 0));
+  path.poses.push_back(makePose(-1, 0, 0));
+  path.poses.push_back(makePose(-2, 0, 0));
 
   bool reversing = false;
   updateApproximatePathOrientations(path, reversing, false);
