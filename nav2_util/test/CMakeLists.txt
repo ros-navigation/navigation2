@@ -34,3 +34,6 @@ target_link_libraries(test_twist_publisher ${library_name} rclcpp::rclcpp ${geom
 
 ament_add_gtest(test_twist_subscriber test_twist_subscriber.cpp)
 target_link_libraries(test_twist_subscriber ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
+
+ament_add_gtest(test_path_utils test_path_utils.cpp)
+target_link_libraries(test_path_utils ${library_name} ${nav_2d_msgs_TARGETS} ${geometry_msgs_TARGETS})
