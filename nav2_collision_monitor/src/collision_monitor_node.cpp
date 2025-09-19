@@ -25,12 +25,14 @@
 
 #include "nav2_collision_monitor/kinematics.hpp"
 
+using namespace std::placeholders;
+
 namespace nav2_collision_monitor
 {
 
 CollisionMonitor::CollisionMonitor(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("collision_monitor", options),
-  process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}, ""},
+  enabled_{true}, process_active_(false), robot_action_prev_{DO_NOTHING, {-1.0, -1.0, -1.0}, ""},
   stop_stamp_{0, 0, get_clock()->get_clock_type()}, stop_pub_timeout_(1.0, 0.0)
 {
 }
@@ -80,6 +82,11 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
 
   collision_points_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "~/collision_points_marker");
+
+  // Toggle service initialization
+  toggle_cm_service_ = create_service<nav2_msgs::srv::Toggle>(
+    "~/toggle",
+    std::bind(&CollisionMonitor::toggleCMServiceCallback, this, _1, _2, _3));
 
   nav2::declare_parameter_if_not_declared(
     node, "use_realtime_priority", rclcpp::ParameterValue(false));
@@ -472,7 +479,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
   }
 
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    if (!polygon->getEnabled()) {
+    if (!polygon->getEnabled() || !enabled_) {
       continue;
     }
     if (robot_action.action_type == STOP) {
@@ -499,7 +506,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     }
   }
 
-  if (robot_action.polygon_name != robot_action_prev_.polygon_name) {
+  if ((robot_action.polygon_name != robot_action_prev_.polygon_name) && enabled_) {
     // Report changed robot behavior
     notifyActionState(robot_action, action_polygon);
   }
@@ -652,10 +659,24 @@ void CollisionMonitor::notifyActionState(
 void CollisionMonitor::publishPolygons() const
 {
   for (std::shared_ptr<Polygon> polygon : polygons_) {
-    if (polygon->getEnabled()) {
+    if (polygon->getEnabled() || !enabled_) {
       polygon->publish();
     }
   }
+}
+
+void CollisionMonitor::toggleCMServiceCallback(
+  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
+  const std::shared_ptr<nav2_msgs::srv::Toggle::Request> request,
+  std::shared_ptr<nav2_msgs::srv::Toggle::Response> response)
+{
+  enabled_ = request->enable;
+
+  std::stringstream message;
+  message << "Collision monitor toggled " << (enabled_ ? "on" : "off") << " successfully";
+
+  response->success = true;
+  response->message = message.str();
 }
 
 }  // namespace nav2_collision_monitor
