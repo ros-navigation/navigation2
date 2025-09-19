@@ -97,7 +97,9 @@ protected:
   std::unique_ptr<pluginlib::ClassLoader<critics::CriticFunction>> loader_;
   Critics critics_;
 
-  nav2::Publisher<nav2_msgs::msg::CriticsStats>::SharedPtr critics_effect_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CriticsStats>::SharedPtr
+  critics_effect_pub_;
+
   bool publish_critics_stats_;
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
