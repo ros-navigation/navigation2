@@ -44,6 +44,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"},
+  current_distance_to_goal_(0.0),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -747,7 +748,7 @@ void ControllerServer::publishTrackingState()
     return;
   }
 
-// Frame checks
+  // Frame checks
   geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
   if (!nav2_util::transformPoseInTargetFrame(
         robot_pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
@@ -757,14 +758,24 @@ void ControllerServer::publishTrackingState()
     return;
   }
 
+  geometry_msgs::msg::PoseStamped transformed_end_pose;
+  if (!nav2_util::transformPoseInTargetFrame(
+        end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
+        robot_pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+  {
+    RCLCPP_WARN(get_logger(), "Failed to transform goal pose to robot frame.");
+    return;
+  } else {
+    current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
+    robot_pose, transformed_end_pose);
+  }
+
   const auto path_search_result = nav2_util::distance_from_path(
     current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
   // Set the current closest idx to the next cycle's start
   start_index_ = path_search_result.closest_segment_index;
 
-  double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(robot_pose,
-    end_pose_);
 
   auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingError>();
 
@@ -772,7 +783,7 @@ void ControllerServer::publishTrackingState()
   tracking_error_msg->tracking_error = path_search_result.distance;
   tracking_error_msg->current_path_index = start_index_;
   tracking_error_msg->robot_pose = robot_pose;
-  tracking_error_msg->distance_to_goal = current_distance_to_goal;
+  tracking_error_msg->distance_to_goal = current_distance_to_goal_;
   tracking_error_msg->speed = std::hypot(
     getThresholdedTwist(odom_sub_->getRawTwist()).linear.x,
     getThresholdedTwist(odom_sub_->getRawTwist()).linear.y);

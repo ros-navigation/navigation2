@@ -277,6 +277,7 @@ protected:
   double search_window_;
   int start_index_;
 
+  double current_distance_to_goal_;
   double failure_tolerance_;
   bool use_realtime_priority_;
   bool publish_zero_velocity_;
