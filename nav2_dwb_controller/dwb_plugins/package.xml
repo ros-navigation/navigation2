@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>dwb_plugins</name>
-  <version>1.1.18</version>
+  <version>1.1.19</version>
   <description>
       Standard implementations of the GoalChecker
       and TrajectoryGenerators for dwb_core
