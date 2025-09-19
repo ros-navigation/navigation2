@@ -778,7 +778,6 @@ void ControllerServer::publishTrackingState()
     getThresholdedTwist(odom_sub_->getRawTwist()).linear.y);
   current_tracking_error_ = *tracking_error_msg;
   tracking_error_pub_->publish(std::move(tracking_error_msg));
-
 }
 
 void ControllerServer::publishVelocity(const geometry_msgs::msg::TwistStamped & velocity)
