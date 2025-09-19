@@ -33,6 +33,7 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/twist_subscriber.hpp"
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
+#include "nav2_msgs/srv/toggle.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -200,6 +201,16 @@ protected:
    */
   void publishPolygons() const;
 
+  /**
+   * @brief Enable/disable collision monitor service callback
+   * @param request Service request
+   * @param response Service response
+   */
+  void toggleCMServiceCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<nav2_msgs::srv::Toggle::Request> request,
+    std::shared_ptr<nav2_msgs::srv::Toggle::Response> response);
+
   // ----- Variables -----
 
   /// @brief TF buffer
@@ -226,6 +237,12 @@ protected:
   /// @brief Collision points marker publisher
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_pub_;
+
+  /// @brief Enable/disable collision monitor service
+  nav2::ServiceServer<nav2_msgs::srv::Toggle>::SharedPtr toggle_cm_service_;
+
+  /// @brief Whether collision monitor is enabled
+  bool enabled_;
 
   /// @brief Whether main routine is active
   bool process_active_;
