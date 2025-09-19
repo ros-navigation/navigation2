@@ -60,6 +60,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetShapes.srv"
   "srv/SetRouteGraph.srv"
   "srv/DynamicEdges.srv"
+  "srv/Toggle.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"
   "action/ComputePathToPose.action"
