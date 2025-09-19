@@ -291,8 +291,8 @@ protected:
   // Current path container
   nav_msgs::msg::Path current_path_;
 
-  // Last tracking error
-  double signed_distance_ = 0;
+  // Last tracking error in the form of TrackingError.msg
+  nav2_msgs::msg::TrackingError  current_tracking_error_;
 
 private:
   /**

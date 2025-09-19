@@ -38,7 +38,7 @@ PathSearchResult distance_from_path(
 
   if (path.poses.size() == 1) {
     result.distance = nav2_util::geometry_utils::euclidean_distance(
-    robot_pose, path.poses.front().pose);
+      robot_pose, path.poses.front().pose);
     result.closest_segment_index = 0;
     return result;
   }
@@ -70,6 +70,14 @@ PathSearchResult distance_from_path(
       path.poses[i],
       path.poses[i + 1]);
   }
+
+  const auto & segment_start = path.poses[result.closest_segment_index];
+  const auto & segment_end = path.poses[result.closest_segment_index + 1];
+
+  const double cross_product = geometry_utils::cross_product_2d(
+    robot_pose.position, segment_start.pose, segment_end.pose);
+
+  result.distance *= (cross_product >= 0.0 ? 1.0 : -1.0);
 
   return result;
 }

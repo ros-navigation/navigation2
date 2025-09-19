@@ -201,7 +201,7 @@ TEST(PathUtilsTest, EmptyAndSinglePointPaths)
   nav_msgs::msg::Path single_point_path;
   single_point_path.poses.push_back(createPoseStamped(0.0, 0.0));
   result = nav2_util::distance_from_path(single_point_path, robot_pose);
-  EXPECT_NEAR(result.distance, 7.071, 0.01);
+  EXPECT_NEAR(std::abs(result.distance), 7.071, 0.01);
 }
 
 TEST_F(CuttingCornerTest, TrajectoryCutsCorner)
@@ -209,7 +209,7 @@ TEST_F(CuttingCornerTest, TrajectoryCutsCorner)
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_NEAR(result.distance, expected_distances[i], 0.1);
+    EXPECT_NEAR(std::abs(result.distance), expected_distances[i], 0.1);
   }
 }
 
@@ -219,7 +219,7 @@ TEST_F(RetracingPathTest, TrajectoryFollowsRetracingPath)
 
   for (const auto & robot_pose : robot_trajectory) {
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_NEAR(result.distance, expected_distance, 1e-6);
+    EXPECT_NEAR(std::abs(result.distance), expected_distance, 1e-6);
   }
 }
 
@@ -227,7 +227,7 @@ TEST_F(CloverleafPathTest, TrajectoryFollowsCloverleafLoop)
 {
   for (const auto & robot_pose : robot_trajectory) {
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_LT(result.distance, 0.25);
+    EXPECT_LT(std::abs(result.distance), 0.25);
   }
 }
 
@@ -237,7 +237,7 @@ TEST_F(RetracingCircleTest, TrajectoryFollowsRetracingCircle)
 
   for (const auto & robot_pose : robot_trajectory) {
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_NEAR(result.distance, expected_distance, 0.01);
+    EXPECT_NEAR(std::abs(result.distance), expected_distance, 0.01);
   }
 }
 
@@ -245,7 +245,7 @@ TEST_F(ZigZagPathTest, TrajectoryFollowsZigZagPath)
 {
   for (const auto & robot_pose : robot_trajectory) {
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_LT(result.distance, 1.0);
+    EXPECT_LT(std::abs(result.distance), 1.0);
   }
 }
 
@@ -253,7 +253,7 @@ TEST_F(HairpinTurnTest, TrajectoryFollowsHairpinTurn)
 {
   for (const auto & robot_pose : robot_trajectory) {
     auto result = nav2_util::distance_from_path(target_path, robot_pose);
-    EXPECT_LT(result.distance, 1.5);
+    EXPECT_LT(std::abs(result.distance), 1.5);
   }
 }
 
@@ -269,7 +269,7 @@ TEST_F(CuttingCornerWindowedTest, WindowedSearch)
     auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
-    EXPECT_NEAR(result.distance, expected_distances[i], 0.15);
+    EXPECT_NEAR(std::abs(result.distance), expected_distances[i], 0.15);
   }
 }
 
@@ -286,7 +286,7 @@ TEST_F(RetracingPathWindowedTest, WindowedSearch)
     auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
-    EXPECT_NEAR(result.distance, expected_distance, 1e-6);
+    EXPECT_NEAR(std::abs(result.distance), expected_distance, 1e-6);
   }
 }
 
@@ -302,7 +302,7 @@ TEST_F(ZigZagPathWindowedTest, WindowedSearch)
     auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
-    EXPECT_LT(result.distance, 1.0);
+    EXPECT_LT(std::abs(result.distance), 1.0);
   }
 }
 
@@ -318,7 +318,7 @@ TEST_F(HairpinTurnWindowedTest, WindowedSearch)
     auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
-    EXPECT_LT(result.distance, 1.5);
+    EXPECT_LT(std::abs(result.distance), 1.5);
   }
 }
 
@@ -330,5 +330,5 @@ TEST(PathUtilsWindowedTest, EdgeCases)
   test_path.poses.push_back(createPoseStamped(10.0, 0.0));
 
   auto result = nav2_util::distance_from_path(test_path, robot_pose, 0, 5.0);
-  EXPECT_NEAR(result.distance, 5.0, 0.01);
+  EXPECT_NEAR(std::abs(result.distance), 5.0, 0.01);
 }
