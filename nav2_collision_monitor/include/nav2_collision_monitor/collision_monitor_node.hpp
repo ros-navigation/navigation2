@@ -239,7 +239,7 @@ protected:
     collision_points_marker_pub_;
 
   /// @brief Enable/disable collision monitor service
-  nav2::ServiceServer<nav2_msgs::srv::Toggle>::SharedPtr toggle_cm_service_;
+  rclcpp::Service<nav2_msgs::srv::Toggle>::SharedPtr toggle_cm_service_;
 
   /// @brief Whether collision monitor is enabled
   bool enabled_;
