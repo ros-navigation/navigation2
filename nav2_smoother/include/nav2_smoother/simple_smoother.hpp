@@ -27,6 +27,7 @@
 #include "nav2_smoother/smoother_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/collision_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -94,6 +95,7 @@ protected:
    * @param costmap Pointer to minimal costmap
    * @param max_time Maximum time to compute, stop early if over limit
    */
+
   void smoothImpl(
     nav_msgs::msg::Path & path,
     bool & reversing_segment,
@@ -124,6 +126,9 @@ protected:
   int max_its_, refinement_ctr_, refinement_num_;
   bool do_refinement_, enforce_path_inversion_;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
+  //member variables added to store foorprint sub and collision checker
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  std::shared_ptr<nav2_costmap_2d::CollisionChecker> collision_checker_;
   rclcpp::Logger logger_{rclcpp::get_logger("SimpleSmoother")};
 };
 
