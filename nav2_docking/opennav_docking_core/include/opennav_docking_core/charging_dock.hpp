@@ -125,6 +125,16 @@ public:
   virtual bool hasStoppedCharging() = 0;
 
   /**
+   * @brief Start any detection pipelines required for pose refinement.
+   */
+  virtual bool startDetectionProcess() = 0;
+
+  /**
+   * @brief Stop any detection pipelines running for pose refinement.
+   */
+  virtual bool stopDetectionProcess() = 0;
+
+  /**
    * @brief Gets if this is a charging-typed dock
    */
   virtual bool isCharger() {return true;}

@@ -74,6 +74,8 @@ TEST(GraphLoader, test_api)
 TEST(GraphLoader, test_transformation_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   tf->setUsingDedicatedThread(true);
   auto tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
@@ -107,8 +109,7 @@ TEST(GraphLoader, test_transformation_api)
   tf_broadcaster->sendTransform(transform);
   rclcpp::Rate(1).sleep();
   tf_broadcaster->sendTransform(transform);
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(1));
-  rclcpp::spin_all(node->get_node_base_interface(), std::chrono::milliseconds(50));
+  executor.spin_all(std::chrono::milliseconds(50));
 
   graph[0].coords.frame_id = "map_test";
   EXPECT_EQ(graph[0].coords.frame_id, "map_test");

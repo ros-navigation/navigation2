@@ -66,7 +66,8 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->on_activate();
 
   nav2_util::OdomSmoother odom_smoother(node, 0.3, "odom");
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   nav_msgs::msg::Odometry odom_msg;
   geometry_msgs::msg::Twist twist_msg;
   geometry_msgs::msg::Twist twist_raw_msg;
@@ -79,7 +80,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_msg.twist.twist.angular.z = 1.0;
 
   odom_pub->publish(odom_msg);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   twist_msg = odom_smoother.getTwist();
   EXPECT_EQ(twist_msg.linear.x, 1.0);
@@ -93,7 +94,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->publish(odom_msg);
 
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   twist_msg = odom_smoother.getTwist();
   twist_raw_msg = odom_smoother.getRawTwist();
@@ -111,7 +112,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->publish(odom_msg);
 
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   twist_msg = odom_smoother.getTwist();
   twist_raw_msg = odom_smoother.getRawTwist();
@@ -129,7 +130,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->publish(odom_msg);
 
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   twist_msg = odom_smoother.getTwist();
   twist_raw_msg = odom_smoother.getRawTwist();
@@ -147,7 +148,7 @@ TEST(OdometryUtils, test_smoothed_velocity)
   odom_pub->publish(odom_msg);
 
   std::this_thread::sleep_for(100ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   twist_msg = odom_smoother.getTwist();
   twist_raw_msg = odom_smoother.getRawTwist();

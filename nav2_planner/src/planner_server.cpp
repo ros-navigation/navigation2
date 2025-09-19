@@ -428,9 +428,17 @@ void PlannerServer::computePlanThroughPoses()
         throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
       }
 
-      // Concatenate paths together
-      concat_path.poses.insert(
-        concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
+      // Concatenate paths together, but skip the first pose of subsequent paths
+      // to avoid duplicating the connection point
+      if (i == 0) {
+        // First path: add all poses
+        concat_path.poses.insert(
+          concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
+      } else if (curr_path.poses.size() > 1) {
+        // Subsequent paths: skip the first pose to avoid duplication
+        concat_path.poses.insert(
+          concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
+      }
       concat_path.header = curr_path.header;
     }
 

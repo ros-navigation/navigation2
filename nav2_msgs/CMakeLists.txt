@@ -11,6 +11,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geographic_msgs)
 find_package(action_msgs REQUIRED)
+find_package(unique_identifier_msgs REQUIRED)
 
 nav2_package()
 
@@ -30,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VoxelGrid.msg"
   "msg/BehaviorTreeStatusChange.msg"
   "msg/BehaviorTreeLog.msg"
+  "msg/CriticsStats.msg"
   "msg/Particle.msg"
   "msg/ParticleCloud.msg"
   "msg/WaypointStatus.msg"
@@ -40,6 +42,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Trajectory.msg"
   "msg/TrajectoryPoint.msg"
   "srv/GetCosts.srv"
+  "msg/PolygonObject.msg"
+  "msg/CircleObject.msg"
   "srv/GetCostmap.srv"
   "srv/IsPathValid.srv"
   "srv/ClearCostmapExceptRegion.srv"
@@ -51,6 +55,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveMap.srv"
   "srv/SetInitialPose.srv"
   "srv/ReloadDockDatabase.srv"
+  "srv/AddShapes.srv"
+  "srv/RemoveShapes.srv"
+  "srv/GetShapes.srv"
   "srv/SetRouteGraph.srv"
   "srv/DynamicEdges.srv"
   "srv/Toggle.srv"
@@ -72,7 +79,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/UndockRobot.action"
   "action/ComputeRoute.action"
   "action/ComputeAndTrackRoute.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs unique_identifier_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

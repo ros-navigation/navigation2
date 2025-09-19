@@ -85,7 +85,9 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
     });
 
   pub->publish(std_msgs::msg::Empty());
-  rclcpp::spin_some(sub_node);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(sub_node->get_node_base_interface());
+  executor.spin_some();
 
   rclcpp::shutdown();
   srv_thread.join();
@@ -98,7 +100,9 @@ TEST(ServiceClient, can_ServiceClient_timeout)
   rclcpp::init(0, nullptr);
   auto node = rclcpp::Node::make_shared("test_node");
   TestServiceClient t("bar", node, true);
-  rclcpp::spin_some(node);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+  executor.spin_some();
   bool ready = t.wait_for_service(std::chrono::milliseconds(10));
   rclcpp::shutdown();
   ASSERT_EQ(ready, false);
@@ -128,7 +132,9 @@ TEST(ServiceClient, can_ServiceClient_async_call) {
   // Test async_call
   client.async_call(req, callback);
   std::this_thread::sleep_for(std::chrono::seconds(1));
-  rclcpp::spin_some(node);
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
+  executor.spin_some();
 
   rclcpp::shutdown();
   srv_thread.join();

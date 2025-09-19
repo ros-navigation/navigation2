@@ -297,6 +297,7 @@ Tester::~Tester()
   collision_points_marker_sub_.reset();
 
   cm_.reset();
+  executor_.reset();
 }
 
 void Tester::setCommonParameters()
