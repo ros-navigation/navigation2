@@ -768,7 +768,7 @@ bool Tester::waitToggle(
     if (status == std::future_status::ready) {
       return true;
     }
-    executor_->spin_some();
+    rclcpp::spin_some(cm_->get_node_base_interface());
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -831,7 +831,7 @@ TEST_F(Tester, testToggleService)
   // Disable test
   request->enable = false;
   {
-    auto result_future = toggle_client_->async_call(request);
+    auto result_future = toggle_client_->async_send_request(request);
     ASSERT_TRUE(waitToggle(result_future, 2s));
   }
   ASSERT_FALSE(cm_->isEnabled());
@@ -839,7 +839,7 @@ TEST_F(Tester, testToggleService)
   // Enable test
   request->enable = true;
   {
-    auto result_future = toggle_client_->async_call(request);
+    auto result_future = toggle_client_->async_send_request(request);
     ASSERT_TRUE(waitToggle(result_future, 2s));
   }
   ASSERT_TRUE(cm_->isEnabled());
