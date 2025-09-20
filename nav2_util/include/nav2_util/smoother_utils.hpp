@@ -102,6 +102,7 @@ inline std::vector<PathSegment> findDirectionalPathSegments(
  * @param path Path to approximate the path orientation in
  * @param reversing_segment Return if this is a reversing segment
  * @param is_holonomic Whether the motion model is holonomic (default is false)
+ Only set as true when the input path is known to be generated from a holonomic planner like NavFn.
  */
 inline void updateApproximatePathOrientations(
   nav_msgs::msg::Path & path,
