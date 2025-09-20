@@ -159,7 +159,15 @@ TEST(UtilsTest, test_to_visualization_msg_conversion)
   graph[3].addEdge(default_cost, &graph[6], ids++);
 
   auto graph_msg = utils::toMsg(graph, frame, time);
-  EXPECT_EQ(graph_msg.markers.size(), 34u);  // 9 nodes and 8 edges (with text markers)
+  constexpr size_t expected_edge_markers = 1;
+  constexpr size_t expected_node_markers = 1;
+  constexpr size_t expected_edge_id_text_markers = 8;
+  constexpr size_t expected_node_id_text_markers = 9;
+  constexpr size_t expected_total_markers =
+    expected_edge_markers + expected_node_markers +
+    expected_edge_id_text_markers + expected_node_id_text_markers;
+
+  EXPECT_EQ(graph_msg.markers.size(), expected_total_markers);
   for (auto & marker : graph_msg.markers) {
     if (marker.ns == "route_graph_ids") {
       EXPECT_EQ(marker.type, visualization_msgs::msg::Marker::TEXT_VIEW_FACING);
