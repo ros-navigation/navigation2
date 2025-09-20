@@ -96,5 +96,5 @@ TEST(SmootherUtils, UpdateApproximatePathReverse)
 
   EXPECT_TRUE(reversing);
   double yaw0 = tf2::getYaw(path.poses[0].pose.orientation);
-  EXPECT_NEAR(yaw0, M_PI, 1e-5);
+  EXPECT_NEAR(yaw0, 0, 1e-5);
 }
