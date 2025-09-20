@@ -99,9 +99,6 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
   declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".transform_tolerance",
-    rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".shorten_transformed_plan",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
@@ -110,9 +107,7 @@ void DWBLocalPlanner::configure(
 
   std::string traj_generator_name;
 
-  double transform_tolerance;
-  node->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance_);
-  RCLCPP_INFO(logger_, "Setting transform_tolerance to %f", transform_tolerance);
+  node->get_parameter("transform_tolerance", transform_tolerance_);
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
   node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);

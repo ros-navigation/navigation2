@@ -71,7 +71,6 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances |
 | `lookahead_time` | The time to project the velocity by to find the velocity scaled lookahead distance. Also known as the lookahead gain. |
 | `rotate_to_heading_angular_vel` | If rotate to heading is used, this is the angular velocity to use. |
-| `transform_tolerance` | The TF transform tolerance |
 | `use_velocity_scaled_lookahead_dist` | Whether to use the velocity scaled lookahead distances or constant `lookahead_distance` |
 | `min_approach_linear_velocity` | The minimum velocity threshold to apply when approaching the goal |
 | `approach_velocity_scaling_dist` | Integrated distance from end of transformed path at which to start applying velocity scaling. This defaults to the forward extent of the costmap minus one costmap cell length. |
@@ -122,7 +121,6 @@ controller_server:
       max_lookahead_dist: 0.9
       lookahead_time: 1.5
       rotate_to_heading_angular_vel: 1.8
-      transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 1.0

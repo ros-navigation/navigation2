@@ -47,6 +47,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2_ros::tf2_ros
+  angles::angles
 )
 target_link_libraries(${library_name} PRIVATE
   ${lifecycle_msgs_TARGETS}

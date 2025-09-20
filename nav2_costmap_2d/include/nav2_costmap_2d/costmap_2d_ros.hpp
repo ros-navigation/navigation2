@@ -212,12 +212,6 @@ public:
     return name_;
   }
 
-  /** @brief Returns the delay in transform (tf) data that is tolerable in seconds */
-  double getTransformTolerance() const
-  {
-    return transform_tolerance_;
-  }
-
   /**
    * @brief Return a pointer to the "master" costmap which receives updates from all the layers.
    *
