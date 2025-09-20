@@ -174,13 +174,6 @@ protected:
     const double & pose_cost, const nav_msgs::msg::Path & path,
     double & linear_vel, double & sign);
 
-  /**
-   * @brief checks for the cusp position
-   * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
-   */
-  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
-
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;

@@ -48,25 +48,9 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
-  declare_parameter("controller_frequency", 20.0);
-
   declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
   declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
   declare_parameter("controller_plugins", default_ids_);
-  declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
-
-  declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-
-  declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
-  declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
-  declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
-  declare_parameter("costmap_update_timeout", 0.30);  // 300ms
-
-  declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
-  declare_parameter("interpolate_curvature_after_goal", rclcpp::ParameterValue(false));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -122,29 +106,15 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   goal_checker_types_.resize(goal_checker_ids_.size());
   progress_checker_types_.resize(progress_checker_ids_.size());
 
-  get_parameter("controller_frequency", controller_frequency_);
-  get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
-  get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
-  get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
-  RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
-
-  std::string speed_limit_topic, odom_topic;
-  get_parameter("speed_limit_topic", speed_limit_topic);
-  get_parameter("odom_topic", odom_topic);
-  double odom_duration;
-  get_parameter("odom_duration", odom_duration);
-  get_parameter("failure_tolerance", failure_tolerance_);
-  get_parameter("use_realtime_priority", use_realtime_priority_);
-  get_parameter("publish_zero_velocity", publish_zero_velocity_);
-  get_parameter("interpolate_curvature_after_goal", interpolate_curvature_after_goal_);
-
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
-  declare_parameter("max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_ros_->getCostmap()->getSizeInMetersX() / 2.0));
-  get_parameter("max_robot_pose_search_dist", max_robot_pose_search_dist_);
+  param_handler_ = std::make_unique<ParameterHandler>(
+    node, get_logger(),
+    costmap_ros_->getCostmap()->getSizeInMetersX());
+  params_ = param_handler_->getParams();
   path_handler_ = std::make_unique<PathHandler>(
-   costmap_ros_->getTransformTolerance(), costmap_ros_->getTfBuffer(), costmap_ros_);
+   params_, costmap_ros_->getTfBuffer(), costmap_ros_);
 
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     try {
@@ -230,13 +200,11 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
-  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
+  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration, params_->odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
 
-  double costmap_update_timeout_dbl;
-  get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
-  costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
+  costmap_update_timeout_ = rclcpp::Duration::from_seconds(params_->costmap_update_timeout);
 
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritization if user doesn't have real-time permissions
@@ -246,7 +214,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       std::bind(&ControllerServer::computeControl, this),
       nullptr,
       std::chrono::milliseconds(500),
-      true /*spin thread*/, use_realtime_priority_ /*soft realtime*/);
+      true /*spin thread*/, params_->use_realtime_priority /*soft realtime*/);
   } catch (const std::runtime_error & e) {
     RCLCPP_ERROR(get_logger(), "Error creating action server! %s", e.what());
     on_cleanup(state);
@@ -255,7 +223,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   // Set subscription to the speed limiting topic
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
-    speed_limit_topic,
+    params_->speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
   return nav2::CallbackReturn::SUCCESS;
@@ -279,9 +247,6 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   action_server_->activate();
 
   auto node = shared_from_this();
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&ControllerServer::dynamicParametersCallback, this, _1));
 
   // create bond connection
   createBond();
@@ -476,7 +441,7 @@ void ControllerServer::computeControl()
     progress_checkers_[current_progress_checker_]->reset();
 
     last_valid_cmd_time_ = now();
-    rclcpp::WallRate loop_rate(controller_frequency_);
+    rclcpp::WallRate loop_rate(params_->controller_frequency);
     while (rclcpp::ok()) {
       auto start_time = this->now();
 
@@ -521,7 +486,7 @@ void ControllerServer::computeControl()
         RCLCPP_WARN(
           get_logger(),
           "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
-          controller_frequency_, 1 / cycle_duration.seconds());
+          params_->controller_frequency, 1 / cycle_duration.seconds());
       }
     }
   } catch (nav2_core::InvalidController & e) {
@@ -634,8 +599,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  auto transformed_plan = path_handler_->pruneGlobalPlan(
-    pose, max_robot_pose_search_dist_, interpolate_curvature_after_goal_);
+  auto transformed_plan = path_handler_->pruneGlobalPlan(pose);
   // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(transformed_plan));
   global_path_pub_->publish(transformed_plan);
   local_path_ = transformed_plan;
@@ -659,7 +623,7 @@ void ControllerServer::computeAndPublishVelocity()
     // Only no valid control exception types are valid to attempt to have control patience, as
     // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
-    if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
+    if (params_->failure_tolerance > 0 || params_->failure_tolerance == -1.0) {
       RCLCPP_WARN(this->get_logger(), "%s", e.what());
       cmd_vel_2d.twist.angular.x = 0;
       cmd_vel_2d.twist.angular.y = 0;
@@ -669,8 +633,8 @@ void ControllerServer::computeAndPublishVelocity()
       cmd_vel_2d.twist.linear.z = 0;
       cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
       cmd_vel_2d.header.stamp = now();
-      if ((now() - last_valid_cmd_time_).seconds() > failure_tolerance_ &&
-        failure_tolerance_ != -1.0)
+      if ((now() - last_valid_cmd_time_).seconds() > params_->failure_tolerance &&
+        params_->failure_tolerance != -1.0)
       {
         throw nav2_core::PatienceExceeded("Controller patience exceeded");
       }
@@ -686,7 +650,7 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
   if (!nav2_util::transformPoseInTargetFrame(
           pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-          current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+          current_path_.header.frame_id, params_->transform_tolerance))
   {
     throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
   }
@@ -793,7 +757,7 @@ void ControllerServer::publishZeroVelocity()
 
 void ControllerServer::onGoalExit(bool force_stop)
 {
-  if (publish_zero_velocity_ || force_stop) {
+  if (params_->publish_zero_velocity || force_stop) {
     publishZeroVelocity();
   }
 
@@ -817,7 +781,7 @@ bool ControllerServer::isGoalReached()
   end_pose_.header.stamp = pose.header.stamp;
   nav2_util::transformPoseInTargetFrame(
     end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
-    costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
+    costmap_ros_->getGlobalFrameID(), params_->transform_tolerance);
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
@@ -840,50 +804,6 @@ void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::Shar
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
     it->second->setSpeedLimit(msg->speed_limit, msg->percentage);
   }
-}
-
-rcl_interfaces::msg::SetParametersResult
-ControllerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
-{
-  rcl_interfaces::msg::SetParametersResult result;
-
-  for (auto parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-
-    // If we are trying to change the parameter of a plugin we can just skip it at this point
-    // as they handle parameter changes themselves and don't need to lock the mutex
-    if (param_name.find('.') != std::string::npos) {
-      continue;
-    }
-
-    if (!dynamic_params_lock_.try_lock()) {
-      RCLCPP_WARN(
-        get_logger(),
-        "Unable to dynamically change Parameters while the controller is currently running");
-      result.successful = false;
-      result.reason =
-        "Unable to dynamically change Parameters while the controller is currently running";
-      return result;
-    }
-
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "min_x_velocity_threshold") {
-        min_x_velocity_threshold_ = parameter.as_double();
-      } else if (param_name == "min_y_velocity_threshold") {
-        min_y_velocity_threshold_ = parameter.as_double();
-      } else if (param_name == "min_theta_velocity_threshold") {
-        min_theta_velocity_threshold_ = parameter.as_double();
-      } else if (param_name == "failure_tolerance") {
-        failure_tolerance_ = parameter.as_double();
-      }
-    }
-
-    dynamic_params_lock_.unlock();
-  }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller

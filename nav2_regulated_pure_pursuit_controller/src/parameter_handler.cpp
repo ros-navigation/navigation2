@@ -49,8 +49,6 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.8));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_velocity_scaled_lookahead_dist",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -113,7 +111,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_angular_vel",
     params_.rotate_to_heading_angular_vel);
-  node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
+  node->get_parameter("transform_tolerance", params_.transform_tolerance);
   node->get_parameter(
     plugin_name_ + ".use_velocity_scaled_lookahead_dist",
     params_.use_velocity_scaled_lookahead_dist);
@@ -295,8 +293,6 @@ ParameterHandler::updateParametersCallback(
         params_.cancel_deceleration = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotate_to_heading_min_angle") {
         params_.rotate_to_heading_min_angle = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".transform_tolerance") {
-        params_.transform_tolerance = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {

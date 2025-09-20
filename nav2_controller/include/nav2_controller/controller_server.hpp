@@ -37,6 +37,7 @@
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_controller/path_handler.hpp"
+#include "nav2_controller/parameter_handler.hpp"
 
 namespace nav2_controller
 {
@@ -212,18 +213,11 @@ protected:
   geometry_msgs::msg::Twist getThresholdedTwist(const geometry_msgs::msg::Twist & twist)
   {
     geometry_msgs::msg::Twist twist_thresh;
-    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, min_x_velocity_threshold_);
-    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, min_y_velocity_threshold_);
-    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, min_theta_velocity_threshold_);
+    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, params_->min_x_velocity_threshold);
+    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, params_->min_y_velocity_threshold);
+    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, params_->min_theta_velocity_threshold);
     return twist_thresh;
   }
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
@@ -265,14 +259,6 @@ protected:
   std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
 
-  double controller_frequency_;
-  double min_x_velocity_threshold_;
-  double min_y_velocity_threshold_;
-  double min_theta_velocity_threshold_;
-
-  double failure_tolerance_;
-  bool use_realtime_priority_;
-  bool publish_zero_velocity_;
   rclcpp::Duration costmap_update_timeout_;
 
   // Whether we've published the single controller warning yet
@@ -284,9 +270,9 @@ protected:
   // Current path container
   nav_msgs::msg::Path current_path_;
   nav_msgs::msg::Path local_path_;
-  bool interpolate_curvature_after_goal_;
-  double max_robot_pose_search_dist_;
   std::unique_ptr<nav2_controller::PathHandler> path_handler_;
+  std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
+  Parameters * params_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
 
 private:

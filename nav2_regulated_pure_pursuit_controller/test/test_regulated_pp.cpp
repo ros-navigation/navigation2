@@ -77,12 +77,6 @@ public:
       curvature, curr_speed, pose_cost, path,
       linear_vel, sign);
   }
-
-  double findVelocitySignChangeWrapper(
-    const nav_msgs::msg::Path & transformed_plan)
-  {
-    return findVelocitySignChange(transformed_plan);
-  }
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -135,46 +129,6 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.x, 1.0);
   EXPECT_EQ(rtn->point.y, 12.0);
   EXPECT_EQ(rtn->point.z, 0.01);
-}
-
-TEST(RegulatedPurePursuitTest, findVelocitySignChange)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("testRPPfindVelocitySignChange");
-  auto ctrl = std::make_shared<BasicAPIRPP>();
-
-  std::string name = "PathFollower";
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
-  ctrl->configure(node, name, tf, costmap);
-
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header.frame_id = "smb";
-  auto time = node->get_clock()->now();
-  pose.header.stamp = time;
-  pose.pose.position.x = 1.0;
-  pose.pose.position.y = 0.0;
-
-  nav_msgs::msg::Path path;
-  path.poses.resize(3);
-  path.header.frame_id = "smb";
-  path.header.stamp = pose.header.stamp;
-  path.poses[0].pose.position.x = 1.0;
-  path.poses[0].pose.position.y = 1.0;
-  path.poses[1].pose.position.x = 2.0;
-  path.poses[1].pose.position.y = 2.0;
-  path.poses[2].pose.position.x = -1.0;
-  path.poses[2].pose.position.y = -1.0;
-  ctrl->setPlan(path);
-  auto rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, sqrt(8.0));
-
-  path.poses[2].pose.position.x = 3.0;
-  path.poses[2].pose.position.y = 3.0;
-  ctrl->setPlan(path);
-  rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
@@ -443,7 +397,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
-      rclcpp::Parameter("test.transform_tolerance", 30.0),
       rclcpp::Parameter("test.max_angular_accel", 3.0),
       rclcpp::Parameter("test.rotate_to_heading_min_angle", 0.7),
       rclcpp::Parameter("test.regulated_linear_scaling_min_speed", 4.0),
@@ -473,7 +426,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
-  EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 30.0);
   EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_min_angle").as_double(), 0.7);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_speed").as_double(), 4.0);
