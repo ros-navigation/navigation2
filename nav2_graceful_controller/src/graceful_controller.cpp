@@ -43,8 +43,7 @@ void GracefulController::configure(
   // Handles storage and dynamic configuration of parameters.
   // Returns pointer to data current param settings.
   param_handler_ = std::make_unique<ParameterHandler>(
-    node, plugin_name_, logger_,
-    costmap_ros_->getCostmap()->getSizeInMetersX());
+    node, plugin_name_, logger_);
   params_ = param_handler_->getParams();
 
   // Handles the control law to generate the velocity commands

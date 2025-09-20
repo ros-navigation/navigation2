@@ -249,7 +249,8 @@ geometry_msgs::msg::TwistStamped
 DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
-  nav2_core::GoalChecker * /*goal_checker*/)
+  nav2_core::GoalChecker * /*goal_checker*/,
+  nav_msgs::msg::Path & /*transformed_global_plan*/)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -284,7 +285,6 @@ DWBLocalPlanner::prepareGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose, nav_msgs::msg::Path & transformed_plan,
   geometry_msgs::msg::PoseStamped & goal_pose, bool publish_plan)
 {
-  transformed_plan = transformGlobalPlan(pose);
   if (publish_plan) {
     pub_->publishTransformedPlan(transformed_plan);
   }
@@ -457,115 +457,6 @@ DWBLocalPlanner::scoreTrajectory(
   }
 
   return score;
-}
-
-nav_msgs::msg::Path
-DWBLocalPlanner::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose)
-{
-  if (global_plan_.poses.empty()) {
-    throw nav2_core::InvalidPath("Received plan with zero length");
-  }
-
-  // let's get the pose of the robot in the frame of the plan
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(
-      pose, robot_pose, *tf_,
-      global_plan_.header.frame_id, transform_tolerance_))
-  {
-    throw nav2_core::
-          ControllerTFError("Unable to transform robot pose into global plan's frame");
-  }
-
-  // we'll discard points on the plan that are outside the local costmap
-  nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
-  double dist_threshold = std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
-    costmap->getResolution() / 2.0;
-
-  // If prune_plan is enabled (it is by default) then we want to restrict the
-  // plan to distances within that range as well.
-  double prune_dist = prune_distance_;
-
-  // Set the maximum distance we'll include points before getting to the part
-  // of the path where the robot is located (the start of the plan). Basically,
-  // these are the points the robot has already passed.
-  double transform_start_threshold;
-  if (prune_plan_) {
-    transform_start_threshold = std::min(dist_threshold, prune_dist);
-  } else {
-    transform_start_threshold = dist_threshold;
-  }
-
-  // Set the maximum distance we'll include points after the part of the plan
-  // near the robot (the end of the plan). This determines the amount of the
-  // plan passed on to the critics
-  double transform_end_threshold;
-  double forward_prune_dist = forward_prune_distance_;
-  if (shorten_transformed_plan_) {
-    transform_end_threshold = std::min(dist_threshold, forward_prune_dist);
-  } else {
-    transform_end_threshold = dist_threshold;
-  }
-
-  // Find the first pose in the global plan that's further than forward prune distance
-  // from the robot using integrated distance
-  auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
-
-  // Find the first pose in the plan (up to prune_point) that's less than transform_start_threshold
-  // from the robot.
-  auto transformation_begin = std::find_if(
-    begin(global_plan_.poses), prune_point,
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(robot_pose, global_plan_pose) < transform_start_threshold;
-    });
-
-  // Find the first pose in the end of the plan that's further than transform_end_threshold
-  // from the robot using integrated distance
-  auto transformation_end = std::find_if(
-    transformation_begin, global_plan_.poses.end(),
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(global_plan_pose, robot_pose) > transform_end_threshold;
-    });
-
-  // Transform the near part of the global plan into the robot's frame of reference.
-  nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  transformed_plan.header.stamp = pose.header.stamp;
-
-  // Helper function for the transform below. Converts a pose2D from global
-  // frame to local
-  auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = global_plan_.header.frame_id;
-      stamped_pose.header.stamp = robot_pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-      if (!nav2_util::transformPoseInTargetFrame(
-          stamped_pose, transformed_pose, *tf_,
-          transformed_plan.header.frame_id, transform_tolerance_))
-      {
-        throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
-      }
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
-  std::transform(
-    transformation_begin, transformation_end,
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPoseToLocal);
-
-  // Remove the portion of the global plan that we've already passed so we don't
-  // process it on the next iteration.
-  if (prune_plan_) {
-    global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
-    pub_->publishGlobalPlan(global_plan_);
-  }
-
-  if (transformed_plan.poses.empty()) {
-    throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
-  }
-  return transformed_plan;
 }
 
 }  // namespace dwb_core

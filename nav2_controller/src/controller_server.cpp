@@ -634,7 +634,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  auto transformed_plan = path_handler_->transformGlobalPlan(
+  auto transformed_plan = path_handler_->pruneGlobalPlan(
     pose, max_robot_pose_search_dist_, interpolate_curvature_after_goal_);
   // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(transformed_plan));
   global_path_pub_->publish(transformed_plan);

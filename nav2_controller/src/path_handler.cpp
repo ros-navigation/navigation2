@@ -46,7 +46,7 @@ double PathHandler::getCostmapMaxExtent() const
   return max_costmap_dim_meters / 2.0;
 }
 
-nav_msgs::msg::Path PathHandler::transformGlobalPlan(
+nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose,
   double max_robot_pose_search_dist,
   bool reject_unit_path)
@@ -98,39 +98,20 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       return euclidean_distance(global_plan_pose, robot_pose) > max_costmap_extent;
     });
 
-  // Lambda to transform a PoseStamped from global frame to local
-  auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = global_plan_.header.frame_id;
-      stamped_pose.header.stamp = robot_pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-      if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
-        costmap_ros_->getBaseFrameID(), transform_tolerance_))
-      {
-        throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
-      }
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
-  // Transform the near part of the global plan into the robot's frame of reference.
-  nav_msgs::msg::Path transformed_plan;
-  std::transform(
-    transformation_begin, transformation_end,
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPoseToLocal);
-  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
-  transformed_plan.header.stamp = robot_pose.header.stamp;
+  nav_msgs::msg::Path pruned_plan;
+  pruned_plan.poses.insert(pruned_plan.poses.end(),
+                           transformation_begin, transformation_end);
+  pruned_plan.header = global_plan_.header;
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
   global_plan_.poses.erase(begin(global_plan_.poses), transformation_begin);
 
-  if (transformed_plan.poses.empty()) {
+  if (pruned_plan.poses.empty()) {
     throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
 
-  return transformed_plan;
+  return pruned_plan;
 }
 
 }  // namespace nav2_controller

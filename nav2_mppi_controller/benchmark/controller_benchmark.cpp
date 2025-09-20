@@ -109,9 +109,9 @@ void prepareAndRunBenchmark(
   controller->setPlan(path);
 
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
-
+  nav_msgs::msg::Path transformed_global_plan;
   for (auto _ : state) {
-    controller->computeVelocityCommands(pose, velocity, dummy_goal_checker);
+    controller->computeVelocityCommands(pose, velocity, dummy_goal_checker, transformed_global_plan);
   }
   map_odom_broadcaster.wait();
   odom_base_link_broadcaster.wait();

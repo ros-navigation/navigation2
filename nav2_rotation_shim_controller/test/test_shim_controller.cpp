@@ -267,12 +267,13 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 
   // send without setting a path - should go to RPP immediately
   // then it should throw an exception because the path is empty and invalid
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
+  nav_msgs::msg::Path transformed_global_plan;
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan), std::runtime_error);
 
   // Set with a path -- should attempt to find a sampled point but throw exception
   // because it cannot be found, then go to RPP and throw exception because it cannot be transformed
   controller->setPlan(path);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan), std::runtime_error);
 
   path.header.frame_id = "base_link";
   path.poses[1].pose.position.x = 0.1;
@@ -288,7 +289,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // is 0.5 and that should cause a rotation in place
   controller->setPlan(path);
   tf_broadcaster->sendTransform(transform);
-  auto effort = controller->computeVelocityCommands(pose, velocity, &checker);
+  auto effort = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_EQ(fabs(effort.twist.angular.z), 1.8);
 
   path.header.frame_id = "base_link";
@@ -306,7 +307,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // and exception because it is off of the costmap
   controller->setPlan(path);
   tf_broadcaster->sendTransform(transform);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, openLoopRotationTests) {
@@ -378,12 +379,13 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
 
   // Calculate first velocity command
   controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.16, 1e-4);
 
   // Test second velocity command with wrong odometry
   velocity.angular.z = 1.8;
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.32, 1e-4);
 }
 
@@ -449,14 +451,15 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   path.poses[3].header.frame_id = "base_link";
 
   controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_EQ(cmd_vel.twist.angular.z, -1.8);
 
   // goal heading 45 degrees to the right
   path.poses[3].pose.orientation.z = 0.3826834;
   path.poses[3].pose.orientation.w = 0.9238795;
   controller->setPlan(path);
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_EQ(cmd_vel.twist.angular.z, 1.8);
 }
 
@@ -529,12 +532,13 @@ TEST(RotationShimControllerTest, accelerationTests) {
 
   // Test acceleration limits
   controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_EQ(cmd_vel.twist.angular.z, -0.025);
 
   // Test slowing down to avoid overshooting
   velocity.angular.z = -1.8;
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -std::sqrt(2 * 0.5 * M_PI / 4), 1e-4);
 }
 

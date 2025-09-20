@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
-#define NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
+#ifndef NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
+#define NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -27,7 +27,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_regulated_pure_pursuit_controller
+namespace nav2_controller
 {
 
 struct Parameters
@@ -65,14 +65,14 @@ struct Parameters
 };
 
 /**
- * @class nav2_regulated_pure_pursuit_controller::ParameterHandler
+ * @class nav2_controller::ParameterHandler
  * @brief Handles parameters and dynamic parameters for RPP
  */
 class ParameterHandler
 {
 public:
   /**
-   * @brief Constructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
+   * @brief Constructor for nav2_controller::ParameterHandler
    */
   ParameterHandler(
     nav2::LifecycleNode::SharedPtr node,
@@ -80,7 +80,7 @@ public:
     rclcpp::Logger & logger, const double costmap_size_x);
 
   /**
-   * @brief Destrructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
+   * @brief Destrructor for nav2_controller::ParameterHandler
    */
   ~ParameterHandler();
 
@@ -104,9 +104,9 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
 };
 
-}  // namespace nav2_regulated_pure_pursuit_controller
+}  // namespace nav2_controller
 
-#endif  // NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
+#endif  // NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_

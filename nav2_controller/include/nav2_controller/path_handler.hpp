@@ -61,7 +61,7 @@ public:
    * @param reject_unit_path If true, fail if path has only one pose
    * @return Path in new frame
    */
-  nav_msgs::msg::Path transformGlobalPlan(
+  nav_msgs::msg::Path pruneGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose,
     double max_robot_pose_search_dist, bool reject_unit_path = false);
 
