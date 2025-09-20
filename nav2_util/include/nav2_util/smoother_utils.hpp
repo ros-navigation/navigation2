@@ -44,6 +44,7 @@ struct PathSegment
  * the robot is traveling in the same direction (e.g. forward vs reverse)
  * @param path Path in which to look for cusps
  * @param is_holonomic Whether the motion model is holonomic (default is false)
+ Only set as true when the input path is known to be generated from a holonomic planner like NavFn.
  * @return Set of index pairs for each segment of the path in a given direction
  */
 inline std::vector<PathSegment> findDirectionalPathSegments(
