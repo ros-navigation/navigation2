@@ -57,8 +57,6 @@ public:
 
   bool getAllowBackward() {return params_->allow_backward;}
 
-  nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
-
   visualization_msgs::msg::Marker createSlowdownMarker(
     const geometry_msgs::msg::PoseStamped & motion_target)
   {
@@ -74,12 +72,6 @@ public:
   }
 
   double getSpeedLinearMax() {return params_->v_linear_max;}
-
-  nav_msgs::msg::Path transformGlobalPlan(
-    const geometry_msgs::msg::PoseStamped & pose)
-  {
-    return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
-  }
 };
 
 TEST(SmoothControlLawTest, setCurvatureConstants) {
@@ -225,9 +217,9 @@ TEST(GracefulControllerTest, configure) {
   plan.header.frame_id = "map";
   plan.poses.resize(3);
   plan.poses[0].header.frame_id = "map";
-  controller->setPlan(plan);
-  EXPECT_EQ(controller->getPlan().poses.size(), 3u);
-  EXPECT_EQ(controller->getPlan().poses[0].header.frame_id, "map");
+  // controller->setPlan(plan);
+  // EXPECT_EQ(controller->getPlan().poses.size(), 3u);
+  // EXPECT_EQ(controller->getPlan().poses[0].header.frame_id, "map");
 
   // Cleaning up
   controller->deactivate();
@@ -238,10 +230,6 @@ TEST(GracefulControllerTest, dynamicParameters) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
-
-  // Set max search distant to negative so it warns
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(-2.0));
 
   // Set initial rotation and allow backward to true so it warns and allow backward is false
   nav2::declare_parameter_if_not_declared(
@@ -507,10 +495,6 @@ TEST(GracefulControllerTest, emptyPlan) {
   }
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
-  // Set max search distant
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
-
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
@@ -537,8 +521,6 @@ TEST(GracefulControllerTest, emptyPlan) {
   nav_msgs::msg::Path global_plan;
   global_plan.header.frame_id = "test_global_frame";
   controller->setPlan(global_plan);
-
-  EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::InvalidPath);
 }
 
 TEST(GracefulControllerTest, poseOutsideCostmap) {
@@ -557,10 +539,6 @@ TEST(GracefulControllerTest, poseOutsideCostmap) {
     EXPECT_TRUE(result.successful) << result.reason;
   }
   costmap_ros->on_configure(rclcpp_lifecycle::State());
-
-  // Set max search distant
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
 
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
@@ -592,8 +570,6 @@ TEST(GracefulControllerTest, poseOutsideCostmap) {
   global_plan.poses[0].pose.position.x = 0.0;
   global_plan.poses[0].pose.position.y = 0.0;
   controller->setPlan(global_plan);
-
-  EXPECT_THROW(controller->transformGlobalPlan(robot_pose), nav2_core::ControllerException);
 }
 
 TEST(GracefulControllerTest, noPruningPlan) {
@@ -612,10 +588,6 @@ TEST(GracefulControllerTest, noPruningPlan) {
     EXPECT_TRUE(result.successful) << result.reason;
   }
   costmap_ros->on_configure(rclcpp_lifecycle::State());
-
-  // Set max search distant
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(5.0));
 
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
@@ -656,10 +628,6 @@ TEST(GracefulControllerTest, noPruningPlan) {
   global_plan.poses[2].pose.position.y = 3.0;
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
-
-  // Check results: the plan should not be pruned
-  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
 }
 
 TEST(GracefulControllerTest, pruningPlan) {
@@ -678,10 +646,6 @@ TEST(GracefulControllerTest, pruningPlan) {
     EXPECT_TRUE(result.successful) << result.reason;
   }
   costmap_ros->on_configure(rclcpp_lifecycle::State());
-
-  // Set max search distant
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(9.0));
 
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
@@ -733,10 +697,6 @@ TEST(GracefulControllerTest, pruningPlan) {
   global_plan.poses[5].pose.position.y = 500.0;
   global_plan.poses[5].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
-
-  // Check results: the plan should be pruned
-  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), 3u);
 }
 
 TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
@@ -755,10 +715,6 @@ TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
     EXPECT_TRUE(result.successful) << result.reason;
   }
   costmap_ros->on_configure(rclcpp_lifecycle::State());
-
-  // Set max search distant
-  nav2::declare_parameter_if_not_declared(
-    node, "test.max_robot_pose_search_dist", rclcpp::ParameterValue(15.0));
 
   // Create controller
   auto controller = std::make_shared<GMControllerFixture>();
@@ -799,10 +755,6 @@ TEST(GracefulControllerTest, pruningPlanOutsideCostmap) {
   global_plan.poses[2].pose.position.y = 200.0;
   global_plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->setPlan(global_plan);
-
-  // Check results: the plan should be pruned
-  auto transformed_plan = controller->transformGlobalPlan(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), 2u);
 }
 
 TEST(GracefulControllerTest, computeVelocityCommandRotate) {
@@ -876,8 +828,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
+  nav_msgs::msg::Path transformed_global_plan;
 
-  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
+  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker, transformed_global_plan);
 
   // Check results: the robot should rotate in place.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
@@ -952,8 +905,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-
-  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker, transformed_global_plan);
 
   // Check results: the robot should go straight to the target.
   // So, linear velocity should be some positive value and angular velocity should be zero.
@@ -1033,8 +986,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-
-  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker, transformed_global_plan);
 
   // Check results: the robot should go straight to the target.
   // So, both linear velocity should be some negative values.
@@ -1119,7 +1072,8 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
 
-  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker);
+  nav_msgs::msg::Path transformed_global_plan;
+  auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker, transformed_global_plan);
 
   // Check results: the robot should do a final rotation near the target.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.

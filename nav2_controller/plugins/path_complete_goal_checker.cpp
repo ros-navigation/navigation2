@@ -78,6 +78,7 @@ bool PathCompleteGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & twist, const nav_msgs::msg::Path & path)
 {
+  std::cout << "length" << nav2_util::geometry_utils::calculate_path_length(path) << std::endl;
   if(nav2_util::geometry_utils::calculate_path_length(path) > path_length_tolerance_){
     return false;
   }

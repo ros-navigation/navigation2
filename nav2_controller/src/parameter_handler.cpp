@@ -19,9 +19,9 @@
 #include <vector>
 #include <utility>
 
-#include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
+#include "nav2_controller/parameter_handler.hpp"
 
-namespace nav2_regulated_pure_pursuit_controller
+namespace nav2_controller
 {
 
 using nav2::declare_parameter_if_not_declared;
@@ -324,4 +324,4 @@ ParameterHandler::updateParametersCallback(
   }
 }
 
-}  // namespace nav2_regulated_pure_pursuit_controller
+}  // namespace nav2_controller

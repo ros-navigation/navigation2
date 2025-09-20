@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 
-#include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
@@ -85,7 +84,8 @@ public:
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
-    nav2_core::GoalChecker * goal_checker) override;
+    nav2_core::GoalChecker * goal_checker,
+    nav_msgs::msg::Path & transformed_global_plan) override;
 
   /**
     * @brief Set new reference path to track
@@ -121,7 +121,6 @@ protected:
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
-  PathHandler path_handler_;
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;

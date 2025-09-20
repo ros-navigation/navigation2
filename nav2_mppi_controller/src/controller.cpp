@@ -42,7 +42,6 @@ void MPPIController::configure(
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
-  path_handler_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
   trajectory_visualizer_.on_configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
@@ -92,22 +91,22 @@ void MPPIController::reset()
 geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  nav_msgs::msg::Path & transformed_global_plan)
 {
 #ifdef BENCHMARK_TESTING
   auto start = std::chrono::system_clock::now();
 #endif
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-  geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal(robot_pose.header.stamp).pose;
-
-  nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
+  //TODO: add goal here
+  geometry_msgs::msg::Pose goal;
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, goal, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();
@@ -129,7 +128,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   }
 
   if (visualize_) {
-    visualize(std::move(transformed_plan), cmd.header.stamp, optimal_trajectory);
+    visualize(std::move(transformed_global_plan), cmd.header.stamp, optimal_trajectory);
   }
 
   return cmd;
@@ -145,9 +144,8 @@ void MPPIController::visualize(
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
-void MPPIController::setPlan(const nav_msgs::msg::Path & path)
+void MPPIController::setPlan(const nav_msgs::msg::Path & /*path*/)
 {
-  path_handler_.setPath(path);
 }
 
 void MPPIController::setSpeedLimit(const double & speed_limit, const bool & percentage)

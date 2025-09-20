@@ -40,6 +40,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -83,8 +84,10 @@ public:
    * @return True if goal is reached
    */
   virtual bool isGoalReached(
-    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-    const geometry_msgs::msg::Twist & velocity) = 0;
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & current_path) = 0;
 
   /**
    * @brief Get the maximum possible tolerances used for goal checking in the major types.

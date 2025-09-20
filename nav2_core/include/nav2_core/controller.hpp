@@ -113,7 +113,8 @@ public:
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * goal_checker) = 0;
+    nav2_core::GoalChecker * goal_checker,
+    nav_msgs::msg::Path & transformed_global_plan) = 0;
 
   /**
    * @brief Cancel the current control action

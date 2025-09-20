@@ -87,7 +87,8 @@ public:
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * /*goal_checker*/) override;
+    nav2_core::GoalChecker * /*goal_checker*/,
+    nav_msgs::msg::Path & transformed_global_plan) override;
 
   /**
    * @brief nav2_core setPlan - Sets the global plan
