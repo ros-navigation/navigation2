@@ -28,34 +28,46 @@ void SimpleSmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
-  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
+  std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub)
 {
-  costmap_sub_ = costmap_sub;
-
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(1e-10));
-  declare_parameter_if_not_declared(
-    node, name + ".max_its", rclcpp::ParameterValue(1000));
-  declare_parameter_if_not_declared(
-    node, name + ".w_data", rclcpp::ParameterValue(0.2));
-  declare_parameter_if_not_declared(
-    node, name + ".w_smooth", rclcpp::ParameterValue(0.3));
-  declare_parameter_if_not_declared(
-    node, name + ".do_refinement", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".refinement_num", rclcpp::ParameterValue(2));
-  declare_parameter_if_not_declared(
-    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
+  // Store subscribers
+  costmap_sub_ = costmap_sub;
+  footprint_sub_ = footprint_sub;
 
+  // Initialize the collision checker
+  collision_checker_ = std::make_shared<nav2_costmap_2d::CollisionChecker>(
+    costmap_sub_, footprint_sub_, node->get_node_topics_interface());
+
+  // Get parameters
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".tolerance", rclcpp::ParameterValue(1e-10));
   node->get_parameter(name + ".tolerance", tolerance_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".max_its", rclcpp::ParameterValue(1000));
   node->get_parameter(name + ".max_its", max_its_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".w_data", rclcpp::ParameterValue(0.2));
   node->get_parameter(name + ".w_data", data_w_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".w_smooth", rclcpp::ParameterValue(0.3));
   node->get_parameter(name + ".w_smooth", smooth_w_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".do_refinement", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".do_refinement", do_refinement_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".refinement_num", rclcpp::ParameterValue(2));
   node->get_parameter(name + ".refinement_num", refinement_num_);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
 }
 
@@ -126,6 +138,7 @@ void SimpleSmoother::smoothImpl(
 
   nav_msgs::msg::Path new_path = path;
   nav_msgs::msg::Path last_path = path;
+  const nav_msgs::msg::Path original_path = path; //new var
 
   while (change >= tolerance_) {
     its += 1;
@@ -199,6 +212,30 @@ void SimpleSmoother::smoothImpl(
   }
 
   updateApproximatePathOrientations(new_path, reversing_segment);
+
+ /* ***********************************************************************
+   ************** START: NEW FOOTPRINT COLLISION CHECKING *****************
+   ************************************************************************/
+  //After smoothing,we perform a full footprint collision check on the result.
+  for (const auto & pose : new_path.poses) {
+    const double cost = collision_checker_->footprintCostAtPose(
+      pose.pose.position.x,
+      pose.pose.position.y,
+      tf2::getYaw(pose.pose.orientation));
+
+    //If the footprint is in collision, reject the new path and keep the original.
+    if (cost > nav2_costmap_2d::MAX_NON_OBSTACLE && cost != nav2_costmap_2d::NO_INFORMATION) {
+      RCLCPP_WARN(
+        logger_,
+        "Smoother generated a path with a footprint in collision. "
+        "Reverting to the original path.");
+      path = original_path;
+      return;
+    }
+  }
+  /***********************************************************************
+   **************** END: NEW FOOTPRINT COLLISION CHECKING ****************
+   ***********************************************************************/
   path = new_path;
 }
 
