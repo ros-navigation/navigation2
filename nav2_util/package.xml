@@ -32,6 +32,7 @@
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
   <depend>nav2_ros_common</depend>
+  <depend>angles</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

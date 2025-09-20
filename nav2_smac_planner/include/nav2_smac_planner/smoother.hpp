@@ -28,16 +28,6 @@ namespace nav2_smac_planner
 {
 
 /**
- * @class nav2_smac_planner::PathSegment
- * @brief A segment of a path in start/end indices
- */
-struct PathSegment
-{
-  unsigned int start;
-  unsigned int end;
-};
-
-/**
  * @struct nav2_smac_planner::BoundaryPoints
  * @brief Set of boundary condition points from expansion
  */
@@ -145,14 +135,6 @@ protected:
     const double & value);
 
   /**
-   * @brief Finds the starting and end indices of path segments where
-   * the robot is traveling in the same direction (e.g. forward vs reverse)
-   * @param path Path in which to look for cusps
-   * @return Set of index pairs for each segment of the path in a given direction
-   */
-  std::vector<PathSegment> findDirectionalPathSegments(const nav_msgs::msg::Path & path);
-
-  /**
    * @brief Enforced minimum curvature boundary conditions on plan output
    * the robot is traveling in the same direction (e.g. forward vs reverse)
    * @param start_pose Start pose of the feasible path to maintain
@@ -213,15 +195,6 @@ protected:
    */
   template<typename IteratorT>
   BoundaryExpansions generateBoundaryExpansionPoints(IteratorT start, IteratorT end);
-
-  /**
-   * @brief For a given path, update the path point orientations based on smoothing
-   * @param path Path to approximate the path orientation in
-   * @param reversing_segment Return if this is a reversing segment
-   */
-  inline void updateApproximatePathOrientations(
-    nav_msgs::msg::Path & path,
-    bool & reversing_segment);
 
   double min_turning_rad_, tolerance_, data_w_, smooth_w_;
   int max_its_, refinement_ctr_, refinement_num_;
