@@ -50,21 +50,19 @@ void LatticeMotionTable::initMotionModel(
   SearchInfo & search_info)
 {
   size_x = size_x_in;
-
-  if (current_lattice_filepath == search_info.lattice_filepath) {
-    return;
-  }
-
-  size_x = size_x_in;
   change_penalty = search_info.change_penalty;
   non_straight_penalty = search_info.non_straight_penalty;
   cost_penalty = search_info.cost_penalty;
   reverse_penalty = search_info.reverse_penalty;
   travel_distance_reward = 1.0f - search_info.retrospective_penalty;
-  current_lattice_filepath = search_info.lattice_filepath;
   allow_reverse_expansion = search_info.allow_reverse_expansion;
   rotation_penalty = search_info.rotation_penalty;
   min_turning_radius = search_info.minimum_turning_radius;
+
+  if (current_lattice_filepath == search_info.lattice_filepath) {
+    return;
+  }
+  current_lattice_filepath = search_info.lattice_filepath;
 
   // Get the metadata about this minimum control set
   lattice_metadata = getLatticeMetadata(current_lattice_filepath);
@@ -231,7 +229,8 @@ bool NodeLattice::isNodeValid(
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
-  const double & angle = motion_table.getAngleFromBin(this->pose.theta) / bin_size;
+  const double angle = std::fmod(motion_table.getAngleFromBin(this->pose.theta),
+      2.0 * M_PI) / bin_size;
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
@@ -270,7 +269,7 @@ bool NodeLattice::isNodeValid(
         if (is_backwards) {
           prim_pose._theta = std::fmod(it->_theta + M_PI, 2.0 * M_PI);
         } else {
-          prim_pose._theta = it->_theta;
+          prim_pose._theta = std::fmod(it->_theta, 2.0 * M_PI);
         }
         if (collision_checker->inCollision(
             prim_pose._x,
