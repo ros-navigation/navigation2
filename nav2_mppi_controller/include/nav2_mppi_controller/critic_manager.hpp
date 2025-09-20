@@ -98,7 +98,7 @@ protected:
   Critics critics_;
 
   rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CriticsStats>::SharedPtr
-  critics_effect_pub_;
+    critics_effect_pub_;
 
   bool publish_critics_stats_;
 
