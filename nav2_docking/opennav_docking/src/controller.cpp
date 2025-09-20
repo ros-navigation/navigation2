@@ -49,7 +49,7 @@ Controller::Controller(
   nav2::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2::declare_parameter_if_not_declared(
-    node, "controller.deceleration_max", rclcpp::ParameterValue(0.1));
+    node, "controller.deceleration_max", rclcpp::ParameterValue(3.0));
   nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
   nav2::declare_parameter_if_not_declared(
