@@ -15,7 +15,6 @@ The smooth control law is a pose-following kinematic control law that generates 
 
 | Parameter | Description |
 |-----|----|
-| `transform_tolerance` | The TF transform tolerance. |
 | `motion_target_dist` | The lookahead distance to use to find the motion_target point. This distance should be a value around 1.0m but not much farther away. Greater values will cause the robot to generate smoother paths but not necessarily follow the path as closely. |
 | `k_phi` | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem. If this value is equal to zero, the controller will behave as a pure waypoint follower. A high value offers extreme scenario of pose-following where theta is reduced much faster than r. **Note**: This variable is called k1 in earlier versions of the paper. |
 | `k_delta` | Constant factor applied to the heading error feedback. Controls the convergence of the fast subsystem. The bigger the value, the robot converge faster to the reference heading. **Note**: This variable is called k2 in earlier versions of the paper. |

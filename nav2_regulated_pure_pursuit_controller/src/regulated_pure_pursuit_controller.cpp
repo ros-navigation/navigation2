@@ -205,6 +205,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     pruned_global_plan.poses.end(),
     std::back_inserter(transformed_plan.poses),
     transformGlobalPlanToLocal);
+  transformed_path_pub_->publish(transformed_plan);
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
