@@ -71,7 +71,6 @@ This process is then repeated a number of times and returns a converged solution
 #### Path Handler
  | Parameter                  | Type   | Definition                                                                                                  |
  | ---------------            | ------ | ----------------------------------------------------------------------------------------------------------- |
- | max_robot_pose_search_dist | double | Default: Costmap half-size. Max integrated distance ahead of robot pose to search for nearest path point in case of path looping.   |
  | prune_distance             | double | Default: 1.5. Distance ahead of nearest point on path to robot to prune path to.                            |
  | enforce_path_inversion        | double | Default: False. If true, it will prune paths containing cusping points for segments changing directions (e.g. path inversions) such that the controller will be forced to change directions at or very near the planner's requested inversion point. In addition, these cusping points will also be treated by the critics as local goals that the robot will attempt to reach. This is targeting Smac Planner users with feasible paths who need their robots to switch directions where specifically requested.      |
  | inversion_xy_tolerance        | double | Default: 0.2. Cartesian proximity (m) to path inversion point to be considered "achieved" to pass on the rest of the path after path inversion.      |

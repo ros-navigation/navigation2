@@ -68,11 +68,18 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, "max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_size_x));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".enforce_path_inversion", rclcpp::ParameterValue(false));
+    node, "enforce_path_inversion", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".inversion_xy_tolerance", rclcpp::ParameterValue(0.2));
+    node, "inversion_xy_tolerance", rclcpp::ParameterValue(0.2));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".inversion_yaw_tolerance", rclcpp::ParameterValue(0.4));
+    node, "inversion_yaw_tolerance", rclcpp::ParameterValue(0.4));
+
+  declare_parameter_if_not_declared(
+    node, "progress_checker_plugins", rclcpp::ParameterValue(default_progress_checker_ids_));
+  declare_parameter_if_not_declared(
+    node, "goal_checker_plugins", rclcpp::ParameterValue(default_goal_checker_ids_));
+  declare_parameter_if_not_declared(
+    node, "controller_plugins", rclcpp::ParameterValue(default_controller_ids_));
 
   node->get_parameter("controller_frequency", params_.controller_frequency);
   node->get_parameter("transform_tolerance", params_.transform_tolerance);
@@ -81,7 +88,7 @@ ParameterHandler::ParameterHandler(
   node->get_parameter("min_theta_velocity_threshold", params_.min_theta_velocity_threshold);
 
   RCLCPP_INFO(
-    node->get_logger(),
+    logger_,
     "Controller frequency set to %.4fHz",
     params_.controller_frequency);
 
@@ -97,10 +104,74 @@ ParameterHandler::ParameterHandler(
     params_.interpolate_curvature_after_goal);
   node->get_parameter("max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
   node->get_parameter("costmap_update_timeout", params_.costmap_update_timeout);
-  node->get_parameter(plugin_name_ + ".enforce_path_inversion", params_.enforce_path_inversion);
-  node->get_parameter(plugin_name_ + ".inversion_xy_tolerance", params_.inversion_xy_tolerance);
-  node->get_parameter(plugin_name_ + ".inversion_yaw_tolerance", params_.inversion_yaw_tolerance);
+  node->get_parameter("enforce_path_inversion", params_.enforce_path_inversion);
+  node->get_parameter("inversion_xy_tolerance", params_.inversion_xy_tolerance);
+  node->get_parameter("inversion_yaw_tolerance", params_.inversion_yaw_tolerance);
 
+  RCLCPP_INFO(logger_, "getting progress checker plugins..");
+  node->get_parameter("progress_checker_plugins", params_.progress_checker_ids);
+  if (params_.progress_checker_ids == default_progress_checker_ids_) {
+    for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
+      nav2::declare_parameter_if_not_declared(
+        node, default_progress_checker_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_progress_checker_types_[i]));
+    }
+  }
+
+  RCLCPP_INFO(logger_, "getting goal checker plugins..");
+  node->get_parameter("goal_checker_plugins", params_.goal_checker_ids);
+  if (params_.goal_checker_ids == default_goal_checker_ids_) {
+    for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
+      nav2::declare_parameter_if_not_declared(
+        node, default_goal_checker_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_goal_checker_types_[i]));
+    }
+  }
+
+  node->get_parameter("controller_plugins", params_.controller_ids);
+  if (params_.controller_ids == default_controller_ids_) {
+    for (size_t i = 0; i < default_controller_ids_.size(); ++i) {
+      nav2::declare_parameter_if_not_declared(
+        node, default_controller_ids_[i] + ".plugin",
+        rclcpp::ParameterValue(default_controller_types_[i]));
+    }
+  }
+
+  params_.controller_types.resize(params_.controller_ids.size());
+  params_.goal_checker_types.resize(params_.goal_checker_ids.size());
+  params_.progress_checker_types.resize(params_.progress_checker_ids.size());
+
+  for (size_t i = 0; i != params_.progress_checker_ids.size(); i++) {
+    try {
+      params_.progress_checker_types[i] = nav2::get_plugin_type_param(
+        node, params_.progress_checker_ids[i]);
+    } catch (const std::exception & ex) {
+      throw std::runtime_error(
+        std::string("Failed to get type for progress_checker '") +
+        params_.progress_checker_ids[i] + "': " + ex.what());
+    }
+  }
+
+  for (size_t i = 0; i != params_.goal_checker_ids.size(); i++) {
+    try {
+      params_.goal_checker_types[i] =
+        nav2::get_plugin_type_param(node, params_.goal_checker_ids[i]);
+    } catch (const std::exception & ex) {
+      throw std::runtime_error(
+        std::string("Failed to get type for goal_checker '") +
+        params_.goal_checker_ids[i] + "': " + ex.what());
+    }
+  }
+
+  for (size_t i = 0; i != params_.controller_ids.size(); i++) {
+    try {
+      params_.controller_types[i] = nav2::get_plugin_type_param(node, params_.controller_ids[i]);
+    } catch (const std::exception & ex) {
+      throw std::runtime_error(
+        std::string("Failed to get type for controller plugins '") +
+        params_.controller_types[i] + "': " + ex.what());
+    }
+  }
 
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(

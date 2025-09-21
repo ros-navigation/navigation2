@@ -49,6 +49,12 @@ struct Parameters
   bool enforce_path_inversion;
   float inversion_xy_tolerance;
   float inversion_yaw_tolerance;
+  std::vector<std::string> progress_checker_ids;
+  std::vector<std::string> progress_checker_types;
+  std::vector<std::string> goal_checker_ids;
+  std::vector<std::string> goal_checker_types;
+  std::vector<std::string> controller_ids;
+  std::vector<std::string> controller_types;
 };
 
 /**
@@ -91,6 +97,13 @@ protected:
   Parameters params_;
   std::string plugin_name_;
   rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
+
+  const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
+  const std::vector<std::string> default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"};
+  const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
+  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::PathCompleteGoalChecker"};
+  const std::vector<std::string> default_controller_ids_{"FollowPath"};
+  const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
 };
 
 }  // namespace nav2_controller

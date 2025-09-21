@@ -36,21 +36,11 @@ namespace nav2_controller
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
-  default_progress_checker_ids_{"progress_checker"},
-  default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"},
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
-  default_goal_checker_ids_{"goal_checker"},
-  default_goal_checker_types_{"nav2_controller::PathCompleteGoalChecker"},
   lp_loader_("nav2_core", "nav2_core::Controller"),
-  default_ids_{"FollowPath"},
-  default_types_{"dwb_core::DWBLocalPlanner"},
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
-
-  declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
-  declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
-  declare_parameter("controller_plugins", default_ids_);
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -73,60 +63,30 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
-  RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
-  get_parameter("progress_checker_plugins", progress_checker_ids_);
-  if (progress_checker_ids_ == default_progress_checker_ids_) {
-    for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
-      nav2::declare_parameter_if_not_declared(
-        node, default_progress_checker_ids_[i] + ".plugin",
-        rclcpp::ParameterValue(default_progress_checker_types_[i]));
-    }
-  }
-
-  RCLCPP_INFO(get_logger(), "getting goal checker plugins..");
-  get_parameter("goal_checker_plugins", goal_checker_ids_);
-  if (goal_checker_ids_ == default_goal_checker_ids_) {
-    for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
-      nav2::declare_parameter_if_not_declared(
-        node, default_goal_checker_ids_[i] + ".plugin",
-        rclcpp::ParameterValue(default_goal_checker_types_[i]));
-    }
-  }
-
-  get_parameter("controller_plugins", controller_ids_);
-  if (controller_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      nav2::declare_parameter_if_not_declared(
-        node, default_ids_[i] + ".plugin",
-        rclcpp::ParameterValue(default_types_[i]));
-    }
-  }
-
-  controller_types_.resize(controller_ids_.size());
-  goal_checker_types_.resize(goal_checker_ids_.size());
-  progress_checker_types_.resize(progress_checker_ids_.size());
-
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
-  param_handler_ = std::make_unique<ParameterHandler>(
-    node, get_logger(),
-    costmap_ros_->getCostmap()->getSizeInMetersX());
-  params_ = param_handler_->getParams();
+  try {
+    param_handler_ = std::make_unique<ParameterHandler>(
+      node, get_logger(), costmap_ros_->getCostmap()->getSizeInMetersX());
+    params_ = param_handler_->getParams();
+  } catch (const std::exception & ex) {
+    RCLCPP_FATAL(get_logger(), "%s", ex.what());
+    on_cleanup(state);
+    return nav2::CallbackReturn::FAILURE;
+  }
   path_handler_ = std::make_unique<PathHandler>(
    params_, costmap_ros_->getTfBuffer(), costmap_ros_);
 
-  for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
+  for (size_t i = 0; i != params_->progress_checker_ids.size(); i++) {
     try {
-      progress_checker_types_[i] = nav2::get_plugin_type_param(
-        node, progress_checker_ids_[i]);
       nav2_core::ProgressChecker::Ptr progress_checker =
-        progress_checker_loader_.createUniqueInstance(progress_checker_types_[i]);
+        progress_checker_loader_.createUniqueInstance(params_->progress_checker_types[i]);
       RCLCPP_INFO(
         get_logger(), "Created progress_checker : %s of type %s",
-        progress_checker_ids_[i].c_str(), progress_checker_types_[i].c_str());
-      progress_checker->initialize(node, progress_checker_ids_[i]);
-      progress_checkers_.insert({progress_checker_ids_[i], progress_checker});
+        params_->progress_checker_ids[i].c_str(), params_->progress_checker_types[i].c_str());
+      progress_checker->initialize(node, params_->progress_checker_ids[i]);
+      progress_checkers_.insert({params_->progress_checker_ids[i], progress_checker});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(),
@@ -136,24 +96,23 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
-    progress_checker_ids_concat_ += progress_checker_ids_[i] + std::string(" ");
+  for (size_t i = 0; i != params_->progress_checker_ids.size(); i++) {
+    progress_checker_ids_concat_ += params_->progress_checker_ids[i] + std::string(" ");
   }
 
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s progress checkers available.", progress_checker_ids_concat_.c_str());
 
-  for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
+  for (size_t i = 0; i != params_->goal_checker_ids.size(); i++) {
     try {
-      goal_checker_types_[i] = nav2::get_plugin_type_param(node, goal_checker_ids_[i]);
       nav2_core::GoalChecker::Ptr goal_checker =
-        goal_checker_loader_.createUniqueInstance(goal_checker_types_[i]);
+        goal_checker_loader_.createUniqueInstance(params_->goal_checker_types[i]);
       RCLCPP_INFO(
         get_logger(), "Created goal checker : %s of type %s",
-        goal_checker_ids_[i].c_str(), goal_checker_types_[i].c_str());
-      goal_checker->initialize(node, goal_checker_ids_[i], costmap_ros_);
-      goal_checkers_.insert({goal_checker_ids_[i], goal_checker});
+        params_->goal_checker_ids[i].c_str(), params_->goal_checker_types[i].c_str());
+      goal_checker->initialize(node, params_->goal_checker_ids[i], costmap_ros_);
+      goal_checkers_.insert({params_->goal_checker_ids[i], goal_checker});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(),
@@ -163,26 +122,25 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (size_t i = 0; i != goal_checker_ids_.size(); i++) {
-    goal_checker_ids_concat_ += goal_checker_ids_[i] + std::string(" ");
+  for (size_t i = 0; i != params_->goal_checker_ids.size(); i++) {
+    goal_checker_ids_concat_ += params_->goal_checker_ids[i] + std::string(" ");
   }
 
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s goal checkers available.", goal_checker_ids_concat_.c_str());
 
-  for (size_t i = 0; i != controller_ids_.size(); i++) {
+  for (size_t i = 0; i != params_->controller_ids.size(); i++) {
     try {
-      controller_types_[i] = nav2::get_plugin_type_param(node, controller_ids_[i]);
       nav2_core::Controller::Ptr controller =
-        lp_loader_.createUniqueInstance(controller_types_[i]);
+        lp_loader_.createUniqueInstance(params_->controller_types[i]);
       RCLCPP_INFO(
         get_logger(), "Created controller : %s of type %s",
-        controller_ids_[i].c_str(), controller_types_[i].c_str());
+        params_->controller_ids[i].c_str(), params_->controller_types[i].c_str());
       controller->configure(
-        node, controller_ids_[i],
+        node, params_->controller_ids[i],
         costmap_ros_->getTfBuffer(), costmap_ros_);
-      controllers_.insert({controller_ids_[i], controller});
+      controllers_.insert({params_->controller_ids[i], controller});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
         get_logger(),
@@ -192,8 +150,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  for (size_t i = 0; i != controller_ids_.size(); i++) {
-    controller_ids_concat_ += controller_ids_[i] + std::string(" ");
+  for (size_t i = 0; i != params_->controller_ids.size(); i++) {
+    controller_ids_concat_ += params_->controller_ids[i] + std::string(" ");
   }
 
   RCLCPP_INFO(
