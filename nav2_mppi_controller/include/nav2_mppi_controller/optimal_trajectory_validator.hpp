@@ -111,7 +111,6 @@ public:
    * @param robot_pose The current pose of the robot
    * @param robot_speed The current speed of the robot
    * @param plan The planned path for the robot
-   * @param goal The goal pose for the robot
    * @return True if the trajectory is valid, false otherwise
    */
   virtual ValidationResult validateTrajectory(
@@ -119,8 +118,7 @@ public:
     const models::ControlSequence & /*control_sequence*/,
     const geometry_msgs::msg::PoseStamped & /*robot_pose*/,
     const geometry_msgs::msg::Twist & /*robot_speed*/,
-    const nav_msgs::msg::Path & /*plan*/,
-    const geometry_msgs::msg::Pose & /*goal*/)
+    const nav_msgs::msg::Path & /*plan*/)
   {
     // The Optimizer automatically ensures that we are within Kinematic
     // and dynamic constraints, no need to check for those again.

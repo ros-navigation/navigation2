@@ -116,10 +116,9 @@ public:
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     const nav_msgs::msg::Path & plan,
-    const geometry_msgs::msg::Pose & goal,
     nav2_core::GoalChecker * goal_checker)
   {
-    prepare(robot_pose, robot_speed, plan, goal, goal_checker);
+    prepare(robot_pose, robot_speed, plan, goal_checker);
 
     EXPECT_EQ(critics_data_.goal_checker, nullptr);
     EXPECT_NEAR(costs_.sum(), 0, 1e-6);  // should be reset
@@ -393,7 +392,7 @@ TEST(OptimizerTests, PrepareTests)
   geometry_msgs::msg::Pose goal;
   path.poses.resize(17);
 
-  optimizer_tester.testPrepare(pose, speed, path, goal, nullptr);
+  optimizer_tester.testPrepare(pose, speed, path, nullptr);
 }
 
 TEST(OptimizerTests, shiftControlSequenceTests)
