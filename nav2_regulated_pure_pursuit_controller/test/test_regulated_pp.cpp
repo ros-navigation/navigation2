@@ -94,14 +94,6 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   ctrl->deactivate();
   ctrl->cleanup();
 
-  // setPlan and get plan
-  // nav_msgs::msg::Path path;
-  // path.poses.resize(2);
-  // path.poses[0].header.frame_id = "fake_frame";
-  // ctrl->setPlan(path);
-  // EXPECT_EQ(ctrl->getPlan().poses.size(), 2ul);
-  // EXPECT_EQ(ctrl->getPlan().poses[0].header.frame_id, std::string("fake_frame"));
-
   // set speed limit
   const double base_speed = ctrl->getSpeed();
   EXPECT_EQ(ctrl->getSpeed(), base_speed);

@@ -89,13 +89,14 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
+   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
-    nav_msgs::msg::Path & transformed_plan) override;
+    nav_msgs::msg::Path & pruned_global_plan) override;
 
   bool cancel() override;
 
@@ -189,6 +190,7 @@ protected:
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
 
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
   nav2::Publisher<std_msgs::msg::Bool>::SharedPtr is_rotating_to_heading_pub_;
