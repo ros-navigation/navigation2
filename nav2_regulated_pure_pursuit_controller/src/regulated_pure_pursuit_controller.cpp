@@ -69,7 +69,7 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_pruned_plan");
+  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point");
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "curvature_lookahead_point");

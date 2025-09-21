@@ -58,7 +58,7 @@ void GracefulController::configure(
   }
 
   // Publishers
-  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_pruned_plan");
+  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
   motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target");
   slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown");
