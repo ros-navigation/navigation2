@@ -235,28 +235,16 @@ protected:
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
   ProgressCheckerMap progress_checkers_;
-  std::vector<std::string> default_progress_checker_ids_;
-  std::vector<std::string> default_progress_checker_types_;
-  std::vector<std::string> progress_checker_ids_;
-  std::vector<std::string> progress_checker_types_;
   std::string progress_checker_ids_concat_, current_progress_checker_;
 
   // Goal Checker Plugin
   pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
   GoalCheckerMap goal_checkers_;
-  std::vector<std::string> default_goal_checker_ids_;
-  std::vector<std::string> default_goal_checker_types_;
-  std::vector<std::string> goal_checker_ids_;
-  std::vector<std::string> goal_checker_types_;
   std::string goal_checker_ids_concat_, current_goal_checker_;
 
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
-  std::vector<std::string> default_ids_;
-  std::vector<std::string> default_types_;
-  std::vector<std::string> controller_ids_;
-  std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
 
   rclcpp::Duration costmap_update_timeout_;
