@@ -36,8 +36,6 @@ ParameterHandler::ParameterHandler(
   logger_ = logger;
 
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead", rclcpp::ParameterValue(0.25));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(1.0));
@@ -70,7 +68,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection", rclcpp::ParameterValue(true));
 
-  node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
+  node->get_parameter("transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
   node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
 
@@ -131,9 +129,7 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".transform_tolerance") {
-        params_.transform_tolerance = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".min_lookahead") {
+      if (param_name == plugin_name_ + ".min_lookahead") {
         params_.min_lookahead = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_lookahead") {
         params_.max_lookahead = parameter.as_double();
