@@ -4,13 +4,17 @@ on:
 
 jobs:
   label-docs:
-    if: contains(github.event.pull_request.title, 'Kilted Sync') || contains(github.event.pull_request.title, 'Jazzy Sync')
+    # if: contains(github.event.pull_request.title, 'Kilted Sync') || contains(github.event.pull_request.title, 'Jazzy Sync')
     runs-on: ubuntu-latest
     steps:
       - name: Process docs PRs
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
+          # Testing permissions of github token (must be removed before merge)
+          gh pr edit 762 --repo ros-navigation/docs.nav2.org --add-label documentation
+
           # Determine ROS distro and label from PR title
           pr_title="${{ github.event.pull_request.title }}"
 
