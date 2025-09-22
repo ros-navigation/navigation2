@@ -489,7 +489,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
   double dist = 1.0;
   nav_msgs::msg::Path path;
   path.poses.resize(10);
-  for (uint i = 0; i != path.poses.size(); i++) {
+  for (unsigned int i = 0; i != path.poses.size(); i++) {
     path.poses[i].pose.position.x = static_cast<double>(i);
   }
 
