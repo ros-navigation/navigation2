@@ -274,12 +274,16 @@ double VelocitySmoother::findEtaConstraint(
     v_component_min = decel / smoothing_frequency_;
   }
 
+  if (v_cmd == 0.0) {
+    return -1.0;
+  }
+
   if (dv > v_component_max) {
-    return v_component_max / dv;
+    return ( v_component_max + v_curr ) / v_cmd;
   }
 
   if (dv < v_component_min) {
-    return v_component_min / dv;
+    return ( v_component_min + v_curr ) / v_cmd;
   }
 
   return -1.0;
@@ -289,7 +293,8 @@ double VelocitySmoother::applyConstraints(
   const double v_curr, const double v_cmd,
   const double accel, const double decel, const double eta)
 {
-  double dv = v_cmd - v_curr;
+  double scaled = eta * v_cmd;
+  double diff = scaled - v_curr;
 
   double v_component_max;
   double v_component_min;
@@ -305,7 +310,14 @@ double VelocitySmoother::applyConstraints(
     v_component_min = decel / smoothing_frequency_;
   }
 
-  return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
+  auto clamped_diff = std::clamp(diff, v_component_min, v_component_max);
+  auto restricted_command = v_curr + clamped_diff;
+
+  if(std::abs(scaled - restricted_command) > 0.0001){
+    RCLCPP_WARN(get_logger(), "Clamped velocity change: eta * v_cmd = %f, clamped to %f", scaled, restricted_command);
+  }
+
+  return restricted_command;
 }
 
 void VelocitySmoother::smootherTimer()
@@ -337,6 +349,9 @@ void VelocitySmoother::smootherTimer()
   } else {
     current_ = odom_smoother_->getTwistStamped();
   }
+
+  RCLCPP_INFO(get_logger(), "current (odom) velocity: [%f, %f, %f]", current_.twist.linear.x, current_.twist.linear.y, current_.twist.angular.z);
+  RCLCPP_INFO(get_logger(), "input velocity: [%f, %f, %f]", command_->twist.linear.x, command_->twist.linear.y, command_->twist.angular.z);
 
   // Apply absolute velocity restrictions to the command
   if(!is_6dof_) {
@@ -370,12 +385,15 @@ void VelocitySmoother::smootherTimer()
       max_velocities_[5]);
   }
 
+  RCLCPP_INFO(get_logger(), "clamped velocity: [%f, %f, %f]", command_->twist.linear.x, command_->twist.linear.y, command_->twist.angular.z);
+
   // Find if any component is not within the acceleration constraints. If so, store the most
   // significant scale factor to apply to the vector <dvx, dvy, dvw>, eta, to reduce all axes
   // proportionally to follow the same direction, within change of velocity bounds.
   // In case eta reduces another axis out of its own limit, apply accel constraint to guarantee
   // output is within limits, even if it deviates from requested command slightly.
   double eta = 1.0;
+  RCLCPP_INFO(get_logger(), "scale_velocities_ = %d", (int) scale_velocities_);
   if (scale_velocities_) {
     double curr_eta = -1.0;
     if(!is_6dof_) {
