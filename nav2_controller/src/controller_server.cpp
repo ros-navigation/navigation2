@@ -160,7 +160,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration, params_->odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
 
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(params_->costmap_update_timeout);
 
@@ -201,7 +200,6 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
   vel_publisher_->on_activate();
-  global_path_pub_->on_activate();
   action_server_->activate();
 
   auto node = shared_from_this();
@@ -234,7 +232,6 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
-  global_path_pub_->on_deactivate();
 
   remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
@@ -268,7 +265,6 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_sub_.reset();
   costmap_thread_.reset();
   vel_publisher_.reset();
-  global_path_pub_.reset();
   speed_limit_sub_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
@@ -557,12 +553,10 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  auto transformed_plan = path_handler_->pruneGlobalPlan(pose);
-  // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(transformed_plan));
-  global_path_pub_->publish(transformed_plan);
-  local_path_ = transformed_plan;
-  end_pose_ = local_path_.poses.back();
-  end_pose_.header.frame_id = local_path_.header.frame_id;
+  pruned_global_plan_ = path_handler_->pruneGlobalPlan(pose);
+  // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
+  end_pose_ = pruned_global_plan_.poses.back();
+  end_pose_.header.frame_id = pruned_global_plan_.header.frame_id;
   goal_checkers_[current_goal_checker_]->reset();
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
@@ -573,7 +567,7 @@ void ControllerServer::computeAndPublishVelocity()
       pose,
       twist,
       goal_checkers_[current_goal_checker_].get(),
-      transformed_plan
+      pruned_global_plan_
       );
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
@@ -743,7 +737,7 @@ bool ControllerServer::isGoalReached()
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
-    velocity, local_path_);
+    velocity, pruned_global_plan_);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)

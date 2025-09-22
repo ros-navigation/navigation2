@@ -103,6 +103,7 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
+  // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_up_to_inversion_.poses.begin(), global_plan_up_to_inversion_.poses.end(),
@@ -111,7 +112,7 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
   // First find the closest pose on the path to the robot
   // bounded by when the path turns around (if it does) so we don't get a pose from a later
   // portion of the path
-  auto transformation_begin =
+  auto closest_point =
     nav2_util::geometry_utils::min_by(
     global_plan_up_to_inversion_.poses.begin(), closest_pose_upper_bound,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
@@ -123,27 +124,27 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
   // end of path direction
   if (global_plan_up_to_inversion_.poses.begin() != closest_pose_upper_bound &&
     global_plan_up_to_inversion_.poses.size() > 1 &&
-    transformation_begin == std::prev(closest_pose_upper_bound))
+    closest_point == std::prev(closest_pose_upper_bound))
   {
-    transformation_begin = std::prev(std::prev(closest_pose_upper_bound));
+    closest_point = std::prev(std::prev(closest_pose_upper_bound));
   }
 
   // We'll discard points on the plan that are outside the local costmap
   const double max_costmap_extent = getCostmapMaxExtent();
-  auto transformation_end = std::find_if(
-    transformation_begin, global_plan_up_to_inversion_.poses.end(),
+  auto pruned_plan_end = std::find_if(
+    closest_point, global_plan_up_to_inversion_.poses.end(),
     [&](const auto & global_plan_pose) {
       return euclidean_distance(global_plan_pose, robot_pose) > max_costmap_extent;
     });
 
   nav_msgs::msg::Path pruned_plan;
   pruned_plan.poses.insert(pruned_plan.poses.end(),
-                           transformation_begin, transformation_end);
+                           closest_point, pruned_plan_end);
   pruned_plan.header = global_plan_.header;
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
-  prunePlan(global_plan_up_to_inversion_, transformation_begin);
+  prunePlan(global_plan_up_to_inversion_, closest_point);
 
   if (params_->enforce_path_inversion && inversion_locale_ != 0u) {
     if (isWithinInversionTolerances(robot_pose)) {
