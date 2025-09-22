@@ -257,11 +257,10 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
-  nav_msgs::msg::Path local_path_;
+  nav_msgs::msg::Path pruned_global_plan_;
   std::unique_ptr<nav2_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
 
 private:
   /**

@@ -36,7 +36,7 @@ using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 
 /**
  * @class nav2_controller::PathHandler
- * @brief Handles input paths to transform them to local frames required
+ * @brief Handles input paths to prune them within the local costmap
  */
 class PathHandler
 {
@@ -55,19 +55,23 @@ public:
   ~PathHandler() = default;
 
   /**
-   * @brief Transforms global plan into same frame as pose and clips poses ineligible for lookaheadPoint
-   * Points ineligible to be selected as a lookahead point if they are any of the following:
-   * - Outside the local_costmap (collision avoidance cannot be assured)
+   * @brief Prunes global plan, bounded around the robot's position and within the local costmap
    * @param pose pose to transform
-   * @param max_robot_pose_search_dist Distance to search for matching nearest path point
-   * @param reject_unit_path If true, fail if path has only one pose
-   * @return Path in new frame
+   * @return Path after pruned
    */
   nav_msgs::msg::Path pruneGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose);
 
+  /**
+    * @brief Set new reference plan
+    * @param Path Path to use
+    */
   void setPlan(const nav_msgs::msg::Path & path);
 
+  /**
+    * @brief Get reference plan
+    * @return Path
+    */
   nav_msgs::msg::Path getPlan() {return global_plan_;}
 
   /**
