@@ -173,7 +173,7 @@ void MPPIController::visualize(
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
-void MPPIController::setPlan(const nav_msgs::msg::Path & /*path*/)
+void MPPIController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
 }
 

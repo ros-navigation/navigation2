@@ -89,10 +89,10 @@ public:
     nav_msgs::msg::Path & pruned_global_plan) override;
 
   /**
-    * @brief Set new reference path to track
-    * @param path Path to track
+    * @brief Receives a new plan from the Planner Server
+    * @param raw_global_path The global plan from the Planner Server
     */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
     * @brief Set new speed limit from callback

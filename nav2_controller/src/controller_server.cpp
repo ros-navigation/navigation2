@@ -537,7 +537,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   if (path.poses.empty()) {
     throw nav2_core::InvalidPath("Path is empty.");
   }
-  controllers_[current_controller_]->setPlan(path);
+  controllers_[current_controller_]->newPathReceived(path);
   path_handler_->setPlan(path);
 
   current_path_ = path;

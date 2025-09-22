@@ -512,7 +512,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   plan.poses[2].pose.position.x = 1.0;
   plan.poses[2].pose.position.y = 1.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->newPathReceived(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -589,7 +589,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   plan.poses[2].pose.position.x = 2.0;
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->newPathReceived(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -670,7 +670,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   plan.poses[2].pose.position.x = -2.0;
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->newPathReceived(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -755,7 +755,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   plan.poses[4].pose.position.x = 0.2;
   plan.poses[4].pose.position.y = 0.0;
   plan.poses[4].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
-  controller->setPlan(plan);
+  controller->newPathReceived(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;

@@ -92,10 +92,10 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief local setPlan - Sets the global plan
+   * @brief local setPlan - Notifies the Controller that a new plan is received from the Planner Server
    * @param path The global plan
    */
-  virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
+  virtual void newPathReceived(const nav_msgs::msg::Path & raw_global_path) = 0;
 
   /**
    * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity

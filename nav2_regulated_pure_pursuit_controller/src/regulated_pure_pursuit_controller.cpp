@@ -397,7 +397,7 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = sign * linear_vel;
 }
 
-void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & /*path*/)
+void RegulatedPurePursuitController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
   has_reached_xy_tolerance_ = false;
 }

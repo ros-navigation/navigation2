@@ -264,7 +264,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   throw nav2_core::NoValidControl("Collision detected in trajectory");
 }
 
-void GracefulController::setPlan(const nav_msgs::msg::Path & /*path*/)
+void GracefulController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
   goal_reached_ = false;
   do_initial_rotation_ = true;
