@@ -99,7 +99,8 @@ protected:
   rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
 
   const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
-  const std::vector<std::string> default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"};
+  const std::vector<std::string> default_progress_checker_types_{
+    "nav2_controller::SimpleProgressChecker"};
   const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
   const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
   const std::vector<std::string> default_controller_ids_{"FollowPath"};

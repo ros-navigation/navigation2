@@ -101,7 +101,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-  
+
   nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = robot_pose.header.stamp;
@@ -110,7 +110,8 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   // Find the furthest relevant pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
-  for (auto global_plan_pose = pruned_global_plan.poses.begin(); global_plan_pose != pruned_global_plan.poses.end();
+  for (auto global_plan_pose = pruned_global_plan.poses.begin();
+    global_plan_pose != pruned_global_plan.poses.end();
     ++global_plan_pose)
   {
     // Transform from global plan frame to costmap frame
