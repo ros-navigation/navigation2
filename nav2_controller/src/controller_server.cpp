@@ -256,25 +256,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   speed_limit_sub_ = create_subscription<nav2_msgs::msg::SpeedLimit>(
     speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
-  
-  get_parameter("search_window", search_window_);
-  // TODO: Add an RCLCPP INFO here
 
-  // Initialize empty tracking error message
-  current_tracking_error_.header.frame_id = "";
-  current_tracking_error_.tracking_error = 0.0;
-  current_tracking_error_.current_path_index = 0;
-  current_tracking_error_.distance_to_goal = 0.0;
-  current_tracking_error_.speed = 0.0;
-  // Initialize robot_pose with zeros
-  current_tracking_error_.robot_pose.header.frame_id = "";
-  current_tracking_error_.robot_pose.pose.position.x = 0.0;
-  current_tracking_error_.robot_pose.pose.position.y = 0.0;
-  current_tracking_error_.robot_pose.pose.position.z = 0.0;
-  current_tracking_error_.robot_pose.pose.orientation.w = 1.0;
-  current_tracking_error_.robot_pose.pose.orientation.x = 0.0;
-  current_tracking_error_.robot_pose.pose.orientation.y = 0.0;
-  current_tracking_error_.robot_pose.pose.orientation.z = 0.0;
+  get_parameter("search_window", search_window_);
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -692,7 +675,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   // Compute and publish tracking error
   if (!current_path_.poses.empty() && current_path_.poses.size() >= 2) {
-    
     // Transform robot pose to path frame
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (nav2_util::transformPoseInTargetFrame(
@@ -725,15 +707,14 @@ void ControllerServer::computeAndPublishVelocity()
         tracking_error_msg->robot_pose = pose;
         tracking_error_msg->distance_to_goal = current_distance_to_goal_;
         tracking_error_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
-        
+
         // Update current tracking error and publish
         current_tracking_error_ = *tracking_error_msg;
-        
+
         if (tracking_error_pub_->is_activated()) {
           tracking_error_pub_->publish(std::move(tracking_error_msg));
         }
-        
-      } catch (const std::exception& e) {
+      } catch (const std::exception & e) {
         RCLCPP_WARN(get_logger(), "Exception during tracking error computation: %s", e.what());
       }
     }
