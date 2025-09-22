@@ -268,12 +268,14 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // send without setting a path - should go to RPP immediately
   // then it should throw an exception because the path is empty and invalid
   nav_msgs::msg::Path pruned_global_plan;
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan), std::runtime_error);
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan),
+    std::runtime_error);
 
   // Set with a path -- should attempt to find a sampled point but throw exception
   // because it cannot be found, then go to RPP and throw exception because it cannot be transformed
   controller->newPathReceived(path);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan), std::runtime_error);
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan),
+    std::runtime_error);
 
   path.header.frame_id = "base_link";
   path.poses[1].pose.position.x = 0.1;
@@ -307,7 +309,8 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // and exception because it is off of the costmap
   controller->newPathReceived(path);
   tf_broadcaster->sendTransform(transform);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan), std::runtime_error);
+  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker, pruned_global_plan),
+    std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, openLoopRotationTests) {

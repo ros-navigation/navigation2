@@ -196,15 +196,15 @@ ParameterHandler::~ParameterHandler()
   on_set_params_handler_.reset();
 }
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> /*parameters*/)
+  std::vector<rclcpp::Parameter>/*parameters*/)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  
+
   return result;
 }
 void
 ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter> /*parameters*/)
+  std::vector<rclcpp::Parameter>/*parameters*/)
 {
 
 }

@@ -158,7 +158,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
-  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration, params_->odom_topic);
+  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
+      params_->odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
 
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(params_->costmap_update_timeout);
@@ -562,7 +563,8 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   pruned_global_plan_ = path_handler_->pruneGlobalPlan(pose);
-  RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
+  RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",
+      nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 

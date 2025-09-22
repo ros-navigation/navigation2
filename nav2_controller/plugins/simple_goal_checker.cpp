@@ -102,7 +102,7 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path &current_path)
+  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & current_path)
 {
   if (nav2_util::geometry_utils::calculate_path_length(current_path) > path_length_tolerance_) {
     return false;

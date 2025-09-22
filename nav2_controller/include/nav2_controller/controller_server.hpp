@@ -213,9 +213,12 @@ protected:
   geometry_msgs::msg::Twist getThresholdedTwist(const geometry_msgs::msg::Twist & twist)
   {
     geometry_msgs::msg::Twist twist_thresh;
-    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, params_->min_x_velocity_threshold);
-    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, params_->min_y_velocity_threshold);
-    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, params_->min_theta_velocity_threshold);
+    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x,
+        params_->min_x_velocity_threshold);
+    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y,
+        params_->min_y_velocity_threshold);
+    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z,
+        params_->min_theta_velocity_threshold);
     return twist_thresh;
   }
 
