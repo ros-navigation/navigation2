@@ -101,7 +101,7 @@ protected:
   const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
   const std::vector<std::string> default_progress_checker_types_{"nav2_controller::SimpleProgressChecker"};
   const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
-  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::PathCompleteGoalChecker"};
+  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
   const std::vector<std::string> default_controller_ids_{"FollowPath"};
   const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
 };
