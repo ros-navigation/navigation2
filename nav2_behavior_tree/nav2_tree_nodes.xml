@@ -315,6 +315,18 @@
       <input_port name="enable">Whether to enable collision monitoring</input_port>
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+     </Action>
+    
+    <Action ID="GetCurrentPose">
+      <input_port name="global_frame">Global reference frame</input_port>
+      <input_port name="robot_base_frame">robot base frame</input_port>
+      <output_port name="current_pose">Current pose output</output_port>
+    </Action>
+
+    <Action ID="ConcatenatePaths">
+      <input_port name="input_path1">Input Path 1 to cancatenate</input_port>
+      <input_port name="input_path2">Input Path 2 to cancatenate</input_port>
+      <output_port name="output_path">Paths concatenated</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
@@ -394,11 +406,21 @@
       <input_port name="error_code">Error code</input_port>
     </Condition>
 
+    <Condition ID="WouldARouteRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
     <Condition ID="AreErrorCodesPresent">
       <input_port name="error_code">Error code</input_port>
       <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
     </Condition>
 
+    <Condition ID="ArePosesNear">
+      <input_port name="ref_pose">Destination</input_port>
+      <input_port name="target_pose">Destination</input_port>
+      <input_port name="global_frame">Global frame</input_port>
+      <input_port name="tolerance">Tolerance</input_port>
+    </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
