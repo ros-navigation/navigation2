@@ -536,6 +536,14 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   controllers_[current_controller_]->newPathReceived(path);
   path_handler_->setPlan(path);
 
+  end_pose_ = path.poses.back();
+  end_pose_.header.frame_id = path.header.frame_id;
+  goal_checkers_[current_goal_checker_]->reset();
+
+  RCLCPP_DEBUG(
+    get_logger(), "Path end point is (%.2f, %.2f)",
+    end_pose_.pose.position.x, end_pose_.pose.position.y);
+
   current_path_ = path;
 }
 
@@ -554,10 +562,7 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   pruned_global_plan_ = path_handler_->pruneGlobalPlan(pose);
-  // RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
-  end_pose_ = pruned_global_plan_.poses.back();
-  end_pose_.header.frame_id = pruned_global_plan_.header.frame_id;
-  goal_checkers_[current_goal_checker_]->reset();
+  RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 

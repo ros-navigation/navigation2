@@ -55,6 +55,7 @@ namespace nav2_controller
 SimpleGoalChecker::SimpleGoalChecker()
 : xy_goal_tolerance_(0.25),
   yaw_goal_tolerance_(0.25),
+  path_length_tolerance_(1.0),
   stateful_(true),
   check_xy_(true),
   xy_goal_tolerance_sq_(0.0625)
@@ -77,10 +78,14 @@ void SimpleGoalChecker::initialize(
     plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
   nav2::declare_parameter_if_not_declared(
     node,
+    plugin_name + ".path_length_tolerance", rclcpp::ParameterValue(1.0));
+  nav2::declare_parameter_if_not_declared(
+    node,
     plugin_name + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
   node->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
+  node->get_parameter(plugin_name + ".yaw_goal_tolerance", path_length_tolerance_);
   node->get_parameter(plugin_name + ".stateful", stateful_);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
@@ -97,8 +102,11 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path &)
+  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path &current_path)
 {
+  if (nav2_util::geometry_utils::calculate_path_length(current_path) > path_length_tolerance_) {
+    return false;
+  }
   if (check_xy_) {
     double dx = query_pose.position.x - goal_pose.position.x,
       dy = query_pose.position.y - goal_pose.position.y;
@@ -156,6 +164,8 @@ SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".stateful") {
