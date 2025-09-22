@@ -1,0 +1,44 @@
+name: Label docs PRs for ROS Sync
+on:
+  pull_request:
+
+jobs:
+  label-docs:
+    if: contains(github.event.pull_request.title, 'Kilted Sync') || contains(github.event.pull_request.title, 'Jazzy Sync')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process docs PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Determine ROS distro and label from PR title
+          pr_title="${{ github.event.pull_request.title }}"
+
+          if [[ "$pr_title" == *"Kilted Sync"* ]]; then
+            ros_distro="kilted"
+            label="backport-kilted"
+
+          elif [[ "$pr_title" == *"Jazzy Sync"* ]]; then
+            ros_distro="jazzy"
+            label="backport-jazzy"
+          fi
+
+          # Get PR numbers from commits
+          prs=$(gh api repos/ros-navigation/navigation2/pulls/${{ github.event.number }}/commits \
+            --jq '.[].commit.message' | grep -o '#[0-9]\+' | tr -d '#' | sort -u)
+
+          # Find and label docs PRs
+          for pr in $prs; do
+
+            # Get cross-referenced events
+            docs_pr=$(gh api repos/ros-navigation/navigation2/issues/$pr/timeline \
+              --jq '.[] | select(.event == "cross-referenced" and .source.issue.repository.name == "docs.nav2.org") | .source.issue.number' \
+              2>/dev/null | head -1)
+
+            if [ -n "$docs_pr" ]; then
+              echo "Labeling docs PR #$docs_pr with '$label'"
+              gh pr edit $docs_pr --repo ros-navigation/docs.nav2.org --add-label "$label"
+            else
+              echo "No cross-referenced docs PR found for navigation2 PR #$pr"
+            fi
+          done
