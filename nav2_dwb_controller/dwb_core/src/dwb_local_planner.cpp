@@ -228,7 +228,7 @@ DWBLocalPlanner::loadCritics()
 }
 
 void
-DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
+DWBLocalPlanner::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
 {
   for (TrajectoryCritic::Ptr & critic : critics_) {
     critic->reset();
@@ -236,8 +236,8 @@ DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 
   traj_generator_->reset();
 
-  pub_->publishGlobalPlan(path);
-  global_plan_ = path;
+  pub_->publishGlobalPlan(raw_global_path);
+  global_plan_ = raw_global_path;
 }
 
 geometry_msgs::msg::TwistStamped
