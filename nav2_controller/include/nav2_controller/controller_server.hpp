@@ -275,7 +275,7 @@ protected:
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
   double search_window_;
-  int start_index_;
+  size_t start_index_;
 
   double current_distance_to_goal_;
   double failure_tolerance_;
