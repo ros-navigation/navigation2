@@ -162,7 +162,7 @@ void KeepoutFilter::updateBounds(
 
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
-  if(!has_updated_data_) {
+  if (!has_updated_data_) {
     return;
   }
 
