@@ -59,7 +59,8 @@ public:
   {
     return providedBasicPorts(
       {
-        BT::InputPort<std::vector<std::string>>("plugins", "List of costmap layer names to clear. If empty, all layers will be cleared")
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap layer names to clear. If empty, all layers will be cleared")
       });
   }
 };
@@ -100,7 +101,8 @@ public:
         BT::InputPort<double>(
           "reset_distance", 1,
           "Distance from the robot above which obstacles are cleared"),
-        BT::InputPort<std::vector<std::string>>("plugins", "List of costmap layer names to clear. If empty, all layers will be cleared")
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap layer names to clear. If empty, all layers will be cleared")
       });
   }
 };
@@ -140,7 +142,8 @@ public:
         BT::InputPort<double>(
           "reset_distance", 1,
           "Distance from the robot under which obstacles are cleared"),
-        BT::InputPort<std::vector<std::string>>("plugins", "List of costmap layer names to clear. If empty, all layers will be cleared")
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap layer names to clear. If empty, all layers will be cleared")
       });
   }
 };
@@ -182,7 +185,8 @@ public:
         BT::InputPort<double>(
           "reset_distance", 1.0,
           "Distance from the pose under which obstacles are cleared"),
-        BT::InputPort<std::vector<std::string>>("plugins", "List of costmap layer names to clear. If empty, all layers will be cleared")
+        BT::InputPort<std::vector<std::string>>("plugins",
+          "List of costmap layer names to clear. If empty, all layers will be cleared")
       });
   }
 };
