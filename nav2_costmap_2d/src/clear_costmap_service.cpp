@@ -208,19 +208,19 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
   if (plugins.empty()) {
     // Default behavior: clear all layers
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
-    RCLCPP_INFO(logger_, "Clearing all layers in costmap: %s", costmap_.getName().c_str()); 
+    RCLCPP_INFO(logger_, "Clearing all layers in costmap: %s", costmap_.getName().c_str());
     costmap_.resetLayers();
   } else {
     // Clear only specified plugins
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
-    
     for (auto & layer : *layers) {
       if (shouldClearLayer(layer, plugins)) {
         if (layer->isClearable()) {
           RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
           auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-          std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_layer->getMutex())); 
-          costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(), costmap_layer->getSizeInCellsY());
+          std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_layer->getMutex()));
+          costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
+            costmap_layer->getSizeInCellsY());
         } else {
           RCLCPP_WARN(
             logger_,
@@ -240,10 +240,10 @@ bool ClearCostmapService::shouldClearLayer(
   if (plugins.empty()) {
     return layer->isClearable();
   }
-  
+
   // If specific plugins requested, check if this layer is in the list AND clearable
-  bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(), layer->getName()) != plugins.end();
-  
+  bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(),
+    layer->getName()) != plugins.end();
   if (is_in_plugin_list && !layer->isClearable()) {
     RCLCPP_WARN(
       logger_,
@@ -251,7 +251,7 @@ bool ClearCostmapService::shouldClearLayer(
       layer->getName().c_str());
     return false;
   }
-  
+
   return is_in_plugin_list && layer->isClearable();
 }
 
