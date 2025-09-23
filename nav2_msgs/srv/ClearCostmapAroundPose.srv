@@ -2,5 +2,6 @@
 
 geometry_msgs/PoseStamped pose
 float64 reset_distance
+string[] plugins
 ---
 std_msgs/Empty response
