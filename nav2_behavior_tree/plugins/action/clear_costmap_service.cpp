@@ -14,6 +14,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
 
@@ -29,6 +30,12 @@ ClearEntireCostmapService::ClearEntireCostmapService(
 
 void ClearEntireCostmapService::on_tick()
 {
+  std::vector<std::string> plugins;
+  if (getInput("plugins", plugins)) {
+    request_->plugins = plugins;
+  } else {
+    request_->plugins = std::vector<std::string>();
+  }
   increment_recovery_count();
 }
 
@@ -42,6 +49,13 @@ ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
 void ClearCostmapExceptRegionService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
+  std::vector<std::string> plugins;
+  if (getInput("plugins", plugins)) {
+    request_->plugins = plugins;
+  } else {
+    request_->plugins = std::vector<std::string>();
+  }
+
   increment_recovery_count();
 }
 
@@ -55,6 +69,14 @@ ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
 void ClearCostmapAroundRobotService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
+
+  std::vector<std::string> plugins;
+  if (getInput("plugins", plugins)) {
+    request_->plugins = plugins;
+  } else {
+    request_->plugins = std::vector<std::string>();
+  }
+
   increment_recovery_count();
 }
 
@@ -69,6 +91,14 @@ void ClearCostmapAroundPoseService::on_tick()
 {
   getInput("pose", request_->pose);
   getInput("reset_distance", request_->reset_distance);
+
+  std::vector<std::string> plugins;
+  if (getInput("plugins", plugins)) {
+    request_->plugins = plugins;
+  } else {
+    request_->plugins = std::vector<std::string>();
+  }
+
   increment_recovery_count();
 }
 
