@@ -229,8 +229,8 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
         }
       }
     }
-  // TODO(BCKSELFDRIVEWORLD): Optimize to reset only affected regions instead of entire master costmap
-  // Reset master costmap to ensure consistency
+  // TODO(BCKSELFDRIVEWORLD): Optimize to reset only affected regions
+  // instead of entire master costmap
     RCLCPP_INFO(logger_, "Resetting master costmap after plugin clearing");
     costmap_.getCostmap()->resetMap(0, 0,
       costmap_.getCostmap()->getSizeInCellsX(),
