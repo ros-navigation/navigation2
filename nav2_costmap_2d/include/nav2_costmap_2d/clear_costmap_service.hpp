@@ -64,7 +64,9 @@ public:
   /**
    * @brief Clears the region around a specific pose
    */
-  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance, const std::vector<std::string> & plugins);
+  void clearAroundPose(
+    const geometry_msgs::msg::PoseStamped & pose, double reset_distance,
+    const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears all layers

@@ -155,7 +155,9 @@ void ClearCostmapService::clearAroundPose(
   }
 }
 
-void ClearCostmapService::clearRegion(const double reset_distance, bool invert, const std::vector<std::string> & plugins)
+void ClearCostmapService::clearRegion(
+  const double reset_distance, bool invert,
+  const std::vector<std::string> & plugins)
 {
   double x, y;
 
