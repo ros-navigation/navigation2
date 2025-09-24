@@ -694,9 +694,8 @@ void ControllerServer::computeAndPublishVelocity()
       }
 
       try {
-        // Compute path search result - always start from index 0
         const auto path_search_result = nav2_util::distance_from_path(
-          current_path_, robot_pose_in_path_frame.pose, 0, search_window_);
+          current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
         // Create tracking error message
         auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingErrorFeedback>();
