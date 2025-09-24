@@ -70,7 +70,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
   declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
 
-  declare_parameter("search_window", rclcpp::ParameterValue(20.0));
+  declare_parameter("search_window", rclcpp::ParameterValue(2.0));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -234,7 +234,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
-  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error", 10);
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error",
+    10);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
@@ -705,6 +706,8 @@ void ControllerServer::computeAndPublishVelocity()
         tracking_error_msg->robot_pose = pose;
         tracking_error_msg->distance_to_goal = current_distance_to_goal_;
         tracking_error_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
+        tracking_error_msg->remaining_path_length =
+          nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
 
         // Update current tracking error and publish
         current_tracking_error_ = *tracking_error_msg;
