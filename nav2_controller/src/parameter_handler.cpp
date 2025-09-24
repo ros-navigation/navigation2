@@ -105,6 +105,12 @@ ParameterHandler::ParameterHandler(
     "interpolate_curvature_after_goal",
     params_.interpolate_curvature_after_goal);
   node->get_parameter("max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
+  if (params_.max_robot_pose_search_dist < 0.0) {
+    RCLCPP_WARN(
+      logger_, "Max robot search distance is negative, setting to max to search"
+      " every point on path for the closest value.");
+    params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
+  }
   node->get_parameter("prune_distance", params_.prune_distance);
   node->get_parameter("costmap_update_timeout", params_.costmap_update_timeout);
   node->get_parameter("enforce_path_inversion", params_.enforce_path_inversion);
@@ -199,17 +205,82 @@ ParameterHandler::~ParameterHandler()
   on_set_params_handler_.reset();
 }
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter>/*parameters*/)
+  std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-
+  result.successful = true;
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    // If we are trying to change the parameter of a plugin we can just skip it at this point
+    // as they handle parameter changes themselves and don't need to lock the mutex
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
   return result;
 }
 void
 ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter>/*parameters*/)
+  std::vector<rclcpp::Parameter> parameters)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
 
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name ==  "controller_frequency") {
+        params_.controller_frequency = parameter.as_double();
+      } else if (param_name == "transform_tolerance") {
+        params_.transform_tolerance = parameter.as_double();
+      } else if (param_name == "min_x_velocity_threshold") {
+        params_.min_x_velocity_threshold = parameter.as_double();
+      } else if (param_name == "min_y_velocity_threshold") {
+        params_.min_y_velocity_threshold = parameter.as_double();
+      } else if (param_name == "min_theta_velocity_threshold") {
+        params_.min_theta_velocity_threshold = parameter.as_double();
+      } else if (param_name == "failure_tolerance") {
+        params_.failure_tolerance = parameter.as_double();
+      } else if (param_name == "costmap_update_timeout") {
+        params_.costmap_update_timeout = parameter.as_double();
+      } else if (param_name == "odom_duration") {
+        params_.odom_duration = parameter.as_double();
+      } else if (param_name == "max_robot_pose_search_dist") {
+        params_.max_robot_pose_search_dist = parameter.as_double();
+      } else if (param_name == "prune_distance") {
+        params_.prune_distance = parameter.as_double();
+      } else if (param_name == "inversion_xy_tolerance") {
+        params_.inversion_xy_tolerance = parameter.as_double();
+      } else if (param_name == "inversion_yaw_tolerance") {
+        params_.inversion_yaw_tolerance = parameter.as_double();
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "use_realtime_priority") {
+        params_.use_realtime_priority = parameter.as_bool();
+      } else if (param_name == "publish_zero_velocity") {
+        params_.publish_zero_velocity = parameter.as_bool();
+      } else if (param_name == "enforce_path_inversion") {
+        params_.enforce_path_inversion = parameter.as_bool();
+      }
+    } else if (param_type == ParameterType::PARAMETER_STRING){
+      if (param_name == "speed_limit_topic") {
+        params_.speed_limit_topic = parameter.as_string();
+      } else if (param_name == "odom_topic") {
+        params_.odom_topic = parameter.as_string();
+      }
+    }
+  }
 }
 
 }  // namespace nav2_controller
