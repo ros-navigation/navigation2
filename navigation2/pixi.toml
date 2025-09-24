@@ -1,0 +1,14 @@
+[package.build.backend]
+name = "pixi-build-ros"
+version = "*"
+channels = ["https://prefix.dev/pixi-build-backends", "https://prefix.dev/robostack-jazzy", "https://prefix.dev/conda-forge"]
+
+[package.build.config]
+distro = "jazzy"
+
+[package.build-dependencies]
+ros-jazzy-nav2-ros-common = { path = "../nav2_ros_common" }
+
+
+[package.run-dependencies]
+nav2_ros_common = { path = "../nav2_ros_common" }

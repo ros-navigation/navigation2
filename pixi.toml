@@ -1,0 +1,10 @@
+[workspace]
+channels = ["https://prefix.dev/robostack-jazzy", "https://prefix.dev/conda-forge"]
+
+platforms = ["osx-arm64"]
+preview = ["pixi-build"]
+
+[tasks]
+
+[dependencies]
+ros-jazzy-navigation2 = {path = "navigation2"}
