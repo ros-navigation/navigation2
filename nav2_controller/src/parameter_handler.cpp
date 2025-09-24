@@ -66,7 +66,9 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, "interpolate_curvature_after_goal", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
-    node, "max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_size_x));
+    node, "max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_size_x / 2.0));
+  declare_parameter_if_not_declared(
+    node, "prune_distance", rclcpp::ParameterValue(1.5));
   declare_parameter_if_not_declared(
     node, "enforce_path_inversion", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -103,6 +105,7 @@ ParameterHandler::ParameterHandler(
     "interpolate_curvature_after_goal",
     params_.interpolate_curvature_after_goal);
   node->get_parameter("max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
+  node->get_parameter("prune_distance", params_.prune_distance);
   node->get_parameter("costmap_update_timeout", params_.costmap_update_timeout);
   node->get_parameter("enforce_path_inversion", params_.enforce_path_inversion);
   node->get_parameter("inversion_xy_tolerance", params_.inversion_xy_tolerance);
