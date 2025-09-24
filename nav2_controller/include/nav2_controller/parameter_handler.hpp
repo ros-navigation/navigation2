@@ -46,6 +46,7 @@ struct Parameters
   double odom_duration;
   bool interpolate_curvature_after_goal;
   double max_robot_pose_search_dist;
+  double prune_distance;
   bool enforce_path_inversion;
   float inversion_xy_tolerance;
   float inversion_yaw_tolerance;

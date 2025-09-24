@@ -129,13 +129,21 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
     closest_point = std::prev(std::prev(closest_pose_upper_bound));
   }
 
-  // We'll discard points on the plan that are outside the local costmap
+  auto pruned_plan_end = global_plan_up_to_inversion_.poses.end();
   const double max_costmap_extent = getCostmapMaxExtent();
-  auto pruned_plan_end = std::find_if(
+  //TODO: For RPP and graceful we don't have prune distance, maybe we need to support two kinds of pruned_plan_end here
+  // by parameter?
+  if (1){
+    pruned_plan_end = nav2_util::geometry_utils::first_after_integrated_distance(
+    closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
+  }
+  else{
+    pruned_plan_end = std::find_if(
     closest_point, global_plan_up_to_inversion_.poses.end(),
     [&](const auto & global_plan_pose) {
       return euclidean_distance(global_plan_pose, robot_pose) > max_costmap_extent;
     });
+  }
 
   nav_msgs::msg::Path pruned_plan;
   pruned_plan.poses.insert(pruned_plan.poses.end(),
