@@ -234,7 +234,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
-  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingError>("tracking_error", 10);
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error", 10);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
@@ -621,6 +621,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
 
+  start_index_ = 0;
   current_path_ = path;
 }
 
@@ -696,11 +697,8 @@ void ControllerServer::computeAndPublishVelocity()
         const auto path_search_result = nav2_util::distance_from_path(
           current_path_, robot_pose_in_path_frame.pose, 0, search_window_);
 
-        // Always reset to 0 for next cycle (to start from beginning)
-        start_index_ = 0;
-
         // Create tracking error message
-        auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingError>();
+        auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingErrorFeedback>();
         tracking_error_msg->header = pose.header;
         tracking_error_msg->tracking_error = path_search_result.distance;
         tracking_error_msg->current_path_index = path_search_result.closest_segment_index;
@@ -771,7 +769,6 @@ void ControllerServer::updateGlobalPath()
       action_server_->terminate_current(result);
       return;
     }
-    start_index_ = 0;
     setPlannerPath(goal->path);
   }
 }
