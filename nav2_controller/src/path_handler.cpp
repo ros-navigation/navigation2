@@ -135,7 +135,7 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
   // by parameter?
   if (1){
     pruned_plan_end = nav2_util::geometry_utils::first_after_integrated_distance(
-    closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
+    closest_point, global_plan_up_to_inversion_.poses.end(), params_->prune_distance);
   }
   else{
     pruned_plan_end = std::find_if(
