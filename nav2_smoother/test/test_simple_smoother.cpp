@@ -24,7 +24,6 @@
 #include "nav2_smoother/simple_smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
 
-using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
 
@@ -34,11 +33,6 @@ public:
   SmootherWrapper()
   : nav2_smoother::SimpleSmoother()
   {
-  }
-
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
-  {
-    return findDirectionalPathSegments(path);
   }
 
   void setMaxItsToInvalid()
