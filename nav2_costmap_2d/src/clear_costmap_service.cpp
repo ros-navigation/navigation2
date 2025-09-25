@@ -213,14 +213,15 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
   } else {
     // Clear only specified plugins
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
+    bool layer_was_cleared = false;
     for (auto & layer : *layers) {
       if (shouldClearLayer(layer, plugins)) {
         if (layer->isClearable()) {
           RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
           auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-          std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_layer->getMutex()));
           costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
             costmap_layer->getSizeInCellsY());
+          layer_was_cleared = true;
         } else {
           RCLCPP_WARN(
             logger_,
@@ -229,11 +230,13 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
         }
       }
     }
-    RCLCPP_INFO(logger_, "Resetting master costmap after plugin clearing");
-    costmap_.getCostmap()->resetMap(0, 0,
-      costmap_.getCostmap()->getSizeInCellsX(),
-      costmap_.getCostmap()->getSizeInCellsY());
-    costmap_.updateMap();
+    if (layer_was_cleared) {
+      RCLCPP_INFO(logger_, "Resetting master costmap after plugin clearing");
+      costmap_.getCostmap()->resetMap(0, 0,
+        costmap_.getCostmap()->getSizeInCellsX(),
+        costmap_.getCostmap()->getSizeInCellsY());
+      costmap_.updateMap();
+    }
   }
 }
 
