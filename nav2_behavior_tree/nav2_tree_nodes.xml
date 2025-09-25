@@ -311,6 +311,12 @@
       <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
+    <Action ID="ToggleCollisionMonitor">
+      <input_port name="enable">Whether to enable collision monitoring</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="GetCurrentPose">
       <input_port name="global_frame">Global reference frame</input_port>
       <input_port name="robot_base_frame">robot base frame</input_port>
