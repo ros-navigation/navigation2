@@ -3,4 +3,4 @@
 std_msgs/Empty request
 string[] plugins
 ---
-std_msgs/Empty response
+bool success

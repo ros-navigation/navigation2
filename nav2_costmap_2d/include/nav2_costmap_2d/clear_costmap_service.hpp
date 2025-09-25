@@ -58,20 +58,23 @@ public:
 
   /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
+  bool clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears the region around a specific pose
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearAroundPose(
+  bool clearAroundPose(
     const geometry_msgs::msg::PoseStamped & pose, double reset_distance,
     const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears all layers
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearEntirely(const std::vector<std::string> & plugins);
+  bool clearEntirely(const std::vector<std::string> & plugins);
 
 private:
   // The Logger object for logging
