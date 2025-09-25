@@ -216,7 +216,7 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
     RCLCPP_INFO(logger_, "Clearing all layers in costmap: %s", costmap_.getName().c_str());
     costmap_.resetLayers();
-    return true; // resetLayers() always succeeds
+    return true;
   } else {
     // Clear only specified plugins
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
