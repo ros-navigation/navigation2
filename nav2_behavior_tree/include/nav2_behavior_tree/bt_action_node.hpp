@@ -521,8 +521,10 @@ protected:
 
   // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
   bool should_send_goal_;
+
+// Initialized to UINT64_MAX as a sentinel value to ensure the first tick always triggers initialization
   bool is_global_ {false};
-  uint64_t last_run_id_ {0};
+  uint64_t last_run_id_ {UINT64_MAX};
 };
 
 }  // namespace nav2_behavior_tree
