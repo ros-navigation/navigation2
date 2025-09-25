@@ -36,6 +36,15 @@ void ClearEntireCostmapService::on_tick()
   increment_recovery_count();
 }
 
+BT::NodeStatus ClearEntireCostmapService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
+}
+
 ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
   const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
@@ -51,6 +60,15 @@ void ClearCostmapExceptRegionService::on_tick()
   }
 
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearCostmapExceptRegionService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
@@ -71,6 +89,15 @@ void ClearCostmapAroundRobotService::on_tick()
   increment_recovery_count();
 }
 
+BT::NodeStatus ClearCostmapAroundRobotService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
+}
+
 ClearCostmapAroundPoseService::ClearCostmapAroundPoseService(
   const std::string & service_node_name,
   const BT::NodeConfiguration & conf)
@@ -88,6 +115,15 @@ void ClearCostmapAroundPoseService::on_tick()
   }
 
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearCostmapAroundPoseService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
