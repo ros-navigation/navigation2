@@ -222,7 +222,7 @@ public:
     } else {
     if (!BT::isStatusActive(status())) {
         needs_initialization_ = true;
-    }
+      }
     }
 
     if (needs_initialization_) {

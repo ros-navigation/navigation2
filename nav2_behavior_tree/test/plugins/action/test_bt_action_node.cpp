@@ -565,7 +565,7 @@ TEST_F(BTActionNodeTestFixture, test_run_id_non_global_mode_unaffected)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Fibonacci order="2" />
+            <Fibonacci order="50" />
         </BehaviorTree>
       </root>)";
 
