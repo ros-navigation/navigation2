@@ -563,8 +563,6 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   pruned_global_plan_ = path_handler_->pruneGlobalPlan(pose);
-  RCLCPP_INFO(get_logger(), "compute remaining distance %lf ",
-      nav2_util::geometry_utils::calculate_path_length(pruned_global_plan_));
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
