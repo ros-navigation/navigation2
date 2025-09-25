@@ -186,13 +186,7 @@ endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
-install(TARGETS
-  simple_progress_checker
-  position_goal_checker
-  pose_progress_checker
-  simple_goal_checker
-  stopped_goal_checker
-  ${library_name}
+install(TARGETS simple_progress_checker position_goal_checker pose_progress_checker simple_goal_checker stopped_goal_checker ${library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -208,14 +202,12 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(
-  simple_progress_checker
+ament_export_libraries(simple_progress_checker
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
   position_goal_checker
-  ${library_name}
-)
+  ${library_name})
 ament_export_dependencies(
   geometry_msgs
   nav2_core
