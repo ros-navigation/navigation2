@@ -707,6 +707,7 @@ void ControllerServer::computeAndPublishVelocity()
         tracking_error_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
         tracking_error_msg->remaining_path_length =
           nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
+        start_index_ = path_search_result.closest_segment_index;
 
         // Update current tracking error and publish
         current_tracking_error_ = *tracking_error_msg;
