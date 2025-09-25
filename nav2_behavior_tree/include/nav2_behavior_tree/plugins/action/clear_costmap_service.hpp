@@ -52,6 +52,13 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response) override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -89,6 +96,13 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   void on_tick() override;
+
+  /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
@@ -132,6 +146,13 @@ public:
   void on_tick() override;
 
   /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response) override;
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -171,6 +192,13 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   void on_tick() override;
+
+  /**
+   * @brief Check the service response and return appropriate BT status
+   * @param response Service response containing success status
+   * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
+   */
+  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
