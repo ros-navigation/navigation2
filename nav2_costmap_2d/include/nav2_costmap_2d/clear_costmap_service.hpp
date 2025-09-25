@@ -136,6 +136,9 @@ private:
    */
   bool getPosition(double & x, double & y) const;
 
+  /**
+   * @brief Determines whether a specific layer should be cleared based on plugin list and clearable status
+   */
   bool shouldClearLayer(
     const std::shared_ptr<Layer> & layer,
     const std::vector<std::string> & plugins) const;

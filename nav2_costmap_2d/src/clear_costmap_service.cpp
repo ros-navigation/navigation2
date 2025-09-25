@@ -212,6 +212,7 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     costmap_.resetLayers();
   } else {
     // Clear only specified plugins
+    std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
     bool layer_was_cleared = false;
     for (auto & layer : *layers) {
@@ -235,7 +236,6 @@ void ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
       costmap_.getCostmap()->resetMap(0, 0,
         costmap_.getCostmap()->getSizeInCellsX(),
         costmap_.getCostmap()->getSizeInCellsY());
-      costmap_.updateMap();
     }
   }
 }
