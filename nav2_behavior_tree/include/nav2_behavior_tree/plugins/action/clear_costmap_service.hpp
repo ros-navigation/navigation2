@@ -17,6 +17,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
@@ -56,7 +57,8 @@ public:
    * @param response Service response containing success status
    * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
    */
-  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response) override;
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
@@ -102,7 +104,8 @@ public:
    * @param response Service response containing success status
    * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
    */
-  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response) override;
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
@@ -150,7 +153,8 @@ public:
    * @param response Service response containing success status
    * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
    */
-  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response) override;
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
@@ -198,7 +202,8 @@ public:
    * @param response Service response containing success status
    * @return BT::NodeStatus SUCCESS if service succeeded, FAILURE otherwise
    */
-  BT::NodeStatus on_completion(std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response) override;
+  BT::NodeStatus on_completion(
+    std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response) override;
 
   /**
    * @brief Creates list of BT ports
