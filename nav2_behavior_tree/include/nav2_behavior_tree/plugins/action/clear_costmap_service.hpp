@@ -186,7 +186,7 @@ public:
           "reset_distance", 1.0,
           "Distance from the pose under which obstacles are cleared"),
         BT::InputPort<std::vector<std::string>>("plugins",
-          "List of costmap layer names to clear. If empty, all layers will be cleared")
+          "List of costmap plugin names to clear. If empty, all plugins will be cleared")
       });
   }
 };
