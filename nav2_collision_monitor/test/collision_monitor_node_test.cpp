@@ -302,6 +302,8 @@ Tester::~Tester()
 
 void Tester::setCommonParameters()
 {
+  cm_->declare_parameter("enabled_at_start", rclcpp::ParameterValue(true));
+
   cm_->declare_parameter(
     "cmd_vel_in_topic", rclcpp::ParameterValue(CMD_VEL_IN_TOPIC));
   cm_->set_parameter(
@@ -841,18 +843,14 @@ TEST_F(Tester, testToggleService)
   addSource(SCAN_NAME, SCAN);
   setVectors({"Stop"}, {SCAN_NAME});
 
+  // Test the parameter in disabled state
+  cm_->set_parameter(rclcpp::Parameter("enabled_at_start", false));
+
   // Start collision monitor node
   cm_->start();
+  ASSERT_FALSE(cm_->isEnabled());
 
   auto request = std::make_shared<nav2_msgs::srv::Toggle::Request>();
-
-  // Disable test
-  request->enable = false;
-  {
-    auto result_future = toggle_client_->async_call(request);
-    ASSERT_TRUE(waitToggle(result_future, 2s));
-  }
-  ASSERT_FALSE(cm_->isEnabled());
 
   // Enable test
   request->enable = true;
@@ -861,6 +859,14 @@ TEST_F(Tester, testToggleService)
     ASSERT_TRUE(waitToggle(result_future, 2s));
   }
   ASSERT_TRUE(cm_->isEnabled());
+
+  // Disable test
+  request->enable = false;
+  {
+    auto result_future = toggle_client_->async_call(request);
+    ASSERT_TRUE(waitToggle(result_future, 2s));
+  }
+  ASSERT_FALSE(cm_->isEnabled());
 
   // Stop the collision monitor
   cm_->stop();
