@@ -184,8 +184,9 @@ bool Controller::isTrajectoryCollisionFree(
 
   do{
     // Apply velocities to calculate next pose
+    double target_distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
     next_pose.pose = control_law_->calculateNextPose(
-      simulation_time_step_, target_pose, next_pose.pose, backward);
+      simulation_time_step_, target_pose, next_pose.pose, target_distance, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory.poses.push_back(next_pose);
@@ -200,7 +201,7 @@ bool Controller::isTrajectoryCollisionFree(
     // and the initial segment for undocking
     // This avoids false positives when the robot is at the dock
     double dock_collision_distance = is_docking ?
-      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
+      target_distance :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
@@ -265,6 +266,8 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (param_name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
+      } else if (param_name == "controller.deceleration_max") {
+        deceleration_max_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_max_angular_accel") {
@@ -280,6 +283,7 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
       // Update the smooth control law with the new params
       control_law_->setCurvatureConstants(k_phi_, k_delta_, beta_, lambda_);
       control_law_->setSlowdownRadius(slowdown_radius_);
+      control_law_->setMaxDeceleration(deceleration_max_);
       control_law_->setSpeedLimit(v_linear_min_, v_linear_max_, v_angular_max_);
     }
   }
