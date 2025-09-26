@@ -126,8 +126,8 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
     // Calculate orientation towards interpolated position
     // Convert yaw to quaternion
     double yaw = atan2(
-      point.y - prev_pose_it->pose.position.y,
-      point.x - prev_pose_it->pose.position.x);
+      goal_pose_it->pose.position.y - prev_pose_it->pose.position.y,
+      goal_pose_it->pose.position.x - prev_pose_it->pose.position.x);
 
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = prev_pose_it->header.frame_id;
