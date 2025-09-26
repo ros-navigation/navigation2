@@ -220,7 +220,7 @@ public:
         }
       }
     } else {
-    if (!BT::isStatusActive(status())) {
+      if (!BT::isStatusActive(status())) {
         needs_initialization_ = true;
       }
     }
@@ -522,7 +522,7 @@ protected:
   // Can be set in on_tick or on_wait_for_result to indicate if a goal should be sent.
   bool should_send_goal_;
 
-// Initialized to UINT64_MAX as a sentinel value to ensure the first tick always triggers initialization
+// Initialized to UINT64_MAX as a sentinel value to ensure the first tick always triggers
   bool is_global_ {false};
   uint64_t last_run_id_ {UINT64_MAX};
 };
