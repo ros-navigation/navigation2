@@ -168,7 +168,8 @@ void RotationShimController::cleanup()
 geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  nav_msgs::msg::Path & pruned_global_plan)
 {
   // Rotate to goal heading when in goal xy tolerance
   if (rotate_to_goal_heading_) {
@@ -189,7 +190,9 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       goal_checker->getTolerances(pose_tolerance, vel_tolerance);
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
-      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity,
+          pruned_global_plan))
+      {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
 
@@ -255,7 +258,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
   // If at this point, use the primary controller to path track
   in_rotation_ = false;
-  auto cmd_vel = primary_controller_->computeVelocityCommands(pose, velocity, goal_checker);
+  auto cmd_vel = primary_controller_->computeVelocityCommands(pose, velocity, goal_checker,
+      pruned_global_plan);
   last_angular_vel_ = cmd_vel.twist.angular.z;
   return cmd_vel;
 }
@@ -391,11 +395,11 @@ bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
   return current_path_.poses.back().pose != path.poses.back().pose;
 }
 
-void RotationShimController::setPlan(const nav_msgs::msg::Path & path)
+void RotationShimController::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
 {
-  path_updated_ = rotate_to_heading_once_ ? isGoalChanged(path) : true;
-  current_path_ = path;
-  primary_controller_->setPlan(path);
+  path_updated_ = rotate_to_heading_once_ ? isGoalChanged(raw_global_path) : true;
+  current_path_ = raw_global_path;
+  primary_controller_->newPathReceived(raw_global_path);
   position_goal_checker_->reset();
 }
 

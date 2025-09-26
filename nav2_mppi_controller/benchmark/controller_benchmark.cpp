@@ -106,12 +106,12 @@ void prepareAndRunBenchmark(
   auto velocity = getDummyTwist();
   auto path = getIncrementalDummyPath(node, path_settings);
 
-  controller->setPlan(path);
+  controller->newPathReceived(path);
 
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
-
+  nav_msgs::msg::Path pruned_global_plan;
   for (auto _ : state) {
-    controller->computeVelocityCommands(pose, velocity, dummy_goal_checker);
+    controller->computeVelocityCommands(pose, velocity, dummy_goal_checker, pruned_global_plan);
   }
   map_odom_broadcaster.wait();
   odom_base_link_broadcaster.wait();

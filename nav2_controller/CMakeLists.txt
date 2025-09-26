@@ -26,6 +26,8 @@ set(executable_name controller_server)
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
+  src/parameter_handler.cpp
+  src/path_handler.cpp
   src/controller_server.cpp
 )
 target_include_directories(${library_name}
@@ -45,6 +47,7 @@ target_link_libraries(${library_name} PUBLIC
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
   tf2_ros::tf2_ros
+  angles::angles
 )
 target_link_libraries(${library_name} PRIVATE
   ${lifecycle_msgs_TARGETS}

@@ -92,10 +92,10 @@ public:
   virtual void deactivate() = 0;
 
   /**
-   * @brief local setPlan - Sets the global plan
+   * @brief local setPlan - Notifies the Controller that a new plan is received from the Planner Server
    * @param path The global plan
    */
-  virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
+  virtual void newPathReceived(const nav_msgs::msg::Path & raw_global_path) = 0;
 
   /**
    * @brief Controller computeVelocityCommands - calculates the best command given the current pose and velocity
@@ -108,12 +108,14 @@ public:
    * @param pose Current robot pose
    * @param velocity Current robot velocity
    * @param goal_checker Pointer to the current goal checker the task is utilizing
+   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return The best command for the robot to drive
    */
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * goal_checker) = 0;
+    nav2_core::GoalChecker * goal_checker,
+    nav_msgs::msg::Path & pruned_global_plan) = 0;
 
   /**
    * @brief Cancel the current control action

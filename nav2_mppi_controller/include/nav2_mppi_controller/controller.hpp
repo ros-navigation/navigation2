@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 
-#include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
@@ -81,17 +80,19 @@ public:
     * @param robot_pose Robot pose
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
+    * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
-    nav2_core::GoalChecker * goal_checker) override;
+    nav2_core::GoalChecker * goal_checker,
+    nav_msgs::msg::Path & pruned_global_plan) override;
 
   /**
-    * @brief Set new reference path to track
-    * @param path Path to track
+    * @brief Receives a new plan from the Planner Server
+    * @param raw_global_path The global plan from the Planner Server
     */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
     * @brief Set new speed limit from callback
@@ -121,11 +122,11 @@ protected:
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
-  PathHandler path_handler_;
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
   bool publish_optimal_trajectory_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_mppi_controller
