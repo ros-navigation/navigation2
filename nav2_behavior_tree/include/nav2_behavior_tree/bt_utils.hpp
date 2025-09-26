@@ -366,7 +366,7 @@ T1 deconflictPortAndParamFrame(
       "Parameter '%s' not provided by behavior tree xml file, "
       "using parameter from ros2 parameter file",
       param_name.c_str());
-    node->get_parameter(param_name, param_value);
+    param_value = node->declare_or_get_parameter(param_name, param_value);
     return param_value;
   } else {
     RCLCPP_DEBUG(

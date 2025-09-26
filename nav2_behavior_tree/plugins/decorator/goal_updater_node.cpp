@@ -53,11 +53,10 @@ void GoalUpdater::createROSInterfaces()
     false);
   callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-  std::string goal_updater_topic_new;
-  std::string goals_updater_topic_new;
-  node_->get_parameter_or<std::string>("goal_updater_topic", goal_updater_topic_new, "goal_update");
-  node_->get_parameter_or<std::string>("goals_updater_topic", goals_updater_topic_new,
-    "goals_update");
+  std::string goal_updater_topic_new = node_->declare_or_get_parameter(
+    "goal_updater_topic", std::string("goal_update"));
+  std::string goals_updater_topic_new = node_->declare_or_get_parameter(
+    "goals_updater_topic", std::string("goals_update"));
 
   // Only create a new subscriber if the topic has changed or subscriber is empty
   if (goal_updater_topic_new != goal_updater_topic_ || !goal_sub_) {

@@ -62,20 +62,19 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   clock_ = node->get_clock();
 
   // Declare this node's parameters
-  if (!node->has_parameter("bt_loop_duration")) {
-    node->declare_parameter("bt_loop_duration", 10);
-  }
-  if (!node->has_parameter("default_server_timeout")) {
-    node->declare_parameter("default_server_timeout", 20);
-  }
-  if (!node->has_parameter("always_reload_bt_xml")) {
-    node->declare_parameter("always_reload_bt_xml", false);
-  }
-  if (!node->has_parameter("wait_for_service_timeout")) {
-    node->declare_parameter("wait_for_service_timeout", 1000);
-  }
+  bt_loop_duration_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("bt_loop_duration", 10));
 
-  std::vector<std::string> error_code_name_prefixes = {
+  default_server_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_server_timeout", 20));
+
+  always_reload_bt_ = node->declare_or_get_parameter(
+    "always_reload_bt_xml", false);
+
+  wait_for_service_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("wait_for_service_timeout", 1000));
+
+  std::vector<std::string> default_error_code_name_prefixes = {
     "assisted_teleop",
     "backup",
     "compute_path",
@@ -95,32 +94,25 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
       " Please review migration guide and update your configuration.");
   }
 
-  if (!node->has_parameter("error_code_name_prefixes")) {
-    const rclcpp::ParameterValue value = node->declare_parameter(
-      "error_code_name_prefixes",
-      rclcpp::PARAMETER_STRING_ARRAY);
-    if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      std::string error_code_name_prefixes_str;
-      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
-        error_code_name_prefixes_str += " " + error_code_name_prefix;
-      }
-      RCLCPP_WARN_STREAM(
-        logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
-          << error_code_name_prefixes_str + "\n"
-          << "Make sure these match your BT and there are not other sources of error codes you"
-          "reported to your application");
-      rclcpp::Parameter error_code_name_prefixes_param("error_code_name_prefixes",
-        error_code_name_prefixes);
-      node->set_parameter(error_code_name_prefixes_param);
-    } else {
-      error_code_name_prefixes = value.get<std::vector<std::string>>();
-      std::string error_code_name_prefixes_str;
-      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
-        error_code_name_prefixes_str += " " + error_code_name_prefix;
-      }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
-        << error_code_name_prefixes_str);
-    }
+  // Declare and get error code name prefixes parameter
+  error_code_name_prefixes_ = node->declare_or_get_parameter(
+    "error_code_name_prefixes",
+    default_error_code_name_prefixes);
+
+  std::string error_code_name_prefixes_str;
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
+    error_code_name_prefixes_str += " " + error_code_name_prefix;
+  }
+
+  if (error_code_name_prefixes_ == default_error_code_name_prefixes) {
+    RCLCPP_WARN_STREAM(
+      logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
+        << error_code_name_prefixes_str + "\n"
+        << "Make sure these match your BT and there are not other sources of error codes "
+        << "reported to your application");
+  } else {
+    RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
+      << error_code_name_prefixes_str);
   }
 }
 
@@ -153,14 +145,10 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   client_node_->activate();
 
   // Declare parameters for common client node applications to share with BT nodes
-  // Declare if not declared in case being used an external application, then copying
-  // all of the main node's parameters to the client for BT nodes to obtain
-  nav2::declare_parameter_if_not_declared(
-    node, "global_frame", rclcpp::ParameterValue(std::string("map")));
-  nav2::declare_parameter_if_not_declared(
-    node, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  nav2::declare_parameter_if_not_declared(
-    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
+  nav2::declare_or_get_parameter(node, "global_frame", std::string("map"));
+  nav2::declare_or_get_parameter(node, "robot_base_frame", std::string("base_link"));
+  nav2::declare_or_get_parameter(node, "transform_tolerance", 0.1);
+
   rclcpp::copy_all_parameter_values(node, client_node_);
 
   // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the subscription
@@ -168,21 +156,6 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   action_server_ = nav2::interfaces::create_action_server<ActionT>(
     node, action_name_, std::bind(&BtActionServer<ActionT, NodeT>::executeCallback, this),
     nullptr, std::chrono::milliseconds(500), false);
-
-  // Get parameters for BT timeouts
-  int bt_loop_duration;
-  node->get_parameter("bt_loop_duration", bt_loop_duration);
-  bt_loop_duration_ = std::chrono::milliseconds(bt_loop_duration);
-  int default_server_timeout;
-  node->get_parameter("default_server_timeout", default_server_timeout);
-  default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
-  int wait_for_service_timeout;
-  node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
-  wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
-  node->get_parameter("always_reload_bt_xml", always_reload_bt_);
-
-  // Get error code id names to grab off of the blackboard
-  error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
   // Create the class that registers our custom nodes and executes the BT
   bt_ = std::make_unique<nav2_behavior_tree::BehaviorTreeEngine>(plugin_lib_names_, client_node_);

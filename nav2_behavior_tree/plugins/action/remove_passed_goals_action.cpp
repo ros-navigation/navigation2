@@ -37,7 +37,7 @@ void RemovePassedGoals::initialize()
 
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  node_->get_parameter("transform_tolerance", transform_tolerance_);
+  transform_tolerance_ = node_->declare_or_get_parameter("transform_tolerance", 0.1);
 
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
