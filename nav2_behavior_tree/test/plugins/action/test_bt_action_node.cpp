@@ -147,7 +147,13 @@ public:
 
   BT::NodeStatus on_cancelled() override
   {
-    config().blackboard->set("sequence", result_.result->sequence);
+    // Check if result is available before accessing it
+    if (result_.result) {
+      config().blackboard->set("sequence", result_.result->sequence);
+    } else {
+      // Set empty sequence if no result available
+      config().blackboard->set("sequence", std::vector<int>());
+    }
     config().blackboard->set("on_cancelled_triggered", true);
     return BT::NodeStatus::SUCCESS;
   }
@@ -485,6 +491,180 @@ TEST_F(BTActionNodeTestFixture, test_server_cancel)
   // ticks variable must be 7 because execution time of the action server
   // is at least 1000000 x 50 ms
   EXPECT_EQ(ticks, 7);
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_initialization_and_persistence)
+{
+  // create tree with is_global="true" to enable RunID checking
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="100" is_global="true" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  // Set initial RunID
+  config_->blackboard->set<uint64_t>("run_id", 1);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(50ms);  // Slower server rate
+
+  // First tick should initialize with run_id = 1
+  auto result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  // Subsequent ticks with same RunID should continue without re-initialization
+  result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  // Clean up by halting the tree
+  tree_->haltTree();
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_changes_trigger_reinitialization)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="50" is_global="true" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(50ms);
+
+  // Test with multiple run_id changes
+  for (uint64_t run_id = 1; run_id <= 3; ++run_id) {
+    config_->blackboard->set<uint64_t>("run_id", run_id);
+
+    // Halt tree to reset state
+    tree_->haltTree();
+
+    // First tick with new run_id should start new execution
+    auto result = tree_->tickOnce();
+    EXPECT_EQ(result, BT::NodeStatus::RUNNING) << "Failed on run_id: " << run_id;
+  }
+
+  // Final cleanup
+  tree_->haltTree();
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_non_global_mode_unaffected)
+{
+  // Test without is_global flag (should use old behavior)
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="10" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(10ns);
+
+  // Should work normally without RunID checking
+  auto result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_missing_from_blackboard)
+{
+  // Test behavior when run_id is not set - should work like old behavior
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="5" is_global="true" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  // Don't set run_id - test graceful handling
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(10ns);
+
+  // Should work like old behavior when RunID is missing
+  auto result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  tree_->haltTree();
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_change_during_execution)
+{
+  // Test RunID change while node is already running (key preemption scenario)
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="100" is_global="true" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config_->blackboard->set<uint64_t>("run_id", 1);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(10ns);
+
+  // Start execution with run_id = 1
+  auto result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  // Change RunID while running (simulates new navigation goal)
+  config_->blackboard->set<uint64_t>("run_id", 2);
+
+  // Next tick should detect change and reinitialize
+  result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  tree_->haltTree();
+}
+
+TEST_F(BTActionNodeTestFixture, test_run_id_zero_edge_case)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <Fibonacci order="5" is_global="true" />
+        </BehaviorTree>
+      </root>)";
+
+  config_->blackboard->set<std::chrono::milliseconds>("server_timeout", 100ms);
+  config_->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+
+  // Test with RunID = 0 (edge case)
+  config_->blackboard->set<uint64_t>("run_id", 0);
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  action_server_->setHandleGoalSleepDuration(2ms);
+  action_server_->setServerLoopRate(10ms);
+
+  auto result = tree_->tickOnce();
+  EXPECT_EQ(result, BT::NodeStatus::RUNNING);
+
+  tree_->haltTree();
 }
 
 int main(int argc, char ** argv)
