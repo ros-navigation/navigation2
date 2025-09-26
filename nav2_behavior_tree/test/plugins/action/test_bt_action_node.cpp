@@ -659,7 +659,7 @@ TEST_F(BTActionNodeTestFixture, test_run_id_zero_edge_case)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   action_server_->setHandleGoalSleepDuration(2ms);
-  action_server_->setServerLoopRate(10ns);
+  action_server_->setServerLoopRate(10ms);
 
   auto result = tree_->tickOnce();
   EXPECT_EQ(result, BT::NodeStatus::RUNNING);
