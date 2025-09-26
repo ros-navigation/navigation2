@@ -28,6 +28,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/msg/tracking_error_feedback.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
@@ -236,6 +237,7 @@ protected:
   std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+  nav2::Publisher<nav2_msgs::msg::TrackingErrorFeedback>::SharedPtr tracking_error_pub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
@@ -268,7 +270,10 @@ protected:
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
+  double search_window_;
+  size_t start_index_;
 
+  double current_distance_to_goal_;
   double failure_tolerance_;
   bool use_realtime_priority_;
   bool publish_zero_velocity_;
@@ -282,6 +287,9 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
+
+  // Last tracking error in the form of TrackingError.msg
+  nav2_msgs::msg::TrackingErrorFeedback  current_tracking_error_;
 
 private:
   /**

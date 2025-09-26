@@ -23,6 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_controller/controller_server.hpp"
 
 using namespace std::chrono_literals;
@@ -43,6 +44,9 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"},
+  search_window_(2.0),
+  start_index_(0),
+  current_distance_to_goal_(0.0),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -65,6 +69,8 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
   declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
+
+  declare_parameter("search_window", rclcpp::ParameterValue(2.0));
 
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
@@ -228,6 +234,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
+  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error",
+    10);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
@@ -250,6 +258,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
+  get_parameter("search_window", search_window_);
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -268,11 +277,11 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   }
   vel_publisher_->on_activate();
   action_server_->activate();
-
   auto node = shared_from_this();
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&ControllerServer::dynamicParametersCallback, this, _1));
+  tracking_error_pub_->on_activate();
 
   // create bond connection
   createBond();
@@ -613,6 +622,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
 
+  start_index_ = 0;
   current_path_ = path;
 }
 
@@ -641,8 +651,6 @@ void ControllerServer::computeAndPublishVelocity()
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
     cmd_vel_2d.header.stamp = last_valid_cmd_time_;
-    // Only no valid control exception types are valid to attempt to have control patience, as
-    // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), "%s", e.what());
@@ -667,40 +675,58 @@ void ControllerServer::computeAndPublishVelocity()
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
 
-  // Find the closest pose to current pose on global path
-  geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
-  if (!nav2_util::transformPoseInTargetFrame(
-          pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-          current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
+  // Compute and publish tracking error
+  if (!current_path_.poses.empty() && current_path_.poses.size() >= 2) {
+    // Transform robot pose to path frame
+    geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
+    if (nav2_util::transformPoseInTargetFrame(
+            pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+            current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+    {
+      // Transform goal pose to robot frame for distance calculation
+      geometry_msgs::msg::PoseStamped transformed_end_pose;
+      if (nav2_util::transformPoseInTargetFrame(
+            end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
+            pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+      {
+        current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
+          pose, transformed_end_pose);
+      }
+
+      try {
+        const auto path_search_result = nav2_util::distance_from_path(
+          current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+
+        // Create tracking error message
+        auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingErrorFeedback>();
+        tracking_error_msg->header = pose.header;
+        tracking_error_msg->tracking_error = path_search_result.distance;
+        tracking_error_msg->current_path_index = path_search_result.closest_segment_index;
+        tracking_error_msg->robot_pose = pose;
+        tracking_error_msg->distance_to_goal = current_distance_to_goal_;
+        tracking_error_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
+        tracking_error_msg->remaining_path_length =
+          nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
+        start_index_ = path_search_result.closest_segment_index;
+
+        // Update current tracking error and publish
+        current_tracking_error_ = *tracking_error_msg;
+
+        if (tracking_error_pub_->is_activated()) {
+          tracking_error_pub_->publish(std::move(tracking_error_msg));
+        }
+      } catch (const std::exception & e) {
+        RCLCPP_WARN(get_logger(), "Exception during tracking error computation: %s", e.what());
+      }
+    }
   }
 
+  // Publish action feedback
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
-  feedback->speed = std::hypot(cmd_vel_2d.twist.linear.x, cmd_vel_2d.twist.linear.y);
-
-  nav_msgs::msg::Path & current_path = current_path_;
-  auto find_closest_pose_idx = [&robot_pose_in_path_frame, &current_path]()
-    {
-      size_t closest_pose_idx = 0;
-      double curr_min_dist = std::numeric_limits<double>::max();
-      for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-        double curr_dist =
-          nav2_util::geometry_utils::euclidean_distance(robot_pose_in_path_frame,
-          current_path.poses[curr_idx]);
-        if (curr_dist < curr_min_dist) {
-          curr_min_dist = curr_dist;
-          closest_pose_idx = curr_idx;
-        }
-      }
-      return closest_pose_idx;
-    };
-
-  const std::size_t closest_pose_idx = find_closest_pose_idx();
-  feedback->distance_to_goal = nav2_util::geometry_utils::calculate_path_length(current_path_,
-      closest_pose_idx);
+  feedback->tracking_error = current_tracking_error_;
   action_server_->publish_feedback(feedback);
 }
+
 
 void ControllerServer::updateGlobalPath()
 {
