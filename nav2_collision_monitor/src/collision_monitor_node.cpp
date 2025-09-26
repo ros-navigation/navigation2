@@ -102,6 +102,15 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
+  nav2::declare_parameter_if_not_declared(node, "enabled", rclcpp::ParameterValue(true));
+  node->get_parameter("enabled", enabled_);
+
+  if (!enabled_) {
+    RCLCPP_WARN(get_logger(), "Collision monitor is disabled at startup.");
+  } else {
+    RCLCPP_INFO(get_logger(), "Collision monitor is enabled at startup.");
+  }
+
   return nav2::CallbackReturn::SUCCESS;
 }
 
