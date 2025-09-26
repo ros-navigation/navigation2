@@ -84,23 +84,11 @@ void DWBLocalPlanner::configure(
     node, dwb_plugin_name_ + ".default_critic_namespaces",
     rclcpp::ParameterValue(std::vector<std::string>()));
   declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".prune_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".prune_distance",
-    rclcpp::ParameterValue(2.0));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".forward_prune_distance",
-    rclcpp::ParameterValue(2.0));
-  declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".debug_trajectory_details",
     rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".trajectory_generator_name",
     rclcpp::ParameterValue(std::string("dwb_plugins::StandardTrajectoryGenerator")));
-  declare_parameter_if_not_declared(
-    node, dwb_plugin_name_ + ".shorten_transformed_plan",
-    rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     rclcpp::ParameterValue(true));
@@ -108,22 +96,11 @@ void DWBLocalPlanner::configure(
   std::string traj_generator_name;
 
   node->get_parameter("transform_tolerance", transform_tolerance_);
-
-  node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
-  node->get_parameter(dwb_plugin_name_ + ".prune_distance", prune_distance_);
-  node->get_parameter(dwb_plugin_name_ + ".forward_prune_distance", forward_prune_distance_);
-  if (forward_prune_distance_ < 0.0) {
-    RCLCPP_WARN(
-      logger_, "Forward prune distance is negative, setting to max to search"
-      " every point on path for the closest value.");
-    forward_prune_distance_ = std::numeric_limits<double>::max();
-  }
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
     dwb_plugin_name_ + ".short_circuit_trajectory_evaluation",
     short_circuit_trajectory_evaluation_);
-  node->get_parameter(dwb_plugin_name_ + ".shorten_transformed_plan", shorten_transformed_plan_);
 
   pub_ = std::make_unique<DWBPublisher>(node, dwb_plugin_name_);
   pub_->on_configure();
@@ -228,16 +205,12 @@ DWBLocalPlanner::loadCritics()
 }
 
 void
-DWBLocalPlanner::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
+DWBLocalPlanner::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
   for (TrajectoryCritic::Ptr & critic : critics_) {
     critic->reset();
   }
-
   traj_generator_->reset();
-
-  pub_->publishGlobalPlan(raw_global_path);
-  global_plan_ = raw_global_path;
 }
 
 geometry_msgs::msg::TwistStamped
@@ -245,7 +218,7 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * /*goal_checker*/,
-  nav_msgs::msg::Path & /*transformed_global_plan*/)
+  nav_msgs::msg::Path & pruned_global_plan)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -255,7 +228,7 @@ DWBLocalPlanner::computeVelocityCommands(
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
       pose,
-      nav_2d_utils::twist3Dto2D(velocity), results);
+      nav_2d_utils::twist3Dto2D(velocity), results, pruned_global_plan);
     pub_->publishEvaluation(results);
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
@@ -275,28 +248,12 @@ DWBLocalPlanner::computeVelocityCommands(
   }
 }
 
-void
-DWBLocalPlanner::prepareGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose, nav_msgs::msg::Path & transformed_plan,
-  geometry_msgs::msg::PoseStamped & goal_pose, bool publish_plan)
-{
-  if (publish_plan) {
-    pub_->publishTransformedPlan(transformed_plan);
-  }
-
-  goal_pose.header.frame_id = global_plan_.header.frame_id;
-  goal_pose.header.stamp = pose.header.stamp;
-  goal_pose.pose = global_plan_.poses.back().pose;
-  nav2_util::transformPoseInTargetFrame(
-    goal_pose, goal_pose, *tf_,
-    costmap_ros_->getGlobalFrameID(), transform_tolerance_);
-}
-
 nav_2d_msgs::msg::Twist2DStamped
 DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity,
-  std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results)
+  std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
+  nav_msgs::msg::Path & pruned_global_plan)
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
@@ -304,9 +261,36 @@ DWBLocalPlanner::computeVelocityCommands(
   }
 
   nav_msgs::msg::Path transformed_plan;
-  geometry_msgs::msg::PoseStamped goal_pose;
+  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
+  transformed_plan.header.stamp = pose.header.stamp;
 
-  prepareGlobalPlan(pose, transformed_plan, goal_pose);
+  // Transform the pruned global plan to global frame
+  auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
+      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
+      stamped_pose.header.frame_id = pruned_global_plan.header.frame_id;
+      stamped_pose.header.stamp = pose.header.stamp;
+      stamped_pose.pose = global_plan_pose.pose;
+
+      if (!nav2_util::transformPoseInTargetFrame(
+          stamped_pose, transformed_pose, *tf_,
+          transformed_plan.header.frame_id, transform_tolerance_))
+      {
+        throw nav2_core::ControllerTFError(
+        "Unable to transform plan pose into local frame");
+      }
+
+      transformed_pose.pose.position.z = 0.0;
+      return transformed_pose;
+    };
+
+  std::transform(
+    pruned_global_plan.poses.begin(),
+    pruned_global_plan.poses.end(),
+    std::back_inserter(transformed_plan.poses),
+    transformGlobalPlanToLocal);
+  pub_->publishTransformedPlan(transformed_plan);
+  //TODO: handle goal pose here
+  geometry_msgs::msg::PoseStamped goal_pose;
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));

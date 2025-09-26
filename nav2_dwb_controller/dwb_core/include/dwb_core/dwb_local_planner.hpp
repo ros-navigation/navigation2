@@ -105,13 +105,14 @@ public:
    * @param pose Current robot pose
    * @param velocity Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
+   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return The best command for the robot to drive
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
-    nav_msgs::msg::Path & transformed_global_plan) override;
+    nav_msgs::msg::Path & pruned_global_plan) override;
 
   /**
    * @brief Score a given command. Can be used for testing.
@@ -138,12 +139,14 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param results   Output param, if not NULL, will be filled in with full evaluation results
+   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return          Best command
    */
   virtual nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const nav_2d_msgs::msg::Twist2D & velocity,
-    std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
+    std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
+    nav_msgs::msg::Path & pruned_global_plan);
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -160,16 +163,6 @@ public:
   }
 
 protected:
-  /**
-   * @brief Helper method for two common operations for the operating on the global_plan
-   *
-   * Transforms the global plan (stored in global_plan_) relative to the pose and saves it in
-   * transformed_plan and possibly publishes it. Then it takes the last pose and transforms it
-   * to match the local costmap's frame
-   */
-  void prepareGlobalPlan(
-    const geometry_msgs::msg::PoseStamped & pose, nav_msgs::msg::Path & transformed_plan,
-    geometry_msgs::msg::PoseStamped & goal_pose, bool publish_plan = true);
 
   /**
    * @brief Iterate through all the twists and find the best one
@@ -179,13 +172,8 @@ protected:
     const nav_2d_msgs::msg::Twist2D velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
 
-  nav_msgs::msg::Path global_plan_;  ///< Saved Global Plan
-  bool prune_plan_;
-  double prune_distance_;
   bool debug_trajectory_details_;
   double transform_tolerance_{0};
-  bool shorten_transformed_plan_;
-  double forward_prune_distance_;
 
   /**
    * @brief try to resolve a possibly shortened critic name with the default namespaces and the suffix "Critic"
