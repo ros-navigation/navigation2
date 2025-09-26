@@ -14,6 +14,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
 
@@ -29,7 +30,19 @@ ClearEntireCostmapService::ClearEntireCostmapService(
 
 void ClearEntireCostmapService::on_tick()
 {
+  if (!getInput("plugins", request_->plugins)) {
+    request_->plugins.clear();
+  }
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearEntireCostmapService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearEntireCostmap::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
@@ -42,7 +55,20 @@ ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
 void ClearCostmapExceptRegionService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
+  if (!getInput("plugins", request_->plugins)) {
+    request_->plugins.clear();
+  }
+
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearCostmapExceptRegionService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapExceptRegion::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
@@ -55,7 +81,21 @@ ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
 void ClearCostmapAroundRobotService::on_tick()
 {
   getInput("reset_distance", request_->reset_distance);
+
+  if (!getInput("plugins", request_->plugins)) {
+    request_->plugins.clear();
+  }
+
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearCostmapAroundRobotService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundRobot::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundPoseService::ClearCostmapAroundPoseService(
@@ -69,7 +109,21 @@ void ClearCostmapAroundPoseService::on_tick()
 {
   getInput("pose", request_->pose);
   getInput("reset_distance", request_->reset_distance);
+
+  if (!getInput("plugins", request_->plugins)) {
+    request_->plugins.clear();
+  }
+
   increment_recovery_count();
+}
+
+BT::NodeStatus ClearCostmapAroundPoseService::on_completion(
+  std::shared_ptr<typename nav2_msgs::srv::ClearCostmapAroundPose::Response> response)
+{
+  if (response->success) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
