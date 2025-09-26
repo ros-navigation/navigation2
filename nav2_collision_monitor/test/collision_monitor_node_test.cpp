@@ -302,7 +302,7 @@ Tester::~Tester()
 
 void Tester::setCommonParameters()
 {
-  cm_->declare_parameter("enabled_at_start", rclcpp::ParameterValue(true));
+  cm_->declare_parameter("enabled", rclcpp::ParameterValue(true));
 
   cm_->declare_parameter(
     "cmd_vel_in_topic", rclcpp::ParameterValue(CMD_VEL_IN_TOPIC));
@@ -844,7 +844,7 @@ TEST_F(Tester, testToggleService)
   setVectors({"Stop"}, {SCAN_NAME});
 
   // Test the parameter in disabled state
-  cm_->set_parameter(rclcpp::Parameter("enabled_at_start", false));
+  cm_->set_parameter(rclcpp::Parameter("enabled", false));
 
   // Start collision monitor node
   cm_->start();
