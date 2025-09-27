@@ -37,7 +37,6 @@ public:
     const std::shared_ptr<nav2_msgs::srv::GetCosts::Request> request,
     const std::shared_ptr<nav2_msgs::srv::GetCosts::Response> response)
   {
-    std::cout << "receive request" << std::endl;
     (void)request_header;
     (void)request;
     response->costs = {254};
