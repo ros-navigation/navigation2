@@ -37,7 +37,9 @@ add_library(${monitor_library_name} SHARED
   src/polygon_source.cpp
   src/range.cpp
   src/kinematics.cpp
+  src/costmap.cpp
 )
+
 target_include_directories(${monitor_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
