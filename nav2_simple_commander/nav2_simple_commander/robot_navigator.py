@@ -257,7 +257,6 @@ class BasicNavigator(Node):
             Toggle, 'collision_monitor/toggle'
         )
 
-
     def destroyNode(self) -> None:
         self.destroy_node()
 
@@ -1145,7 +1144,7 @@ class BasicNavigator(Node):
             return None
 
         return result.map
-    
+
     def toggleCollisionMonitor(self, enable: bool) -> None:
         """Toggle the collision monitor."""
         while not self.toggle_collision_monitor_srv.wait_for_service(timeout_sec=1.0):
