@@ -31,7 +31,7 @@ from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
 from nav2_msgs.msg import Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
-                           ManageLifecycleNodes)
+                           ManageLifecycleNodes, Toggle)
 from nav_msgs.msg import Goals, OccupancyGrid, Path
 import rclpy
 from rclpy.action import ActionClient
@@ -251,6 +251,12 @@ class BasicNavigator(Node):
             self.create_client(
             GetCostmap, 'local_costmap/get_costmap'
         )
+        self.toggle_collision_monitor_srv: Client[
+            Toggle.Request, Toggle.Response] = \
+            self.create_client(
+            Toggle, 'collision_monitor/toggle'
+        )
+
 
     def destroyNode(self) -> None:
         self.destroy_node()
@@ -1139,6 +1145,16 @@ class BasicNavigator(Node):
             return None
 
         return result.map
+    
+    def toggleCollisionMonitor(self, enable: bool) -> None:
+        """Toggle the collision monitor."""
+        while not self.toggle_collision_monitor_srv.wait_for_service(timeout_sec=1.0):
+            self.info('Toggle collision monitor service not available, waiting...')
+        req = Toggle.Request()
+        req.enable = enable
+        future = self.toggle_collision_monitor_srv.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return
 
     def lifecycleStartup(self) -> None:
         """Startup nav2 lifecycle system."""
