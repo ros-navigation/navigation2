@@ -158,6 +158,11 @@ bool ClearCostmapService::clearAroundPose(
       }
     }
   }
+  
+  if (!all_plugins_cleared) {
+    RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearAroundPose");
+  }
+  
   return all_plugins_cleared;
 }
 
@@ -190,6 +195,11 @@ bool ClearCostmapService::clearRegion(
 
   // AlexeyMerzlyakov: No need to clear layer region for costmap filters
   // as they are always supposed to be not clearable.
+  
+  if (!all_plugins_cleared) {
+    RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearRegion");
+  }
+  
   return all_plugins_cleared;
 }
 
@@ -250,6 +260,8 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
       costmap_.getCostmap()->resetMap(0, 0,
         costmap_.getCostmap()->getSizeInCellsX(),
         costmap_.getCostmap()->getSizeInCellsY());
+    } else {
+      RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearEntirely");
     }
     return all_plugins_cleared;
   }
