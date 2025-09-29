@@ -26,7 +26,7 @@ class ToggleCollisionMonitorService : public TestService<nav2_msgs::srv::Toggle>
 {
 public:
   ToggleCollisionMonitorService()
-  : TestService("toggle_collision_monitor")
+  : TestService("/collision_monitor/toggle")
   {}
 };
 
@@ -105,7 +105,7 @@ TEST_P(ToggleParamTest, test_tick)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ToggleCollisionMonitor service_name="toggle_collision_monitor" enable=")")
+            <ToggleCollisionMonitor service_name="/collision_monitor/toggle" enable=")")
     +
     std::string(enable ? "true" : "false") +
     R"(" />
