@@ -214,7 +214,7 @@ bool ClearCostmapService::clearRegion(
   if (!any_plugin_cleared) {
     RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearRegion");
   }
-  
+
   // Return false if any clearable plugin failed to clear OR if no plugins were cleared at all
   return !any_clearable_plugin_failed && any_plugin_cleared;
 }
