@@ -1061,6 +1061,11 @@ class BasicNavigator(Node):
         req = ClearEntireCostmap.Request()
         future = self.clear_costmap_local_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear local costmap request failed!')
+
         return
 
     def clearGlobalCostmap(self) -> None:
@@ -1070,6 +1075,11 @@ class BasicNavigator(Node):
         req = ClearEntireCostmap.Request()
         future = self.clear_costmap_global_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear global costmap request failed!')
+
         return
 
     def clearCostmapExceptRegion(self, reset_distance: float) -> None:
@@ -1080,6 +1090,11 @@ class BasicNavigator(Node):
         req.reset_distance = reset_distance
         future = self.clear_costmap_except_region_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear costmap except region request failed!')
+
         return
 
     def clearCostmapAroundRobot(self, reset_distance: float) -> None:
@@ -1090,6 +1105,11 @@ class BasicNavigator(Node):
         req.reset_distance = reset_distance
         future = self.clear_costmap_around_robot_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear costmap around robot request failed!')
+
         return
 
     def clearLocalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
@@ -1101,6 +1121,11 @@ class BasicNavigator(Node):
         req.reset_distance = reset_distance
         future = self.clear_local_costmap_around_pose_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear local costmap around pose request failed!')
+
         return
 
     def clearGlobalCostmapAroundPose(self, pose: PoseStamped, reset_distance: float) -> None:
@@ -1112,6 +1137,11 @@ class BasicNavigator(Node):
         req.reset_distance = reset_distance
         future = self.clear_global_costmap_around_pose_srv.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+
+        result = future.result()
+        if result is None:
+            self.error('Clear global costmap around pose request failed!')
+
         return
 
     def getGlobalCostmap(self) -> OccupancyGrid:
