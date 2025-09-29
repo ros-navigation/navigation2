@@ -1152,7 +1152,12 @@ class BasicNavigator(Node):
         req = Toggle.Request()
         req.enable = enable
         future = self.toggle_collision_monitor_srv.call_async(req)
+
         rclpy.spin_until_future_complete(self, future)
+        result = future.result()
+        if result is None:
+            self.error('Toggle collision monitor request failed!')
+
         return
 
     def lifecycleStartup(self) -> None:
