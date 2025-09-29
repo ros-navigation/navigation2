@@ -49,8 +49,6 @@ Controller::Controller(
   nav2::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2::declare_parameter_if_not_declared(
-    node, "controller.deceleration_max", rclcpp::ParameterValue(3.0));
-  nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
   nav2::declare_parameter_if_not_declared(
       node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
@@ -79,10 +77,9 @@ Controller::Controller(
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
-  node->get_parameter("controller.deceleration_max", deceleration_max_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, deceleration_max_,
-    v_linear_min_, v_linear_max_, v_angular_max_);
+    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
+    v_angular_max_);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -184,9 +181,8 @@ bool Controller::isTrajectoryCollisionFree(
 
   do{
     // Apply velocities to calculate next pose
-    double target_distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
     next_pose.pose = control_law_->calculateNextPose(
-      simulation_time_step_, target_pose, next_pose.pose, target_distance, backward);
+      simulation_time_step_, target_pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
     trajectory.poses.push_back(next_pose);
@@ -201,7 +197,7 @@ bool Controller::isTrajectoryCollisionFree(
     // and the initial segment for undocking
     // This avoids false positives when the robot is at the dock
     double dock_collision_distance = is_docking ?
-      target_distance :
+      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
@@ -266,8 +262,6 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
         v_angular_max_ = parameter.as_double();
       } else if (param_name == "controller.slowdown_radius") {
         slowdown_radius_ = parameter.as_double();
-      } else if (param_name == "controller.deceleration_max") {
-        deceleration_max_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_angular_vel") {
         rotate_to_heading_angular_vel_ = parameter.as_double();
       } else if (param_name == "controller.rotate_to_heading_max_angular_accel") {
@@ -283,7 +277,6 @@ Controller::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
       // Update the smooth control law with the new params
       control_law_->setCurvatureConstants(k_phi_, k_delta_, beta_, lambda_);
       control_law_->setSlowdownRadius(slowdown_radius_);
-      control_law_->setMaxDeceleration(deceleration_max_);
       control_law_->setSpeedLimit(v_linear_min_, v_linear_max_, v_angular_max_);
     }
   }

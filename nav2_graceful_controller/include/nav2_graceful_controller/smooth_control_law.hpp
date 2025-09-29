@@ -49,6 +49,22 @@ public:
     double k_phi, double k_delta, double beta, double lambda,
     double slowdown_radius, double deceleration_max,
     double v_linear_min, double v_linear_max, double v_angular_max);
+  
+  /**
+   * @brief Constructor for nav2_graceful_controller::SmoothControlLaw
+   *
+   * @param k_phi Ratio of the rate of change in phi to the rate of change in r.
+   * @param k_delta Constant factor applied to the heading error feedback.
+   * @param beta Constant factor applied to the path curvature: dropping velocity.
+   * @param lambda Constant factor applied to the path curvature for sharpness.
+   * @param slowdown_radius Radial threshold applied to the slowdown rule.
+   * @param v_linear_min Minimum linear velocity.
+   * @param v_linear_max Maximum linear velocity.
+   * @param v_angular_max Maximum angular velocity.
+   */
+  SmoothControlLaw(
+    double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
+    double v_linear_min, double v_linear_max, double v_angular_max);
 
   /**
    * @brief Destructor for nav2_graceful_controller::SmoothControlLaw
@@ -109,6 +125,20 @@ public:
    * @brief Compute linear and angular velocities command using the curvature.
    *
    * @param target Pose of the target in the robot frame.
+   * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
+   * @return Velocity command.
+   */
+  geometry_msgs::msg::Twist calculateRegularVelocity(
+    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & current,
+    const bool & backward = false);
+
+  /**
+   * @brief Compute linear and angular velocities command using the curvature.
+   *
+   * @param target Pose of the target in the robot frame.
    * @param backward If true, the robot is moving backwards. Defaults to false.
    * @return Velocity command.
    */
@@ -131,6 +161,23 @@ public:
     const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current,
     const double & target_distance,
+    const bool & backward = false);
+
+  /**
+   * @brief Calculate the next pose of the robot by generating a velocity command using the
+   * curvature and the current pose.
+   *
+   * @param dt Time step.
+   * @param target Pose of the target in the robot frame.
+   * @param current Current pose of the robot in the robot frame.
+   * @param target_distance Path distance from current to target frame.
+   * @param backward If true, the robot is moving backwards. Defaults to false.
+   * @return geometry_msgs::msg::Pose
+   */
+  geometry_msgs::msg::Pose calculateNextPose(
+    const double dt,
+    const geometry_msgs::msg::Pose & target,
+    const geometry_msgs::msg::Pose & current,
     const bool & backward = false);
 
 protected:
