@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
 using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
 using rcl_interfaces::msg::ParameterType;
 
@@ -157,6 +158,7 @@ StaticLayer::getParameters()
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
+  node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
   node->get_parameter("transform_tolerance", temp_tf_tol);
@@ -267,6 +269,8 @@ StaticLayer::interpretValue(unsigned char value)
     return NO_INFORMATION;
   } else if (!track_unknown_space_ && value == unknown_cost_value_) {
     return FREE_SPACE;
+  } else if (value == inscribed_obstacle_cost_value_) {
+    return INSCRIBED_INFLATED_OBSTACLE;
   } else if (value >= lethal_threshold_) {
     return LETHAL_OBSTACLE;
   } else if (trinary_costmap_) {

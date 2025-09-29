@@ -201,6 +201,7 @@ protected:
   bool track_unknown_space_;
   bool use_maximum_;
   unsigned char lethal_threshold_;
+  unsigned char inscribed_obstacle_cost_value_;
   unsigned char unknown_cost_value_;
   bool trinary_costmap_;
   bool map_received_{false};
