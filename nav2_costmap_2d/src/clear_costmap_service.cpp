@@ -146,16 +146,19 @@ bool ClearCostmapService::clearAroundPose(
   y = global_pose.pose.position.y;
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
-  bool plugin_was_cleared = false;
+  bool all_plugins_cleared = true;
 
   for (auto & layer : *layers) {
-    if (shouldClearLayer(layer, plugins)) {
-      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clearLayerRegion(costmap_layer, x, y, reset_distance, false);
-      plugin_was_cleared = true;
+    if (layer->isClearable()) {
+      if (shouldClearLayer(layer, plugins)) {
+        auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+        clearLayerRegion(costmap_layer, x, y, reset_distance, false);
+      } else {
+        all_plugins_cleared = false;
+      }
     }
   }
-  return plugin_was_cleared;
+  return all_plugins_cleared;
 }
 
 bool ClearCostmapService::clearRegion(
@@ -172,19 +175,22 @@ bool ClearCostmapService::clearRegion(
   }
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
-  bool plugin_was_cleared = false;
+  bool all_plugins_cleared = true;
 
   for (auto & layer : *layers) {
-    if (shouldClearLayer(layer, plugins)) {
-      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
-      plugin_was_cleared = true;
+    if (layer->isClearable()) {
+      if (shouldClearLayer(layer, plugins)) {
+        auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+        clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
+      } else {
+        all_plugins_cleared = false;
+      }
     }
   }
 
   // AlexeyMerzlyakov: No need to clear layer region for costmap filters
   // as they are always supposed to be not clearable.
-  return plugin_was_cleared;
+  return all_plugins_cleared;
 }
 
 void ClearCostmapService::clearLayerRegion(
@@ -221,30 +227,31 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     // Clear only specified plugins
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
-    bool plugin_was_cleared = false;
+    bool all_plugins_cleared = true;
     for (auto & layer : *layers) {
-      if (shouldClearLayer(layer, plugins)) {
-        if (layer->isClearable()) {
+      if (layer->isClearable()) {
+        if (shouldClearLayer(layer, plugins)) {
           RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
           auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
           costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
             costmap_layer->getSizeInCellsY());
-          plugin_was_cleared = true;
         } else {
-          RCLCPP_WARN(
-            logger_,
-            "Layer '%s' is not clearable, skipping.",
-            layer->getName().c_str());
+          all_plugins_cleared = false;
         }
+      } else {
+        RCLCPP_WARN(
+          logger_,
+          "Layer '%s' is not clearable, skipping.",
+          layer->getName().c_str());
       }
     }
-    if (plugin_was_cleared) {
+    if (all_plugins_cleared) {
       RCLCPP_INFO(logger_, "Resetting master costmap after plugin clearing");
       costmap_.getCostmap()->resetMap(0, 0,
         costmap_.getCostmap()->getSizeInCellsX(),
         costmap_.getCostmap()->getSizeInCellsY());
     }
-    return plugin_was_cleared;
+    return all_plugins_cleared;
   }
 }
 
@@ -268,7 +275,7 @@ bool ClearCostmapService::shouldClearLayer(
     return false;
   }
 
-  return is_in_plugin_list && layer->isClearable();
+  return layer->isClearable();
 }
 
 bool ClearCostmapService::getPosition(double & x, double & y) const
