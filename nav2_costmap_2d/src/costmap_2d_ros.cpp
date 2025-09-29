@@ -131,6 +131,7 @@ void Costmap2DROS::init()
   declare_parameter("initial_transform_timeout", rclcpp::ParameterValue(60.0));
   declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   declare_parameter("subscribe_to_stamped_footprint", rclcpp::ParameterValue(false));
