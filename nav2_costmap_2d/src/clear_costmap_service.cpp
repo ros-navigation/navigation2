@@ -146,24 +146,21 @@ bool ClearCostmapService::clearAroundPose(
   y = global_pose.pose.position.y;
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
-  bool all_plugins_cleared = true;
+  bool any_plugin_cleared = false;
 
   for (auto & layer : *layers) {
-    if (layer->isClearable()) {
-      if (shouldClearLayer(layer, plugins)) {
-        auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-        clearLayerRegion(costmap_layer, x, y, reset_distance, false);
-      } else {
-        all_plugins_cleared = false;
-      }
+    if (shouldClearLayer(layer, plugins)) {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+      clearLayerRegion(costmap_layer, x, y, reset_distance, false);
+      any_plugin_cleared = true;
     }
   }
 
-  if (!all_plugins_cleared) {
-    RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearAroundPose");
+  if (!any_plugin_cleared) {
+    RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearAroundPose");
   }
 
-  return all_plugins_cleared;
+  return any_plugin_cleared;
 }
 
 bool ClearCostmapService::clearRegion(
@@ -180,27 +177,24 @@ bool ClearCostmapService::clearRegion(
   }
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
-  bool all_plugins_cleared = true;
+  bool any_plugin_cleared = false;
 
   for (auto & layer : *layers) {
-    if (layer->isClearable()) {
-      if (shouldClearLayer(layer, plugins)) {
-        auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-        clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
-      } else {
-        all_plugins_cleared = false;
-      }
+    if (shouldClearLayer(layer, plugins)) {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+      clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
+      any_plugin_cleared = true;
     }
   }
 
   // AlexeyMerzlyakov: No need to clear layer region for costmap filters
   // as they are always supposed to be not clearable.
 
-  if (!all_plugins_cleared) {
-    RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearRegion");
+  if (!any_plugin_cleared) {
+    RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearRegion");
   }
 
-  return all_plugins_cleared;
+  return any_plugin_cleared;
 }
 
 void ClearCostmapService::clearLayerRegion(
@@ -237,33 +231,25 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     // Clear only specified plugins
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
-    bool all_plugins_cleared = true;
+    bool any_plugin_cleared = false;
     for (auto & layer : *layers) {
-      if (layer->isClearable()) {
-        if (shouldClearLayer(layer, plugins)) {
-          RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
-          auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-          costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
-            costmap_layer->getSizeInCellsY());
-        } else {
-          all_plugins_cleared = false;
-        }
-      } else {
-        RCLCPP_WARN(
-          logger_,
-          "Layer '%s' is not clearable, skipping.",
-          layer->getName().c_str());
+      if (shouldClearLayer(layer, plugins)) {
+        RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
+        auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+        costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
+          costmap_layer->getSizeInCellsY());
+        any_plugin_cleared = true;
       }
     }
-    if (all_plugins_cleared) {
+    if (any_plugin_cleared) {
       RCLCPP_INFO(logger_, "Resetting master costmap after plugin clearing");
       costmap_.getCostmap()->resetMap(0, 0,
         costmap_.getCostmap()->getSizeInCellsX(),
         costmap_.getCostmap()->getSizeInCellsY());
     } else {
-      RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearEntirely");
+      RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearEntirely");
     }
-    return all_plugins_cleared;
+    return any_plugin_cleared;
   }
 }
 
@@ -287,7 +273,7 @@ bool ClearCostmapService::shouldClearLayer(
     return false;
   }
 
-  return layer->isClearable();
+  return is_in_plugin_list && layer->isClearable();
 }
 
 bool ClearCostmapService::getPosition(double & x, double & y) const

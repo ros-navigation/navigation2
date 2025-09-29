@@ -41,8 +41,10 @@ BT::NodeStatus ClearEntireCostmapService::on_completion(
 {
   if (response->success) {
     return BT::NodeStatus::SUCCESS;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "ClearEntireCostmap: Failed to clear costmap layers");
+    return BT::NodeStatus::FAILURE;
   }
-  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapExceptRegionService::ClearCostmapExceptRegionService(
