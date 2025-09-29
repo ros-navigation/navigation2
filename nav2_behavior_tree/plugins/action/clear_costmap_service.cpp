@@ -69,8 +69,10 @@ BT::NodeStatus ClearCostmapExceptRegionService::on_completion(
 {
   if (response->success) {
     return BT::NodeStatus::SUCCESS;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapExceptRegion: Failed to clear costmap layers");
+    return BT::NodeStatus::FAILURE;
   }
-  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundRobotService::ClearCostmapAroundRobotService(
@@ -96,8 +98,10 @@ BT::NodeStatus ClearCostmapAroundRobotService::on_completion(
 {
   if (response->success) {
     return BT::NodeStatus::SUCCESS;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapAroundRobot: Failed to clear costmap layers");
+    return BT::NodeStatus::FAILURE;
   }
-  return BT::NodeStatus::FAILURE;
 }
 
 ClearCostmapAroundPoseService::ClearCostmapAroundPoseService(
@@ -124,8 +128,10 @@ BT::NodeStatus ClearCostmapAroundPoseService::on_completion(
 {
   if (response->success) {
     return BT::NodeStatus::SUCCESS;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "ClearCostmapAroundPose: Failed to clear costmap layers");
+    return BT::NodeStatus::FAILURE;
   }
-  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree
