@@ -394,6 +394,15 @@
       <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
     </Condition>
 
+    <Condition ID="IsPoseOccupied">
+      <input_port name="pose">Pose to check whether it is occupied</input_port>
+      <input_port name="service_name">Service name to call GetCosts</input_port>
+      <input_port name="cost_threshold">The cost threshold above which a pose is considered occupied</input_port>
+      <input_port name="use_footprint">Whether to use the footprint cost or the point cost</input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+      <input_port name="server_timeout"> Server timeout </input_port>
+    </Condition>
+
     <Condition ID="WouldAControllerRecoveryHelp">
       <input_port name="error_code">Error code</input_port>
     </Condition>
