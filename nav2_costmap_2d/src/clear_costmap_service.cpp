@@ -158,11 +158,11 @@ bool ClearCostmapService::clearAroundPose(
       }
     }
   }
-  
+
   if (!all_plugins_cleared) {
     RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearAroundPose");
   }
-  
+
   return all_plugins_cleared;
 }
 
@@ -195,11 +195,11 @@ bool ClearCostmapService::clearRegion(
 
   // AlexeyMerzlyakov: No need to clear layer region for costmap filters
   // as they are always supposed to be not clearable.
-  
+
   if (!all_plugins_cleared) {
     RCLCPP_ERROR(logger_, "Not all requested plugins were cleared in clearRegion");
   }
-  
+
   return all_plugins_cleared;
 }
 
