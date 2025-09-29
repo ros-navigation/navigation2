@@ -147,12 +147,22 @@ bool ClearCostmapService::clearAroundPose(
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
   bool any_plugin_cleared = false;
+  bool any_clearable_plugin_failed = false;
 
   for (auto & layer : *layers) {
     if (shouldClearLayer(layer, plugins)) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clearLayerRegion(costmap_layer, x, y, reset_distance, false);
       any_plugin_cleared = true;
+    } else {
+      // Check if this was a clearable plugin that failed to clear
+      bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(),
+        layer->getName()) != plugins.end();
+      if (is_in_plugin_list && layer->isClearable()) {
+        RCLCPP_ERROR(logger_, "Clearable plugin '%s' failed to clear in clearAroundPose",
+          layer->getName().c_str());
+        any_clearable_plugin_failed = true;
+      }
     }
   }
 
@@ -160,7 +170,8 @@ bool ClearCostmapService::clearAroundPose(
     RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearAroundPose");
   }
 
-  return any_plugin_cleared;
+  // Return false if any clearable plugin failed to clear OR if no plugins were cleared at all
+  return !any_clearable_plugin_failed && any_plugin_cleared;
 }
 
 bool ClearCostmapService::clearRegion(
@@ -178,12 +189,22 @@ bool ClearCostmapService::clearRegion(
 
   auto layers = costmap_.getLayeredCostmap()->getPlugins();
   bool any_plugin_cleared = false;
+  bool any_clearable_plugin_failed = false;
 
   for (auto & layer : *layers) {
     if (shouldClearLayer(layer, plugins)) {
       auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
       clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
       any_plugin_cleared = true;
+    } else {
+      // Check if this was a clearable plugin that failed to clear
+      bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(),
+        layer->getName()) != plugins.end();
+      if (is_in_plugin_list && layer->isClearable()) {
+        RCLCPP_ERROR(logger_, "Clearable plugin '%s' failed to clear in clearRegion",
+          layer->getName().c_str());
+        any_clearable_plugin_failed = true;
+      }
     }
   }
 
@@ -193,8 +214,9 @@ bool ClearCostmapService::clearRegion(
   if (!any_plugin_cleared) {
     RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearRegion");
   }
-
-  return any_plugin_cleared;
+  
+  // Return false if any clearable plugin failed to clear OR if no plugins were cleared at all
+  return !any_clearable_plugin_failed && any_plugin_cleared;
 }
 
 void ClearCostmapService::clearLayerRegion(
@@ -232,6 +254,7 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getCostmap()->getMutex()));
     auto layers = costmap_.getLayeredCostmap()->getPlugins();
     bool any_plugin_cleared = false;
+    bool any_clearable_plugin_failed = false;
     for (auto & layer : *layers) {
       if (shouldClearLayer(layer, plugins)) {
         RCLCPP_INFO(logger_, "Clearing entire layer: %s", layer->getName().c_str());
@@ -239,6 +262,15 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
         costmap_layer->resetMap(0, 0, costmap_layer->getSizeInCellsX(),
           costmap_layer->getSizeInCellsY());
         any_plugin_cleared = true;
+      } else {
+        // Check if this was a clearable plugin that failed to clear
+        bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(),
+          layer->getName()) != plugins.end();
+        if (is_in_plugin_list && layer->isClearable()) {
+          RCLCPP_ERROR(logger_, "Clearable plugin '%s' failed to clear",
+            layer->getName().c_str());
+          any_clearable_plugin_failed = true;
+        }
       }
     }
     if (any_plugin_cleared) {
@@ -249,7 +281,8 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
     } else {
       RCLCPP_ERROR(logger_, "No requested plugins were cleared in clearEntirely");
     }
-    return any_plugin_cleared;
+    // Return false if any clearable plugin failed to clear OR if no plugins were cleared at all
+    return !any_clearable_plugin_failed && any_plugin_cleared;
   }
 }
 
