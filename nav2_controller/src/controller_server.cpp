@@ -44,9 +44,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   lp_loader_("nav2_core", "nav2_core::Controller"),
   default_ids_{"FollowPath"},
   default_types_{"dwb_core::DWBLocalPlanner"},
-  search_window_(2.0),
   start_index_(0),
-  current_distance_to_goal_(0.0),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -140,6 +138,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("failure_tolerance", failure_tolerance_);
   get_parameter("use_realtime_priority", use_realtime_priority_);
   get_parameter("publish_zero_velocity", publish_zero_velocity_);
+  get_parameter("search_window", search_window_);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -235,7 +234,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error",
-    10);
+  );
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method
@@ -258,7 +257,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     speed_limit_topic,
     std::bind(&ControllerServer::speedLimitCallback, this, std::placeholders::_1));
 
-  get_parameter("search_window", search_window_);
   return nav2::CallbackReturn::SUCCESS;
 }
 
@@ -267,6 +265,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
+    tracking_error_pub_->on_activate();
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return nav2::CallbackReturn::FAILURE;
@@ -281,7 +280,6 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&ControllerServer::dynamicParametersCallback, this, _1));
-  tracking_error_pub_->on_activate();
 
   // create bond connection
   createBond();
@@ -689,7 +687,7 @@ void ControllerServer::computeAndPublishVelocity()
             end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
             pose.header.frame_id, costmap_ros_->getTransformTolerance()))
       {
-        current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
+        double current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
           pose, transformed_end_pose);
       }
 
@@ -710,14 +708,9 @@ void ControllerServer::computeAndPublishVelocity()
         start_index_ = path_search_result.closest_segment_index;
 
         // Update current tracking error and publish
-        current_tracking_error_ = *tracking_error_msg;
+        nav2_msgs::msg::TrackingErrorFeedback current_tracking_error_ = *tracking_error_msg;
 
-        if (tracking_error_pub_->is_activated()) {
-          tracking_error_pub_->publish(std::move(tracking_error_msg));
-        }
-      } catch (const std::exception & e) {
-        RCLCPP_WARN(get_logger(), "Exception during tracking error computation: %s", e.what());
-      }
+        tracking_error_pub_->publish(std::move(tracking_error_msg));
     }
   }
 

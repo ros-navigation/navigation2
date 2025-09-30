@@ -248,12 +248,15 @@ inline double distanceToPoint(
 
 /**
  * @brief Find the shortest distance to a vector
+ * 
+ * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+ * 
  * @param global_pose Robot's current or planned position
- * @param start Starting point of target vector
- * @param finish End point of target vector
+ * @param start Starting segment of the path
+ * @param finish End segment of the path
  * @return int
  */
-inline double distance_to_segment(
+inline double distance_to_path_segment(
   const geometry_msgs::msg::Point & point,
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & end)
