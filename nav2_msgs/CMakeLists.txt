@@ -39,7 +39,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RouteNode.msg"
   "msg/RouteEdge.msg"
   "msg/EdgeCost.msg"
-  "msg/TrackingErrorFeedback.msg"
+  "msg/TrackingFeedback.msg"
   "msg/Trajectory.msg"
   "msg/TrajectoryPoint.msg"
   "srv/GetCosts.srv"

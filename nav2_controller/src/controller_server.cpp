@@ -233,7 +233,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
-  tracking_error_pub_ = create_publisher<nav2_msgs::msg::TrackingErrorFeedback>("tracking_error",
+  tracking_feedback_pub_ = create_publisher<nav2_msgs::msg::TrackingFeedback>("tracking_feedback"
   );
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
@@ -265,7 +265,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-    tracking_error_pub_->on_activate();
+    tracking_feedback_pub_->on_activate();
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return nav2::CallbackReturn::FAILURE;
@@ -673,6 +673,8 @@ void ControllerServer::computeAndPublishVelocity()
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
 
+  double current_distance_to_goal_ = 0.0;
+  nav2_msgs::msg::TrackingFeedback current_tracking_feedback_;
   // Compute and publish tracking error
   if (!current_path_.poses.empty() && current_path_.poses.size() >= 2) {
     // Transform robot pose to path frame
@@ -687,36 +689,35 @@ void ControllerServer::computeAndPublishVelocity()
             end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
             pose.header.frame_id, costmap_ros_->getTransformTolerance()))
       {
-        double current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
+        current_distance_to_goal_ = nav2_util::geometry_utils::euclidean_distance(
           pose, transformed_end_pose);
       }
 
-      try {
-        const auto path_search_result = nav2_util::distance_from_path(
-          current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+      const auto path_search_result = nav2_util::distance_from_path(
+        current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
-        // Create tracking error message
-        auto tracking_error_msg = std::make_unique<nav2_msgs::msg::TrackingErrorFeedback>();
-        tracking_error_msg->header = pose.header;
-        tracking_error_msg->tracking_error = path_search_result.distance;
-        tracking_error_msg->current_path_index = path_search_result.closest_segment_index;
-        tracking_error_msg->robot_pose = pose;
-        tracking_error_msg->distance_to_goal = current_distance_to_goal_;
-        tracking_error_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
-        tracking_error_msg->remaining_path_length =
-          nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
-        start_index_ = path_search_result.closest_segment_index;
+      // Create tracking error message
+      auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
+      tracking_feedback_msg->header = pose.header;
+      tracking_feedback_msg->tracking_error = path_search_result.distance;
+      tracking_feedback_msg->current_path_index = path_search_result.closest_segment_index;
+      tracking_feedback_msg->robot_pose = pose;
+      tracking_feedback_msg->distance_to_goal = current_distance_to_goal_;
+      tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
+      tracking_feedback_msg->remaining_path_length =
+        nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
+      start_index_ = path_search_result.closest_segment_index;
 
-        // Update current tracking error and publish
-        nav2_msgs::msg::TrackingErrorFeedback current_tracking_error_ = *tracking_error_msg;
+      // Update current tracking error and publish
+      current_tracking_feedback_ = *tracking_feedback_msg;
 
-        tracking_error_pub_->publish(std::move(tracking_error_msg));
+      tracking_feedback_pub_->publish(std::move(tracking_feedback_msg));
     }
   }
 
   // Publish action feedback
   std::shared_ptr<Action::Feedback> feedback = std::make_shared<Action::Feedback>();
-  feedback->tracking_error = current_tracking_error_;
+  feedback->tracking_feedback = current_tracking_feedback_;
   action_server_->publish_feedback(feedback);
 }
 
