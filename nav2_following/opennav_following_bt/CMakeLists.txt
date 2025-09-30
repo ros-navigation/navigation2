@@ -9,7 +9,6 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(opennav_following_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 
@@ -27,7 +26,7 @@ target_link_libraries(opennav_follow_action_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
-  ${opennav_following_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
 )
 
 add_library(opennav_follow_cancel_bt_node SHARED src/follow_object_cancel_node.cpp)
@@ -42,7 +41,7 @@ target_link_libraries(opennav_follow_cancel_bt_node PUBLIC
   behaviortree_cpp::behaviortree_cpp
   ${geometry_msgs_TARGETS}
   nav2_behavior_tree::nav2_behavior_tree
-  ${opennav_following_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
 )
 
 install(TARGETS opennav_follow_action_bt_node opennav_follow_cancel_bt_node
@@ -70,7 +69,7 @@ ament_export_dependencies(
   geometry_msgs
   nav2_behavior_tree
   nav2_ros_common
-  opennav_following_msgs
+  nav2_msgs
 )
 ament_export_targets(${PROJECT_NAME})
 ament_package()

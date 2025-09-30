@@ -22,19 +22,19 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
-#include "opennav_following_msgs/action/follow_object.hpp"
+#include "nav2_msgs/action/follow_object.hpp"
 
 
 namespace opennav_following_bt
 {
 
 /**
- * @brief nav2_behavior_tree::BtActionNode class that wraps opennav_following_msgs/FollowObject
+ * @brief nav2_behavior_tree::BtActionNode class that wraps nav2_msgs/FollowObject
  */
 class FollowObjectAction
-  : public nav2_behavior_tree::BtActionNode<opennav_following_msgs::action::FollowObject>
+  : public nav2_behavior_tree::BtActionNode<nav2_msgs::action::FollowObject>
 {
-  using Action = opennav_following_msgs::action::FollowObject;
+  using Action = nav2_msgs::action::FollowObject;
   using ActionResult = Action::Result;
 
 public:

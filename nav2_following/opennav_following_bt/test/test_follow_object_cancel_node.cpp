@@ -25,7 +25,7 @@
 #include "lifecycle_msgs/srv/change_state.hpp"
 
 class CancelFollowObjectServer
-  : public TestActionServer<opennav_following_msgs::action::FollowObject>
+  : public TestActionServer<nav2_msgs::action::FollowObject>
 {
 public:
   CancelFollowObjectServer()
@@ -35,7 +35,7 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<opennav_following_msgs::action::FollowObject>>
+      rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowObject>>
     goal_handle)
   {
     while (!goal_handle->is_canceling()) {
@@ -65,7 +65,7 @@ public:
       "bt_loop_duration", std::chrono::milliseconds(10));
     config_->blackboard->set<std::chrono::milliseconds>(
       "wait_for_service_timeout", std::chrono::milliseconds(1000));
-    client_ = rclcpp_action::create_client<opennav_following_msgs::action::FollowObject>(
+    client_ = rclcpp_action::create_client<nav2_msgs::action::FollowObject>(
       node_, "follow_object");
 
     BT::NodeBuilder builder =
@@ -95,7 +95,7 @@ public:
   }
 
   static std::shared_ptr<CancelFollowObjectServer> action_server_;
-  static std::shared_ptr<nav2::ActionClient<opennav_following_msgs::action::FollowObject>> client_;
+  static std::shared_ptr<nav2::ActionClient<nav2_msgs::action::FollowObject>> client_;
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
@@ -107,7 +107,7 @@ protected:
 nav2::LifecycleNode::SharedPtr CancelFollowObjectActionTestFixture::node_ = nullptr;
 std::shared_ptr<CancelFollowObjectServer>
 CancelFollowObjectActionTestFixture::action_server_ = nullptr;
-std::shared_ptr<nav2::ActionClient<opennav_following_msgs::action::FollowObject>>
+std::shared_ptr<nav2::ActionClient<nav2_msgs::action::FollowObject>>
 CancelFollowObjectActionTestFixture::client_ = nullptr;
 
 BT::NodeConfiguration * CancelFollowObjectActionTestFixture::config_ = nullptr;
@@ -127,10 +127,10 @@ TEST_F(CancelFollowObjectActionTestFixture, test_ports)
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
   auto send_goal_options = nav2::ActionClient<
-    opennav_following_msgs::action::FollowObject>::SendGoalOptions();
+    nav2_msgs::action::FollowObject>::SendGoalOptions();
 
   // Creating a dummy goal_msg
-  auto goal_msg = opennav_following_msgs::action::FollowObject::Goal();
+  auto goal_msg = nav2_msgs::action::FollowObject::Goal();
 
   // BackUping for server and sending a goal
   client_->wait_for_action_server();

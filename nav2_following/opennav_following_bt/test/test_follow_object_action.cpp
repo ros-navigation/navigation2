@@ -26,7 +26,7 @@
 #include "opennav_following_bt/follow_object_action.hpp"
 
 class FollowObjectActionServer
-  : public TestActionServer<opennav_following_msgs::action::FollowObject>
+  : public TestActionServer<nav2_msgs::action::FollowObject>
 {
 public:
   FollowObjectActionServer()
@@ -36,11 +36,11 @@ public:
 protected:
   void execute(
     const typename std::shared_ptr<
-      rclcpp_action::ServerGoalHandle<opennav_following_msgs::action::FollowObject>> goal_handle)
+      rclcpp_action::ServerGoalHandle<nav2_msgs::action::FollowObject>> goal_handle)
   override
   {
     const auto goal = goal_handle->get_goal();
-    auto result = std::make_shared<opennav_following_msgs::action::FollowObject::Result>();
+    auto result = std::make_shared<nav2_msgs::action::FollowObject::Result>();
     goal_handle->succeed(result);
   }
 };
