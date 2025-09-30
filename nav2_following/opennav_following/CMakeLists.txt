@@ -5,11 +5,11 @@ find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(opennav_docking REQUIRED)
 find_package(opennav_docking_core REQUIRED)
-find_package(opennav_following_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -34,9 +34,9 @@ target_include_directories(${library_name}
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_util::nav2_util_core
+  ${nav2_msgs_TARGETS}
   opennav_docking::controller
   opennav_docking::pose_filter
-  ${opennav_following_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros
@@ -91,11 +91,11 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
   geometry_msgs
+  nav2_msgs
   nav2_ros_common
   nav2_util
   opennav_docking
   opennav_docking_core
-  opennav_following_msgs
   rclcpp
   rclcpp_lifecycle
   tf2_ros

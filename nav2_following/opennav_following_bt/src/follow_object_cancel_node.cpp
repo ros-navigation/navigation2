@@ -25,7 +25,7 @@ FollowObjectCancel::FollowObjectCancel(
   const std::string & xml_tag_name,
   const std::string & action_name,
   const BT::NodeConfiguration & conf)
-: nav2_behavior_tree::BtCancelActionNode<opennav_following_msgs::action::FollowObject>(
+: nav2_behavior_tree::BtCancelActionNode<nav2_msgs::action::FollowObject>(
     xml_tag_name, action_name, conf)
 {
 }

@@ -21,16 +21,16 @@
 
 #include "nav2_behavior_tree/bt_cancel_action_node.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "opennav_following_msgs/action/follow_object.hpp"
+#include "nav2_msgs/action/follow_object.hpp"
 
 namespace opennav_following_bt
 {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps opennav_following_msgs::action::FollowObject
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowObject
  */
 class FollowObjectCancel
-  : public nav2_behavior_tree::BtCancelActionNode<opennav_following_msgs::action::FollowObject>
+  : public nav2_behavior_tree::BtCancelActionNode<nav2_msgs::action::FollowObject>
 {
 public:
   /**

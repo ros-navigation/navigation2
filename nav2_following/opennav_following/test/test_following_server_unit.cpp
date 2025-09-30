@@ -39,7 +39,7 @@ RosLockGuard g_rclcpp;
 namespace opennav_following
 {
 
-using FollowObject = opennav_following_msgs::action::FollowObject;
+using FollowObject = nav2_msgs::action::FollowObject;
 
 class FollowingServerShim : public FollowingServer
 {

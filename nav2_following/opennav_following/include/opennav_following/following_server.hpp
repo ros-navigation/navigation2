@@ -25,6 +25,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
+#include "nav2_msgs/action/follow_object.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
@@ -32,7 +33,6 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "opennav_docking/controller.hpp"
 #include "opennav_docking/pose_filter.hpp"
-#include "opennav_following_msgs/action/follow_object.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
@@ -45,7 +45,7 @@ namespace opennav_following
 class FollowingServer : public nav2::LifecycleNode
 {
 public:
-  using FollowObject = opennav_following_msgs::action::FollowObject;
+  using FollowObject = nav2_msgs::action::FollowObject;
   using FollowingActionServer = nav2::SimpleActionServer<FollowObject>;
 
   /**

@@ -16,7 +16,6 @@
   <depend>nav2_msgs</depend>
   <depend>nav2_ros_common</depend>
   <depend>nav_msgs</depend>
-  <depend>opennav_following_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
 
