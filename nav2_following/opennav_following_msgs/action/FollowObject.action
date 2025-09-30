@@ -1,0 +1,33 @@
+#goal definition
+
+string pose_topic  # Topic to publish the pose of the object to follow
+string tracked_frame  # Target frame to follow (Optional, used if pose_topic is not set)
+builtin_interfaces/Duration max_duration
+
+---
+#result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 TF_ERROR=901
+uint16 FAILED_TO_DETECT_OBJECT=902
+uint16 FAILED_TO_CONTROL=903
+uint16 UNKNOWN=999
+
+builtin_interfaces/Duration total_elapsed_time
+uint16 error_code 0  # Contextual error code, if any
+uint16 num_retries 0  # Number of retries attempted
+string error_msg  # Error message, if any
+---
+#feedback definition
+
+uint16 NONE=0
+uint16 INITIAL_PERCEPTION=1
+uint16 CONTROLLING=2
+uint16 STOPPING=3
+uint16 RETRY=4
+
+uint16 state  # Current following state
+builtin_interfaces/Duration following_time
+uint16 num_retries 0  # Number of retries attempted
