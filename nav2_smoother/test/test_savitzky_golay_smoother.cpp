@@ -100,7 +100,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   straight_regular_path_baseline = straight_regular_path;
 
   EXPECT_TRUE(smoother->smooth(straight_regular_path, max_time));
-  for (uint i = 0; i != straight_regular_path.poses.size() - 1; i++) {
+  for (unsigned int i = 0; i != straight_regular_path.poses.size() - 1; i++) {
     // Check distances are still the same
     EXPECT_NEAR(
       fabs(

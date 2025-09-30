@@ -92,6 +92,14 @@ rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix)
 
 void setSoftRealTimePriority()
 {
+  #if defined(__APPLE__) || defined(_WIN32)
+  std::string errmsg(
+    "Setting priority as real-time thread is currently only supported on Linux."
+    "Contributions welcome.");
+  throw std::runtime_error(errmsg + std::strerror(errno));
+
+  #else
+
   sched_param sch;
   sch.sched_priority = 49;
   if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
@@ -101,6 +109,7 @@ void setSoftRealTimePriority()
       "realtime prioritization! Error: ");
     throw std::runtime_error(errmsg + std::strerror(errno));
   }
+  #endif
 }
 
 }  // namespace nav2_util
