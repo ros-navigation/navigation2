@@ -61,20 +61,6 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  // Declare this node's parameters
-  if (!node->has_parameter("bt_loop_duration")) {
-    node->declare_parameter("bt_loop_duration", 10);
-  }
-  if (!node->has_parameter("default_server_timeout")) {
-    node->declare_parameter("default_server_timeout", 20);
-  }
-  if (!node->has_parameter("always_reload_bt_xml")) {
-    node->declare_parameter("always_reload_bt_xml", false);
-  }
-  if (!node->has_parameter("wait_for_service_timeout")) {
-    node->declare_parameter("wait_for_service_timeout", 1000);
-  }
-
   std::vector<std::string> error_code_name_prefixes = {
     "assisted_teleop",
     "backup",
@@ -170,16 +156,17 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
     nullptr, std::chrono::milliseconds(500), false);
 
   // Get parameters for BT timeouts
-  int bt_loop_duration;
-  node->get_parameter("bt_loop_duration", bt_loop_duration);
-  bt_loop_duration_ = std::chrono::milliseconds(bt_loop_duration);
-  int default_server_timeout;
-  node->get_parameter("default_server_timeout", default_server_timeout);
-  default_server_timeout_ = std::chrono::milliseconds(default_server_timeout);
-  int wait_for_service_timeout;
-  node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
-  wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
-  node->get_parameter("always_reload_bt_xml", always_reload_bt_);
+  bt_loop_duration_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("bt_loop_duration", 10));
+
+  default_server_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_server_timeout", 20));
+
+  wait_for_service_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("wait_for_service_timeout", 1000));
+
+  always_reload_bt_ = node->declare_or_get_parameter(
+    "always_reload_bt_xml", false);
 
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
