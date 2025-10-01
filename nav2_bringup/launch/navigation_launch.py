@@ -52,6 +52,7 @@ def generate_launch_description() -> LaunchDescription:
         'bt_navigator',
         'waypoint_follower',
         'docking_server',
+        'following_server',
     ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -262,6 +263,17 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
+                package='opennav_following',
+                executable='opennav_following',
+                name='following_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
@@ -347,6 +359,13 @@ def generate_launch_description() -> LaunchDescription:
                         package='opennav_docking',
                         plugin='opennav_docking::DockingServer',
                         name='docking_server',
+                        parameters=[configured_params],
+                        remappings=remappings,
+                    ),
+                    ComposableNode(
+                        package='opennav_following',
+                        plugin='opennav_following::FollowingServer',
+                        name='following_server',
                         parameters=[configured_params],
                         remappings=remappings,
                     ),
