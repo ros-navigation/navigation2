@@ -20,9 +20,9 @@
 
 #include "behaviortree_cpp/bt_factory.h"
 
-#include "nav2_behavior_tree/utils/test_action_server.hpp"
-#include "opennav_following_bt/follow_object_cancel_node.hpp"
 #include "lifecycle_msgs/srv/change_state.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
+#include "nav2_behavior_tree/plugins/action/follow_object_cancel_node.hpp"
 
 class CancelFollowObjectServer
   : public TestActionServer<nav2_msgs::action::FollowObject>
@@ -71,11 +71,11 @@ public:
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
       {
-        return std::make_unique<opennav_following_bt::FollowObjectCancel>(
+        return std::make_unique<nav2_behavior_tree::FollowObjectCancel>(
           name, "follow_object", config);
       };
 
-    factory_->registerBuilder<opennav_following_bt::FollowObjectCancel>(
+    factory_->registerBuilder<nav2_behavior_tree::FollowObjectCancel>(
       "CancelFollowObject", builder);
   }
 

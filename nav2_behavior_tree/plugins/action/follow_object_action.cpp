@@ -16,9 +16,9 @@
 #include <memory>
 #include <string>
 
-#include "opennav_following_bt/follow_object_action.hpp"
+#include "nav2_behavior_tree/plugins/action/follow_object_action.hpp"
 
-namespace opennav_following_bt
+namespace nav2_behavior_tree
 {
 
 FollowObjectAction::FollowObjectAction(
@@ -65,7 +65,7 @@ BT::NodeStatus FollowObjectAction::on_cancelled()
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace opennav_following_bt
+}  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
@@ -73,10 +73,10 @@ BT_REGISTER_NODES(factory)
   BT::NodeBuilder builder =
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<opennav_following_bt::FollowObjectAction>(
+      return std::make_unique<nav2_behavior_tree::FollowObjectAction>(
         name, "follow_object", config);
     };
 
-  factory.registerBuilder<opennav_following_bt::FollowObjectAction>(
+  factory.registerBuilder<nav2_behavior_tree::FollowObjectAction>(
     "FollowObject", builder);
 }

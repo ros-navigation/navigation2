@@ -13,19 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_FOLLOWING_BT__FOLLOW_OBJECT_ACTION_HPP_
-#define OPENNAV_FOLLOWING_BT__FOLLOW_OBJECT_ACTION_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_OBJECT_ACTION_HPP_
+#define NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_OBJECT_ACTION_HPP_
 
 #include <string>
 #include <memory>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/follow_object.hpp"
 
 
-namespace opennav_following_bt
+namespace nav2_behavior_tree
 {
 
 /**
@@ -39,7 +38,7 @@ class FollowObjectAction
 
 public:
   /**
-   * @brief A constructor for opennav_following_bt::FollowObjectAction
+   * @brief A constructor for nav2_behavior_tree::FollowObjectAction
    * @param xml_tag_name Name for the XML tag for this node
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
@@ -94,6 +93,6 @@ public:
   }
 };
 
-}  // namespace opennav_following_bt
+}  // namespace nav2_behavior_tree
 
-#endif  // OPENNAV_FOLLOWING_BT__FOLLOW_OBJECT_ACTION_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_OBJECT_ACTION_HPP_
