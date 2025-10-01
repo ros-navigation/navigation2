@@ -116,11 +116,15 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   if (publish_optimal_trajectory_ && opt_traj_pub_->get_subscription_count() > 0) {
+    std_msgs::msg::Header trajectory_header;
+    trajectory_header.stamp = cmd.header.stamp;
+    trajectory_header.frame_id = costmap_ros_->getGlobalFrameID();
+
     auto trajectory_msg = utils::toTrajectoryMsg(
       optimal_trajectory,
       optimizer_.getOptimalControlSequence(),
       optimizer_.getSettings().model_dt,
-      cmd.header);
+      trajectory_header);
     opt_traj_pub_->publish(std::move(trajectory_msg));
   }
 
