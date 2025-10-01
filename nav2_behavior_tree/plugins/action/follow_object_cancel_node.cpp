@@ -16,9 +16,9 @@
 #include <string>
 #include <memory>
 
-#include "opennav_following_bt/follow_object_cancel_node.hpp"
+#include "nav2_behavior_tree/plugins/action/follow_object_cancel_node.hpp"
 
-namespace opennav_following_bt
+namespace nav2_behavior_tree
 {
 
 FollowObjectCancel::FollowObjectCancel(
@@ -30,7 +30,7 @@ FollowObjectCancel::FollowObjectCancel(
 {
 }
 
-}  // namespace opennav_following_bt
+}  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
@@ -38,10 +38,10 @@ BT_REGISTER_NODES(factory)
   BT::NodeBuilder builder =
     [](const std::string & name, const BT::NodeConfiguration & config)
     {
-      return std::make_unique<opennav_following_bt::FollowObjectCancel>(
+      return std::make_unique<nav2_behavior_tree::FollowObjectCancel>(
         name, "follow_object", config);
     };
 
-  factory.registerBuilder<opennav_following_bt::FollowObjectCancel>(
+  factory.registerBuilder<nav2_behavior_tree::FollowObjectCancel>(
     "CancelFollowObject", builder);
 }
