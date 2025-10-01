@@ -24,10 +24,25 @@ from builtin_interfaces.msg import Duration
 from geographic_msgs.msg import GeoPose
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
-                              ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
-                              DriveOnHeading, FollowGPSWaypoints, FollowPath, FollowWaypoints,
-                              NavigateThroughPoses, NavigateToPose, SmoothPath, Spin, UndockRobot)
+from nav2_msgs.action import (
+    AssistedTeleop,
+    BackUp,
+    ComputeAndTrackRoute,
+    ComputePathThroughPoses,
+    ComputePathToPose,
+    ComputeRoute,
+    DockRobot,
+    DriveOnHeading,
+    FollowGPSWaypoints,
+    FollowObject,
+    FollowPath,
+    FollowWaypoints,
+    NavigateThroughPoses,
+    NavigateToPose,
+    SmoothPath,
+    Spin,
+    UndockRobot
+)
 from nav2_msgs.msg import Costmap, Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
@@ -69,6 +84,7 @@ class RunningTask(Enum):
     DOCK_ROBOT = 10
     UNDOCK_ROBOT = 11
     COMPUTE_AND_TRACK_ROUTE = 12
+    FOLLOW_OBJECT = 13
 
 
 class BasicNavigator(Node):
@@ -199,6 +215,11 @@ class BasicNavigator(Node):
             UndockRobot.Result,
             UndockRobot.Feedback
         ] = ActionClient(self, UndockRobot, 'undock_robot')
+        self.following_client: ActionClient[
+            FollowObject.Goal,
+            FollowObject.Result,
+            FollowObject.Feedback
+        ] = ActionClient(self, FollowObject, 'follow_object')
 
         self.localization_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -561,8 +582,8 @@ class BasicNavigator(Node):
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
         self.info('Docking at pose: ' + str(dock_pose) + '...')
-        send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                               self._feedbackCallback)
+        send_goal_future = self.docking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -588,8 +609,8 @@ class BasicNavigator(Node):
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
         self.info('Docking at dock ID: ' + str(dock_id) + '...')
-        send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                               self._feedbackCallback)
+        send_goal_future = self.docking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -613,8 +634,8 @@ class BasicNavigator(Node):
         goal_msg.dock_type = dock_type
 
         self.info('Undocking from dock of type: ' + str(dock_type) + '...')
-        send_goal_future = self.undocking_client.send_goal_async(goal_msg,
-                                                                 self._feedbackCallback)
+        send_goal_future = self.undocking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
@@ -626,6 +647,58 @@ class BasicNavigator(Node):
 
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.UNDOCK_ROBOT
+
+    def followObjectByTopic(self, topic: str, max_duration: int = 0) -> Optional[RunningTask]:
+        """Send a `FollowObject` action request."""
+        self.clearTaskError()
+        self.info("Waiting for 'FollowObject' action server")
+        while not self.following_client.wait_for_server(timeout_sec=1.0):
+            self.info('"FollowObject" action server not available, waiting...')
+
+        goal_msg = FollowObject.Goal()
+        goal_msg.pose_topic = topic
+        goal_msg.max_duration = Duration(sec=max_duration)
+
+        self.info('Following object on topic: ' + str(topic) + '...')
+        send_goal_future = self.following_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle or not self.goal_handle.accepted:
+            msg = 'FollowObject request was rejected!'
+            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.error(msg)
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        return RunningTask.FOLLOW_OBJECT
+
+    def followObjectByFrame(self, frame: str, max_duration: int = 0) -> Optional[RunningTask]:
+        """Send a `FollowObject` action request."""
+        self.clearTaskError()
+        self.info("Waiting for 'FollowObject' action server")
+        while not self.following_client.wait_for_server(timeout_sec=1.0):
+            self.info('"FollowObject" action server not available, waiting...')
+
+        goal_msg = FollowObject.Goal()
+        goal_msg.tracked_frame = frame
+        goal_msg.max_duration = Duration(sec=max_duration)
+
+        self.info('Following object in frame: ' + str(frame) + '...')
+        send_goal_future = self.following_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle or not self.goal_handle.accepted:
+            msg = 'FollowObject request was rejected!'
+            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.error(msg)
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        return RunningTask.FOLLOW_OBJECT
 
     def cancelTask(self) -> None:
         """Cancel pending task request of any type."""
