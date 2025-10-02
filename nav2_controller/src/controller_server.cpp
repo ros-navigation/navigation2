@@ -710,7 +710,6 @@ void ControllerServer::computeAndPublishVelocity()
 
       // Update current tracking error and publish
       current_tracking_feedback_ = *tracking_feedback_msg;
-
       tracking_feedback_pub_->publish(std::move(tracking_feedback_msg));
     }
   }
