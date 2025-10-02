@@ -92,7 +92,7 @@ void prepareAndRunBenchmark(
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
   for (auto _ : state) {
-    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path,
+    auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, path.poses.back().pose,
       dummy_goal_checker);
   }
 }

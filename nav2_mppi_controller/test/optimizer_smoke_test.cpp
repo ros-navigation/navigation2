@@ -77,9 +77,10 @@ TEST_P(OptimizerSuite, OptimizerTest) {
   auto pose = getDummyPointStamped(node, start_pose);
   auto velocity = getDummyTwist();
   auto path = getIncrementalDummyPath(node, path_settings);
+  auto goal = path.poses.back().pose;
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
 
-  auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path,
+  auto [cmd, trajectory] = optimizer->evalControl(pose, velocity, path, goal,
     dummy_goal_checker);
   EXPECT_GT(trajectory.rows(), 0);
   EXPECT_GT(trajectory.cols(), 0);

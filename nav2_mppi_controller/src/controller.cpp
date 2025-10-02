@@ -132,11 +132,14 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
     transformed_plan.poses.push_back(costmap_plan_pose);
   }
 
+  //TODO: add goal here
+  geometry_msgs::msg::Pose goal;
+
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();

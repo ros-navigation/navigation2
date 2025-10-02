@@ -176,12 +176,13 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(100, 2);
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   path.reset(10);
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   // Attempt to set furthest point if notionally set, should not change
@@ -191,7 +192,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
 
   // Attempt to set if not set already with no other information, should fail
   CriticData data2 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
   setPathFurthestPointIfNotSet(data2);
   EXPECT_EQ(data2.furthest_reached_path_point, 0);
@@ -210,7 +211,7 @@ TEST(UtilsTests, FurthestAndClosestReachedPoint)
   path = toTensor(plan);
 
   CriticData data3 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
   EXPECT_EQ(findPathFurthestReachedPoint(data3), 5);
 }
@@ -220,12 +221,13 @@ TEST(UtilsTests, findPathCosts)
   models::State state;
   models::Trajectories generated_trajectories;
   models::Path path;
+  geometry_msgs::msg::Pose goal;
   path.reset(50);
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
 
   CriticData data =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   // Test not set if already set, should not change
@@ -238,7 +240,7 @@ TEST(UtilsTests, findPathCosts)
   EXPECT_EQ(data.path_pts_valid->size(), 10u);
 
   CriticData data3 =
-  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(

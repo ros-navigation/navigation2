@@ -91,13 +91,14 @@ public:
    * @param robot_pose Pose of the robot at given time
    * @param robot_speed Speed of the robot at given time
    * @param plan Path plan to track
+   * @param goal Given Goal pose to reach.
    * @param goal_checker Object to check if goal is completed
    * @return Tuple of [TwistStamped command, optimal trajectory]
    */
   std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> evalControl(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed, const nav_msgs::msg::Path & plan,
-    nav2_core::GoalChecker * goal_checker);
+    const geometry_msgs::msg::Pose & goal, nav2_core::GoalChecker * goal_checker);
 
   /**
    * @brief Get the trajectories generated in a cycle for visualization
@@ -156,7 +157,7 @@ protected:
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     const nav_msgs::msg::Path & plan,
-    nav2_core::GoalChecker * goal_checker);
+    const geometry_msgs::msg::Pose & goal, nav2_core::GoalChecker * goal_checker);
 
   /**
    * @brief Obtain the main controller's parameters
@@ -278,10 +279,11 @@ protected:
   std::array<mppi::models::Control, 4> control_history_;
   models::Trajectories generated_trajectories_;
   models::Path path_;
+  geometry_msgs::msg::Pose goal_;
   Eigen::ArrayXf costs_;
 
   CriticData critics_data_ = {
-    state_, generated_trajectories_, path_,
+    state_, generated_trajectories_, path_, goal_,
     costs_, settings_.model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
