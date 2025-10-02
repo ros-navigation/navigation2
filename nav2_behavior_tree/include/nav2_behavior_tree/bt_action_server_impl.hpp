@@ -61,7 +61,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  std::vector<std::string> error_code_name_prefixes = {
+  std::vector<std::string> default_error_code_name_prefixes = {
     "assisted_teleop",
     "backup",
     "compute_path",
@@ -81,32 +81,26 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
       " Please review migration guide and update your configuration.");
   }
 
-  if (!node->has_parameter("error_code_name_prefixes")) {
-    const rclcpp::ParameterValue value = node->declare_parameter(
-      "error_code_name_prefixes",
-      rclcpp::PARAMETER_STRING_ARRAY);
-    if (value.get_type() == rclcpp::PARAMETER_NOT_SET) {
-      std::string error_code_name_prefixes_str;
-      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
-        error_code_name_prefixes_str += " " + error_code_name_prefix;
-      }
-      RCLCPP_WARN_STREAM(
-        logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
-          << error_code_name_prefixes_str + "\n"
-          << "Make sure these match your BT and there are not other sources of error codes you"
-          "reported to your application");
-      rclcpp::Parameter error_code_name_prefixes_param("error_code_name_prefixes",
-        error_code_name_prefixes);
-      node->set_parameter(error_code_name_prefixes_param);
-    } else {
-      error_code_name_prefixes = value.get<std::vector<std::string>>();
-      std::string error_code_name_prefixes_str;
-      for (const auto & error_code_name_prefix : error_code_name_prefixes) {
-        error_code_name_prefixes_str += " " + error_code_name_prefix;
-      }
-      RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
-        << error_code_name_prefixes_str);
-    }
+  // Declare and get error code name prefixes parameter
+  error_code_name_prefixes_ = node->declare_or_get_parameter(
+    "error_code_name_prefixes",
+    default_error_code_name_prefixes);
+
+  // Provide informative logging about error code prefixes
+  std::string error_code_name_prefixes_str;
+  for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
+    error_code_name_prefixes_str += " " + error_code_name_prefix;
+  }
+
+  if (error_code_name_prefixes_ == default_error_code_name_prefixes) {
+    RCLCPP_WARN_STREAM(
+      logger_, "error_code_name_prefixes parameters were not set. Using default values of:"
+        << error_code_name_prefixes_str + "\n"
+        << "Make sure these match your BT and there are not other sources of error codes you"
+        << "reported to your application");
+  } else {
+    RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
+      << error_code_name_prefixes_str);
   }
 }
 
