@@ -28,7 +28,6 @@ import launch_testing
 import launch_testing.actions
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import FollowObject
-from nav2_msgs.action._follow_object import FollowObject_Feedback
 import pytest
 import rclpy
 from rclpy.action import ActionClient
@@ -193,7 +192,7 @@ class TestFollowingServer(unittest.TestCase):
         self.at_distance: bool = False
         self.retry_state: bool = False
         # Latest command velocity
-        self.command = Twist()
+        self.command: Twist = Twist()
         self.node = rclpy.create_node('test_following_server')
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
@@ -280,12 +279,15 @@ class TestFollowingServer(unittest.TestCase):
         m.transform.rotation.w = 1.0
         self.tf_broadcaster.sendTransform(m)
 
-    def action_feedback_callback(self, msg: FollowObject_Feedback) -> None:
+    def action_feedback_callback(
+        self,
+        msg: FollowObject.Feedback  # type: ignore[name-defined]
+    ) -> None:
         # Force the following action to run a full recovery loop when
         # the robot is at distance
-        if msg.state == FollowObject_Feedback.STOPPING:
+        if msg.feedback.state == msg.feedback.STOPPING:
             self.at_distance = True
-        elif msg.state == FollowObject_Feedback.RETRY:
+        elif msg.feedback.state == msg.feedback.RETRY:
             self.at_distance = False
             self.retry_state = True
 
