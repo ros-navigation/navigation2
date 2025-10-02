@@ -28,7 +28,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "nav2_regulated_pure_pursuit_controller/path_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
@@ -90,20 +89,22 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
+   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * /*goal_checker*/) override;
+    nav2_core::GoalChecker * /*goal_checker*/,
+    nav_msgs::msg::Path & pruned_global_plan) override;
 
   bool cancel() override;
 
   /**
-   * @brief nav2_core setPlan - Sets the global plan
-   * @param path The global plan
+   * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server
+   * @param raw_global_path The global plan from the Planner Server
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -174,13 +175,6 @@ protected:
     const double & pose_cost, const nav_msgs::msg::Path & path,
     double & linear_vel, double & sign);
 
-  /**
-   * @brief checks for the cusp position
-   * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
-   */
-  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
-
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
@@ -196,12 +190,11 @@ protected:
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
 
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
   nav2::Publisher<std_msgs::msg::Bool>::SharedPtr is_rotating_to_heading_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
-  std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;
 };

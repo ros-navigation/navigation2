@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
-#define NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
+#ifndef NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
+#define NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -27,60 +27,53 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_regulated_pure_pursuit_controller
+namespace nav2_controller
 {
 
 struct Parameters
 {
-  double desired_linear_vel, base_desired_linear_vel;
-  double lookahead_dist;
-  double rotate_to_heading_angular_vel;
-  double max_lookahead_dist;
-  double min_lookahead_dist;
-  double lookahead_time;
-  bool use_velocity_scaled_lookahead_dist;
-  double min_approach_linear_velocity;
-  double approach_velocity_scaling_dist;
-  double max_allowed_time_to_collision_up_to_carrot;
-  double min_distance_to_obstacle;
-  bool use_regulated_linear_velocity_scaling;
-  bool use_cost_regulated_linear_velocity_scaling;
-  double cost_scaling_dist;
-  double cost_scaling_gain;
-  double inflation_cost_scaling_factor;
-  double regulated_linear_scaling_min_radius;
-  double regulated_linear_scaling_min_speed;
-  bool use_fixed_curvature_lookahead;
-  double curvature_lookahead_dist;
-  bool use_rotate_to_heading;
-  double max_angular_accel;
-  bool use_cancel_deceleration;
-  double cancel_deceleration;
-  double rotate_to_heading_min_angle;
-  bool allow_reversing;
-  bool interpolate_curvature_after_goal;
-  bool use_collision_detection;
+  double controller_frequency;
   double transform_tolerance;
-  bool stateful;
+  double min_x_velocity_threshold;
+  double min_y_velocity_threshold;
+  double min_theta_velocity_threshold;
+  std::string speed_limit_topic;
+  double failure_tolerance;
+  bool use_realtime_priority;
+  bool publish_zero_velocity;
+  double costmap_update_timeout;
+  std::string odom_topic;
+  double odom_duration;
+  bool interpolate_curvature_after_goal;
+  double max_robot_pose_search_dist;
+  double prune_distance;
+  bool enforce_path_inversion;
+  float inversion_xy_tolerance;
+  float inversion_yaw_tolerance;
+  std::vector<std::string> progress_checker_ids;
+  std::vector<std::string> progress_checker_types;
+  std::vector<std::string> goal_checker_ids;
+  std::vector<std::string> goal_checker_types;
+  std::vector<std::string> controller_ids;
+  std::vector<std::string> controller_types;
 };
 
 /**
- * @class nav2_regulated_pure_pursuit_controller::ParameterHandler
+ * @class nav2_controller::ParameterHandler
  * @brief Handles parameters and dynamic parameters for RPP
  */
 class ParameterHandler
 {
 public:
   /**
-   * @brief Constructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
+   * @brief Constructor for nav2_controller::ParameterHandler
    */
   ParameterHandler(
     nav2::LifecycleNode::SharedPtr node,
-    std::string & plugin_name,
-    rclcpp::Logger & logger, const double costmap_size_x);
+    const rclcpp::Logger & logger, const double costmap_size_x);
 
   /**
-   * @brief Destrructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
+   * @brief Destrructor for nav2_controller::ParameterHandler
    */
   ~ParameterHandler();
 
@@ -104,9 +97,17 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
+
+  const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
+  const std::vector<std::string> default_progress_checker_types_{
+    "nav2_controller::SimpleProgressChecker"};
+  const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
+  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
+  const std::vector<std::string> default_controller_ids_{"FollowPath"};
+  const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
 };
 
-}  // namespace nav2_regulated_pure_pursuit_controller
+}  // namespace nav2_controller
 
-#endif  // NAV2_REGULATED_PURE_PURSUIT_CONTROLLER__PARAMETER_HANDLER_HPP_
+#endif  // NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_

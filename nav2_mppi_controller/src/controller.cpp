@@ -34,6 +34,8 @@ void MPPIController::configure(
   parameters_handler_ = std::make_unique<ParametersHandler>(parent, name_);
 
   auto node = parent_.lock();
+  auto getParentParam = parameters_handler_->getParamGetter("");
+  getParentParam(transform_tolerance_, "transform_tolerance", 0.1, ParameterType::Static);
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
@@ -42,7 +44,6 @@ void MPPIController::configure(
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
-  path_handler_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
   trajectory_visualizer_.on_configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
@@ -92,22 +93,50 @@ void MPPIController::reset()
 geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  nav_msgs::msg::Path & pruned_global_plan)
 {
 #ifdef BENCHMARK_TESTING
   auto start = std::chrono::system_clock::now();
 #endif
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-  geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal(robot_pose.header.stamp).pose;
 
-  nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
+  nav_msgs::msg::Path transformed_plan;
+  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
+  transformed_plan.header.stamp = robot_pose.header.stamp;
+
+  unsigned int mx, my;
+  // Find the furthest relevant pose on the path to consider within costmap
+  // bounds
+  // Transforming it to the costmap frame in the same loop
+  for (auto global_plan_pose = pruned_global_plan.poses.begin();
+    global_plan_pose != pruned_global_plan.poses.end();
+    ++global_plan_pose)
+  {
+    // Transform from global plan frame to costmap frame
+    geometry_msgs::msg::PoseStamped costmap_plan_pose;
+    global_plan_pose->header.stamp = robot_pose.header.stamp;
+    global_plan_pose->header.frame_id = pruned_global_plan.header.frame_id;
+    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_buffer_,
+        costmap_ros_->getGlobalFrameID(), transform_tolerance_);
+
+    // Check if pose is inside the costmap
+    if (!costmap_ros_->getCostmap()->worldToMap(
+        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
+    {
+      break;
+    }
+
+    // Filling the transformed plan to return with the transformed pose
+    transformed_plan.poses.push_back(costmap_plan_pose);
+  }
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();
@@ -145,9 +174,8 @@ void MPPIController::visualize(
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
 
-void MPPIController::setPlan(const nav_msgs::msg::Path & path)
+void MPPIController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
-  path_handler_.setPath(path);
 }
 
 void MPPIController::setSpeedLimit(const double & speed_limit, const bool & percentage)

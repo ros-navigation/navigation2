@@ -27,9 +27,9 @@ namespace nav2_controller
 {
 
 /**
-     * @class PositionGoalChecker
-     * @brief Goal Checker plugin that only checks XY position, ignoring orientation
-     */
+ * @class PositionGoalChecker
+ * @brief Goal Checker plugin that only checks XY position, ignoring orientation
+ */
 class PositionGoalChecker : public nav2_core::GoalChecker
 {
 public:
@@ -45,16 +45,16 @@ public:
 
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-    const geometry_msgs::msg::Twist & velocity) override;
+    const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path) override;
 
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
   /**
-       * @brief Set the XY goal tolerance
-       * @param tolerance New tolerance value
-       */
+   * @brief Set the XY goal tolerance
+   * @param tolerance New tolerance value
+   */
   void setXYGoalTolerance(double tolerance);
 
 protected:
@@ -66,9 +66,9 @@ protected:
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   /**
-       * @brief Callback executed when a parameter change is detected
-       * @param parameters list of changed parameters
-       */
+   * @brief Callback executed when a parameter change is detected
+   * @param parameters list of changed parameters
+   */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 };
