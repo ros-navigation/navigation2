@@ -39,7 +39,7 @@ struct PathSearchResult
 /**
  * @brief Finds the minimum distance from a robot pose to a path segment.
  *Especially considering we need to explain to users that if start index
- * window length are not speficied, it finds the global nearest path point.
+ * window length are not specified, it finds the global nearest path point.
  * Else, specify the index to start from during an existing path tracking task and max
  * window length to search for (which can be computed based on
  * robot's max velocity and the frequency of the server calling this function).
