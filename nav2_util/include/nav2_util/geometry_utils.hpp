@@ -248,9 +248,9 @@ inline double distanceToPoint(
 
 /**
  * @brief Find the shortest distance to a vector
- * 
+ *
  * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
- * 
+ *
  * @param global_pose Robot's current or planned position
  * @param start Starting segment of the path
  * @param finish End segment of the path

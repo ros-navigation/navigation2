@@ -265,7 +265,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
 
-    tracking_feedback_pub_->on_activate();
+  tracking_feedback_pub_->on_activate();
   const auto costmap_ros_state = costmap_ros_->activate();
   if (costmap_ros_state.id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return nav2::CallbackReturn::FAILURE;
@@ -649,6 +649,8 @@ void ControllerServer::computeAndPublishVelocity()
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
     cmd_vel_2d.header.stamp = last_valid_cmd_time_;
+    // Only no valid control exception types are valid to attempt to have control patience, as
+    // other types will not be resolved with more attempts
   } catch (nav2_core::NoValidControl & e) {
     if (failure_tolerance_ > 0 || failure_tolerance_ == -1.0) {
       RCLCPP_WARN(this->get_logger(), "%s", e.what());
