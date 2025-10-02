@@ -676,7 +676,7 @@ void ControllerServer::computeAndPublishVelocity()
   double current_distance_to_goal_ = 0.0;
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback_;
   // Compute and publish tracking error
-  if (!current_path_.poses.empty() && current_path_.poses.size() >= 2) {
+  if (current_path_.poses.size() >= 2) {
     // Transform robot pose to path frame
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (nav2_util::transformPoseInTargetFrame(
