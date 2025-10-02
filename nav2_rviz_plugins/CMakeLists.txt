@@ -12,18 +12,6 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_route REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
-if(${QT_VERSION} VERSION_LESS 5.15.0)
-  function(qt_wrap_cpp out)
-    qt5_wrap_cpp(_sources ${ARGN})
-    set("${out}" ${_sources} PARENT_SCOPE)
-  endfunction()
-  function(qt_wrap_ui out)
-      qt5_wrap_ui(_uis_hdrs ${ARGN})
-      set("${out}" ${_uis_hdrs} PARENT_SCOPE)
-  endfunction()
-endif()
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rviz_common REQUIRED)
@@ -36,6 +24,37 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+
+# In Kilted and older distros, rviz with Qt6 is not supported
+if(TARGET Qt5::Core)
+  set(QT_VERSION_MAJOR 5)
+  set(QT_VERSION ${Qt5Core_VERSION})
+  # In Qt5, state machine is part of core
+  find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+elseif(TARGET Qt6::Core)
+  set(QT_VERSION_MAJOR 6)
+  set(QT_VERSION ${Qt6Core_VERSION})
+  find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
+endif()
+if(${QT_VERSION} VERSION_LESS 5.15.0)
+  function(qt_wrap_cpp out)
+    qt5_wrap_cpp(_sources ${ARGN})
+    set("${out}" ${_sources} PARENT_SCOPE)
+  endfunction()
+  function(qt_wrap_ui out)
+      qt5_wrap_ui(_uis_hdrs ${ARGN})
+      set("${out}" ${_uis_hdrs} PARENT_SCOPE)
+  endfunction()
+endif()
+
+set(QT_LIBRARIES
+  Qt${QT_VERSION_MAJOR}::Core
+  Qt${QT_VERSION_MAJOR}::Gui
+  Qt${QT_VERSION_MAJOR}::Widgets
+)
+if(QT_VERSION_MAJOR EQUAL 6)
+  list(APPEND QT_LIBRARIES Qt6::StateMachine)
+endif()
 
 nav2_package()
 
@@ -100,10 +119,7 @@ target_link_libraries(${library_name} PUBLIC
   ${std_msgs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
-  Qt${QT_VERSION_MAJOR}::Widgets
-  Qt${QT_VERSION_MAJOR}::Gui
-  Qt${QT_VERSION_MAJOR}::Core
-  Qt${QT_VERSION_MAJOR}::StateMachine
+  ${QT_LIBRARIES}
 )
 target_link_libraries(${library_name} PRIVATE
   ament_index_cpp::ament_index_cpp
