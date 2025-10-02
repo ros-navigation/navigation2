@@ -58,18 +58,23 @@ public:
 
   /**
    * @brief Clears the region outside of a user-specified area reverting to the static map
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearRegion(double reset_distance, bool invert);
+  bool clearRegion(double reset_distance, bool invert, const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears the region around a specific pose
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearAroundPose(const geometry_msgs::msg::PoseStamped & pose, double reset_distance);
+  bool clearAroundPose(
+    const geometry_msgs::msg::PoseStamped & pose, double reset_distance,
+    const std::vector<std::string> & plugins);
 
   /**
    * @brief Clears all layers
+   * @return true if at least one layer was successfully cleared, false otherwise
    */
-  void clearEntirely();
+  bool clearEntirely(const std::vector<std::string> & plugins);
 
 private:
   // The Logger object for logging
@@ -126,13 +131,20 @@ private:
    * @brief  Function used to clear a given costmap layer
    */
   void clearLayerRegion(
-    std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,
-    bool invert);
+    std::shared_ptr<CostmapLayer> & costmap,
+    double pose_x, double pose_y, double reset_distance, bool invert);
 
   /**
    * @brief Get the robot's position in the costmap using the master costmap
    */
   bool getPosition(double & x, double & y) const;
+
+  /**
+   * @brief Determines whether a specific layer should be cleared based on plugin list and clearable status
+   */
+  bool shouldClearLayer(
+    const std::shared_ptr<Layer> & layer,
+    const std::vector<std::string> & plugins) const;
 };
 
 }  // namespace nav2_costmap_2d
