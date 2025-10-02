@@ -20,7 +20,7 @@
 #include <QBasicTimer>
 #include <QStateMachine>
 #include <QState>
-#include <QSignalTransition> 
+#include <QSignalTransition>
 
 #include <memory>
 #include <string>
