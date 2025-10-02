@@ -721,7 +721,6 @@ void ControllerServer::computeAndPublishVelocity()
   action_server_->publish_feedback(feedback);
 }
 
-
 void ControllerServer::updateGlobalPath()
 {
   if (action_server_->is_preempt_requested()) {
