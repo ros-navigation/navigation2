@@ -26,8 +26,8 @@ Basic navigation demo to using the route server.
 
 def toPoseStamped(pt: Pose, header: Header) -> PoseStamped:
     pose = PoseStamped()
-    pose.pose.position.x = pt.x
-    pose.pose.position.y = pt.y
+    pose.pose.position.x = pt.position.x
+    pose.pose.position.y = pt.position.y
     pose.header = header
     return pose
 
