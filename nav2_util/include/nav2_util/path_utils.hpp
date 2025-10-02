@@ -37,23 +37,17 @@ struct PathSearchResult
   size_t closest_segment_index;
 };
 /**
- * @brief Finds the minimum distance from a robot pose to a path segment.
- *Especially considering we need to explain to users that if start index
- * window length are not specified, it finds the global nearest path point.
- * Else, specify the index to start from during an existing path tracking task and max
- * window length to search for (which can be computed based on
- * robot's max velocity and the frequency of the server calling this function).
- * If calling the function without a fixed iteration rate,
- * consider using the global search as long as you don't expect loops in
- * the path generated from things like navigate through poses.
- * This function searches for the closest segment on the given path to the robot's pose,
- * starting from a specified index and optionally limiting the search to a window length.
- * It returns the minimum distance found and the index of the closest segment.
+ * @brief Finds the minimum distance from the robot's pose to the closest segment of a path.
+ *
+ * This function searches for the closest segment on the given path to the robot's pose.
+ * By default, it finds the globally nearest path point. Optionally, you can specify
+ * the index to start searching from (useful for path tracking tasks) and a maximum
+ * search window length (in meters) to limit the search range.
  *
  * @param path The path to search (sequence of poses).
- * @param robot_pose The robot's current pose in pose form.
- * @param start_index The index in the path to start searching from.
- * @param search_window_length The maximum length (in meters) to search along the path.
+ * @param robot_pose The robot's current pose.
+ * @param start_index The index in the path to start searching from (default: 0).
+ * @param search_window_length The maximum length (in meters) to search along the path (default: unlimited).
  * @return PathSearchResult Struct containing the minimum distance and the index of the closest segment.
  */
 PathSearchResult distance_from_path(
