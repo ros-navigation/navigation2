@@ -526,6 +526,8 @@ TEST(AStarTest, test_goal_heading_mode)
     a_star.setGoal(
       80u, 80u, 10u,
       nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
+  delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_constants)
