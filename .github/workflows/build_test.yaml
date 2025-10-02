@@ -1,0 +1,30 @@
+name: Call
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.docker/**'
+      - '.github/workflows/build_prod_images.yaml'
+      - '.github/workflows/build_test_colcon.yaml'
+      - '.github/workflows/build_test_integration.yaml'
+      - '.github/workflows/build_test.yaml'
+      - 'docker-bake.hcl'
+      - 'nav*/**'
+  pull_request:
+    paths:
+      - '.docker/**'
+      - '.github/workflows/build_prod_images.yaml'
+      - '.github/workflows/build_test_colcon.yaml'
+      - '.github/workflows/build_test_integration.yaml'
+      - '.github/workflows/build_test.yaml'
+      - 'docker-bake.hcl'
+      - 'nav*/**'
+  workflow_dispatch:
+
+jobs:
+  integration:
+    name: Integration
+    uses: ros-navigation/navigation2/.github/workflows/build_test_integration.yaml@buildkit
+    secrets: inherit
