@@ -67,6 +67,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
     "compute_path",
     "dock_robot",
     "drive_on_heading",
+    "follow_object",
     "follow_path",
     "nav_thru_poses",
     "nav_to_pose",
