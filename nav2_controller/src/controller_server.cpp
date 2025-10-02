@@ -67,7 +67,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 
   declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
   declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
-
   declare_parameter("search_window", rclcpp::ParameterValue(2.0));
 
   // The costmap node is used in the implementation of the controller
