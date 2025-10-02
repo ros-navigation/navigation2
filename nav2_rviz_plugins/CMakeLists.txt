@@ -12,7 +12,18 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_route REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
+if(${QT_VERSION} VERSION_LESS 5.15.0)
+  function(qt_wrap_cpp out)
+    qt5_wrap_cpp(_sources ${ARGN})
+    set("${out}" ${_sources} PARENT_SCOPE)
+  endfunction()
+  function(qt_wrap_ui out)
+      qt5_wrap_ui(_uis_hdrs ${ARGN})
+      set("${out}" ${_uis_hdrs} PARENT_SCOPE)
+  endfunction()
+endif()
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rviz_common REQUIRED)
@@ -43,10 +54,10 @@ set(nav2_rviz_plugins_headers_to_moc
 )
 
 foreach(header "${nav2_rviz_plugins_headers_to_moc}")
-  qt5_wrap_cpp(nav2_rviz_plugins_moc_files "${header}")
+  qt_wrap_cpp(nav2_rviz_plugins_moc_files "${header}")
 endforeach()
 
-qt5_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
+qt_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
 
 # Qt5 boilerplate options from http://doc.qt.io/qt-5/cmake-manual.html
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -70,7 +81,6 @@ add_library(${library_name} SHARED
   ${route_tool_UIS_H}
 )
 target_include_directories(${library_name} PUBLIC
-  ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
@@ -90,6 +100,10 @@ target_link_libraries(${library_name} PUBLIC
   ${std_msgs_TARGETS}
   tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
+  Qt${QT_VERSION_MAJOR}::Widgets
+  Qt${QT_VERSION_MAJOR}::Gui
+  Qt${QT_VERSION_MAJOR}::Core
+  Qt${QT_VERSION_MAJOR}::StateMachine
 )
 target_link_libraries(${library_name} PRIVATE
   ament_index_cpp::ament_index_cpp
@@ -132,7 +146,7 @@ ament_export_dependencies(
   nav2_msgs
   nav2_route
   nav2_util
-  Qt5
+  Qt${QT_VERSION_MAJOR}
   rclcpp
   rclcpp_action
   rviz_common
