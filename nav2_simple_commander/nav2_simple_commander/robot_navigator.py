@@ -26,13 +26,14 @@ from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
 from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
                               ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
-                              DriveOnHeading, FollowGPSWaypoints, FollowPath, FollowWaypoints,
-                              NavigateThroughPoses, NavigateToPose, SmoothPath, Spin, UndockRobot)
-from nav2_msgs.msg import Route
+                              DriveOnHeading, FollowGPSWaypoints, FollowObject, FollowPath,
+                              FollowWaypoints, NavigateThroughPoses, NavigateToPose, SmoothPath,
+                              Spin, UndockRobot)
+from nav2_msgs.msg import Costmap, Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
                            ManageLifecycleNodes, Toggle)
-from nav_msgs.msg import Goals, OccupancyGrid, Path
+from nav_msgs.msg import Goals, Path
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
@@ -69,6 +70,7 @@ class RunningTask(Enum):
     DOCK_ROBOT = 10
     UNDOCK_ROBOT = 11
     COMPUTE_AND_TRACK_ROUTE = 12
+    FOLLOW_OBJECT = 13
 
 
 class BasicNavigator(Node):
@@ -105,100 +107,100 @@ class BasicNavigator(Node):
         )
 
         self.initial_pose_received = False
-        self.nav_through_poses_client: ActionClient[
+        self.nav_through_poses_client: ActionClient[  # type: ignore[name-defined]
             NavigateThroughPoses.Goal,
             NavigateThroughPoses.Result,
             NavigateThroughPoses.Feedback
         ] = ActionClient(
-            self, NavigateThroughPoses, 'navigate_through_poses')
-        self.nav_to_pose_client: ActionClient[
+            self, NavigateThroughPoses, 'navigate_through_poses')  # type: ignore[arg-type]
+        self.nav_to_pose_client: ActionClient[  # type: ignore[name-defined]
             NavigateToPose.Goal,
             NavigateToPose.Result,
             NavigateToPose.Feedback
-        ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-        self.follow_waypoints_client: ActionClient[
+        ] = ActionClient(self, NavigateToPose, 'navigate_to_pose')  # type: ignore[arg-type]
+        self.follow_waypoints_client: ActionClient[  # type: ignore[name-defined]
             FollowWaypoints.Goal,
             FollowWaypoints.Result,
             FollowWaypoints.Feedback
         ] = ActionClient(
-            self, FollowWaypoints, 'follow_waypoints'
-        )
-        self.follow_gps_waypoints_client: ActionClient[
+            self, FollowWaypoints, 'follow_waypoints')  # type: ignore[arg-type]
+        self.follow_gps_waypoints_client: ActionClient[  # type: ignore[name-defined]
             FollowGPSWaypoints.Goal,
             FollowGPSWaypoints.Result,
             FollowGPSWaypoints.Feedback
         ] = ActionClient(
-            self, FollowGPSWaypoints, 'follow_gps_waypoints'
-        )
-        self.follow_path_client: ActionClient[
+            self, FollowGPSWaypoints, 'follow_gps_waypoints')  # type: ignore[arg-type]
+        self.follow_path_client: ActionClient[  # type: ignore[name-defined]
             FollowPath.Goal,
             FollowPath.Result,
             FollowPath.Feedback
-        ] = ActionClient(self, FollowPath, 'follow_path')
-        self.compute_path_to_pose_client: ActionClient[
+        ] = ActionClient(self, FollowPath, 'follow_path')  # type: ignore[arg-type]
+        self.compute_path_to_pose_client: ActionClient[  # type: ignore[name-defined]
             ComputePathToPose.Goal,
             ComputePathToPose.Result,
             ComputePathToPose.Feedback
         ] = ActionClient(
-            self, ComputePathToPose, 'compute_path_to_pose'
-        )
-        self.compute_path_through_poses_client: ActionClient[
+            self, ComputePathToPose, 'compute_path_to_pose')  # type: ignore[arg-type]
+        self.compute_path_through_poses_client: ActionClient[  # type: ignore[name-defined]
             ComputePathThroughPoses.Goal,
             ComputePathThroughPoses.Result,
             ComputePathThroughPoses.Feedback
         ] = ActionClient(
-            self, ComputePathThroughPoses, 'compute_path_through_poses'
-        )
-        self.smoother_client: ActionClient[
+            self, ComputePathThroughPoses, 'compute_path_through_poses')  # type: ignore[arg-type]
+        self.smoother_client: ActionClient[  # type: ignore[name-defined]
             SmoothPath.Goal,
             SmoothPath.Result,
             SmoothPath.Feedback
-        ] = ActionClient(self, SmoothPath, 'smooth_path')
-        self.compute_route_client: ActionClient[
+        ] = ActionClient(self, SmoothPath, 'smooth_path')  # type: ignore[arg-type]
+        self.compute_route_client: ActionClient[  # type: ignore[name-defined]
             ComputeRoute.Goal,
             ComputeRoute.Result,
             ComputeRoute.Feedback
-        ] = ActionClient(self, ComputeRoute, 'compute_route')
-        self.compute_and_track_route_client: ActionClient[
+        ] = ActionClient(self, ComputeRoute, 'compute_route')  # type: ignore[arg-type]
+        self.compute_and_track_route_client: ActionClient[  # type: ignore[name-defined]
             ComputeAndTrackRoute.Goal,
             ComputeAndTrackRoute.Result,
             ComputeAndTrackRoute.Feedback
-        ] = ActionClient(self, ComputeAndTrackRoute, 'compute_and_track_route')
-        self.spin_client: ActionClient[
+        ] = ActionClient(
+            self, ComputeAndTrackRoute, 'compute_and_track_route')  # type: ignore[arg-type]
+        self.spin_client: ActionClient[  # type: ignore[name-defined]
             Spin.Goal,
             Spin.Result,
             Spin.Feedback
-        ] = ActionClient(self, Spin, 'spin')
+        ] = ActionClient(self, Spin, 'spin')  # type: ignore[arg-type]
 
-        self.backup_client: ActionClient[
+        self.backup_client: ActionClient[  # type: ignore[name-defined]
             BackUp.Goal,
             BackUp.Result,
             BackUp.Feedback
-        ] = ActionClient(self, BackUp, 'backup')
-        self.drive_on_heading_client: ActionClient[
+        ] = ActionClient(self, BackUp, 'backup')  # type: ignore[arg-type]
+        self.drive_on_heading_client: ActionClient[  # type: ignore[name-defined]
             DriveOnHeading.Goal,
             DriveOnHeading.Result,
             DriveOnHeading.Feedback
         ] = ActionClient(
-            self, DriveOnHeading, 'drive_on_heading'
-        )
-        self.assisted_teleop_client: ActionClient[
+            self, DriveOnHeading, 'drive_on_heading')  # type: ignore[arg-type]
+        self.assisted_teleop_client: ActionClient[  # type: ignore[name-defined]
             AssistedTeleop.Goal,
             AssistedTeleop.Result,
             AssistedTeleop.Feedback
         ] = ActionClient(
-            self, AssistedTeleop, 'assisted_teleop'
-        )
-        self.docking_client: ActionClient[
+            self, AssistedTeleop, 'assisted_teleop')  # type: ignore[arg-type]
+        self.docking_client: ActionClient[  # type: ignore[name-defined]
             DockRobot.Goal,
             DockRobot.Result,
             DockRobot.Feedback
-        ] = ActionClient(self, DockRobot, 'dock_robot')
-        self.undocking_client: ActionClient[
+        ] = ActionClient(self, DockRobot, 'dock_robot')  # type: ignore[arg-type]
+        self.undocking_client: ActionClient[  # type: ignore[name-defined]
             UndockRobot.Goal,
             UndockRobot.Result,
             UndockRobot.Feedback
-        ] = ActionClient(self, UndockRobot, 'undock_robot')
+        ] = ActionClient(self, UndockRobot, 'undock_robot')  # type: ignore[arg-type]
+        self.following_client: ActionClient[  # type: ignore[name-defined]
+            FollowObject.Goal,
+            FollowObject.Result,
+            FollowObject.Feedback
+        ] = ActionClient(self, FollowObject, 'follow_object')  # type: ignore[arg-type]
 
         self.localization_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
@@ -209,52 +211,59 @@ class BasicNavigator(Node):
         self.initial_pose_pub = self.create_publisher(
             PoseWithCovarianceStamped, 'initialpose', 10
         )
-        self.change_maps_srv: Client[LoadMap.Request, LoadMap.Response] = \
-            self.create_client(LoadMap, 'map_server/load_map')
-        self.clear_costmap_global_srv: Client[
+        self.change_maps_srv: Client[  # type: ignore[name-defined]
+            LoadMap.Request, LoadMap.Response] = \
+            self.create_client(LoadMap, 'map_server/load_map')  # type: ignore[arg-type]
+        self.clear_costmap_global_srv: Client[  # type: ignore[name-defined]
             ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
             self.create_client(
-            ClearEntireCostmap, 'global_costmap/clear_entirely_global_costmap'
+            ClearEntireCostmap,  # type: ignore[arg-type]
+            'global_costmap/clear_entirely_global_costmap'
         )
-        self.clear_costmap_local_srv: Client[
+        self.clear_costmap_local_srv: Client[  # type: ignore[name-defined]
             ClearEntireCostmap.Request, ClearEntireCostmap.Response] = \
             self.create_client(
-            ClearEntireCostmap, 'local_costmap/clear_entirely_local_costmap'
+            ClearEntireCostmap,  # type: ignore[arg-type]
+            'local_costmap/clear_entirely_local_costmap'
         )
-        self.clear_costmap_except_region_srv: Client[
+        self.clear_costmap_except_region_srv: Client[  # type: ignore[name-defined]
             ClearCostmapExceptRegion.Request, ClearCostmapExceptRegion.Response] = \
             self.create_client(
-            ClearCostmapExceptRegion, 'local_costmap/clear_costmap_except_region'
+            ClearCostmapExceptRegion,  # type: ignore[arg-type]
+            'local_costmap/clear_costmap_except_region'
         )
-        self.clear_costmap_around_robot_srv: Client[
+        self.clear_costmap_around_robot_srv: Client[  # type: ignore[name-defined]
             ClearCostmapAroundRobot.Request, ClearCostmapAroundRobot.Response] = \
             self.create_client(
-            ClearCostmapAroundRobot, 'local_costmap/clear_costmap_around_robot'
+            ClearCostmapAroundRobot,  # type: ignore[arg-type]
+            'local_costmap/clear_costmap_around_robot'
         )
-        self.clear_local_costmap_around_pose_srv: Client[
+        self.clear_local_costmap_around_pose_srv: Client[  # type: ignore[name-defined]
             ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
             self.create_client(
-            ClearCostmapAroundPose, 'local_costmap/clear_costmap_around_pose'
+            ClearCostmapAroundPose,  # type: ignore[arg-type]
+            'local_costmap/clear_costmap_around_pose'
         )
-        self.clear_global_costmap_around_pose_srv: Client[
+        self.clear_global_costmap_around_pose_srv: Client[  # type: ignore[name-defined]
             ClearCostmapAroundPose.Request, ClearCostmapAroundPose.Response] = \
             self.create_client(
-            ClearCostmapAroundPose, 'global_costmap/clear_costmap_around_pose'
+            ClearCostmapAroundPose,  # type: ignore[arg-type]
+            'global_costmap/clear_costmap_around_pose'
         )
-        self.get_costmap_global_srv: Client[
+        self.get_costmap_global_srv: Client[  # type: ignore[name-defined]
             GetCostmap.Request, GetCostmap.Response] = \
             self.create_client(
-            GetCostmap, 'global_costmap/get_costmap'
+            GetCostmap, 'global_costmap/get_costmap'  # type: ignore[arg-type]
         )
-        self.get_costmap_local_srv: Client[
+        self.get_costmap_local_srv: Client[  # type: ignore[name-defined]
             GetCostmap.Request, GetCostmap.Response] = \
             self.create_client(
-            GetCostmap, 'local_costmap/get_costmap'
+            GetCostmap, 'local_costmap/get_costmap'  # type: ignore[arg-type]
         )
-        self.toggle_collision_monitor_srv: Client[
+        self.toggle_collision_monitor_srv: Client[  # type: ignore[name-defined]
             Toggle.Request, Toggle.Response] = \
             self.create_client(
-            Toggle, 'collision_monitor/toggle'
+            Toggle, 'collision_monitor/toggle'  # type: ignore[arg-type]
         )
 
     def destroyNode(self) -> None:
@@ -296,7 +305,7 @@ class BasicNavigator(Node):
         goal_msg.poses = poses
         goal_msg.behavior_tree = behavior_tree
 
-        self.info(f'Navigating with {len(goal_msg.poses)} goals....')
+        self.info(f'Navigating with {len(goal_msg.poses.goals)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -304,8 +313,8 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle or not self.goal_handle.accepted:
-            msg = f'NavigateThroughPoses request with {len(poses)} was rejected!'
-            self.setTaskError(NavigateThroughPoses.UNKNOWN, msg)
+            msg = f'NavigateThroughPoses request with {len(poses.goals)} was rejected!'
+            self.setTaskError(NavigateThroughPoses.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -344,7 +353,7 @@ class BasicNavigator(Node):
                 + str(pose.pose.position.y)
                 + ' was rejected!'
             )
-            self.setTaskError(NavigateToPose.UNKNOWN, msg)
+            self.setTaskError(NavigateToPose.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -370,7 +379,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = f'Following {len(poses)} waypoints request was rejected!'
-            self.setTaskError(FollowWaypoints.UNKNOWN, msg)
+            self.setTaskError(FollowWaypoints.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -396,7 +405,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = f'Following {len(gps_poses)} gps waypoints request was rejected!'
-            self.setTaskError(FollowGPSWaypoints.UNKNOWN, msg)
+            self.setTaskError(FollowGPSWaypoints.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -424,7 +433,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Spin request was rejected!'
-            self.setTaskError(Spin.UNKNOWN, msg)
+            self.setTaskError(Spin.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -454,7 +463,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Backup request was rejected!'
-            self.setTaskError(BackUp.UNKNOWN, msg)
+            self.setTaskError(BackUp.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -484,7 +493,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Drive On Heading request was rejected!'
-            self.setTaskError(DriveOnHeading.UNKNOWN, msg)
+            self.setTaskError(DriveOnHeading.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -510,7 +519,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Assisted Teleop request was rejected!'
-            self.setTaskError(AssistedTeleop.UNKNOWN, msg)
+            self.setTaskError(AssistedTeleop.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -539,7 +548,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'FollowPath goal was rejected!'
-            self.setTaskError(FollowPath.UNKNOWN, msg)
+            self.setTaskError(FollowPath.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -561,14 +570,14 @@ class BasicNavigator(Node):
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
         self.info('Docking at pose: ' + str(dock_pose) + '...')
-        send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                               self._feedbackCallback)
+        send_goal_future = self.docking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'DockRobot request was rejected!'
-            self.setTaskError(DockRobot.UNKNOWN, msg)
+            self.setTaskError(DockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -588,14 +597,14 @@ class BasicNavigator(Node):
         goal_msg.navigate_to_staging_pose = nav_to_dock  # if want to navigate before staging
 
         self.info('Docking at dock ID: ' + str(dock_id) + '...')
-        send_goal_future = self.docking_client.send_goal_async(goal_msg,
-                                                               self._feedbackCallback)
+        send_goal_future = self.docking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'DockRobot request was rejected!'
-            self.setTaskError(DockRobot.UNKNOWN, msg)
+            self.setTaskError(DockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -613,19 +622,71 @@ class BasicNavigator(Node):
         goal_msg.dock_type = dock_type
 
         self.info('Undocking from dock of type: ' + str(dock_type) + '...')
-        send_goal_future = self.undocking_client.send_goal_async(goal_msg,
-                                                                 self._feedbackCallback)
+        send_goal_future = self.undocking_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
         rclpy.spin_until_future_complete(self, send_goal_future)
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'UndockRobot request was rejected!'
-            self.setTaskError(UndockRobot.UNKNOWN, msg)
+            self.setTaskError(UndockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
         self.result_future = self.goal_handle.get_result_async()
         return RunningTask.UNDOCK_ROBOT
+
+    def followObjectByTopic(self, topic: str, max_duration: int = 0) -> Optional[RunningTask]:
+        """Send a `FollowObject` action request."""
+        self.clearTaskError()
+        self.info("Waiting for 'FollowObject' action server")
+        while not self.following_client.wait_for_server(timeout_sec=1.0):
+            self.info('"FollowObject" action server not available, waiting...')
+
+        goal_msg = FollowObject.Goal()
+        goal_msg.pose_topic = topic
+        goal_msg.max_duration = Duration(sec=max_duration)
+
+        self.info('Following object on topic: ' + str(topic) + '...')
+        send_goal_future = self.following_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle or not self.goal_handle.accepted:
+            msg = 'FollowObject request was rejected!'
+            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.error(msg)
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        return RunningTask.FOLLOW_OBJECT
+
+    def followObjectByFrame(self, frame: str, max_duration: int = 0) -> Optional[RunningTask]:
+        """Send a `FollowObject` action request."""
+        self.clearTaskError()
+        self.info("Waiting for 'FollowObject' action server")
+        while not self.following_client.wait_for_server(timeout_sec=1.0):
+            self.info('"FollowObject" action server not available, waiting...')
+
+        goal_msg = FollowObject.Goal()
+        goal_msg.tracked_frame = frame
+        goal_msg.max_duration = Duration(sec=max_duration)
+
+        self.info('Following object in frame: ' + str(frame) + '...')
+        send_goal_future = self.following_client.send_goal_async(
+            goal_msg, self._feedbackCallback)
+        rclpy.spin_until_future_complete(self, send_goal_future)
+        self.goal_handle = send_goal_future.result()
+
+        if not self.goal_handle or not self.goal_handle.accepted:
+            msg = 'FollowObject request was rejected!'
+            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.error(msg)
+            return None
+
+        self.result_future = self.goal_handle.get_result_async()
+        return RunningTask.FOLLOW_OBJECT
 
     def cancelTask(self) -> None:
         """Cancel pending task request of any type."""
@@ -736,7 +797,7 @@ class BasicNavigator(Node):
     def _getPathImpl(
         self, start: PoseStamped, goal: PoseStamped,
         planner_id: str = '', use_start: bool = False
-    ) -> ComputePathToPose.Result:
+    ) -> ComputePathToPose.Result:  # type: ignore[name-defined]
         """
         Send a `ComputePathToPose` action request.
 
@@ -759,9 +820,9 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Get path was rejected!')
-            self.status = GoalStatus.UNKNOWN
+            self.status = GoalStatus.STATUS_UNKNOWN
             result = ComputePathToPose.Result()
-            result.error_code = ComputePathToPose.UNKNOWN
+            result.error_code = ComputePathToPose.Result.UNKNOWN
             result.error_msg = 'Get path was rejected'
             return result
 
@@ -773,13 +834,13 @@ class BasicNavigator(Node):
 
     def getPath(
         self, start: PoseStamped, goal: PoseStamped,
-            planner_id: str = '', use_start: bool = False) -> Path:
+            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathToPose` action request."""
         self.clearTaskError()
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            return rtn.path  # type: ignore[no-any-return]
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -791,7 +852,7 @@ class BasicNavigator(Node):
     def _getPathThroughPosesImpl(
         self, start: PoseStamped, goals: Goals,
             planner_id: str = '', use_start: bool = False
-    ) -> ComputePathThroughPoses.Result:
+    ) -> ComputePathThroughPoses.Result:  # type: ignore[name-defined]
         """
         Send a `ComputePathThroughPoses` action request.
 
@@ -823,7 +884,7 @@ class BasicNavigator(Node):
         if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Get path was rejected!')
             result = ComputePathThroughPoses.Result()
-            result.error_code = ComputePathThroughPoses.UNKNOWN
+            result.error_code = ComputePathThroughPoses.Result.UNKNOWN
             result.error_msg = 'Get path was rejected!'
             return result
 
@@ -835,13 +896,13 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(
         self, start: PoseStamped, goals: Goals,
-            planner_id: str = '', use_start: bool = False) -> Path:
+            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathThroughPoses` action request."""
         self.clearTaskError()
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            return rtn.path  # type: ignore[no-any-return]
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -853,7 +914,7 @@ class BasicNavigator(Node):
     def _getRouteImpl(
         self, start: Union[int, PoseStamped],
         goal: Union[int, PoseStamped], use_start: bool = False
-    ) -> ComputeRoute.Result:
+    ) -> ComputeRoute.Result:  # type: ignore[name-defined]
         """
         Send a `ComputeRoute` action request.
 
@@ -878,7 +939,7 @@ class BasicNavigator(Node):
         else:
             self.error('Invalid start and goal types. Must be PoseStamped for pose or int for ID')
             result = ComputeRoute.Result()
-            result.error_code = ComputeRoute.UNKNOWN
+            result.error_code = ComputeRoute.Result.UNKNOWN
             result.error_msg = 'Request type fields were invalid!'
             return result
 
@@ -890,7 +951,7 @@ class BasicNavigator(Node):
         if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Get route was rejected!')
             result = ComputeRoute.Result()
-            result.error_code = ComputeRoute.UNKNOWN
+            result.error_code = ComputeRoute.Result.UNKNOWN
             result.error_msg = 'Get route was rejected!'
             return result
 
@@ -942,7 +1003,10 @@ class BasicNavigator(Node):
             goal_msg.goal = goal
             goal_msg.use_poses = True
         else:
-            self.setTaskError(ComputeAndTrackRoute.UNKNOWN, 'Request type fields were invalid!')
+            self.setTaskError(
+                ComputeAndTrackRoute.Result.UNKNOWN,
+                'Request type fields were invalid!'
+            )
             self.error('Invalid start and goal types. Must be PoseStamped for pose or int for ID')
             return None
 
@@ -954,7 +1018,7 @@ class BasicNavigator(Node):
 
         if not self.route_goal_handle or not self.route_goal_handle.accepted:
             msg = 'Compute and track route was rejected!'
-            self.setTaskError(ComputeAndTrackRoute.UNKNOWN, msg)
+            self.setTaskError(ComputeAndTrackRoute.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -964,7 +1028,7 @@ class BasicNavigator(Node):
     def _smoothPathImpl(
         self, path: Path, smoother_id: str = '',
         max_duration: float = 2.0, check_for_collision: bool = False
-    ) -> SmoothPath.Result:
+    ) -> SmoothPath.Result:  # type: ignore[name-defined]
         """
         Send a `SmoothPath` action request.
 
@@ -988,7 +1052,7 @@ class BasicNavigator(Node):
         if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Smooth path was rejected!')
             result = SmoothPath.Result()
-            result.error_code = SmoothPath.UNKNOWN
+            result.error_code = SmoothPath.Result.UNKNOWN
             result.error_msg = 'Smooth path was rejected'
             return result
 
@@ -1000,13 +1064,13 @@ class BasicNavigator(Node):
 
     def smoothPath(
         self, path: Path, smoother_id: str = '',
-            max_duration: float = 2.0, check_for_collision: bool = False) -> Path:
+            max_duration: float = 2.0, check_for_collision: bool = False) -> Optional[Path]:
         """Send a `SmoothPath` action request."""
         self.clearTaskError()
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            return rtn.path
+            return rtn.path  # type: ignore[no-any-return]
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
             self.warn('Getting path failed with'
@@ -1030,14 +1094,14 @@ class BasicNavigator(Node):
             return False
 
         result = future_result.result
-        if result != LoadMap.Response().RESULT_SUCCESS:
-            if result == LoadMap.RESULT_MAP_DOES_NOT_EXIST:
+        if result != LoadMap.Response.RESULT_SUCCESS:
+            if result == LoadMap.Response.RESULT_MAP_DOES_NOT_EXIST:
                 reason = 'Map does not exist'
-            elif result == LoadMap.INVALID_MAP_DATA:
+            elif result == LoadMap.Response.RESULT_INVALID_MAP_DATA:
                 reason = 'Invalid map data'
-            elif result == LoadMap.INVALID_MAP_METADATA:
+            elif result == LoadMap.Response.RESULT_INVALID_MAP_METADATA:
                 reason = 'Invalid map metadata'
-            elif result == LoadMap.UNDEFINED_FAILURE:
+            elif result == LoadMap.Response.RESULT_UNDEFINED_FAILURE:
                 reason = 'Undefined failure'
             else:
                 reason = 'Unknown'
@@ -1144,7 +1208,7 @@ class BasicNavigator(Node):
 
         return
 
-    def getGlobalCostmap(self) -> OccupancyGrid:
+    def getGlobalCostmap(self) -> Optional[Costmap]:
         """Get the global costmap."""
         while not self.get_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get global costmaps service not available, waiting...')
@@ -1157,9 +1221,9 @@ class BasicNavigator(Node):
             self.error('Get global costmap request failed!')
             return None
 
-        return result.map
+        return result.map  # type: ignore[no-any-return]
 
-    def getLocalCostmap(self) -> OccupancyGrid:
+    def getLocalCostmap(self) -> Optional[Costmap]:
         """Get the local costmap."""
         while not self.get_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get local costmaps service not available, waiting...')
@@ -1173,7 +1237,7 @@ class BasicNavigator(Node):
             self.error('Get local costmap request failed!')
             return None
 
-        return result.map
+        return result.map  # type: ignore[no-any-return]
 
     def toggleCollisionMonitor(self, enable: bool) -> None:
         """Toggle the collision monitor."""
@@ -1196,12 +1260,13 @@ class BasicNavigator(Node):
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info(f'Starting up {srv_name}')
-                mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
-                    self.create_client(ManageLifecycleNodes, srv_name)
+                mgr_client: Client[  # type: ignore[name-defined]
+                    ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+                    self.create_client(ManageLifecycleNodes, srv_name)  # type: ignore[arg-type]
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
                     self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
-                req.command = ManageLifecycleNodes.Request().STARTUP
+                req.command = ManageLifecycleNodes.Request.STARTUP
                 future = mgr_client.call_async(req)
 
                 # starting up requires a full map->odom->base_link TF tree
@@ -1221,12 +1286,13 @@ class BasicNavigator(Node):
         for srv_name, srv_type in self.get_service_names_and_types():
             if srv_type[0] == 'nav2_msgs/srv/ManageLifecycleNodes':
                 self.info(f'Shutting down {srv_name}')
-                mgr_client: Client[ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
-                    self.create_client(ManageLifecycleNodes, srv_name)
+                mgr_client: Client[  # type: ignore[name-defined]
+                    ManageLifecycleNodes.Request, ManageLifecycleNodes.Response] = \
+                    self.create_client(ManageLifecycleNodes, srv_name)  # type: ignore[arg-type]
                 while not mgr_client.wait_for_service(timeout_sec=1.0):
                     self.info(f'{srv_name} service not available, waiting...')
                 req = ManageLifecycleNodes.Request()
-                req.command = ManageLifecycleNodes.Request().SHUTDOWN
+                req.command = ManageLifecycleNodes.Request.SHUTDOWN
                 future = mgr_client.call_async(req)
                 rclpy.spin_until_future_complete(self, future)
                 future.result()
@@ -1236,8 +1302,9 @@ class BasicNavigator(Node):
         # Waits for the node within the tester namespace to become active
         self.debug(f'Waiting for {node_name} to become active..')
         node_service = f'{node_name}/get_state'
-        state_client: Client[GetState.Request, GetState.Response] = \
-            self.create_client(GetState, node_service)
+        state_client: Client[  # type: ignore[name-defined]
+            GetState.Request, GetState.Response] = \
+            self.create_client(GetState, node_service)  # type: ignore[arg-type]
         while not state_client.wait_for_service(timeout_sec=1.0):
             self.info(f'{node_service} service not available, waiting...')
 
@@ -1268,14 +1335,20 @@ class BasicNavigator(Node):
         self.initial_pose_received = True
         return
 
-    def _feedbackCallback(self, msg: NavigateToPose.Feedback) -> None:
+    def _feedbackCallback(
+        self,
+        msg: NavigateToPose.Feedback  # type: ignore[name-defined]
+    ) -> None:
         self.debug('Received action feedback message')
-        self.feedback = msg.feedback
+        self.feedback = msg
         return
 
-    def _routeFeedbackCallback(self, msg: ComputeAndTrackRoute.Feedback) -> None:
+    def _routeFeedbackCallback(
+        self,
+        msg: ComputeAndTrackRoute.Feedback  # type: ignore[name-defined]
+    ) -> None:
         self.debug('Received route action feedback message')
-        self.route_feedback.append(msg.feedback)
+        self.route_feedback.append(msg)
         return
 
     def _setInitialPose(self) -> None:

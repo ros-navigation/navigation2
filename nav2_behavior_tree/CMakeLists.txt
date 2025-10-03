@@ -261,6 +261,12 @@ list(APPEND plugin_libs nav2_compute_route_bt_node)
 add_library(nav2_toggle_collision_monitor_service_bt_node SHARED plugins/action/toggle_collision_monitor_service.cpp)
 list(APPEND plugin_libs nav2_toggle_collision_monitor_service_bt_node)
 
+add_library(opennav_follow_action_bt_node SHARED plugins/action/follow_object_action.cpp)
+list(APPEND plugin_libs opennav_follow_action_bt_node)
+
+add_library(opennav_follow_cancel_bt_node SHARED plugins/action/follow_object_cancel_node.cpp)
+list(APPEND plugin_libs opennav_follow_cancel_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE
