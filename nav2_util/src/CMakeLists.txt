@@ -18,7 +18,6 @@ target_link_libraries(${library_name} PUBLIC
   ${lifecycle_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
-  ${nav_2d_msgs_TARGETS}
   ${rcl_interfaces_TARGETS}
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
