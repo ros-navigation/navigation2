@@ -49,7 +49,7 @@ public:
     double k_phi, double k_delta, double beta, double lambda,
     double slowdown_radius, double deceleration_max,
     double v_linear_min, double v_linear_max, double v_angular_max);
-  
+
   /**
    * @brief Constructor for nav2_graceful_controller::SmoothControlLaw
    *
