@@ -20,12 +20,13 @@ import pickle
 from random import randint, seed, uniform
 from typing import Optional
 
+from builtin_interfaces.msg import Time
 from geometry_msgs.msg import PoseStamped
+from nav2_msgs.action import ComputePathToPose, SmoothPath
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
 from numpy.typing import NDArray
 import rclpy
-from rclpy.time import Time
 from transforms3d.euler import euler2quat
 
 # Note: Map origin is assumed to be (0,0)
@@ -33,7 +34,7 @@ from transforms3d.euler import euler2quat
 
 def getPlannerResults(
         navigator: BasicNavigator, initial_pose: PoseStamped,
-        goal_pose: PoseStamped, planner: str) -> PoseStamped:
+        goal_pose: PoseStamped, planner: str) -> Optional[ComputePathToPose.Result]:
     result = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
     if result is None or result.error_code != 0:
         print(planner, 'planner failed to produce the path')
@@ -43,7 +44,7 @@ def getPlannerResults(
 
 def getSmootherResults(
         navigator: BasicNavigator, path: PoseStamped,
-        smoothers: list[str]) -> Optional[list[PoseStamped]]:
+        smoothers: list[str]) -> Optional[list[SmoothPath.Result]]:
     smoothed_results = []
     for smoother in smoothers:
         smoothed_result = navigator._smoothPathImpl(path, smoother)

@@ -296,7 +296,7 @@ class BasicNavigator(Node):
         goal_msg.poses = poses
         goal_msg.behavior_tree = behavior_tree
 
-        self.info(f'Navigating with {len(goal_msg.poses)} goals....')
+        self.info(f'Navigating with {len(poses.goals)} goals....')
         send_goal_future = self.nav_through_poses_client.send_goal_async(
             goal_msg, self._feedbackCallback
         )
@@ -304,7 +304,7 @@ class BasicNavigator(Node):
         self.goal_handle = send_goal_future.result()
 
         if not self.goal_handle or not self.goal_handle.accepted:
-            msg = f'NavigateThroughPoses request with {len(poses)} was rejected!'
+            msg = f'NavigateThroughPoses request with {len(poses.goals)} was rejected!'
             self.setTaskError(NavigateThroughPoses.UNKNOWN, msg)
             self.error(msg)
             return None
@@ -759,7 +759,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             self.error('Get path was rejected!')
-            self.status = GoalStatus.UNKNOWN
+            self.status = GoalStatus.STATUS_UNKNOWN
             result = ComputePathToPose.Result()
             result.error_code = ComputePathToPose.UNKNOWN
             result.error_msg = 'Get path was rejected'
@@ -773,7 +773,7 @@ class BasicNavigator(Node):
 
     def getPath(
         self, start: PoseStamped, goal: PoseStamped,
-            planner_id: str = '', use_start: bool = False) -> Path:
+            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathToPose` action request."""
         self.clearTaskError()
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
@@ -835,7 +835,7 @@ class BasicNavigator(Node):
 
     def getPathThroughPoses(
         self, start: PoseStamped, goals: Goals,
-            planner_id: str = '', use_start: bool = False) -> Path:
+            planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathThroughPoses` action request."""
         self.clearTaskError()
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
@@ -1000,7 +1000,7 @@ class BasicNavigator(Node):
 
     def smoothPath(
         self, path: Path, smoother_id: str = '',
-            max_duration: float = 2.0, check_for_collision: bool = False) -> Path:
+            max_duration: float = 2.0, check_for_collision: bool = False) -> Optional[Path]:
         """Send a `SmoothPath` action request."""
         self.clearTaskError()
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
@@ -1144,7 +1144,7 @@ class BasicNavigator(Node):
 
         return
 
-    def getGlobalCostmap(self) -> OccupancyGrid:
+    def getGlobalCostmap(self) -> Optional[OccupancyGrid]:
         """Get the global costmap."""
         while not self.get_costmap_global_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get global costmaps service not available, waiting...')
@@ -1159,7 +1159,7 @@ class BasicNavigator(Node):
 
         return result.map
 
-    def getLocalCostmap(self) -> OccupancyGrid:
+    def getLocalCostmap(self) -> Optional[OccupancyGrid]:
         """Get the local costmap."""
         while not self.get_costmap_local_srv.wait_for_service(timeout_sec=1.0):
             self.info('Get local costmaps service not available, waiting...')
