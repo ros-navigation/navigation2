@@ -239,6 +239,13 @@ protected:
   inline bool areInputsValid();
 
   /**
+   * @brief Get the closest path within tolerance if available
+   * @param path Vector of coordinates to fill with path
+   * @return if a valid path was found within tolerance
+   */
+  inline bool getClosestPathWithinTolerance(CoordinateVector & path);
+
+  /**
    * @brief Clear heuristic queue of nodes to search
    */
   inline void clearQueue();
