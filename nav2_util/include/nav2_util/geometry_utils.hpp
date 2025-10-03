@@ -231,6 +231,89 @@ inline bool isPointInsidePolygon(
   return res;
 }
 
+/**
+ * @brief Find the distance to a point
+ * @param global_pose Robot's current or planned position
+ * @param target target point
+ * @return int
+ */
+inline double distanceToPoint(
+  const geometry_msgs::msg::PoseStamped & point1,
+  const geometry_msgs::msg::PoseStamped & point2)
+{
+  const double dx = point1.pose.position.x - point2.pose.position.x;
+  const double dy = point1.pose.position.y - point2.pose.position.y;
+  return std::hypot(dx, dy);
+}
+
+/**
+ * @brief Find the shortest distance to a vector
+ *
+ * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+ *
+ * @param global_pose Robot's current or planned position
+ * @param start Starting segment of the path
+ * @param finish End segment of the path
+ * @return int
+ */
+inline double distance_to_path_segment(
+  const geometry_msgs::msg::Point & point,
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & end)
+{
+  const auto & p = point;
+  const auto & a = start.position;
+  const auto & b = end.position;
+
+  const double dx_seg = b.x - a.x;
+  const double dy_seg = b.y - a.y;
+
+  const double seg_len_sq = (dx_seg * dx_seg) + (dy_seg * dy_seg);
+
+  if (seg_len_sq <= 1e-9) {
+    return euclidean_distance(point, a);
+  }
+
+  const double dot = ((p.x - a.x) * dx_seg) + ((p.y - a.y) * dy_seg);
+  const double t = std::clamp(dot / seg_len_sq, 0.0, 1.0);
+
+  const double proj_x = a.x + t * dx_seg;
+  const double proj_y = a.y + t * dy_seg;
+
+  const double dx_proj = p.x - proj_x;
+  const double dy_proj = p.y - proj_y;
+  return std::hypot(dx_proj, dy_proj);
+}
+
+/**
+ * @brief Computes the 2D cross product between the vector from start to end and the vector from start to point.
+ * The sign of this calculation's result can be used to determine which side are you on of the track.
+ *
+ * See: https://en.wikipedia.org/wiki/Cross_product
+ *
+ * @param point The point to check relative to the segment.
+ * @param start The starting pose of the segment.
+ * @param end The ending pose of the segment.
+ * @return The signed 2D cross product value.
+ */
+inline double cross_product_2d(
+  const geometry_msgs::msg::Point & point,
+  const geometry_msgs::msg::Pose & start,
+  const geometry_msgs::msg::Pose & end)
+{
+  const auto & p = point;
+  const auto & a = start.position;
+  const auto & b = end.position;
+
+  const double path_vec_x = b.x - a.x;
+  const double path_vec_y = b.y - a.y;
+
+  const double robot_vec_x = p.x - a.x;
+  const double robot_vec_y = p.y - a.y;
+
+  return (path_vec_x * robot_vec_y) - (path_vec_y * robot_vec_x);
+}
+
 }  // namespace geometry_utils
 }  // namespace nav2_util
 
