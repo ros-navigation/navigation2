@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from geometry_msgs.msg import PoseStamped
+from nav2_msgs.msg import TrackingFeedback
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 
@@ -69,9 +70,9 @@ def main() -> None:
         if feedback and i % 5 == 0:
             print(
                 'Estimated distance remaining to goal position: '
-                + f'{feedback.distance_to_goal:.3f}'
+                + f'{feedback.tracking_feedback.distance_to_goal:.3f}'
                 + '\nCurrent speed of the robot: '
-                + f'{feedback.speed:.3f}'
+                + f'{feedback.tracking_feedback.speed:.3f}'
             )
 
     # Do something depending on the return code
