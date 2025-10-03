@@ -673,6 +673,7 @@ void ControllerServer::computeAndPublishVelocity()
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
   double current_distance_to_goal = 0.0;
+
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
   if (current_path_.poses.size() >= 2) {
     // Transform robot pose to path frame
