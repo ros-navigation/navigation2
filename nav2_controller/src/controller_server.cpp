@@ -687,7 +687,6 @@ void ControllerServer::computeAndPublishVelocity()
 
     // Transform goal pose to robot frame for distance calculation
     geometry_msgs::msg::PoseStamped transformed_end_pose;
-
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
       pose, transformed_end_pose);
 
