@@ -307,6 +307,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
+  tracking_error_pub_->on_deactivate();
 
   remove_on_set_parameters_callback(dyn_params_handler_.get());
   dyn_params_handler_.reset();
