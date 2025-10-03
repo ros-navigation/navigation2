@@ -74,9 +74,9 @@ PathSearchResult distance_from_path(
   const auto & segment_start = path.poses[result.closest_segment_index];
   const auto & segment_end = path.poses[result.closest_segment_index + 1];
 
+  // Obtain the signed direction of the cross track error
   const double cross_product = geometry_utils::cross_product_2d(
     robot_pose.position, segment_start.pose, segment_end.pose);
-
   result.distance *= (cross_product >= 0.0 ? 1.0 : -1.0);
 
   return result;
