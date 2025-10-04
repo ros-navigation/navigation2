@@ -523,9 +523,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
   nav_msgs::msg::Path pruned_global_plan;
-
+  geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
-    pruned_global_plan);
+    pruned_global_plan, goal);
 
   // Check results: the robot should rotate in place.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.
@@ -601,8 +601,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
   nav_msgs::msg::Path pruned_global_plan;
+  geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
-    pruned_global_plan);
+    pruned_global_plan, goal);
 
   // Check results: the robot should go straight to the target.
   // So, linear velocity should be some positive value and angular velocity should be zero.
@@ -683,8 +684,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
   nav_msgs::msg::Path pruned_global_plan;
+  geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
-    pruned_global_plan);
+    pruned_global_plan, goal);
 
   // Check results: the robot should go straight to the target.
   // So, both linear velocity should be some negative values.
@@ -770,8 +772,9 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   checker.initialize(node, "checker", costmap_ros);
 
   nav_msgs::msg::Path pruned_global_plan;
+  geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
-    pruned_global_plan);
+    pruned_global_plan, goal);
 
   // Check results: the robot should do a final rotation near the target.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.

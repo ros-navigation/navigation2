@@ -93,7 +93,6 @@ public:
   void publishCostGrid(
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const std::vector<TrajectoryCritic::Ptr> critics);
-  void publishTransformedPlan(const nav_msgs::msg::Path plan);
   void publishLocalPlan(const nav_msgs::msg::Path plan);
 
 protected:
@@ -117,7 +116,6 @@ protected:
 
   // Publisher Objects
   std::shared_ptr<Publisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
-  std::shared_ptr<Publisher<nav_msgs::msg::Path>> transformed_pub_;
   std::shared_ptr<Publisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<Publisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;

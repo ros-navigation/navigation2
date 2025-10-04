@@ -83,6 +83,24 @@ void PathHandler::setPlan(const nav_msgs::msg::Path & path)
   }
 }
 
+geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
+{
+  auto goal = global_plan_.poses.back();
+  goal.header.frame_id = global_plan_.header.frame_id;
+  goal.header.stamp = stamp;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *tf_,
+      costmap_ros_->getGlobalFrameID(), params_->transform_tolerance))
+  {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
+}
+
 nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {

@@ -76,9 +76,6 @@ DWBPublisher::on_configure()
     node, plugin_name_ + ".publish_evaluation",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".publish_transformed_plan",
-    rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".publish_local_plan",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
@@ -92,13 +89,11 @@ DWBPublisher::on_configure()
     rclcpp::ParameterValue(0.1));
 
   node->get_parameter(plugin_name_ + ".publish_evaluation", publish_evaluation_);
-  node->get_parameter(plugin_name_ + ".publish_transformed_plan", publish_transformed_);
   node->get_parameter(plugin_name_ + ".publish_local_plan", publish_local_plan_);
   node->get_parameter(plugin_name_ + ".publish_trajectories", publish_trajectories_);
   node->get_parameter(plugin_name_ + ".publish_cost_grid_pc", publish_cost_grid_pc_);
 
   eval_pub_ = node->create_publisher<dwb_msgs::msg::LocalPlanEvaluation>("evaluation");
-  transformed_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   local_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
   marker_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>("marker");
   cost_grid_pc_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>("cost_cloud");
@@ -114,7 +109,6 @@ nav2::CallbackReturn
 DWBPublisher::on_activate()
 {
   eval_pub_->on_activate();
-  transformed_pub_->on_activate();
   local_pub_->on_activate();
   marker_pub_->on_activate();
   cost_grid_pc_pub_->on_activate();
@@ -126,7 +120,6 @@ nav2::CallbackReturn
 DWBPublisher::on_deactivate()
 {
   eval_pub_->on_deactivate();
-  transformed_pub_->on_deactivate();
   local_pub_->on_deactivate();
   marker_pub_->on_deactivate();
   cost_grid_pc_pub_->on_deactivate();
@@ -138,7 +131,6 @@ nav2::CallbackReturn
 DWBPublisher::on_cleanup()
 {
   eval_pub_.reset();
-  transformed_pub_.reset();
   local_pub_.reset();
   marker_pub_.reset();
   cost_grid_pc_pub_.reset();
@@ -327,12 +319,6 @@ DWBPublisher::publishCostGrid(
   }
 
   cost_grid_pc_pub_->publish(std::move(cost_grid_pc));
-}
-
-void
-DWBPublisher::publishTransformedPlan(const nav_msgs::msg::Path plan)
-{
-  publishGenericPlan(plan, *transformed_pub_, publish_transformed_);
 }
 
 void

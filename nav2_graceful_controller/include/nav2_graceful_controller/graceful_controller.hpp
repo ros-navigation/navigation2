@@ -84,13 +84,15 @@ public:
    * @param velocity  Current robot velocity
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
    * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param goal The last pose of the global plan
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker,
-    nav_msgs::msg::Path & pruned_global_plan) override;
+    nav_msgs::msg::Path & pruned_global_plan,
+    const geometry_msgs::msg::Pose & goal) override;
 
   /**
    * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server
@@ -190,7 +192,6 @@ protected:
   // True from the time a new path arrives until we have completed an initial rotation
   bool do_initial_rotation_;
 
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr local_plan_pub_;
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr motion_target_pub_;
   nav2::Publisher<visualization_msgs::msg::Marker>::SharedPtr slowdown_pub_;

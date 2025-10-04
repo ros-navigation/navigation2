@@ -290,7 +290,6 @@ controller_server:
 | Topic                     | Type                             | Description                                                           |
 |---------------------------|----------------------------------|-----------------------------------------------------------------------|
 | `trajectories`            | `visualization_msgs/MarkerArray` | Randomly generated trajectories, including resulting control sequence |
-| `transformed_global_plan` | `nav_msgs/Path`                  | Part of global plan considered by local planner                       |
 | `critics_stats`           | `nav2_msgs/CriticsStats`         | Statistics about each critic's performance (published when `publish_critics_stats` is enabled) |
 
 ## Notes to Users

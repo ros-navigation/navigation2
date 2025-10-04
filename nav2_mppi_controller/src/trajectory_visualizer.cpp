@@ -27,8 +27,6 @@ void TrajectoryVisualizer::on_configure(
   frame_id_ = frame_id;
   trajectories_publisher_ =
     node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
-  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
-    "~/transformed_global_plan");
   optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
   parameters_handler_ = parameters_handler;
 
@@ -43,21 +41,18 @@ void TrajectoryVisualizer::on_configure(
 void TrajectoryVisualizer::on_cleanup()
 {
   trajectories_publisher_.reset();
-  transformed_path_pub_.reset();
   optimal_path_pub_.reset();
 }
 
 void TrajectoryVisualizer::on_activate()
 {
   trajectories_publisher_->on_activate();
-  transformed_path_pub_->on_activate();
   optimal_path_pub_->on_activate();
 }
 
 void TrajectoryVisualizer::on_deactivate()
 {
   trajectories_publisher_->on_deactivate();
-  transformed_path_pub_->on_deactivate();
   optimal_path_pub_->on_deactivate();
 }
 
@@ -135,7 +130,7 @@ void TrajectoryVisualizer::reset()
   optimal_path_ = std::make_unique<nav_msgs::msg::Path>();
 }
 
-void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
+void TrajectoryVisualizer::visualize()
 {
   if (trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));
@@ -146,11 +141,6 @@ void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
   }
 
   reset();
-
-  if (transformed_path_pub_->get_subscription_count() > 0) {
-    auto plan_ptr = std::make_unique<nav_msgs::msg::Path>(plan);
-    transformed_path_pub_->publish(std::move(plan_ptr));
-  }
 }
 
 }  // namespace mppi

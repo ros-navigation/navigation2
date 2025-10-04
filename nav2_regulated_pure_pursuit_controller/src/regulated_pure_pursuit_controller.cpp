@@ -69,7 +69,6 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  transformed_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point");
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "curvature_lookahead_point");
@@ -84,7 +83,6 @@ void RegulatedPurePursuitController::cleanup()
     "Cleaning up controller: %s of type"
     " regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  transformed_path_pub_.reset();
   carrot_pub_.reset();
   curvature_carrot_pub_.reset();
   is_rotating_to_heading_pub_.reset();
@@ -97,7 +95,6 @@ void RegulatedPurePursuitController::activate()
     "Activating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  transformed_path_pub_->on_activate();
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
   is_rotating_to_heading_pub_->on_activate();
@@ -110,7 +107,6 @@ void RegulatedPurePursuitController::deactivate()
     "Deactivating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  transformed_path_pub_->on_activate();
   carrot_pub_->on_deactivate();
   curvature_carrot_pub_->on_deactivate();
   is_rotating_to_heading_pub_->on_deactivate();
@@ -162,7 +158,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & pruned_global_plan)
+  nav_msgs::msg::Path & pruned_global_plan,
+  const geometry_msgs::msg::Pose & /*goal*/)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
@@ -178,41 +175,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
-  // Transform the pruned global plan to robot base frame
-  auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = pruned_global_plan.header.frame_id;
-      stamped_pose.header.stamp = pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-
-      if (!nav2_util::transformPoseInTargetFrame(
-          stamped_pose, transformed_pose, *tf_,
-          costmap_ros_->getBaseFrameID(), params_->transform_tolerance))
-      {
-        throw nav2_core::ControllerTFError(
-        "Unable to transform plan pose into local frame");
-      }
-
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
-  nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
-  transformed_plan.header.stamp = pose.header.stamp;
-  std::transform(
-    pruned_global_plan.poses.begin(),
-    pruned_global_plan.poses.end(),
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPlanToLocal);
-  transformed_path_pub_->publish(transformed_plan);
-
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
   double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
   // Get the particular point on the path at the lookahead distance
-  auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, transformed_plan);
+  auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, pruned_global_plan);
   auto rotate_to_path_carrot_pose = carrot_pose;
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
@@ -224,7 +192,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = nav2_util::getLookAheadPoint(
       curv_lookahead_dist,
-      transformed_plan, params_->interpolate_curvature_after_goal);
+      pruned_global_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
     curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
@@ -246,7 +214,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double angle_to_heading;
   if (shouldRotateToGoalHeading(carrot_pose)) {
     is_rotating_to_heading_ = true;
-    double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+    double angle_to_goal = tf2::getYaw(pruned_global_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
   } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading, x_vel_sign)) {
     is_rotating_to_heading_ = true;
@@ -255,7 +223,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     is_rotating_to_heading_ = false;
     applyConstraints(
       regulation_curvature, speed,
-      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
+      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), pruned_global_plan,
       linear_vel, x_vel_sign);
 
     if (cancelling_) {

@@ -218,7 +218,8 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * /*goal_checker*/,
-  nav_msgs::msg::Path & pruned_global_plan)
+  nav_msgs::msg::Path & pruned_global_plan,
+  const geometry_msgs::msg::Pose & goal)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -228,7 +229,7 @@ DWBLocalPlanner::computeVelocityCommands(
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
       pose,
-      nav_2d_utils::twist3Dto2D(velocity), results, pruned_global_plan);
+      nav_2d_utils::twist3Dto2D(velocity), results, pruned_global_plan, goal);
     pub_->publishEvaluation(results);
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
@@ -253,50 +254,19 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
-  nav_msgs::msg::Path & pruned_global_plan)
+  nav_msgs::msg::Path & pruned_global_plan,
+  const geometry_msgs::msg::Pose & goal)
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
     results->header.stamp = clock_->now();
   }
 
-  nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  transformed_plan.header.stamp = pose.header.stamp;
-
-  // Transform the pruned global plan to global frame
-  auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = pruned_global_plan.header.frame_id;
-      stamped_pose.header.stamp = pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-
-      if (!nav2_util::transformPoseInTargetFrame(
-          stamped_pose, transformed_pose, *tf_,
-          transformed_plan.header.frame_id, transform_tolerance_))
-      {
-        throw nav2_core::ControllerTFError(
-        "Unable to transform plan pose into local frame");
-      }
-
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
-  std::transform(
-    pruned_global_plan.poses.begin(),
-    pruned_global_plan.poses.end(),
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPlanToLocal);
-  pub_->publishTransformedPlan(transformed_plan);
-  //TODO: handle goal pose here
-  geometry_msgs::msg::PoseStamped goal_pose;
-
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (TrajectoryCritic::Ptr & critic : critics_) {
-    if (!critic->prepare(pose.pose, velocity, goal_pose.pose, transformed_plan)) {
+    if (!critic->prepare(pose.pose, velocity, goal, pruned_global_plan)) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
     }
   }

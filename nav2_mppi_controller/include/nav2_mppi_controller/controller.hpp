@@ -81,12 +81,14 @@ public:
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
     * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+    * @param goal The last pose of the global plan
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     nav2_core::GoalChecker * goal_checker,
-    nav_msgs::msg::Path & pruned_global_plan) override;
+    nav_msgs::msg::Path & pruned_global_plan,
+    const geometry_msgs::msg::Pose & goal) override;
 
   /**
     * @brief Receives a new plan from the Planner Server
@@ -104,12 +106,10 @@ public:
 protected:
   /**
     * @brief Visualize trajectories
-    * @param transformed_plan Transformed input plan
     * @param cmd_stamp Command stamp
     * @param optimal_trajectory Optimal trajectory, if already computed
     */
   void visualize(
-    nav_msgs::msg::Path transformed_plan,
     const builtin_interfaces::msg::Time & cmd_stamp,
     const Eigen::ArrayXXf & optimal_trajectory);
 

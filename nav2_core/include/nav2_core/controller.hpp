@@ -109,13 +109,15 @@ public:
    * @param velocity Current robot velocity
    * @param goal_checker Pointer to the current goal checker the task is utilizing
    * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param goal The last pose of the global plan
    * @return The best command for the robot to drive
    */
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker,
-    nav_msgs::msg::Path & pruned_global_plan) = 0;
+    nav_msgs::msg::Path & pruned_global_plan,
+    const geometry_msgs::msg::Pose & goal) = 0;
 
   /**
    * @brief Cancel the current control action
