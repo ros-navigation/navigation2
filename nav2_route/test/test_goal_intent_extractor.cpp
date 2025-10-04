@@ -83,7 +83,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
     node->get_node_timers_interface());
   tf->setCreateTimerInterface(timer_interface);
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  tf2_ros::TransformBroadcaster broadcaster(node);
+  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber = nullptr;
   extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
 
@@ -101,7 +101,7 @@ TEST(GoalIntentExtractorTest, test_transform_pose)
   transform.header.frame_id = "map";
   transform.header.stamp = node->now();
   transform.child_frame_id = "gps";
-  broadcaster.sendTransform(transform);
+  broadcaster->sendTransform(transform);
   EXPECT_NO_THROW(extractor.transformPose(pose, "map"));
 }
 

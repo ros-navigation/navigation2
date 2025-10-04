@@ -86,6 +86,8 @@ TEST(SimpleChargingDockTests, BatteryState)
 
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   geometry_msgs::msg::PoseStamped pose;
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
 
@@ -95,7 +97,7 @@ TEST(SimpleChargingDockTests, BatteryState)
   pub->publish(msg);
   rclcpp::Rate r(2);
   r.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isCharging());
   EXPECT_TRUE(dock->hasStoppedCharging());
@@ -106,7 +108,7 @@ TEST(SimpleChargingDockTests, BatteryState)
   pub->publish(msg2);
   rclcpp::Rate r1(2);
   r1.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(dock->isCharging());
   EXPECT_FALSE(dock->hasStoppedCharging());
@@ -139,6 +141,8 @@ TEST(SimpleChargingDockTests, StallDetection)
     rclcpp::Parameter("my_dock.stall_joint_names", rclcpp::ParameterValue(names)));
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   EXPECT_EQ(dock->getStallJointNames(), names);
 
   // Stopped, but below effort threshold
@@ -149,7 +153,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg);
   rclcpp::Rate r(2);
   r.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -161,7 +165,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg2);
   rclcpp::Rate r1(2);
   r1.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_FALSE(dock->isDocked());
 
@@ -173,7 +177,7 @@ TEST(SimpleChargingDockTests, StallDetection)
   pub->publish(msg3);
   rclcpp::Rate r2(2);
   r2.sleep();
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(dock->isDocked());
 
@@ -245,6 +249,8 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   dock->configure(node, "my_dock", nullptr);
   dock->activate();
   dock->startDetectionProcess();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped pose;
 
@@ -258,7 +264,7 @@ TEST(SimpleChargingDockTests, RefinedPoseTest)
   detected_pose.pose.position.x = 0.1;
   detected_pose.pose.position.y = -0.5;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   pose.header.frame_id = "my_frame";
@@ -287,6 +293,8 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
 
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   geometry_msgs::msg::PoseStamped detected_pose;
   detected_pose.header.stamp = node->now();
@@ -294,7 +302,7 @@ TEST(SimpleChargingDockTests, RefinedPoseNotTransform)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
@@ -325,6 +333,8 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   dock->configure(node, "my_dock", tf_buffer);
   dock->activate();
   dock->startDetectionProcess();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   // Create a pose with a different frame_id
   geometry_msgs::msg::PoseStamped pose;
@@ -347,7 +357,7 @@ TEST(SimpleChargingDockTests, IsDockedTransformException)
   detected_pose.pose.position.x = 1.0;
   detected_pose.pose.position.y = 1.0;
   pub->publish(detected_pose);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Second call should succeed
   EXPECT_TRUE(dock->getRefinedPose(pose, ""));
@@ -452,12 +462,14 @@ TEST(SimpleChargingDockTests, DetectorLifecycle)
 
   dock->activate();
   dock->startDetectionProcess();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   // Spin to process async service call
   auto start_time = std::chrono::steady_clock::now();
   while (!service_called &&
     std::chrono::steady_clock::now() - start_time < std::chrono::seconds(2))
   {
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   EXPECT_TRUE(service_called);
@@ -502,11 +514,13 @@ TEST(SimpleChargingDockTests, SubscriptionCallback)
   publisher->on_activate();
 
   dock->startDetectionProcess();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
 
   // Wait for the publisher and subscriber to connect.
   int tries = 0;
   while (publisher->get_subscription_count() == 0 && tries++ < 10) {
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(100ms);
   }
   ASSERT_GT(publisher->get_subscription_count(), 0);
@@ -514,7 +528,7 @@ TEST(SimpleChargingDockTests, SubscriptionCallback)
   // Publish a message to trigger the subscription callback.
   publisher->publish(geometry_msgs::msg::PoseStamped{});
   std::this_thread::sleep_for(50ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Verify the detector state was updated, proving the callback was executed.
   EXPECT_TRUE(dock->isDetectorActive());
@@ -608,17 +622,18 @@ TEST(SimpleChargingDockTests, SubscriptionPersistent)
   auto publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>(
     "detected_dock_pose", rclcpp::QoS(1));
   publisher->on_activate();
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   int tries = 0;
   while (publisher->get_subscription_count() == 0 && tries++ < 10) {
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(100ms);
   }
   ASSERT_GT(publisher->get_subscription_count(), 0);
 
   publisher->publish(geometry_msgs::msg::PoseStamped{});
   std::this_thread::sleep_for(50ms);
-  rclcpp::spin_some(node->get_node_base_interface());
+  executor.spin_some();
 
   // Verify the detector state changed, proving the callback was executed.
   EXPECT_TRUE(dock->isDetectorActive());

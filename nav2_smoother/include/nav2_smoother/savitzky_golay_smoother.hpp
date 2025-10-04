@@ -25,7 +25,7 @@
 #include <utility>
 
 #include "nav2_core/smoother.hpp"
-#include "nav2_smoother/smoother_utils.hpp"
+#include "nav2_util/smoother_utils.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_util/geometry_utils.hpp"

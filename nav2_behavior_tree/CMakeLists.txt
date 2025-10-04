@@ -120,6 +120,9 @@ list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
 add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
 list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 
+add_library(nav2_is_pose_occupied_condition_bt_node SHARED plugins/condition/is_pose_occupied_condition.cpp)
+list(APPEND plugin_libs nav2_is_pose_occupied_condition_bt_node)
+
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
@@ -254,6 +257,9 @@ list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
 
 add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_route_bt_node)
+
+add_library(nav2_toggle_collision_monitor_service_bt_node SHARED plugins/action/toggle_collision_monitor_service.cpp)
+list(APPEND plugin_libs nav2_toggle_collision_monitor_service_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
