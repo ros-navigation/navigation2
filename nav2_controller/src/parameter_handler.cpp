@@ -35,90 +35,39 @@ ParameterHandler::ParameterHandler(
   node_ = node;
   logger_ = logger;
 
-  declare_parameter_if_not_declared(
-    node, "controller_frequency", rclcpp::ParameterValue(20.0));
-  declare_parameter_if_not_declared(
-    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-
-  declare_parameter_if_not_declared(
-    node, "min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter_if_not_declared(
-    node, "min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter_if_not_declared(
-    node, "min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
-
-  declare_parameter_if_not_declared(
-    node, "speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-
-  declare_parameter_if_not_declared(
-    node, "failure_tolerance", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    node, "use_realtime_priority", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node, "publish_zero_velocity", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, "costmap_update_timeout", rclcpp::ParameterValue(0.30));
-
-  declare_parameter_if_not_declared(
-    node, "odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter_if_not_declared(
-    node, "odom_duration", rclcpp::ParameterValue(0.3));
-  declare_parameter_if_not_declared(
-    node, "interpolate_curvature_after_goal", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node, "max_robot_pose_search_dist", rclcpp::ParameterValue(costmap_size_x / 2.0));
-  declare_parameter_if_not_declared(
-    node, "prune_distance", rclcpp::ParameterValue(1.5));
-  declare_parameter_if_not_declared(
-    node, "enforce_path_inversion", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-    node, "inversion_xy_tolerance", rclcpp::ParameterValue(0.2));
-  declare_parameter_if_not_declared(
-    node, "inversion_yaw_tolerance", rclcpp::ParameterValue(0.4));
-
-  declare_parameter_if_not_declared(
-    node, "progress_checker_plugins", rclcpp::ParameterValue(default_progress_checker_ids_));
-  declare_parameter_if_not_declared(
-    node, "goal_checker_plugins", rclcpp::ParameterValue(default_goal_checker_ids_));
-  declare_parameter_if_not_declared(
-    node, "controller_plugins", rclcpp::ParameterValue(default_controller_ids_));
-
-  node->get_parameter("controller_frequency", params_.controller_frequency);
-  node->get_parameter("transform_tolerance", params_.transform_tolerance);
-  node->get_parameter("min_x_velocity_threshold", params_.min_x_velocity_threshold);
-  node->get_parameter("min_y_velocity_threshold", params_.min_y_velocity_threshold);
-  node->get_parameter("min_theta_velocity_threshold", params_.min_theta_velocity_threshold);
+  params_.controller_frequency = node->declare_or_get_parameter("controller_frequency", 20.0);
+  params_.transform_tolerance = node->declare_or_get_parameter("transform_tolerance", 0.1);
+  params_.min_x_velocity_threshold = node->declare_or_get_parameter("min_x_velocity_threshold", 0.0001);
+  params_.min_y_velocity_threshold = node->declare_or_get_parameter("min_y_velocity_threshold", 0.0001);
+  params_.min_theta_velocity_threshold = node->declare_or_get_parameter("min_theta_velocity_threshold", 0.0001);
+  params_.speed_limit_topic = node->declare_or_get_parameter("speed_limit_topic", std::string("speed_limit"));
+  params_.failure_tolerance = node->declare_or_get_parameter("failure_tolerance", 0.0);
+  params_.use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
+  params_.publish_zero_velocity = node->declare_or_get_parameter("publish_zero_velocity", true);
+  params_.costmap_update_timeout = node->declare_or_get_parameter("costmap_update_timeout", 0.30);
+  params_.odom_topic = node->declare_or_get_parameter("odom_topic", std::string("odom"));
+  params_.odom_duration = node->declare_or_get_parameter("odom_duration", 0.3);
+  params_.interpolate_curvature_after_goal = node->declare_or_get_parameter("interpolate_curvature_after_goal", false);
+  params_.max_robot_pose_search_dist = node->declare_or_get_parameter("max_robot_pose_search_dist", costmap_size_x / 2.0);
+  params_.prune_distance = node->declare_or_get_parameter("prune_distance", 1.5);
+  params_.enforce_path_inversion = node->declare_or_get_parameter("enforce_path_inversion", false);
+  params_.inversion_xy_tolerance = node->declare_or_get_parameter("inversion_xy_tolerance", 0.2);
+  params_.inversion_yaw_tolerance = node->declare_or_get_parameter("inversion_yaw_tolerance", 0.4);
 
   RCLCPP_INFO(
     logger_,
     "Controller frequency set to %.4fHz",
     params_.controller_frequency);
 
-  node->get_parameter("speed_limit_topic", params_.speed_limit_topic);
-  node->get_parameter("odom_topic", params_.odom_topic);
-  node->get_parameter("odom_duration", params_.odom_duration);
-
-  node->get_parameter("failure_tolerance", params_.failure_tolerance);
-  node->get_parameter("use_realtime_priority", params_.use_realtime_priority);
-  node->get_parameter("publish_zero_velocity", params_.publish_zero_velocity);
-  node->get_parameter(
-    "interpolate_curvature_after_goal",
-    params_.interpolate_curvature_after_goal);
-  node->get_parameter("max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
   if (params_.max_robot_pose_search_dist < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
       " every point on path for the closest value.");
     params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
   }
-  node->get_parameter("prune_distance", params_.prune_distance);
-  node->get_parameter("costmap_update_timeout", params_.costmap_update_timeout);
-  node->get_parameter("enforce_path_inversion", params_.enforce_path_inversion);
-  node->get_parameter("inversion_xy_tolerance", params_.inversion_xy_tolerance);
-  node->get_parameter("inversion_yaw_tolerance", params_.inversion_yaw_tolerance);
 
   RCLCPP_INFO(logger_, "getting progress checker plugins..");
-  node->get_parameter("progress_checker_plugins", params_.progress_checker_ids);
+  params_.progress_checker_ids = node->declare_or_get_parameter("progress_checker_plugins", default_progress_checker_ids_);
   if (params_.progress_checker_ids == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -128,7 +77,7 @@ ParameterHandler::ParameterHandler(
   }
 
   RCLCPP_INFO(logger_, "getting goal checker plugins..");
-  node->get_parameter("goal_checker_plugins", params_.goal_checker_ids);
+  params_.goal_checker_ids = node->declare_or_get_parameter("goal_checker_plugins", default_goal_checker_ids_);
   if (params_.goal_checker_ids == default_goal_checker_ids_) {
     for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -137,7 +86,8 @@ ParameterHandler::ParameterHandler(
     }
   }
 
-  node->get_parameter("controller_plugins", params_.controller_ids);
+  RCLCPP_INFO(logger_, "getting controller plugins..");
+  params_.controller_ids = node->declare_or_get_parameter("controller_plugins", default_controller_ids_);
   if (params_.controller_ids == default_controller_ids_) {
     for (size_t i = 0; i < default_controller_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(

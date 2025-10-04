@@ -23,6 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/controller_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "angles/angles.h"
 
@@ -79,7 +80,7 @@ void PathHandler::setPlan(const nav_msgs::msg::Path & path)
   global_plan_ = path;
   global_plan_up_to_inversion_ = global_plan_;
   if(params_->enforce_path_inversion) {
-    inversion_locale_ = removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+    inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
   }
 }
 
@@ -176,7 +177,7 @@ nav_msgs::msg::Path PathHandler::pruneGlobalPlan(
     if (isWithinInversionTolerances(robot_pose)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
       global_plan_up_to_inversion_ = global_plan_;
-      inversion_locale_ = removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+      inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
     }
   }
 

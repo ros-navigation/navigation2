@@ -108,7 +108,7 @@ public:
    * @param pose Current robot pose
    * @param velocity Current robot velocity
    * @param goal_checker Pointer to the current goal checker the task is utilizing
-   * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param transformed_global_plan The global plan after being processed by the path handler
    * @param goal The last pose of the global plan
    * @return The best command for the robot to drive
    */

@@ -60,10 +60,9 @@ namespace dwb_core
  *
  * Right now, it can publish
  *   1) The Local Plan (after it is calculated)
- *   2) The Transformed Global Plan (since it may be different than the global)
- *   3) The Full LocalPlanEvaluation
- *   4) Markers representing the different trajectories evaluated
- *   5) The CostGrid (in the form of a complex PointCloud2)
+ *   2) The Full LocalPlanEvaluation
+ *   3) Markers representing the different trajectories evaluated
+ *   4) The CostGrid (in the form of a complex PointCloud2)
  */
 class DWBPublisher
 {
@@ -105,7 +104,6 @@ protected:
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_;
-  bool publish_transformed_;
   bool publish_local_plan_;
   bool publish_trajectories_;
   bool publish_cost_grid_pc_;

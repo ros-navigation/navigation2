@@ -81,6 +81,7 @@ public:
    * @param query_pose The pose to check
    * @param goal_pose The pose to check against
    * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
    * @return True if goal is reached
    */
   virtual bool isGoalReached(

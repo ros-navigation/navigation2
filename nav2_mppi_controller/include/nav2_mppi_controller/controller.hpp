@@ -80,7 +80,7 @@ public:
     * @param robot_pose Robot pose
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
-    * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+    * @param transformed_global_plan The global plan after being processed by the path handler
     * @param goal The last pose of the global plan
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(

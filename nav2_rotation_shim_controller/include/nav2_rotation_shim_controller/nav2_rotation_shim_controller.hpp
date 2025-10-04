@@ -82,7 +82,7 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
-   * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param transformed_global_plan The global plan after being processed by the path handler
    * @param goal The last pose of the global plan
    * @return          Best command
    */
