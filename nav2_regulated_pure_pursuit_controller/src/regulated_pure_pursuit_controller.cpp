@@ -158,7 +158,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & pruned_global_plan,
+  nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::Pose & /*goal*/)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
@@ -180,7 +180,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double curv_lookahead_dist = params_->curvature_lookahead_dist;
 
   // Get the particular point on the path at the lookahead distance
-  auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, pruned_global_plan);
+  auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, transformed_global_plan);
   auto rotate_to_path_carrot_pose = carrot_pose;
   carrot_pub_->publish(createCarrotMsg(carrot_pose));
 
@@ -192,7 +192,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   if (params_->use_fixed_curvature_lookahead) {
     auto curvature_lookahead_pose = nav2_util::getLookAheadPoint(
       curv_lookahead_dist,
-      pruned_global_plan, params_->interpolate_curvature_after_goal);
+      transformed_global_plan, params_->interpolate_curvature_after_goal);
     rotate_to_path_carrot_pose = curvature_lookahead_pose;
     regulation_curvature = calculateCurvature(curvature_lookahead_pose.pose.position);
     curvature_carrot_pub_->publish(createCarrotMsg(curvature_lookahead_pose));
@@ -214,7 +214,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double angle_to_heading;
   if (shouldRotateToGoalHeading(carrot_pose)) {
     is_rotating_to_heading_ = true;
-    double angle_to_goal = tf2::getYaw(pruned_global_plan.poses.back().pose.orientation);
+    double angle_to_goal = tf2::getYaw(transformed_global_plan.poses.back().pose.orientation);
     rotateToHeading(linear_vel, angular_vel, angle_to_goal, speed);
   } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading, x_vel_sign)) {
     is_rotating_to_heading_ = true;
@@ -223,7 +223,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     is_rotating_to_heading_ = false;
     applyConstraints(
       regulation_curvature, speed,
-      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), pruned_global_plan,
+      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_global_plan,
       linear_vel, x_vel_sign);
 
     if (cancelling_) {

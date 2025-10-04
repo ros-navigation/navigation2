@@ -563,7 +563,7 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
   geometry_msgs::msg::Pose goal = path_handler_->getTransformedGoal(pose.header.stamp).pose;
-  pruned_global_plan_ = path_handler_->pruneGlobalPlan(pose);
+  transformed_global_plan_ = path_handler_->pruneGlobalPlan(pose);
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
@@ -573,7 +573,7 @@ void ControllerServer::computeAndPublishVelocity()
       pose,
       twist,
       goal_checkers_[current_goal_checker_].get(),
-      pruned_global_plan_,
+      transformed_global_plan_,
       goal
       );
     last_valid_cmd_time_ = now();
@@ -744,7 +744,7 @@ bool ControllerServer::isGoalReached()
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,
-    velocity, pruned_global_plan_);
+    velocity, transformed_global_plan_);
 }
 
 bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)

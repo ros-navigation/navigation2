@@ -82,9 +82,9 @@ void StoppedGoalChecker::initialize(
 
 bool StoppedGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path)
+  const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
 {
-  bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity, current_path);
+  bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity, transformed_global_plan);
   if (!ret) {
     return ret;
   }

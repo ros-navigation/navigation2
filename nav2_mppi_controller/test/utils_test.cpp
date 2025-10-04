@@ -42,7 +42,7 @@ public:
     const geometry_msgs::msg::Pose & /*query_pose*/,
     const geometry_msgs::msg::Pose & /*goal_pose*/,
     const geometry_msgs::msg::Twist & /*velocity*/,
-    const nav_msgs::msg::Path & /*current_path*/) {return false;}
+    const nav_msgs::msg::Path & /*transformed_global_plan*/) {return false;}
 
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,

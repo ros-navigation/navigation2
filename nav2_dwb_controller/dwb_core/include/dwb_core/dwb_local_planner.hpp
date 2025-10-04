@@ -105,7 +105,7 @@ public:
    * @param pose Current robot pose
    * @param velocity Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
-   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @param goal The last pose of the global plan
    * @return The best command for the robot to drive
    */
@@ -113,7 +113,7 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
-    nav_msgs::msg::Path & pruned_global_plan,
+    nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::Pose & goal) override;
 
   /**
@@ -141,14 +141,14 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param results   Output param, if not NULL, will be filled in with full evaluation results
-   * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+   * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
    * @return          Best command
    */
   virtual nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
-    nav_msgs::msg::Path & pruned_global_plan,
+    nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::Pose & goal);
 
   /**

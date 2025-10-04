@@ -80,14 +80,14 @@ public:
     * @param robot_pose Robot pose
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
-    * @param pruned_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
+    * @param transformed_global_plan The pruned portion of the global plan, bounded around the robot's position and within the local costmap
     * @param goal The last pose of the global plan
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     nav2_core::GoalChecker * goal_checker,
-    nav_msgs::msg::Path & pruned_global_plan,
+    nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::Pose & goal) override;
 
   /**

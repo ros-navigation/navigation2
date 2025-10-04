@@ -87,7 +87,7 @@ public:
     const geometry_msgs::msg::Pose & query_pose,
     const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity,
-    const nav_msgs::msg::Path & current_path) = 0;
+    const nav_msgs::msg::Path & transformed_global_plan) = 0;
 
   /**
    * @brief Get the maximum possible tolerances used for goal checking in the major types.

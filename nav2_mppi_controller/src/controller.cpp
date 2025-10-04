@@ -94,7 +94,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & pruned_global_plan,
+  nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::Pose & goal)
 {
 #ifdef BENCHMARK_TESTING
@@ -107,7 +107,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, pruned_global_plan, goal, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, goal, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();

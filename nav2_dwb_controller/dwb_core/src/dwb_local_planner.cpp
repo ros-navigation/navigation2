@@ -218,7 +218,7 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * /*goal_checker*/,
-  nav_msgs::msg::Path & pruned_global_plan,
+  nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::Pose & goal)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
@@ -229,7 +229,7 @@ DWBLocalPlanner::computeVelocityCommands(
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
       pose,
-      nav_2d_utils::twist3Dto2D(velocity), results, pruned_global_plan, goal);
+      nav_2d_utils::twist3Dto2D(velocity), results, transformed_global_plan, goal);
     pub_->publishEvaluation(results);
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
@@ -254,7 +254,7 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
-  nav_msgs::msg::Path & pruned_global_plan,
+  nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::Pose & goal)
 {
   if (results) {
@@ -266,7 +266,7 @@ DWBLocalPlanner::computeVelocityCommands(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (TrajectoryCritic::Ptr & critic : critics_) {
-    if (!critic->prepare(pose.pose, velocity, goal, pruned_global_plan)) {
+    if (!critic->prepare(pose.pose, velocity, goal, transformed_global_plan)) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
     }
   }

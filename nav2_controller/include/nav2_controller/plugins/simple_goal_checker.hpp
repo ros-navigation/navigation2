@@ -66,7 +66,7 @@ public:
   void reset() override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-    const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & current_path) override;
+    const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan) override;
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) override;

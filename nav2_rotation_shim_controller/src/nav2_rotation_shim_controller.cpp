@@ -169,7 +169,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & pruned_global_plan,
+  nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::Pose & goal)
 {
   // Rotate to goal heading when in goal xy tolerance
@@ -192,7 +192,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
       if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity,
-          pruned_global_plan))
+          transformed_global_plan))
       {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
@@ -260,7 +260,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   // If at this point, use the primary controller to path track
   in_rotation_ = false;
   auto cmd_vel = primary_controller_->computeVelocityCommands(pose, velocity, goal_checker,
-      pruned_global_plan, goal);
+      transformed_global_plan, goal);
   last_angular_vel_ = cmd_vel.twist.angular.z;
   return cmd_vel;
 }
