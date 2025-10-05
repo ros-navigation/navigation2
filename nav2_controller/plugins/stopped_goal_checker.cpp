@@ -65,15 +65,10 @@ void StoppedGoalChecker::initialize(
 
   auto node = parent.lock();
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
-
-  node->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  rot_stopped_velocity_ = node->declare_or_get_parameter(plugin_name + ".rot_stopped_velocity",
+      0.25);
+  trans_stopped_velocity_ = node->declare_or_get_parameter(plugin_name + ".trans_stopped_velocity",
+      0.25);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -84,7 +79,8 @@ bool StoppedGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
 {
-  bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity, transformed_global_plan);
+  bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity,
+      transformed_global_plan);
   if (!ret) {
     return ret;
   }

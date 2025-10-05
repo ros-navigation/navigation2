@@ -180,6 +180,7 @@
       <input_port name="path">Path to follow</input_port>
       <input_port name="goal_checker_id">Goal checker</input_port>
       <input_port name="progress_checker_id">Progress checker</input_port>
+      <input_port name="path_handler_id">Path handler</input_port>
       <input_port name="server_name">Action server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
@@ -255,6 +256,12 @@
       <input_port name="topic_name">Name of the topic to receive progress checker selection commands</input_port>
       <input_port name="default_progress_checker">Default progress checker of the controller selector</input_port>
       <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
+    </Action>
+
+    <Action ID="GoalCheckerSelector">
+      <input_port name="topic_name">Name of the topic to receive path handler selection commands</input_port>
+      <input_port name="default_path_handler">Default path handler of the controller selector</input_port>
+      <output_port name="selected_path_handler">Name of the selected path handler received from the topic subscription</output_port>
     </Action>
 
     <Action ID="Spin">

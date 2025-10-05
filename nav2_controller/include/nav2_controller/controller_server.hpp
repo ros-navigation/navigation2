@@ -25,6 +25,7 @@
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
+#include "nav2_core/path_handler.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -36,7 +37,6 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_controller/path_handler.hpp"
 #include "nav2_controller/parameter_handler.hpp"
 
 namespace nav2_controller
@@ -54,6 +54,7 @@ public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
   using GoalCheckerMap = std::unordered_map<std::string, nav2_core::GoalChecker::Ptr>;
   using ProgressCheckerMap = std::unordered_map<std::string, nav2_core::ProgressChecker::Ptr>;
+  using PathHandlerMap = std::unordered_map<std::string, nav2_core::PathHandler::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -156,6 +157,15 @@ protected:
   bool findProgressCheckerId(const std::string & c_name, std::string & name);
 
   /**
+   * @brief Find the valid path handler ID name for the specified parameter
+   *
+   * @param c_name The path handler name
+   * @param name Reference to the name to use for path handling if any valid available
+   * @return bool Whether it found a valid path handler to use
+   */
+  bool findPathHandlerId(const std::string & c_name, std::string & name);
+
+  /**
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
@@ -222,6 +232,13 @@ protected:
     return twist_thresh;
   }
 
+  /**
+   * @brief Get the global goal pose transformed to the local frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
+
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::mutex dynamic_params_lock_;
@@ -250,6 +267,11 @@ protected:
   ControllerMap controllers_;
   std::string controller_ids_concat_, current_controller_;
 
+  // Path Handler Plugins
+  pluginlib::ClassLoader<nav2_core::PathHandler> path_handler_loader_;
+  PathHandlerMap path_handlers_;
+  std::string path_handler_ids_concat_, current_path_handler_;
+
   rclcpp::Duration costmap_update_timeout_;
 
   // Whether we've published the single controller warning yet
@@ -261,7 +283,6 @@ protected:
   // Current path container
   nav_msgs::msg::Path current_path_;
   nav_msgs::msg::Path transformed_global_plan_;
-  std::unique_ptr<nav2_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
 

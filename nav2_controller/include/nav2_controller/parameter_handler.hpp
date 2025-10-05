@@ -44,18 +44,14 @@ struct Parameters
   double costmap_update_timeout;
   std::string odom_topic;
   double odom_duration;
-  bool interpolate_curvature_after_goal;
-  double max_robot_pose_search_dist;
-  double prune_distance;
-  bool enforce_path_inversion;
-  float inversion_xy_tolerance;
-  float inversion_yaw_tolerance;
   std::vector<std::string> progress_checker_ids;
   std::vector<std::string> progress_checker_types;
   std::vector<std::string> goal_checker_ids;
   std::vector<std::string> goal_checker_types;
   std::vector<std::string> controller_ids;
   std::vector<std::string> controller_types;
+  std::vector<std::string> path_handler_ids;
+  std::vector<std::string> path_handler_types;
 };
 
 /**
@@ -70,7 +66,7 @@ public:
    */
   ParameterHandler(
     nav2::LifecycleNode::SharedPtr node,
-    const rclcpp::Logger & logger, const double costmap_size_x);
+    const rclcpp::Logger & logger);
 
   /**
    * @brief Destrructor for nav2_controller::ParameterHandler
@@ -106,6 +102,8 @@ protected:
   const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
   const std::vector<std::string> default_controller_ids_{"FollowPath"};
   const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
+  const std::vector<std::string> default_path_handler_ids_{"path_handler"};
+  const std::vector<std::string> default_path_handler_types_{"nav2_controller::SimplePathHandler"};
 };
 
 }  // namespace nav2_controller

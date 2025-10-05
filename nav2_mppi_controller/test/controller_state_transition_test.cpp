@@ -59,7 +59,8 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
   controller->newPathReceived(path);
   nav_msgs::msg::Path transformed_global_plan;
   geometry_msgs::msg::Pose goal;
-  EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}, transformed_global_plan, goal));
+  EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}, transformed_global_plan,
+    goal));
 
   controller->setSpeedLimit(0.5, true);
   controller->setSpeedLimit(0.5, false);

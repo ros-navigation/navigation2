@@ -38,6 +38,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
+  path_handler_loader_("nav2_core", "nav2_core::PathHandler"),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -53,6 +54,7 @@ ControllerServer::~ControllerServer()
   progress_checkers_.clear();
   goal_checkers_.clear();
   controllers_.clear();
+  path_handlers_.clear();
   costmap_thread_.reset();
 }
 
@@ -68,15 +70,13 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
   try {
     param_handler_ = std::make_unique<ParameterHandler>(
-      node, get_logger(), costmap_ros_->getCostmap()->getSizeInMetersX());
+      node, get_logger());
     params_ = param_handler_->getParams();
   } catch (const std::exception & ex) {
     RCLCPP_FATAL(get_logger(), "%s", ex.what());
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
-  path_handler_ = std::make_unique<PathHandler>(
-   params_, costmap_ros_->getTfBuffer(), costmap_ros_);
 
   for (size_t i = 0; i != params_->progress_checker_ids.size(); i++) {
     try {
@@ -157,6 +157,33 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
+
+  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
+    try {
+      nav2_core::PathHandler::Ptr path_handler =
+        path_handler_loader_.createUniqueInstance(params_->path_handler_types[i]);
+      RCLCPP_INFO(
+        get_logger(), "Created path handler : %s of type %s",
+        params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
+      path_handler->initialize(node, params_->path_handler_ids[i], costmap_ros_,
+          costmap_ros_->getTfBuffer());
+      path_handlers_.insert({params_->path_handler_ids[i], path_handler});
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create path handler Exception: %s", ex.what());
+      on_cleanup(state);
+      return nav2::CallbackReturn::FAILURE;
+    }
+  }
+
+  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
+    path_handler_ids_concat_ += params_->path_handler_ids[i] + std::string(" ");
+  }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s path handlers available.", path_handler_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
       params_->odom_topic);
@@ -257,6 +284,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   goal_checkers_.clear();
   progress_checkers_.clear();
+  path_handlers_.clear();
 
   costmap_ros_->cleanup();
 
@@ -356,6 +384,51 @@ bool ControllerServer::findProgressCheckerId(
   return true;
 }
 
+bool ControllerServer::findPathHandlerId(
+  const std::string & c_name,
+  std::string & current_path_handler)
+{
+  if (path_handlers_.find(c_name) == path_handlers_.end()) {
+    if (path_handlers_.size() == 1 && c_name.empty()) {
+      RCLCPP_WARN_ONCE(
+        get_logger(), "No path handler was specified in parameter 'current_path_handler'."
+        " Server will use only plugin loaded %s. "
+        "This warning will appear once.", path_handler_ids_concat_.c_str());
+      current_path_handler = path_handlers_.begin()->first;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with path_handler name %s in parameter"
+        " 'current_path_handler', which does not exist. Available path handlers are: %s.",
+        c_name.c_str(), path_handler_ids_concat_.c_str());
+      return false;
+    }
+  } else {
+    RCLCPP_DEBUG(get_logger(), "Selected path handler: %s.", c_name.c_str());
+    current_path_handler = c_name;
+  }
+
+  return true;
+}
+
+geometry_msgs::msg::PoseStamped ControllerServer::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
+{
+  auto goal = current_path_.poses.back();
+  goal.header.frame_id = current_path_.header.frame_id;
+  goal.header.stamp = stamp;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), params_->transform_tolerance))
+  {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
+}
+
+
 void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
@@ -390,6 +463,14 @@ void ControllerServer::computeControl()
       current_progress_checker_ = current_progress_checker;
     } else {
       throw nav2_core::ControllerException("Failed to find progress checker name: " + pc_name);
+    }
+
+    std::string ph_name = goal->path_handler_id;
+    std::string current_path_handler;
+    if(findPathHandlerId(ph_name, current_path_handler)) {
+      current_path_handler_ = current_path_handler;
+    } else {
+      throw nav2_core::ControllerException("Failed to find path handler name: " + ph_name);
     }
 
     setPlannerPath(goal->path);
@@ -535,7 +616,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     throw nav2_core::InvalidPath("Path is empty.");
   }
   controllers_[current_controller_]->newPathReceived(path);
-  path_handler_->setPlan(path);
+  path_handlers_[current_path_handler_]->setPlan(path);
 
   end_pose_ = path.poses.back();
   end_pose_.header.frame_id = path.header.frame_id;
@@ -562,8 +643,8 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  geometry_msgs::msg::Pose goal = path_handler_->getTransformedGoal(pose.header.stamp).pose;
-  transformed_global_plan_ = path_handler_->pruneGlobalPlan(pose);
+  geometry_msgs::msg::Pose goal = getTransformedGoal(pose.header.stamp).pose;
+  transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 
@@ -681,6 +762,22 @@ void ControllerServer::updateGlobalPath()
       result->error_code = Action::Result::INVALID_CONTROLLER;
       result->error_msg = "Terminating action, invalid progress checker " +
         goal->progress_checker_id + " requested.";
+      action_server_->terminate_current(result);
+      return;
+    }
+    std::string current_path_handler;
+    if (findPathHandlerId(goal->path_handler_id, current_path_handler)) {
+      if(current_path_handler_ != current_path_handler) {
+        RCLCPP_INFO(
+          get_logger(), "Change of path handler %s requested, resetting it",
+          goal->path_handler_id.c_str());
+        current_path_handler_ = current_path_handler;
+      }
+    } else {
+      std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
+      result->error_code = Action::Result::INVALID_CONTROLLER;
+      result->error_msg = "Terminating action, invalid path handler" +
+        goal->path_handler_id + " requested.";
       action_server_->terminate_current(result);
       return;
     }

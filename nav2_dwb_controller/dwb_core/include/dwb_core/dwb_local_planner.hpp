@@ -166,7 +166,6 @@ public:
   }
 
 protected:
-
   /**
    * @brief Iterate through all the twists and find the best one
    */
