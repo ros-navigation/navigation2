@@ -22,6 +22,7 @@
 #include <memory>
 #include <set>
 #include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -246,33 +247,30 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  bool is_bt_id = false;
-  if ((file_or_id.length() < 4) ||
-    file_or_id.substr(file_or_id.length() - 4) != ".xml")
-  {
-    is_bt_id = true;
-  }
+  const std::string kXmlExtension = ".xml";
+  const bool is_bt_id = (file_or_id.length() < kXmlExtension.size()) ||
+    (file_or_id.compare(file_or_id.length() - kXmlExtension.size(),
+                             kXmlExtension.size(), kXmlExtension) != 0);
 
-  std::unordered_set<std::string> used_bt_id;
+  std::unordered_map<std::string, std::string> id_to_file;
+  std::unordered_set<std::string> duplicate_ids;
   for (const auto & directory : search_directories_) {
     try {
       for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() == ".xml") {
-          auto current_bt_id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (current_bt_id.empty()) {
-            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)",
-              entry.path().string().c_str());
-            continue;
-          }
-          auto [it, inserted] = used_bt_id.insert(current_bt_id);
-          if (!inserted) {
-            RCLCPP_WARN(
-              logger_,
-              "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
-              "ID: %s File: %s",
-              current_bt_id.c_str(), entry.path().string().c_str());
-          }
-          bt_->registerTreeFromFile(entry.path().string());
+        if (entry.path().extension() != ".xml") {continue;}
+
+        auto id = bt_->extractBehaviorTreeID(entry.path().string());
+        if (id.empty()) {
+          RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
+          continue;
+        }
+
+        if (id_to_file.count(id)) {
+          duplicate_ids.insert(id);
+          RCLCPP_WARN(logger_, "Duplicate BT ID detected: %s in files [%s, %s]", id.c_str(),
+              id_to_file[id].c_str(), entry.path().c_str());
+        } else {
+          id_to_file[id] = entry.path().string();
         }
       }
     } catch (const std::exception & e) {
@@ -281,12 +279,53 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       return false;
     }
   }
-  // Try to load the main BT tree (by ID)
+  std::string main_file;
+  std::string main_id;
+
   try {
-    if(!is_bt_id) {
-      tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
+    if (!is_bt_id) {
+      main_file = file_or_id;
+      main_id = bt_->extractBehaviorTreeID(main_file);
+
+      if (main_id.empty()) {
+        RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        return false;
+      }
+
+      // Register all trees, skipping duplicates that conflict with main tree
+      for (const auto & [id, path] : id_to_file) {
+        if (id == main_id && path != main_file) {
+          RCLCPP_WARN(
+              logger_, "Skipping conflicting BT file %s (duplicate ID %s)", path.c_str(),
+              id.c_str());
+          continue;
+        }
+        RCLCPP_INFO(logger_, "Registering Tree from File: %s", path.c_str());
+        bt_->registerTreeFromFile(path);
+      }
+
+      RCLCPP_INFO(logger_, "Registering main BT file explicitly: %s", main_file.c_str());
+      bt_->registerTreeFromFile(main_file);
+
+      tree_ = bt_->createTree(main_id, blackboard_);
+      RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
+
     } else {
+      if (duplicate_ids.count(file_or_id)) {
+        RCLCPP_ERROR(logger_,
+            "Conflicting BT ID '%s' found in multiple files. Loading may be ambiguous. Concider "
+            "using unique IDs for each BT file.",
+            file_or_id.c_str());
+      }
+
+      for (const auto & [id, path] : id_to_file) {
+        if (path.empty()) {continue;}
+        RCLCPP_INFO(logger_, "Registering Tree from File: %s", path.c_str());
+        bt_->registerTreeFromFile(path);
+      }
+
       tree_ = bt_->createTree(file_or_id, blackboard_);
+      RCLCPP_INFO(logger_, "Creating tree from ID: %s", file_or_id.c_str());
     }
 
     for (auto & subtree : tree_.subtrees) {
