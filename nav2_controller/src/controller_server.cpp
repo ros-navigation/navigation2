@@ -688,9 +688,14 @@ void ControllerServer::computeAndPublishVelocity()
 
     // Transform goal pose to robot frame for distance calculation
     geometry_msgs::msg::PoseStamped transformed_end_pose;
+    if (!nav2_util::transformPoseInTargetFrame(
+            end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
+            pose.header.frame_id, costmap_ros_->getTransformTolerance()))
+    {
+      throw nav2_core::ControllerTFError("Failed to transform goal pose to robot frame");
+    }
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-      pose, transformed_end_pose);
-
+    pose, transformed_end_pose);
     const auto path_search_result = nav2_util::distance_from_path(
       current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
