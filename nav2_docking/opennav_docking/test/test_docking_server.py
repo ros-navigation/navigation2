@@ -200,12 +200,12 @@ class TestDockingServer(unittest.TestCase):
         odom.twist.twist = self.command
         self.odom_pub.publish(odom)
 
-    def action_feedback_callback(self, msg: DockRobot.Feedback) -> None:
+    def action_feedback_callback(self, msg: DockRobot.Impl.FeedbackMessage) -> None:
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
         if msg.feedback.num_retries > 0 and \
-                msg.feedback.state == msg.feedback.WAIT_FOR_CHARGE:
+                msg.feedback.state == DockRobot.Feedback.WAIT_FOR_CHARGE:
             self.is_charging = True
 
     def nav_execute_callback(
