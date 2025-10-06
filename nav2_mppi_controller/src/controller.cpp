@@ -51,6 +51,9 @@ void MPPIController::configure(
       "~/optimal_trajectory");
   }
 
+  opt_traj_unconstrained_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+      "~/optimal_trajectory_unconstrained");
+
   RCLCPP_INFO(logger_, "Configured MPPI Controller: %s", name_.c_str());
 }
 
@@ -127,8 +130,21 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
     opt_traj_pub_->publish(std::move(trajectory_msg));
   }
 
+// if (publish_optimal_trajectory_ && opt_traj_unconstrained_pub_->get_subscription_count() > 0) {
+//     std_msgs::msg::Header trajectory_header;
+//     trajectory_header.stamp = cmd.header.stamp;
+//     trajectory_header.frame_id = costmap_ros_->getGlobalFrameID();
+
+//     auto trajectory_msg = utils::toTrajectoryMsg(
+//       optimizer_.getOptimalTrajectoryUnconstrained(),
+//       optimizer_.getOptimalControlSequenceUnconstrained(),
+//       optimizer_.getSettings().model_dt,
+//       trajectory_header);
+//     opt_traj_unconstrained_pub_->publish(std::move(trajectory_msg));
+//   }
+
   if (visualize_) {
-    visualize(cmd.header.stamp, optimal_trajectory);
+    visualize(cmd.header.stamp, optimal_trajectory, optimizer_.getOptimalTrajectoryUnconstrained());
   }
 
   return cmd;
@@ -136,10 +152,12 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 
 void MPPIController::visualize(
   const builtin_interfaces::msg::Time & cmd_stamp,
-  const Eigen::ArrayXXf & optimal_trajectory)
+  const Eigen::ArrayXXf & optimal_trajectory,
+  const Eigen::ArrayXXf & optimal_trajectory_unconstrained)
 {
   trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
+  trajectory_visualizer_.add(optimal_trajectory_unconstrained, "Optimal Trajectory Unconstrained", cmd_stamp);
   trajectory_visualizer_.visualize();
 }
 
