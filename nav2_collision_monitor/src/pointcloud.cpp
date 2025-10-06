@@ -105,10 +105,12 @@ bool PointCloud::getData(
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, "height");
 
   // Refill data array with PointCloud points in base frame
-  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_height) {
     // Transform point coordinates from source frame -> to base frame
+    //Not transforming height since it is already relative to ground
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
 
     // Check range from sensor origin before transformation
@@ -120,7 +122,7 @@ bool PointCloud::getData(
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
-    if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
+    if (*iter_height >= min_height_ && *iter_height <= max_height_) {
       data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
   }
