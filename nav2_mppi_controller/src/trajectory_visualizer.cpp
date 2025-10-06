@@ -111,6 +111,23 @@ void TrajectoryVisualizer::add(
   const float shape_1 = static_cast<float>(n_cols);
   points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
 
+  std::vector<std::pair<size_t, float>> sorted_costs;
+  sorted_costs.reserve(std::ceil(n_rows / trajectory_step_));
+
+  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+    sorted_costs.emplace_back(i, trajectories.costs(i));
+  }
+  std::sort(sorted_costs.begin(), sorted_costs.end(),
+            [](const auto & a, const auto & b) { return a.second < b.second; });
+
+  const float step = 1.0f / static_cast<float>(sorted_costs.size());
+  float color_component = 1.0f;
+  std::map<size_t, float> cost_color_map;
+  for (const auto & pair : sorted_costs) {
+    cost_color_map[pair.first] = color_component;
+    color_component -= step;
+  }
+
   for (size_t i = 0; i < n_rows; i += trajectory_step_) {
     for (size_t j = 0; j < n_cols; j += time_step_) {
       const float j_flt = static_cast<float>(j);
@@ -119,7 +136,7 @@ void TrajectoryVisualizer::add(
 
       auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
       auto scale = utils::createScale(0.03, 0.03, 0.03);
-      auto color = utils::createColor(0, green_component, blue_component, 1);
+      auto color = utils::createColor(cost_color_map[i], green_component, blue_component, 1);
       auto marker = utils::createMarker(
         marker_id_++, pose, scale, color, frame_id_, marker_namespace);
 

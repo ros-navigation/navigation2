@@ -29,6 +29,7 @@ struct Trajectories
   Eigen::ArrayXXf x;
   Eigen::ArrayXXf y;
   Eigen::ArrayXXf yaws;
+  Eigen::ArrayXf costs;
 
   /**
     * @brief Reset state data

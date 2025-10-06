@@ -226,6 +226,7 @@ void Optimizer::optimize()
     generateNoisedTrajectories();
     critic_manager_.evalTrajectoriesScores(critics_data_);
     updateControlSequence();
+    generated_trajectories_.costs = costs_;
   }
 }
 
