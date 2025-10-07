@@ -568,42 +568,16 @@ void Optimizer::updateControlSequence()
   const bool is_holo = isHolonomic();
   auto & s = settings_;
 
-  // Paper
-  auto vx = state_.cvx; // K×N
-  std::cout << "Vx: size " << vx.rows() << "x" << vx.cols() << std::endl;
-  auto ux = control_sequence_.vx; // Nx1
-  std::cout << "ux: size " << ux.rows() << "x" << ux.cols() << std::endl;
-
-  // u_t^T * v_t (paper) = v_t^T * u_t per sample
-  // Eigen::VectorXf cross = (Vx * ux).eval(); // (KxN) * (Nx1) -> (Kx1)
-  // Since all vars are Eigen::Array, need to do element-wise multiplication and then sum rows
-  Eigen::ArrayXf cross_vx = (vx.rowwise() * ux.transpose()) // K×N, broadcast ux over rows
-                             .rowwise()
-                             .sum(); // Kx1
-  std::cout << "cross_vx: " << cross_vx.rows() << "x" << cross_vx.cols() << " : " << cross_vx(Eigen::seq(0, 9)).transpose() << "\n";
-
-  // original mppi
-  auto vx_T = control_sequence_.vx.transpose();  // 1xN
-  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T; // KxN
-  auto costs_vx = ((bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
-  // costs_ += (gamma_vx * (ux_T * vx).rowwise().sum()).eval();
-  std::cout << "costs_vx: " << costs_vx.rows() << "x" << costs_vx.cols() << " : " << costs_vx(Eigen::seq(0, 9)).transpose() << "\n";
-
+  auto vx_T = control_sequence_.vx.transpose();
+  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
-  costs_ += gamma_vx * cross_vx;
+  costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
   if (s.sampling_std.wz > 0.0f) {
-    // auto wz_T = control_sequence_.wz.transpose();  // 1xN
-    // auto bounded_noises_wz = state_.cwz.rowwise() - wz_T; // KxN
+    auto wz_T = control_sequence_.wz.transpose();
+    auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
     const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
-    // costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
-
-     auto wz = state_.cwz;
-     auto uz = control_sequence_.wz; // Nx1
-     Eigen::ArrayXf cross_wz = (wz.rowwise() * uz.transpose()) // (K×N), broadcast ux over rows
-                                   .rowwise()
-                                   .sum();
-     costs_ += gamma_wz * cross_wz;
+    costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
   }
 
   if (is_holo) {
