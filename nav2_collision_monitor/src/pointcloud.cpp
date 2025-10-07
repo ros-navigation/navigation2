@@ -122,8 +122,14 @@ bool PointCloud::getData(
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
-    if (*iter_height >= min_height_ && *iter_height <= max_height_) {
-      data.push_back({p_v3_b.x(), p_v3_b.y()});
+    if(use_global_height_){
+      if (*iter_height >= min_height_ && *iter_height <= max_height_) {
+        data.push_back({p_v3_b.x(), p_v3_b.y()});
+      }
+    } else {
+      if (*iter_z >= min_height_ && *iter_z <= max_height_) {
+        data.push_back({p_v3_b.x(), p_v3_b.y()});
+      }
     }
   }
   return true;
@@ -150,6 +156,9 @@ void PointCloud::getParameters(std::string & source_topic)
   nav2::declare_parameter_if_not_declared(
     node, source_name_ + ".transport_type", rclcpp::ParameterValue(std::string("raw")));
   transport_type_ = node->get_parameter(source_name_ + ".transport_type").as_string();
+  nav2::declare_parameter_if_not_declared(
+    node, source_name_ + ".use_global_height", rclcpp::ParameterValue(false));
+  use_global_height_ = node->get_parameter(source_name_ + ".use_global_height").as_bool();
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
@@ -180,6 +189,9 @@ PointCloud::dynamicParametersCallback(
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == source_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
+      }
+      else if (param_name == source_name_ + "." + "use_global_height") {
+        use_global_height_ = parameter.as_bool();
       }
     }
   }
