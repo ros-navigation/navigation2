@@ -48,7 +48,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 geometry_msgs::msg::Point linearInterpolation(
   const geometry_msgs::msg::Point & p1,
   const geometry_msgs::msg::Point & p2,
-  double target_dist);
+  const double target_dist);
 
 /**
 * @brief Get lookahead point

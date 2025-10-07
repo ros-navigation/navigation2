@@ -57,7 +57,7 @@ geometry_msgs::msg::Point circleSegmentIntersection(
 geometry_msgs::msg::Point linearInterpolation(
   const geometry_msgs::msg::Point & p1,
   const geometry_msgs::msg::Point & p2,
-  double target_dist)
+  const double target_dist)
 {
   geometry_msgs::msg::Point result;
 
@@ -120,7 +120,7 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       projected_position.x += cos(end_path_orientation) * lookahead_dist;
       projected_position.y += sin(end_path_orientation) * lookahead_dist;
 
-      // Use the circle intersection to find the position at the correct look
+      // Use the linear interpolation to find the position at the correct look
       // ahead distance
       const auto interpolated_position = linearInterpolation(
         last_pose_it->pose.position, projected_position, interpolation_dist);
@@ -135,11 +135,11 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       goal_pose_it = std::prev(transformed_plan.poses.end());
     }
   } else if (goal_pose_it != transformed_plan.poses.begin()) {
-    // Find the point on the line segment between the two poses
+    // Find the point on the robot path
     // that is exactly the lookahead distance away from the robot pose (the origin)
-    // This can be found with a closed form for the intersection of a segment and a circle
-    // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
-    // and goal_pose is guaranteed to be outside the circle.
+    // This can be found with a linear interpolation between the prev_pose and
+    // the goal_pose, moving interpolation_dist starting from prev_pose in the
+    // direction of goal_pose.
     auto prev_pose_it = std::prev(goal_pose_it);
     auto point = linearInterpolation(
       prev_pose_it->pose.position,
