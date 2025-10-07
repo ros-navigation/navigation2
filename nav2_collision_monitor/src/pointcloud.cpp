@@ -110,7 +110,6 @@ bool PointCloud::getData(
   // Refill data array with PointCloud points in base frame
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_height) {
     // Transform point coordinates from source frame -> to base frame
-    //Not transforming height since it is already relative to ground
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
 
     // Check range from sensor origin before transformation
@@ -122,7 +121,7 @@ bool PointCloud::getData(
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
-    if(use_global_height_){
+    if(use_global_height_) {
       if (*iter_height >= min_height_ && *iter_height <= max_height_) {
         data.push_back({p_v3_b.x(), p_v3_b.y()});
       }
@@ -189,8 +188,7 @@ PointCloud::dynamicParametersCallback(
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == source_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
-      }
-      else if (param_name == source_name_ + "." + "use_global_height") {
+      } else if (param_name == source_name_ + "." + "use_global_height") {
         use_global_height_ = parameter.as_bool();
       }
     }
