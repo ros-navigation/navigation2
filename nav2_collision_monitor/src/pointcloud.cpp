@@ -119,6 +119,7 @@ bool PointCloud::getData(
     height_field = "height";
   } else if (use_global_height_) {
     RCLCPP_ERROR(logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud", source_name_.c_str());
+    return false;
   } else {
     // If height field not present fill iterator with z field
     height_field = "z";
