@@ -105,7 +105,25 @@ bool PointCloud::getData(
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*data_, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
-  sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, "height");
+
+  bool height_present{false};
+  for(const auto & field : data_->fields) {
+    if(field.name == "height") {
+      height_present = true;
+    }
+  }
+
+  // Reference height field
+  std::string height_field{""};
+  if(use_global_height_ && height_present) {
+    height_field = "height";
+  } else if(use_global_height_) {
+    throw std::runtime_error{"'use_global_height' parameter true but height field not in cloud"};
+  } else {
+    // If height field not present fill iterator with z field
+    height_field = "z";
+  }
+  sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, height_field);
 
   // Refill data array with PointCloud points in base frame
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_height) {
