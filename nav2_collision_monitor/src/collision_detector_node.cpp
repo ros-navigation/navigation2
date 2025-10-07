@@ -178,14 +178,14 @@ bool CollisionDetector::configurePolygons(
     auto node = shared_from_this();
 
     // Leave it to be not initialized: to intentionally cause an error if it will not set
-    nav2::declare_parameter_if_not_declared(
-      node, "polygons", rclcpp::PARAMETER_STRING_ARRAY);
-    std::vector<std::string> polygon_names = get_parameter("polygons").as_string_array();
+    std::vector<std::string> polygon_names =
+      node->declare_or_get_parameter<std::vector<std::string>>(
+        "polygons", rclcpp::PARAMETER_STRING_ARRAY);
     for (std::string polygon_name : polygon_names) {
       // Leave it not initialized: the will cause an error if it will not set
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name + ".type", rclcpp::PARAMETER_STRING);
-      const std::string polygon_type = get_parameter(polygon_name + ".type").as_string();
+      const std::string polygon_type =
+        node->declare_or_get_parameter<std::string>(
+          polygon_name + ".type", rclcpp::PARAMETER_STRING);
 
       if (polygon_type == "polygon") {
         polygons_.push_back(
@@ -242,9 +242,9 @@ bool CollisionDetector::configureSources(
     auto node = shared_from_this();
 
     // Leave it to be not initialized to intentionally cause an error if it will not set
-    nav2::declare_parameter_if_not_declared(
-      node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
-    std::vector<std::string> source_names = get_parameter("observation_sources").as_string_array();
+    std::vector<std::string> source_names =
+      node->declare_or_get_parameter<std::vector<std::string>>(
+        "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     for (std::string source_name : source_names) {
       const std::string source_type = node->declare_or_get_parameter(
         source_name + ".type", std::string("scan"));  // Laser scanner by default

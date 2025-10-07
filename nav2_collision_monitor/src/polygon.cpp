@@ -332,10 +332,8 @@ bool Polygon::getCommonParameters(
   try {
     // Get action type.
     // Leave it not initialized: the will cause an error if it will not set.
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".action_type", rclcpp::PARAMETER_STRING);
-    const std::string at_str =
-      node->get_parameter(polygon_name_ + ".action_type").as_string();
+    const std::string at_str = node->declare_or_get_parameter<std::string>(
+      polygon_name_ + ".action_type", rclcpp::PARAMETER_STRING);
     if (at_str == "stop") {
       action_type_ = STOP;
     } else if (at_str == "slowdown") {
@@ -355,9 +353,8 @@ bool Polygon::getCommonParameters(
     min_points_ = node->declare_or_get_parameter(polygon_name_ + ".min_points", 4);
 
     try {
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER);
-      min_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int() + 1;
+      min_points_ = node->declare_or_get_parameter<int>(
+        polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER) + 1;
       RCLCPP_WARN(
         logger_,
         "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
@@ -399,10 +396,8 @@ bool Polygon::getCommonParameters(
     if (use_dynamic_sub_topic) {
       if (action_type_ != APPROACH) {
         // Get polygon sub topic
-        nav2::declare_parameter_if_not_declared(
-          node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-        polygon_sub_topic =
-          node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+        polygon_sub_topic = node->declare_or_get_parameter<std::string>(
+          polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
       } else {
         // Obtain the footprint topic to make a footprint subscription for approach polygon
         footprint_topic = node->declare_or_get_parameter(
@@ -412,10 +407,9 @@ bool Polygon::getCommonParameters(
     }
 
     // By default, use all observation sources for polygon
-    nav2::declare_parameter_if_not_declared(
-      node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     const std::vector<std::string> observation_sources =
-      node->get_parameter("observation_sources").as_string_array();
+      node->declare_or_get_parameter<std::vector<std::string>>(
+        "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     sources_names_ = node->declare_or_get_parameter(
       polygon_name_ + ".sources_names", observation_sources);
 
@@ -460,13 +454,11 @@ bool Polygon::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter points fails, use dynamic subscription
   try {
     // Leave it uninitialized: it will throw an inner exception if the parameter is not set
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
-    std::string poly_string =
-      node->get_parameter(polygon_name_ + ".points").as_string();
+    std::string poly_string = node->declare_or_get_parameter<std::string>(
+      polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
 
     use_dynamic_sub = !getPolygonFromString(poly_string, poly_);
-  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+  } catch (const rclcpp::exceptions::InvalidParameterValueException &) {
     RCLCPP_INFO(
       logger_,
       "[%s]: Polygon points are not defined. Using dynamic subscription instead.",

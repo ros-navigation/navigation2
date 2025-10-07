@@ -50,10 +50,9 @@ bool VelocityPolygon::getParameters(
 
   try {
     // Get velocity_polygons parameter
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> velocity_polygons =
-      node->get_parameter(polygon_name_ + ".velocity_polygons").as_string_array();
+      node->declare_or_get_parameter<std::vector<std::string>>(
+        polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
 
     // holonomic param
     holonomic_ = node->declare_or_get_parameter(
@@ -62,42 +61,34 @@ bool VelocityPolygon::getParameters(
     for (std::string velocity_polygon_name : velocity_polygons) {
       // polygon points parameter
       std::vector<Point> poly;
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + velocity_polygon_name + ".points", rclcpp::PARAMETER_STRING);
       std::string poly_string =
-        node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".points").as_string();
+        node->declare_or_get_parameter<std::string>(
+          polygon_name_ + "." + velocity_polygon_name + ".points",
+          rclcpp::PARAMETER_STRING);
 
       if (!getPolygonFromString(poly_string, poly)) {
         return false;
       }
 
       // linear_min param
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + velocity_polygon_name + ".linear_min",
+      double linear_min = node->declare_or_get_parameter<double>(
+        polygon_name_ + "." + velocity_polygon_name + ".linear_min",
         rclcpp::PARAMETER_DOUBLE);
-      double linear_min = node->get_parameter(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_min").as_double();
 
       // linear_max param
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + velocity_polygon_name + ".linear_max",
+      double linear_max = node->declare_or_get_parameter<double>(
+        polygon_name_ + "." + velocity_polygon_name + ".linear_max",
         rclcpp::PARAMETER_DOUBLE);
-      double linear_max = node->get_parameter(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_max").as_double();
 
       // theta_min param
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + velocity_polygon_name + ".theta_min",
+      double theta_min = node->declare_or_get_parameter<double>(
+        polygon_name_ + "." + velocity_polygon_name + ".theta_min",
         rclcpp::PARAMETER_DOUBLE);
-      double theta_min = node->get_parameter(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_min").as_double();
 
       // theta_max param
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + "." + velocity_polygon_name + ".theta_max",
+      double theta_max = node->declare_or_get_parameter<double>(
+        polygon_name_ + "." + velocity_polygon_name + ".theta_max",
         rclcpp::PARAMETER_DOUBLE);
-      double theta_max = node->get_parameter(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_max").as_double();
 
       // direction_end_angle param and direction_start_angle param
       double direction_end_angle = 0.0;
