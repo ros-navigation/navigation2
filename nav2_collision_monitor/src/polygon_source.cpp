@@ -160,9 +160,8 @@ void PolygonSource::getParameters(std::string & source_topic)
 
   getCommonParameters(source_topic);
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".sampling_distance", rclcpp::ParameterValue(0.1));
-  sampling_distance_ = node->get_parameter(source_name_ + ".sampling_distance").as_double();
+  sampling_distance_ = node->declare_or_get_parameter(
+    source_name_ + ".sampling_distance", 0.1);
 }
 
 void PolygonSource::dataCallback(geometry_msgs::msg::PolygonInstanceStamped::ConstSharedPtr msg)
