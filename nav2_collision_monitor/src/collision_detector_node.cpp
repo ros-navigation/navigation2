@@ -147,27 +147,14 @@ bool CollisionDetector::getParameters()
 
   auto node = shared_from_this();
 
-  nav2::declare_parameter_if_not_declared(
-    node, "frequency", rclcpp::ParameterValue(10.0));
-  frequency_ = get_parameter("frequency").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
-  base_frame_id = get_parameter("base_frame_id").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "odom_frame_id", rclcpp::ParameterValue("odom"));
-  odom_frame_id = get_parameter("odom_frame_id").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-  transform_tolerance =
-    tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "source_timeout", rclcpp::ParameterValue(2.0));
-  source_timeout =
-    rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "base_shift_correction", rclcpp::ParameterValue(true));
-  const bool base_shift_correction =
-    get_parameter("base_shift_correction").as_bool();
+  frequency_ = node->declare_or_get_parameter("frequency", 10.0);
+  base_frame_id = node->declare_or_get_parameter("base_frame_id", std::string("base_footprint"));
+  odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
+  transform_tolerance = tf2::durationFromSec(
+    node->declare_or_get_parameter("transform_tolerance", 0.1));
+  source_timeout = rclcpp::Duration::from_seconds(
+    node->declare_or_get_parameter("source_timeout", 2.0));
+  const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
 
   if (!configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout,
@@ -259,10 +246,8 @@ bool CollisionDetector::configureSources(
       node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> source_names = get_parameter("observation_sources").as_string_array();
     for (std::string source_name : source_names) {
-      nav2::declare_parameter_if_not_declared(
-        node, source_name + ".type",
-        rclcpp::ParameterValue("scan"));  // Laser scanner by default
-      const std::string source_type = get_parameter(source_name + ".type").as_string();
+      const std::string source_type = node->declare_or_get_parameter(
+        source_name + ".type", std::string("scan"));  // Laser scanner by default
 
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(

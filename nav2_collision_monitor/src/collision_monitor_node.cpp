@@ -88,10 +88,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
     "~/toggle",
     std::bind(&CollisionMonitor::toggleCMServiceCallback, this, _1, _2, _3));
 
-  nav2::declare_parameter_if_not_declared(
-    node, "use_realtime_priority", rclcpp::ParameterValue(false));
-  bool use_realtime_priority = false;
-  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  bool use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
   if (use_realtime_priority) {
     try {
       nav2::setSoftRealTimePriority();
@@ -102,8 +99,7 @@ CollisionMonitor::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  nav2::declare_parameter_if_not_declared(node, "enabled", rclcpp::ParameterValue(true));
-  node->get_parameter("enabled", enabled_);
+  enabled_ = node->declare_or_get_parameter("enabled", true);
 
   if (!enabled_) {
     RCLCPP_WARN(get_logger(), "Collision monitor is disabled at startup.");
@@ -253,39 +249,23 @@ bool CollisionMonitor::getParameters(
 
   auto node = shared_from_this();
 
-  nav2::declare_parameter_if_not_declared(
-    node, "cmd_vel_in_topic", rclcpp::ParameterValue("cmd_vel_smoothed"));
-  cmd_vel_in_topic = get_parameter("cmd_vel_in_topic").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "cmd_vel_out_topic", rclcpp::ParameterValue("cmd_vel"));
-  cmd_vel_out_topic = get_parameter("cmd_vel_out_topic").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "state_topic", rclcpp::ParameterValue(""));
-  state_topic = get_parameter("state_topic").as_string();
+  cmd_vel_in_topic = node->declare_or_get_parameter(
+    "cmd_vel_in_topic", std::string("cmd_vel_smoothed"));
+  cmd_vel_out_topic = node->declare_or_get_parameter(
+    "cmd_vel_out_topic", std::string("cmd_vel"));
+  state_topic = node->declare_or_get_parameter("state_topic", std::string(""));
 
-  nav2::declare_parameter_if_not_declared(
-    node, "base_frame_id", rclcpp::ParameterValue("base_footprint"));
-  base_frame_id = get_parameter("base_frame_id").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "odom_frame_id", rclcpp::ParameterValue("odom"));
-  odom_frame_id = get_parameter("odom_frame_id").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, "transform_tolerance", rclcpp::ParameterValue(0.1));
-  transform_tolerance =
-    tf2::durationFromSec(get_parameter("transform_tolerance").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "source_timeout", rclcpp::ParameterValue(2.0));
-  source_timeout =
-    rclcpp::Duration::from_seconds(get_parameter("source_timeout").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "base_shift_correction", rclcpp::ParameterValue(true));
-  const bool base_shift_correction =
-    get_parameter("base_shift_correction").as_bool();
+  base_frame_id = node->declare_or_get_parameter(
+    "base_frame_id", std::string("base_footprint"));
+  odom_frame_id = node->declare_or_get_parameter("odom_frame_id", std::string("odom"));
+  transform_tolerance = tf2::durationFromSec(
+    node->declare_or_get_parameter("transform_tolerance", 0.1));
+  source_timeout = rclcpp::Duration::from_seconds(
+    node->declare_or_get_parameter("source_timeout", 2.0));
+  const bool base_shift_correction = node->declare_or_get_parameter("base_shift_correction", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, "stop_pub_timeout", rclcpp::ParameterValue(1.0));
-  stop_pub_timeout_ =
-    rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
+  stop_pub_timeout_ = rclcpp::Duration::from_seconds(
+    node->declare_or_get_parameter("stop_pub_timeout", 1.0));
 
   if (
     !configureSources(
@@ -366,10 +346,8 @@ bool CollisionMonitor::configureSources(
       node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> source_names = get_parameter("observation_sources").as_string_array();
     for (std::string source_name : source_names) {
-      nav2::declare_parameter_if_not_declared(
-        node, source_name + ".type",
-        rclcpp::ParameterValue("scan"));  // Laser scanner by default
-      const std::string source_type = get_parameter(source_name + ".type").as_string();
+      const std::string source_type = node->declare_or_get_parameter(
+        source_name + ".type", std::string("scan"));  // Laser scanner by default
 
       if (source_type == "scan") {
         std::shared_ptr<Scan> s = std::make_shared<Scan>(
