@@ -239,10 +239,6 @@ protected:
    */
   geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dynamic_params_lock_;
-
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2::NodeThread> costmap_thread_;
@@ -285,6 +281,7 @@ protected:
   nav_msgs::msg::Path transformed_global_plan_;
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_plan_pub_;
 
 private:
   /**

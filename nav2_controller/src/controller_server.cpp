@@ -165,7 +165,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created path handler : %s of type %s",
         params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
-      path_handler->initialize(node, params_->path_handler_ids[i], costmap_ros_,
+      path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
           costmap_ros_->getTfBuffer());
       path_handlers_.insert({params_->path_handler_ids[i], path_handler});
     } catch (const pluginlib::PluginlibException & ex) {
@@ -188,6 +188,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
       params_->odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
+  transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
 
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(params_->costmap_update_timeout);
 
@@ -228,6 +229,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
   vel_publisher_->on_activate();
+  transformed_plan_pub_->on_activate();
   action_server_->activate();
 
   auto node = shared_from_this();
@@ -260,9 +262,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   publishZeroVelocity();
   vel_publisher_->on_deactivate();
-
-  remove_on_set_parameters_callback(dyn_params_handler_.get());
-  dyn_params_handler_.reset();
+  transformed_plan_pub_->on_deactivate();
 
   // destroy bond connection
   destroyBond();
@@ -294,6 +294,7 @@ ControllerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   odom_sub_.reset();
   costmap_thread_.reset();
   vel_publisher_.reset();
+  transformed_plan_pub_.reset();
   speed_limit_sub_.reset();
 
   return nav2::CallbackReturn::SUCCESS;
@@ -431,7 +432,7 @@ geometry_msgs::msg::PoseStamped ControllerServer::getTransformedGoal(
 
 void ControllerServer::computeControl()
 {
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
   RCLCPP_INFO(get_logger(), "Received a goal, begin computing control effort.");
 
@@ -645,6 +646,8 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Pose goal = getTransformedGoal(pose.header.stamp).pose;
   transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
+  auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
+  transformed_plan_pub_->publish(std::move(path));
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 

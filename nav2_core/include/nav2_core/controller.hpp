@@ -94,6 +94,9 @@ public:
   /**
    * @brief local setPlan - Notifies the Controller that a new plan is received from the Planner Server
    * @param path The global plan
+   * @note This callback should only perform minimal work, such as extracting global information that may
+   * be of interest (e.g. reset internal states when new path received). The controller will be provided
+   * with the transformed and pruned plan in the local frame during computeVelocityCommands().
    */
   virtual void newPathReceived(const nav_msgs::msg::Path & raw_global_path) = 0;
 

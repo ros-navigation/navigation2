@@ -30,10 +30,12 @@ using nav2_util::geometry_utils::euclidean_distance;
 
 void SimplePathHandler::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
+  const rclcpp::Logger & logger,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
   std::shared_ptr<tf2_ros::Buffer> tf)
 {
+  logger_ = logger;
   plugin_name_ = plugin_name;
   auto node = parent.lock();
   costmap_ros_ = costmap_ros;
@@ -41,7 +43,7 @@ void SimplePathHandler::initialize(
   interpolate_curvature_after_goal_ = node->declare_or_get_parameter(plugin_name +
       ".interpolate_curvature_after_goal", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
-      ".max_robot_pose_search_dist", costmap_ros_->getCostmap()->getSizeInMetersX());
+      ".max_robot_pose_search_dist", costmap_ros_->getCostmap()->getSizeInMetersX() / 2);
   enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_inversion",
       false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
@@ -50,9 +52,9 @@ void SimplePathHandler::initialize(
       ".inversion_yaw_tolerance", 0.4);
   node->get_parameter("transform_tolerance", transform_tolerance_);
   if (max_robot_pose_search_dist_ < 0.0) {
-    // RCLCPP_WARN(
-    //   logger_, "Max robot search distance is negative, setting to max to search"
-    //   " every point on path for the closest value.");
+    RCLCPP_WARN(
+      logger_, "Max robot search distance is negative, setting to max to search"
+      " every point on path for the closest value.");
     max_robot_pose_search_dist_ = std::numeric_limits<double>::max();
   }
   if(enforce_path_inversion_) {

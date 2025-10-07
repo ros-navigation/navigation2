@@ -48,6 +48,7 @@ public:
    */
   virtual void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
+    const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     std::shared_ptr<tf2_ros::Buffer> tf) = 0;
