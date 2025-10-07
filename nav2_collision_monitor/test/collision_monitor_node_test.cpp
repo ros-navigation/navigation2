@@ -306,39 +306,23 @@ void Tester::setCommonParameters()
 
   cm_->declare_parameter(
     "cmd_vel_in_topic", rclcpp::ParameterValue(CMD_VEL_IN_TOPIC));
-  cm_->set_parameter(
-    rclcpp::Parameter("cmd_vel_in_topic", CMD_VEL_IN_TOPIC));
   cm_->declare_parameter(
     "cmd_vel_out_topic", rclcpp::ParameterValue(CMD_VEL_OUT_TOPIC));
-  cm_->set_parameter(
-    rclcpp::Parameter("cmd_vel_out_topic", CMD_VEL_OUT_TOPIC));
   cm_->declare_parameter(
     "state_topic", rclcpp::ParameterValue(STATE_TOPIC));
-  cm_->set_parameter(
-    rclcpp::Parameter("state_topic", STATE_TOPIC));
 
   cm_->declare_parameter(
     "base_frame_id", rclcpp::ParameterValue(BASE_FRAME_ID));
-  cm_->set_parameter(
-    rclcpp::Parameter("base_frame_id", BASE_FRAME_ID));
   cm_->declare_parameter(
     "odom_frame_id", rclcpp::ParameterValue(ODOM_FRAME_ID));
-  cm_->set_parameter(
-    rclcpp::Parameter("odom_frame_id", ODOM_FRAME_ID));
 
   cm_->declare_parameter(
     "transform_tolerance", rclcpp::ParameterValue(TRANSFORM_TOLERANCE));
-  cm_->set_parameter(
-    rclcpp::Parameter("transform_tolerance", TRANSFORM_TOLERANCE));
   cm_->declare_parameter(
     "source_timeout", rclcpp::ParameterValue(SOURCE_TIMEOUT));
-  cm_->set_parameter(
-    rclcpp::Parameter("source_timeout", SOURCE_TIMEOUT));
 
   cm_->declare_parameter(
     "stop_pub_timeout", rclcpp::ParameterValue(STOP_PUB_TIMEOUT));
-  cm_->set_parameter(
-    rclcpp::Parameter("stop_pub_timeout", STOP_PUB_TIMEOUT));
 }
 
 void Tester::addPolygon(
@@ -349,8 +333,6 @@ void Tester::addPolygon(
   if (type == POLYGON) {
     cm_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("polygon"));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "polygon"));
 
     if (at != "approach") {
       const std::string points = "[[" +
@@ -360,95 +342,59 @@ void Tester::addPolygon(
         std::to_string(-size) + ", " + std::to_string(size) + "]]";
       cm_->declare_parameter(
         polygon_name + ".points", rclcpp::ParameterValue(points));
-      cm_->set_parameter(
-        rclcpp::Parameter(polygon_name + ".points", points));
     } else {  // at == "approach"
       cm_->declare_parameter(
         polygon_name + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
-      cm_->set_parameter(
-        rclcpp::Parameter(polygon_name + ".footprint_topic", FOOTPRINT_TOPIC));
     }
   } else if (type == CIRCLE) {
     cm_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("circle"));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "circle"));
 
     cm_->declare_parameter(
       polygon_name + ".radius", rclcpp::ParameterValue(size));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".radius", size));
   } else if (type == VELOCITY_POLYGON) {
     cm_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("velocity_polygon"));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "velocity_polygon"));
     cm_->declare_parameter(
       polygon_name + ".holonomic", rclcpp::ParameterValue(false));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".holonomic", false));
   } else {  // type == POLYGON_UNKNOWN
     cm_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("unknown"));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "unknown"));
   }
 
   cm_->declare_parameter(
     polygon_name + ".enabled", rclcpp::ParameterValue(true));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".enabled", true));
 
   cm_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(at));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".action_type", at));
 
   cm_->declare_parameter(
     polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   cm_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
 
   cm_->declare_parameter(
     polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
 
   cm_->declare_parameter(
     polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   cm_->declare_parameter(
     polygon_name + ".time_before_collision", rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".time_before_collision", TIME_BEFORE_COLLISION));
 
   cm_->declare_parameter(
     polygon_name + ".simulation_time_step", rclcpp::ParameterValue(SIMULATION_TIME_STEP));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".simulation_time_step", SIMULATION_TIME_STEP));
 
   cm_->declare_parameter(
     polygon_name + ".visualize", rclcpp::ParameterValue(false));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".visualize", false));
 
   cm_->declare_parameter(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".polygon_pub_topic", polygon_name));
 
   if (!sources_names.empty()) {
     cm_->declare_parameter(
       polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
-    cm_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".sources_names", sources_names));
   }
 }
 
@@ -465,28 +411,18 @@ void Tester::addPolygonVelocitySubPolygon(
     std::to_string(-size) + ", " + std::to_string(size) + "]]";
   cm_->declare_parameter(
     polygon_name + "." + sub_polygon_name + ".points", rclcpp::ParameterValue(points));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + "." + sub_polygon_name + ".points", points));
 
   cm_->declare_parameter(
     polygon_name + "." + sub_polygon_name + ".linear_min", rclcpp::ParameterValue(linear_min));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + "." + sub_polygon_name + ".linear_min", linear_min));
 
   cm_->declare_parameter(
     polygon_name + "." + sub_polygon_name + ".linear_max", rclcpp::ParameterValue(linear_max));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + "." + sub_polygon_name + ".linear_max", linear_max));
 
   cm_->declare_parameter(
     polygon_name + "." + sub_polygon_name + ".theta_min", rclcpp::ParameterValue(theta_min));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + "." + sub_polygon_name + ".theta_min", theta_min));
 
   cm_->declare_parameter(
     polygon_name + "." + sub_polygon_name + ".theta_max", rclcpp::ParameterValue(theta_max));
-  cm_->set_parameter(
-    rclcpp::Parameter(polygon_name + "." + sub_polygon_name + ".theta_max", theta_max));
 }
 
 void Tester::addSource(
@@ -495,57 +431,35 @@ void Tester::addSource(
   if (type == SCAN) {
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("scan"));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "scan"));
   } else if (type == POINTCLOUD) {
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("pointcloud"));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "pointcloud"));
 
     cm_->declare_parameter(
       source_name + ".min_height", rclcpp::ParameterValue(0.1));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".min_height", 0.1));
     cm_->declare_parameter(
       source_name + ".max_height", rclcpp::ParameterValue(1.0));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".max_height", 1.0));
   } else if (type == RANGE) {
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("range"));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "range"));
 
     cm_->declare_parameter(
       source_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".obstacles_angle", M_PI / 200));
   } else if (type == POLYGON_SOURCE) {
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("polygon"));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "polygon"));
 
     cm_->declare_parameter(
       source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".sampling_distance", 0.1));
     cm_->declare_parameter(
       source_name + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".polygon_similarity_threshold", 2.0));
   } else {  // type == SOURCE_UNKNOWN
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
-    cm_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "unknown"));
   }
 
   cm_->declare_parameter(
     source_name + ".topic", rclcpp::ParameterValue(source_name));
-  cm_->set_parameter(
-    rclcpp::Parameter(source_name + ".topic", source_name));
 }
 
 void Tester::setVectors(
@@ -553,10 +467,7 @@ void Tester::setVectors(
   const std::vector<std::string> & sources)
 {
   cm_->declare_parameter("polygons", rclcpp::ParameterValue(polygons));
-  cm_->set_parameter(rclcpp::Parameter("polygons", polygons));
-
   cm_->declare_parameter("observation_sources", rclcpp::ParameterValue(sources));
-  cm_->set_parameter(rclcpp::Parameter("observation_sources", sources));
 }
 
 void Tester::setPolygonVelocityVectors(
@@ -564,7 +475,6 @@ void Tester::setPolygonVelocityVectors(
   const std::vector<std::string> & polygons)
 {
   cm_->declare_parameter(polygon_name + ".velocity_polygons", rclcpp::ParameterValue(polygons));
-  cm_->set_parameter(rclcpp::Parameter(polygon_name + ".velocity_polygons", polygons));
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -1576,7 +1486,6 @@ TEST_F(Tester, testSourcesNotSet)
   addPolygon("Stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
   cm_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"Stop"}));
-  cm_->set_parameter(rclcpp::Parameter("polygons", std::vector<std::string>{"Stop"}));
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
