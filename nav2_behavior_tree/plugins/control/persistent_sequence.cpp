@@ -29,7 +29,10 @@ BT::NodeStatus PersistentSequenceNode::tick()
   const int children_count = children_nodes_.size();
 
   int current_child_idx;
-  getInput("current_child_idx", current_child_idx);
+  if (!getInput("current_child_idx", current_child_idx)) {
+    throw BT::RuntimeError(
+      "Missing required input [current_child_idx] in PersistentSequenceNode");
+  }
 
   setStatus(BT::NodeStatus::RUNNING);
 
