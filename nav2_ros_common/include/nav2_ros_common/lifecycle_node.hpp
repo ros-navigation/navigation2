@@ -103,6 +103,25 @@ public:
   }
 
   /**
+   * @brief Declares or gets a parameter with specified type.
+   * If the parameter is already declared, returns its value;
+   * otherwise declares it with the specified type.
+   * @param parameter_name Name of the parameter
+   * @param param_type The type of parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   * @return The value of the parameter or throws an exception if not set
+   */
+  template<typename ParameterT>
+  inline ParameterT declare_or_get_parameter(
+    const std::string & parameter_name,
+    const rclcpp::ParameterType & param_type,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    return nav2::declare_or_get_parameter<ParameterT>(
+      this, parameter_name, param_type, parameter_descriptor);
+  }
+
+  /**
    * @brief Declares or gets a parameter.
    * If the parameter is already declared, returns its value;
    * otherwise declares it and returns the default value.
