@@ -113,53 +113,39 @@ bool PointCloud::getData(
     }
   }
 
-  // Reference height field
-  if(use_global_height_ && height_present) {
-    sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, "height");
-    // Refill data array with PointCloud points in base frame
-    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_height) {
-      // Transform point coordinates from source frame -> to base frame
-      tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
-
-      // Check range from sensor origin before transformation
-      double range = p_v3_s.length();
-      if (range < min_range_) {
-        continue;
-      }
-
-      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
-
-      // Refill data array
-      if (*iter_height >= min_height_ && *iter_height <= max_height_) {
-        data.push_back({p_v3_b.x(), p_v3_b.y()});
-      }
-    }
+// Reference height field
+  std::string height_field{"z"};
+  if (use_global_height_ && height_present) {
+    height_field = "height";
   } else if (use_global_height_) {
     RCLCPP_ERROR(logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud",
-        source_name_.c_str());
+    source_name_.c_str());
     return false;
-  } else {
-    // Refill data array with PointCloud points in base frame
-    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-      // Transform point coordinates from source frame -> to base frame
-      tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+  }
+  sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, height_field);
 
-      // Check range from sensor origin before transformation
-      double range = p_v3_s.length();
-      if (range < min_range_) {
-        continue;
-      }
+  // Refill data array with PointCloud points in base frame
+  for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    // Transform point coordinates from source frame -> to base frame
+    tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
 
-      tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+    double data_height = *iter_z;
+    if (use_global_height_) {
+      data_height = *iter_height;
+      ++iter_height;
+    }
 
-      // Refill data array
-      if (*iter_z >= min_height_ && *iter_z <= max_height_) {
-        data.push_back({p_v3_b.x(), p_v3_b.y()});
-      }
+    // Check range from sensor origin before transformation
+    double range = p_v3_s.length();
+    if (range < min_range_) {
+      continue;
+    }
+    tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
+    // Refill data array
+    if (data_height >= min_height_ && data_height <= max_height_) {
+      data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
   }
-
-
   return true;
 }
 
