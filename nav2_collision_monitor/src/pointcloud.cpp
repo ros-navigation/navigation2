@@ -107,7 +107,7 @@ bool PointCloud::getData(
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
 
   bool height_present = false;
-  for(const auto & field : data_->fields) {
+  for (const auto & field : data_->fields) {
     if (field.name == "height") {
       height_present = true;
     }
@@ -119,7 +119,7 @@ bool PointCloud::getData(
     height_field = "height";
   } else if (use_global_height_) {
     RCLCPP_ERROR(logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud",
-    source_name_.c_str());
+      source_name_.c_str());
     return false;
   }
   sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, height_field);
