@@ -1,4 +1,6 @@
-// Copyright (c) 2025 Maurice Alexander Purnawan
+// Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Dexory
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +45,7 @@ void SimplePathHandler::initialize(
   interpolate_curvature_after_goal_ = node->declare_or_get_parameter(plugin_name +
       ".interpolate_curvature_after_goal", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
-      ".max_robot_pose_search_dist", costmap_ros_->getCostmap()->getSizeInMetersX() / 2);
+      ".max_robot_pose_search_dist", getCostmapMaxExtent());
   enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_inversion",
       false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
@@ -69,8 +71,8 @@ void SimplePathHandler::initialize(
 double SimplePathHandler::getCostmapMaxExtent() const
 {
   const double max_costmap_dim_meters = std::max(
-    costmap_ros_->getCostmap()->getSizeInMetersX(),
-    costmap_ros_->getCostmap()->getSizeInMetersY());
+    costmap_ros_->getCostmap()->getSizeInCellsX(),
+    costmap_ros_->getCostmap()->getSizeInCellsY());
   return max_costmap_dim_meters / 2.0;
 }
 
@@ -105,7 +107,7 @@ void SimplePathHandler::setPlan(const nav_msgs::msg::Path & path)
   }
 }
 
-nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
+geometry_msgs::msg::PoseStamped SimplePathHandler::transformToGlobalPlanFrame(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_up_to_inversion_.poses.empty()) {
@@ -125,6 +127,13 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
+  return robot_pose;
+}
+
+std::pair<nav_msgs::msg::Path, PathIterator>
+SimplePathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
+  const geometry_msgs::msg::PoseStamped & global_pose)
+{
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
@@ -137,8 +146,8 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   auto closest_point =
     nav2_util::geometry_utils::min_by(
     global_plan_up_to_inversion_.poses.begin(), closest_pose_upper_bound,
-    [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
-      return euclidean_distance(robot_pose, ps);
+    [&global_pose](const geometry_msgs::msg::PoseStamped & ps) {
+      return euclidean_distance(global_pose, ps);
     });
 
   // Make sure we always have at least 2 points on the transformed plan and that we don't prune
@@ -155,14 +164,14 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   auto pruned_plan_end = std::find_if(
   closest_point, global_plan_up_to_inversion_.poses.end(),
     [&](const auto & global_plan_pose) {
-      return euclidean_distance(global_plan_pose, robot_pose) > max_costmap_extent;
+      return euclidean_distance(global_plan_pose, global_pose) > max_costmap_extent;
   });
 
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
       geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
       stamped_pose.header.frame_id = global_plan_up_to_inversion_.header.frame_id;
-      stamped_pose.header.stamp = robot_pose.header.stamp;
+      stamped_pose.header.stamp = global_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
       if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
         costmap_ros_->getBaseFrameID(), transform_tolerance_))
@@ -180,14 +189,23 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
     std::back_inserter(transformed_plan.poses),
     transformGlobalPoseToLocal);
   transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
-  transformed_plan.header.stamp = robot_pose.header.stamp;
+  transformed_plan.header.stamp = global_pose.header.stamp;
+
+  return {transformed_plan, closest_point};
+}
+
+nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
+  const geometry_msgs::msg::PoseStamped & pose)
+{
+  geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
+  auto [transformed_plan, closest_point] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
   prunePlan(global_plan_up_to_inversion_, closest_point);
 
   if (enforce_path_inversion_ && inversion_locale_ != 0u) {
-    if (isWithinInversionTolerances(robot_pose)) {
+    if (isWithinInversionTolerances(global_pose)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
       global_plan_up_to_inversion_ = global_plan_;
       inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);

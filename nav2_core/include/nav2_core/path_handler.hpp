@@ -30,10 +30,10 @@ namespace nav2_core
  * @class PathHandler
  * @brief Function-object for handling the path from Planner Server
  *
- * This class defines the plugin interface for determining whether you have reached
- * the goal state. This primarily consists of checking the relative positions of two poses
- * (which are presumed to be in the same frame). It can also check the velocity, as some
- * applications require that robot be stopped to be considered as having reached the goal.
+ * This class defines the plugin interface used by the Controller Server to manage the
+ * path received from the Planner Server. Its primary responsibilities are pruning
+ * path segments the robot has already traversed and transforming the remaining,
+ * relevant portion of the path into the costmap's global or base frame.
  */
 class PathHandler
 {
@@ -60,7 +60,8 @@ public:
   virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
 
   /**
-   * @brief Prunes global plan, bounded around the robot's position and within the local costmap
+   * @brief transform global plan to local applying constraints,
+   * then prune global plan
    * @param pose pose to transform
    * @return Path after pruned
    */

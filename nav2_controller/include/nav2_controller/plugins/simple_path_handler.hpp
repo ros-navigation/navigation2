@@ -1,4 +1,6 @@
-// Copyright (c) 2025 Maurice Alexander Purnawan
+// Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Dexory
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +26,10 @@ namespace nav2_controller
 {
 using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 /**
-* @class PoseProgressChecker
-* @brief This plugin is used to check the position and the angle of the robot to make sure
-* that it is actually progressing or rotating towards a goal.
+* @class SimplePathHandler
+* @brief This plugin manages the global plan by clipping it to the local
+* segment relevant to the controller—typically bounded by the local costmap size
+* and transforming the resulting path into the robot base frame.
 */
 
 class SimplePathHandler : public nav2_core::PathHandler
@@ -43,6 +46,23 @@ public:
     const geometry_msgs::msg::PoseStamped & pose) override;
 
 protected:
+  /**
+    * @brief Transform a pose to the global reference frame
+    * @param pose Current pose
+    * @return output poose in global reference frame
+    */
+  geometry_msgs::msg::PoseStamped transformToGlobalPlanFrame(
+  const geometry_msgs::msg::PoseStamped & pose);
+
+  /**
+    * @brief Get global plan within window of the local costmap size
+    * @param global_pose Robot pose
+    * @return plan transformed in the robot base frame frame and iterator to the first pose of the global
+    * plan
+    */
+  virtual std::pair<nav_msgs::msg::Path, PathIterator> getGlobalPlanConsideringBoundsInCostmapFrame(
+    const geometry_msgs::msg::PoseStamped & global_pose);
+
   /**
    * Get the greatest extent of the costmap in meters from the center.
    * @return max of distance from center in meters to edge of costmap

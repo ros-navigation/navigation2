@@ -189,6 +189,29 @@ target_link_libraries(simple_path_handler PRIVATE
   pluginlib::pluginlib
 )
 
+add_library(mppi_path_handler SHARED plugins/mppi_path_handler.cpp)
+target_include_directories(mppi_path_handler
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(mppi_path_handler PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+  simple_path_handler
+)
+target_link_libraries(mppi_path_handler PRIVATE
+  angles::angles
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+  tf2::tf2
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -205,7 +228,7 @@ endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
-install(TARGETS simple_progress_checker position_goal_checker pose_progress_checker simple_goal_checker stopped_goal_checker simple_path_handler ${library_name}
+install(TARGETS simple_progress_checker position_goal_checker pose_progress_checker simple_goal_checker stopped_goal_checker simple_path_handler mppi_path_handler ${library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -227,6 +250,7 @@ ament_export_libraries(simple_progress_checker
   stopped_goal_checker
   position_goal_checker
   simple_path_handler
+  mppi_path_handler
   ${library_name})
 ament_export_dependencies(
   geometry_msgs
