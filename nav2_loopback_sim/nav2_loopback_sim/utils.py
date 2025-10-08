@@ -15,7 +15,7 @@
 
 import math
 
-from geometry_msgs.msg import Quaternion, Transform
+from geometry_msgs.msg import Quaternion, Transform, TransformStamped
 from nav_msgs.msg import OccupancyGrid
 import numpy as np
 import tf_transformations
@@ -37,7 +37,8 @@ def addYawToQuat(quaternion: Quaternion, yaw_to_add: float) -> Quaternion:
     return new_quaternion
 
 
-def transformStampedToMatrix(transform: Transform) -> np.ndarray[np.float64, np.dtype[np.float64]]:
+def transformStampedToMatrix(
+        transform: TransformStamped) -> np.ndarray[np.float64, np.dtype[np.float64]]:
     translation = transform.transform.translation
     rotation = transform.transform.rotation
     matrix = np.eye(4)

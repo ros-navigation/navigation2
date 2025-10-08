@@ -35,7 +35,7 @@ class WaypointFollowerTest(Node):
 
     def __init__(self) -> None:
         super().__init__(node_name='nav2_waypoint_tester', namespace='')
-        self.waypoints: list[float] = []
+        self.waypoints: list[PoseStamped] = []
         self.action_client: ActionClient[
             FollowWaypoints.Goal,
             FollowWaypoints.Result,
