@@ -262,7 +262,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     };
 
   std::set<std::string> registered_ids;
-  std::vector<std::pair<std::string, std::string>> files_to_register;
 
   if (!is_bt_id) {
     // file_or_id is a filename: register it first
@@ -272,7 +271,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
       return false;
     }
-    files_to_register.emplace_back(main_id, main_file);
+    RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
+    bt_->registerTreeFromFile(main_file);
     registered_ids.insert(main_id);
 
     // Register all other trees, skipping conflicts with main_id
@@ -290,15 +290,10 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
               entry.path().c_str(), id.c_str());
           continue;
         }
-        files_to_register.emplace_back(id, entry.path().string());
+        RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+        bt_->registerTreeFromFile(entry.path().string());
         registered_ids.insert(id);
       }
-    }
-
-    // Register all files
-    for (const auto & [id, path] : files_to_register) {
-      RCLCPP_INFO(logger_, "Registering Tree from File: %s", path.c_str());
-      bt_->registerTreeFromFile(path);
     }
 
     try {
@@ -316,7 +311,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       RCLCPP_ERROR(logger_, "Could not find file for BT ID: %s", file_or_id.c_str());
       return false;
     }
-    files_to_register.emplace_back(file_or_id, main_file);
+    RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
+    bt_->registerTreeFromFile(main_file);
     registered_ids.insert(file_or_id);
 
     // Register all other trees, skipping conflicts
@@ -334,15 +330,10 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
               entry.path().c_str(), id.c_str());
           continue;
         }
-        files_to_register.emplace_back(id, entry.path().string());
+        RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+        bt_->registerTreeFromFile(entry.path().string());
         registered_ids.insert(id);
       }
-    }
-
-    // Register all files
-    for (const auto & [id, path] : files_to_register) {
-      RCLCPP_INFO(logger_, "Registering Tree from File: %s", path.c_str());
-      bt_->registerTreeFromFile(path);
     }
 
     try {

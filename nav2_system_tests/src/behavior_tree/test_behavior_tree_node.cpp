@@ -116,7 +116,6 @@ public:
                           kXmlExtension.size(), kXmlExtension) != 0);
 
     std::set<std::string> registered_ids;
-    std::vector<std::pair<std::string, std::string>> files_to_register;
 
     if (!is_bt_id) {
       std::string main_file = file_or_id;
@@ -126,7 +125,8 @@ public:
         std::cerr << "Failed to extract ID from " << main_file << "\n";
         return false;
       }
-      files_to_register.emplace_back(main_id, main_file);
+      std::cout << "Registering Tree from File: " << main_file << "\n";
+      factory_.registerBehaviorTreeFromFile(main_file);
       registered_ids.insert(main_id);
 
       for (const auto & directory : search_directories) {
@@ -144,7 +144,8 @@ public:
                         << " (duplicate ID " << id << ")\n";
               continue;
             }
-            files_to_register.emplace_back(id, entry.path().string());
+            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
+            factory_.registerBehaviorTreeFromFile(entry.path().string());
             registered_ids.insert(id);
           }
         } catch (const std::exception & e) {
@@ -153,10 +154,6 @@ public:
         }
       }
 
-      for (const auto & [id, path] : files_to_register) {
-        std::cout << "Registering Tree from File: " << path << "\n";
-        factory_.registerBehaviorTreeFromFile(path);
-      }
 
       blackboard = setBlackboardVariables();
       try {
@@ -183,7 +180,8 @@ public:
         std::cerr << "Could not find file for BT ID: " << file_or_id << "\n";
         return false;
       }
-      files_to_register.emplace_back(file_or_id, main_file);
+      std::cout << "Registering Tree from File: " << main_file << "\n";
+      factory_.registerBehaviorTreeFromFile(main_file);
       registered_ids.insert(file_or_id);
 
       for (const auto & directory : search_directories) {
@@ -201,7 +199,8 @@ public:
                         << " (duplicate ID " << id << ")\n";
               continue;
             }
-            files_to_register.emplace_back(id, entry.path().string());
+            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
+            factory_.registerBehaviorTreeFromFile(entry.path().string());
             registered_ids.insert(id);
           }
         } catch (const std::exception & e) {
@@ -210,10 +209,6 @@ public:
         }
       }
 
-      for (const auto & [id, path] : files_to_register) {
-        std::cout << "Registering Tree from File: " << path << "\n";
-        factory_.registerBehaviorTreeFromFile(path);
-      }
       blackboard = setBlackboardVariables();
       try {
         tree = factory_.createTree(file_or_id, blackboard);
