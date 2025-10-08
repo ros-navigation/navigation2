@@ -282,7 +282,7 @@ protected:
   geometry_msgs::msg::PoseStamped end_pose_;
 
   // end_pose_ transformed to global version
-  geometry_msgs::msg::PoseStamped end_pose_global_;
+  geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;

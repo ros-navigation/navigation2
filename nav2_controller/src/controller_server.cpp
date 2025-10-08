@@ -676,11 +676,20 @@ void ControllerServer::computeAndPublishVelocity()
   double current_distance_to_goal = 0.0;
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
+
+  // Use the current robot pose's timestamp for the transformation
+  end_pose_.header.stamp = pose.header.stamp;
+
+  // Transform the goal pose and store it in the member variable 'transformed_end_pose_'
+  nav2_util::transformPoseInTargetFrame(
+    end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+    costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
+
   if (current_path_.poses.size() >= 2) {
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-    pose, end_pose_global_);
+    pose, transformed_end_pose_);
 
-  // Transform robot pose to path frame for path tracking calculations
+    // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
           pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
@@ -813,17 +822,8 @@ bool ControllerServer::isGoalReached()
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  // Use the current robot pose's timestamp for the transformation
-  end_pose_.header.stamp = pose.header.stamp;
-
-  // Transform the goal pose and store it in the member variable 'end_pose_global_'
-  nav2_util::transformPoseInTargetFrame(
-    end_pose_, end_pose_global_, *costmap_ros_->getTfBuffer(),
-    costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
-
-  // Use the now-populated member variable 'end_pose_global_' in the goal checker
   return goal_checkers_[current_goal_checker_]->isGoalReached(
-    pose.pose, end_pose_global_.pose,
+    pose.pose, transformed_end_pose_.pose,
     velocity);
 }
 
