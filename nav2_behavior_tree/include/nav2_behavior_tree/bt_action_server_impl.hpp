@@ -20,6 +20,7 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <unordered_set>
 #include <set>
 #include <utility>
 #include <string>
@@ -248,25 +249,41 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     (file_or_id.compare(file_or_id.length() - kXmlExtension.size(),
                              kXmlExtension.size(), kXmlExtension) != 0);
 
-  // Helper to find the file for a given ID or filename
-  auto find_file_for_id = [&](const std::string & id_or_file) -> std::string {
+  std::set<std::string> registered_ids;
+  std::string main_id;
+
+  auto register_all_bt_files = [&](const std::string & skip_file = "") {
       for (const auto & directory : search_directories_) {
         for (const auto & entry : fs::directory_iterator(directory)) {
-          if (entry.path().extension() != ".xml") {continue;}
-          if (entry.path().string() == id_or_file) {return entry.path().string();}
+          if (entry.path().extension() != ".xml") {
+            continue;
+          }
+          if (!skip_file.empty() && entry.path().string() == skip_file) {
+            continue;
+          }
+
           auto id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (!id.empty() && id == id_or_file) {return entry.path().string();}
+          if (id.empty()) {
+            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
+            continue;
+          }
+          if (registered_ids.count(id)) {
+            RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
+              entry.path().c_str(), id.c_str());
+            continue;
+          }
+
+          RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+          bt_->registerTreeFromFile(entry.path().string());
+          registered_ids.insert(id);
         }
       }
-      return {};
     };
-
-  std::set<std::string> registered_ids;
 
   if (!is_bt_id) {
     // file_or_id is a filename: register it first
     std::string main_file = file_or_id;
-    std::string main_id = bt_->extractBehaviorTreeID(main_file);
+    main_id = bt_->extractBehaviorTreeID(main_file);
     if (main_id.empty()) {
       RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
       return false;
@@ -275,75 +292,23 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     bt_->registerTreeFromFile(main_file);
     registered_ids.insert(main_id);
 
-    // Register all other trees, skipping conflicts with main_id
-    for (const auto & directory : search_directories_) {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() != ".xml") {continue;}
-        if (entry.path().string() == main_file) {continue;}
-        auto id = bt_->extractBehaviorTreeID(entry.path().string());
-        if (id.empty()) {
-          RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
-          continue;
-        }
-        if (registered_ids.count(id)) {
-          RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
-              entry.path().c_str(), id.c_str());
-          continue;
-        }
-        RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
-        bt_->registerTreeFromFile(entry.path().string());
-        registered_ids.insert(id);
-      }
-    }
-
-    try {
-      tree_ = bt_->createTree(main_id, blackboard_);
-      RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
-    } catch (const std::exception & e) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        std::string("Exception when creating BT tree from file: ") + e.what());
-      return false;
-    }
+    // Register all other BT files in the search directories
+    // skipping conflicts with main_id
+    register_all_bt_files(main_file);
   } else {
-    // file_or_id is an ID: find and register the corresponding file first
-    std::string main_file = find_file_for_id(file_or_id);
-    if (main_file.empty()) {
-      RCLCPP_ERROR(logger_, "Could not find file for BT ID: %s", file_or_id.c_str());
-      return false;
-    }
-    RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
-    bt_->registerTreeFromFile(main_file);
-    registered_ids.insert(file_or_id);
+    // file_or_id is an ID: register all files, skipping conflicts
+    main_id = file_or_id;
+    register_all_bt_files();
+  }
 
-    // Register all other trees, skipping conflicts
-    for (const auto & directory : search_directories_) {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() != ".xml") {continue;}
-        if (entry.path().string() == main_file) {continue;}
-        auto id = bt_->extractBehaviorTreeID(entry.path().string());
-        if (id.empty()) {
-          RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
-          continue;
-        }
-        if (registered_ids.count(id)) {
-          RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
-              entry.path().c_str(), id.c_str());
-          continue;
-        }
-        RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
-        bt_->registerTreeFromFile(entry.path().string());
-        registered_ids.insert(id);
-      }
-    }
-
-    try {
-      tree_ = bt_->createTree(file_or_id, blackboard_);
-      RCLCPP_INFO(logger_, "Created BT from ID: %s", file_or_id.c_str());
-    } catch (const std::exception & e) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        std::string("Exception when creating BT tree from file: ") + e.what());
-      return false;
-    }
+  // Create the tree with the specified ID
+  try {
+    tree_ = bt_->createTree(main_id, blackboard_);
+    RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
+  } catch (const std::exception & e) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when creating BT tree from ID: ") + e.what());
+    return false;
   }
 
   // Set blackboard variables for all subtrees

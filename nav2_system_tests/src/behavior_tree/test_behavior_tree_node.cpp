@@ -116,10 +116,39 @@ public:
                           kXmlExtension.size(), kXmlExtension) != 0);
 
     std::set<std::string> registered_ids;
+    std::string main_id;
+
+    auto register_all_bt_files = [&](const std::string & skip_file = "") {
+        for (const auto & directory : search_directories) {
+          for (const auto & entry : fs::directory_iterator(directory)) {
+            if (entry.path().extension() != ".xml") {
+              continue;
+            }
+            if (!skip_file.empty() && entry.path().string() == skip_file) {
+              continue;
+            }
+
+            auto id = bt_engine_->extractBehaviorTreeID(entry.path().string());
+            if (id.empty()) {
+              std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
+              continue;
+            }
+            if (registered_ids.count(id)) {
+              std::cerr << "Skipping conflicting BT file " << entry.path() << " (duplicate ID " <<
+                id << ")" << "\n";
+              continue;
+            }
+            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
+            factory_.registerBehaviorTreeFromFile(entry.path().string());
+            registered_ids.insert(id);
+          }
+        }
+      };
 
     if (!is_bt_id) {
+      // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      std::string main_id = bt_engine_->extractBehaviorTreeID(main_file);
+      main_id = bt_engine_->extractBehaviorTreeID(main_file);
 
       if (main_id.empty()) {
         std::cerr << "Failed to extract ID from " << main_file << "\n";
@@ -129,94 +158,31 @@ public:
       factory_.registerBehaviorTreeFromFile(main_file);
       registered_ids.insert(main_id);
 
-      for (const auto & directory : search_directories) {
-        try {
-          for (const auto & entry : fs::directory_iterator(directory)) {
-            if (entry.path().extension() != ".xml") {continue;}
-            if (entry.path().string() == main_file) {continue;}
-            auto id = bt_engine_->extractBehaviorTreeID(entry.path().string());
-            if (id.empty()) {
-              std::cerr << "Skipping BT file " << entry.path() << " (missing ID)\n";
-              continue;
-            }
-            if (registered_ids.count(id)) {
-              std::cerr << "Skipping conflicting BT file " << entry.path()
-                        << " (duplicate ID " << id << ")\n";
-              continue;
-            }
-            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
-            factory_.registerBehaviorTreeFromFile(entry.path().string());
-            registered_ids.insert(id);
-          }
-        } catch (const std::exception & e) {
-          std::cerr << "Exception reading behavior tree directory: " << std::string(e.what());
-          return false;
-        }
-      }
-
-
-      blackboard = setBlackboardVariables();
-      try {
-        tree = factory_.createTree(main_id, blackboard);
-        std::cout << "Created BT from ID: " << main_id << "\n";
-      } catch (BT::RuntimeError & exp) {
-        std::cerr << "Failed to create BT " << main_id << ": " << exp.what() << "\n";
-        return false;
-      }
+      // Register all other trees, skipping conflicts with main_id
+      register_all_bt_files(main_file);
     } else {
-      std::string main_file;
-      for (const auto & directory : search_directories) {
-        for (const auto & entry : fs::directory_iterator(directory)) {
-          if (entry.path().extension() != ".xml") {continue;}
-          auto id = bt_engine_->extractBehaviorTreeID(entry.path().string());
-          if (id == file_or_id) {
-            main_file = entry.path().string();
-            break;
-          }
-        }
-        if (!main_file.empty()) {break;}
-      }
-      if (main_file.empty()) {
-        std::cerr << "Could not find file for BT ID: " << file_or_id << "\n";
-        return false;
-      }
-      std::cout << "Registering Tree from File: " << main_file << "\n";
-      factory_.registerBehaviorTreeFromFile(main_file);
-      registered_ids.insert(file_or_id);
+      // file_or_id is an ID: register all files, skipping conflicts
+      main_id = file_or_id;
+      register_all_bt_files();
+    }
 
-      for (const auto & directory : search_directories) {
-        try {
-          for (const auto & entry : fs::directory_iterator(directory)) {
-            if (entry.path().extension() != ".xml") {continue;}
-            if (entry.path().string() == main_file) {continue;}
-            auto id = bt_engine_->extractBehaviorTreeID(entry.path().string());
-            if (id.empty()) {
-              std::cerr << "Skipping BT file " << entry.path() << " (missing ID)\n";
-              continue;
-            }
-            if (registered_ids.count(id)) {
-              std::cerr << "Skipping conflicting BT file " << entry.path()
-                        << " (duplicate ID " << id << ")\n";
-              continue;
-            }
-            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
-            factory_.registerBehaviorTreeFromFile(entry.path().string());
-            registered_ids.insert(id);
-          }
-        } catch (const std::exception & e) {
-          std::cerr << "Exception reading behavior tree directory: " << std::string(e.what());
-          return false;
-        }
-      }
+    // Create the tree with the specified ID
+    blackboard = setBlackboardVariables();
+    try {
+      tree = factory_.createTree(main_id, blackboard);
+      std::cout << "Created BT from ID: " << main_id << "\n";
+    } catch (BT::RuntimeError & exp) {
+      std::cerr << "Failed to create BT " << main_id << ": " << exp.what() << "\n";
+      return false;
+    }
 
-      blackboard = setBlackboardVariables();
-      try {
-        tree = factory_.createTree(file_or_id, blackboard);
-        std::cout << "Created BT from ID: " << file_or_id << "\n";
-      } catch (BT::RuntimeError & exp) {
-        std::cerr << "Failed to create BT " << file_or_id << ": " << exp.what() << "\n";
-        return false;
-      }
+    for (auto & subtree : tree.subtrees) {
+      auto & bb = subtree->blackboard;
+      bb->set("node", node_);
+      bb->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(20));
+      bb->set<std::chrono::milliseconds>("bt_loop_duration", std::chrono::milliseconds(10));
+      bb->set<std::chrono::milliseconds>("wait_for_service_timeout",
+               std::chrono::milliseconds(1000));
     }
 
     return true;
