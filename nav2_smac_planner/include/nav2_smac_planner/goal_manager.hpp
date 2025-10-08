@@ -113,6 +113,77 @@ public:
   }
 
   /**
+   * @brief Checks if zone within the radius of a node is feasible. Returns true if
+   *        there's at least one non-lethal cell within the node radius.
+   * @param node Input node.
+   * @param radius Search radius.
+   * @param collision_checker Collision checker to validate nearby nodes.
+   * @param traverse_unknown Flag whether traversal through unknown space is allowed.
+   * @return true
+   * @return false
+   */
+  bool isZoneValid(
+    const NodePtr node, const float & radius, GridCollisionChecker * collision_checker,
+    const bool & traverse_unknown) const
+  {
+    auto isPointWithinMap = [&collision_checker] (const Coordinates & point) {
+        const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
+        const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
+
+        if (point.x < 0 || point.y < 0 || point.x >= size_x || point.y >= size_y) {
+          return false;
+        }
+
+        return true;
+      };
+
+    auto getIndexFromPoint = [&collision_checker] (const Coordinates & point) {
+        unsigned int index = 0;
+
+        if constexpr (!std::is_same_v<NodeT, Node2D>) {
+          auto mx = static_cast<unsigned int>(point.x);
+          auto my = static_cast<unsigned int>(point.y);
+          auto angle = static_cast<unsigned int>(point.theta);
+
+          index = NodeT::getIndex(mx, my, angle);
+        } else {
+          auto mx = static_cast<unsigned int>(point.x);
+          auto my = static_cast<unsigned int>(point.y);
+          auto width = collision_checker->getCostmap()->getSizeInCellsX();
+
+          index = NodeT::getIndex(mx, my, width);
+        }
+
+        return index;
+      };
+
+    const Coordinates & center_point = node->pose;
+    Coordinates current_point = node->pose;
+    constexpr float degree = M_PI / 180;
+    constexpr float two_pi = 2 * M_PI;
+
+    for (float r = 0; r < radius + 1; r += 1) {
+      for (float theta = 0; theta < two_pi; theta += degree) {
+        current_point.x = center_point.x + r * std::cos(theta);
+        current_point.y = center_point.y + r * std::sin(theta);
+
+        if (!isPointWithinMap(current_point)) {
+          continue;
+        }
+
+        NodeT current_node(getIndexFromPoint(current_point));
+        current_node.setPose(current_point);
+
+        if (current_node.isNodeValid(traverse_unknown, collision_checker)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * @brief Filters and marks invalid goals based on collision checking and tolerance thresholds.
    *
    * Stores only valid (or tolerably infeasible) goals into internal goal sets and coordinates.
@@ -132,9 +203,7 @@ public:
         "removeinvalidgoals");
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
-      if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
-        tolerance > 0.001)
-      {
+      if (isZoneValid(_goals_state[i].goal, tolerance, collision_checker, traverse_unknown)) {
         _goals_state[i].is_valid = true;
         _goals_set.insert(_goals_state[i].goal);
         _goals_coordinate.push_back(_goals_state[i].goal->pose);
