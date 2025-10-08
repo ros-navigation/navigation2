@@ -677,15 +677,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
   if (current_path_.poses.size() >= 2) {
-    // Transform robot pose to path frame
-    geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
-    if (!nav2_util::transformPoseInTargetFrame(
-            pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-            current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
-    {
-      throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
-    }
-
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
     pose, end_pose_global_);
     const auto path_search_result = nav2_util::distance_from_path(
