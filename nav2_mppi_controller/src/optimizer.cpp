@@ -272,13 +272,13 @@ void Optimizer::computeControlSequenceAccel(const models::ControlSequence& contr
     // Check if accelerations exceed constraints
     float ax = (control_sequence.vx(i) - control_sequence.vx(i - 1)) / s.model_dt;
     if (std::abs(ax) > s.constraints.ax_max + epsilon) {
-      std::cout << "Acceleration constraint violated at index " << i << ":\n";
+      std::cout << "****Acceleration constraint violated at index " << i << ":\n";
       std::cout << "vx[i-1]: " << control_sequence.vx(i - 1) << ", vx[i]: " << control_sequence.vx(i) << ", ax: " << ax << "\n";
     }
 
     float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
     if (std::abs(wz_accel) > s.constraints.az_max + epsilon) {
-      std::cout << "Angular acceleration constraint violated at index " << i << ":\n";
+      std::cout << "***Angular acceleration constraint violated at index " << i << ":\n";
       std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
     }
   }
@@ -344,7 +344,12 @@ void Optimizer::shiftControlSequence()
   control_sequence_.vx(size - 1) = control_sequence_.vx(size - 2);
   control_sequence_.wz(size - 1) = control_sequence_.wz(size - 2);
 
-  if (isHolonomic()) {
+  // std::cout << "\n\t control_sequence_ After:\n\t\t" << control_sequence_.vx(Eigen::seq(0, 5)).transpose() << "\n\t\t"
+  //           << control_sequence_.wz(Eigen::seq(0, 5)).transpose() << "\n\t\t"
+  //           /*<< control_sequence_.vx(Eigen::seq(Eigen::last -5, Eigen::last)).transpose()*/<< std::endl;
+
+  if (isHolonomic())
+  {
     utils::shiftColumnsByOnePlace(control_sequence_.vy, -1);
     control_sequence_.vy(size - 1) = control_sequence_.vy(size - 2);
   }
@@ -367,8 +372,16 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
+  // --tried 1 limit ctrl_seq_(0) based on accel_limit from current robot speed (= state.vx(0,0))  (instead of in predict -> see it still accel issue)
+  // TODO 1 only constrain the published controls (u0 & u1), but keep the unconstrained sequence for warm start
+  // TODO 4 or ideally based on last published command
+
+  // at this point, control_sequence_ contains the softmax mean of state_.cu (u_virt)]
+
+  /*
   float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
   float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
+
   control_sequence_.vx(0) = vx_last;
   control_sequence_.wz(0) = wz_last;
   float vy_last = 0;
@@ -376,8 +389,18 @@ void Optimizer::applyControlSequenceConstraints()
     vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
     control_sequence_.vy(0) = vy_last;
   }
+  */
 
-  for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
+  // limit acceleration between current feedback speed and first control in the sequence
+  float vx_last = static_cast<float>(state_.speed.linear.x);
+  float wz_last = static_cast<float>(state_.speed.angular.z);
+
+  float vy_last = 0;
+  if (isHolonomic()) {
+    vy_last = static_cast<float>(state_.speed.linear.y);
+  }
+
+  for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
     if (vx_last > 0) {
@@ -388,10 +411,18 @@ void Optimizer::applyControlSequenceConstraints()
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
+    if (i==0)
+    {
+      std::cout << "control_sequence_.wz(0) BEFORE: " << control_sequence_.wz(i) << std::endl;
+    }
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
     wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
     wz_last = wz_curr;
 
+        if (i==0)
+    {
+      std::cout << "control_sequence_.wz(0) AFTER: " << control_sequence_.wz(i) << std::endl;
+    }
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
