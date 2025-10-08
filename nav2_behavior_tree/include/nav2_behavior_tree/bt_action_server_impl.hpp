@@ -20,7 +20,6 @@
 #include <fstream>
 #include <limits>
 #include <memory>
-#include <unordered_set>
 #include <set>
 #include <utility>
 #include <string>

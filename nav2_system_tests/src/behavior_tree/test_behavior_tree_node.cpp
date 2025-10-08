@@ -176,15 +176,6 @@ public:
       return false;
     }
 
-    for (auto & subtree : tree.subtrees) {
-      auto & bb = subtree->blackboard;
-      bb->set("node", node_);
-      bb->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(20));
-      bb->set<std::chrono::milliseconds>("bt_loop_duration", std::chrono::milliseconds(10));
-      bb->set<std::chrono::milliseconds>("wait_for_service_timeout",
-               std::chrono::milliseconds(1000));
-    }
-
     return true;
   }
 
