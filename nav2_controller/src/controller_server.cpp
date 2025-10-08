@@ -680,7 +680,6 @@ void ControllerServer::computeAndPublishVelocity()
   // Use the current robot pose's timestamp for the transformation
   end_pose_.header.stamp = pose.header.stamp;
 
-  // Transform the goal pose and store it in the member variable 'transformed_end_pose_'
   nav2_util::transformPoseInTargetFrame(
     end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
     costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());

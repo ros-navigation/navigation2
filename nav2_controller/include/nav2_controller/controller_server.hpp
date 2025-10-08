@@ -281,7 +281,6 @@ protected:
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;
 
-  // end_pose_ transformed to global version
   geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
   // Last time the controller generated a valid command
