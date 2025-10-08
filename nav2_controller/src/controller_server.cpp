@@ -680,7 +680,7 @@ void ControllerServer::computeAndPublishVelocity()
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
     pose, end_pose_global_);
     const auto path_search_result = nav2_util::distance_from_path(
-      current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+      current_path_, end_pose_global_.pose, start_index_, search_window_);
 
     // Create tracking error message
     auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
