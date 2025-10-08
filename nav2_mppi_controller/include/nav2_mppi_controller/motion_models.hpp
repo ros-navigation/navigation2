@@ -99,6 +99,14 @@ public:
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
 
+      // constrain u_virt 0 & 1 to make sure accelerations are limited at the first step (state.vx(0) is from feedback)
+      // also constrain u_virt_1 as this is published as command
+      if (i <= 2)
+      {
+        state.cvx.col(i - 1) = state.vx.col(i);
+        state.cwz.col(i - 1) = state.wz.col(i);
+      }
+
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
           0).select(
