@@ -123,11 +123,11 @@ public:
 
       // constrain u_virt 0 & 1 to make sure accelerations are limited at the first step (state.vx(0) is from feedback)
       // also constrain u_virt_1 as this is published as command
-      // if (i <= 2)
-      // {
-      //   state.cvx.col(i - 1) = state.vx.col(i);
-      //   state.cwz.col(i - 1) = state.wz.col(i);
-      // }
+      if (i <= 2)
+      {
+        state.cvx.col(i - 1) = state.vx.col(i);
+        state.cwz.col(i - 1) = state.wz.col(i);
+      }
 
       // also apply velocity limits constrains
       state.vx.col(i) = state.vx.col(i)
