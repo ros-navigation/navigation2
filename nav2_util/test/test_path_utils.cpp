@@ -372,15 +372,16 @@ TEST(PathUtilsTest, FourArgThrowsOnStartIndexOutOfBounds)
   nav_msgs::msg::Path path;
   path.poses.push_back(createPoseStamped(0.0, 0.0));
   path.poses.push_back(createPoseStamped(1.0, 0.0));
+  path.poses.push_back(createPoseStamped(2.0, 0.0));  // 3 elements (indices 0, 1, 2)
   geometry_msgs::msg::Pose robot_pose = createPose(0.5, 0.0);
 
   // start_index is out of bounds (equal to path.poses.size())
   EXPECT_THROW(
-    nav2_util::distance_from_path(path, robot_pose, 2, 5.0),
+    nav2_util::distance_from_path(path, robot_pose, 3, 5.0),  // 3 >= 3
     std::runtime_error);
 
   // start_index is way out of bounds
   EXPECT_THROW(
-    nav2_util::distance_from_path(path, robot_pose, 100, 5.0),
+    nav2_util::distance_from_path(path, robot_pose, 100, 5.0),  // 100 >= 3
     std::runtime_error);
 }
