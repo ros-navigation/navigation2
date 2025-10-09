@@ -49,25 +49,10 @@ void Spin::onConfigure()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-  node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "max_rotational_vel", rclcpp::ParameterValue(1.0));
-  node->get_parameter("max_rotational_vel", max_rotational_vel_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "min_rotational_vel", rclcpp::ParameterValue(0.4));
-  node->get_parameter("min_rotational_vel", min_rotational_vel_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "rotational_acc_lim", rclcpp::ParameterValue(3.2));
-  node->get_parameter("rotational_acc_lim", rotational_acc_lim_);
+  simulate_ahead_time_ = node->declare_or_get_parameter("simulate_ahead_time", 2.0);
+  max_rotational_vel_ = node->declare_or_get_parameter("max_rotational_vel", 1.0);
+  min_rotational_vel_ = node->declare_or_get_parameter("min_rotational_vel", 0.4);
+  rotational_acc_lim_ = node->declare_or_get_parameter("rotational_acc_lim", 3.2);
 }
 
 ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)

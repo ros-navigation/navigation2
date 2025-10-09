@@ -62,6 +62,23 @@ std::shared_ptr<BT::BehaviorTreeFactory>
 PersistentSequenceTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> PersistentSequenceTestFixture::tree_ = nullptr;
 
+TEST_F(PersistentSequenceTestFixture, test_empty_fails)
+{
+  // create tree
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <PersistentSequence>
+            <AlwaysSuccess/>
+          </PersistentSequence>
+        </BehaviorTree>
+      </root>)";
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  EXPECT_THROW(tree_->rootNode()->executeTick(), BT::RuntimeError);
+}
+
 TEST_F(PersistentSequenceTestFixture, test_tick)
 {
   // create tree
