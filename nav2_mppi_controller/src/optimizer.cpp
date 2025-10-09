@@ -338,6 +338,8 @@ void Optimizer::prepare(
 
 void Optimizer::shiftControlSequence()
 {
+  control_sequence_ = control_sequence_virtual_;
+
   auto size = control_sequence_.vx.size();
   utils::shiftColumnsByOnePlace(control_sequence_.vx, -1);
   utils::shiftColumnsByOnePlace(control_sequence_.wz, -1);
@@ -636,8 +638,8 @@ void Optimizer::updateControlSequence()
     control_sequence_.vy = state_.cvy.transpose().matrix() * softmax_mat;
   }
 
-  control_sequence_virtual_ = control_sequence_;
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
+  control_sequence_virtual_ = control_sequence_;
 
   applyControlSequenceConstraints();
 }
