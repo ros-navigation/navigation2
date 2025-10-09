@@ -68,14 +68,6 @@ This process is then repeated a number of times and returns a converged solution
  | trajectory_step       | int    | Default: 5. The step between trajectories to visualize to downsample candidate trajectory pool.             |
  | time_step             | int    | Default: 3. The step between points on trajectories to visualize to downsample trajectory density.          |
 
-#### Path Handler
- | Parameter                  | Type   | Definition                                                                                                  |
- | ---------------            | ------ | ----------------------------------------------------------------------------------------------------------- |
- | prune_distance             | double | Default: 1.5. Distance ahead of nearest point on path to robot to prune path to.                            |
- | enforce_path_inversion        | double | Default: False. If true, it will prune paths containing cusping points for segments changing directions (e.g. path inversions) such that the controller will be forced to change directions at or very near the planner's requested inversion point. In addition, these cusping points will also be treated by the critics as local goals that the robot will attempt to reach. This is targeting Smac Planner users with feasible paths who need their robots to switch directions where specifically requested.      |
- | inversion_xy_tolerance        | double | Default: 0.2. Cartesian proximity (m) to path inversion point to be considered "achieved" to pass on the rest of the path after path inversion.      |
- | inversion_yaw_tolerance        | double | Default: 0.4. Angular proximity (radians) to path inversion point to be considered "achieved" to pass on the rest of the path after path inversion. 0.4 rad = 23 deg.  |
-
 #### Ackermann Motion Model
  | Parameter            | Type   | Definition                                                                                                  |
  | -------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
@@ -203,7 +195,6 @@ controller_server:
       vy_max: 0.5
       wz_max: 1.9
       iteration_count: 1
-      prune_distance: 1.7
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"

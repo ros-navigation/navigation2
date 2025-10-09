@@ -198,7 +198,8 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
-  auto [transformed_plan, closest_point] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
+  auto [transformed_plan,
+    closest_point] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)

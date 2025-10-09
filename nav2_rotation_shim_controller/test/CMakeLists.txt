@@ -9,6 +9,7 @@ target_link_libraries(test_shim_controller
   rclcpp::rclcpp
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_controller::simple_goal_checker
+  nav2_controller::simple_path_handler
   nav2_util::nav2_util_core
   tf2_ros::tf2_ros
 )

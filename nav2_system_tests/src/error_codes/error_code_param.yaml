@@ -1,12 +1,14 @@
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
+    transform_tolerance: 0.1
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.2
     failure_tolerance: -0.1
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+    path_handler_plugins: ["path_handler"]
     controller_plugins: [ "unknown", "tf_error", "invalid_path", "patience_exceeded","failed_to_make_progress", "no_valid_control"]
     unknown:
       plugin: "nav2_system_tests::UnknownErrorController"
@@ -38,6 +40,9 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+    path_handler:
+      plugin: "nav2_controller::MPPIPathHandler"
+      prune_distance: 1.7
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -64,7 +69,6 @@ controller_server:
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True

@@ -8,6 +8,7 @@ target_link_libraries(test_graceful_controller
   ${library_name}
   ${geometry_msgs_TARGETS}
   nav2_controller::simple_goal_checker
+  nav2_controller::simple_path_handler
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core

@@ -19,6 +19,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <utility>
 #include "nav2_core/path_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
@@ -52,7 +54,7 @@ protected:
     * @return output poose in global reference frame
     */
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrame(
-  const geometry_msgs::msg::PoseStamped & pose);
+    const geometry_msgs::msg::PoseStamped & pose);
 
   /**
     * @brief Get global plan within window of the local costmap size

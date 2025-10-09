@@ -258,7 +258,7 @@
       <output_port name="selected_progress_checker">Name of the selected progress checker received from the topic subscription</output_port>
     </Action>
 
-    <Action ID="GoalCheckerSelector">
+    <Action ID="PathHandlerSelector">
       <input_port name="topic_name">Name of the topic to receive path handler selection commands</input_port>
       <input_port name="default_path_handler">Default path handler of the controller selector</input_port>
       <output_port name="selected_path_handler">Name of the selected path handler received from the topic subscription</output_port>

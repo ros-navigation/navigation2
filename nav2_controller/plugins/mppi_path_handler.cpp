@@ -40,7 +40,7 @@ void MPPIPathHandler::initialize(
   SimplePathHandler::initialize(parent, logger, plugin_name, costmap_ros, tf);
   auto node = parent.lock();
   prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
-      0.2);
+      2.0);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(

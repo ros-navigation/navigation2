@@ -228,7 +228,15 @@ endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_controller::ControllerServer")
 
-install(TARGETS simple_progress_checker position_goal_checker pose_progress_checker simple_goal_checker stopped_goal_checker simple_path_handler mppi_path_handler ${library_name}
+install(TARGETS
+  simple_progress_checker
+  position_goal_checker
+  pose_progress_checker
+  simple_goal_checker
+  stopped_goal_checker
+  simple_path_handler
+  mppi_path_handler
+  ${library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

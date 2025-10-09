@@ -17,6 +17,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
+#include "nav2_controller/plugins/simple_path_handler.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_graceful_controller/ego_polar_coords.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
@@ -477,6 +478,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
+  nav2_controller::SimplePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -513,6 +516,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   plan.poses[2].pose.position.y = 1.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->newPathReceived(plan);
+  path_handler.setPlan(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -522,7 +526,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan;
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
   geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -555,6 +559,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
+  nav2_controller::SimplePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -591,6 +597,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->newPathReceived(plan);
+  path_handler.setPlan(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -600,7 +607,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan;
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
   geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -638,6 +645,8 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
+  nav2_controller::SimplePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -674,6 +683,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->newPathReceived(plan);
+  path_handler.setPlan(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -683,7 +693,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan;
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
   geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -717,6 +727,8 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
+  nav2_controller::SimplePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
   geometry_msgs::msg::PoseStamped robot_pose;
@@ -761,6 +773,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   plan.poses[4].pose.position.y = 0.0;
   plan.poses[4].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->newPathReceived(plan);
+  path_handler.setPlan(plan);
 
   // Set velocity
   geometry_msgs::msg::Twist robot_velocity;
@@ -771,7 +784,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
 
-  nav_msgs::msg::Path transformed_global_plan;
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
   geometry_msgs::msg::Pose goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);

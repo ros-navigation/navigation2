@@ -17,6 +17,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <utility>
 #include "nav2_controller/plugins/simple_path_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 

@@ -8,6 +8,7 @@ ament_add_test(test_route
     BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
     TESTER=tester_node.py
     ASTAR=True
+    PATH_HANDLER=nav2_controller::SimplePathHandler
     CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
     PLANNER=nav2_navfn_planner::NavfnPlanner
 )
