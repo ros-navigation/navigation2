@@ -333,7 +333,26 @@ TEST(PathUtilsWindowedTest, EdgeCases)
   EXPECT_NEAR(std::abs(result.distance), 5.0, 0.01);
 }
 
-TEST(PathUtilsTest, ThrowsOnStartIndexOutOfBounds)
+TEST(PathUtilsTest, FourArgEmptyPath)
+{
+  nav_msgs::msg::Path empty_path;
+  geometry_msgs::msg::Pose robot_pose = createPose(1.0, 1.0);
+  auto result = nav2_util::distance_from_path(empty_path, robot_pose, 0, 5.0);
+  EXPECT_EQ(result.distance, std::numeric_limits<double>::max());
+}
+
+TEST(PathUtilsTest, FourArgSinglePointPath)
+{
+  nav_msgs::msg::Path path;
+  path.poses.push_back(createPoseStamped(2.0, 3.0));
+  geometry_msgs::msg::Pose robot_pose = createPose(5.0, 7.0);
+  auto result = nav2_util::distance_from_path(path, robot_pose, 0, 5.0);
+  // Distance between (5,7) and (2,3) is 5.0
+  EXPECT_NEAR(result.distance, 5.0, 1e-6);
+  EXPECT_EQ(result.closest_segment_index, 0);
+}
+
+TEST(PathUtilsTest, FourArgThrowsOnStartIndexOutOfBounds)
 {
   nav_msgs::msg::Path path;
   path.poses.push_back(createPoseStamped(0.0, 0.0));
@@ -349,16 +368,4 @@ TEST(PathUtilsTest, ThrowsOnStartIndexOutOfBounds)
   EXPECT_THROW(
     nav2_util::distance_from_path(path, robot_pose, 100, 5.0),
     std::runtime_error);
-}
-
-TEST(PathUtilsTest, SinglePosePathReturnsCorrectDistance)
-{
-  nav_msgs::msg::Path path;
-  path.poses.push_back(createPoseStamped(2.0, 3.0));
-  geometry_msgs::msg::Pose robot_pose = createPose(5.0, 7.0);
-
-  auto result = nav2_util::distance_from_path(path, robot_pose, 0, 5.0);
-  // Distance between (5,7) and (2,3) is 5.0
-  EXPECT_NEAR(result.distance, 5.0, 1e-6);
-  EXPECT_EQ(result.closest_segment_index, 0);
 }
