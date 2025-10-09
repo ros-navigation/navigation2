@@ -310,16 +310,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return false;
   }
 
-  // Set blackboard variables for all subtrees
-  for (auto & subtree : tree_.subtrees) {
-    auto & blackboard = subtree->blackboard;
-    blackboard->set("node", client_node_);
-    blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
-    blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
-    blackboard->set<std::chrono::milliseconds>(
-        "wait_for_service_timeout", wait_for_service_timeout_);
-  }
-
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
   current_bt_file_or_id_ = file_or_id;
 
