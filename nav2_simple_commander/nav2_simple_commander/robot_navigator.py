@@ -24,7 +24,7 @@ from builtin_interfaces.msg import Duration
 from geographic_msgs.msg import GeoPose
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
+from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,  # type: ignore[attr-defined]
                               ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
                               DriveOnHeading, FollowGPSWaypoints, FollowObject, FollowPath,
                               FollowWaypoints, NavigateThroughPoses, NavigateToPose, SmoothPath,
