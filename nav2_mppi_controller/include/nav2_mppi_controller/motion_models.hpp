@@ -103,8 +103,6 @@ public:
       // then state.u(i) = u_app(i-1)
       // ==>  x_k = F(x_k-1, u_app_k-1) = F(x_k-1, g(u_virt_k-1))
 
-      // TODO 2 constrains state.u based on static limits (max vel & curvature) to compute u_app
-
       // u_app(0) should be limited on acceleration relative to either feedback (state.u(0)) as done now
       // TODO 3 or ideally based on last published command
 

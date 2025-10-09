@@ -291,6 +291,8 @@ protected:
   models::Path path_;
   geometry_msgs::msg::Pose goal_;
   Eigen::ArrayXf costs_;
+  geometry_msgs::msg::TwistStamped prev_control_twist_;
+  models::ControlSequence prev_control_sequence_;
 
   Eigen::ArrayXXf optimal_trajectory_unconstrained_;
 
