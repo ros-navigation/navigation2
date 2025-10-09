@@ -129,6 +129,17 @@ public:
       //   state.cwz.col(i - 1) = state.wz.col(i);
       // }
 
+      // also apply velocity limits constrains
+      state.vx.col(i) = state.vx.col(i)
+        .cwiseMax(control_constraints_.vx_min)
+        .cwiseMin(control_constraints_.vx_max);
+
+      state.wz.col(i) = state.wz.col(i)
+        .cwiseMax(-control_constraints_.wz)
+        .cwiseMin(control_constraints_.wz);
+
+
+      // also constrain wz base
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >
           0).select(
@@ -142,8 +153,14 @@ public:
         state.vy.col(i) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
+
+        state.vy.col(i) = state.cvy.col(i - 1)
+        .cwiseMax(-control_constraints_.vy)
+        .cwiseMin(control_constraints_.vy);
       }
     }
+
+    applyConstraints(state);
   }
 
   /**
@@ -157,6 +174,7 @@ public:
    * @param control_sequence Control sequence to apply constraints to
    */
   virtual void applyConstraints(models::ControlSequence & /*control_sequence*/) {}
+  virtual void applyConstraints(models::State & /*state*/) {}
 
 protected:
   float model_dt_{0.0};
@@ -199,6 +217,28 @@ public:
     control_sequence.wz = control_sequence.wz
       .max((-wz_constrained))
       .min(wz_constrained);
+  }
+
+  void applyConstraints(models::State & state) override
+  {
+    std::cout << "\n\t wz Before applyConstraints:\n\t\t" << state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
+    // auto tmp_state = state;
+    // for(unsigned int i = 0; i < state.vx.cols(); i++) {
+    //   auto wz_constrained = state.vx.col(i).abs() / min_turning_r_;
+    //   state.wz.col(i) = state.wz.col(i)
+    //     .cwiseMax(-1 * wz_constrained)
+    //     .cwiseMin(wz_constrained);
+    // }
+
+    std::cout << "\n\t wz with loop:\n\t\t" << state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
+
+    // vectorized version
+    const auto wz_constrained = tmp_state.vx.abs() / min_turning_r_;
+    tmp_state.wz = tmp_state.wz
+      .max((-wz_constrained))
+      .min(wz_constrained);
+
+    std::cout << "\n\t wz without loop:\n\t\t" << tmp_state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
   }
 
   /**
