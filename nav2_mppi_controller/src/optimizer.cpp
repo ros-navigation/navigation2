@@ -402,7 +402,7 @@ void Optimizer::applyControlSequenceConstraints()
     vy_last = static_cast<float>(state_.speed.linear.y);
   }
 
-  for (unsigned int i = 0; i < 2; i++) {
+  for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
     if (vx_last > 0) {
