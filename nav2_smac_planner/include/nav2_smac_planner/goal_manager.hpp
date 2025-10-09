@@ -17,6 +17,7 @@
 #ifndef NAV2_SMAC_PLANNER__GOAL_MANAGER_HPP_
 #define NAV2_SMAC_PLANNER__GOAL_MANAGER_HPP_
 
+#include <algorithm>
 #include <unordered_set>
 #include <vector>
 #include <functional>
@@ -126,18 +127,10 @@ public:
     const NodePtr node, const float & radius, GridCollisionChecker * collision_checker,
     const bool & traverse_unknown) const
   {
-    auto isPointWithinMap = [&collision_checker] (const Coordinates & point) {
-        const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
-        const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
+    const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
+    const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
 
-        if (point.x < 0 || point.y < 0 || point.x >= size_x || point.y >= size_y) {
-          return false;
-        }
-
-        return true;
-      };
-
-    auto getIndexFromPoint = [&collision_checker] (const Coordinates & point) {
+    auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
         unsigned int index = 0;
 
         if constexpr (!std::is_same_v<NodeT, Node2D>) {
@@ -149,30 +142,28 @@ public:
         } else {
           auto mx = static_cast<unsigned int>(point.x);
           auto my = static_cast<unsigned int>(point.y);
-          auto width = collision_checker->getCostmap()->getSizeInCellsX();
 
-          index = NodeT::getIndex(mx, my, width);
+          index = NodeT::getIndex(mx, my, size_x);
         }
 
         return index;
       };
 
     const Coordinates & center_point = node->pose;
-    Coordinates current_point = node->pose;
-    constexpr float degree = M_PI / 180;
-    constexpr float two_pi = 2 * M_PI;
+    float min_x = std::max(0.0f, std::floor(center_point.x - radius));
+    float min_y = std::max(0.0f, std::floor(center_point.y - radius));
+    float max_x = std::min(static_cast<float>(size_x - 1), std::ceil(center_point.x + radius));
+    float max_y = std::min(static_cast<float>(size_y - 1), std::ceil(center_point.y + radius));
 
-    for (float r = 0; r < radius + 1; r += 1) {
-      for (float theta = 0; theta < two_pi; theta += degree) {
-        current_point.x = center_point.x + r * std::cos(theta);
-        current_point.y = center_point.y + r * std::sin(theta);
-
-        if (!isPointWithinMap(current_point)) {
+    Coordinates m;
+    for (m.x = min_x; m.x <= max_x ; ++m.x) {
+      for (m.y = min_y; m.y <= max_y; ++m.y) {
+        if (std::hypot(m.x - center_point.x, m.y - center_point.y) > radius) {
           continue;
         }
 
-        NodeT current_node(getIndexFromPoint(current_point));
-        current_node.setPose(current_point);
+        NodeT current_node(getIndexFromPoint(m));
+        current_node.setPose(m);
 
         if (current_node.isNodeValid(traverse_unknown, collision_checker)) {
           return true;
@@ -203,7 +194,9 @@ public:
         "removeinvalidgoals");
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
-      if (isZoneValid(_goals_state[i].goal, tolerance, collision_checker, traverse_unknown)) {
+      if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
+        isZoneValid(_goals_state[i].goal, tolerance, collision_checker, traverse_unknown))
+      {
         _goals_state[i].is_valid = true;
         _goals_set.insert(_goals_state[i].goal);
         _goals_coordinate.push_back(_goals_state[i].goal->pose);
