@@ -221,24 +221,10 @@ public:
 
   void applyConstraints(models::State & state) override
   {
-    std::cout << "\n\t wz Before applyConstraints:\n\t\t" << state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
-    // auto tmp_state = state;
-    // for(unsigned int i = 0; i < state.vx.cols(); i++) {
-    //   auto wz_constrained = state.vx.col(i).abs() / min_turning_r_;
-    //   state.wz.col(i) = state.wz.col(i)
-    //     .cwiseMax(-1 * wz_constrained)
-    //     .cwiseMin(wz_constrained);
-    // }
-
-    std::cout << "\n\t wz with loop:\n\t\t" << state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
-
-    // vectorized version
-    const auto wz_constrained = tmp_state.vx.abs() / min_turning_r_;
-    tmp_state.wz = tmp_state.wz
+    const auto wz_constrained = state.vx.abs() / min_turning_r_;
+    state.wz = state.wz
       .max((-wz_constrained))
       .min(wz_constrained);
-
-    std::cout << "\n\t wz without loop:\n\t\t" << tmp_state.wz(Eigen::seq(0,1000,300), Eigen::seq(0, 2)) << std::endl;
   }
 
   /**
