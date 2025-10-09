@@ -356,6 +356,7 @@ TEST(PathUtilsTest, FourArgEmptyPath)
   EXPECT_EQ(result.closest_point.y, 0.0);
   EXPECT_EQ(result.closest_point.z, 0.0);
 }
+
 TEST(PathUtilsTest, FourArgSinglePointPath)
 {
   nav_msgs::msg::Path path;
