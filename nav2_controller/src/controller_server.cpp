@@ -673,7 +673,6 @@ void ControllerServer::computeAndPublishVelocity()
 
   RCLCPP_DEBUG(get_logger(), "Publishing velocity at time %.2f", now().seconds());
   publishVelocity(cmd_vel_2d);
-  double current_distance_to_goal = 0.0;
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
 
@@ -685,22 +684,23 @@ void ControllerServer::computeAndPublishVelocity()
     costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance());
 
   if (current_path_.poses.size() >= 2) {
+    double current_distance_to_goal = 0.0;
     current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-    pose, transformed_end_pose_);
+        pose, transformed_end_pose_);
 
-    // Transform robot pose to path frame for path tracking calculations
+      // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
-          pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-          current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+            pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+            current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
     {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
 
     const auto path_search_result = nav2_util::distance_from_path(
-    current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
+      current_path_, robot_pose_in_path_frame.pose, start_index_, search_window_);
 
-    // Create tracking error message
+      // Create tracking error message
     auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
     tracking_feedback_msg->header = pose.header;
     tracking_feedback_msg->tracking_error = path_search_result.distance;
@@ -712,7 +712,7 @@ void ControllerServer::computeAndPublishVelocity()
       nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
     start_index_ = path_search_result.closest_segment_index;
 
-    // Update current tracking error and publish
+      // Update current tracking error and publish
     current_tracking_feedback = *tracking_feedback_msg;
     if (tracking_feedback_pub_->get_subscription_count() > 0) {
       tracking_feedback_pub_->publish(std::move(tracking_feedback_msg));

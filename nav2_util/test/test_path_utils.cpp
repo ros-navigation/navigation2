@@ -332,3 +332,33 @@ TEST(PathUtilsWindowedTest, EdgeCases)
   auto result = nav2_util::distance_from_path(test_path, robot_pose, 0, 5.0);
   EXPECT_NEAR(std::abs(result.distance), 5.0, 0.01);
 }
+
+TEST(PathUtilsTest, ThrowsOnStartIndexOutOfBounds)
+{
+  nav_msgs::msg::Path path;
+  path.poses.push_back(createPoseStamped(0.0, 0.0));
+  path.poses.push_back(createPoseStamped(1.0, 0.0));
+  geometry_msgs::msg::Pose robot_pose = createPose(0.5, 0.0);
+
+  // start_index is out of bounds (equal to path.poses.size())
+  EXPECT_THROW(
+    nav2_util::distance_from_path(path, robot_pose, 2, 5.0),
+    std::runtime_error);
+
+  // start_index is way out of bounds
+  EXPECT_THROW(
+    nav2_util::distance_from_path(path, robot_pose, 100, 5.0),
+    std::runtime_error);
+}
+
+TEST(PathUtilsTest, SinglePosePathReturnsCorrectDistance)
+{
+  nav_msgs::msg::Path path;
+  path.poses.push_back(createPoseStamped(2.0, 3.0));
+  geometry_msgs::msg::Pose robot_pose = createPose(5.0, 7.0);
+
+  auto result = nav2_util::distance_from_path(path, robot_pose, 0, 5.0);
+  // Distance between (5,7) and (2,3) is 5.0
+  EXPECT_NEAR(result.distance, 5.0, 1e-6);
+  EXPECT_EQ(result.closest_segment_index, 0);
+}
