@@ -235,7 +235,7 @@ inline bool isPointInsidePolygon(
  * @brief Computes the shortest (perpendicular) distance from a point to a path segment.
  *
  * Given a point and a line segment defined by two poses, calculates the minimum distance
- * from the point to the segment in the XY plane. If the segment is degenerate (zero length),
+ * from the point to the segment in the XY plane. If the segment is too short returns zero,
  * returns the distance from the point to the segment's start.
  *
  * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
