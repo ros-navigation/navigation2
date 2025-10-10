@@ -127,22 +127,23 @@ public:
     const NodePtr node, const float & radius, GridCollisionChecker * collision_checker,
     const bool & traverse_unknown) const
   {
+    if (radius < 1) {
+      return false;
+    }
+
     const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
     const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
 
     auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
         unsigned int index = 0;
 
-        if constexpr (!std::is_same_v<NodeT, Node2D>) {
-          auto mx = static_cast<unsigned int>(point.x);
-          auto my = static_cast<unsigned int>(point.y);
-          auto angle = static_cast<unsigned int>(point.theta);
+        auto mx = static_cast<unsigned int>(point.x);
+        auto my = static_cast<unsigned int>(point.y);
 
+        if constexpr (!std::is_same_v<NodeT, Node2D>) {
+          auto angle = static_cast<unsigned int>(point.theta);
           index = NodeT::getIndex(mx, my, angle);
         } else {
-          auto mx = static_cast<unsigned int>(point.x);
-          auto my = static_cast<unsigned int>(point.y);
-
           index = NodeT::getIndex(mx, my, size_x);
         }
 
@@ -150,15 +151,21 @@ public:
       };
 
     const Coordinates & center_point = node->pose;
-    float min_x = std::max(0.0f, std::floor(center_point.x - radius));
-    float min_y = std::max(0.0f, std::floor(center_point.y - radius));
-    float max_x = std::min(static_cast<float>(size_x - 1), std::ceil(center_point.x + radius));
-    float max_y = std::min(static_cast<float>(size_y - 1), std::ceil(center_point.y + radius));
+    const float min_x = std::max(0.0f, std::floor(center_point.x - radius));
+    const float min_y = std::max(0.0f, std::floor(center_point.y - radius));
+    const float max_x =
+      std::min(static_cast<float>(size_x - 1), std::ceil(center_point.x + radius));
+    const float max_y =
+      std::min(static_cast<float>(size_y - 1), std::ceil(center_point.y + radius));
+    const float radius_sq = radius * radius;
 
     Coordinates m;
-    for (m.x = min_x; m.x <= max_x ; ++m.x) {
-      for (m.y = min_y; m.y <= max_y; ++m.y) {
-        if (std::hypot(m.x - center_point.x, m.y - center_point.y) > radius) {
+    for (m.x = min_x; m.x <= max_x; ++m.x) {
+      for (m.y = min_y; m.y <= max_y ; ++m.y) {
+        const float dx = m.x - center_point.x;
+        const float dy = m.y - center_point.y;
+
+        if (dx * dx + dy * dy > radius_sq) {
           continue;
         }
 
