@@ -21,7 +21,7 @@
 #include <limits>
 #include <memory>
 #include <set>
-#include <unordered_set>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -246,64 +246,78 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  bool is_bt_id = false;
-  if ((file_or_id.length() < 4) ||
-    file_or_id.substr(file_or_id.length() - 4) != ".xml")
-  {
-    is_bt_id = true;
-  }
+  const std::string kXmlExtension = ".xml";
+  const bool is_bt_id = (file_or_id.length() < kXmlExtension.size()) ||
+    (file_or_id.compare(file_or_id.length() - kXmlExtension.size(), kXmlExtension.size(),
+      kXmlExtension) != 0);
 
-  std::unordered_set<std::string> used_bt_id;
-  for (const auto & directory : search_directories_) {
-    try {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() == ".xml") {
-          auto current_bt_id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (current_bt_id.empty()) {
-            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)",
-              entry.path().string().c_str());
-            continue;
+  std::set<std::string> registered_ids;
+  std::string main_id;
+
+  auto register_all_bt_files = [&](const std::string & skip_file = "") {
+      try {
+        for (const auto & directory : search_directories_) {
+          for (const auto & entry : fs::directory_iterator(directory)) {
+            if (entry.path().extension() != ".xml") {
+              continue;
+            }
+            if (!skip_file.empty() && entry.path().string() == skip_file) {
+              continue;
+            }
+
+            auto id = bt_->extractBehaviorTreeID(entry.path().string());
+            if (id.empty()) {
+              RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
+              continue;
+            }
+            if (registered_ids.count(id)) {
+              RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
+              entry.path().c_str(), id.c_str());
+              continue;
+            }
+
+            RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+            bt_->registerTreeFromFile(entry.path().string());
+            registered_ids.insert(id);
           }
-          auto [it, inserted] = used_bt_id.insert(current_bt_id);
-          if (!inserted) {
-            RCLCPP_WARN(
-              logger_,
-              "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
-              "ID: %s File: %s",
-              current_bt_id.c_str(), entry.path().string().c_str());
-          }
-          bt_->registerTreeFromFile(entry.path().string());
         }
+      } catch (const std::exception & e) {
+        setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Exception reading behavior tree directory: " + std::string(e.what()));
       }
-    } catch (const std::exception & e) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        "Exception reading behavior tree directory: " + std::string(e.what()));
+    };
+
+  if (!is_bt_id) {
+    // file_or_id is a filename: register it first
+    std::string main_file = file_or_id;
+    main_id = bt_->extractBehaviorTreeID(main_file);
+    if (main_id.empty()) {
+      RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
       return false;
     }
-  }
-  // Try to load the main BT tree (by ID)
-  try {
-    if(!is_bt_id) {
-      tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
-    } else {
-      tree_ = bt_->createTree(file_or_id, blackboard_);
-    }
+    RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
+    bt_->registerTreeFromFile(main_file);
+    registered_ids.insert(main_id);
 
-    for (auto & subtree : tree_.subtrees) {
-      auto & blackboard = subtree->blackboard;
-      blackboard->set("node", client_node_);
-      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
-      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
-      blackboard->set<std::chrono::milliseconds>(
-          "wait_for_service_timeout", wait_for_service_timeout_);
-    }
+    // Register all other BT files in the search directories
+    // skipping conflicts with main_id
+    register_all_bt_files(main_file);
+  } else {
+    // file_or_id is an ID: register all files, skipping conflicts
+    main_id = file_or_id;
+    register_all_bt_files();
+  }
+
+  // Create the tree with the specified ID
+  try {
+    tree_ = bt_->createTree(main_id, blackboard_);
+    RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
   } catch (const std::exception & e) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Exception when creating BT tree from file: ") + e.what());
+      std::string("Exception when creating BT tree from ID: ") + e.what());
     return false;
   }
 
-  // Optional logging and monitoring
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
   current_bt_file_or_id_ = file_or_id;
 
