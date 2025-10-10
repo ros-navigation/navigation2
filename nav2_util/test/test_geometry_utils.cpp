@@ -156,3 +156,38 @@ TEST(GeometryUtils, find_next_matching_goal_in_waypoint_statuses)
   ASSERT_EQ(find_next_matching_goal_in_waypoint_statuses(waypoint_statuses,
     waypoint_statuses[matching_index].waypoint_pose), -1);
 }
+
+TEST(GeometryUtils, cross_product_2d_basic)
+{
+  geometry_msgs::msg::Point point;
+  point.x = 1.0;
+  point.y = 2.0;
+
+  geometry_msgs::msg::Pose start;
+  start.position.x = 0.0;
+  start.position.y = 0.0;
+
+  geometry_msgs::msg::Pose end;
+  end.position.x = 2.0;
+  end.position.y = 0.0;
+
+  // The vector from start to end is (2,0)
+  // The vector from start to point is (1,2)
+  // Cross product: (2*2) - (0*1) = 4
+  double result = nav2_util::geometry_utils::cross_product_2d(point, start, end);
+  EXPECT_NEAR(result, 4.0, 1e-6);
+
+  // Now test a point below the segment
+  point.x = 1.0;
+  point.y = -2.0;
+  // Cross product: (2*-2) - (0*1) = -4
+  result = nav2_util::geometry_utils::cross_product_2d(point, start, end);
+  EXPECT_NEAR(result, -4.0, 1e-6);
+
+  // Point on the segment
+  point.x = 1.0;
+  point.y = 0.0;
+  // Cross product: (2*0) - (0*1) = 0
+  result = nav2_util::geometry_utils::cross_product_2d(point, start, end);
+  EXPECT_NEAR(result, 0.0, 1e-6);
+}
