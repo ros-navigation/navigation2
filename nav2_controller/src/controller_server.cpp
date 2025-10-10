@@ -679,13 +679,11 @@ void ControllerServer::computeAndPublishVelocity()
   // Use the current robot pose's timestamp for the transformation
   end_pose_.header.stamp = pose.header.stamp;
 
-  if (nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
+  if (!nav2_util::transformPoseInTargetFrame(
+        end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+        costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
   {
-    // Transform succeeded
-  } else {
-    RCLCPP_WARN(get_logger(), "Failed to transform end pose to global frame");
+    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
 
   if (current_path_.poses.size() >= 2) {
