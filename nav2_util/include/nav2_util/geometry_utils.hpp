@@ -232,29 +232,14 @@ inline bool isPointInsidePolygon(
 }
 
 /**
- * @brief Find the distance to a point
- * @param global_pose Robot's current or planned position
- * @param target target point
- * @return int
- */
-inline double distanceToPoint(
-  const geometry_msgs::msg::PoseStamped & point1,
-  const geometry_msgs::msg::PoseStamped & point2)
-{
-  const double dx = point1.pose.position.x - point2.pose.position.x;
-  const double dy = point1.pose.position.y - point2.pose.position.y;
-  return std::hypot(dx, dy);
-}
-
-/**
  * @brief Find the shortest distance to a vector
  *
  * See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
  *
- * @param global_pose Robot's current or planned position
- * @param start Starting segment of the path
- * @param finish End segment of the path
- * @return int
+ * @param point The point to measure from (geometry_msgs::msg::Point).
+ * @param start The starting pose of the segment (geometry_msgs::msg::Pose).
+ * @param end The ending pose of the segment (geometry_msgs::msg::Pose).
+ * @return The shortest distance from the point to the segment in meters.
  */
 inline double distance_to_path_segment(
   const geometry_msgs::msg::Point & point,
