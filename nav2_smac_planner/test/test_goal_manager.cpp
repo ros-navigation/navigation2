@@ -116,8 +116,29 @@ TEST(GoalManagerTest, test_goal_manager)
   goal_manager.addGoal(pose_b);
   goal_manager.addGoal(pose_c);
 
-  int low_tolerance = 0.0f;
+  int low_tolerance = 10.0f;
   goal_manager.removeInvalidGoals(low_tolerance, checker.get(), allow_unknow);
+
+  EXPECT_EQ(goal_manager.getGoalsSet().size(), 2);
+  EXPECT_EQ(goal_manager.getGoalsCoordinates().size(), 2);
+
+  // expect last goal to be invalid
+  for (const auto & goal_state : goal_manager.getGoalsState()) {
+    if (goal_state.goal == pose_c) {
+      EXPECT_FALSE(goal_state.is_valid);
+    } else {
+      EXPECT_TRUE(goal_state.is_valid);
+    }
+  }
+
+  // Test with zero tolerance, expect invalid goal to be still filtered out
+  goal_manager.clear();
+  goal_manager.addGoal(pose_a);
+  goal_manager.addGoal(pose_b);
+  goal_manager.addGoal(pose_c);
+
+  int zero_tolerance = 0.0f;
+  goal_manager.removeInvalidGoals(zero_tolerance, checker.get(), allow_unknow);
 
   EXPECT_EQ(goal_manager.getGoalsSet().size(), 2);
   EXPECT_EQ(goal_manager.getGoalsCoordinates().size(), 2);
