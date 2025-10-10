@@ -536,38 +536,38 @@ _parameters:
 
 workflows:
   version: 2
-  build_and_test:
-    jobs:
-      - release_build:
-          <<: *release_parameters
-      - system_build:
-          requires:
-            - release_build
-      - release_test:
-          requires:
-            - system_build
-          cache_test: true
-  nightly:
-    jobs:
-      - release_build:
-          <<: *release_parameters
-      - system_build:
-          requires:
-            - release_build
-      - release_test:
-          requires:
-            - system_build
-          <<: *release_parameters
-          matrix:
-            alias: release_test
-            parameters:
-              rmw:
-                - rmw_cyclonedds_cpp
-                - rmw_fastrtps_cpp
-    triggers:
-      - schedule:
-          cron: "0 13 * * *"
-          filters:
-            branches:
-              only:
-                - main
+  # build_and_test:
+  #   jobs:
+  #     - release_build:
+  #         <<: *release_parameters
+  #     - system_build:
+  #         requires:
+  #           - release_build
+  #     - release_test:
+  #         requires:
+  #           - system_build
+  #         cache_test: true
+  # nightly:
+  #   jobs:
+  #     - release_build:
+  #         <<: *release_parameters
+  #     - system_build:
+  #         requires:
+  #           - release_build
+  #     - release_test:
+  #         requires:
+  #           - system_build
+  #         <<: *release_parameters
+  #         matrix:
+  #           alias: release_test
+  #           parameters:
+  #             rmw:
+  #               - rmw_cyclonedds_cpp
+  #               - rmw_fastrtps_cpp
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 13 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - main

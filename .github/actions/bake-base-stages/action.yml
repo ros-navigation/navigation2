@@ -1,0 +1,158 @@
+name: "Bake base stages"
+description: "GitHub Action to bake base stages and push images for CI"
+author: 'ros-navigation'
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  integration_repo:
+    required: true
+    type: string
+    description: The repository to checkout for running CI
+  token:
+    required: true
+    type: string
+    description: The token to use for image registry login
+
+outputs:
+  overlay_cache_sha:
+    description: 'Cache sha to restore overlay workspace cache'
+    value: ${{ steps.job_workflow_info.outputs.overlay_cache_sha }}
+  metadata:
+    description: 'Layer result metadata'
+    value: ${{ steps.get_layer_metadata.outputs.metadata }}
+  tooler_image:
+    description: 'Docker image for building overlay workspace'
+    value: ${{ steps.job_workflow_info.outputs.tooler_image }}
+  validator_image:
+    description: 'Docker image for testing overlay workspace'
+    value: ${{ steps.job_workflow_info.outputs.validator_image }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      # TODO: Check if default cleanup clears cache on host runner
+      # and if so, postpone cleanup when baking base stages
+      # later when baking prod stages if using the same runner
+      with:
+        cleanup: false
+        buildkitd-config-inline: |
+          [gc]
+            enabled = false
+          [worker.oci]
+            gc = false
+          [worker.containerd]
+            gc = false
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+    - name: GHCR Info
+      shell: bash
+      run: |
+        echo "GHCR_REGISTRY=ghcr.io" >> $GITHUB_ENV
+        echo "INTEGRATION_REPO=${{ inputs.integration_repo }}" >> $GITHUB_ENV
+        echo "GHCR_REPO=${{ github.repository }}" >> $GITHUB_ENV
+
+    - name: Docker validator meta
+      id: docker_meta_validator
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
+        flavor: suffix=-validator
+        bake-target: validator
+        tags: type=raw,value=${{ github.head_ref || github.ref_name }}
+    - name: Docker tooler meta
+      id: docker_meta_tooler
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}
+        flavor: suffix=-tooler
+        bake-target: tooler
+        tags: type=raw,value=${{ github.head_ref || github.ref_name }}
+
+    - name: Set Extra Bake Args
+      id: docker_bake_extra
+      shell: bash
+      run: |
+        {
+        echo 'EXTRA_BAKE_SET<<EOF'
+        if [ "$INTEGRATION_REPO" == "$GHCR_REPO" ]; then
+          tooler_ref=${{ fromJSON(steps.docker_meta_tooler.outputs.json).tags[0] }}
+          echo    *.cache-from=type=registry,ref=${tooler_ref}.cache
+          echo tooler.cache-to=type=registry,ref=${tooler_ref}.cache,mode=max
+        fi
+        if [ "${{ github.head_ref || github.ref_name }}" != "main" ] || [ "$INTEGRATION_REPO" != "$GHCR_REPO" ]; then
+          echo *.cache-from=type=gha
+        fi
+        echo EOF
+        } >> "$GITHUB_ENV"
+    - name: Bake base stages
+      id: bake_base_stages
+      uses: docker/bake-action@v5
+      with:
+        pull: true
+        push: true
+        load: false
+        provenance: false
+        no-cache: false
+        targets: |
+          tooler
+          validator
+        set: |
+          *.cache-from=type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.INTEGRATION_REPO }}:main-tooler.cache
+          *.cache-to=type=gha,mode=max
+          ${{ env.EXTRA_BAKE_SET }}
+        files: |
+          ./docker-bake.hcl
+          ${{ steps.docker_meta_tooler.outputs.bake-file }}
+          ${{ steps.docker_meta_validator.outputs.bake-file }}
+
+    - name: Get Layer Metadata
+      id: get_layer_metadata
+      uses: ros-navigation/navigation2/.github/actions/get-layer-metadata@buildkit
+      with:
+        metadata: ${{ steps.bake_base_stages.outputs.metadata }}
+        load: false
+    - name: Job Workflow Info
+      id: job_workflow_info
+      shell: bash
+      run: |
+        overlay_cache_sha="${{ fromJSON(steps.get_layer_metadata.outputs.metadata)['tooler']['layer.digest'] }}"
+        overlay_cache_sha="${overlay_cache_sha#sha256:}"
+        overlay_cache_sha="$(echo $overlay_cache_sha | cut -c1-12)"
+        echo "overlay_cache_sha=${overlay_cache_sha}" >> $GITHUB_OUTPUT
+
+        tooler_image_name="${{ fromJSON(steps.get_layer_metadata.outputs.metadata)['tooler']['image.name'] }}"
+        tooler_image_digest="${{ fromJSON(steps.get_layer_metadata.outputs.metadata)['tooler']['containerimage.digest'] }}"
+        tooler_image="${tooler_image_name}@${tooler_image_digest}"
+        echo "tooler_image=${tooler_image}" >> $GITHUB_OUTPUT
+
+        validator_image_name="${{ fromJSON(steps.get_layer_metadata.outputs.metadata)['validator']['image.name'] }}"
+        validator_image_digest="${{ fromJSON(steps.get_layer_metadata.outputs.metadata)['validator']['containerimage.digest'] }}"
+        validator_image="${validator_image_name}@${validator_image_digest}"
+        echo "validator_image=${validator_image}" >> $GITHUB_OUTPUT
+
+        cat << EOF > $GITHUB_STEP_SUMMARY
+        ## Base Images
+        | Image tag | Digest |
+        |-|-|
+        | \`${tooler_image_name##*:}\` | \`${tooler_image_digest}\` |
+        | \`${validator_image_name##*:}\` | \`${validator_image_digest}\` |
+
+        ### tooler
+        \`\`\`
+        ${tooler_image}
+        \`\`\`
+
+        ### validator
+        \`\`\`
+        ${validator_image}
+        \`\`\`
+        EOF

@@ -1,0 +1,245 @@
+name: Colcon Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      checkout_cache_key:
+        required: true
+        type: string
+      overlay_cache_sha:
+        required: true
+        type: string
+      overlay_ws:
+        required: true
+        type: string
+      metadata:
+        required: true
+        type: string
+      runs_on:
+        required: true
+        type: string
+      tooler_image:
+        required: true
+        type: string
+      validator_image:
+        required: true
+        type: string
+    outputs:
+      build_result:
+        value: ${{ jobs.build_colcon_workspace.result }}
+      ccache_cache_key:
+        value: ${{ jobs.build_colcon_workspace.outputs.ccache_cache_key }}
+      overlay_cache_key:
+        value: ${{ jobs.test_colcon_workspace.outputs.overlay_cache_key }}
+      test_result:
+        value: ${{ jobs.test_colcon_workspace.result }}
+
+jobs:
+  build_colcon_workspace:
+    name: Build Workspace
+    outputs:
+      ccache_cache_key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
+      overlay_cache_key: ${{ steps.cache_overlay_info.outputs.overlay_cache_key }}
+      build_packages: ${{ steps.check_differential.outputs.build_packages }}
+    runs-on: ${{ inputs.runs_on }}
+    container:
+      image: ${{ inputs.tooler_image }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.overlay_ws }}/
+    steps:
+      - name: Restore checkout
+        id: restore_checkout
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: ${{ inputs.overlay_ws }}/src/
+          key: ${{ inputs.checkout_cache_key }}
+      - name: Cache ccache info
+        id: cache_ccache_info
+        run: |
+          ccache_cache_key="ccache-v1"\
+          "-${{ github.ref }}"\
+          "-${{ github.run_id }}"\
+          "-${{ github.run_number }}"\
+          "-${{ github.run_attempt }}"
+          echo "ccache_cache_key=${ccache_cache_key}" >> $GITHUB_OUTPUT
+      - name: Restore ccache
+        id: restore_ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/.ccache
+          key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
+          restore-keys: |
+            ccache-v1-${{ github.ref }}
+            ccache-v1-refs/heads/${{ github.head_ref }}
+            ccache-v1-refs/heads/${{ github.base_ref }}
+      - name: Cache overlay info
+        id: cache_overlay_info
+        run: |
+          overlay_cache_key="overlay-v1"\
+          "-${{ github.ref }}"\
+          "-${{ inputs.overlay_cache_sha }}"\
+          "-${{ github.run_id }}"\
+          "-${{ github.run_number }}"\
+          "-${{ github.run_attempt }}"
+          echo "overlay_cache_key=${overlay_cache_key}" >> $GITHUB_OUTPUT
+      - name: Restore overlay
+        id: restore_overlay
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ steps.cache_overlay_info.outputs.overlay_cache_key }}
+          restore-keys: |
+            overlay-v1-${{ github.ref }}-${{ inputs.overlay_cache_sha }}
+            overlay-v1-refs/heads/${{ github.head_ref }}-${{ inputs.overlay_cache_sha }}
+            overlay-v1-refs/heads/${{ github.base_ref }}-${{ inputs.overlay_cache_sha }}
+      - name: Check Differential
+        id: check_differential
+        shell: bash
+        run: |
+          marked_base_paths=$(find ./src -name "COLCON_MARK" -exec dirname {} \; | xargs)
+          if [ -n "$marked_base_paths" ]; then
+            echo "Differential build detected!"
+            base_paths=$marked_base_paths
+          else
+            echo "Defaulting full build..."
+            base_paths='./src'
+          fi
+          BUILD_PACKAGES=$(
+            colcon list \
+              --names-only \
+              --base-paths $base_paths \
+            | xargs)
+          echo BUILD_PACKAGES: $BUILD_PACKAGES
+          echo "build_packages=$BUILD_PACKAGES" >> $GITHUB_OUTPUT
+      - name: Ccache Info
+        run: |
+          ccache -z # zero stats
+          ccache -V # show version
+          ccache -p # show config
+      - name: Colcon Build
+        id: colcon_build
+        run: |
+          . /opt/ros/$ROS_DISTRO/setup.sh
+          colcon cache lock \
+            --dirhash-reset
+          colcon clean packages -y \
+            --packages-select-cache-invalid \
+            --packages-select-cache-key build \
+            --base-select install
+          colcon build \
+            --packages-up-to \
+              ${{ steps.check_differential.outputs.build_packages }} \
+            --packages-skip-cache-valid \
+            --mixin $OVERLAY_MIXINS
+      - name: Ccache Stats
+        if: always()
+        run: |
+          ccache -s # show stats
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ${{ inputs.overlay_ws }}/log/
+      - name: Save ccache
+        id: save_ccache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/.ccache
+          key: ${{ steps.cache_ccache_info.outputs.ccache_cache_key }}
+      - name: Save overlay
+        id: save_overlay
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ steps.cache_overlay_info.outputs.overlay_cache_key }}
+
+  test_colcon_workspace:
+    name: Test Workspace
+    outputs:
+      overlay_cache_key: ${{ needs.build_colcon_workspace.outputs.overlay_cache_key }}-${{ github.run_attempt }}
+    runs-on: ${{ inputs.runs_on }}
+    needs:
+        - build_colcon_workspace
+    container:
+      image: ${{ inputs.validator_image }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.overlay_ws }}/
+    steps:
+      - name: Restore checkout
+        id: restore_checkout
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: ${{ inputs.overlay_ws }}/src/
+          key: ${{ inputs.checkout_cache_key }}
+      - name: Restore overlay
+        id: restore_overlay
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ needs.build_colcon_workspace.outputs.overlay_cache_key }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ needs.build_colcon_workspace.outputs.overlay_cache_key }}
+      - name: Colcon Test
+        id: colcon_test
+        run: |
+          . install/setup.sh
+          colcon test \
+            --packages-select \
+              ${{ needs.build_colcon_workspace.outputs.build_packages }} \
+            --packages-skip-cache-valid
+          TEST_FAILURES=$(
+              colcon list \
+              --names-only \
+              --packages-select-test-failures \
+              | xargs)
+          echo TEST_FAILURES: $TEST_FAILURES
+          TEST_UNFINISHED=$(
+            colcon list \
+            --names-only \
+            --packages-skip-test-passed \
+            | xargs)
+          echo TEST_UNFINISHED: $TEST_UNFINISHED
+          colcon test-result \
+            --verbose
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: ${{ inputs.overlay_ws }}/log/
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ inputs.overlay_ws }}/test_results/
+      - name: Save overlay
+        id: save_overlay
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ needs.build_colcon_workspace.outputs.overlay_cache_key }}-${{ github.run_attempt }}

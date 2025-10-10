@@ -1,0 +1,106 @@
+name: Build Prod Images
+
+on:
+  workflow_call:
+    inputs:
+      ccache_cache_key:
+        required: true
+        type: string
+      checkout_cache_key:
+        required: true
+        type: string
+      overlay_cache_key:
+        required: true
+        type: string
+      overlay_ws:
+        required: true
+        type: string
+      metadata:
+        required: true
+        type: string
+      runs_on:
+        required: true
+        type: string
+      cache_image:
+        required: true
+        type: string
+    outputs:
+      debugger_image:
+        value: ${{ jobs.build_prod_images.outputs.debugger_image }}
+      metadata:
+        value: ${{ jobs.build_prod_images.outputs.metadata }}
+      releaser_image:
+        value: ${{ jobs.build_prod_images.outputs.releaser_image }}
+
+jobs:
+  build_prod_images:
+    name: Build Images
+    outputs:
+      debugger_image: ${{ steps.bake_prod_stages.outputs.debugger_image }}
+      metadata: ${{ steps.bake_prod_stages.outputs.metadata }}
+      releaser_image: ${{ steps.bake_prod_stages.outputs.releaser_image }}
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - name: Workspace cache prep
+        id: workspace_cache_prep
+        shell: bash
+        run: |
+          rm -rf ${{ inputs.overlay_ws }} || true
+          rm -rf /home/runner/${{ inputs.overlay_ws }} || true 
+
+      - name: Restore checkout
+        id: restore_checkout
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: ${{ inputs.overlay_ws }}/src/
+          key: ${{ inputs.checkout_cache_key }}
+      - name: Restore ccache
+        id: restore_ccache
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ${{ inputs.overlay_ws }}/.ccache
+          key: ${{ inputs.ccache_cache_key }}
+      - name: Restore overlay
+        id: restore_overlay
+        uses: actions/cache/restore@v4
+        with:
+          fail-on-cache-miss: true
+          path: |
+            ${{ inputs.overlay_ws }}/build
+            ${{ inputs.overlay_ws }}/install
+            ${{ inputs.overlay_ws }}/test_results
+          key: ${{ inputs.overlay_cache_key }}
+
+      - name: Workspace cache dance
+        id: workspace_cache_dance
+        shell: bash
+        run: |
+          overlay_ws_src="${{ inputs.overlay_ws }}/src"
+          integration_repo_name=$(basename ${{ github.repository }})
+          integration_repo_path="$overlay_ws_src/$integration_repo_name"
+
+          shopt -s dotglob
+          mv $integration_repo_path/* ${{ github.workspace }}
+
+          overlay_ws_dir=$(dirname ${{ inputs.overlay_ws }})
+          mkdir -p ${{ github.workspace }}/cache/$overlay_ws_dir
+          # FIXME: GitHub Cache Action restores caches relative to the working directory
+          # when the cache was intially saved, I.e. that of the orginating job container.
+          # Thus the restore_overlay step restores to ../../opt/<overlay_ws>/...
+          # instead of simply /opt/<overlay_ws>/... as the restore_checkout step does.
+          # In either case, paths outside of github.workspace could result in crosstalk
+          # if the same self-hosted runner VM is configured to run multiple concurrent jobs
+          mv /home/runner/${{ inputs.overlay_ws }} ${{ github.workspace }}/cache/$overlay_ws_dir/
+
+          tree -L 4 ${{ github.workspace }}/cache
+
+      - name: Bake prod stages
+        id: bake_prod_stages
+        uses: ros-navigation/navigation2/.github/actions/bake-prod-stages@buildkit
+        with:
+          cache_image: ${{ inputs.cache_image }}
+          integration_repo: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}

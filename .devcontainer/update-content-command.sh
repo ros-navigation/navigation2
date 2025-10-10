@@ -42,19 +42,21 @@ then
     colcon list \
         --names-only \
         --packages-above \
-        $BUILD_UNFINISHED \
-        $BUILD_FAILED \
-        $BUILD_INVALID \
+            $BUILD_UNFINISHED \
+            $BUILD_FAILED \
+            $BUILD_INVALID \
     | xargs)
 fi
 echo BUILD_PACKAGES: $BUILD_PACKAGES
 
+# DEBUG: Uncoment for more sterile but slower builds
 # colcon clean packages --yes \
 #     --packages-select ${BUILD_PACKAGES} \
-#     --base-select install
+#     --base-select build install
 
-. $UNDERLAY_WS/install/setup.sh
+# OPTOINAL: Uncomment to build packages upon update
+. /opt/ros/$ROS_DISTRO/setup.sh
 colcon build \
-    --symlink-install \
     --mixin $OVERLAY_MIXINS \
-    --packages-select ${BUILD_PACKAGES}
+    --packages-select ${BUILD_PACKAGES} \
+    || true
