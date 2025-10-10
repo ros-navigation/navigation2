@@ -112,8 +112,11 @@ bool CollisionChecker::isCollisionImminent(
     theta += projection_time * angular_vel;
     curr_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
-    // Stop simulating if we've gone past the simulation distance limit (max: carrot or min distance)
-    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > simulation_distance_limit) {
+    // Stop simulating if we've gone past the simulation distance limit
+    // (max: carrot or min distance)
+    if (hypot(curr_pose.position.x - robot_xy.x,
+        curr_pose.position.y - robot_xy.y) > simulation_distance_limit)
+    {
       break;
     }
 
