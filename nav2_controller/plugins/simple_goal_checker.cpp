@@ -92,6 +92,7 @@ bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
 {
+  // If the local plan is longer than the tolerance, we skip the check
   if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
     path_length_tolerance_)
   {

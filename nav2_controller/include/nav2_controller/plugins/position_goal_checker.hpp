@@ -61,6 +61,7 @@ public:
 protected:
   double xy_goal_tolerance_;
   double xy_goal_tolerance_sq_;
+  double path_length_tolerance_;
   bool stateful_;
   bool position_reached_;
   std::string plugin_name_;
