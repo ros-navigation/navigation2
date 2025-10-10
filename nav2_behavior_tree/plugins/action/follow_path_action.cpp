@@ -34,6 +34,7 @@ void FollowPathAction::on_tick()
   getInput("controller_id", goal_.controller_id);
   getInput("goal_checker_id", goal_.goal_checker_id);
   getInput("progress_checker_id", goal_.progress_checker_id);
+  getInput("path_handler_id", goal_.path_handler_id);
 }
 
 BT::NodeStatus FollowPathAction::on_success()
@@ -99,6 +100,14 @@ void FollowPathAction::on_wait_for_result(
 
   if (goal_.progress_checker_id != new_progress_checker_id) {
     goal_.progress_checker_id = new_progress_checker_id;
+    goal_updated_ = true;
+  }
+
+  std::string new_path_handler_id;
+  getInput("path_handler_id", new_path_handler_id);
+
+  if (goal_.path_handler_id != new_path_handler_id) {
+    goal_.path_handler_id = new_path_handler_id;
     goal_updated_ = true;
   }
 }

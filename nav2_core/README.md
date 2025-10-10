@@ -8,6 +8,7 @@ This package hosts the abstract interface (virtual base classes) for plugins to 
 - goal checker (e.g. `simple_goal_checker`)
 - behaviors (e.g. `drive_on_heading`)
 - progress checker (e.g. `simple_progress_checker`)
+- path handler (e.g. `simple_path_handler`)
 - waypoint task executor (e.g. `take_pictures`)
 - exceptions in planning and control
 

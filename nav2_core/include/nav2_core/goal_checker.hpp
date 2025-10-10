@@ -40,6 +40,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -80,11 +81,14 @@ public:
    * @param query_pose The pose to check
    * @param goal_pose The pose to check against
    * @param velocity The robot's current velocity
+   * @param transformed_global_plan The global plan after being processed by the path handler
    * @return True if goal is reached
    */
   virtual bool isGoalReached(
-    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-    const geometry_msgs::msg::Twist & velocity) = 0;
+    const geometry_msgs::msg::Pose & query_pose,
+    const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) = 0;
 
   /**
    * @brief Get the maximum possible tolerances used for goal checking in the major types.

@@ -55,12 +55,14 @@ bt_navigator:
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
+    transform_tolerance: 0.1
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     speed_limit_topic: "/speed_limit"
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
+    path_handler_plugins: ["path_handler"]
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
@@ -74,6 +76,9 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       stateful: True
+    path_handler:
+      plugin: "nav2_controller::MPPIPathHandler"
+      prune_distance: 1.7
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -100,7 +105,6 @@ controller_server:
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True

@@ -35,6 +35,8 @@ Selector::Selector(QWidget * parent)
   pub_smoother_ = client_node_->create_publisher<std_msgs::msg::String>("smoother_selector", qos);
   pub_progress_checker_ =
     client_node_->create_publisher<std_msgs::msg::String>("progress_checker_selector", qos);
+  pub_path_handler_ =
+    client_node_->create_publisher<std_msgs::msg::String>("path_handler_selector", qos);
 
   main_layout_ = new QVBoxLayout;
   row_1_label_layout_ = new QHBoxLayout;
@@ -48,6 +50,7 @@ Selector::Selector(QWidget * parent)
   goal_checker_ = new QComboBox;
   smoother_ = new QComboBox;
   progress_checker_ = new QComboBox;
+  path_handler_ = new QComboBox;
 
   main_layout_->setContentsMargins(10, 10, 10, 10);
 
@@ -61,6 +64,8 @@ Selector::Selector(QWidget * parent)
   row_2_layout_->addWidget(smoother_);
   row_3_label_layout_->addWidget(new QLabel("Progress Checker"));
   row_3_layout_->addWidget(progress_checker_);
+  row_3_label_layout_->addWidget(new QLabel("Path Handler"));
+  row_3_layout_->addWidget(path_handler_);
 
   main_layout_->addLayout(row_1_label_layout_);
   main_layout_->addLayout(row_1_layout_);
@@ -91,6 +96,10 @@ Selector::Selector(QWidget * parent)
   connect(
     progress_checker_, QOverload<int>::of(&QComboBox::activated), this,
     &Selector::setProgressChecker);
+
+  connect(
+    path_handler_, QOverload<int>::of(&QComboBox::activated), this,
+    &Selector::setPathHandler);
 }
 
 Selector::~Selector()
@@ -146,6 +155,11 @@ void Selector::setProgressChecker()
   setSelection(progress_checker_, pub_progress_checker_);
 }
 
+void Selector::setPathHandler()
+{
+  setSelection(path_handler_, pub_path_handler_);
+}
+
 void
 Selector::loadPlugins()
 {
@@ -166,11 +180,15 @@ Selector::loadPlugins()
         nav2_rviz_plugins::pluginLoader(
           client_node_, server_failed_, "controller_server", "progress_checker_plugins",
           progress_checker_);
+        nav2_rviz_plugins::pluginLoader(
+          client_node_, server_failed_, "controller_server", "path_handler_plugins",
+          path_handler_);
         if (controller_->count() > 0 &&
         planner_->count() > 0 &&
         goal_checker_->count() > 0 &&
         smoother_->count() > 0 &&
-        progress_checker_->count() > 0)
+        progress_checker_->count() > 0 &&
+        path_handler_->count() > 0)
         {
           plugins_loaded_ = true;
         } else {
