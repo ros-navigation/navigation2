@@ -91,12 +91,14 @@ bool CollisionChecker::isCollisionImminent(
 
   // only forward simulate within time requested
   double max_allowed_time_to_collision_check = params_->max_allowed_time_to_collision_up_to_carrot;
+  double simulation_distance_limit = carrot_dist;
   if (params_->min_distance_to_obstacle > 0.0) {
     max_allowed_time_to_collision_check = std::max(
         params_->max_allowed_time_to_collision_up_to_carrot,
         params_->min_distance_to_obstacle / std::max(std::abs(linear_vel),
         params_->min_approach_linear_velocity)
     );
+    simulation_distance_limit = std::max(carrot_dist, params_->min_distance_to_obstacle);
   }
   int i = 1;
   while (i * projection_time < max_allowed_time_to_collision_check) {
@@ -110,8 +112,9 @@ bool CollisionChecker::isCollisionImminent(
     theta += projection_time * angular_vel;
     curr_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
 
-    // check if past carrot pose, where no longer a thoughtfully valid command
-    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > carrot_dist) {
+    //stop simulating if we've gone past the simulation distance limit
+    // this limit is the max between carrot_dist and min_distance_to_obstacle.
+    if (hypot(curr_pose.position.x - robot_xy.x, curr_pose.position.y - robot_xy.y) > simulation_distance_limit) {
       break;
     }
 
