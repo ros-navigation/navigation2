@@ -688,7 +688,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   if (current_path_.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
-    pose, transformed_end_pose_);
+      pose, transformed_end_pose_);
 
     // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
