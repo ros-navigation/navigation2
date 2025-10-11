@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
@@ -41,7 +42,7 @@ public:
 
   void deactivate() {}
 
-  void setPlan(const nav_msgs::msg::Path &) {}
+  void setPlan(const nav_msgs::msg::Path &, const std::vector<geometry_msgs::msg::PoseStamped> &) {}
 
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
