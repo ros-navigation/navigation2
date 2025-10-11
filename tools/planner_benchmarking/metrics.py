@@ -20,12 +20,12 @@ import pickle
 from random import randint, seed, uniform
 import time
 
+from builtin_interfaces.msg import Time
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
 from numpy.typing import NDArray
 import rclpy
-from rclpy.time import Time
 from transforms3d.euler import euler2quat
 
 
@@ -118,7 +118,7 @@ def main() -> None:
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
-    results: list[PoseStamped] = []
+    results: list[list[PoseStamped]] = []
     seed(33)
 
     random_pairs = 100

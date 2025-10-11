@@ -246,23 +246,15 @@ protected:
       throw std::runtime_error{"Failed to lock node"};
     }
 
-    nav2::declare_parameter_if_not_declared(
-      node,
-      "simulate_ahead_time", rclcpp::ParameterValue(2.0));
-    node->get_parameter("simulate_ahead_time", simulate_ahead_time_);
+    simulate_ahead_time_ = node->declare_or_get_parameter(
+      "simulate_ahead_time", 2.0);
+    acceleration_limit_ = node->declare_or_get_parameter(
+      this->behavior_name_ + ".acceleration_limit", 2.5);
+    deceleration_limit_ = node->declare_or_get_parameter(
+      this->behavior_name_ + ".deceleration_limit", -2.5);
+    minimum_speed_ = node->declare_or_get_parameter(
+      this->behavior_name_ + ".minimum_speed", 0.10);
 
-    nav2::declare_parameter_if_not_declared(
-      node, this->behavior_name_ + ".acceleration_limit",
-      rclcpp::ParameterValue(2.5));
-    nav2::declare_parameter_if_not_declared(
-      node, this->behavior_name_ + ".deceleration_limit",
-      rclcpp::ParameterValue(-2.5));
-    nav2::declare_parameter_if_not_declared(
-      node, this->behavior_name_ + ".minimum_speed",
-      rclcpp::ParameterValue(0.10));
-    node->get_parameter(this->behavior_name_ + ".acceleration_limit", acceleration_limit_);
-    node->get_parameter(this->behavior_name_ + ".deceleration_limit", deceleration_limit_);
-    node->get_parameter(this->behavior_name_ + ".minimum_speed", minimum_speed_);
     if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
       RCLCPP_ERROR(this->logger_,
         "DriveOnHeading: acceleration_limit and deceleration_limit must be "
