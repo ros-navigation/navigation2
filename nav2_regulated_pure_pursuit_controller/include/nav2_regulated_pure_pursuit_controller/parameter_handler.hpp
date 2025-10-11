@@ -91,14 +91,27 @@ public:
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
+
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
    */
   void
   updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  /**
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
+   */
   rcl_interfaces::msg::SetParametersResult
   validateParameterUpdatesCallback(std::vector<rclcpp::Parameter> parameters);
+
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
