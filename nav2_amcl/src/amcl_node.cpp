@@ -1004,35 +1004,33 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0 && (param_name != "laser_min_range" || param_name != "laser_max_range")) {
+      if (parameter.as_double() < 0.0 &&
+        (param_name != "laser_min_range" || param_name != "laser_max_range"))
+      {
         RCLCPP_WARN(
         get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
-    }
-    else if (param_type == ParameterType::PARAMETER_INTEGER) {
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (parameter.as_int() <= 0.0 && param_name == "resample_interval") {
         RCLCPP_WARN(
         get_logger(), "The value of resample_interval is incorrectly set, "
         "it should be >0. Ignoring parameter update.");
         result.successful = false;
-      }
-      else if (parameter.as_int() < 0.0) {
+      } else if (parameter.as_int() < 0.0) {
         RCLCPP_WARN(
         get_logger(), "The value of parameter '%s' is incorrectly set to %ld, "
         "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_int());
         result.successful = false;
-      }
-      else if (param_name == "max_particles" && parameter.as_int() < min_particles_) {
+      } else if (param_name == "max_particles" && parameter.as_int() < min_particles_) {
         RCLCPP_WARN(
         get_logger(), "The value of max_particles is incorrectly set, "
         "it should be larger than min_particles. Ignoring parameter update.");
         result.successful = false;
-      }
-      else if (param_name == "min_particles" && parameter.as_int() > max_particles_) {
+      } else if (param_name == "min_particles" && parameter.as_int() > max_particles_) {
         RCLCPP_WARN(
         get_logger(), "The value of min_particles is incorrectly set, "
         "it should be smaller than max particles. Ignoring parameter update.");
