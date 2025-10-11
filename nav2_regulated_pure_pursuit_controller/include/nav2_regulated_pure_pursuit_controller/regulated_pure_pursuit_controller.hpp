@@ -1,5 +1,6 @@
 // Copyright (c) 2020 Shrijit Singh
 // Copyright (c) 2020 Samsung Research America
+// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -79,6 +80,22 @@ public:
    * @brief Deactivate controller state machine
    */
   void deactivate() override;
+
+  /**
+   * @brief Compute the optimal command given the current pose, velocity and acceleration constraints using dynamic window
+   * @param curvature      Curvature of the path to follow
+   * @param current_speed  Current robot velocity
+   * @param regulated_linear_vel   Regulated linear velocity
+   * @param optimal_linear_vel   Optimal linear velocity to follow the path under velocity and acceleration constraints
+   * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
+   */
+  void computeOptimalVelocityUsingDynamicWindow(
+    const double curvature,
+    const geometry_msgs::msg::Twist current_speed,
+    const double regulated_linear_vel,
+    double & optimal_linear_vel,
+    double & optimal_angular_vel
+  );
 
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
@@ -195,6 +212,7 @@ protected:
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
+  geometry_msgs::msg::Twist last_command_velocity_;
 
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
