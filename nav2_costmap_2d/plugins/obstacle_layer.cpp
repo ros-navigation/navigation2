@@ -658,10 +658,12 @@ ObstacleLayer::getMarkingObservations(
   bool current = true;
   // get the marking observations
   for (const auto & marking_buffer : marking_buffers_) {
-    marking_buffer->lock();
-    marking_buffer->getObservations(marking_observations);
-    current = marking_buffer->isCurrent() && current;
-    marking_buffer->unlock();
+    if (marking_buffer) {
+      marking_buffer->lock();
+      marking_buffer->getObservations(marking_observations);
+      current = marking_buffer->isCurrent() && current;
+      marking_buffer->unlock();
+    }
   }
   marking_observations.insert(
     marking_observations.end(),
@@ -676,10 +678,12 @@ ObstacleLayer::getClearingObservations(
   bool current = true;
   // get the clearing observations
   for (const auto & clearing_buffer : clearing_buffers_) {
-    clearing_buffer->lock();
-    clearing_buffer->getObservations(clearing_observations);
-    current = clearing_buffer->isCurrent() && current;
-    clearing_buffer->unlock();
+    if (clearing_buffer) {
+      clearing_buffer->lock();
+      clearing_buffer->getObservations(clearing_observations);
+      current = clearing_buffer->isCurrent() && current;
+      clearing_buffer->unlock();
+    }
   }
   clearing_observations.insert(
     clearing_observations.end(),
@@ -833,7 +837,9 @@ void
 ObstacleLayer::resetBuffersLastUpdated()
 {
   for (const auto & observation_buffer : observation_buffers_) {
-    observation_buffer->resetLastUpdated();
+    if (observation_buffer) {
+      observation_buffer->resetLastUpdated();
+    }
   }
 }
 
