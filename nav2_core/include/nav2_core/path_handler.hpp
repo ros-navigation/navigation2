@@ -73,7 +73,8 @@ public:
    * @param stamp Time to get the goal pose at
    * @return Transformed goal pose
    */
-  virtual geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp) = 0;
+  virtual geometry_msgs::msg::PoseStamped getTransformedGoal(
+    const builtin_interfaces::msg::Time & stamp) = 0;
 };
 
 }  // namespace nav2_core

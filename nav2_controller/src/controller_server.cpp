@@ -626,7 +626,8 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  geometry_msgs::msg::PoseStamped goal = path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
+  geometry_msgs::msg::PoseStamped goal =
+    path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
   transformed_plan_pub_->publish(std::move(path));

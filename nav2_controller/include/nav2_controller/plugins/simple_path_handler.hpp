@@ -46,7 +46,8 @@ public:
   void setPlan(const nav_msgs::msg::Path & path) override;
   nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose) override;
-  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp) override;
+  geometry_msgs::msg::PoseStamped getTransformedGoal(
+    const builtin_interfaces::msg::Time & stamp) override;
 
 protected:
   /**
