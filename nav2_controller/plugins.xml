@@ -29,9 +29,4 @@
       <description>Handles the path from planner server and transform it to robot base frame</description>
     </class>
   </library>
-  <library path="mppi_path_handler">
-    <class type="nav2_controller::MPPIPathHandler" base_class_type="nav2_core::PathHandler">
-      <description>Handles the path from planner server and transform it to costmap's global frame</description>
-    </class>
-  </library>
 </class_libraries>

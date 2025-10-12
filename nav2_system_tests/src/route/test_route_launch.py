@@ -63,9 +63,6 @@ def generate_launch_description() -> LaunchDescription:
         {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER', '')}
     )
     param_substitutions.update(
-        {'controller_server.ros__parameters.path_handler.plugin': os.getenv('PATH_HANDLER', '')}
-    )
-    param_substitutions.update(
         {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER', '')}
     )
     param_substitutions.update(

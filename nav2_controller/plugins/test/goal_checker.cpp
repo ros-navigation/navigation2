@@ -41,7 +41,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "eigen3/Eigen/Geometry"
 
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
@@ -313,15 +312,9 @@ TEST(StoppedGoalChecker, is_reached)
 
 
   // Current angular position is tolerance away from goal
-  auto quat =
-    (Eigen::AngleAxisd::Identity() * Eigen::AngleAxisd(0.25, Eigen::Vector3d::UnitZ())).coeffs();
-  // epsilon for orientation is a lot bigger than double limit, probably from TF getYaw
-  auto quat_epsilon =
-    (Eigen::AngleAxisd::Identity() *
-    Eigen::AngleAxisd(0.25 + 1.0E-15, Eigen::Vector3d::UnitZ())).coeffs();
-
-  current_pose.orientation.z = quat[2];
-  current_pose.orientation.w = quat[3];
+  tf2::Quaternion q;
+  q.setRPY(0, 0, 0.25);
+  current_pose.orientation = tf2::toMsg(q);
   velocity.angular.z = 0.25;
   EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
@@ -336,8 +329,9 @@ TEST(StoppedGoalChecker, is_reached)
   gc.reset();
 
   // Current angular position is further than tolerance away from goal
-  current_pose.orientation.z = quat_epsilon[2];
-  current_pose.orientation.w = quat_epsilon[3];
+  tf2::Quaternion q2;
+  q2.setRPY(0, 0, 0.25 + 1e-15);  // slightly offset yaw
+  current_pose.orientation = tf2::toMsg(q2);
   velocity.angular.z = 0.25;
   EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));

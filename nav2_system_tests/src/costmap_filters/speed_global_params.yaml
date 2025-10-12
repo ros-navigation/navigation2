@@ -77,7 +77,7 @@ controller_server:
       yaw_goal_tolerance: 0.25
       stateful: True
     path_handler:
-      plugin: "nav2_controller::MPPIPathHandler"
+      plugin: "nav2_controller::SimplePathHandler"
       prune_distance: 1.7
     # DWB parameters
     FollowPath:

@@ -47,6 +47,8 @@ void SimplePathHandler::initialize(
       ".interpolate_curvature_after_goal", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
       ".max_robot_pose_search_dist", getCostmapMaxExtent());
+  prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
+      2.0);
   enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_inversion",
       false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
@@ -130,8 +132,7 @@ geometry_msgs::msg::PoseStamped SimplePathHandler::transformToGlobalPlanFrame(
   return robot_pose;
 }
 
-std::pair<nav_msgs::msg::Path, PathIterator>
-SimplePathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
+PathSegment SimplePathHandler::findPlanSegmentIterators(
   const geometry_msgs::msg::PoseStamped & global_pose)
 {
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
@@ -161,12 +162,25 @@ SimplePathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
   }
 
   const double max_costmap_extent = getCostmapMaxExtent();
-  auto pruned_plan_end = std::find_if(
-  closest_point, global_plan_up_to_inversion_.poses.end(),
+  auto transformation_end = std::find_if(
+    closest_point, global_plan_up_to_inversion_.poses.end(),
     [&](const auto & global_plan_pose) {
       return euclidean_distance(global_plan_pose, global_pose) > max_costmap_extent;
-  });
+    });
+  auto pruned_plan_end =
+    nav2_util::geometry_utils::first_after_integrated_distance(
+    closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
+  auto last_point = std::min(transformation_end, pruned_plan_end);
 
+  return {closest_point, last_point};
+}
+
+
+nav_msgs::msg::Path SimplePathHandler::transformLocalPlan(
+  const geometry_msgs::msg::PoseStamped & global_pose,
+  const PathIterator & closest_point,
+  const PathIterator & last_point)
+{
   // Lambda to transform a PoseStamped from global frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
       geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
@@ -174,7 +188,7 @@ SimplePathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
       stamped_pose.header.stamp = global_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
       if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
-        costmap_ros_->getBaseFrameID(), transform_tolerance_))
+        costmap_ros_->getGlobalFrameID(), transform_tolerance_))
       {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }
@@ -185,21 +199,21 @@ SimplePathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
   // Transform the near part of the global plan into the robot's frame of reference.
   nav_msgs::msg::Path transformed_plan;
   std::transform(
-    closest_point, pruned_plan_end,
+    closest_point, last_point,
     std::back_inserter(transformed_plan.poses),
     transformGlobalPoseToLocal);
-  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
+  transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose.header.stamp;
 
-  return {transformed_plan, closest_point};
+  return transformed_plan;
 }
 
 nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
-  auto [transformed_plan,
-    closest_point] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
+  auto [closest_point, last_point] = findPlanSegmentIterators(global_pose);
+  auto transformed_plan = transformLocalPlan(global_pose, closest_point, last_point);
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
@@ -256,6 +270,8 @@ SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         inversion_xy_tolerance_ = parameter.as_double();
       } else if (param_name == "inversion_yaw_tolerance") {
         inversion_yaw_tolerance_ = parameter.as_double();
+      } else if (param_name == "prune_distance") {
+        prune_distance_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == "enforce_path_inversion") {

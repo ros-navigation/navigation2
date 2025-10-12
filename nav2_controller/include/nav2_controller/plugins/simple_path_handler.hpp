@@ -27,6 +27,7 @@
 namespace nav2_controller
 {
 using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
+using PathSegment = std::pair<PathIterator, PathIterator>;
 /**
 * @class SimplePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
@@ -59,13 +60,24 @@ protected:
     const geometry_msgs::msg::PoseStamped & pose);
 
   /**
-    * @brief Get global plan within window of the local costmap size
-    * @param global_pose Robot pose
-    * @return plan transformed in the robot base frame frame and iterator to the first pose of the global
-    * plan
+    * @brief Finds the start and end iterators defining the segment of the global plan
+    * that should be used for local control.
+    * @param global_pose Robot's current pose in map frame
+    * @return PathSegment A pair of iterators representing the [start, end) range of the local plan segment.
     */
-  virtual std::pair<nav_msgs::msg::Path, PathIterator> getGlobalPlanConsideringBoundsInCostmapFrame(
-    const geometry_msgs::msg::PoseStamped & global_pose);
+  PathSegment findPlanSegmentIterators(const geometry_msgs::msg::PoseStamped & global_pose);
+
+   /**
+    * @brief Transforms a predefined segment of the global plan into the desired frame.
+    * @param global_pose Robot's current pose
+    * @param closest_point Iterator to the starting pose of the path segment.
+    * @param last_point Iterator to the ending pose of the path segment.
+    * @return nav_msgs::msg::Path The transformed local plan segment in the desired frame.
+    */
+  nav_msgs::msg::Path transformLocalPlan(
+    const geometry_msgs::msg::PoseStamped & global_pose,
+    const PathIterator & closest_point,
+    const PathIterator & last_point);
 
   /**
    * Get the greatest extent of the costmap in meters from the center.
@@ -97,7 +109,7 @@ protected:
   nav_msgs::msg::Path global_plan_up_to_inversion_;
   unsigned int inversion_locale_{0u};
   bool interpolate_curvature_after_goal_, enforce_path_inversion_;
-  double max_robot_pose_search_dist_, transform_tolerance_;
+  double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_;
   float inversion_xy_tolerance_, inversion_yaw_tolerance_;
 
   /**

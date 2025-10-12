@@ -8,7 +8,6 @@ ament_add_test(test_bt_navigator
   BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
   TESTER=nav_to_pose_tester_node.py
   ASTAR=True
-  PATH_HANDLER=nav2_controller::SimplePathHandler
   CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -23,7 +22,6 @@ ament_add_test(test_bt_navigator_with_wrong_init_pose
   BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
   TESTER=nav_to_pose_tester_node.py
   ASTAR=True
-  PATH_HANDLER=nav2_controller::SimplePathHandler
   CONTROLLER=nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -38,7 +36,6 @@ ament_add_test(test_bt_navigator_with_dijkstra
   BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
   TESTER=nav_to_pose_tester_node.py
   ASTAR=False
-  PATH_HANDLER=nav2_controller::MPPIPathHandler
   CONTROLLER=dwb_core::DWBLocalPlanner
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -54,7 +51,6 @@ ament_add_test(test_bt_navigator_with_groot_monitoring
   TESTER=nav_to_pose_tester_node.py
   ASTAR=False
   GROOT_MONITORING=True
-  PATH_HANDLER=nav2_controller::MPPIPathHandler
   CONTROLLER=dwb_core::DWBLocalPlanner
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -70,7 +66,6 @@ ament_add_test(test_dynamic_obstacle
   BT_NAVIGATOR_XML=navigate_to_pose_w_replanning_and_recovery.xml
   TESTER=nav_to_pose_tester_node.py
   ASTAR=False
-  PATH_HANDLER=nav2_controller::MPPIPathHandler
   CONTROLLER=dwb_core::DWBLocalPlanner
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -86,7 +81,6 @@ ament_add_test(test_nav_through_poses
   BT_NAVIGATOR_XML=navigate_through_poses_w_replanning_and_recovery.xml
   TESTER=nav_through_poses_tester_node.py
   ASTAR=False
-  PATH_HANDLER=nav2_controller::MPPIPathHandler
   CONTROLLER=dwb_core::DWBLocalPlanner
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
@@ -102,7 +96,6 @@ ament_add_test(test_nav_through_poses_error_msg
   BT_NAVIGATOR_XML=navigate_through_poses_w_replanning_and_recovery.xml
   TESTER=nav_through_poses_tester_error_msg_node.py
   ASTAR=False
-  PATH_HANDLER=nav2_controller::MPPIPathHandler
   CONTROLLER=dwb_core::DWBLocalPlanner
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
