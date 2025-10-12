@@ -106,7 +106,7 @@ public:
    * @param velocity Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
    * @param transformed_global_plan The global plan after being processed by the path handler
-   * @param goal The last pose of the global plan
+   * @param global_goal The last pose of the global plan
    * @return The best command for the robot to drive
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
@@ -114,7 +114,7 @@ public:
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
     nav_msgs::msg::Path & transformed_global_plan,
-    const geometry_msgs::msg::Pose & goal) override;
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
    * @brief Score a given command. Can be used for testing.
@@ -142,6 +142,7 @@ public:
    * @param velocity  Current robot velocity
    * @param results   Output param, if not NULL, will be filled in with full evaluation results
    * @param transformed_global_plan The global plan after being processed by the path handler
+   * @param global_goal The last pose of the global plan
    * @return          Best command
    */
   virtual nav_2d_msgs::msg::Twist2DStamped computeVelocityCommands(
@@ -149,7 +150,7 @@ public:
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
     nav_msgs::msg::Path & transformed_global_plan,
-    const geometry_msgs::msg::Pose & goal);
+    const geometry_msgs::msg::PoseStamped & global_goal);
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -175,7 +176,6 @@ protected:
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results);
 
   bool debug_trajectory_details_;
-  double transform_tolerance_{0};
 
   /**
    * @brief try to resolve a possibly shortened critic name with the default namespaces and the suffix "Critic"

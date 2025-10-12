@@ -21,7 +21,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
-#include "nav2_core/path_handler.hpp"
+#include "nav2_core/controller_path_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_controller
@@ -34,7 +34,7 @@ using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 * and transforming the resulting path into the robot base frame.
 */
 
-class SimplePathHandler : public nav2_core::PathHandler
+class SimplePathHandler : public nav2_core::ControllerPathHandler
 {
 public:
   void initialize(

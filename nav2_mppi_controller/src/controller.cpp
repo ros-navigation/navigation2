@@ -35,7 +35,6 @@ void MPPIController::configure(
 
   auto node = parent_.lock();
   auto getParentParam = parameters_handler_->getParamGetter("");
-  getParentParam(transform_tolerance_, "transform_tolerance", 0.1, ParameterType::Static);
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);
@@ -95,7 +94,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker,
   nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::Pose & goal)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
 #ifdef BENCHMARK_TESTING
   auto start = std::chrono::system_clock::now();
@@ -107,7 +106,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, goal, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, global_goal.pose, goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();

@@ -111,7 +111,6 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_angular_vel",
     params_.rotate_to_heading_angular_vel);
-  node->get_parameter("transform_tolerance", params_.transform_tolerance);
   node->get_parameter(
     plugin_name_ + ".use_velocity_scaled_lookahead_dist",
     params_.use_velocity_scaled_lookahead_dist);

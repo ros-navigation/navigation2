@@ -35,7 +35,6 @@ ParameterHandler::ParameterHandler(
   logger_ = logger;
 
   params_.controller_frequency = node->declare_or_get_parameter("controller_frequency", 20.0);
-  params_.transform_tolerance = node->declare_or_get_parameter("transform_tolerance", 0.1);
   params_.min_x_velocity_threshold = node->declare_or_get_parameter("min_x_velocity_threshold",
       0.0001);
   params_.min_y_velocity_threshold = node->declare_or_get_parameter("min_y_velocity_threshold",
@@ -206,9 +205,7 @@ ParameterHandler::updateParametersCallback(
     const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "transform_tolerance") {
-        params_.transform_tolerance = parameter.as_double();
-      } else if (param_name == "min_x_velocity_threshold") {
+      if (param_name == "min_x_velocity_threshold") {
         params_.min_x_velocity_threshold = parameter.as_double();
       } else if (param_name == "min_y_velocity_threshold") {
         params_.min_y_velocity_threshold = parameter.as_double();

@@ -38,7 +38,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
-  path_handler_loader_("nav2_core", "nav2_core::PathHandler"),
+  path_handler_loader_("nav2_core", "nav2_core::ControllerPathHandler"),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -68,6 +68,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
+  transform_tolerance_ = costmap_ros_->getTransformTolerance();
   try {
     param_handler_ = std::make_unique<ParameterHandler>(
       node, get_logger());
@@ -160,7 +161,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
     try {
-      nav2_core::PathHandler::Ptr path_handler =
+      nav2_core::ControllerPathHandler::Ptr path_handler =
         path_handler_loader_.createUniqueInstance(params_->path_handler_types[i]);
       RCLCPP_INFO(
         get_logger(), "Created path handler : %s of type %s",
@@ -422,7 +423,7 @@ geometry_msgs::msg::PoseStamped ControllerServer::getTransformedGoal(
   }
   geometry_msgs::msg::PoseStamped transformed_goal;
   if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), params_->transform_tolerance))
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }
@@ -644,7 +645,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  geometry_msgs::msg::Pose goal = getTransformedGoal(pose.header.stamp).pose;
+  geometry_msgs::msg::PoseStamped goal = getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
   transformed_plan_pub_->publish(std::move(path));
@@ -693,7 +694,7 @@ void ControllerServer::computeAndPublishVelocity()
   geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
   if (!nav2_util::transformPoseInTargetFrame(
           pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-          current_path_.header.frame_id, params_->transform_tolerance))
+          current_path_.header.frame_id, transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
   }
@@ -840,7 +841,7 @@ bool ControllerServer::isGoalReached()
   end_pose_.header.stamp = pose.header.stamp;
   nav2_util::transformPoseInTargetFrame(
     end_pose_, transformed_end_pose, *costmap_ros_->getTfBuffer(),
-    costmap_ros_->getGlobalFrameID(), params_->transform_tolerance);
+    costmap_ros_->getGlobalFrameID(), transform_tolerance_);
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose.pose,

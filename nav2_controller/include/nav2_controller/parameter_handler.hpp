@@ -33,7 +33,6 @@ namespace nav2_controller
 struct Parameters
 {
   double controller_frequency;
-  double transform_tolerance;
   double min_x_velocity_threshold;
   double min_y_velocity_threshold;
   double min_theta_velocity_threshold;

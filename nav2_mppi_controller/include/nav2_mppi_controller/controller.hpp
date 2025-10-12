@@ -81,14 +81,14 @@ public:
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
     * @param transformed_global_plan The global plan after being processed by the path handler
-    * @param goal The last pose of the global plan
+    * @param global_goal The last pose of the global plan
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
     nav2_core::GoalChecker * goal_checker,
     nav_msgs::msg::Path & transformed_global_plan,
-    const geometry_msgs::msg::Pose & goal) override;
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
     * @brief Receives a new plan from the Planner Server
@@ -126,7 +126,6 @@ protected:
 
   bool visualize_;
   bool publish_optimal_trajectory_;
-  double transform_tolerance_;
 };
 
 }  // namespace nav2_mppi_controller

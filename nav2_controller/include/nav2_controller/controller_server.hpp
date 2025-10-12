@@ -25,7 +25,7 @@
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
-#include "nav2_core/path_handler.hpp"
+#include "nav2_core/controller_path_handler.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -54,7 +54,7 @@ public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
   using GoalCheckerMap = std::unordered_map<std::string, nav2_core::GoalChecker::Ptr>;
   using ProgressCheckerMap = std::unordered_map<std::string, nav2_core::ProgressChecker::Ptr>;
-  using PathHandlerMap = std::unordered_map<std::string, nav2_core::PathHandler::Ptr>;
+  using PathHandlerMap = std::unordered_map<std::string, nav2_core::ControllerPathHandler::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -264,7 +264,7 @@ protected:
   std::string controller_ids_concat_, current_controller_;
 
   // Path Handler Plugins
-  pluginlib::ClassLoader<nav2_core::PathHandler> path_handler_loader_;
+  pluginlib::ClassLoader<nav2_core::ControllerPathHandler> path_handler_loader_;
   PathHandlerMap path_handlers_;
   std::string path_handler_ids_concat_, current_path_handler_;
 
@@ -282,6 +282,7 @@ protected:
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_plan_pub_;
+  double transform_tolerance_;
 
 private:
   /**

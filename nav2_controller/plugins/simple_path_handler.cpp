@@ -52,7 +52,7 @@ void SimplePathHandler::initialize(
       0.2);
   inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
       ".inversion_yaw_tolerance", 0.4);
-  node->get_parameter("transform_tolerance", transform_tolerance_);
+  transform_tolerance_ = costmap_ros_->getTransformTolerance();
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
@@ -251,4 +251,4 @@ SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::SimplePathHandler, nav2_core::PathHandler)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::SimplePathHandler, nav2_core::ControllerPathHandler)

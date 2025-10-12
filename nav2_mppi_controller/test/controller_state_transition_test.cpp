@@ -58,7 +58,7 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
 
   controller->newPathReceived(path);
   nav_msgs::msg::Path transformed_global_plan;
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}, transformed_global_plan,
     goal));
 

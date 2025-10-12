@@ -95,7 +95,6 @@ void DWBLocalPlanner::configure(
 
   std::string traj_generator_name;
 
-  node->get_parameter("transform_tolerance", transform_tolerance_);
   node->get_parameter(dwb_plugin_name_ + ".debug_trajectory_details", debug_trajectory_details_);
   node->get_parameter(dwb_plugin_name_ + ".trajectory_generator_name", traj_generator_name);
   node->get_parameter(
@@ -219,7 +218,7 @@ DWBLocalPlanner::computeVelocityCommands(
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * /*goal_checker*/,
   nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::Pose & goal)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> results = nullptr;
   if (pub_->shouldRecordEvaluation()) {
@@ -229,7 +228,7 @@ DWBLocalPlanner::computeVelocityCommands(
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
       pose,
-      nav_2d_utils::twist3Dto2D(velocity), results, transformed_global_plan, goal);
+      nav_2d_utils::twist3Dto2D(velocity), results, transformed_global_plan, global_goal);
     pub_->publishEvaluation(results);
     geometry_msgs::msg::TwistStamped cmd_vel;
     cmd_vel.twist = nav_2d_utils::twist2Dto3D(cmd_vel2d.velocity);
@@ -255,7 +254,7 @@ DWBLocalPlanner::computeVelocityCommands(
   const nav_2d_msgs::msg::Twist2D & velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
   nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::Pose & goal)
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   if (results) {
     results->header.frame_id = pose.header.frame_id;
@@ -266,7 +265,7 @@ DWBLocalPlanner::computeVelocityCommands(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (TrajectoryCritic::Ptr & critic : critics_) {
-    if (!critic->prepare(pose.pose, velocity, goal, transformed_global_plan)) {
+    if (!critic->prepare(pose.pose, velocity, global_goal.pose, transformed_global_plan)) {
       RCLCPP_WARN(rclcpp::get_logger("DWBLocalPlanner"), "A scoring function failed to prepare");
     }
   }

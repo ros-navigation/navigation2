@@ -284,7 +284,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   path_handler.setPlan(path);
   tf_broadcaster->sendTransform(transform);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   auto effort = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(fabs(effort.twist.angular.z), 1.8);
@@ -384,7 +384,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.16, 1e-4);
@@ -462,7 +462,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -1.8);
@@ -551,7 +551,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -0.025);

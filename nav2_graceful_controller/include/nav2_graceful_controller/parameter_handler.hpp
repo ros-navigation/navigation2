@@ -31,7 +31,6 @@ namespace nav2_graceful_controller
 
 struct Parameters
 {
-  double transform_tolerance;
   double min_lookahead;
   double max_lookahead;
   double k_phi;

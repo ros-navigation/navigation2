@@ -68,7 +68,6 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection", rclcpp::ParameterValue(true));
 
-  node->get_parameter("transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
   node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
 

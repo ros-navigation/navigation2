@@ -106,7 +106,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & /*velocity*/,
   nav2_core::GoalChecker * goal_checker,
   nav_msgs::msg::Path & transformed_global_plan,
-  const geometry_msgs::msg::Pose & /*goal*/)
+  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
 

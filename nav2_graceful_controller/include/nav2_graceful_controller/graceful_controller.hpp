@@ -84,7 +84,7 @@ public:
    * @param velocity  Current robot velocity
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
    * @param transformed_global_plan The global plan after being processed by the path handler
-   * @param goal The last pose of the global plan
+   * @param global_goal The last pose of the global plan
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
@@ -92,7 +92,7 @@ public:
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker,
     nav_msgs::msg::Path & transformed_global_plan,
-    const geometry_msgs::msg::Pose & goal) override;
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
    * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server

@@ -110,7 +110,7 @@ void prepareAndRunBenchmark(
 
   nav2_core::GoalChecker * dummy_goal_checker{nullptr};
   nav_msgs::msg::Path transformed_global_plan;
-  geometry_msgs::msg::Pose goal;
+  geometry_msgs::msg::PoseStamped goal;
   for (auto _ : state) {
     controller->computeVelocityCommands(pose, velocity, dummy_goal_checker, transformed_global_plan,
       goal);

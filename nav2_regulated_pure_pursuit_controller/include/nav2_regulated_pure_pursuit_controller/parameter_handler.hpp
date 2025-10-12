@@ -60,7 +60,6 @@ struct Parameters
   bool allow_reversing;
   bool interpolate_curvature_after_goal;
   bool use_collision_detection;
-  double transform_tolerance;
   bool stateful;
 };
 
