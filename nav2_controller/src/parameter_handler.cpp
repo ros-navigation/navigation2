@@ -147,13 +147,13 @@ ParameterHandler::ParameterHandler(
     }
   }
 
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
   on_set_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &ParameterHandler::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::updateParametersCallback,
       this, std::placeholders::_1));
 }
 
@@ -183,7 +183,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
+      if (parameter.as_double() < 0.0 && param_name != "failure_tolerance") {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",
@@ -213,22 +213,6 @@ ParameterHandler::updateParametersCallback(
         params_.min_theta_velocity_threshold = parameter.as_double();
       } else if (param_name == "failure_tolerance") {
         params_.failure_tolerance = parameter.as_double();
-      } else if (param_name == "costmap_update_timeout") {
-        params_.costmap_update_timeout = parameter.as_double();
-      } else if (param_name == "odom_duration") {
-        params_.odom_duration = parameter.as_double();
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "use_realtime_priority") {
-        params_.use_realtime_priority = parameter.as_bool();
-      } else if (param_name == "publish_zero_velocity") {
-        params_.publish_zero_velocity = parameter.as_bool();
-      }
-    } else if (param_type == ParameterType::PARAMETER_STRING) {
-      if (param_name == "speed_limit_topic") {
-        params_.speed_limit_topic = parameter.as_string();
-      } else if (param_name == "odom_topic") {
-        params_.odom_topic = parameter.as_string();
       }
     }
   }

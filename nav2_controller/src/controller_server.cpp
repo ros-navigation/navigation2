@@ -38,7 +38,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
-  path_handler_loader_("nav2_core", "nav2_core::ControllerPathHandler"),
+  path_handler_loader_("nav2_core", "nav2_core::PathHandler"),
   costmap_update_timeout_(300ms)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
@@ -161,7 +161,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
     try {
-      nav2_core::ControllerPathHandler::Ptr path_handler =
+      nav2_core::PathHandler::Ptr path_handler =
         path_handler_loader_.createUniqueInstance(params_->path_handler_types[i]);
       RCLCPP_INFO(
         get_logger(), "Created path handler : %s of type %s",
@@ -412,25 +412,6 @@ bool ControllerServer::findPathHandlerId(
   return true;
 }
 
-geometry_msgs::msg::PoseStamped ControllerServer::getTransformedGoal(
-  const builtin_interfaces::msg::Time & stamp)
-{
-  auto goal = current_path_.poses.back();
-  goal.header.frame_id = current_path_.header.frame_id;
-  goal.header.stamp = stamp;
-  if (goal.header.frame_id.empty()) {
-    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
-  }
-  geometry_msgs::msg::PoseStamped transformed_goal;
-  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
-  }
-  return transformed_goal;
-}
-
-
 void ControllerServer::computeControl()
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
@@ -645,7 +626,7 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  geometry_msgs::msg::PoseStamped goal = getTransformedGoal(pose.header.stamp);
+  geometry_msgs::msg::PoseStamped goal = path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
   transformed_plan_pub_->publish(std::move(path));

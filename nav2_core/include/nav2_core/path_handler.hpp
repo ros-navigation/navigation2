@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CORE__CONTROLLER_PATH_HANDLER_HPP_
-#define NAV2_CORE__CONTROLLER_PATH_HANDLER_HPP_
+#ifndef NAV2_CORE__PATH_HANDLER_HPP_
+#define NAV2_CORE__PATH_HANDLER_HPP_
 
 #include <memory>
 #include <string>
@@ -27,7 +27,7 @@ namespace nav2_core
 {
 
 /**
- * @class ControllerPathHandler
+ * @class PathHandler
  * @brief Function-object for handling the path from Planner Server
  *
  * This class defines the plugin interface used by the Controller Server to manage the
@@ -35,12 +35,12 @@ namespace nav2_core
  * path segments the robot has already traversed and transforming the remaining,
  * relevant portion of the path into the costmap's global or base frame.
  */
-class ControllerPathHandler
+class PathHandler
 {
 public:
-  typedef std::shared_ptr<nav2_core::ControllerPathHandler> Ptr;
+  typedef std::shared_ptr<nav2_core::PathHandler> Ptr;
 
-  virtual ~ControllerPathHandler() {}
+  virtual ~PathHandler() {}
 
   /**
    * @brief Initialize any parameters from the NodeHandle
@@ -67,8 +67,15 @@ public:
    */
   virtual nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose) = 0;
+
+  /**
+   * @brief Get the global goal pose transformed to the desired frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
+  virtual geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp) = 0;
 };
 
 }  // namespace nav2_core
 
-#endif  // NAV2_CORE__CONTROLLER_PATH_HANDLER_HPP_
+#endif  // NAV2_CORE__PATH_HANDLER_HPP_

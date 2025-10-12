@@ -125,4 +125,4 @@ MPPIPathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::MPPIPathHandler, nav2_core::ControllerPathHandler)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::MPPIPathHandler, nav2_core::PathHandler)

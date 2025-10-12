@@ -42,6 +42,7 @@ void SimplePathHandler::initialize(
   auto node = parent.lock();
   costmap_ros_ = costmap_ros;
   tf_ = tf;
+  transform_tolerance_ = costmap_ros_->getTransformTolerance();
   interpolate_curvature_after_goal_ = node->declare_or_get_parameter(plugin_name +
       ".interpolate_curvature_after_goal", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
@@ -52,7 +53,6 @@ void SimplePathHandler::initialize(
       0.2);
   inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
       ".inversion_yaw_tolerance", 0.4);
-  transform_tolerance_ = costmap_ros_->getTransformTolerance();
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
@@ -220,6 +220,24 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   return transformed_plan;
 }
 
+geometry_msgs::msg::PoseStamped SimplePathHandler::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
+{
+  auto goal = global_plan_.poses.back();
+  goal.header.frame_id = global_plan_.header.frame_id;
+  goal.header.stamp = stamp;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
+}
+
 rcl_interfaces::msg::SetParametersResult
 SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
@@ -251,4 +269,4 @@ SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::SimplePathHandler, nav2_core::ControllerPathHandler)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::SimplePathHandler, nav2_core::PathHandler)

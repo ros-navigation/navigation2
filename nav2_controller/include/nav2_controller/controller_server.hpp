@@ -25,7 +25,7 @@
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
-#include "nav2_core/controller_path_handler.hpp"
+#include "nav2_core/path_handler.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -54,7 +54,7 @@ public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
   using GoalCheckerMap = std::unordered_map<std::string, nav2_core::GoalChecker::Ptr>;
   using ProgressCheckerMap = std::unordered_map<std::string, nav2_core::ProgressChecker::Ptr>;
-  using PathHandlerMap = std::unordered_map<std::string, nav2_core::ControllerPathHandler::Ptr>;
+  using PathHandlerMap = std::unordered_map<std::string, nav2_core::PathHandler::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -232,13 +232,6 @@ protected:
     return twist_thresh;
   }
 
-  /**
-   * @brief Get the global goal pose transformed to the local frame
-   * @param stamp Time to get the goal pose at
-   * @return Transformed goal pose
-   */
-  geometry_msgs::msg::PoseStamped getTransformedGoal(const builtin_interfaces::msg::Time & stamp);
-
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2::NodeThread> costmap_thread_;
@@ -264,7 +257,7 @@ protected:
   std::string controller_ids_concat_, current_controller_;
 
   // Path Handler Plugins
-  pluginlib::ClassLoader<nav2_core::ControllerPathHandler> path_handler_loader_;
+  pluginlib::ClassLoader<nav2_core::PathHandler> path_handler_loader_;
   PathHandlerMap path_handlers_;
   std::string path_handler_ids_concat_, current_path_handler_;
 

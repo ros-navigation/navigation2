@@ -106,7 +106,8 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
 
   auto [cmd, optimal_trajectory] =
-    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, global_goal.pose, goal_checker);
+    optimizer_.evalControl(robot_pose, robot_speed, transformed_global_plan, global_goal.pose,
+      goal_checker);
 
 #ifdef BENCHMARK_TESTING
   auto end = std::chrono::system_clock::now();
