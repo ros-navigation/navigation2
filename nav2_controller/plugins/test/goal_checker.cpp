@@ -310,11 +310,8 @@ TEST(StoppedGoalChecker, is_reached)
   current_pose.position.x = 0.0;
   velocity.linear.x = 0.0;
 
-
   // Current angular position is tolerance away from goal
-  tf2::Quaternion q;
-  q.setRPY(0, 0, 0.25);
-  current_pose.orientation = tf2::toMsg(q);
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25);
   velocity.angular.z = 0.25;
   EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
@@ -329,9 +326,7 @@ TEST(StoppedGoalChecker, is_reached)
   gc.reset();
 
   // Current angular position is further than tolerance away from goal
-  tf2::Quaternion q2;
-  q2.setRPY(0, 0, 0.25 + 1e-15);  // slightly offset yaw
-  current_pose.orientation = tf2::toMsg(q2);
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25 + 1e-15);
   velocity.angular.z = 0.25;
   EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
