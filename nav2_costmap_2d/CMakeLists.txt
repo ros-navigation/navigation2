@@ -73,6 +73,7 @@ add_library(layers SHARED
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
   plugins/plugin_container_layer.cpp
+  plugins/tracking_error_layer.cpp
 )
 target_include_directories(layers
   PUBLIC

@@ -27,6 +27,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "rcutils/logging.h"
 // Test constants
 static constexpr double TEST_CORRIDOR_WIDTH = 2.0;
 static constexpr int TEST_PATH_POINTS = 50;
@@ -408,6 +409,11 @@ TEST_F(TrackingErrorLayerTestFixture, test_frame_transformation)
 
 int main(int argc, char ** argv)
 {
+  if (rcutils_logging_set_logger_level("test_tracking_error_layer",
+    RCUTILS_LOG_SEVERITY_ERROR) != RCUTILS_RET_OK)
+    {
+      std::cerr << "Failed to set logger level" << std::endl;
+  }
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();

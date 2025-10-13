@@ -61,7 +61,6 @@ public:
   std::vector<std::vector<double>> getWallPoints(const nav_msgs::msg::Path & segment);
   nav_msgs::msg::Path getPathSegment();
 
-
 protected:
   void pathCallback(const nav_msgs::msg::Path::SharedPtr msg);
   void trackingCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);

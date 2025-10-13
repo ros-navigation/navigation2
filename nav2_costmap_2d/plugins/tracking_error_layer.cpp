@@ -51,16 +51,17 @@ void TrackingErrorLayer::onInitialize()
   if (temp_step_ == 0) {
     throw std::runtime_error{"step must be greater than zero"};
   }
-    dyn_params_handler_ = node->add_on_set_parameters_callback(
-      std::bind(
-        &TrackingErrorLayer::dynamicParametersCallback,
-        this, std::placeholders::_1));
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &TrackingErrorLayer::dynamicParametersCallback,
+      this, std::placeholders::_1));
 
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     "/plan",
     std::bind(&TrackingErrorLayer::pathCallback, this, std::placeholders::_1),
     rclcpp::QoS(10).reliable()
   );
+
   tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
     "/tracking_feedback",
     std::bind(&TrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
@@ -296,7 +297,7 @@ rcl_interfaces::msg::SetParametersResult TrackingErrorLayer::dynamicParametersCa
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    
+
     // Only process parameters for this layer
     if (param_name.find(name_ + ".") != 0) {
       continue;
