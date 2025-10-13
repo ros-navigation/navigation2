@@ -480,11 +480,14 @@ void Optimizer::updateStateVelocities(
 
 void Optimizer::updateInitialStateVelocities(models::State & state) const
 {
-  state.vx.col(0) = static_cast<float>(state.speed.linear.x);
-  state.wz.col(0) = static_cast<float>(state.speed.angular.z);
+  // state.vx.col(0) = static_cast<float>(state.speed.linear.x);
+  // state.wz.col(0) = static_cast<float>(state.speed.angular.z);
+  state.vx.col(0) = control_sequence_.vx(0);
+  state.wz.col(0) = control_sequence_.wz(0);
 
   if (isHolonomic()) {
-    state.vy.col(0) = static_cast<float>(state.speed.linear.y);
+    // state.vy.col(0) = static_cast<float>(state.speed.linear.y);
+    state.vy.col(0) = control_sequence_.vy(0);
   }
 }
 
