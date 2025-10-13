@@ -34,7 +34,6 @@ void MPPIController::configure(
   parameters_handler_ = std::make_unique<ParametersHandler>(parent, name_);
 
   auto node = parent_.lock();
-  auto getParentParam = parameters_handler_->getParamGetter("");
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(visualize_, "visualize", false);

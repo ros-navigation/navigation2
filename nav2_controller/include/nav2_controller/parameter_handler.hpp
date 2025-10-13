@@ -93,7 +93,7 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("Controller Server")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("ControllerServer")};
 
   const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
   const std::vector<std::string> default_progress_checker_types_{

@@ -28,7 +28,6 @@ bt_navigator:
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
-    transform_tolerance: 0.1
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
@@ -56,7 +55,6 @@ controller_server:
       yaw_goal_tolerance: 0.25
     path_handler:
       plugin: "nav2_controller::SimplePathHandler"
-      prune_distance: 1.7
     # MPPI parameters
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"

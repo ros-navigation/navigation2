@@ -132,6 +132,33 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s goal checkers available.", goal_checker_ids_concat_.c_str());
+  
+  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
+    try {
+      nav2_core::PathHandler::Ptr path_handler =
+        path_handler_loader_.createUniqueInstance(params_->path_handler_types[i]);
+      RCLCPP_INFO(
+        get_logger(), "Created path handler : %s of type %s",
+        params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
+      path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
+          costmap_ros_->getTfBuffer());
+      path_handlers_.insert({params_->path_handler_ids[i], path_handler});
+    } catch (const pluginlib::PluginlibException & ex) {
+      RCLCPP_FATAL(
+        get_logger(),
+        "Failed to create path handler Exception: %s", ex.what());
+      on_cleanup(state);
+      return nav2::CallbackReturn::FAILURE;
+    }
+  }
+
+  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
+    path_handler_ids_concat_ += params_->path_handler_ids[i] + std::string(" ");
+  }
+
+  RCLCPP_INFO(
+    get_logger(),
+    "Controller Server has %s path handlers available.", path_handler_ids_concat_.c_str());
 
   for (size_t i = 0; i != params_->controller_ids.size(); i++) {
     try {
@@ -160,33 +187,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
-
-  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
-    try {
-      nav2_core::PathHandler::Ptr path_handler =
-        path_handler_loader_.createUniqueInstance(params_->path_handler_types[i]);
-      RCLCPP_INFO(
-        get_logger(), "Created path handler : %s of type %s",
-        params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
-      path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
-          costmap_ros_->getTfBuffer());
-      path_handlers_.insert({params_->path_handler_ids[i], path_handler});
-    } catch (const pluginlib::PluginlibException & ex) {
-      RCLCPP_FATAL(
-        get_logger(),
-        "Failed to create path handler Exception: %s", ex.what());
-      on_cleanup(state);
-      return nav2::CallbackReturn::FAILURE;
-    }
-  }
-
-  for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
-    path_handler_ids_concat_ += params_->path_handler_ids[i] + std::string(" ");
-  }
-
-  RCLCPP_INFO(
-    get_logger(),
-    "Controller Server has %s path handlers available.", path_handler_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
       params_->odom_topic);
@@ -236,7 +236,6 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   transformed_plan_pub_->on_activate();
   tracking_feedback_pub_->on_activate();
   action_server_->activate();
-
   auto node = shared_from_this();
 
   // create bond connection
@@ -699,7 +698,7 @@ void ControllerServer::computeAndPublishVelocity()
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
       pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-            current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+            current_path_.header.frame_id, transform_tolerance_))
     {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
