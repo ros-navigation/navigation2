@@ -91,10 +91,10 @@ public:
         state.vx.col(i - 1) + max_delta_vx,
         state.vx.col(i - 1) - min_delta_vx);
 
-      // state.cvx.col(i - 1) = state.cvx.col(i - 1)
-      //   .cwiseMax(lower_bound_vx)
-      //   .cwiseMin(upper_bound_vx);
-      // state.vx.col(i) = state.cvx.col(i - 1);
+      state.cvx.col(i - 1) = state.cvx.col(i - 1)
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
+      state.vx.col(i) = state.cvx.col(i - 1);
 
       // state.u(i) = state.cu(i-1)
       // => we start from current robot speed (state.u(0)) and then apply u_virt (state.cu(i-1))
@@ -106,18 +106,18 @@ public:
       // u_app(0) should be limited on acceleration relative to either feedback (state.u(0)) as done now
       // TODO 3 or ideally based on last published command
 
-      state.vx.col(i) = state.cvx.col(i - 1)
-        .cwiseMax(lower_bound_vx)
-        .cwiseMin(upper_bound_vx);
+      // state.vx.col(i) = state.cvx.col(i - 1)
+      //   .cwiseMax(lower_bound_vx)
+      //   .cwiseMin(upper_bound_vx);
 
-      // state.cwz.col(i - 1) = state.cwz.col(i - 1)
-      //   .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
-      //   .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-      // state.wz.col(i) = state.cwz.col(i - 1);
-
-      state.wz.col(i) = state.cwz.col(i - 1)
+      state.cwz.col(i - 1) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+      state.wz.col(i) = state.cwz.col(i - 1);
+
+      // state.wz.col(i) = state.cwz.col(i - 1)
+      //   .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+      //   .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
 
       // constrain u_virt 0 & 1 to make sure accelerations are limited at the first step (state.vx(0) is from feedback)
       // also constrain u_virt_1 as this is published as command
@@ -148,9 +148,13 @@ public:
           state.vy.col(i - 1) + max_delta_vy,
           state.vy.col(i - 1) - min_delta_vy);
 
-        state.vy.col(i) = state.cvy.col(i - 1)
+        state.cvy.col(i - 1) = state.cvy.col(i - 1)
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
+        state.vy.col(i) = state.cvy.col(i - 1);
+        // state.vy.col(i) = state.cvy.col(i - 1)
+        //   .cwiseMax(lower_bound_vy)
+        //   .cwiseMin(upper_bound_vy);
 
         // state.vy.col(i) = state.cvy.col(i - 1)
         // .cwiseMax(-control_constraints_.vy)
