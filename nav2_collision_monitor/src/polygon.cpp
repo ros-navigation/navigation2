@@ -353,8 +353,7 @@ bool Polygon::getCommonParameters(
     min_points_ = node->declare_or_get_parameter(polygon_name_ + ".min_points", 4);
 
     try {
-      min_points_ = node->declare_or_get_parameter<int>(
-        polygon_name_ + ".max_points") + 1;
+      min_points_ = node->declare_or_get_parameter<int>(polygon_name_ + ".max_points") + 1;
       RCLCPP_WARN(
         logger_,
         "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
@@ -365,15 +364,12 @@ bool Polygon::getCommonParameters(
     }
 
     if (action_type_ == SLOWDOWN) {
-      slowdown_ratio_ = node->declare_or_get_parameter(
-        polygon_name_ + ".slowdown_ratio", 0.5);
+      slowdown_ratio_ = node->declare_or_get_parameter(polygon_name_ + ".slowdown_ratio", 0.5);
     }
 
     if (action_type_ == LIMIT) {
-      linear_limit_ = node->declare_or_get_parameter(
-        polygon_name_ + ".linear_limit", 0.5);
-      angular_limit_ = node->declare_or_get_parameter(
-        polygon_name_ + ".angular_limit", 0.5);
+      linear_limit_ = node->declare_or_get_parameter(polygon_name_ + ".linear_limit", 0.5);
+      angular_limit_ = node->declare_or_get_parameter(polygon_name_ + ".angular_limit", 0.5);
     }
 
     if (action_type_ == APPROACH) {

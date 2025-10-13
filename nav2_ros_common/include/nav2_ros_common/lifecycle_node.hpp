@@ -103,7 +103,7 @@ public:
   }
 
   /**
-   * @brief Declares or gets a parameter with specified type.
+   * @brief Declares or gets a parameter with specified type (not value).
    * If the parameter is already declared, returns its value;
    * otherwise declares it with the specified type.
    * @param parameter_name Name of the parameter
