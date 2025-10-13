@@ -43,6 +43,7 @@ struct Parameters
   double costmap_update_timeout;
   std::string odom_topic;
   double odom_duration;
+  double search_window;
   std::vector<std::string> progress_checker_ids;
   std::vector<std::string> progress_checker_types;
   std::vector<std::string> goal_checker_ids;

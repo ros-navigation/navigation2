@@ -49,6 +49,7 @@ ParameterHandler::ParameterHandler(
   params_.costmap_update_timeout = node->declare_or_get_parameter("costmap_update_timeout", 0.30);
   params_.odom_topic = node->declare_or_get_parameter("odom_topic", std::string("odom"));
   params_.odom_duration = node->declare_or_get_parameter("odom_duration", 0.3);
+  params_.search_window = node->declare_or_get_parameter("search_window", 2.0);
 
   RCLCPP_INFO(
     logger_,
@@ -213,6 +214,8 @@ ParameterHandler::updateParametersCallback(
         params_.min_theta_velocity_threshold = parameter.as_double();
       } else if (param_name == "failure_tolerance") {
         params_.failure_tolerance = parameter.as_double();
+      } else if (param_name == "search_window") {
+        params_.search_window = parameter.as_double();
       }
     }
   }
