@@ -95,8 +95,7 @@ bool Circle::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter radius fails, use dynamic subscription
   try {
     // Leave it not initialized: the will cause an error if it will not set
-    radius_ = node->declare_or_get_parameter<double>(
-      polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
+    radius_ = node->declare_or_get_parameter<double>(polygon_name_ + ".radius");
     radius_squared_ = radius_ * radius_;
     use_dynamic_sub = false;
   } catch (const rclcpp::exceptions::InvalidParameterValueException &) {

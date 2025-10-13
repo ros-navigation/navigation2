@@ -290,13 +290,11 @@ bool CollisionMonitor::configurePolygons(
 
     // Leave it to be not initialized: to intentionally cause an error if it will not set
     std::vector<std::string> polygon_names =
-      node->declare_or_get_parameter<std::vector<std::string>>(
-        "polygons", rclcpp::PARAMETER_STRING_ARRAY);
+      node->declare_or_get_parameter<std::vector<std::string>>("polygons");
     for (std::string polygon_name : polygon_names) {
       // Leave it not initialized: the will cause an error if it will not set
       const std::string polygon_type =
-        node->declare_or_get_parameter<std::string>(
-          polygon_name + ".type", rclcpp::PARAMETER_STRING);
+        node->declare_or_get_parameter<std::string>(polygon_name + ".type");
 
       if (polygon_type == "polygon") {
         polygons_.push_back(
@@ -343,8 +341,7 @@ bool CollisionMonitor::configureSources(
 
     // Leave it to be not initialized: to intentionally cause an error if it will not set
     std::vector<std::string> source_names =
-      node->declare_or_get_parameter<std::vector<std::string>>(
-        "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
+      node->declare_or_get_parameter<std::vector<std::string>>("observation_sources");
     for (std::string source_name : source_names) {
       const std::string source_type = node->declare_or_get_parameter(
         source_name + ".type", std::string("scan"));  // Laser scanner by default

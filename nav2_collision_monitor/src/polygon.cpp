@@ -333,7 +333,7 @@ bool Polygon::getCommonParameters(
     // Get action type.
     // Leave it not initialized: the will cause an error if it will not set.
     const std::string at_str = node->declare_or_get_parameter<std::string>(
-      polygon_name_ + ".action_type", rclcpp::PARAMETER_STRING);
+      polygon_name_ + ".action_type");
     if (at_str == "stop") {
       action_type_ = STOP;
     } else if (at_str == "slowdown") {
@@ -354,7 +354,7 @@ bool Polygon::getCommonParameters(
 
     try {
       min_points_ = node->declare_or_get_parameter<int>(
-        polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER) + 1;
+        polygon_name_ + ".max_points") + 1;
       RCLCPP_WARN(
         logger_,
         "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
@@ -397,7 +397,7 @@ bool Polygon::getCommonParameters(
       if (action_type_ != APPROACH) {
         // Get polygon sub topic
         polygon_sub_topic = node->declare_or_get_parameter<std::string>(
-          polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
+          polygon_name_ + ".polygon_sub_topic");
       } else {
         // Obtain the footprint topic to make a footprint subscription for approach polygon
         footprint_topic = node->declare_or_get_parameter(
@@ -408,8 +408,7 @@ bool Polygon::getCommonParameters(
 
     // By default, use all observation sources for polygon
     const std::vector<std::string> observation_sources =
-      node->declare_or_get_parameter<std::vector<std::string>>(
-        "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
+      node->declare_or_get_parameter<std::vector<std::string>>("observation_sources");
     sources_names_ = node->declare_or_get_parameter(
       polygon_name_ + ".sources_names", observation_sources);
 
@@ -455,7 +454,7 @@ bool Polygon::getParameters(
   try {
     // Leave it uninitialized: it will throw an inner exception if the parameter is not set
     std::string poly_string = node->declare_or_get_parameter<std::string>(
-      polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
+      polygon_name_ + ".points");
 
     use_dynamic_sub = !getPolygonFromString(poly_string, poly_);
   } catch (const rclcpp::exceptions::InvalidParameterValueException &) {

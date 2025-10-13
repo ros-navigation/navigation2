@@ -52,7 +52,7 @@ bool VelocityPolygon::getParameters(
     // Get velocity_polygons parameter
     std::vector<std::string> velocity_polygons =
       node->declare_or_get_parameter<std::vector<std::string>>(
-        polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
+        polygon_name_ + ".velocity_polygons");
 
     // holonomic param
     holonomic_ = node->declare_or_get_parameter(
@@ -63,8 +63,7 @@ bool VelocityPolygon::getParameters(
       std::vector<Point> poly;
       std::string poly_string =
         node->declare_or_get_parameter<std::string>(
-          polygon_name_ + "." + velocity_polygon_name + ".points",
-          rclcpp::PARAMETER_STRING);
+          polygon_name_ + "." + velocity_polygon_name + ".points");
 
       if (!getPolygonFromString(poly_string, poly)) {
         return false;
@@ -72,23 +71,19 @@ bool VelocityPolygon::getParameters(
 
       // linear_min param
       double linear_min = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_min",
-        rclcpp::PARAMETER_DOUBLE);
+        polygon_name_ + "." + velocity_polygon_name + ".linear_min");
 
       // linear_max param
       double linear_max = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_max",
-        rclcpp::PARAMETER_DOUBLE);
+        polygon_name_ + "." + velocity_polygon_name + ".linear_max");
 
       // theta_min param
       double theta_min = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_min",
-        rclcpp::PARAMETER_DOUBLE);
+        polygon_name_ + "." + velocity_polygon_name + ".theta_min");
 
       // theta_max param
       double theta_max = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_max",
-        rclcpp::PARAMETER_DOUBLE);
+        polygon_name_ + "." + velocity_polygon_name + ".theta_max");
 
       // direction_end_angle param and direction_start_angle param
       double direction_end_angle = 0.0;
