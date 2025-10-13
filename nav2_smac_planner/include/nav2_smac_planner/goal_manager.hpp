@@ -137,11 +137,11 @@ public:
     auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
         unsigned int index = 0;
 
-        auto mx = static_cast<unsigned int>(point.x);
-        auto my = static_cast<unsigned int>(point.y);
+        const auto mx = static_cast<unsigned int>(point.x);
+        const auto my = static_cast<unsigned int>(point.y);
 
         if constexpr (!std::is_same_v<NodeT, Node2D>) {
-          auto angle = static_cast<unsigned int>(point.theta);
+          const auto angle = static_cast<unsigned int>(point.theta);
           index = NodeT::getIndex(mx, my, angle);
         } else {
           index = NodeT::getIndex(mx, my, size_x);
@@ -160,8 +160,8 @@ public:
     const float radius_sq = radius * radius;
 
     Coordinates m;
-    for (m.x = min_x; m.x <= max_x; ++m.x) {
-      for (m.y = min_y; m.y <= max_y ; ++m.y) {
+    for (m.x = min_x; m.x <= max_x; m.x += 1.0f) {
+      for (m.y = min_y; m.y <= max_y; m.y += 1.0f) {
         const float dx = m.x - center_point.x;
         const float dy = m.y - center_point.y;
 
