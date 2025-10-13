@@ -24,7 +24,6 @@ namespace dwb_critics
 
 void PathHugCritic::onInit()
 {
-  stop_on_failure_ = false;
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -38,7 +37,6 @@ void PathHugCritic::onInit()
     throw std::runtime_error{"search_window must be positive"};
   }
 }
-
 bool PathHugCritic::prepare(
   const geometry_msgs::msg::Pose & /*pose*/, const nav_2d_msgs::msg::Twist2D & /*vel*/,
   const geometry_msgs::msg::Pose & /*goal*/,
@@ -75,7 +73,7 @@ double PathHugCritic::getScale() const
   if (zero_scale_) {
     return 0.0;
   } else {
-    return costmap_->getResolution() * 0.5;
+    return costmap_ros_->getCostmap()->getResolution() * 0.5;
   }
 }
 
