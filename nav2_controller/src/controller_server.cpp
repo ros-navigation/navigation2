@@ -132,7 +132,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Controller Server has %s goal checkers available.", goal_checker_ids_concat_.c_str());
-  
+
   for (size_t i = 0; i != params_->path_handler_ids.size(); i++) {
     try {
       nav2_core::PathHandler::Ptr path_handler =
