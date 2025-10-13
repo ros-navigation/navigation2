@@ -246,10 +246,12 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
-  const std::string kXmlExtension = ".xml";
-  const bool is_bt_id = (file_or_id.length() < kXmlExtension.size()) ||
-    (file_or_id.compare(file_or_id.length() - kXmlExtension.size(), kXmlExtension.size(),
-      kXmlExtension) != 0);
+  bool is_bt_id = false;
+  if ((file_or_id.length() < 4) ||
+    file_or_id.substr(file_or_id.length() - 4) != ".xml")
+  {
+    is_bt_id = true;
+  }
 
   std::set<std::string> registered_ids;
   std::string main_id;
@@ -312,6 +314,15 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   try {
     tree_ = bt_->createTree(main_id, blackboard_);
     RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
+
+    for (auto & subtree : tree_.subtrees) {
+      auto & blackboard = subtree->blackboard;
+      blackboard->set("node", client_node_);
+      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
+      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->set<std::chrono::milliseconds>(
+          "wait_for_service_timeout", wait_for_service_timeout_);
+    }
   } catch (const std::exception & e) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       std::string("Exception when creating BT tree from ID: ") + e.what());
