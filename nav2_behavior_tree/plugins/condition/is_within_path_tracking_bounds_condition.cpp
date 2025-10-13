@@ -67,7 +67,7 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
     RCLCPP_ERROR(node_->get_logger(), "max_error parameter not provided");
     max_error_ = 1.0;  // Default fallback
   }
-  
+
   if (max_error_ < 0.0) {
     RCLCPP_WARN(node_->get_logger(), "max_error should be positive, using absolute value");
     max_error_ = std::abs(max_error_);
