@@ -15,7 +15,8 @@
 #ifndef DWB_CRITICS__PATH_HUG_HPP_
 #define DWB_CRITICS__PATH_HUG_HPP_
 
-#include "dwb_critics/path_dist.hpp"
+#include "dwb_core/trajectory_critic.hpp"
+#include "nav2_util/path_utils.hpp"
 
 namespace dwb_critics
 {
@@ -24,7 +25,7 @@ namespace dwb_critics
  * @brief DWB critic that penalizes trajectories based on their distance from the global path.
  *        Encourages the robot to "hug" or stay close to the path.
  */
-class PathHugCritic : public PathDistCritic
+class PathHugCritic : public dwb_core::TrajectoryCritic
 {
 public:
   void onInit() override;
@@ -39,10 +40,10 @@ public:
 protected:
   bool zero_scale_{false};
   nav_msgs::msg::Path global_path_;
-  size_t start_index_;
-  geometry_msgs::msg::Pose current_pose_;
-  double average_score_;
-  double search_window_;
+  size_t start_index_{0};
+  geometry_msgs::msg::Pose current_pose_{};
+  double average_score_{0.0};
+  double search_window_{2.0};
 };
 
 }  // namespace dwb_critics
