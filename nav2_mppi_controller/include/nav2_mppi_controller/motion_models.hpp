@@ -121,20 +121,20 @@ public:
 
       // constrain u_virt 0 & 1 to make sure accelerations are limited at the first step (state.vx(0) is from feedback)
       // also constrain u_virt_1 as this is published as command
-      if (i <= 2)
-      {
-        state.cvx.col(i - 1) = state.vx.col(i);
-        state.cwz.col(i - 1) = state.wz.col(i);
-      }
+      // if (i <= 2)
+      // {
+      //   state.cvx.col(i - 1) = state.vx.col(i);
+      //   state.cwz.col(i - 1) = state.wz.col(i);
+      // }
 
-      // also apply velocity limits constrains
-      state.vx.col(i) = state.vx.col(i)
-        .cwiseMax(control_constraints_.vx_min)
-        .cwiseMin(control_constraints_.vx_max);
+      // // also apply velocity limits constrains
+      // state.vx.col(i) = state.vx.col(i)
+      //   .cwiseMax(control_constraints_.vx_min)
+      //   .cwiseMin(control_constraints_.vx_max);
 
-      state.wz.col(i) = state.wz.col(i)
-        .cwiseMax(-control_constraints_.wz)
-        .cwiseMin(control_constraints_.wz);
+      // state.wz.col(i) = state.wz.col(i)
+      //   .cwiseMax(-control_constraints_.wz)
+      //   .cwiseMin(control_constraints_.wz);
 
 
       // also constrain wz base
@@ -152,13 +152,13 @@ public:
           .cwiseMax(lower_bound_vy)
           .cwiseMin(upper_bound_vy);
 
-        state.vy.col(i) = state.cvy.col(i - 1)
-        .cwiseMax(-control_constraints_.vy)
-        .cwiseMin(control_constraints_.vy);
+        // state.vy.col(i) = state.cvy.col(i - 1)
+        // .cwiseMax(-control_constraints_.vy)
+        // .cwiseMin(control_constraints_.vy);
       }
     }
 
-    applyConstraints(state);
+    // applyConstraints(state);
   }
 
   /**
