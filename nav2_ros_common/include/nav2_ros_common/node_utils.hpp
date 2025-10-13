@@ -25,7 +25,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 
 using std::chrono::high_resolution_clock;
 using std::to_string;
