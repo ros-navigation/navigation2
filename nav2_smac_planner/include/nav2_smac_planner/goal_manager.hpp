@@ -17,6 +17,7 @@
 #ifndef NAV2_SMAC_PLANNER__GOAL_MANAGER_HPP_
 #define NAV2_SMAC_PLANNER__GOAL_MANAGER_HPP_
 
+#include <algorithm>
 #include <unordered_set>
 #include <vector>
 #include <functional>
@@ -113,6 +114,74 @@ public:
   }
 
   /**
+   * @brief Checks if zone within the radius of a node is feasible. Returns true if
+   *        there's at least one non-lethal cell within the node radius.
+   * @param node Input node.
+   * @param radius Search radius.
+   * @param collision_checker Collision checker to validate nearby nodes.
+   * @param traverse_unknown Flag whether traversal through unknown space is allowed.
+   * @return true
+   * @return false
+   */
+  bool isZoneValid(
+    const NodePtr node, const float & radius, GridCollisionChecker * collision_checker,
+    const bool & traverse_unknown) const
+  {
+    if (radius < 1) {
+      return false;
+    }
+
+    const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
+    const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
+
+    auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
+        unsigned int index = 0;
+
+        const auto mx = static_cast<unsigned int>(point.x);
+        const auto my = static_cast<unsigned int>(point.y);
+
+        if constexpr (!std::is_same_v<NodeT, Node2D>) {
+          const auto angle = static_cast<unsigned int>(point.theta);
+          index = NodeT::getIndex(mx, my, angle);
+        } else {
+          index = NodeT::getIndex(mx, my, size_x);
+        }
+
+        return index;
+      };
+
+    const Coordinates & center_point = node->pose;
+    const float min_x = std::max(0.0f, std::floor(center_point.x - radius));
+    const float min_y = std::max(0.0f, std::floor(center_point.y - radius));
+    const float max_x =
+      std::min(static_cast<float>(size_x - 1), std::ceil(center_point.x + radius));
+    const float max_y =
+      std::min(static_cast<float>(size_y - 1), std::ceil(center_point.y + radius));
+    const float radius_sq = radius * radius;
+
+    Coordinates m;
+    for (m.x = min_x; m.x <= max_x; m.x += 1.0f) {
+      for (m.y = min_y; m.y <= max_y; m.y += 1.0f) {
+        const float dx = m.x - center_point.x;
+        const float dy = m.y - center_point.y;
+
+        if (dx * dx + dy * dy > radius_sq) {
+          continue;
+        }
+
+        NodeT current_node(getIndexFromPoint(m));
+        current_node.setPose(m);
+
+        if (current_node.isNodeValid(traverse_unknown, collision_checker)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * @brief Filters and marks invalid goals based on collision checking and tolerance thresholds.
    *
    * Stores only valid (or tolerably infeasible) goals into internal goal sets and coordinates.
@@ -133,7 +202,7 @@ public:
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
-        tolerance > 0.001)
+        isZoneValid(_goals_state[i].goal, tolerance, collision_checker, traverse_unknown))
       {
         _goals_state[i].is_valid = true;
         _goals_set.insert(_goals_state[i].goal);
