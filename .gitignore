@@ -55,6 +55,7 @@ cmake-build-debug/
 
 # doxygen docs
 doc/html/
+
 # Vim Swap
 [._]*.s[a-v][a-z]
 [._]*.sw[a-p]
@@ -70,3 +71,7 @@ Session.vim
 
 # Vim Temporary
 .netrwhist
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
