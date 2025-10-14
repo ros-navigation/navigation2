@@ -255,7 +255,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 
   std::set<std::string> registered_ids;
   std::string main_id;
-
   auto register_all_bt_files = [&](const std::string & skip_file = "") {
       try {
         for (const auto & directory : search_directories_) {
