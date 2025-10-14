@@ -1,10 +1,54 @@
 [workspace]
 channels = ["https://prefix.dev/robostack-jazzy", "https://prefix.dev/conda-forge"]
-
-platforms = ["osx-arm64"]
+platforms = ["linux-64", "osx-arm64"]
 preview = ["pixi-build"]
 
 [tasks]
+build = "colcon build --symlink-install"
+test = "colcon test"
 
-[dependencies]
+[develop]
 ros-jazzy-navigation2 = {path = "navigation2"}
+ros-jazzy-nav2-amcl = {path = "nav2_amcl"}
+ros-jazzy-nav2-behavior-tree = {path = "nav2_behavior_tree"}
+ros-jazzy-nav2-behaviors = {path = "nav2_behaviors"}
+ros-jazzy-nav2-bringup = {path = "nav2_bringup"}
+ros-jazzy-nav2-bt-navigator = {path = "nav2_bt_navigator"}
+ros-jazzy-nav2-collision-monitor = {path = "nav2_collision_monitor"}
+ros-jazzy-nav2-common = {path = "nav2_common"}
+ros-jazzy-nav2-constrained-smoother = {path = "nav2_constrained_smoother"}
+ros-jazzy-nav2-controller = {path = "nav2_controller"}
+ros-jazzy-nav2-core = {path = "nav2_core"}
+ros-jazzy-nav2-costmap-2d = {path = "nav2_costmap_2d"}
+ros-jazzy-opennav-docking = {path = "nav2_docking/opennav_docking"}
+ros-jazzy-opennav-docking-bt = {path = "nav2_docking/opennav_docking_bt"}
+ros-jazzy-opennav-docking-core = {path = "nav2_docking/opennav_docking_core"}
+ros-jazzy-costmap-queue = {path = "nav2_dwb_controller/costmap_queue"}
+ros-jazzy-dwb-core = {path = "nav2_dwb_controller/dwb_core"}
+ros-jazzy-dwb-critics = {path = "nav2_dwb_controller/dwb_critics"}
+ros-jazzy-dwb-msgs = {path = "nav2_dwb_controller/dwb_msgs"}
+ros-jazzy-dwb-plugins = {path = "nav2_dwb_controller/dwb_plugins"}
+ros-jazzy-nav2-dwb-controller = {path = "nav2_dwb_controller/nav2_dwb_controller"}
+ros-jazzy-nav-2d-msgs = {path = "nav2_dwb_controller/nav_2d_msgs"}
+ros-jazzy-nav-2d-utils = {path = "nav2_dwb_controller/nav_2d_utils"}
+ros-jazzy-nav2-graceful-controller = {path = "nav2_graceful_controller"}
+ros-jazzy-nav2-lifecycle-manager = {path = "nav2_lifecycle_manager"}
+ros-jazzy-nav2-loopback-sim = {path = "nav2_loopback_sim"}
+ros-jazzy-nav2-map-server = {path = "nav2_map_server"}
+ros-jazzy-nav2-mppi-controller = {path = "nav2_mppi_controller"}
+ros-jazzy-nav2-msgs = {path = "nav2_msgs"}
+ros-jazzy-nav2-navfn-planner = {path = "nav2_navfn_planner"}
+ros-jazzy-nav2-planner = {path = "nav2_planner"}
+ros-jazzy-nav2-regulated-pure-pursuit-controller = {path = "nav2_regulated_pure_pursuit_controller"}
+ros-jazzy-nav2-rotation-shim-controller = {path = "nav2_rotation_shim_controller"}
+ros-jazzy-nav2-route = {path = "nav2_route"}
+ros-jazzy-nav2-rviz-plugins = {path = "nav2_rviz_plugins"}
+ros-jazzy-nav2-simple-commander = {path = "nav2_simple_commander"}
+ros-jazzy-nav2-smac-planner = {path = "nav2_smac_planner"}
+ros-jazzy-nav2-smoother = {path = "nav2_smoother"}
+ros-jazzy-nav2-system-tests = {path = "nav2_system_tests"}
+ros-jazzy-nav2-theta-star-planner = {path = "nav2_theta_star_planner"}
+ros-jazzy-nav2-util = {path = "nav2_util"}
+ros-jazzy-nav2-velocity-smoother = {path = "nav2_velocity_smoother"}
+ros-jazzy-nav2-voxel-grid = {path = "nav2_voxel_grid"}
+ros-jazzy-nav2-waypoint-follower = {path = "nav2_waypoint_follower"}
