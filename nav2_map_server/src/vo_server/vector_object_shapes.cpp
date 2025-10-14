@@ -56,7 +56,7 @@ bool Shape::obtainShapeUUID(const std::string & shape_name, unsigned char * out_
   try {
     // Try to get shape UUID from ROS-parameters
     std::string uuid_str = nav2::declare_or_get_parameter<std::string>(
-      node, shape_name + ".uuid", rclcpp::PARAMETER_STRING);
+      node, shape_name + ".uuid");
     if (uuid_parse(uuid_str.c_str(), out_uuid) != 0) {
       RCLCPP_ERROR(
         node->get_logger(),
@@ -137,7 +137,7 @@ bool Polygon::obtainParams(const std::string & shape_name)
   std::vector<double> poly_row;
   try {
     poly_row = nav2::declare_or_get_parameter<std::vector<double>>(
-      node, shape_name + ".points", rclcpp::PARAMETER_DOUBLE_ARRAY);
+      node, shape_name + ".points");
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
       node->get_logger(),
@@ -351,9 +351,9 @@ bool Circle::obtainParams(const std::string & shape_name)
   std::vector<double> center_row;
   try {
     center_row = nav2::declare_or_get_parameter<std::vector<double>>(
-      node, shape_name + ".center", rclcpp::PARAMETER_DOUBLE_ARRAY);
+      node, shape_name + ".center");
     params_->radius = nav2::declare_or_get_parameter<double>(
-      node, shape_name + ".radius", rclcpp::PARAMETER_DOUBLE);
+      node, shape_name + ".radius");
     if (params_->radius < 0) {
       RCLCPP_ERROR(
         node->get_logger(),
