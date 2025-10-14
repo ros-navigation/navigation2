@@ -19,7 +19,7 @@ jobs:
       if: matrix.linter == 'mypy'
       run: sudo apt update && sudo apt install -y python3-typeshed
 
-    - uses: ros-tooling/action-ros-lint@v0.1
+    - uses: ros-tooling/action-ros-lint@v0.1.4
       with:
         linter: ${{ matrix.linter }}
         distribution: rolling
