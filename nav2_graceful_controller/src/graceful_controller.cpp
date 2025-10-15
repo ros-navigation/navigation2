@@ -122,13 +122,41 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     goal_dist_tolerance_ = pose_tolerance.position.x;
   }
 
+  // Transform the pruned global plan to robot base frame
+  auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
+    geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
+    stamped_pose.header.frame_id = transformed_global_plan.header.frame_id;
+    stamped_pose.header.stamp = pose.header.stamp;
+    stamped_pose.pose = global_plan_pose.pose;
+
+    if (!nav2_util::transformPoseInTargetFrame(
+          stamped_pose, transformed_pose, *tf_buffer_,
+          costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
+    {
+      throw nav2_core::ControllerTFError(
+        "Unable to transform plan pose into local frame");
+    }
+
+    transformed_pose.pose.position.z = 0.0;
+    return transformed_pose;
+  };
+
+  nav_msgs::msg::Path transformed_plan;
+  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
+  transformed_plan.header.stamp = pose.header.stamp;
+  std::transform(
+    transformed_global_plan.poses.begin(),
+    transformed_global_plan.poses.end(),
+    std::back_inserter(transformed_plan.poses),
+    transformGlobalPlanToLocal);
+
   // Update the smooth control law with the new params
   control_law_->setCurvatureConstants(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
   control_law_->setSlowdownRadius(params_->slowdown_radius);
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
   // Add proper orientations to plan, if needed
-  validateOrientations(transformed_global_plan.poses);
+  validateOrientations(transformed_plan.poses);
 
   // Transform local frame to global frame to use in collision checking
   geometry_msgs::msg::TransformStamped costmap_transform;
@@ -145,12 +173,12 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   }
 
   // Compute distance to goal as the path's integrated distance to account for path curvatures
-  double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_global_plan);
+  double dist_to_goal = nav2_util::geometry_utils::calculate_path_length(transformed_plan);
 
   // If we've reached the XY goal tolerance, just rotate
   if (dist_to_goal < goal_dist_tolerance_ || goal_reached_) {
     goal_reached_ = true;
-    double angle_to_goal = tf2::getYaw(transformed_global_plan.poses.back().pose.orientation);
+    double angle_to_goal = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
     // Check for collisions between our current pose and goal pose
     size_t num_steps = fabs(angle_to_goal) / params_->in_place_collision_resolution;
     // Need to check at least the end pose
@@ -186,10 +214,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
   double dist_to_target;
   std::vector<double> target_distances;
-  computeDistanceAlongPath(transformed_global_plan.poses, target_distances);
+  computeDistanceAlongPath(transformed_plan.poses, target_distances);
 
   bool is_first_iteration = true;
-  for (int i = transformed_global_plan.poses.size() - 1; i >= 0; --i) {
+  for (int i = transformed_plan.poses.size() - 1; i >= 0; --i) {
     if (is_first_iteration) {
       // Calculate target pose through lookahead interpolation to get most accurate
       // lookahead point, if possible
@@ -197,7 +225,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       // Interpolate after goal false for graceful controller
       // Requires interpolating the orientation which is not yet implemented
       // Updates dist_to_target for target_pose returned if using the point on the path
-      target_pose = nav2_util::getLookAheadPoint(dist_to_target, transformed_global_plan, false);
+      target_pose = nav2_util::getLookAheadPoint(dist_to_target, transformed_plan, false);
       is_first_iteration = false;
     } else {
       // Underlying control law needs a single target pose, which should:
@@ -205,7 +233,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       //  * But no further than the max_lookahed_ distance
       //  * Be feasible to reach in a collision free manner
       dist_to_target = target_distances[i];
-      target_pose = transformed_global_plan.poses[i];
+      target_pose = transformed_plan.poses[i];
     }
 
     // Compute velocity at this moment if valid target pose is found
@@ -219,7 +247,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
         target_pose, params_->slowdown_radius);
       slowdown_pub_->publish(slowdown_marker);
       // Publish the local plan
-      local_plan.header = transformed_global_plan.header;
+      local_plan.header = transformed_plan.header;
       local_plan_pub_->publish(local_plan);
       // Successfully found velocity command
       return cmd_vel;

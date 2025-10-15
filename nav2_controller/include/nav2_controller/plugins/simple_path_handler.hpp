@@ -68,16 +68,16 @@ protected:
   PathSegment findPlanSegmentIterators(const geometry_msgs::msg::PoseStamped & global_pose);
 
    /**
-    * @brief Transforms a predefined segment of the global plan into the desired frame.
+    * @brief Transforms a predefined segment of the global plan into the odom frame.
     * @param global_pose Robot's current pose
     * @param closest_point Iterator to the starting pose of the path segment.
-    * @param last_point Iterator to the ending pose of the path segment.
-    * @return nav_msgs::msg::Path The transformed local plan segment in the desired frame.
+    * @param pruned_plan_end Iterator to the ending pose of the path segment.
+    * @return nav_msgs::msg::Path The transformed local plan segment in the odom frame.
     */
   nav_msgs::msg::Path transformLocalPlan(
     const geometry_msgs::msg::PoseStamped & global_pose,
     const PathIterator & closest_point,
-    const PathIterator & last_point);
+    const PathIterator & pruned_plan_end);
 
   /**
    * Get the greatest extent of the costmap in meters from the center.

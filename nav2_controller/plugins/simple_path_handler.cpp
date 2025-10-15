@@ -161,49 +161,46 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
     closest_point = std::prev(std::prev(closest_pose_upper_bound));
   }
 
-  const double max_costmap_extent = getCostmapMaxExtent();
-  auto transformation_end = std::find_if(
-    closest_point, global_plan_up_to_inversion_.poses.end(),
-    [&](const auto & global_plan_pose) {
-      return euclidean_distance(global_plan_pose, global_pose) > max_costmap_extent;
-    });
   auto pruned_plan_end =
     nav2_util::geometry_utils::first_after_integrated_distance(
     closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
-  auto last_point = std::min(transformation_end, pruned_plan_end);
 
-  return {closest_point, last_point};
+  return {closest_point, pruned_plan_end};
 }
 
 
 nav_msgs::msg::Path SimplePathHandler::transformLocalPlan(
   const geometry_msgs::msg::PoseStamped & global_pose,
   const PathIterator & closest_point,
-  const PathIterator & last_point)
+  const PathIterator & pruned_plan_end)
 {
-  // Lambda to transform a PoseStamped from global frame to local
-  auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = global_plan_up_to_inversion_.header.frame_id;
-      stamped_pose.header.stamp = global_pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-      if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
-        costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-      {
-        throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
-      }
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
-  // Transform the near part of the global plan into the robot's frame of reference.
   nav_msgs::msg::Path transformed_plan;
-  std::transform(
-    closest_point, last_point,
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPoseToLocal);
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose.header.stamp;
+  unsigned int mx, my;
+  // Find the furthest relevant pose on the path to consider within costmap
+  // bounds
+  // Transforming it to the costmap frame in the same loop
+  for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
+    ++global_plan_pose)
+  {
+    // Transform from global plan frame to costmap frame
+    geometry_msgs::msg::PoseStamped costmap_plan_pose;
+    global_plan_pose->header.stamp = global_pose.header.stamp;
+    global_plan_pose->header.frame_id = global_plan_.header.frame_id;
+    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
+        costmap_ros_->getGlobalFrameID(), transform_tolerance_);
+
+    // Check if pose is inside the costmap
+    if (!costmap_ros_->getCostmap()->worldToMap(
+        costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
+    {
+      return transformed_plan;
+    }
+
+    // Filling the transformed plan to return with the transformed pose
+    transformed_plan.poses.push_back(costmap_plan_pose);
+  }
 
   return transformed_plan;
 }
@@ -212,8 +209,8 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
-  auto [closest_point, last_point] = findPlanSegmentIterators(global_pose);
-  auto transformed_plan = transformLocalPlan(global_pose, closest_point, last_point);
+  auto [closest_point, pruned_plan_end] = findPlanSegmentIterators(global_pose);
+  auto transformed_plan = transformLocalPlan(global_pose, closest_point, pruned_plan_end);
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
