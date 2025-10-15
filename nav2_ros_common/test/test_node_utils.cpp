@@ -108,15 +108,13 @@ TEST(DeclareOrGetParam, DeclareOrGetParam)
   EXPECT_TRUE(declare_or_get_parameter(node, "burpy", true));
 
   // test declaration by type of existing param
-  int_param = declare_or_get_parameter<int>(node, "waldo",
-    rclcpp::ParameterType::PARAMETER_INTEGER);
+  int_param = declare_or_get_parameter<int>(node, "waldo");
   EXPECT_EQ(int_param, 3);
 
   // test declaration by type of non existing param
   got_exception = false;
   try {
-    int_param = declare_or_get_parameter<int>(node, "wololo",
-      rclcpp::ParameterType::PARAMETER_INTEGER);
+    int_param = declare_or_get_parameter<int>(node, "wololo");
   } catch (const rclcpp::exceptions::InvalidParameterValueException & exc) {
     got_exception = true;
   }

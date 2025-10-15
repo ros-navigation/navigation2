@@ -136,18 +136,11 @@ void PointCloud::getParameters(std::string & source_topic)
 
   getCommonParameters(source_topic);
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
-  min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
-  max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".min_range", rclcpp::ParameterValue(0.0));
-  min_range_ = node->get_parameter(source_name_ + ".min_range").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".transport_type", rclcpp::ParameterValue(std::string("raw")));
-  transport_type_ = node->get_parameter(source_name_ + ".transport_type").as_string();
+  min_height_ = node->declare_or_get_parameter(source_name_ + ".min_height", 0.05);
+  max_height_ = node->declare_or_get_parameter(source_name_ + ".max_height", 0.5);
+  min_range_ = node->declare_or_get_parameter(source_name_ + ".min_range", 0.0);
+  transport_type_ = node->declare_or_get_parameter(
+    source_name_ + ".transport_type", std::string("raw"));
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
