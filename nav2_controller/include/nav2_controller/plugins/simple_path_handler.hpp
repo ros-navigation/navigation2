@@ -31,7 +31,7 @@ using PathSegment = std::pair<PathIterator, PathIterator>;
 /**
 * @class SimplePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
-* segment relevant to the controller—typically bounded by the local costmap size
+* segment, typically bounded by the local costmap size
 * and transforming the resulting path into the robot base frame.
 */
 
@@ -101,7 +101,7 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("Controller Server")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("ControllerServer")};
   std::string plugin_name_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

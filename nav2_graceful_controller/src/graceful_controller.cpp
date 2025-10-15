@@ -122,7 +122,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     goal_dist_tolerance_ = pose_tolerance.position.x;
   }
 
-  // Transform the pruned global plan to robot base frame
+  // Transform the plan from costmap's global frame to robot base frame
   auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
       geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
       stamped_pose.header.frame_id = transformed_global_plan.header.frame_id;
