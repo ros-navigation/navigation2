@@ -33,8 +33,9 @@ NavigateToPoseNavigator::configure(
       std::string("goal"));
   path_blackboard_id_ = node->declare_or_get_parameter(getName() + ".path_blackboard_id",
       std::string("path"));
-  tracking_feedback_blackboard_id_ = 
-    node->declare_or_get_parameter(getName() + ".tracking_feedback_blackboard_id", std::string("tracking_feedback"));
+  tracking_feedback_blackboard_id_ =
+    node->declare_or_get_parameter(getName() + ".tracking_feedback_blackboard_id",
+      std::string("tracking_feedback"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;

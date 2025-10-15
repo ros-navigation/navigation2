@@ -34,8 +34,9 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
-  tracking_feedback_blackboard_id_ = 
-    node->declare_or_get_parameter(getName() + ".tracking_feedback_blackboard_id", std::string("tracking_feedback"));
+  tracking_feedback_blackboard_id_ =
+    node->declare_or_get_parameter(getName() + ".tracking_feedback_blackboard_id",
+      std::string("tracking_feedback"));
   waypoint_statuses_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".waypoint_statuses_blackboard_id",
       std::string("waypoint_statuses"));
