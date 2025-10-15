@@ -300,14 +300,39 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_vy = s.model_dt * s.constraints.ay_max;
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
-  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
-  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
-  control_sequence_.vx(0) = vx_last;
-  control_sequence_.wz(0) = wz_last;
+
+  float& vx0 = control_sequence_.vx(0);
+  vx0 = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx0);
+  if (state_.speed.linear.x > 0.0f) {
+    vx0 = utils::clamp(state_.speed.linear.x + min_delta_vx,
+      state_.speed.linear.x + max_delta_vx, vx0);
+  } else {
+    vx0 = utils::clamp(state_.speed.linear.x - max_delta_vx,
+      state_.speed.linear.x - min_delta_vx, vx0);
+  }
+
+  float& wz0 = control_sequence_.wz(0);
+  wz0 = utils::clamp(-s.constraints.wz, s.constraints.wz, wz0);
+  wz0 = utils::clamp(state_.speed.angular.z - max_delta_wz,
+    state_.speed.angular.z + max_delta_wz, wz0);
+
+  if (isHolonomic()) {
+    float& vy0 = control_sequence_.vy(0);
+    vy0 = utils::clamp(-s.constraints.vy, s.constraints.vy, vy0);
+    if (state_.speed.linear.y > 0.0f) {
+      vy0 = utils::clamp(state_.speed.linear.y + min_delta_vy,
+             state_.speed.linear.y + max_delta_vy, vy0);
+    } else {
+      vy0 = utils::clamp(state_.speed.linear.y - max_delta_vy,
+             state_.speed.linear.y - min_delta_vy, vy0);
+    }
+  }
+
+  float vx_last = control_sequence_.vx(0);
+  float wz_last = control_sequence_.wz(0);
   float vy_last = 0;
   if (isHolonomic()) {
-    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
-    control_sequence_.vy(0) = vy_last;
+    vy_last = control_sequence_.vy(0);
   }
 
   for (unsigned int i = 1; i != control_sequence_.vx.size(); i++) {
@@ -484,22 +509,22 @@ void Optimizer::updateControlSequence()
   auto & s = settings_;
 
   auto vx_T = control_sequence_.vx.transpose();
-  auto bounded_noises_vx = state_.cvx.rowwise() - vx_T;
+  auto noises_vx = state_.cvx.rowwise() - vx_T;
   const float gamma_vx = s.gamma / (s.sampling_std.vx * s.sampling_std.vx);
-  costs_ += (gamma_vx * (bounded_noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
+  costs_ += (gamma_vx * (noises_vx.rowwise() * vx_T).rowwise().sum()).eval();
 
   if (s.sampling_std.wz > 0.0f) {
     auto wz_T = control_sequence_.wz.transpose();
-    auto bounded_noises_wz = state_.cwz.rowwise() - wz_T;
+    auto noises_wz = state_.cwz.rowwise() - wz_T;
     const float gamma_wz = s.gamma / (s.sampling_std.wz * s.sampling_std.wz);
-    costs_ += (gamma_wz * (bounded_noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
+    costs_ += (gamma_wz * (noises_wz.rowwise() * wz_T).rowwise().sum()).eval();
   }
 
   if (is_holo) {
     auto vy_T = control_sequence_.vy.transpose();
-    auto bounded_noises_vy = state_.cvy.rowwise() - vy_T;
+    auto noises_vy = state_.cvy.rowwise() - vy_T;
     const float gamma_vy = s.gamma / (s.sampling_std.vy * s.sampling_std.vy);
-    costs_ += (gamma_vy * (bounded_noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
+    costs_ += (gamma_vy * (noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
   }
 
   auto costs_normalized = costs_ - costs_.minCoeff();
