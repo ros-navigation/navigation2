@@ -24,6 +24,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(orocos_kdl_vendor REQUIRED)
 
 # In Kilted and older distros, rviz with Qt6 is not supported
 if(TARGET Qt5::Core)

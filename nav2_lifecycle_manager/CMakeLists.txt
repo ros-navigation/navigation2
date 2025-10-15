@@ -14,6 +14,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(orocos_kdl_vendor REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
 nav2_package()

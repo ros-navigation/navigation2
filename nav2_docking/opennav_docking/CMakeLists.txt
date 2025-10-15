@@ -22,6 +22,7 @@ find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(orocos_kdl_vendor REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(nav2_ros_common REQUIRED)
@@ -31,7 +32,6 @@ nav2_package()
 
 set(executable_name opennav_docking)
 set(library_name ${executable_name}_core)
-
 add_library(controller SHARED
   src/controller.cpp
 )

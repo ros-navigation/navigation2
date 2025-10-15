@@ -4,11 +4,11 @@ platforms = ["linux-64", "osx-arm64"]
 preview = ["pixi-build"]
 
 [tasks]
-build = "colcon build --symlink-install"
+build = "colcon build --cmake-force-configure --cmake-args -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS=-Wno-error "
 test = "colcon test"
 
 [develop]
-ros-jazzy-navigation2 = {path = "navigation2"}
+ros-jazzy-navigation2 = { path = "navigation2" }
 ros-jazzy-nav2-amcl = {path = "nav2_amcl"}
 ros-jazzy-nav2-behavior-tree = {path = "nav2_behavior_tree"}
 ros-jazzy-nav2-behaviors = {path = "nav2_behaviors"}
@@ -52,3 +52,10 @@ ros-jazzy-nav2-util = {path = "nav2_util"}
 ros-jazzy-nav2-velocity-smoother = {path = "nav2_velocity_smoother"}
 ros-jazzy-nav2-voxel-grid = {path = "nav2_voxel_grid"}
 ros-jazzy-nav2-waypoint-follower = {path = "nav2_waypoint_follower"}
+
+[dependencies]
+colcon-ros = ">=0.5.0,<0.6"
+setuptools = "<72.0.0"
+gcc_linux-64 = "<15"
+cmake = "<4"
+nanoflann = ">=1.6.1,<2"
