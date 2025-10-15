@@ -39,6 +39,7 @@ void FollowPathAction::on_tick()
 
 BT::NodeStatus FollowPathAction::on_success()
 {
+  resetFeedbackAndOutputPorts();
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
   return BT::NodeStatus::SUCCESS;
@@ -46,6 +47,7 @@ BT::NodeStatus FollowPathAction::on_success()
 
 BT::NodeStatus FollowPathAction::on_aborted()
 {
+  resetFeedbackAndOutputPorts();
   setOutput("error_code_id", result_.result->error_code);
   setOutput("error_msg", result_.result->error_msg);
   return BT::NodeStatus::FAILURE;
@@ -53,6 +55,7 @@ BT::NodeStatus FollowPathAction::on_aborted()
 
 BT::NodeStatus FollowPathAction::on_cancelled()
 {
+  resetFeedbackAndOutputPorts();
   // Set empty error code, action was cancelled
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
@@ -66,7 +69,7 @@ void FollowPathAction::on_timeout()
 }
 
 void FollowPathAction::on_wait_for_result(
-  std::shared_ptr<const Action::Feedback>/*feedback*/)
+  std::shared_ptr<const Action::Feedback> feedback)
 {
   // Grab the new path
   nav_msgs::msg::Path new_path;
@@ -110,6 +113,18 @@ void FollowPathAction::on_wait_for_result(
     goal_.path_handler_id = new_path_handler_id;
     goal_updated_ = true;
   }
+
+  if (feedback) {
+    feedback_ = *feedback;
+    setOutput("tracking_feedback", feedback_.tracking_feedback);
+  }
+}
+
+void FollowPathAction::resetFeedbackAndOutputPorts()
+{
+  nav2_msgs::msg::TrackingFeedback empty_feedback;
+  feedback_.tracking_feedback = empty_feedback;
+  setOutput("tracking_feedback", feedback_.tracking_feedback);
 }
 
 }  // namespace nav2_behavior_tree
