@@ -288,25 +288,37 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       }
     };
 
-  if (!is_bt_id) {
+  try {
+    if (!is_bt_id) {
     // file_or_id is a filename: register it first
-    std::string main_file = file_or_id;
-    main_id = bt_->extractBehaviorTreeID(main_file);
-    if (main_id.empty()) {
-      RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
-      return false;
-    }
-    RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
-    bt_->registerTreeFromFile(main_file);
-    registered_ids.insert(main_id);
+      std::string main_file = file_or_id;
+      main_id = bt_->extractBehaviorTreeID(main_file);
+      if (main_id.empty()) {
+        RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        return false;
+      }
+      RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
+      bt_->registerTreeFromFile(main_file);
+      registered_ids.insert(main_id);
 
-    // Register all other BT files in the search directories
-    // skipping conflicts with main_id
-    register_all_bt_files(main_file);
-  } else {
+    // When a filename is specified, it must be register first
+    // and treat it as the "main" tree to execute.
+    // This ensures the requested tree is always available
+    // and prioritized, even if other files in the directory have duplicate IDs.
+    // The lambda then skips this main file to avoid
+    // re-registering it or logging a duplicate warning.
+    // In contrast, when an ID is specified, it's unkown which file is "main"
+    // so all files are registered and conflicts are handled in the lambda.
+      register_all_bt_files(main_file);
+    } else {
     // file_or_id is an ID: register all files, skipping conflicts
-    main_id = file_or_id;
-    register_all_bt_files();
+      main_id = file_or_id;
+      register_all_bt_files();
+    }
+  } catch (const std::exception & e) {
+    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Exception registering behavior trees: " + std::string(e.what()));
+    return false;
   }
 
   // Create the tree with the specified ID
@@ -328,6 +340,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return false;
   }
 
+  // Optional logging and monitoring
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
   current_bt_file_or_id_ = file_or_id;
 
