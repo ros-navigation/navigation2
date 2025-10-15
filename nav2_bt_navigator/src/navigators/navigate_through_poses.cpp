@@ -34,6 +34,8 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
+  tracking_feedback_blackboard_id_ = 
+    node->declare_or_get_parameter(getName() + ".tracking_feedback_blackboard_id", std::string("tracking_feedback"));
   waypoint_statuses_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".waypoint_statuses_blackboard_id",
       std::string("waypoint_statuses"));
@@ -148,30 +150,10 @@ NavigateThroughPosesNavigator::onLoop()
     return;
   }
 
-  // Get current path points
-  nav_msgs::msg::Path current_path;
-  res = blackboard->get(path_blackboard_id_, current_path);
-  if (res && current_path.poses.size() > 0u) {
-    // Find the closest pose to current pose on global path
-    auto find_closest_pose_idx =
-      [&current_pose, &current_path]() {
-        size_t closest_pose_idx = 0;
-        double curr_min_dist = std::numeric_limits<double>::max();
-        for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-          double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-            current_pose, current_path.poses[curr_idx]);
-          if (curr_dist < curr_min_dist) {
-            curr_min_dist = curr_dist;
-            closest_pose_idx = curr_idx;
-          }
-        }
-        return closest_pose_idx;
-      };
-
-    // Calculate distance on the path
-    double distance_remaining =
-      nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
-
+  nav2_msgs::msg::TrackingFeedback tracking_feedback;
+  res = blackboard->get(tracking_feedback_blackboard_id_, tracking_feedback);
+  if (res) {
+    double distance_remaining = tracking_feedback.remaining_path_length;
     // Default value for time remaining
     rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
 
