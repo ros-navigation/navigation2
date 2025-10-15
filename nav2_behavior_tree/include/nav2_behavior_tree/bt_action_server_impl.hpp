@@ -307,7 +307,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     // and prioritized, even if other files in the directory have duplicate IDs.
     // The lambda then skips this main file to avoid
     // re-registering it or logging a duplicate warning.
-    // In contrast, when an ID is specified, it's unkown which file is "main"
+    // In contrast, when an ID is specified, it's unknown which file is "main"
     // so all files are registered and conflicts are handled in the lambda.
       register_all_bt_files(main_file);
     } else {
