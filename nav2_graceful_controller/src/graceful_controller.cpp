@@ -124,22 +124,22 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
   // Transform the pruned global plan to robot base frame
   auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
-    geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-    stamped_pose.header.frame_id = transformed_global_plan.header.frame_id;
-    stamped_pose.header.stamp = pose.header.stamp;
-    stamped_pose.pose = global_plan_pose.pose;
+      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
+      stamped_pose.header.frame_id = transformed_global_plan.header.frame_id;
+      stamped_pose.header.stamp = pose.header.stamp;
+      stamped_pose.pose = global_plan_pose.pose;
 
-    if (!nav2_util::transformPoseInTargetFrame(
+      if (!nav2_util::transformPoseInTargetFrame(
           stamped_pose, transformed_pose, *tf_buffer_,
           costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
-    {
-      throw nav2_core::ControllerTFError(
+      {
+        throw nav2_core::ControllerTFError(
         "Unable to transform plan pose into local frame");
-    }
+      }
 
-    transformed_pose.pose.position.z = 0.0;
-    return transformed_pose;
-  };
+      transformed_pose.pose.position.z = 0.0;
+      return transformed_pose;
+    };
 
   nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
