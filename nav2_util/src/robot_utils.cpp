@@ -24,6 +24,7 @@
 
 #include "nav2_util/robot_utils.hpp"
 #include "rclcpp/logger.hpp"
+#include "rclcpp/clock.hpp"
 
 namespace nav2_util
 {
@@ -56,6 +57,26 @@ bool transformPoseInTargetFrame(
   }
 
   try {
+    // First try without timeout for immediate transforms (most common case)
+    if (tf_buffer.canTransform(target_frame, input_pose.header.frame_id,
+                               input_pose.header.stamp, tf2::Duration::zero())) {
+      transformed_pose = tf_buffer.transform(input_pose, target_frame, tf2::Duration::zero());
+      return true;
+    }
+
+    // Try using latest available transform (time zero) as optimization
+    if (tf_buffer.canTransform(target_frame, input_pose.header.frame_id,
+                               tf2::TimePointZero, tf2::Duration::zero())) {
+      // Create a copy with time zero for latest transform
+      geometry_msgs::msg::PoseStamped latest_pose = input_pose;
+      latest_pose.header.stamp = rclcpp::Time(0);
+      transformed_pose = tf_buffer.transform(latest_pose, target_frame, tf2::Duration::zero());
+      // Restore original timestamp in output
+      transformed_pose.header.stamp = input_pose.header.stamp;
+      return true;
+    }
+
+    // Fallback to timeout-based transform for delayed transforms
     transformed_pose = tf_buffer.transform(
       input_pose, target_frame,
       tf2::durationFromSec(transform_timeout));
