@@ -292,7 +292,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
         RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
         return false;
       }
-      RCLCPP_INFO(logger_, "Registering Tree from File: %s", main_file.c_str());
+      RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
       bt_->registerTreeFromFile(main_file);
       registered_ids.insert(main_id);
 
