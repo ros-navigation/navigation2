@@ -137,7 +137,9 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".min_distance_to_obstacle",
     params_.min_distance_to_obstacle);
-  if (params_.use_collision_detection && params_.min_distance_to_obstacle > params_.max_lookahead_dist) {
+  if (params_.use_collision_detection &&
+    params_.min_distance_to_obstacle > params_.max_lookahead_dist)
+  {
     RCLCPP_WARN(
       logger_,
       "min_distance_to_obstacle (%f) is greater than max_lookahead_dist (%f). "
