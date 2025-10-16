@@ -274,12 +274,16 @@ double VelocitySmoother::findEtaConstraint(
     v_component_min = decel / smoothing_frequency_;
   }
 
+  if (std::abs(v_cmd) < 1e-6) {
+    return -1.0;
+  }
+
   if (dv > v_component_max) {
-    return v_component_max / dv;
+    return ( v_component_max + v_curr ) / v_cmd;
   }
 
   if (dv < v_component_min) {
-    return v_component_min / dv;
+    return ( v_component_min + v_curr ) / v_cmd;
   }
 
   return -1.0;
@@ -289,7 +293,8 @@ double VelocitySmoother::applyConstraints(
   const double v_curr, const double v_cmd,
   const double accel, const double decel, const double eta)
 {
-  double dv = v_cmd - v_curr;
+  double v_scaled = eta * v_cmd;
+  double v_diff = v_scaled - v_curr;
 
   double v_component_max;
   double v_component_min;
@@ -305,7 +310,10 @@ double VelocitySmoother::applyConstraints(
     v_component_min = decel / smoothing_frequency_;
   }
 
-  return v_curr + std::clamp(eta * dv, v_component_min, v_component_max);
+  auto v_diff_clamped = std::clamp(v_diff, v_component_min, v_component_max);
+  auto v_cmd_restricted = v_curr + v_diff_clamped;
+
+  return v_cmd_restricted;
 }
 
 void VelocitySmoother::smootherTimer()
