@@ -16,6 +16,7 @@
 #include "nav2_lifecycle_manager/lifecycle_manager.hpp"
 
 #include <chrono>
+#include <future>
 #include <memory>
 #include <string>
 #include <vector>
@@ -45,6 +46,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("service_timeout", 5.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
+  declare_parameter("parallel_state_transitions", rclcpp::ParameterValue(false));
 
   registerRclPreshutdownCallback();
 
@@ -65,6 +67,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
 
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
+  get_parameter("parallel_state_transitions", parallel_state_transitions_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
 
@@ -281,34 +284,83 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 bool
 LifecycleManager::changeStateForAllNodes(std::uint8_t transition, bool hard_change)
 {
+  /* Function partially created using claude */
   // Hard change will continue even if a node fails
   if (transition == Transition::TRANSITION_CONFIGURE ||
     transition == Transition::TRANSITION_ACTIVATE)
   {
+    std::vector<std::future<bool>> futures;
+    futures.reserve(node_names_.size());
+
     for (auto & node_name : node_names_) {
-      try {
-        if (!changeStateForNode(node_name, transition) && !hard_change) {
+      auto future = std::async(
+        std::launch::async,
+        [this, node_name, transition]() {
+          try {
+            return changeStateForNode(node_name, transition);
+          } catch (const std::runtime_error & e) {
+            RCLCPP_ERROR(
+              get_logger(),
+              "Failed to change state for node: %s. Exception: %s.", node_name.c_str(), e.what());
+            return false;
+          }
+        });
+
+      if (!parallel_state_transitions_) {
+        // Sequential execution: wait for each future immediately
+        if (!future.get() && !hard_change) {
           return false;
         }
-      } catch (const std::runtime_error & e) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Failed to change state for node: %s. Exception: %s.", node_name.c_str(), e.what());
-        return false;
+      } else {
+        // Parallel execution: collect futures to wait later
+        futures.push_back(std::move(future));
+      }
+    }
+
+    // If parallel execution, wait for all futures now
+    if (parallel_state_transitions_) {
+      for (auto & future : futures) {
+        if (!future.get() && !hard_change) {
+          return false;
+        }
       }
     }
   } else {
+    std::vector<std::future<bool>> futures;
+    futures.reserve(node_names_.size());
+
     std::vector<std::string>::reverse_iterator rit;
     for (rit = node_names_.rbegin(); rit != node_names_.rend(); ++rit) {
-      try {
-        if (!changeStateForNode(*rit, transition) && !hard_change) {
+      auto future = std::async(
+        std::launch::async,
+        [this, rit, transition]() {
+          try {
+            return changeStateForNode(*rit, transition);
+          } catch (const std::runtime_error & e) {
+            RCLCPP_ERROR(
+              get_logger(),
+              "Failed to change state for node: %s. Exception: %s.", (*rit).c_str(), e.what());
+            return false;
+          }
+        });
+
+      if (!parallel_state_transitions_) {
+        // Sequential execution: wait for each future immediately
+        if (!future.get() && !hard_change) {
           return false;
         }
-      } catch (const std::runtime_error & e) {
-        RCLCPP_ERROR(
-          get_logger(),
-          "Failed to change state for node: %s. Exception: %s.", (*rit).c_str(), e.what());
-        return false;
+      } else {
+        // Parallel execution: collect futures to wait later
+        futures.push_back(std::move(future));
+      }
+    }
+
+    // If parallel execution, wait for all futures now
+    if (parallel_state_transitions_) {
+      for (auto & future : futures) {
+        if (!future.get() && !hard_change) {
+          return false;
+        }
       }
     }
   }
