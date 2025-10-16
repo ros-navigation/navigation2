@@ -137,15 +137,6 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".min_distance_to_obstacle",
     params_.min_distance_to_obstacle);
-  if (params_.use_collision_detection &&
-    params_.min_distance_to_obstacle > params_.max_lookahead_dist)
-  {
-    RCLCPP_WARN(
-      logger_,
-      "min_distance_to_obstacle (%f) is greater than max_lookahead_dist (%f). "
-      "The collision check distance will be capped by max_lookahead_dist.",
-      params_.min_distance_to_obstacle, params_.max_lookahead_dist);
-  }
   node->get_parameter(
     plugin_name_ + ".use_regulated_linear_velocity_scaling",
     params_.use_regulated_linear_velocity_scaling);
@@ -198,6 +189,15 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
+  if (params_.use_collision_detection &&
+    params_.min_distance_to_obstacle > params_.max_lookahead_dist)
+  {
+    RCLCPP_WARN(
+      logger_,
+      "min_distance_to_obstacle (%f) is greater than max_lookahead_dist (%f). "
+      "The collision check distance will be capped by max_lookahead_dist.",
+      params_.min_distance_to_obstacle, params_.max_lookahead_dist);
+  }
   node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
