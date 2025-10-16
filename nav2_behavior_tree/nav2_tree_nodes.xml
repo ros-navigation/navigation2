@@ -183,7 +183,6 @@
       <input_port name="path_handler_id">Path handler</input_port>
       <input_port name="server_name">Action server name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="tracking_feedback">Tracking feedback from controller server</output_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
       <output_port name="error_msg">Follow Path error message</output_port>
     </Action>

@@ -23,7 +23,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "nav2_msgs/msg/tracking_feedback.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -128,7 +127,6 @@ protected:
 
   std::string goal_blackboard_id_;
   std::string path_blackboard_id_;
-  std::string tracking_feedback_blackboard_id_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;

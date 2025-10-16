@@ -23,7 +23,6 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
-#include "nav2_msgs/msg/tracking_feedback.hpp"
 #include "nav2_msgs/msg/waypoint_status.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -111,7 +110,6 @@ protected:
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
   std::string path_blackboard_id_;
-  std::string tracking_feedback_blackboard_id_;
   std::string waypoint_statuses_blackboard_id_;
 
   // Odometry smoother object
