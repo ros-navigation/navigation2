@@ -194,7 +194,7 @@ ParameterHandler::ParameterHandler(
   {
     RCLCPP_WARN(
       logger_,
-      "min_distance_to_obstacle (%f) is greater than max_lookahead_dist (%f). "
+      "min_distance_to_obstacle (%.02f) is greater than max_lookahead_dist (%.02f). "
       "The collision check distance will be capped by max_lookahead_dist.",
       params_.min_distance_to_obstacle, params_.max_lookahead_dist);
   }
