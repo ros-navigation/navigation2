@@ -148,13 +148,14 @@ ParameterHandler::ParameterHandler(
     }
   }
 
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &ParameterHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 }
 
