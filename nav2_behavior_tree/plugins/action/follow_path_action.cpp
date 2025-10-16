@@ -34,6 +34,7 @@ void FollowPathAction::on_tick()
   getInput("controller_id", goal_.controller_id);
   getInput("goal_checker_id", goal_.goal_checker_id);
   getInput("progress_checker_id", goal_.progress_checker_id);
+  getInput("key_poses", goal_.key_poses);
 }
 
 BT::NodeStatus FollowPathAction::on_success()
@@ -99,6 +100,14 @@ void FollowPathAction::on_wait_for_result(
 
   if (goal_.progress_checker_id != new_progress_checker_id) {
     goal_.progress_checker_id = new_progress_checker_id;
+    goal_updated_ = true;
+  }
+
+  std::vector<geometry_msgs::msg::PoseStamped> new_key_poses;
+  getInput("key_poses", new_key_poses);
+
+  if (goal_.key_poses != new_key_poses) {
+    goal_.key_poses = new_key_poses;
     goal_updated_ = true;
   }
 }
