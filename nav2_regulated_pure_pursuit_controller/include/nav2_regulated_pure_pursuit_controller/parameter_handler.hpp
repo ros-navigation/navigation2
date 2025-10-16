@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America
+// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +34,7 @@ namespace nav2_regulated_pure_pursuit_controller
 struct Parameters
 {
   double desired_linear_vel, base_desired_linear_vel;
+  double desired_angular_vel;
   double lookahead_dist;
   double rotate_to_heading_angular_vel;
   double max_lookahead_dist;
@@ -53,7 +55,7 @@ struct Parameters
   bool use_fixed_curvature_lookahead;
   double curvature_lookahead_dist;
   bool use_rotate_to_heading;
-  double max_angular_accel;
+  double max_linear_accel, max_angular_accel;
   bool use_cancel_deceleration;
   double cancel_deceleration;
   double rotate_to_heading_min_angle;
@@ -63,6 +65,8 @@ struct Parameters
   bool use_collision_detection;
   double transform_tolerance;
   bool stateful;
+  bool use_dynamic_window;
+  std::string velocity_feedback;
 };
 
 /**
