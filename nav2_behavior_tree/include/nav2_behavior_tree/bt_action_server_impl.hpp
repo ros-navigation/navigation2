@@ -276,7 +276,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
 
-          RCLCPP_INFO(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+          RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
           bt_->registerTreeFromFile(entry.path().string());
           registered_ids.insert(id);
         }
