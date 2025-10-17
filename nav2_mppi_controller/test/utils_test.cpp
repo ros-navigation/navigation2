@@ -310,20 +310,21 @@ TEST(UtilsTests, SmootherTest)
   history[0].wz = 0.0;
   history_init = history;
 
-  models::OptimizerSettings settings;
-  settings.shift_control_sequence = false;  // so result stores 0th value in history
+  savitskyGolayFilter(noisey_sequence, history);
 
-  savitskyGolayFilter(noisey_sequence, history, settings);
-
-  // Check history is propagated backward
-  EXPECT_NEAR(history_init[3].vx, history[2].vx, 0.02);
-  EXPECT_NEAR(history_init[3].vy, history[2].vy, 0.02);
-  EXPECT_NEAR(history_init[3].wz, history[2].wz, 0.02);
-
-  // Check history element is updated for first command
-  EXPECT_NEAR(history[3].vx, 0.2, 0.05);
-  EXPECT_NEAR(history[3].vy, 0.0, 0.035);
-  EXPECT_NEAR(history[3].wz, 0.23, 0.02);
+  // History should remain unchanged
+  EXPECT_NEAR(history_init[0].vx, history[0].vx, 1e-6);
+  EXPECT_NEAR(history_init[0].vy, history[0].vy, 1e-6);
+  EXPECT_NEAR(history_init[0].wz, history[0].wz, 1e-6);
+  EXPECT_NEAR(history_init[1].vx, history[1].vx, 1e-6);
+  EXPECT_NEAR(history_init[1].vy, history[1].vy, 1e-6);
+  EXPECT_NEAR(history_init[1].wz, history[1].wz, 1e-6);
+  EXPECT_NEAR(history_init[2].vx, history[2].vx, 1e-6);
+  EXPECT_NEAR(history_init[2].vy, history[2].vy, 1e-6);
+  EXPECT_NEAR(history_init[2].wz, history[2].wz, 1e-6);
+  EXPECT_NEAR(history_init[3].vx, history[3].vx, 1e-6);
+  EXPECT_NEAR(history_init[3].vy, history[3].vy, 1e-6);
+  EXPECT_NEAR(history_init[3].wz, history[3].wz, 1e-6);
 
   // Check that path is smoother
   float smoothed_val{0}, original_val{0};
