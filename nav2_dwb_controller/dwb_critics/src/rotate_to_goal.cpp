@@ -86,7 +86,8 @@ bool RotateToGoalCritic::prepare(
 {
   double dxy_sq = hypot_sq(pose.position.x - goal.position.x, pose.position.y - goal.position.y);
   double path_length = nav2_util::geometry_utils::calculate_path_length(transformed_global_plan);
-  in_window_ = in_window_ || dxy_sq <= (xy_goal_tolerance_sq_ && path_length <= path_length_tolerance_);
+  in_window_ = in_window_ ||
+    dxy_sq <= (xy_goal_tolerance_sq_ && path_length <= path_length_tolerance_);
   current_xy_speed_sq_ = hypot_sq(vel.x, vel.y);
   rotating_ = rotating_ || (in_window_ && current_xy_speed_sq_ <= stopped_xy_velocity_sq_);
   goal_yaw_ = tf2::getYaw(goal.orientation);
