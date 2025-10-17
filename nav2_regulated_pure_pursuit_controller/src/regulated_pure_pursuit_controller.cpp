@@ -251,8 +251,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     is_rotating_to_heading_ = false;
     applyConstraints(
       regulation_curvature, speed,
-      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y),
-        transformed_plan, linear_vel, x_vel_sign);
+      collision_checker_->costAtPose(pose.pose.position.x, pose.pose.position.y), transformed_plan,
+      linear_vel, x_vel_sign);
 
     if (cancelling_) {
       const double & dt = control_duration_;

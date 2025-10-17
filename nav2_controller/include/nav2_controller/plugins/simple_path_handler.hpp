@@ -32,7 +32,7 @@ using PathSegment = std::pair<PathIterator, PathIterator>;
 * @class SimplePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
 * segment, typically bounded by the local costmap size
-* and transforming the resulting path into the robot base frame.
+* and transforming the resulting path into the odom frame.
 */
 
 class SimplePathHandler : public nav2_core::PathHandler
