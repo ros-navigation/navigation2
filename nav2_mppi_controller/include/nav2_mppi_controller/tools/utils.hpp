@@ -431,12 +431,10 @@ inline float posePointAngle(
  * @brief Apply Savisky-Golay filter to optimal trajectory
  * @param control_sequence Sequence to apply filter to
  * @param control_history Recent set of controls for edge-case handling
- * @param Settings Settings to use
  */
 inline void savitskyGolayFilter(
   models::ControlSequence & control_sequence,
-  std::array<mppi::models::Control, 4> & control_history,
-  const models::OptimizerSettings & settings)
+  std::array<mppi::models::Control, 4> & control_history)
 {
   // Savitzky-Golay Quadratic, 9-point Coefficients
   Eigen::Array<float, 9, 1> filter = {-21.0f, 14.0f, 39.0f, 54.0f, 59.0f, 54.0f, 39.0f, 14.0f,
@@ -498,16 +496,6 @@ inline void savitskyGolayFilter(
   applyFilterOverAxis(
     control_sequence.wz, initial_control_sequence.wz, control_history[0].wz,
     control_history[1].wz, control_history[2].wz, control_history[3].wz);
-
-  // Update control history
-  unsigned int offset = settings.shift_control_sequence ? 1 : 0;
-  control_history[0] = control_history[1];
-  control_history[1] = control_history[2];
-  control_history[2] = control_history[3];
-  control_history[3] = {
-    control_sequence.vx(offset),
-    control_sequence.vy(offset),
-    control_sequence.wz(offset)};
 }
 
 /**
