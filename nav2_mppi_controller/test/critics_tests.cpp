@@ -336,7 +336,7 @@ TEST(CriticTests, PathAngleCritic)
   costmap_ros->on_configure(lstate);
 
   models::State state;
-  state.reset(1000, 30);
+   state.reset(1000, 30);
   models::ControlSequence control_sequence;
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
