@@ -192,6 +192,9 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 
   do {
     optimize();
+    utils::savitskyGolayFilter(control_sequence_, control_history_);
+    applyControlSequenceConstraints();
+    updateHistory();
     optimal_trajectory = getOptimizedTrajectory();
     switch (trajectory_validator_->validateTrajectory(
       optimal_trajectory, control_sequence_, robot_pose, robot_speed, plan, goal))
@@ -210,7 +213,6 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
     }
   } while (fallback(critics_data_.fail_flag || !trajectory_valid));
 
-  utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
   if (settings_.shift_control_sequence) {
@@ -541,6 +543,15 @@ void Optimizer::updateControlSequence()
   }
 
   applyControlSequenceConstraints();
+}
+
+void Optimizer::updateHistory() {
+  control_history_[0] = control_history_[1];
+  control_history_[1] = control_history_[2];
+  control_history_[2] = control_history_[3];
+  control_history_[3] = {control_sequence_.vx(0),
+                         isHolonomic() ? control_sequence_.vy(0) : 0.0f,
+                         control_sequence_.wz(0)};
 }
 
 geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
