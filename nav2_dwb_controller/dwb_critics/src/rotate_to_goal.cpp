@@ -38,6 +38,7 @@
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/trajectory_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "angles/angles.h"
 
 PLUGINLIB_EXPORT_CLASS(dwb_critics::RotateToGoalCritic, dwb_core::TrajectoryCritic)
@@ -60,6 +61,8 @@ void RotateToGoalCritic::onInit()
   xy_goal_tolerance_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + ".xy_goal_tolerance", 0.25);
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
+  path_length_tolerance_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "path_length_tolerance", 1.0);
   double stopped_xy_velocity = node->declare_or_get_parameter(
     dwb_plugin_name_ + ".trans_stopped_velocity", 0.25);
   stopped_xy_velocity_sq_ = stopped_xy_velocity * stopped_xy_velocity;
@@ -79,10 +82,11 @@ void RotateToGoalCritic::reset()
 bool RotateToGoalCritic::prepare(
   const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D & vel,
   const geometry_msgs::msg::Pose & goal,
-  const nav_msgs::msg::Path &)
+  const nav_msgs::msg::Path & transformed_global_plan)
 {
   double dxy_sq = hypot_sq(pose.position.x - goal.position.x, pose.position.y - goal.position.y);
-  in_window_ = in_window_ || dxy_sq <= xy_goal_tolerance_sq_;
+  double path_length = nav2_util::geometry_utils::calculate_path_length(transformed_global_plan);
+  in_window_ = in_window_ || dxy_sq <= (xy_goal_tolerance_sq_ && path_length <= path_length_tolerance_);
   current_xy_speed_sq_ = hypot_sq(vel.x, vel.y);
   rotating_ = rotating_ || (in_window_ && current_xy_speed_sq_ <= stopped_xy_velocity_sq_);
   goal_yaw_ = tf2::getYaw(goal.orientation);

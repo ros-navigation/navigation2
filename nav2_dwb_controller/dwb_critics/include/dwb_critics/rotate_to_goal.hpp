@@ -92,6 +92,7 @@ private:
   double goal_yaw_;
   double xy_goal_tolerance_;
   double xy_goal_tolerance_sq_;  ///< Cached squared tolerance
+  double path_length_tolerance_;
   double current_xy_speed_sq_, stopped_xy_velocity_sq_;
   double slowing_factor_;
   double lookahead_time_;
