@@ -4,4 +4,4 @@ version = "*"
 channels = ["https://prefix.dev/pixi-build-backends", "https://prefix.dev/conda-forge"]
 
 [package.build.config]
-distro = "jazzy"
+distro = "kilted"
