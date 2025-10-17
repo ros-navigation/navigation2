@@ -61,6 +61,7 @@ This process is then repeated a number of times and returns a converged solution
  | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
  | publish_critics_stats      | bool   | Default false. Whether to publish statistics about each critic's performance. When enabled, publishes a `nav2_msgs::msg::CriticsStats` message containing critic names, whether they changed costs, and the sum of costs added by each critic. Useful for debugging and tuning critic behavior. |
 
+ | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
 
 #### Trajectory Visualizer
  | Parameter             | Type   | Definition                                                                                                  |
