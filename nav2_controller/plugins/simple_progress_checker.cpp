@@ -38,7 +38,7 @@ void SimpleProgressChecker::initialize(
 
   radius_ = node->declare_or_get_parameter(plugin_name + ".required_movement_radius", 0.5);
   time_allowance_ = rclcpp::Duration::from_seconds(node->declare_or_get_parameter(plugin_name +
-      ".movement_time_allowance", 10.0));
+    ".movement_time_allowance", 10.0));
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(

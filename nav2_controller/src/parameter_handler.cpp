@@ -58,7 +58,7 @@ ParameterHandler::ParameterHandler(
 
   RCLCPP_INFO(logger_, "getting progress checker plugins..");
   params_.progress_checker_ids = node->declare_or_get_parameter("progress_checker_plugins",
-      default_progress_checker_ids_);
+    default_progress_checker_ids_);
   if (params_.progress_checker_ids == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -69,7 +69,7 @@ ParameterHandler::ParameterHandler(
 
   RCLCPP_INFO(logger_, "getting goal checker plugins..");
   params_.goal_checker_ids = node->declare_or_get_parameter("goal_checker_plugins",
-      default_goal_checker_ids_);
+    default_goal_checker_ids_);
   if (params_.goal_checker_ids == default_goal_checker_ids_) {
     for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -80,7 +80,7 @@ ParameterHandler::ParameterHandler(
 
   RCLCPP_INFO(logger_, "getting controller plugins..");
   params_.controller_ids = node->declare_or_get_parameter("controller_plugins",
-      default_controller_ids_);
+    default_controller_ids_);
   if (params_.controller_ids == default_controller_ids_) {
     for (size_t i = 0; i < default_controller_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -91,7 +91,7 @@ ParameterHandler::ParameterHandler(
 
   RCLCPP_INFO(logger_, "getting path handler plugins..");
   params_.path_handler_ids = node->declare_or_get_parameter("path_handler_plugins",
-      default_path_handler_ids_);
+    default_path_handler_ids_);
   if (params_.path_handler_ids == default_path_handler_ids_) {
     for (size_t i = 0; i < default_path_handler_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -140,7 +140,7 @@ ParameterHandler::ParameterHandler(
   for (size_t i = 0; i != params_.path_handler_ids.size(); i++) {
     try {
       params_.path_handler_types[i] = nav2::get_plugin_type_param(node,
-          params_.path_handler_ids[i]);
+        params_.path_handler_ids[i]);
     } catch (const std::exception & ex) {
       throw std::runtime_error(
         std::string("Failed to get type for path handler plugins '") +

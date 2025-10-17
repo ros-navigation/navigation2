@@ -44,17 +44,17 @@ void SimplePathHandler::initialize(
   tf_ = tf;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
   interpolate_curvature_after_goal_ = node->declare_or_get_parameter(plugin_name +
-      ".interpolate_curvature_after_goal", false);
+    ".interpolate_curvature_after_goal", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
-      ".max_robot_pose_search_dist", getCostmapMaxExtent());
+    ".max_robot_pose_search_dist", getCostmapMaxExtent());
   prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
-      2.0);
+    2.0);
   enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_inversion",
-      false);
+    false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
-      0.2);
+    0.2);
   inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
-      ".inversion_yaw_tolerance", 0.4);
+    ".inversion_yaw_tolerance", 0.4);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
