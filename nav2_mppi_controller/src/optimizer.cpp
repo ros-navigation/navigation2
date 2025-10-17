@@ -352,17 +352,17 @@ void Optimizer::updateInitialStateVelocities(models::State & state) const
 {
   const bool open = settings_.open_loop;
 
-  const float vx0 = open ? control_sequence_.vx(0)
-                         : static_cast<float>(state.speed.linear.x);
-  const float wz0 = open ? control_sequence_.wz(0)
-                         : static_cast<float>(state.speed.angular.z);
+  const float vx0 = open ? control_sequence_.vx(0) :
+    static_cast<float>(state.speed.linear.x);
+  const float wz0 = open ? control_sequence_.wz(0) :
+    static_cast<float>(state.speed.angular.z);
 
   state.vx.col(0) = vx0;
   state.wz.col(0) = wz0;
 
   if (isHolonomic()) {
-    const float vy0 = open ? control_sequence_.vy(0)
-                           : static_cast<float>(state.speed.linear.y);
+    const float vy0 = open ? control_sequence_.vy(0) :
+      static_cast<float>(state.speed.linear.y);
     state.vy.col(0) = vy0;
   }
 }
