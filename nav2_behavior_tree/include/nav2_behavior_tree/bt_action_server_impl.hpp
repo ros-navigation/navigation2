@@ -272,7 +272,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
           }
           if (registered_ids.count(id)) {
             RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
-        entry.path().c_str(), id.c_str());
+              entry.path().c_str(), id.c_str());
             continue;
           }
 
