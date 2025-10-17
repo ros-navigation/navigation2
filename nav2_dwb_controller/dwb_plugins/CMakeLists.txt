@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(dwb_plugins)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(dwb_core REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -24,13 +25,13 @@ add_library(standard_traj_generator SHARED
 target_include_directories(standard_traj_generator PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(standard_traj_generator PUBLIC
   dwb_core::dwb_core
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${nav_2d_msgs_TARGETS}
   rclcpp::rclcpp
   ${rcl_interfaces_TARGETS}

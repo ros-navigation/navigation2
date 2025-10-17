@@ -38,11 +38,11 @@
 #include "tf2/utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/LinearMath/Transform.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/message_filter.h"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/message_filter.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
 
 #include "nav2_amcl/portable_utils.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
@@ -58,126 +58,6 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  declare_parameter(
-    "alpha1", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "alpha2", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "alpha3", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "alpha4", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "alpha5", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
-
-  declare_parameter("beam_skip_distance", rclcpp::ParameterValue(0.5));
-  declare_parameter("beam_skip_error_threshold", rclcpp::ParameterValue(0.9));
-  declare_parameter("beam_skip_threshold", rclcpp::ParameterValue(0.3));
-  declare_parameter("do_beamskip", rclcpp::ParameterValue(false));
-
-  declare_parameter(
-    "global_frame_id", rclcpp::ParameterValue(std::string("map")));
-
-  declare_parameter(
-    "lambda_short", rclcpp::ParameterValue(0.1));
-
-  declare_parameter(
-    "laser_likelihood_max_dist", rclcpp::ParameterValue(2.0));
-
-  declare_parameter(
-    "laser_max_range", rclcpp::ParameterValue(100.0));
-
-  declare_parameter(
-    "laser_min_range", rclcpp::ParameterValue(-1.0));
-
-  declare_parameter(
-    "laser_model_type", rclcpp::ParameterValue(std::string("likelihood_field")));
-
-  declare_parameter(
-    "set_initial_pose", rclcpp::ParameterValue(false));
-
-  declare_parameter(
-    "initial_pose.x", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "initial_pose.y", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "initial_pose.z", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "initial_pose.yaw", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "max_beams", rclcpp::ParameterValue(60));
-
-  declare_parameter(
-    "max_particles", rclcpp::ParameterValue(2000));
-
-  declare_parameter(
-    "min_particles", rclcpp::ParameterValue(500));
-
-  declare_parameter(
-    "odom_frame_id", rclcpp::ParameterValue(std::string("odom")));
-
-  declare_parameter("pf_err", rclcpp::ParameterValue(0.05));
-  declare_parameter("pf_z", rclcpp::ParameterValue(0.99));
-
-  declare_parameter(
-    "recovery_alpha_fast", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "recovery_alpha_slow", rclcpp::ParameterValue(0.0));
-
-  declare_parameter(
-    "resample_interval", rclcpp::ParameterValue(1));
-
-  declare_parameter("robot_model_type",
-    rclcpp::ParameterValue("nav2_amcl::DifferentialMotionModel"));
-
-  declare_parameter(
-    "save_pose_rate", rclcpp::ParameterValue(0.5));
-
-  declare_parameter("sigma_hit", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "tf_broadcast", rclcpp::ParameterValue(true));
-
-  declare_parameter(
-    "transform_tolerance", rclcpp::ParameterValue(1.0));
-
-  declare_parameter(
-    "update_min_a", rclcpp::ParameterValue(0.2));
-
-  declare_parameter(
-    "update_min_d", rclcpp::ParameterValue(0.25));
-
-  declare_parameter("z_hit", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_max", rclcpp::ParameterValue(0.05));
-  declare_parameter("z_rand", rclcpp::ParameterValue(0.5));
-  declare_parameter("z_short", rclcpp::ParameterValue(0.05));
-
-  declare_parameter(
-    "always_reset_initial_pose", rclcpp::ParameterValue(false));
-
-  declare_parameter(
-    "scan_topic", rclcpp::ParameterValue("scan"));
-
-  declare_parameter(
-    "map_topic", rclcpp::ParameterValue("map"));
-
-  declare_parameter(
-    "first_map_only", rclcpp::ParameterValue(false));
-
-  declare_parameter(
-    "freespace_downsampling", rclcpp::ParameterValue(false));
 }
 
 AmclNode::~AmclNode()
@@ -1013,52 +893,54 @@ AmclNode::initParameters()
   double save_pose_rate;
   double tmp_tol;
 
-  get_parameter("alpha1", alpha1_);
-  get_parameter("alpha2", alpha2_);
-  get_parameter("alpha3", alpha3_);
-  get_parameter("alpha4", alpha4_);
-  get_parameter("alpha5", alpha5_);
-  get_parameter("base_frame_id", base_frame_id_);
-  get_parameter("beam_skip_distance", beam_skip_distance_);
-  get_parameter("beam_skip_error_threshold", beam_skip_error_threshold_);
-  get_parameter("beam_skip_threshold", beam_skip_threshold_);
-  get_parameter("do_beamskip", do_beamskip_);
-  get_parameter("global_frame_id", global_frame_id_);
-  get_parameter("lambda_short", lambda_short_);
-  get_parameter("laser_likelihood_max_dist", laser_likelihood_max_dist_);
-  get_parameter("laser_max_range", laser_max_range_);
-  get_parameter("laser_min_range", laser_min_range_);
-  get_parameter("laser_model_type", sensor_model_type_);
-  get_parameter("set_initial_pose", set_initial_pose_);
-  get_parameter("initial_pose.x", initial_pose_x_);
-  get_parameter("initial_pose.y", initial_pose_y_);
-  get_parameter("initial_pose.z", initial_pose_z_);
-  get_parameter("initial_pose.yaw", initial_pose_yaw_);
-  get_parameter("max_beams", max_beams_);
-  get_parameter("max_particles", max_particles_);
-  get_parameter("min_particles", min_particles_);
-  get_parameter("odom_frame_id", odom_frame_id_);
-  get_parameter("pf_err", pf_err_);
-  get_parameter("pf_z", pf_z_);
-  get_parameter("recovery_alpha_fast", alpha_fast_);
-  get_parameter("recovery_alpha_slow", alpha_slow_);
-  get_parameter("resample_interval", resample_interval_);
-  get_parameter("robot_model_type", robot_model_type_);
-  get_parameter("save_pose_rate", save_pose_rate);
-  get_parameter("sigma_hit", sigma_hit_);
-  get_parameter("tf_broadcast", tf_broadcast_);
-  get_parameter("transform_tolerance", tmp_tol);
-  get_parameter("update_min_a", a_thresh_);
-  get_parameter("update_min_d", d_thresh_);
-  get_parameter("z_hit", z_hit_);
-  get_parameter("z_max", z_max_);
-  get_parameter("z_rand", z_rand_);
-  get_parameter("z_short", z_short_);
-  get_parameter("first_map_only", first_map_only_);
-  get_parameter("always_reset_initial_pose", always_reset_initial_pose_);
-  get_parameter("scan_topic", scan_topic_);
-  get_parameter("map_topic", map_topic_);
-  get_parameter("freespace_downsampling", freespace_downsampling_);
+  alpha1_ = this->declare_or_get_parameter("alpha1", 0.2);
+  alpha2_ = this->declare_or_get_parameter("alpha2", 0.2);
+  alpha3_ = this->declare_or_get_parameter("alpha3", 0.2);
+  alpha4_ = this->declare_or_get_parameter("alpha4", 0.2);
+  alpha5_ = this->declare_or_get_parameter("alpha5", 0.2);
+  base_frame_id_ = this->declare_or_get_parameter("base_frame_id", std::string{"base_footprint"});
+  beam_skip_distance_ = this->declare_or_get_parameter("beam_skip_distance", 0.5);
+  beam_skip_error_threshold_ = this->declare_or_get_parameter("beam_skip_error_threshold", 0.9);
+  beam_skip_threshold_ = this->declare_or_get_parameter("beam_skip_threshold", 0.3);
+  do_beamskip_ = this->declare_or_get_parameter("do_beamskip", false);
+  global_frame_id_ = this->declare_or_get_parameter("global_frame_id", std::string{"map"});
+  lambda_short_ = this->declare_or_get_parameter("lambda_short", 0.1);
+  laser_likelihood_max_dist_ = this->declare_or_get_parameter("laser_likelihood_max_dist", 2.0);
+  laser_max_range_ = this->declare_or_get_parameter("laser_max_range", 100.0);
+  laser_min_range_ = this->declare_or_get_parameter("laser_min_range", -1.0);
+  sensor_model_type_ = this->declare_or_get_parameter(
+    "laser_model_type", std::string{"likelihood_field"});
+  set_initial_pose_ = this->declare_or_get_parameter("set_initial_pose", false);
+  initial_pose_x_ = this->declare_or_get_parameter("initial_pose.x", 0.0);
+  initial_pose_y_ = this->declare_or_get_parameter("initial_pose.y", 0.0);
+  initial_pose_z_ = this->declare_or_get_parameter("initial_pose.z", 0.0);
+  initial_pose_yaw_ = this->declare_or_get_parameter("initial_pose.yaw", 0.0);
+  max_beams_ = this->declare_or_get_parameter("max_beams", 60);
+  max_particles_ = this->declare_or_get_parameter("max_particles", 2000);
+  min_particles_ = this->declare_or_get_parameter("min_particles", 500);
+  odom_frame_id_ = this->declare_or_get_parameter("odom_frame_id", std::string{"odom"});
+  pf_err_ = this->declare_or_get_parameter("pf_err", 0.05);
+  pf_z_ = this->declare_or_get_parameter("pf_z", 0.99);
+  alpha_fast_ = this->declare_or_get_parameter("recovery_alpha_fast", 0.0);
+  alpha_slow_ = this->declare_or_get_parameter("recovery_alpha_slow", 0.0);
+  resample_interval_ = this->declare_or_get_parameter("resample_interval", 1);
+  robot_model_type_ = this->declare_or_get_parameter(
+    "robot_model_type", std::string{"nav2_amcl::DifferentialMotionModel"});
+  save_pose_rate = this->declare_or_get_parameter("save_pose_rate", 0.5);
+  sigma_hit_ = this->declare_or_get_parameter("sigma_hit", 0.2);
+  tf_broadcast_ = this->declare_or_get_parameter("tf_broadcast", true);
+  tmp_tol = this->declare_or_get_parameter("transform_tolerance", 1.0);
+  a_thresh_ = this->declare_or_get_parameter("update_min_a", 0.2);
+  d_thresh_ = this->declare_or_get_parameter("update_min_d", 0.25);
+  z_hit_ = this->declare_or_get_parameter("z_hit", 0.5);
+  z_max_ = this->declare_or_get_parameter("z_max", 0.05);
+  z_rand_ = this->declare_or_get_parameter("z_rand", 0.5);
+  z_short_ = this->declare_or_get_parameter("z_short", 0.05);
+  first_map_only_ = this->declare_or_get_parameter("first_map_only", false);
+  always_reset_initial_pose_ = this->declare_or_get_parameter("always_reset_initial_pose", false);
+  scan_topic_ = this->declare_or_get_parameter("scan_topic", std::string{"scan"});
+  map_topic_ = this->declare_or_get_parameter("map_topic", std::string{"map"});
+  freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1457,7 +1339,7 @@ AmclNode::initTransforms()
     get_node_timers_interface(),
     callback_group_);
   tf_buffer_->setCreateTimerInterface(timer_interface);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this, true);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
   sent_first_transform_ = false;

@@ -19,7 +19,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
-from launch_ros.actions import LoadComposableNodes, Node, SetParameter
+from launch_ros.actions import LoadComposableNodes, Node, PushROSNamespace, SetParameter
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
@@ -38,6 +38,8 @@ def generate_launch_description() -> LaunchDescription:
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    use_keepout_zones = LaunchConfigAsBool('use_keepout_zones')
+    use_speed_zones = LaunchConfigAsBool('use_speed_zones')
 
     lifecycle_nodes = [
         'controller_server',
@@ -50,6 +52,7 @@ def generate_launch_description() -> LaunchDescription:
         'bt_navigator',
         'waypoint_follower',
         'docking_server',
+        'following_server',
     ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -58,11 +61,25 @@ def generate_launch_description() -> LaunchDescription:
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {'autostart': autostart}
 
+    yaml_substitutions = {
+        'KEEPOUT_ZONE_ENABLED': use_keepout_zones,
+        'SPEED_ZONE_ENABLED': use_speed_zones,
+    }
+
+    # RewrittenYaml: Adds namespace to the parameters file as a root key
+    # Note: Make sure that all frames are correctly namespaced in the parameters file
+    # Do not add namespace to topics in the parameters file, as they will be remapped
+    # by the root key only if they are not prefixed with a forward slash.
+    # e.g. 'map' will be remapped to '/<namespace>/map', but '/map' will not be remapped.
+    # IMPORTANT: to make your yaml file dynamic you can refer to humble branch under
+    # nav2_bringup/launch/bringup_launch.py to see how the parameters file is configured
+    # using ReplaceString <robot_namespace>
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
+            value_rewrites=yaml_substitutions,
             convert_types=True,
         ),
         allow_substs=True,
@@ -121,10 +138,21 @@ def generate_launch_description() -> LaunchDescription:
         'log_level', default_value='info', description='log level'
     )
 
+    declare_use_keepout_zones_cmd = DeclareLaunchArgument(
+        'use_keepout_zones', default_value='True',
+        description='Whether to enable keepout zones or not'
+    )
+
+    declare_use_speed_zones_cmd = DeclareLaunchArgument(
+        'use_speed_zones', default_value='True',
+        description='Whether to enable speed zones or not'
+    )
+
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             Node(
                 package='nav2_controller',
                 executable='controller_server',
@@ -235,6 +263,17 @@ def generate_launch_description() -> LaunchDescription:
                 remappings=remappings,
             ),
             Node(
+                package='opennav_following',
+                executable='opennav_following',
+                name='following_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
@@ -249,6 +288,7 @@ def generate_launch_description() -> LaunchDescription:
         condition=IfCondition(use_composition),
         actions=[
             SetParameter('use_sim_time', use_sim_time),
+            PushROSNamespace(namespace=namespace),
             LoadComposableNodes(
                 target_container=container_name_full,
                 composable_node_descriptions=[
@@ -323,6 +363,13 @@ def generate_launch_description() -> LaunchDescription:
                         remappings=remappings,
                     ),
                     ComposableNode(
+                        package='opennav_following',
+                        plugin='opennav_following::FollowingServer',
+                        name='following_server',
+                        parameters=[configured_params],
+                        remappings=remappings,
+                    ),
+                    ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_navigation',
@@ -351,6 +398,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
+    ld.add_action(declare_use_keepout_zones_cmd)
+    ld.add_action(declare_use_speed_zones_cmd)
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)

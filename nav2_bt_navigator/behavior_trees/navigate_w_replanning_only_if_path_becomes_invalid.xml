@@ -1,8 +1,8 @@
 <!--
   This Behavior Tree replans the global path only if the path becomes invalid
 -->
-<root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="NavigateWReplanningOnlyIfPathBecomesInvalid">
+  <BehaviorTree ID="NavigateWReplanningOnlyIfPathBecomesInvalid">
     <PipelineSequence name="NavigateWithReplanning">
       <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
       <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>

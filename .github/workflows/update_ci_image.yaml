@@ -30,7 +30,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "trigger=true" >> $GITHUB_OUTPUT
-          echo "no_cache=false" >> $GITHUB_OUTPUT
+          echo "no_cache=true" >> $GITHUB_OUTPUT
   check_ci_image:
     name: Check CI Image
     if: github.event_name == 'schedule'
@@ -66,7 +66,7 @@ jobs:
       - check_ci_image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub

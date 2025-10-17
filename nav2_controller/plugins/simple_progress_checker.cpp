@@ -17,9 +17,8 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
@@ -56,11 +55,8 @@ bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
-  geometry_msgs::msg::Pose2D current_pose2d;
-  current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
-
-  if ((!baseline_pose_set_) || (isRobotMovedEnough(current_pose2d))) {
-    resetBaselinePose(current_pose2d);
+  if ((!baseline_pose_set_) || (isRobotMovedEnough(current_pose.pose))) {
+    resetBaselinePose(current_pose.pose);
     return true;
   }
   return !((clock_->now() - baseline_time_) > time_allowance_);
@@ -71,24 +67,24 @@ void SimpleProgressChecker::reset()
   baseline_pose_set_ = false;
 }
 
-void SimpleProgressChecker::resetBaselinePose(const geometry_msgs::msg::Pose2D & pose)
+void SimpleProgressChecker::resetBaselinePose(const geometry_msgs::msg::Pose & pose)
 {
   baseline_pose_ = pose;
   baseline_time_ = clock_->now();
   baseline_pose_set_ = true;
 }
 
-bool SimpleProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
+bool SimpleProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_;
 }
 
 double SimpleProgressChecker::pose_distance(
-  const geometry_msgs::msg::Pose2D & pose1,
-  const geometry_msgs::msg::Pose2D & pose2)
+  const geometry_msgs::msg::Pose & pose1,
+  const geometry_msgs::msg::Pose & pose2)
 {
-  double dx = pose1.x - pose2.x;
-  double dy = pose1.y - pose2.y;
+  double dx = pose1.position.x - pose2.position.x;
+  double dy = pose1.position.y - pose2.position.y;
 
   return std::hypot(dx, dy);
 }

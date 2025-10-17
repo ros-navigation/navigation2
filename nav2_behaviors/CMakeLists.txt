@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_behaviors)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -31,7 +32,6 @@ target_include_directories(nav2_spin_behavior
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_spin_behavior PUBLIC
   ${geometry_msgs_TARGETS}
@@ -40,6 +40,7 @@ target_link_libraries(nav2_spin_behavior PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -57,7 +58,6 @@ target_include_directories(nav2_wait_behavior
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_wait_behavior PUBLIC
   ${geometry_msgs_TARGETS}
@@ -65,6 +65,7 @@ target_link_libraries(nav2_wait_behavior PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -78,7 +79,6 @@ target_include_directories(nav2_drive_on_heading_behavior
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_drive_on_heading_behavior PUBLIC
   ${geometry_msgs_TARGETS}
@@ -86,6 +86,7 @@ target_link_libraries(nav2_drive_on_heading_behavior PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -102,7 +103,6 @@ target_include_directories(nav2_back_up_behavior
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_back_up_behavior PUBLIC
   ${geometry_msgs_TARGETS}
@@ -110,6 +110,7 @@ target_link_libraries(nav2_back_up_behavior PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -126,7 +127,6 @@ target_include_directories(nav2_assisted_teleop_behavior
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_assisted_teleop_behavior PUBLIC
   ${geometry_msgs_TARGETS}
@@ -134,6 +134,7 @@ target_link_libraries(nav2_assisted_teleop_behavior PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${std_msgs_TARGETS}
@@ -154,13 +155,13 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2_ros::tf2_ros

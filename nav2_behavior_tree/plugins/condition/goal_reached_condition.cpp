@@ -44,10 +44,7 @@ void GoalReachedCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
 
-  nav2::declare_parameter_if_not_declared(
-    node_, "goal_reached_tol",
-    rclcpp::ParameterValue(0.25));
-  node_->get_parameter_or<double>("goal_reached_tol", goal_reached_tol_, 0.25);
+  goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
 
   node_->get_parameter("transform_tolerance", transform_tolerance_);

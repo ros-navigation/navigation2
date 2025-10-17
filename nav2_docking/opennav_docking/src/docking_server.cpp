@@ -42,6 +42,7 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
   declare_parameter("dock_backwards", rclcpp::PARAMETER_BOOL);
   declare_parameter("dock_prestaging_tolerance", 0.5);
   declare_parameter("odom_topic", "odom");
+  declare_parameter("odom_duration", 0.3);
   declare_parameter("rotation_angular_tolerance", 0.05);
 }
 
@@ -83,7 +84,9 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   // Create odom subscriber for backward blind docking
   std::string odom_topic;
   get_parameter("odom_topic", odom_topic);
-  odom_sub_ = std::make_unique<nav_2d_utils::OdomSubscriber>(node, odom_topic);
+  double odom_duration;
+  get_parameter("odom_duration", odom_duration);
+  odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
 
   // Create the action servers for dock / undock
   docking_action_server_ = node->create_action_server<DockRobot>(
@@ -118,7 +121,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
+  tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_, this, true);
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -318,6 +321,7 @@ void DockingServer::dockRobot()
           // We are docked, wait for charging to begin
           RCLCPP_INFO(
             get_logger(), "Made contact with dock, waiting for charge to start (if applicable).");
+          publishZeroVelocity();
           if (waitForCharge(dock)) {
             if (dock->plugin->isCharger()) {
               RCLCPP_INFO(get_logger(), "Robot is charging!");
@@ -328,6 +332,7 @@ void DockingServer::dockRobot()
             result->num_retries = num_retries_;
             stashDockData(goal->use_dock_id, dock, true);
             publishZeroVelocity();
+            dock->plugin->stopDetectionProcess();
             docking_action_server_->succeeded_current(result);
             return;
           }
@@ -336,12 +341,13 @@ void DockingServer::dockRobot()
         // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
+        dock->plugin->stopDetectionProcess();
         docking_action_server_->terminate_all(result);
         return;
       } catch (opennav_docking_core::DockingException & e) {
         if (++num_retries_ > max_retries_) {
           RCLCPP_ERROR(get_logger(), "Failed to dock, all retries have been used");
-          throw e;
+          throw;
         }
         RCLCPP_WARN(get_logger(), "Docking failed, will retry: %s", e.what());
       }
@@ -351,6 +357,7 @@ void DockingServer::dockRobot()
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
+        dock->plugin->stopDetectionProcess();
         docking_action_server_->terminate_all(result);
         return;
       }
@@ -398,6 +405,7 @@ void DockingServer::dockRobot()
   stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
   publishZeroVelocity();
+  dock->plugin->stopDetectionProcess();
   docking_action_server_->terminate_current(result);
 }
 
@@ -426,12 +434,18 @@ Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> go
 void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose)
 {
   publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
+
+  if (!dock->plugin->startDetectionProcess()) {
+    throw opennav_docking_core::FailedToDetectDock("Failed to start the detection process.");
+  }
+
   rclcpp::Rate loop_rate(controller_frequency_);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(initial_perception_timeout_);
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
-      throw opennav_docking_core::FailedToDetectDock("Failed initial dock detection");
+      throw opennav_docking_core::FailedToDetectDock(
+        "Failed initial dock detection: Timeout exceeded");
     }
 
     if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||
@@ -464,7 +478,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
     }
 
     auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    current_vel->twist.angular.z = odom_sub_->getTwist().theta;
+    current_vel->twist.angular.z = odom_sub_->getRawTwist().angular.z;
 
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header = robot_pose.header;

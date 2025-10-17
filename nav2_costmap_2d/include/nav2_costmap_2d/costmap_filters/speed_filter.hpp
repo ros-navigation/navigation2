@@ -74,7 +74,7 @@ public:
   void process(
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j,
-    const geometry_msgs::msg::Pose2D & pose);
+    const geometry_msgs::msg::Pose & pose);
 
   /**
    * @brief Reset the costmap filter / topic / info

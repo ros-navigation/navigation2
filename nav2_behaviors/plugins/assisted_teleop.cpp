@@ -16,6 +16,7 @@
 
 #include "nav2_behaviors/plugins/assisted_teleop.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav2_behaviors
 {
@@ -32,23 +33,10 @@ void AssistedTeleop::onConfigure()
   }
 
   // set up parameters
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "projection_time", rclcpp::ParameterValue(1.0));
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "simulation_time_step", rclcpp::ParameterValue(0.1));
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "cmd_vel_teleop", rclcpp::ParameterValue(std::string("cmd_vel_teleop")));
-
-  node->get_parameter("projection_time", projection_time_);
-  node->get_parameter("simulation_time_step", simulation_time_step_);
-
-  std::string cmd_vel_teleop;
-  node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
+  projection_time_ = node->declare_or_get_parameter("projection_time", 1.0);
+  simulation_time_step_ = node->declare_or_get_parameter("simulation_time_step", 0.1);
+  std::string cmd_vel_teleop = node->declare_or_get_parameter(
+    "cmd_vel_teleop", std::string("cmd_vel_teleop"));
 
   vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
@@ -110,10 +98,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
     return ResultStatus{Status::FAILED, AssistedTeleopActionResult::TF_ERROR, error_msg};
   }
 
-  geometry_msgs::msg::Pose2D projected_pose;
-  projected_pose.x = current_pose.pose.position.x;
-  projected_pose.y = current_pose.pose.position.y;
-  projected_pose.theta = tf2::getYaw(current_pose.pose.orientation);
+  geometry_msgs::msg::Pose projected_pose = current_pose.pose;
 
   auto scaled_twist = std::make_unique<geometry_msgs::msg::TwistStamped>(teleop_twist_);
   for (double time = simulation_time_step_; time < projection_time_;
@@ -151,22 +136,25 @@ ResultStatus AssistedTeleop::onCycleUpdate()
   return ResultStatus{Status::RUNNING, AssistedTeleopActionResult::NONE, ""};
 }
 
-geometry_msgs::msg::Pose2D AssistedTeleop::projectPose(
-  const geometry_msgs::msg::Pose2D & pose,
+geometry_msgs::msg::Pose AssistedTeleop::projectPose(
+  const geometry_msgs::msg::Pose & pose,
   const geometry_msgs::msg::Twist & twist,
   double projection_time)
 {
-  geometry_msgs::msg::Pose2D projected_pose = pose;
+  geometry_msgs::msg::Pose projected_pose = pose;
 
-  projected_pose.x += projection_time * (
-    twist.linear.x * cos(pose.theta) +
-    twist.linear.y * sin(pose.theta));
+  double theta = tf2::getYaw(pose.orientation);
 
-  projected_pose.y += projection_time * (
-    twist.linear.x * sin(pose.theta) -
-    twist.linear.y * cos(pose.theta));
+  projected_pose.position.x += projection_time * (
+    twist.linear.x * cos(theta) +
+    twist.linear.y * sin(theta));
 
-  projected_pose.theta += projection_time * twist.angular.z;
+  projected_pose.position.y += projection_time * (
+    twist.linear.x * sin(theta) -
+    twist.linear.y * cos(theta));
+
+  double new_theta = theta + projection_time * twist.angular.z;
+  projected_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(new_theta);
 
   return projected_pose;
 }

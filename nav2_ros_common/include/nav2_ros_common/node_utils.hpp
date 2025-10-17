@@ -25,7 +25,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 
 using std::chrono::high_resolution_clock;
 using std::to_string;
@@ -195,7 +194,6 @@ inline void declare_parameter_if_not_declared(
  *
  * \param[in] node A node in which given parameter to be declared
  * \param[in] parameter_name Name of the parameter
- * \param[in] param_type The type of parameter
  * \param[in] parameter_descriptor Parameter descriptor (optional)
  * \return The value of the parameter or an exception
  */
@@ -203,12 +201,12 @@ template<typename ParameterT, typename NodeT>
 inline ParameterT declare_or_get_parameter(
   NodeT node,
   const std::string & parameter_name,
-  const rclcpp::ParameterType & param_type,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   if (node->has_parameter(parameter_name)) {
     return node->get_parameter(parameter_name).template get_value<ParameterT>();
   }
+  auto param_type = rclcpp::ParameterValue{ParameterT{}}.get_type();
   auto parameter = node->declare_parameter(parameter_name, param_type, parameter_descriptor);
   if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET) {
     std::string description = "Parameter " + parameter_name + " not in overrides";
@@ -358,15 +356,15 @@ inline void setIntrospectionMode(
 {
   #if RCLCPP_VERSION_GTE(29, 0, 0)
   rcl_service_introspection_state_t introspection_state = RCL_SERVICE_INTROSPECTION_OFF;
-  if (!node_parameters_interface->has_parameter("service_introspection_mode")) {
+  if (!node_parameters_interface->has_parameter("introspection_mode")) {
     node_parameters_interface->declare_parameter(
-      "service_introspection_mode", rclcpp::ParameterValue("disabled"));
+      "introspection_mode", rclcpp::ParameterValue("disabled"));
   }
-  std::string service_introspection_mode =
-    node_parameters_interface->get_parameter("service_introspection_mode").as_string();
-  if (service_introspection_mode == "metadata") {
+  std::string introspection_mode =
+    node_parameters_interface->get_parameter("introspection_mode").as_string();
+  if (introspection_mode == "metadata") {
     introspection_state = RCL_SERVICE_INTROSPECTION_METADATA;
-  } else if (service_introspection_mode == "contents") {
+  } else if (introspection_mode == "contents") {
     introspection_state = RCL_SERVICE_INTROSPECTION_CONTENTS;
   }
 
@@ -376,6 +374,26 @@ inline void setIntrospectionMode(
   (void)node_parameters_interface;
   (void)clock;
   #endif
+}
+
+/**
+  * @brief Given a specified argument name, replaces it with the specified
+  * new value. If the argument is not in the existing list, a new argument
+  * is created with the specified option.
+  */
+inline void replaceOrAddArgument(
+  std::vector<std::string> & arguments, const std::string & option,
+  const std::string & arg_name, const std::string & new_argument)
+{
+  auto argument = std::find_if(arguments.begin(), arguments.end(),
+      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  if (argument != arguments.end()) {
+    *argument = new_argument;
+  } else {
+    arguments.push_back("--ros-args");
+    arguments.push_back(option);
+    arguments.push_back(new_argument);
+  }
 }
 
 }  // namespace nav2

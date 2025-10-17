@@ -3,12 +3,13 @@
   <name>dwb_critics</name>
   <version>1.4.0</version>
   <description>The dwb_critics package</description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>angles</depend>
   <depend>costmap_queue</depend>
   <depend>dwb_core</depend>
@@ -21,6 +22,8 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>nav2_ros_common</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_common</test_depend>

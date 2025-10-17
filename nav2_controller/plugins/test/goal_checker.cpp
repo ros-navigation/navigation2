@@ -38,7 +38,7 @@
 #include "gtest/gtest.h"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
-#include "nav_2d_utils/conversions.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "eigen3/Eigen/Geometry"
 
@@ -53,27 +53,27 @@ void checkMacro(
   bool expected_result)
 {
   gc.reset();
-  geometry_msgs::msg::Pose2D pose0, pose1;
-  pose0.x = x0;
-  pose0.y = y0;
-  pose0.theta = theta0;
-  pose1.x = x1;
-  pose1.y = y1;
-  pose1.theta = theta1;
-  nav_2d_msgs::msg::Twist2D v;
-  v.x = xv;
-  v.y = yv;
-  v.theta = thetav;
+
+  geometry_msgs::msg::Pose pose0, pose1;
+  pose0.position.x = x0;
+  pose0.position.y = y0;
+  pose0.position.z = 0.0;
+  pose0.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta0);
+
+  pose1.position.x = x1;
+  pose1.position.y = y1;
+  pose1.position.z = 0.0;
+  pose1.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta1);
+
+  geometry_msgs::msg::Twist v;
+  v.linear.x = xv;
+  v.linear.y = yv;
+  v.angular.z = thetav;
+
   if (expected_result) {
-    EXPECT_TRUE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
   } else {
-    EXPECT_FALSE(
-      gc.isGoalReached(
-        nav_2d_utils::pose2DToPose(pose0),
-        nav_2d_utils::pose2DToPose(pose1), nav_2d_utils::twist2Dto3D(v)));
+    EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
   }
 }
 

@@ -134,8 +134,10 @@ private:
 TEST_F(InfoServerTester, testCostmapFilterInfoPublish)
 {
   rclcpp::Time start_time = info_server_->now();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(info_server_->get_node_base_interface());
   while (!isReceived()) {
-    rclcpp::spin_some(info_server_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(100ms);
     // Waiting no more than 5 seconds
     ASSERT_TRUE((info_server_->now() - start_time) <= rclcpp::Duration(5000ms));
@@ -155,8 +157,10 @@ TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
   info_server_->activate();
 
   rclcpp::Time start_time = info_server_->now();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(info_server_->get_node_base_interface());
   while (!isReceived()) {
-    rclcpp::spin_some(info_server_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(100ms);
     // Waiting no more than 5 seconds
     ASSERT_TRUE((info_server_->now() - start_time) <= rclcpp::Duration(5000ms));

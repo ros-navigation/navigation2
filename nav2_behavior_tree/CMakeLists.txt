@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_behavior_tree CXX)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(action_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -29,8 +30,7 @@ add_library(${library_name} SHARED
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
   ${action_msgs_TARGETS}
   behaviortree_cpp::behaviortree_cpp
@@ -38,6 +38,7 @@ target_link_libraries(${library_name} PUBLIC
   ${nav_msgs_TARGETS}
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -119,11 +120,14 @@ list(APPEND plugin_libs nav2_goal_updated_condition_bt_node)
 add_library(nav2_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
 list(APPEND plugin_libs nav2_is_path_valid_condition_bt_node)
 
+add_library(nav2_is_pose_occupied_condition_bt_node SHARED plugins/condition/is_pose_occupied_condition.cpp)
+list(APPEND plugin_libs nav2_is_pose_occupied_condition_bt_node)
+
 add_library(nav2_time_expired_condition_bt_node SHARED plugins/condition/time_expired_condition.cpp)
 list(APPEND plugin_libs nav2_time_expired_condition_bt_node)
 
-add_library(nav2_path_expiring_timer_condition SHARED plugins/condition/path_expiring_timer_condition.cpp)
-list(APPEND plugin_libs nav2_path_expiring_timer_condition)
+add_library(nav2_path_expiring_timer_condition_bt_node SHARED plugins/condition/path_expiring_timer_condition.cpp)
+list(APPEND plugin_libs nav2_path_expiring_timer_condition_bt_node)
 
 add_library(nav2_distance_traveled_condition_bt_node SHARED plugins/condition/distance_traveled_condition.cpp)
 list(APPEND plugin_libs nav2_distance_traveled_condition_bt_node)
@@ -212,8 +216,17 @@ list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 add_library(nav2_pipeline_sequence_bt_node SHARED plugins/control/pipeline_sequence.cpp)
 list(APPEND plugin_libs nav2_pipeline_sequence_bt_node)
 
+add_library(nav2_nonblocking_sequence_bt_node SHARED plugins/control/nonblocking_sequence.cpp)
+list(APPEND plugin_libs nav2_nonblocking_sequence_bt_node)
+
 add_library(nav2_round_robin_node_bt_node SHARED plugins/control/round_robin_node.cpp)
 list(APPEND plugin_libs nav2_round_robin_node_bt_node)
+
+add_library(nav2_pause_resume_controller_bt_node SHARED plugins/control/pause_resume_controller.cpp)
+list(APPEND plugin_libs nav2_pause_resume_controller_bt_node)
+
+add_library(nav2_persistent_sequence_bt_node SHARED plugins/control/persistent_sequence.cpp)
+list(APPEND plugin_libs nav2_persistent_sequence_bt_node)
 
 add_library(nav2_single_trigger_bt_node SHARED plugins/decorator/single_trigger_node.cpp)
 list(APPEND plugin_libs nav2_single_trigger_bt_node)
@@ -245,12 +258,20 @@ list(APPEND plugin_libs nav2_compute_and_track_route_bt_node)
 add_library(nav2_compute_route_bt_node SHARED plugins/action/compute_route_action.cpp)
 list(APPEND plugin_libs nav2_compute_route_bt_node)
 
+add_library(nav2_toggle_collision_monitor_service_bt_node SHARED plugins/action/toggle_collision_monitor_service.cpp)
+list(APPEND plugin_libs nav2_toggle_collision_monitor_service_bt_node)
+
+add_library(opennav_follow_action_bt_node SHARED plugins/action/follow_object_action.cpp)
+list(APPEND plugin_libs opennav_follow_action_bt_node)
+
+add_library(opennav_follow_cancel_bt_node SHARED plugins/action/follow_object_cancel_node.cpp)
+list(APPEND plugin_libs opennav_follow_cancel_bt_node)
+
 foreach(bt_plugin ${plugin_libs})
   target_include_directories(${bt_plugin}
     PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
   target_link_libraries(${bt_plugin} PUBLIC
     behaviortree_cpp::behaviortree_cpp
     ${geometry_msgs_TARGETS}
@@ -285,9 +306,10 @@ add_executable(generate_nav2_tree_nodes_xml src/generate_nav2_tree_nodes_xml.cpp
 target_link_libraries(generate_nav2_tree_nodes_xml PRIVATE
   behaviortree_cpp::behaviortree_cpp
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
 )
 # allow generate_nav2_tree_nodes_xml to find plugins_list.hpp
-target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR} "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+target_include_directories(generate_nav2_tree_nodes_xml PRIVATE ${GENERATED_DIR})
 install(TARGETS generate_nav2_tree_nodes_xml DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/

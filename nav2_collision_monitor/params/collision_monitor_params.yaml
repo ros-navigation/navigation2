@@ -1,5 +1,6 @@
 collision_monitor:
   ros__parameters:
+    enabled: True
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
@@ -96,6 +97,7 @@ collision_monitor:
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
+      transport_type: "raw" # Options: raw, zlib, draco, zstd
       min_height: 0.1
       max_height: 0.5
       enabled: True

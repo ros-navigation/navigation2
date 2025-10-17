@@ -135,6 +135,12 @@
       <output_port name="execution_time">Duration to compute route</output_port>
       <output_port name="error_code_id">"Compute route to pose error code"</output_port>
       <output_port name="error_msg">"Compute route to pose error message"</output_port>
+      <output_port name="last_node_id">"ID of the previous node"</output_port>
+      <output_port name="next_node_id">"ID of the next node"</output_port>
+      <output_port name="current_edge_id">"ID of the current edge"</output_port>
+      <output_port name="route">"List of RouteNodes to go from start to end"</output_port>
+      <output_port name="path">"Path created by ComputeAndTrackRoute node"</output_port>
+      <output_port name="rerouted">"Whether the plan has rerouted"</output_port>
     </Action>
 
     <Action ID="RemovePassedGoals">
@@ -305,6 +311,24 @@
       <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
+    <Action ID="ToggleCollisionMonitor">
+      <input_port name="enable">Whether to enable collision monitoring</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
+    <Action ID="GetCurrentPose">
+      <input_port name="global_frame">Global reference frame</input_port>
+      <input_port name="robot_base_frame">robot base frame</input_port>
+      <output_port name="current_pose">Current pose output</output_port>
+    </Action>
+
+    <Action ID="ConcatenatePaths">
+      <input_port name="input_path1">Input Path 1 to cancatenate</input_port>
+      <input_port name="input_path2">Input Path 2 to cancatenate</input_port>
+      <output_port name="output_path">Paths concatenated</output_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
       <input_port name="goal">Destination</input_port>
@@ -370,6 +394,15 @@
       <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
     </Condition>
 
+    <Condition ID="IsPoseOccupied">
+      <input_port name="pose">Pose to check whether it is occupied</input_port>
+      <input_port name="service_name">Service name to call GetCosts</input_port>
+      <input_port name="cost_threshold">The cost threshold above which a pose is considered occupied</input_port>
+      <input_port name="use_footprint">Whether to use the footprint cost or the point cost</input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+      <input_port name="server_timeout"> Server timeout </input_port>
+    </Condition>
+
     <Condition ID="WouldAControllerRecoveryHelp">
       <input_port name="error_code">Error code</input_port>
     </Condition>
@@ -382,11 +415,21 @@
       <input_port name="error_code">Error code</input_port>
     </Condition>
 
+    <Condition ID="WouldARouteRecoveryHelp">
+      <input_port name="error_code">Error code</input_port>
+    </Condition>
+
     <Condition ID="AreErrorCodesPresent">
       <input_port name="error_code">Error code</input_port>
       <input_port name="error_codes_to_check">Error codes to check, user defined</input_port>
     </Condition>
 
+    <Condition ID="ArePosesNear">
+      <input_port name="ref_pose">Destination</input_port>
+      <input_port name="target_pose">Destination</input_port>
+      <input_port name="global_frame">Global frame</input_port>
+      <input_port name="tolerance">Tolerance</input_port>
+    </Condition>
 
     <!-- ############################### CONTROL NODES ################################ -->
     <Control ID="PipelineSequence"/>
@@ -396,6 +439,17 @@
     </Control>
 
     <Control ID="RoundRobin"/>
+
+    <Control ID="NonblockingSequence"/>
+
+    <Control ID="PauseResumeController">
+      <input_port name="pause_service_name">Service to call to pause</input_port>
+      <input_port name="resume_service_name">Service to call to resume</input_port>
+    </Control>
+
+    <Control ID="PersistentSequence">
+      <bidirectional_port name="current_child_idx">Index of the child to execute</bidirectional_port>
+    </Control>
 
     <!-- ############################### DECORATOR NODES ############################## -->
     <Decorator ID="RateController">

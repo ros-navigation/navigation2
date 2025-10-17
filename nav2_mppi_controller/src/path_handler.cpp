@@ -17,6 +17,7 @@
 #include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace mppi
 {
@@ -85,7 +86,8 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    transformPose(costmap_->getGlobalFrameID(), *global_plan_pose, costmap_plan_pose);
+    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_buffer_,
+        costmap_->getGlobalFrameID(), transform_tolerance_);
 
     // Check if pose is inside the costmap
     if (!costmap_->getCostmap()->worldToMap(
@@ -109,7 +111,9 @@ geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
   }
 
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!transformPose(global_plan_up_to_inversion_.header.frame_id, pose, robot_pose)) {
+  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_buffer_,
+      global_plan_up_to_inversion_.header.frame_id, transform_tolerance_))
+  {
     throw nav2_core::ControllerTFError(
             "Unable to transform robot pose into global plan's frame");
   }
@@ -140,27 +144,6 @@ nav_msgs::msg::Path PathHandler::transformPath(
   }
 
   return transformed_plan;
-}
-
-bool PathHandler::transformPose(
-  const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-  geometry_msgs::msg::PoseStamped & out_pose) const
-{
-  if (in_pose.header.frame_id == frame) {
-    out_pose = in_pose;
-    return true;
-  }
-
-  try {
-    tf_buffer_->transform(
-      in_pose, out_pose, frame,
-      tf2::durationFromSec(transform_tolerance_));
-    out_pose.header.frame_id = frame;
-    return true;
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
-  }
-  return false;
 }
 
 double PathHandler::getMaxCostmapDist()
@@ -196,7 +179,9 @@ geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
   geometry_msgs::msg::PoseStamped transformed_goal;
-  if (!transformPose(costmap_->getGlobalFrameID(), goal, transformed_goal)) {
+  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *tf_buffer_,
+      costmap_->getGlobalFrameID(), transform_tolerance_))
+  {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
   }
   return transformed_goal;

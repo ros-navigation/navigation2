@@ -30,39 +30,25 @@ NavigateThroughPosesNavigator::configure(
   start_time_ = rclcpp::Time(0);
   auto node = parent_node.lock();
 
-  if (!node->has_parameter("goals_blackboard_id")) {
-    node->declare_parameter("goals_blackboard_id", std::string("goals"));
-  }
-
-  goals_blackboard_id_ = node->get_parameter("goals_blackboard_id").as_string();
-
-  if (!node->has_parameter("path_blackboard_id")) {
-    node->declare_parameter("path_blackboard_id", std::string("path"));
-  }
-
-  path_blackboard_id_ = node->get_parameter("path_blackboard_id").as_string();
-
-  if (!node->has_parameter("waypoint_statuses_blackboard_id")) {
-    node->declare_parameter("waypoint_statuses_blackboard_id", std::string("waypoint_statuses"));
-  }
-
+  goals_blackboard_id_ =
+    node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
+  path_blackboard_id_ =
+    node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
   waypoint_statuses_blackboard_id_ =
-    node->get_parameter("waypoint_statuses_blackboard_id").as_string();
+    node->declare_or_get_parameter(getName() + ".waypoint_statuses_blackboard_id",
+      std::string("waypoint_statuses"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
 
-  if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
-    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
-  }
-
-  if (!node->has_parameter(getName() + ".groot_server_port")) {
-    node->declare_parameter(getName() + ".groot_server_port", 1669);
-  }
+  bool enable_groot_monitoring =
+    node->declare_or_get_parameter(getName() + ".enable_groot_monitoring", false);
+  int groot_server_port =
+    node->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
 
   bt_action_server_->setGrootMonitoring(
-      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
-      node->get_parameter(getName() + ".groot_server_port").as_int());
+      enable_groot_monitoring,
+      groot_server_port);
 
   return true;
 }
@@ -71,19 +57,14 @@ std::string
 NavigateThroughPosesNavigator::getDefaultBTFilepath(
   nav2::LifecycleNode::WeakPtr parent_node)
 {
-  std::string default_bt_xml_filename;
   auto node = parent_node.lock();
+  std::string pkg_share_dir =
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
 
-  if (!node->has_parameter("default_nav_through_poses_bt_xml")) {
-    std::string pkg_share_dir =
-      ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
-    node->declare_parameter<std::string>(
-      "default_nav_through_poses_bt_xml",
-      pkg_share_dir +
-      "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml");
-  }
-
-  node->get_parameter("default_nav_through_poses_bt_xml", default_bt_xml_filename);
+  auto default_bt_xml_filename = node->declare_or_get_parameter(
+    "default_nav_through_poses_bt_xml",
+    pkg_share_dir +
+    "/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml");
 
   return default_bt_xml_filename;
 }
@@ -91,11 +72,9 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
 bool
 NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
-  auto bt_xml_filename = goal->behavior_tree;
-
-  if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
+  if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
     bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      "Error loading XML file: " + bt_xml_filename + ". Navigation canceled.");
+      "Error loading BT: " + goal->behavior_tree + ". Navigation canceled.");
     return false;
   }
 
@@ -226,9 +205,9 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 {
   RCLCPP_INFO(logger_, "Received goal preemption request");
 
-  if (goal->behavior_tree == bt_action_server_->getCurrentBTFilename() ||
+  if (goal->behavior_tree == bt_action_server_->getCurrentBTFilenameOrID() ||
     (goal->behavior_tree.empty() &&
-    bt_action_server_->getCurrentBTFilename() == bt_action_server_->getDefaultBTFilename()))
+    bt_action_server_->getCurrentBTFilenameOrID() == bt_action_server_->getDefaultBTFilenameOrID()))
   {
     // if pending goal requests the same BT as the current goal, accept the pending goal
     // if pending goal has an empty behavior_tree field, it requests the default BT file

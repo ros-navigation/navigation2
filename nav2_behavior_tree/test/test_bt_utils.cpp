@@ -58,7 +58,7 @@ TEST(PointPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Point>>("PointPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -68,7 +68,7 @@ TEST(PointPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(PointPortTest, test_correct_syntax)
@@ -105,7 +105,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::Quaternion>>("QuaternionPort");
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -115,7 +115,7 @@ TEST(QuaternionPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(QuaternionPortTest, test_correct_syntax)
@@ -152,7 +152,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<geometry_msgs::msg::PoseStamped>>("PoseStampedPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -162,7 +162,7 @@ TEST(PoseStampedPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(PoseStampedPortTest, test_correct_syntax)
@@ -206,7 +206,7 @@ TEST(PoseStampedVectorPortTest, test_wrong_syntax)
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<std::vector<geometry_msgs::msg::PoseStamped>>>(
     "PoseStampedVectorPortTest");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -216,7 +216,7 @@ TEST(PoseStampedVectorPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(PoseStampedVectorPortTest, test_correct_syntax)
@@ -270,7 +270,7 @@ TEST(GoalsArrayPortTest, test_wrong_syntax)
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<nav_msgs::msg::Goals>>(
     "GoalsArrayPortTest");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -280,7 +280,7 @@ TEST(GoalsArrayPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(GoalsArrayPortTest, test_correct_syntax)
@@ -334,7 +334,7 @@ TEST(PathPortTest, test_wrong_syntax)
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<nav_msgs::msg::Path>>(
     "PathPortTest");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -344,7 +344,7 @@ TEST(PathPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(PathPortTest, test_correct_syntax)
@@ -399,7 +399,7 @@ TEST(WaypointStatusPortTest, test_wrong_syntax)
 
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<nav2_msgs::msg::WaypointStatus>>("WaypointStatusPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -409,7 +409,7 @@ TEST(WaypointStatusPortTest, test_wrong_syntax)
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(WaypointStatusPortTest, test_correct_syntax)
@@ -455,7 +455,7 @@ TEST(WaypointStatusVectorPortTest, test_wrong_syntax) {
   BT::BehaviorTreeFactory factory;
   factory.registerNodeType<TestNode<std::vector<nav2_msgs::msg::WaypointStatus>>>(
     "WaypointStatusVectorPort");
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 
   xml_txt =
     R"(
@@ -465,7 +465,7 @@ TEST(WaypointStatusVectorPortTest, test_wrong_syntax) {
         </BehaviorTree>
       </root>)";
 
-  EXPECT_THROW(factory.createTreeFromText(xml_txt), std::exception);
+  EXPECT_THROW({auto unused = factory.createTreeFromText(xml_txt);}, std::exception);
 }
 
 TEST(WaypointStatusVectorPortTest, test_correct_syntax)

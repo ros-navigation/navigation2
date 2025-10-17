@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav_2d_utils)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_2d_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -24,7 +25,6 @@ target_include_directories(conversions
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(conversions PUBLIC
   ${geometry_msgs_TARGETS}
@@ -45,37 +45,18 @@ target_include_directories(path_ops
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(path_ops PUBLIC
   ${nav_2d_msgs_TARGETS}
+  rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
+  nav2_util::nav2_util_core
 )
 target_link_libraries(path_ops PRIVATE
   ${geometry_msgs_TARGETS}
 )
 
-add_library(tf_help SHARED
-  src/tf_help.cpp
-)
-target_include_directories(tf_help
-  PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
-)
-target_link_libraries(tf_help PUBLIC
-  conversions
-  ${geometry_msgs_TARGETS}
-  ${nav_2d_msgs_TARGETS}
-  rclcpp::rclcpp
-  tf2::tf2
-  tf2_geometry_msgs::tf2_geometry_msgs
-  tf2_ros::tf2_ros
-  rclcpp_lifecycle::rclcpp_lifecycle
-  rcl_lifecycle::rcl_lifecycle
-)
-
-install(TARGETS conversions path_ops tf_help
+install(TARGETS conversions path_ops
   EXPORT ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -99,7 +80,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(conversions path_ops tf_help)
+ament_export_libraries(conversions path_ops)
 ament_export_dependencies(
   geometry_msgs
   nav_2d_msgs

@@ -87,6 +87,23 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
+   * @brief Extract BehaviorTree ID from BT file path or BT ID
+   * @param file_or_id
+   * @return std::string
+   */
+  std::string extractBehaviorTreeID(const std::string & file_or_id);
+
+    /**
+   * @brief Function to create a BT from a BehaviorTree ID
+   * @param tree_id BehaviorTree ID
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+    */
+  BT::Tree createTree(
+    const std::string & tree_id,
+    BT::Blackboard::Ptr blackboard);
+
+  /**
    * @brief Add Groot2 monitor to publish BT status changes
    * @param tree BT to monitor
    * @param server_port Groot2 Server port, first of the pair (server_port, publisher_port)
@@ -97,6 +114,12 @@ public:
    * @brief Reset groot monitor
    */
   void resetGrootMonitor();
+
+  /**
+   * @brief Function to register a BT from an XML file
+   * @param file_path Path to BT XML file
+   */
+  void registerTreeFromFile(const std::string & file_path);
 
   /**
    * @brief Function to explicitly reset all BT nodes to initial state

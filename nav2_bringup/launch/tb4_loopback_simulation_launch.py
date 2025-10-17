@@ -123,11 +123,11 @@ def generate_launch_description() -> LaunchDescription:
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, 'rviz_launch.py')),
         condition=IfCondition(use_rviz),
-        launch_arguments={
-            'namespace': namespace,
-            'use_sim_time': 'True',
-            'rviz_config': rviz_config_file,
-        }.items(),
+        launch_arguments=[
+            ('namespace', namespace),
+            ('use_sim_time', 'True'),
+            ('rviz_config', rviz_config_file),
+        ],
     )
 
     bringup_cmd = IncludeLaunchDescription(
@@ -141,6 +141,8 @@ def generate_launch_description() -> LaunchDescription:
             'autostart': autostart,
             'use_composition': use_composition,
             'use_respawn': use_respawn,
+            'use_keepout_zones': 'False',  # Keepout zones not used in loopback simulation
+            'use_speed_zones': 'False',  # Speed zones not used in loopback simulation
             'use_localization': 'False',  # Don't use SLAM, AMCL
         }.items(),
     )
@@ -148,18 +150,19 @@ def generate_launch_description() -> LaunchDescription:
     loopback_sim_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(loopback_sim_dir, 'loopback_simulation.launch.py')),
-        launch_arguments={
-            'params_file': params_file,
-            'scan_frame_id': 'rplidar_link',
-        }.items(),
+        launch_arguments=[
+            ('params_file', params_file),
+            ('scan_frame_id', 'rplidar_link'),
+        ],
     )
 
     static_publisher_cmd = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         arguments=[
-            '0.0', '0.0', '0.0', '0', '0', '0',
-            'base_footprint', 'base_link']
+            '--x', '0.0', '--y', '0.0', '--z', '0.0',
+            '--roll', '0', '--pitch', '0', '--yaw', '0',
+            '--frame-id', 'base_footprint', '--child-frame-id', 'base_link']
     )
 
     configured_params = ParameterFile(

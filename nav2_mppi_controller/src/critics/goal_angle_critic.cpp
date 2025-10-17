@@ -20,8 +20,6 @@ namespace mppi::critics
 void GoalAngleCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
-
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.0f);
@@ -36,17 +34,11 @@ void GoalAngleCritic::initialize()
 
 void GoalAngleCritic::score(CriticData & data)
 {
-  if (!enabled_) {
+  if (!enabled_ || data.state.local_path_length > threshold_to_consider_) {
     return;
   }
 
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
-
-  if (!utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, goal))
-  {
-    return;
-  }
+  geometry_msgs::msg::Pose goal = utils::getLastPathPose(data.path);
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 

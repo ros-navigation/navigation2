@@ -56,7 +56,8 @@ public:
     OnGoalReceivedCallback on_goal_received_callback,
     OnLoopCallback on_loop_callback,
     OnPreemptCallback on_preempt_callback,
-    OnCompletionCallback on_completion_callback);
+    OnCompletionCallback on_completion_callback,
+    const std::vector<std::string> & search_directories = std::vector<std::string>{});
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -98,11 +99,18 @@ public:
 
   /**
    * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT, uses default filename if empty
-   * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
+   * @param bt_xml_filename_or_id The file containing the new BT, uses default filename if empty or BT ID
+   * @return bool true if the resulting BT correspond to the one in bt_xml_filename_or_id. false
    * if something went wrong, and previous BT is maintained
    */
-  bool loadBehaviorTree(const std::string & bt_xml_filename = "");
+  bool loadBehaviorTree(
+    const std::string & bt_xml_filename_or_id = "");
+
+  /** @brief Extract BehaviorTree ID from XML file
+   * @param filename The file containing the BT
+   * @return std::string BehaviorTree ID if found, empty string otherwise
+   */
+  std::string extractBehaviorTreeID(const std::string & file_or_id);
 
   /**
    * @brief Getter function for BT Blackboard
@@ -117,18 +125,18 @@ public:
    * @brief Getter function for current BT XML filename
    * @return string Containing current BT XML filename
    */
-  std::string getCurrentBTFilename() const
+  std::string getCurrentBTFilenameOrID() const
   {
-    return current_bt_xml_filename_;
+    return current_bt_file_or_id_;
   }
 
   /**
-   * @brief Getter function for default BT XML filename
-   * @return string Containing default BT XML filename
+   * @brief Getter function for default BT XML filename or ID
+   * @return string Containing default BT XML filename or ID
    */
-  std::string getDefaultBTFilename() const
+  std::string getDefaultBTFilenameOrID() const
   {
-    return default_bt_xml_filename_;
+    return default_bt_xml_filename_or_id_;
   }
 
   /**
@@ -243,8 +251,9 @@ protected:
   BT::Blackboard::Ptr blackboard_;
 
   // The XML file that contains the Behavior Tree to create
-  std::string current_bt_xml_filename_;
-  std::string default_bt_xml_filename_;
+  std::string current_bt_file_or_id_;
+  std::string default_bt_xml_filename_or_id_;
+  std::vector<std::string> search_directories_;
 
   // The wrapper class for the BT functionality
   std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
@@ -280,7 +289,7 @@ protected:
   std::chrono::milliseconds wait_for_service_timeout_;
 
   // should the BT be reloaded even if the same xml filename is requested?
-  bool always_reload_bt_xml_ = false;
+  bool always_reload_bt_ = false;
 
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;

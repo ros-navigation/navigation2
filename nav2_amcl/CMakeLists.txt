@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_amcl)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -64,12 +65,12 @@ add_library(motions_lib SHARED
 target_include_directories(motions_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(motions_lib PUBLIC
   pf_lib
   pluginlib::pluginlib
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(sensors_lib SHARED
@@ -81,11 +82,11 @@ add_library(sensors_lib SHARED
 target_include_directories(sensors_lib
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(sensors_lib PUBLIC
   pf_lib
   map_lib
+  nav2_ros_common::nav2_ros_common
 )
 
 set(executable_name amcl)
@@ -101,12 +102,12 @@ endif()
 target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
   message_filters::message_filters
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${sensor_msgs_TARGETS}
   ${std_srvs_TARGETS}
   pluginlib::pluginlib
@@ -129,10 +130,10 @@ add_executable(${executable_name}
 target_include_directories(${executable_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
+  nav2_ros_common::nav2_ros_common
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_amcl::AmclNode")

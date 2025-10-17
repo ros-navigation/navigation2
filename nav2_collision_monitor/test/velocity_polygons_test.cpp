@@ -27,9 +27,9 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -90,20 +90,6 @@ public:
   void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
   {
     polygon_received_ = msg;
-  }
-
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
-    const std::chrono::nanoseconds & timeout)
-  {
-    rclcpp::Time start_time = this->now();
-    while (rclcpp::ok() && this->now() - start_time <= rclcpp::Duration(timeout)) {
-      if (polygon_received_) {
-        return polygon_received_;
-      }
-      rclcpp::spin_some(this->get_node_base_interface());
-      std::this_thread::sleep_for(10ms);
-    }
-    return nullptr;
   }
 
 private:
@@ -167,6 +153,7 @@ protected:
     std::vector<nav2_collision_monitor::Point> & poly);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   std::shared_ptr<VelocityPolygonWrapper> velocity_polygon_;
 
@@ -177,6 +164,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(test_node_->get_node_base_interface());
   test_node_->configure();
   test_node_->activate();
 
@@ -199,37 +188,25 @@ void Tester::setCommonParameters(const std::string & polygon_name, const std::st
 {
   test_node_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(action_type));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".action_type", action_type));
 
   test_node_->declare_parameter(
     polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   test_node_->declare_parameter(
     polygon_name + ".visualize", rclcpp::ParameterValue(true));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".visualize", true));
 
   test_node_->declare_parameter(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(POLYGON_PUB_TOPIC));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".polygon_pub_topic", POLYGON_PUB_TOPIC));
 
   std::vector<std::string> default_observation_sources = {"source"};
   test_node_->declare_parameter(
     "observation_sources", rclcpp::ParameterValue(default_observation_sources));
-  test_node_->set_parameter(
-    rclcpp::Parameter("observation_sources", default_observation_sources));
 }
 
 void Tester::setVelocityPolygonParameters(const bool is_holonomic)
 {
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".holonomic", rclcpp::ParameterValue(is_holonomic));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".holonomic", is_holonomic));
 
   std::vector<std::string> velocity_polygons =
   {SUB_POLYGON_FORWARD_NAME, SUB_POLYGON_BACKWARD_NAME};
@@ -279,8 +256,6 @@ void Tester::setVelocityPolygonParameters(const bool is_holonomic)
 
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".velocity_polygons", rclcpp::ParameterValue(velocity_polygons));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".velocity_polygons", velocity_polygons));
 }
 
 void Tester::addPolygonVelocitySubPolygon(
@@ -293,48 +268,22 @@ void Tester::addPolygonVelocitySubPolygon(
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + "." + sub_polygon_name + ".points",
     rclcpp::ParameterValue(polygon_points));
-  test_node_->set_parameter(
-    rclcpp::Parameter(
-      std::string(
-        POLYGON_NAME) +
-      "." + sub_polygon_name + ".points",
-      polygon_points));
 
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + "." + sub_polygon_name + ".linear_min",
     rclcpp::ParameterValue(linear_min));
-  test_node_->set_parameter(
-    rclcpp::Parameter(
-      std::string(
-        POLYGON_NAME) +
-      "." + sub_polygon_name + ".linear_min",
-      linear_min));
 
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + "." + sub_polygon_name + ".linear_max",
     rclcpp::ParameterValue(linear_max));
-  test_node_->set_parameter(
-    rclcpp::Parameter(
-      std::string(
-        POLYGON_NAME) +
-      "." + sub_polygon_name + ".linear_max",
-      linear_max));
 
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + "." + sub_polygon_name + ".theta_min",
     rclcpp::ParameterValue(theta_min));
-  test_node_->set_parameter(
-    rclcpp::Parameter(
-      std::string(POLYGON_NAME) + "." + sub_polygon_name + ".theta_min",
-      theta_min));
 
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + "." + sub_polygon_name + ".theta_max",
     rclcpp::ParameterValue(theta_max));
-  test_node_->set_parameter(
-    rclcpp::Parameter(
-      std::string(POLYGON_NAME) + "." + sub_polygon_name + ".theta_max",
-      theta_max));
 
   if (is_holonomic) {
     test_node_->declare_parameter(
@@ -342,21 +291,12 @@ void Tester::addPolygonVelocitySubPolygon(
         POLYGON_NAME) +
       "." + sub_polygon_name + ".direction_end_angle",
       rclcpp::ParameterValue(direction_end_angle));
-    test_node_->set_parameter(
-      rclcpp::Parameter(
-        std::string(POLYGON_NAME) + "." + sub_polygon_name + ".direction_end_angle",
-        direction_end_angle));
 
     test_node_->declare_parameter(
       std::string(
         POLYGON_NAME) +
       "." + sub_polygon_name + ".direction_start_angle",
       rclcpp::ParameterValue(direction_start_angle));
-    test_node_->set_parameter(
-      rclcpp::Parameter(
-        std::string(POLYGON_NAME) + "." + sub_polygon_name +
-        ".direction_start_angle",
-        direction_start_angle));
   }
 }
 
@@ -382,7 +322,7 @@ bool Tester::waitPolygon(
     if (poly.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;

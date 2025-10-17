@@ -31,6 +31,8 @@ public:
   static void SetUpTestCase()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("smoother_selector_test_fixture");
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_->get_node_base_interface());
 
     // Configure and activate the lifecycle node
     node_->configure();
@@ -44,6 +46,9 @@ public:
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
     config_->blackboard->set("node", node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::SmootherSelector>(name, config);
@@ -64,6 +69,7 @@ public:
     config_ = nullptr;
     node_.reset();
     factory_.reset();
+    executor_.reset();
   }
 
   void TearDown() override
@@ -73,12 +79,15 @@ public:
 
 protected:
   static nav2::LifecycleNode::SharedPtr node_;
+  static rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
 nav2::LifecycleNode::SharedPtr SmootherSelectorTestFixture::node_ = nullptr;
+rclcpp::executors::SingleThreadedExecutor::SharedPtr SmootherSelectorTestFixture::executor_ =
+  nullptr;
 
 BT::NodeConfiguration * SmootherSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> SmootherSelectorTestFixture::factory_ = nullptr;
@@ -124,7 +133,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
     tree_->rootNode()->executeTick();
     smoother_selector_pub->publish(selected_smoother_cmd);
 
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor_->spin_some();
   }
 
   // check smoother updated
@@ -172,7 +181,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
     tree_->rootNode()->executeTick();
     smoother_selector_pub->publish(selected_smoother_cmd);
 
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor_->spin_some();
   }
 
   // check smoother updated

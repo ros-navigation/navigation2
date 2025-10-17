@@ -46,6 +46,15 @@ public:
   }
 };
 
+// Test shim to expose the TF2 buffer for injection
+class DockingServerTFShim : public DockingServerShim
+{
+public:
+  DockingServerTFShim()
+  : DockingServerShim() {}
+  std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf2_buffer_;}
+};
+
 TEST(DockingServerTests, ObjectLifecycle)
 {
   auto node = std::make_shared<opennav_docking::DockingServer>();
@@ -309,6 +318,161 @@ TEST(DockingServerTests, testDockBackward)
 
   node->on_shutdown(rclcpp_lifecycle::State());
   node.reset();
+}
+
+TEST(DockingServerTests, ExceptionHandlingDuringDocking)
+{
+  auto node = std::make_shared<DockingServerShim>();
+  auto node_thread = nav2::NodeThread(node);
+  auto client_node = std::make_shared<rclcpp::Node>("test_client");
+
+  // Configure docking server
+  node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
+  node->declare_parameter("test_dock.type", "test_plugin");
+  node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("exception_to_throw", "");
+  node->declare_parameter("dock_action_called", false);
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  // Test multiple exception scenarios to ensure coverage
+  std::vector<std::string> exceptions = {"FailedToDetectDock", "FailedToControl"};
+
+  for (const auto & exception_type : exceptions) {
+    node->set_parameter(rclcpp::Parameter("exception_to_throw", exception_type));
+    node->set_parameter(rclcpp::Parameter("dock_action_called", false));
+
+    auto client = rclcpp_action::create_client<DockRobot>(client_node, "dock_robot");
+    ASSERT_TRUE(client->wait_for_action_server(2s));
+
+    auto goal = DockRobot::Goal();
+    goal.dock_id = "test_dock";
+    goal.navigate_to_staging_pose = false;
+
+    auto future_goal = client->async_send_goal(goal);
+    rclcpp::spin_until_future_complete(client_node, future_goal, 2s);
+
+    auto goal_handle = future_goal.get();
+    ASSERT_TRUE(goal_handle);
+
+    auto future_result = client->async_get_result(goal_handle);
+    auto status = rclcpp::spin_until_future_complete(client_node, future_result, 5s);
+    ASSERT_EQ(status, rclcpp::FutureReturnCode::SUCCESS);
+
+    auto result = future_result.get();
+    EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
+  }
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+}
+
+TEST(DockingServerTests, StopDetectionOnSuccess)
+{
+  auto node = std::make_shared<DockingServerShim>();
+  auto node_thread = nav2::NodeThread(node);
+  auto client_node = std::make_shared<rclcpp::Node>("test_client_success");
+
+  // Configure the server with the test plugin
+  node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
+  node->declare_parameter("test_dock.type", "test_plugin");
+  node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
+
+  // Configure TestFailureDock to report success
+  node->declare_parameter("exception_to_throw", "");
+  node->declare_parameter("dock_action_called", true);
+  // Note: isCharging() in TestFailureDock returns false, so it will wait for charge
+  // which will succeed because the plugin is a charger. We'll set the timeout low.
+  node->set_parameter(rclcpp::Parameter("wait_charge_timeout", 0.1));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto client = rclcpp_action::create_client<DockRobot>(client_node, "dock_robot");
+  ASSERT_TRUE(client->wait_for_action_server(2s));
+
+  DockRobot::Goal goal;
+  goal.dock_id = "test_dock";
+  goal.navigate_to_staging_pose = false;
+
+  auto future_goal = client->async_send_goal(goal);
+  rclcpp::spin_until_future_complete(client_node, future_goal, 2s);
+  auto goal_handle = future_goal.get();
+  ASSERT_TRUE(goal_handle);
+
+  auto future_result = client->async_get_result(goal_handle);
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(client_node, future_result, 5s),
+    rclcpp::FutureReturnCode::SUCCESS);
+
+  auto result = future_result.get();
+  EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  EXPECT_TRUE(result.result->success);
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
+}
+
+TEST(DockingServerTests, HandlesPluginStartFailure)
+{
+  auto node = std::make_shared<DockingServerTFShim>();
+  auto node_thread = nav2::NodeThread(node);
+  auto client_node = std::make_shared<rclcpp::Node>("test_client_start_failure");
+
+  // Configure the server with the TestFailureDock plugin.
+  node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
+  node->declare_parameter("test_dock.type", "test_plugin");
+  node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
+  node->declare_parameter("test_dock.frame", "odom");
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("exception_to_throw", "");
+
+  // Configure the TestFailureDock to fail its startup process.
+  node->declare_parameter("fail_start_detection", true);
+  node->declare_parameter("dock_action_called", false);
+
+  node->on_configure(rclcpp_lifecycle::State());
+
+  // Mock the necessary TF transform to prevent a premature failure.
+  geometry_msgs::msg::TransformStamped identity_transform;
+  identity_transform.header.frame_id = "odom";
+  identity_transform.child_frame_id = "odom";
+  identity_transform.transform.rotation.w = 1.0;
+  node->getTfBuffer()->setTransform(identity_transform, "test_authority", true);
+
+  node->on_activate(rclcpp_lifecycle::State());
+
+  auto client = rclcpp_action::create_client<DockRobot>(client_node, "dock_robot");
+  ASSERT_TRUE(client->wait_for_action_server(2s));
+
+  DockRobot::Goal goal;
+  goal.dock_id = "test_dock";
+  goal.navigate_to_staging_pose = false;
+
+  auto future_goal = client->async_send_goal(goal);
+  rclcpp::spin_until_future_complete(client_node, future_goal, 2s);
+  auto goal_handle = future_goal.get();
+  ASSERT_TRUE(goal_handle);
+
+  auto future_result = client->async_get_result(goal_handle);
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(client_node, future_result, 5s),
+    rclcpp::FutureReturnCode::SUCCESS);
+
+  auto result = future_result.get();
+  EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
+  EXPECT_EQ(result.result->error_code, DockRobot::Result::FAILED_TO_DETECT_DOCK);
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
 }
 
 }  // namespace opennav_docking

@@ -23,6 +23,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -30,7 +31,7 @@ namespace nav2_regulated_pure_pursuit_controller
 using nav2_util::geometry_utils::euclidean_distance;
 
 PathHandler::PathHandler(
-  tf2::Duration transform_tolerance,
+  double transform_tolerance,
   std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 : transform_tolerance_(transform_tolerance), tf_(tf), costmap_ros_(costmap_ros)
@@ -60,7 +61,9 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!transformPose(global_plan_.header.frame_id, pose, robot_pose)) {
+  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_, global_plan_.header.frame_id,
+      transform_tolerance_))
+  {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
   }
 
@@ -101,7 +104,9 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.header.stamp = robot_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
-      if (!transformPose(costmap_ros_->getBaseFrameID(), stamped_pose, transformed_pose)) {
+      if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
+        costmap_ros_->getBaseFrameID(), transform_tolerance_))
+      {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }
       transformed_pose.pose.position.z = 0.0;
@@ -126,26 +131,6 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
   }
 
   return transformed_plan;
-}
-
-bool PathHandler::transformPose(
-  const std::string frame,
-  const geometry_msgs::msg::PoseStamped & in_pose,
-  geometry_msgs::msg::PoseStamped & out_pose) const
-{
-  if (in_pose.header.frame_id == frame) {
-    out_pose = in_pose;
-    return true;
-  }
-
-  try {
-    tf_->transform(in_pose, out_pose, frame, transform_tolerance_);
-    out_pose.header.frame_id = frame;
-    return true;
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
-  }
-  return false;
 }
 
 }  // namespace nav2_regulated_pure_pursuit_controller

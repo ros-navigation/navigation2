@@ -18,6 +18,9 @@
 // QT
 #include <QtWidgets>
 #include <QBasicTimer>
+#include <QStateMachine>
+#include <QState>
+#include <QSignalTransition>
 
 #include <memory>
 #include <string>
@@ -88,6 +91,7 @@ private:
 
   // The (non-spinning) client node used to invoke the action client
   rclcpp::Node::SharedPtr client_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   // The Node pointer that we need to keep alive for the duration of this plugin.
   std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;

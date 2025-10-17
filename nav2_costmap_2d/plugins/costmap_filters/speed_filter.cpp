@@ -43,6 +43,7 @@
 #include <string>
 
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -177,7 +178,7 @@ void SpeedFilter::maskCallback(
 void SpeedFilter::process(
   nav2_costmap_2d::Costmap2D & /*master_grid*/,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/,
-  const geometry_msgs::msg::Pose2D & pose)
+  const geometry_msgs::msg::Pose & pose)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -189,7 +190,7 @@ void SpeedFilter::process(
     return;
   }
 
-  geometry_msgs::msg::Pose2D mask_pose;  // robot coordinates in mask frame
+  geometry_msgs::msg::Pose mask_pose;  // robot coordinates in mask frame
 
   // Transforming robot pose from current layer frame to mask frame
   if (!transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
@@ -198,7 +199,9 @@ void SpeedFilter::process(
 
   // Converting mask_pose robot position to filter_mask_ indexes (mask_robot_i, mask_robot_j)
   unsigned int mask_robot_i, mask_robot_j;
-  if (!worldToMask(filter_mask_, mask_pose.x, mask_pose.y, mask_robot_i, mask_robot_j)) {
+  if (!nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
+    mask_robot_i, mask_robot_j))
+  {
     return;
   }
 

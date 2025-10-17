@@ -11,8 +11,10 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>backward_ros</build_depend>
   <build_depend>nav2_common</build_depend>
 
+  <exec_depend>backward_ros</exec_depend>
   <exec_depend>costmap_queue</exec_depend>
   <exec_depend>dwb_core</exec_depend>
   <exec_depend>dwb_critics</exec_depend>

@@ -7,12 +7,13 @@
   <maintainer email="steve@opennav.org">steve macenski</maintainer>
   <license>Apache-2.0</license>
 
-  <exec_depend>rclpy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav2_simple_commander</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
   <exec_depend>python3-transforms3d</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

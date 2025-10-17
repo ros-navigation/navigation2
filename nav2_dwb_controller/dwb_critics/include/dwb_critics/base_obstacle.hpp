@@ -66,7 +66,7 @@ public:
    * @brief Return the obstacle score for a particular pose
    * @param pose Pose to check
    */
-  virtual double scorePose(const geometry_msgs::msg::Pose2D & pose);
+  virtual double scorePose(const geometry_msgs::msg::Pose & pose);
 
   /**
    * @brief Check to see whether a given cell cost is valid for driving through.

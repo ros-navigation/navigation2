@@ -51,10 +51,84 @@ public:
   }
 };
 
+TEST(VelocitySmootherTest, openLoopTestTimer6dof)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
+  std::vector<double> deadbands{0.2, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::vector<double> min_velocity{-0.5, -0.5, -0.5, -2.5, -2.5, -2.5};
+  std::vector<double> max_velocity{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
+  std::vector<double> max_decel{-2.5, -2.5, -2.5, -3.2, -3.2, -3.2};
+  std::vector<double> max_accel{2.5, 2.5, 2.5, 3.2, 3.2, 3.2};
+
+  smoother->declare_parameter("scale_velocities", rclcpp::ParameterValue(true));
+  smoother->set_parameter(rclcpp::Parameter("scale_velocities", true));
+  smoother->declare_parameter("deadband_velocity", rclcpp::ParameterValue(deadbands));
+  smoother->set_parameter(rclcpp::Parameter("deadband_velocity", deadbands));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(min_velocity));
+  smoother->set_parameter(rclcpp::Parameter("min_velocity", min_velocity));
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_velocity));
+  smoother->set_parameter(rclcpp::Parameter("max_velocity", max_velocity));
+  smoother->declare_parameter("max_decel", rclcpp::ParameterValue(max_decel));
+  smoother->set_parameter(rclcpp::Parameter("max_decel", max_decel));
+  smoother->declare_parameter("max_accel", rclcpp::ParameterValue(max_accel));
+  smoother->set_parameter(rclcpp::Parameter("max_accel", max_accel));
+
+  rclcpp_lifecycle::State state;
+  smoother->configure(state);
+  smoother->activate(state);
+
+  std::vector<double> linear_vels;
+  auto subscription = nav2_util::TwistSubscriber(
+    smoother,
+    "cmd_vel_smoothed",
+    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+      linear_vels.push_back(msg->linear.x);
+    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+      linear_vels.push_back(msg->twist.linear.x);
+    });
+
+  // Send a velocity command
+  auto cmd = std::make_shared<geometry_msgs::msg::TwistStamped>();
+  cmd->twist.linear.x = 1.0;  // Max is 0.5, so should threshold
+  smoother->sendCommandMsg(cmd);
+
+  // Process velocity smoothing and send updated odometry based on commands
+  auto start = smoother->now();
+  while (smoother->now() - start < 1.5s) {
+    executor.spin_some();
+  }
+
+  // Sanity check we have the approximately right number of messages for the timespan and timeout
+  EXPECT_GT(linear_vels.size(), 19u);
+  EXPECT_LT(linear_vels.size(), 30u);
+
+  // Should have last command be a stop since we timed out the command stream
+  EXPECT_EQ(linear_vels.back(), 0.0);
+
+  // From deadband, first few should be 0 until above 0.2
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    if (linear_vels[i] != 0) {
+      EXPECT_GT(linear_vels[i], 0.2);
+      break;
+    }
+  }
+
+  // Process to make sure stops at limit in velocity,
+  // doesn't exceed acceleration
+  for (unsigned int i = 0; i != linear_vels.size(); i++) {
+    EXPECT_TRUE(linear_vels[i] <= 0.5);
+  }
+}
+
 TEST(VelocitySmootherTest, openLoopTestTimer)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   std::vector<double> deadbands{0.2, 0.0, 0.0};
   smoother->declare_parameter("scale_velocities", rclcpp::ParameterValue(true));
   smoother->set_parameter(rclcpp::Parameter("scale_velocities", true));
@@ -82,7 +156,7 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
   // Process velocity smoothing and send updated odometry based on commands
   auto start = smoother->now();
   while (smoother->now() - start < 1.5s) {
-    rclcpp::spin_some(smoother->get_node_base_interface());
+    executor.spin_some();
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
@@ -111,6 +185,8 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
 {
   auto smoother =
     std::make_shared<VelSmootherShim>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   smoother->declare_parameter("feedback", rclcpp::ParameterValue(std::string("CLOSED_LOOP")));
   smoother->set_parameter(rclcpp::Parameter("feedback", std::string("CLOSED_LOOP")));
   rclcpp_lifecycle::State state;
@@ -152,7 +228,7 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
       odom_msg.twist.twist.linear.x = linear_vels.back();
     }
     odom_pub->publish(odom_msg);
-    rclcpp::spin_some(smoother->get_node_base_interface());
+    executor.spin_some();
   }
 
   // Sanity check we have the approximately right number of messages for the timespan and timeout
@@ -563,10 +639,12 @@ TEST(VelocitySmootherTest, testCommandCallback)
 
   auto pub = smoother->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(smoother->get_node_base_interface());
   auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
   msg->twist.linear.x = 100.0;
   pub->publish(std::move(msg));
-  rclcpp::spin_some(smoother->get_node_base_interface());
+  executor.spin_some();
 
   EXPECT_TRUE(smoother->hasCommandMsg());
   EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);
@@ -615,6 +693,38 @@ TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
   EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
 
   smoother->set_parameter(rclcpp::Parameter("max_decel", rclcpp::ParameterValue(bad_test_decel)));
+  EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
+}
+
+TEST(VelocitySmootherTest, testDifferentParamsSize) {
+   auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> max_vel{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
+  std::vector<double> bad_min_vel{0.0, 0.0, 0.5, 2.5};
+  std::vector<double> accel{2.5, 2.5, 2.5, 5.0, 5.0, 5.0};
+  std::vector<double> decel{-2.5, -2.5, -2.5, -5.0, -5.0, -5.0};
+  std::vector<double> deadband_vel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_min_vel));
+  smoother->declare_parameter("max_accel", rclcpp::ParameterValue(accel));
+  smoother->declare_parameter("min_decel", rclcpp::ParameterValue(decel));
+  smoother->declare_parameter("deadband_velocity", rclcpp::ParameterValue(deadband_vel));
+
+  rclcpp_lifecycle::State state;
+  EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
+}
+
+TEST(VelocitySmootherTest, testInvalidParamsSize) {
+   auto smoother =
+    std::make_shared<VelSmootherShim>();
+
+  std::vector<double> bad_max_vel{0.5, 0.5, 0.5, 2.5};
+  std::vector<double> bad_min_vel{0, 5, 0.5};
+
+  smoother->declare_parameter("max_velocity", rclcpp::ParameterValue(bad_max_vel));
+  smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_min_vel));
+  rclcpp_lifecycle::State state;
   EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
 }
 

@@ -20,7 +20,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 
 namespace opennav_docking_core
@@ -123,6 +123,16 @@ public:
    * @brief Similar to isCharging() but called when undocking.
    */
   virtual bool hasStoppedCharging() = 0;
+
+  /**
+   * @brief Start any detection pipelines required for pose refinement.
+   */
+  virtual bool startDetectionProcess() = 0;
+
+  /**
+   * @brief Stop any detection pipelines running for pose refinement.
+   */
+  virtual bool stopDetectionProcess() = 0;
 
   /**
    * @brief Gets if this is a charging-typed dock

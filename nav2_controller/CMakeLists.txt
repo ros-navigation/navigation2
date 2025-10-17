@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_controller)
 
 find_package(ament_cmake REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -10,8 +11,6 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(nav_2d_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -33,7 +32,6 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   ${geometry_msgs_TARGETS}
@@ -41,9 +39,7 @@ target_link_libraries(${library_name} PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
-  ${nav_2d_msgs_TARGETS}
-  nav_2d_utils::conversions
-  nav_2d_utils::tf_help
+  nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -62,10 +58,10 @@ target_include_directories(${executable_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${executable_name} PRIVATE
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
   ${library_name}
 )
 
@@ -74,18 +70,17 @@ target_include_directories(simple_progress_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(simple_progress_checker PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
 )
 target_link_libraries(simple_progress_checker PRIVATE
   nav2_util::nav2_util_core
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 
@@ -94,19 +89,18 @@ target_include_directories(pose_progress_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(pose_progress_checker PUBLIC
   ${geometry_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
+  nav2_ros_common::nav2_ros_common
   simple_progress_checker
 )
 target_link_libraries(pose_progress_checker PRIVATE
   angles::angles
   nav2_util::nav2_util_core
-  nav_2d_utils::conversions
   pluginlib::pluginlib
 )
 
@@ -115,11 +109,11 @@ target_include_directories(simple_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(simple_goal_checker PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -137,11 +131,11 @@ target_include_directories(stopped_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(stopped_goal_checker PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${rcl_interfaces_TARGETS}
@@ -157,11 +151,11 @@ target_include_directories(position_goal_checker
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(position_goal_checker PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
@@ -217,8 +211,6 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav2_msgs
   nav2_util
-  nav_2d_msgs
-  nav_2d_utils
   pluginlib
   rclcpp
   rclcpp_lifecycle

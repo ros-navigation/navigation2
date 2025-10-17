@@ -19,6 +19,7 @@ from launch import LaunchDescription
 from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -30,6 +31,14 @@ def generate_launch_description() -> LaunchDescription:
     )
     map_file = os.path.join(benchmark_dir, 'maps', 'smoothers_world.yaml')
     lifecycle_nodes = ['map_server', 'planner_server', 'smoother_server']
+    config = RewrittenYaml(
+        source_file=config, root_key='', param_rewrites={},
+        value_rewrites={
+            'KEEPOUT_ZONE_ENABLED': 'False',
+            'SPEED_ZONE_ENABLED': 'False',
+        },
+        convert_types=True
+    )
 
     static_transform_one = Node(
         package='tf2_ros',

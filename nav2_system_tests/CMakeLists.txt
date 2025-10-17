@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_system_tests)
 
 find_package(ament_cmake REQUIRED)
@@ -45,6 +45,7 @@ if(BUILD_TESTING)
   target_link_libraries(${local_controller_plugin_lib} PRIVATE
     ${geometry_msgs_TARGETS}
     nav2_core::nav2_core
+    nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
     ${nav_msgs_TARGETS}
     pluginlib::pluginlib
@@ -54,7 +55,6 @@ if(BUILD_TESTING)
     PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
       "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   )
 
   install(TARGETS ${local_controller_plugin_lib}
@@ -73,6 +73,7 @@ if(BUILD_TESTING)
   target_link_libraries(${global_planner_plugin_lib} PRIVATE
     ${geometry_msgs_TARGETS}
     nav2_core::nav2_core ${nav_msgs_TARGETS}
+    nav2_ros_common::nav2_ros_common
     nav2_costmap_2d::nav2_costmap_2d_core
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
@@ -82,7 +83,6 @@ if(BUILD_TESTING)
     PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
       "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/planner_plugins.xml)
 
@@ -102,6 +102,7 @@ if(BUILD_TESTING)
   target_link_libraries(${smoother_plugin_lib} PRIVATE
     nav2_core::nav2_core
     nav2_costmap_2d::nav2_costmap_2d_core
+    nav2_ros_common::nav2_ros_common
     ${nav_msgs_TARGETS}
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
@@ -111,7 +112,6 @@ if(BUILD_TESTING)
     PUBLIC
       "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
       "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-      "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   )
   pluginlib_export_plugin_description_file(nav2_core src/error_codes/smoother_plugins.xml)
 

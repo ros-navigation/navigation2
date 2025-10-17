@@ -27,9 +27,9 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
@@ -162,18 +162,9 @@ public:
     polygon_received_ = msg;
   }
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
-    const std::chrono::nanoseconds & timeout)
+  geometry_msgs::msg::PolygonStamped::SharedPtr getPolygonReceived()
   {
-    rclcpp::Time start_time = this->now();
-    while (rclcpp::ok() && this->now() - start_time <= rclcpp::Duration(timeout)) {
-      if (polygon_received_) {
-        return polygon_received_;
-      }
-      rclcpp::spin_some(this->get_node_base_interface());
-      std::this_thread::sleep_for(10ms);
-    }
-    return nullptr;
+    return polygon_received_;
   }
 
 private:
@@ -265,6 +256,9 @@ protected:
     const std::chrono::nanoseconds & timeout,
     std::vector<nav2_collision_monitor::Point> & poly);
 
+  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
+    const std::chrono::nanoseconds & timeout);
+
   // Wait until circle polygon radius will be received
   bool waitRadius(const std::chrono::nanoseconds & timeout);
 
@@ -274,6 +268,7 @@ protected:
     std::vector<nav2_collision_monitor::Point> & footprint);
 
   std::shared_ptr<TestNode> test_node_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -285,6 +280,8 @@ protected:
 Tester::Tester()
 {
   test_node_ = std::make_shared<TestNode>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(test_node_->get_node_base_interface());
   test_node_->configure();
   test_node_->activate();
 
@@ -313,60 +310,38 @@ void Tester::setCommonParameters(
 {
   test_node_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(action_type));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".action_type", action_type));
 
   test_node_->declare_parameter(
     polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   test_node_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
 
   test_node_->declare_parameter(
     polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
 
   test_node_->declare_parameter(
     polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   test_node_->declare_parameter(
     polygon_name + ".time_before_collision",
     rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".time_before_collision", TIME_BEFORE_COLLISION));
 
   test_node_->declare_parameter(
     polygon_name + ".simulation_time_step", rclcpp::ParameterValue(SIMULATION_TIME_STEP));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".simulation_time_step", SIMULATION_TIME_STEP));
 
   test_node_->declare_parameter(
     polygon_name + ".visualize", rclcpp::ParameterValue(true));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".visualize", true));
 
   test_node_->declare_parameter(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(POLYGON_PUB_TOPIC));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".polygon_pub_topic", POLYGON_PUB_TOPIC));
 
   test_node_->declare_parameter(
     "observation_sources", rclcpp::ParameterValue(observation_sources));
-  test_node_->set_parameter(
-    rclcpp::Parameter("observation_sources", observation_sources));
 
   if (!sources_names.empty()) {
     test_node_->declare_parameter(
       polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
-    test_node_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".sources_names", sources_names));
   }
 }
 
@@ -376,18 +351,12 @@ void Tester::setPolygonParameters(
   if (is_static) {
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(points));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", points));
   } else {
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
 
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".footprint_topic", FOOTPRINT_TOPIC));
   }
 }
 
@@ -396,13 +365,9 @@ void Tester::setCircleParameters(const double radius, const bool is_static)
   if (is_static) {
     test_node_->declare_parameter(
       std::string(CIRCLE_NAME) + ".radius", rclcpp::ParameterValue(radius));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".radius", radius));
   } else {
     test_node_->declare_parameter(
       std::string(CIRCLE_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
   }
 }
 
@@ -471,6 +436,21 @@ void Tester::sendTransforms(double shift)
   tf_broadcaster->sendTransform(transform);
 }
 
+geometry_msgs::msg::PolygonStamped::SharedPtr Tester::waitPolygonReceived(
+  const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+    auto polygon = test_node_->getPolygonReceived();
+    if (polygon) {
+      return polygon;
+    }
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return nullptr;
+}
+
 bool Tester::waitPolygon(
   const std::chrono::nanoseconds & timeout,
   std::vector<nav2_collision_monitor::Point> & poly)
@@ -481,7 +461,7 @@ bool Tester::waitPolygon(
     if (poly.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -494,7 +474,7 @@ bool Tester::waitRadius(const std::chrono::nanoseconds & timeout)
     if (circle_->isShapeSet()) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -512,7 +492,7 @@ bool Tester::waitFootprint(
     if (footprint.size() > 0) {
       return true;
     }
-    rclcpp::spin_some(test_node_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -613,8 +593,6 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
   // "points" and "polygon_sub_topic" parameters are not initialized
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
@@ -642,8 +620,6 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
   // Triangle points
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_1_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_1_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -658,8 +634,6 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
   // Odd number of elements
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_2_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_2_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -676,8 +650,6 @@ TEST_F(Tester, testPolygonMaxPoints)
   const int max_points = 5;
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".max_points", rclcpp::ParameterValue(max_points));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".max_points", max_points));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -956,8 +928,7 @@ TEST_F(Tester, testPolygonPublish)
 {
   createPolygon("stop", true);
   polygon_->publish();
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received =
-    test_node_->waitPolygonReceived(500ms);
+  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received = waitPolygonReceived(500ms);
 
   ASSERT_NE(polygon_received, nullptr);
   ASSERT_EQ(polygon_received->polygon.points.size(), 4u);
@@ -978,11 +949,8 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   // Use default parameters, visualize should be false by-default
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   std::vector<std::string> observation_sources = {OBSERVATION_SOURCE_NAME};
   test_node_->declare_parameter("observation_sources", rclcpp::ParameterValue(observation_sources));
-  test_node_->set_parameter(rclcpp::Parameter("observation_sources", observation_sources));
   setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   // Create new polygon
@@ -996,7 +964,7 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   polygon_->publish();
 
   // Wait for polygon: it should not be published
-  ASSERT_EQ(test_node_->waitPolygonReceived(100ms), nullptr);
+  ASSERT_EQ(waitPolygonReceived(100ms), nullptr);
 }
 
 TEST_F(Tester, testPolygonInvalidPointsString)
@@ -1006,8 +974,6 @@ TEST_F(Tester, testPolygonInvalidPointsString)
   // Invalid points
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INVALID_POINTS_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INVALID_POINTS_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,

@@ -48,7 +48,7 @@
 #include "nav2_util/execution_timer.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
@@ -71,21 +71,6 @@ Costmap2DROS::Costmap2DROS(const rclcpp::NodeOptions & options)
   init();
 }
 
-void replaceOrAddArgument(
-  std::vector<std::string> & arguments, const std::string & option,
-  const std::string & arg_name, const std::string & new_argument)
-{
-  auto argument = std::find_if(arguments.begin(), arguments.end(),
-      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
-  if (argument != arguments.end()) {
-    *argument = new_argument;
-  } else {
-    arguments.push_back("--ros-args");
-    arguments.push_back(option);
-    arguments.push_back(new_argument);
-  }
-}
-
 rclcpp::NodeOptions getChildNodeOptions(
   const std::string & name,
   const std::string & parent_namespace,
@@ -93,10 +78,10 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
-  replaceOrAddArgument(new_arguments, "-r", "__ns",
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__ns",
       "__ns:=" + nav2::add_namespaces(parent_namespace, name));
-  replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
-  replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
+  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
+  nav2::replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
       "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
   return rclcpp::NodeOptions().arguments(new_arguments);
 }
@@ -148,6 +133,7 @@ void Costmap2DROS::init()
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
   declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
+  declare_parameter("subscribe_to_stamped_footprint", rclcpp::ParameterValue(false));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -233,9 +219,15 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Create the publishers and subscribers
-  footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
-    "footprint",
-    std::bind(&Costmap2DROS::setRobotFootprintPolygon, this, std::placeholders::_1));
+  if (subscribe_to_stamped_footprint_) {
+    footprint_stamped_sub_ = create_subscription<geometry_msgs::msg::PolygonStamped>(
+      "footprint", [this](const geometry_msgs::msg::PolygonStamped::SharedPtr footprint)
+      {setRobotFootprintPolygon(footprint->polygon);});
+  } else {
+    footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
+      "footprint", [this](const geometry_msgs::msg::Polygon::SharedPtr footprint)
+      {setRobotFootprintPolygon(*footprint);});
+  }
 
   footprint_pub_ = create_publisher<geometry_msgs::msg::PolygonStamped>(
     "published_footprint");
@@ -430,6 +422,7 @@ Costmap2DROS::getParameters()
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
   get_parameter("filters", filter_names_);
+  get_parameter("subscribe_to_stamped_footprint", subscribe_to_stamped_footprint_);
 
   auto node = shared_from_this();
 
@@ -498,7 +491,7 @@ Costmap2DROS::setRobotFootprint(const std::vector<geometry_msgs::msg::Point> & p
 
 void
 Costmap2DROS::setRobotFootprintPolygon(
-  const geometry_msgs::msg::Polygon::SharedPtr footprint)
+  const geometry_msgs::msg::Polygon & footprint)
 {
   setRobotFootprint(toPointVector(footprint));
 }

@@ -30,7 +30,7 @@ amcl:
     sigma_hit: 0.2
     tf_broadcast: true
     transform_tolerance: 1.0
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
     update_min_a: 0.2
     update_min_d: 0.25
     z_hit: 0.5
@@ -48,7 +48,7 @@ bt_navigator:
     filter_duration: 0.3
     default_server_timeout: 20
     wait_for_service_timeout: 1000
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
@@ -58,6 +58,8 @@ bt_navigator:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1669
+    bt_search_directories:
+      - $(find-pkg-share nav2_bt_navigator)/behavior_trees
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
@@ -73,6 +75,7 @@ bt_navigator:
       - compute_path
       - dock_robot
       - drive_on_heading
+      - follow_object
       - follow_path
       - nav_thru_poses
       - nav_to_pose
@@ -141,6 +144,11 @@ controller_server:
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
+      TrajectoryValidator:
+        # The validator can be configured with additional parameters if needed.
+        plugin: "mppi::DefaultOptimalTrajectoryValidator"
+        collision_lookahead_time: 2.0  # Time to look ahead to check for collisions
+        consider_footprint: false  # Whether to consider the full robot's footprint (or circle) in trajectory validation collision checks
       AckermannConstraints:
         min_turning_r: 0.2
       critics:
@@ -265,7 +273,7 @@ local_costmap:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
       always_send_full_costmap: True
-      service_introspection_mode: "disabled"
+      introspection_mode: "disabled"
 
 global_costmap:
   global_costmap:
@@ -318,7 +326,7 @@ global_costmap:
         cost_scaling_factor: 3.0
         inflation_radius: 0.7
       always_send_full_costmap: True
-      service_introspection_mode: "disabled"
+      introspection_mode: "disabled"
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
 # If you'd rather set it in the yaml, remove the default "map" value in the launch file(s).
@@ -326,7 +334,7 @@ global_costmap:
 map_server:
   ros__parameters:
     # yaml_filename: ""
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
 
 keepout_filter_mask_server:
   ros__parameters:
@@ -360,14 +368,14 @@ map_saver:
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
     map_subscribe_transient_local: True
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
 
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
     planner_plugins: ["GridBased"]
     costmap_update_timeout: 1.0
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
     GridBased:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
@@ -432,7 +440,7 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
     waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
@@ -478,6 +486,7 @@ velocity_smoother:
 
 collision_monitor:
   ros__parameters:
+    enabled: True
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
@@ -519,7 +528,7 @@ docking_server:
     base_frame: "base_link"
     fixed_frame: "odom"
     dock_prestaging_tolerance: 0.5
-    service_introspection_mode: "disabled"
+    introspection_mode: "disabled"
 
     # Types of docks
     dock_plugins: ["simple_charging_dock"]

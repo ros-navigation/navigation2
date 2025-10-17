@@ -47,6 +47,8 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/validate_messages.hpp"
 
+#define EPSILON 1e-5
+
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
 using nav2_costmap_2d::NO_INFORMATION;
@@ -190,9 +192,9 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   Costmap2D * master = layered_costmap_->getCostmap();
   if (!layered_costmap_->isRolling() && (master->getSizeInCellsX() != size_x ||
     master->getSizeInCellsY() != size_y ||
-    master->getResolution() != new_map.info.resolution ||
-    master->getOriginX() != new_map.info.origin.position.x ||
-    master->getOriginY() != new_map.info.origin.position.y ||
+    !isEqual(master->getResolution(), new_map.info.resolution, EPSILON) ||
+    !isEqual(master->getOriginX(), new_map.info.origin.position.x, EPSILON) ||
+    !isEqual(master->getOriginY(), new_map.info.origin.position.y, EPSILON) ||
     !layered_costmap_->isSizeLocked()))
   {
     // Update the size of the layered costmap (and all layers, including this one)
@@ -206,9 +208,9 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
       new_map.info.origin.position.y,
       true);
   } else if (size_x_ != size_x || size_y_ != size_y ||  // NOLINT
-    resolution_ != new_map.info.resolution ||
-    origin_x_ != new_map.info.origin.position.x ||
-    origin_y_ != new_map.info.origin.position.y)
+    !isEqual(resolution_, new_map.info.resolution, EPSILON) ||
+    !isEqual(origin_x_, new_map.info.origin.position.x, EPSILON) ||
+    !isEqual(origin_y_, new_map.info.origin.position.y, EPSILON))
   {
     // only update the size of the costmap stored locally in this layer
     RCLCPP_INFO(
@@ -467,6 +469,18 @@ StaticLayer::updateCosts(
     restoreMapRegionOccupiedByPolygon(map_region_to_restore);
   }
   current_ = true;
+}
+
+/**
+  * @brief Check if two floating point numbers are equal within a given epsilon
+  * @param a First number
+  * @param b Second number
+  * @param epsilon Tolerance for equality check
+  * @return True if numbers are equal within the tolerance, false otherwise
+  */
+bool StaticLayer::isEqual(double a, double b, double epsilon)
+{
+  return std::abs(a - b) < epsilon;
 }
 
 /**

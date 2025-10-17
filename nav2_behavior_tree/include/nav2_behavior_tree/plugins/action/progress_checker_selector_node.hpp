@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "std_msgs/msg/string.hpp"
 
@@ -101,6 +102,7 @@ private:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   std::string topic_name_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

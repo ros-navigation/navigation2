@@ -225,7 +225,7 @@ public:
   }
 
   /**
-   * @brief Get index
+   * @brief Get coordinates using index
    * @param Index Index of point
    * @return coordinates of point
    */

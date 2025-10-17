@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(dwb_core)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(dwb_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -20,6 +21,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 nav2_package()
 
@@ -32,24 +34,24 @@ add_library(dwb_core SHARED
 target_include_directories(dwb_core PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(dwb_core PUBLIC
   ${builtin_interfaces_TARGETS}
   ${dwb_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
   ${nav_2d_msgs_TARGETS}
   nav_2d_utils::conversions
-  nav_2d_utils::tf_help
   ${nav_msgs_TARGETS}
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   ${sensor_msgs_TARGETS}
   tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
   ${visualization_msgs_TARGETS}
 )
 
@@ -93,6 +95,7 @@ ament_export_dependencies(
   rclcpp_lifecycle
   sensor_msgs
   tf2_ros
+  tf2_geometry_msgs
   visualization_msgs
   nav2_ros_common
 )

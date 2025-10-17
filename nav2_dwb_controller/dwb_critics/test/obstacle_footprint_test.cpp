@@ -40,6 +40,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "dwb_critics/obstacle_footprint.hpp"
 #include "dwb_core/exceptions.hpp"
+#include "nav2_util/geometry_utils.hpp"
 
 class OpenObstacleFootprintCritic : public dwb_critics::ObstacleFootprintCritic
 {
@@ -101,16 +102,21 @@ TEST(ObstacleFootprint, GetOrientedFootprint)
   std::vector<geometry_msgs::msg::Point> footprint_before = getFootprint();
 
   std::vector<geometry_msgs::msg::Point> footprint_after;
-  geometry_msgs::msg::Pose2D pose;
-  pose.theta = theta;
+  geometry_msgs::msg::Pose pose;
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
+
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
   for (uint i = 0; i < footprint_before.size(); i++) {
-    ASSERT_EQ(rotate_origin(footprint_before[i], theta), footprint_after[i]);
-  }
+    geometry_msgs::msg::Point expected = rotate_origin(footprint_before[i], theta);
+    geometry_msgs::msg::Point actual = footprint_after[i];
 
+    ASSERT_NEAR(expected.x, actual.x, 0.000001);
+    ASSERT_NEAR(expected.y, actual.y, 0.000001);
+    ASSERT_NEAR(expected.z, actual.z, 0.000001);
+  }
   theta = 5.123;
-  pose.theta = theta;
+  pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(theta);
   footprint_after = dwb_critics::getOrientedFootprint(pose, footprint_before);
 
   for (unsigned int i = 0; i < footprint_before.size(); i++) {
@@ -134,10 +140,10 @@ TEST(ObstacleFootprint, Prepare)
   std::string name = "name";
   critic->initialize(node, name, ns, costmap_ros);
 
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   nav_2d_msgs::msg::Twist2D vel;
-  geometry_msgs::msg::Pose2D goal;
-  nav_2d_msgs::msg::Path2D global_plan;
+  geometry_msgs::msg::Pose goal;
+  nav_msgs::msg::Path global_plan;
 
   // no footprint set in the costmap. Prepare should return false;
   std::vector<geometry_msgs::msg::Point> footprint;
@@ -151,24 +157,28 @@ TEST(ObstacleFootprint, Prepare)
   // If the robot footprint goes of the map, it should throw an exception
   // The following cases put the robot over the edge of the map on the left, bottom, right and top
 
-  pose.x = footprint_size_x_half;  // This gives an error
-  pose.y = footprint_size_y_half + epsilon;
+  pose.position.x = footprint_size_x_half;  // This gives an error
+  pose.position.y = footprint_size_y_half + epsilon;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = footprint_size_x_half + epsilon;
-  pose.y = footprint_size_y_half;  // error
+  pose.position.x = footprint_size_x_half + epsilon;
+  pose.position.y = footprint_size_y_half;  // error
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = costmap_ros->getCostmap()->getSizeInMetersX() - footprint_size_x_half;  // error
-  pose.y = costmap_ros->getCostmap()->getSizeInMetersY() + footprint_size_y_half - epsilon;
+  pose.position.x = costmap_ros->getCostmap()->getSizeInMetersX() -
+    footprint_size_x_half;  // error
+  pose.position.y = costmap_ros->getCostmap()->getSizeInMetersY() +
+    footprint_size_y_half - epsilon;
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = costmap_ros->getCostmap()->getSizeInMetersX() - footprint_size_x_half - epsilon;
-  pose.y = costmap_ros->getCostmap()->getSizeInMetersY() + footprint_size_y_half;  // error
+  pose.position.x = costmap_ros->getCostmap()->getSizeInMetersX() -
+    footprint_size_x_half - epsilon;
+  pose.position.y = costmap_ros->getCostmap()->getSizeInMetersY() +
+    footprint_size_y_half;  // error
   ASSERT_THROW(critic->scorePose(pose), dwb_core::IllegalTrajectoryException);
 
-  pose.x = footprint_size_x_half + epsilon;
-  pose.y = footprint_size_y_half + epsilon;
+  pose.position.x = footprint_size_x_half + epsilon;
+  pose.position.y = footprint_size_y_half + epsilon;
   ASSERT_EQ(critic->scorePose(pose), 0.0);
 
   for (unsigned int i = 1; i < costmap_ros->getCostmap()->getSizeInCellsX(); i++) {

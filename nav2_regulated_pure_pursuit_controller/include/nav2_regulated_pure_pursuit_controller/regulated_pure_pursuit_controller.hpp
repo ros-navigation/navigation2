@@ -26,7 +26,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "nav2_regulated_pure_pursuit_controller/path_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
@@ -173,32 +173,6 @@ protected:
     const double & curvature, const geometry_msgs::msg::Twist & speed,
     const double & pose_cost, const nav_msgs::msg::Path & path,
     double & linear_vel, double & sign);
-
-  /**
-   * @brief Find the intersection a circle and a line segment.
-   * This assumes the circle is centered at the origin.
-   * If no intersection is found, a floating point error will occur.
-   * @param p1 first endpoint of line segment
-   * @param p2 second endpoint of line segment
-   * @param r radius of circle
-   * @return point of intersection
-   */
-  static geometry_msgs::msg::Point circleSegmentIntersection(
-    const geometry_msgs::msg::Point & p1,
-    const geometry_msgs::msg::Point & p2,
-    double r);
-
-  /**
-   * @brief Get lookahead point
-   * @param lookahead_dist Optimal lookahead distance
-   * @param path Current global path
-   * @param interpolate_after_goal If true, interpolate the lookahead point after the goal based
-   * on the orientation given by the position of the last two pose of the path
-   * @return Lookahead point
-   */
-  geometry_msgs::msg::PoseStamped getLookAheadPoint(
-    const double &, const nav_msgs::msg::Path &,
-    bool interpolate_after_goal = false);
 
   /**
    * @brief checks for the cusp position

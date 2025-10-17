@@ -17,9 +17,10 @@
 import os
 from pathlib import Path
 import tempfile
+from typing import Optional
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
+from launch import LaunchDescription, LaunchDescriptionEntity
 from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess,
                             ForEach, GroupAction, IncludeLaunchDescription, LogInfo,
                             OpaqueFunction, RegisterEventHandler)
@@ -50,7 +51,9 @@ def count_robots(context: LaunchContext) -> list[LogInfo]:
     return [LogInfo(msg=[log_msg])]
 
 
-def generate_robot_actions(name: str = '', pose: dict[str, float] = {}) -> list[GroupAction]:
+def generate_robot_actions(
+        name: str = '', pose: dict[str, float] = {}) -> \
+            Optional[list[LaunchDescriptionEntity]]:
     """Generate the actions to launch a robot with the given name and pose."""
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')

@@ -22,7 +22,7 @@
 #include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.h"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"

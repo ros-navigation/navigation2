@@ -45,7 +45,11 @@ PointCloud::PointCloud(
 PointCloud::~PointCloud()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying PointCloud", source_name_.c_str());
+  #if RCLCPP_VERSION_GTE(30, 0, 0)
+  data_sub_.shutdown();
+  #else
   data_sub_.reset();
+  #endif
 }
 
 void PointCloud::configure()
@@ -60,10 +64,24 @@ void PointCloud::configure()
 
   getParameters(source_topic);
 
+  #if RCLCPP_VERSION_GTE(30, 0, 0)
+  const point_cloud_transport::TransportHints hint(transport_type_);
+  pct_ = std::make_shared<point_cloud_transport::PointCloudTransport>(*node);
+  data_sub_ = pct_->subscribe(
+    source_topic, nav2::qos::SensorDataQoS(),
+    std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
+    {}, &hint
+  );
+  #else
   data_sub_ = node->create_subscription<sensor_msgs::msg::PointCloud2>(
     source_topic,
     std::bind(&PointCloud::dataCallback, this, std::placeholders::_1),
     nav2::qos::SensorDataQoS());
+  #endif
+
+  // Add callback for dynamic parameters
+  dyn_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(&PointCloud::dynamicParametersCallback, this, std::placeholders::_1));
 }
 
 bool PointCloud::getData(
@@ -92,6 +110,13 @@ bool PointCloud::getData(
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     // Transform point coordinates from source frame -> to base frame
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+
+    // Check range from sensor origin before transformation
+    double range = p_v3_s.length();
+    if (range < min_range_) {
+      continue;
+    }
+
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
@@ -111,17 +136,46 @@ void PointCloud::getParameters(std::string & source_topic)
 
   getCommonParameters(source_topic);
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".min_height", rclcpp::ParameterValue(0.05));
-  min_height_ = node->get_parameter(source_name_ + ".min_height").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".max_height", rclcpp::ParameterValue(0.5));
-  max_height_ = node->get_parameter(source_name_ + ".max_height").as_double();
+  min_height_ = node->declare_or_get_parameter(source_name_ + ".min_height", 0.05);
+  max_height_ = node->declare_or_get_parameter(source_name_ + ".max_height", 0.5);
+  min_range_ = node->declare_or_get_parameter(source_name_ + ".min_range", 0.0);
+  transport_type_ = node->declare_or_get_parameter(
+    source_name_ + ".transport_type", std::string("raw"));
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
   data_ = msg;
+}
+
+rcl_interfaces::msg::SetParametersResult
+PointCloud::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(source_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == source_name_ + "." + "min_height") {
+        min_height_ = parameter.as_double();
+      } else if (param_name == source_name_ + "." + "max_height") {
+        max_height_ = parameter.as_double();
+      } else if (param_name == source_name_ + "." + "min_range") {
+        min_range_ = parameter.as_double();
+      }
+    } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
+      if (param_name == source_name_ + "." + "enabled") {
+        enabled_ = parameter.as_bool();
+      }
+    }
+  }
+  result.successful = true;
+  return result;
 }
 
 }  // namespace nav2_collision_monitor

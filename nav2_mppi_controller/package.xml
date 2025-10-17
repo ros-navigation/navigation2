@@ -12,11 +12,13 @@
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <depend>angles</depend>
+  <depend>backward_ros</depend>
+  <depend>benchmark</depend>
   <depend>geometry_msgs</depend>
-  <depend>libomp-dev</depend>
   <depend>nav2_common</depend>
   <depend>nav2_core</depend>
   <depend>nav2_costmap_2d</depend>
+  <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
   <depend>pluginlib</depend>
@@ -39,6 +41,7 @@
     <build_type>ament_cmake</build_type>
     <nav2_core plugin="${prefix}/mppic.xml" />
     <nav2_mppi_controller plugin="${prefix}/critics.xml" />
+    <nav2_mppi_controller plugin="${prefix}/trajectory_validators.xml" />
   </export>
 
 </package>

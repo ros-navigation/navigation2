@@ -59,7 +59,7 @@ public:
     const std::string & node_name,
     const std::string & ns,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : rclcpp_lifecycle::LifecycleNode(node_name, ns, options)
+  : rclcpp_lifecycle::LifecycleNode(node_name, ns, options, getEnableLifecycleServices(options))
   {
     // server side never times out from lifecycle manager
     this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
@@ -67,14 +67,8 @@ public:
       rclcpp::Parameter(
         bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 
-    nav2::declare_parameter_if_not_declared(
-      this, "bond_heartbeat_period", rclcpp::ParameterValue(0.1));
-    this->get_parameter("bond_heartbeat_period", bond_heartbeat_period);
-
-    bool autostart_node = false;
-    nav2::declare_parameter_if_not_declared(
-      this, "autostart_node", rclcpp::ParameterValue(false));
-    this->get_parameter("autostart_node", autostart_node);
+    bond_heartbeat_period = this->declare_or_get_parameter<double>("bond_heartbeat_period", 0.1);
+    bool autostart_node = this->declare_or_get_parameter("autostart_node", false);
     if (autostart_node) {
       autostart();
     }
@@ -106,6 +100,43 @@ public:
       context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
       rcl_preshutdown_cb_handle_.reset();
     }
+  }
+
+  /**
+   * @brief Declares or gets a parameter with specified type (not value).
+   * If the parameter is already declared, returns its value;
+   * otherwise declares it with the specified type.
+   * @param parameter_name Name of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   * @return The value of the parameter or throws an exception if not set
+   */
+  template<typename ParameterT>
+  inline ParameterT declare_or_get_parameter(
+    const std::string & parameter_name,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    return nav2::declare_or_get_parameter<ParameterT>(
+      this, parameter_name, parameter_descriptor);
+  }
+
+  /**
+   * @brief Declares or gets a parameter.
+   * If the parameter is already declared, returns its value;
+   * otherwise declares it and returns the default value.
+   * @param parameter_name Name of the parameter
+   * @param default_value Default value of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   * @return The value of the param from the override if existent, otherwise the default value.
+   */
+  template<typename ParamType>
+  inline ParamType declare_or_get_parameter(
+    const std::string & parameter_name,
+    const ParamType & default_value,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    return nav2::declare_or_get_parameter(
+      this, parameter_name,
+      default_value, parameter_descriptor);
   }
 
   /**
@@ -313,7 +344,7 @@ public:
     if (bond_heartbeat_period > 0.0) {
       RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
 
-      bond_ = std::make_unique<bond::Bond>(
+      bond_ = std::make_shared<bond::Bond>(
         std::string("bond"),
         this->get_name(),
         shared_from_this());
@@ -392,9 +423,27 @@ protected:
 
   // Connection to tell that server is still up
   std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
-  std::unique_ptr<bond::Bond> bond_{nullptr};
+  std::shared_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
+
+private:
+  /**
+   * @brief Get the enable_lifecycle_services parameter value from NodeOptions
+   * @param options NodeOptions to check for the parameter
+   * @return true if lifecycle services should be enabled, false otherwise
+   */
+  static bool getEnableLifecycleServices(const rclcpp::NodeOptions & options)
+  {
+    // Check if the parameter is explicitly set in NodeOptions
+    for (const auto & param : options.parameter_overrides()) {
+      if (param.get_name() == "enable_lifecycle_services") {
+        return param.as_bool();
+      }
+    }
+    // Default to true if not specified
+    return true;
+  }
 };
 
 }  // namespace nav2

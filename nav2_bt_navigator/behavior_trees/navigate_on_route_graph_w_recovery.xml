@@ -10,8 +10,8 @@
   It also has recovery actions specific to planning / control as well as general system issues.
 -->
 
-<root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="NavigateOnRouteGraphWRecovery">
+  <BehaviorTree ID="NavigateOnRouteGraphWRecovery">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>

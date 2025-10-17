@@ -23,7 +23,6 @@ namespace mppi::critics
 void PathAngleCritic::initialize()
 {
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
-  getParentParam(enforce_path_inversion_, "enforce_path_inversion", false);
   float vx_min;
   getParentParam(vx_min, "vx_min", -0.35);
   if (fabs(vx_min) < 1e-6f) {  // zero
@@ -62,15 +61,7 @@ void PathAngleCritic::initialize()
 
 void PathAngleCritic::score(CriticData & data)
 {
-  if (!enabled_) {
-    return;
-  }
-
-  geometry_msgs::msg::Pose goal = utils::getCriticGoal(data, enforce_path_inversion_);
-
-  if (utils::withinPositionGoalTolerance(
-      threshold_to_consider_, data.state.pose.pose, goal))
-  {
+  if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 

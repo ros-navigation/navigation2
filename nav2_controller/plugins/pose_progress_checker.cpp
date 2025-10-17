@@ -18,11 +18,12 @@
 #include <memory>
 #include <vector>
 #include "angles/angles.h"
-#include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
@@ -51,27 +52,26 @@ bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
-  geometry_msgs::msg::Pose2D current_pose2d;
-  current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
-
-  if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose2d)) {
-    resetBaselinePose(current_pose2d);
+  if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose.pose)) {
+    resetBaselinePose(current_pose.pose);
     return true;
   }
   return clock_->now() - baseline_time_ <= time_allowance_;
 }
 
-bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
+bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_ ||
          poseAngleDistance(pose, baseline_pose_) > required_movement_angle_;
 }
 
 double PoseProgressChecker::poseAngleDistance(
-  const geometry_msgs::msg::Pose2D & pose1,
-  const geometry_msgs::msg::Pose2D & pose2)
+  const geometry_msgs::msg::Pose & pose1,
+  const geometry_msgs::msg::Pose & pose2)
 {
-  return abs(angles::shortest_angular_distance(pose1.theta, pose2.theta));
+  double theta1 = tf2::getYaw(pose1.orientation);
+  double theta2 = tf2::getYaw(pose2.orientation);
+  return std::abs(angles::shortest_angular_distance(theta1, theta2));
 }
 
 rcl_interfaces::msg::SetParametersResult

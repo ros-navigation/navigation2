@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_bt_navigator)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_common REQUIRED)
@@ -31,11 +32,11 @@ target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${library_name} PUBLIC
   nav2_core::nav2_core
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -54,11 +55,11 @@ target_include_directories(${executable_name}
   PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(${executable_name} PRIVATE
   ${library_name}
   rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 add_library(nav2_navigate_to_pose_navigator SHARED src/navigators/navigate_to_pose.cpp)
@@ -66,13 +67,13 @@ target_include_directories(nav2_navigate_to_pose_navigator
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_navigate_to_pose_navigator PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
   ${nav2_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
@@ -89,7 +90,6 @@ target_include_directories(nav2_navigate_through_poses
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
 )
 target_link_libraries(nav2_navigate_through_poses PUBLIC
   ${geometry_msgs_TARGETS}
@@ -97,6 +97,7 @@ target_link_libraries(nav2_navigate_through_poses PUBLIC
   ${nav2_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
 )

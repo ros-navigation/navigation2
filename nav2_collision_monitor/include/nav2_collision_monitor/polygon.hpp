@@ -24,7 +24,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
 #include "tf2/time.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
@@ -238,13 +238,6 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
     std::vector<rclcpp::Parameter> parameters);
-
-  /**
-   * @brief Checks if point is inside polygon
-   * @param point Given point to check
-   * @return True if given point is inside polygon, otherwise false
-   */
-  bool isPointInside(const Point & point) const;
 
   /**
    * @brief Extracts Polygon points from a string with of the form [[x1,y1],[x2,y2],[x3,y3]...]
