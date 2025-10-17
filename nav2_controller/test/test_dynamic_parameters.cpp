@@ -23,38 +23,11 @@
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-class ControllerShim : public nav2_controller::ControllerServer
+TEST(ControllerServerTest, test_dynamic_parameters)
 {
-public:
-  ControllerShim()
-  : nav2_controller::ControllerServer(rclcpp::NodeOptions())
-  {
-  }
-
-  // Since we cannot call configure/activate due to costmaps
-  // requiring TF
-  void setDynamicCallback()
-  {
-    auto node = shared_from_this();
-    // Add callback for dynamic parameters
-    dyn_params_handler_ = node->add_on_set_parameters_callback(
-      std::bind(&ControllerShim::dynamicParamsShim, this, std::placeholders::_1));
-  }
-
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParamsShim(std::vector<rclcpp::Parameter> parameters)
-  {
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    dynamicParametersCallback(parameters);
-    return result;
-  }
-};
-
-TEST(WPTest, test_dynamic_parameters)
-{
-  auto controller = std::make_shared<ControllerShim>();
-  controller->setDynamicCallback();
+  auto controller = std::make_shared<nav2_controller::ControllerServer>();
+  controller->configure();
+  controller->activate();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     controller->get_node_base_interface(), controller->get_node_topics_interface(),

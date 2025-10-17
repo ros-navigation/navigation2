@@ -56,9 +56,11 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
   path.header.frame_id = costmap_ros->getGlobalFrameID();
   pose.header.frame_id = costmap_ros->getGlobalFrameID();
 
-  controller->setPlan(path);
-
-  EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}));
+  controller->newPathReceived(path);
+  nav_msgs::msg::Path transformed_global_plan;
+  geometry_msgs::msg::PoseStamped goal;
+  EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}, transformed_global_plan,
+    goal));
 
   controller->setSpeedLimit(0.5, true);
   controller->setSpeedLimit(0.5, false);

@@ -7,7 +7,6 @@ set(TEST_NAMES
   motion_model_tests
   trajectory_visualizer_tests
   utils_test
-  path_handler_test
   critic_manager_test
   optimizer_unit_tests
 )
