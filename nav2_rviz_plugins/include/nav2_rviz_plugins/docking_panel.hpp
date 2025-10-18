@@ -18,6 +18,9 @@
 // QT
 #include <QtWidgets>
 #include <QBasicTimer>
+#include <QStateMachine>
+#include <QState>
+#include <QSignalTransition>
 
 #include <memory>
 #include <string>

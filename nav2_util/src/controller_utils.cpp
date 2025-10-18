@@ -54,6 +54,24 @@ geometry_msgs::msg::Point circleSegmentIntersection(
   return p;
 }
 
+geometry_msgs::msg::Point linearInterpolation(
+  const geometry_msgs::msg::Point & p1,
+  const geometry_msgs::msg::Point & p2,
+  const double target_dist)
+{
+  geometry_msgs::msg::Point result;
+
+  double dx = p2.x - p1.x;
+  double dy = p2.y - p1.y;
+  double d_dist = std::hypot(dx, dy);
+
+  double target_ratio = target_dist / d_dist;
+
+  result.x = p1.x + target_ratio * dx;
+  result.y = p1.y + target_ratio * dy;
+  return result;
+}
+
 geometry_msgs::msg::PoseStamped getLookAheadPoint(
   double & lookahead_dist,
   const nav_msgs::msg::Path & transformed_plan,
@@ -63,21 +81,25 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
   // Using distance along the path
   const auto & poses = transformed_plan.poses;
   auto goal_pose_it = poses.begin();
-  double d = 0.0;
+  double path_dist = 0.0;
+  double interpolation_dist = 0.0;
 
   bool pose_found = false;
   for (size_t i = 1; i < poses.size(); i++) {
     const auto & prev_pose = poses[i - 1].pose.position;
     const auto & curr_pose = poses[i].pose.position;
 
-    d += std::hypot(curr_pose.x - prev_pose.x, curr_pose.y - prev_pose.y);
-    if (d >= lookahead_dist) {
+    const double d = std::hypot(curr_pose.x - prev_pose.x, curr_pose.y - prev_pose.y);
+    if (path_dist + d >= lookahead_dist) {
       goal_pose_it = poses.begin() + i;
       pose_found = true;
       break;
     }
+
+    path_dist += d;
   }
 
+  interpolation_dist = lookahead_dist - path_dist;
   if (!pose_found) {
     goal_pose_it = poses.end();
   }
@@ -98,10 +120,10 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
       projected_position.x += cos(end_path_orientation) * lookahead_dist;
       projected_position.y += sin(end_path_orientation) * lookahead_dist;
 
-      // Use the circle intersection to find the position at the correct look
+      // Use the linear interpolation to find the position at the correct look
       // ahead distance
-      const auto interpolated_position = circleSegmentIntersection(
-        last_pose_it->pose.position, projected_position, lookahead_dist);
+      const auto interpolated_position = linearInterpolation(
+        last_pose_it->pose.position, projected_position, interpolation_dist);
 
       geometry_msgs::msg::PoseStamped interpolated_pose;
       interpolated_pose.header = last_pose_it->header;
@@ -109,19 +131,19 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
 
       return interpolated_pose;
     } else {
-      lookahead_dist = d;  // Updating lookahead distance since using the final point
+      lookahead_dist = path_dist;  // Updating lookahead distance since using the final point
       goal_pose_it = std::prev(transformed_plan.poses.end());
     }
   } else if (goal_pose_it != transformed_plan.poses.begin()) {
-    // Find the point on the line segment between the two poses
+    // Find the point on the robot path
     // that is exactly the lookahead distance away from the robot pose (the origin)
-    // This can be found with a closed form for the intersection of a segment and a circle
-    // Because of the way we did the std::find_if, prev_pose is guaranteed to be inside the circle,
-    // and goal_pose is guaranteed to be outside the circle.
+    // This can be found with a linear interpolation between the prev_pose and
+    // the goal_pose, moving interpolation_dist starting from prev_pose in the
+    // direction of goal_pose.
     auto prev_pose_it = std::prev(goal_pose_it);
-    auto point = circleSegmentIntersection(
+    auto point = linearInterpolation(
       prev_pose_it->pose.position,
-      goal_pose_it->pose.position, lookahead_dist);
+      goal_pose_it->pose.position, interpolation_dist);
 
     // Calculate orientation towards interpolated position
     // Convert yaw to quaternion

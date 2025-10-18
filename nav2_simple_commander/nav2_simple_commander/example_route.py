@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Point, PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator, RunningTask, TaskResult
 from nav2_simple_commander.utils import euler_to_quaternion
 import rclpy
@@ -24,7 +24,7 @@ Basic navigation demo to using the route server.
 """
 
 
-def toPoseStamped(pt: Pose, header: Header) -> PoseStamped:
+def toPoseStamped(pt: Point, header: Header) -> PoseStamped:
     pose = PoseStamped()
     pose.pose.position.x = pt.x
     pose.pose.position.y = pt.y
