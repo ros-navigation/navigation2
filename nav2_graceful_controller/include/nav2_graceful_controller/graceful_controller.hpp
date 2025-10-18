@@ -131,6 +131,7 @@ protected:
    *
    * @param motion_target Motion target point (in costmap local frame?)
    * @param costmap_transform Transform between global and local costmap
+   * @param target_distance Path distance to target point
    * @param trajectory Simulated trajectory
    * @param cmd_vel Initial command velocity during simulation
    * @param backward Flag to indicate if the robot is moving backward
@@ -139,6 +140,7 @@ protected:
   bool simulateTrajectory(
     const geometry_msgs::msg::PoseStamped & motion_target,
     const geometry_msgs::msg::TransformStamped & costmap_transform,
+    const double & target_distance,
     nav_msgs::msg::Path & trajectory,
     geometry_msgs::msg::TwistStamped & cmd_vel,
     bool backward);
