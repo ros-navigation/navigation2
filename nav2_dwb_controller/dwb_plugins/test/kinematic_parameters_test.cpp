@@ -49,7 +49,8 @@ public:
   void simulate_event(
     std::vector<rclcpp::Parameter> parameters)
   {
-    dynamicParametersCallback(parameters);
+    validateParameterUpdatesCallback(parameters);
+    updateParametersCallback(parameters);
   }
 };
 

@@ -56,10 +56,15 @@ KinematicsHandler::KinematicsHandler()
 KinematicsHandler::~KinematicsHandler()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  logger_ = node->get_logger();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
   delete kinematics_.load();
 }
 
@@ -118,10 +123,16 @@ void KinematicsHandler::initialize(
   kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
   kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
   kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
-
+  auto node = node_.lock();
   // Add callback for dynamic parameters
-  dyn_params_handler_ = nh->add_on_set_parameters_callback(
-    std::bind(&KinematicsHandler::dynamicParametersCallback, this, _1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &KinematicsHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &KinematicsHandler::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
   kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
@@ -169,8 +180,46 @@ void KinematicsHandler::setSpeedLimit(
   update_kinematics(kinematics);
 }
 
-rcl_interfaces::msg::SetParametersResult
-KinematicsHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0 &&
+        (param_name == plugin_name_ + ".max_vel_x" || param_name == plugin_name_ + ".max_vel_y" ||
+        param_name == plugin_name_ + ".max_vel_theta" ||
+        param_name == plugin_name_ + ".acc_lim_x" || param_name == plugin_name_ + ".acc_lim_y" ||
+        param_name == plugin_name_ + ".acc_lim_theta"))
+      {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >= 0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() > 0.0 &&
+        (param_name == plugin_name_ + ".acc_lim_x" || param_name == plugin_name_ + ".acc_lim_y" ||
+        param_name == plugin_name_ + ".acc_lim_y"))
+      {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be <= 0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+KinematicsHandler::updateParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   KinematicParameters kinematics(*kinematics_.load());
@@ -221,8 +270,6 @@ KinematicsHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
     }
   }
   update_kinematics(kinematics);
-  result.successful = true;
-  return result;
 }
 
 void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
