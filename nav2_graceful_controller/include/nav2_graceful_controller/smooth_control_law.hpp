@@ -51,22 +51,6 @@ public:
     double v_linear_min, double v_linear_max, double v_angular_max);
 
   /**
-   * @brief Constructor for nav2_graceful_controller::SmoothControlLaw
-   *
-   * @param k_phi Ratio of the rate of change in phi to the rate of change in r.
-   * @param k_delta Constant factor applied to the heading error feedback.
-   * @param beta Constant factor applied to the path curvature: dropping velocity.
-   * @param lambda Constant factor applied to the path curvature for sharpness.
-   * @param slowdown_radius Radial threshold applied to the slowdown rule.
-   * @param v_linear_min Minimum linear velocity.
-   * @param v_linear_max Maximum linear velocity.
-   * @param v_angular_max Maximum angular velocity.
-   */
-  SmoothControlLaw(
-    double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
-    double v_linear_min, double v_linear_max, double v_angular_max);
-
-  /**
    * @brief Destructor for nav2_graceful_controller::SmoothControlLaw
    */
   ~SmoothControlLaw() = default;

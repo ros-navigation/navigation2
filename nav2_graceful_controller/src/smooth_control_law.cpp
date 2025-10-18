@@ -30,14 +30,6 @@ SmoothControlLaw::SmoothControlLaw(
 {
 }
 
-SmoothControlLaw::SmoothControlLaw(
-  double k_phi, double k_delta, double beta, double lambda, double slowdown_radius,
-  double v_linear_min, double v_linear_max, double v_angular_max)
-: k_phi_(k_phi), k_delta_(k_delta), beta_(beta), lambda_(lambda), slowdown_radius_(slowdown_radius),
-  v_linear_min_(v_linear_min), v_linear_max_(v_linear_max), v_angular_max_(v_angular_max)
-{
-}
-
 void SmoothControlLaw::setCurvatureConstants(
   double k_phi, double k_delta, double beta, double lambda)
 {

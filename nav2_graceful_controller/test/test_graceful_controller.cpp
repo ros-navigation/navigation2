@@ -295,6 +295,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.v_angular_max", 10.0),
       rclcpp::Parameter("test.v_angular_min_in_place", 14.0),
       rclcpp::Parameter("test.slowdown_radius", 11.0),
+      rclcpp::Parameter("test.deceleration_max", 16.0),
       rclcpp::Parameter("test.initial_rotation", false),
       rclcpp::Parameter("test.initial_rotation_tolerance", 12.0),
       rclcpp::Parameter("test.prefer_final_rotation", false),
@@ -319,6 +320,7 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.v_angular_max").as_double(), 10.0);
   EXPECT_EQ(node->get_parameter("test.v_angular_min_in_place").as_double(), 14.0);
   EXPECT_EQ(node->get_parameter("test.slowdown_radius").as_double(), 11.0);
+  EXPECT_EQ(node->get_parameter("test.deceleration_max").as_double(), 16.0);
   EXPECT_EQ(node->get_parameter("test.initial_rotation").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.initial_rotation_tolerance").as_double(), 12.0);
   EXPECT_EQ(node->get_parameter("test.prefer_final_rotation").as_bool(), false);
