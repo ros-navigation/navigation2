@@ -263,51 +263,51 @@ TEST(VelocitySmootherTest, testfindEtaConstraint)
 
   // In range
   // Constant positive
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 1.0, accel, decel), 1);
   // Constant negative
-  EXPECT_EQ(smoother->findEtaConstraint(-1.0, -1.0, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, -1.0, accel, decel), 1);
   // Positive To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.504, accel, decel), 1);
   // Positive To Positive Decel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.5, 0.46, accel, decel), 1);
   // 0 To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, 0.004, accel, decel), 1);
   // Positive To 0 Decel
-  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.04, 0.0, accel, decel), 1);
   // Negative To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.504, accel, decel), 1);
   // Negative To Negative Decel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -0.46, accel, decel), 1);
   // 0 To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.0, -0.004, accel, decel), 1);
   // Negative To 0 Decel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.04, 0.0, accel, decel), 1);
   // Negative to Positive
-  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(-0.02, 0.02, accel, decel), 1);
   // Positive to Negative
-  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, decel), -1);
+  EXPECT_EQ(smoother->findEtaConstraint(0.02, -0.02, accel, decel), 1);
 
   // Faster than limit
   // Positive To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.5, 1.5, accel, decel), 0.005);
+  EXPECT_NEAR(smoother->findEtaConstraint(0.5, 1.5, accel, decel), 0.3366, 0.01);
   // Positive To Positive Decel
-  EXPECT_EQ(smoother->findEtaConstraint(1.5, 0.5, accel, decel), 0.05);
+  EXPECT_NEAR(smoother->findEtaConstraint(1.5, 0.5, accel, decel), 2.9, 0.01);
   // 0 To Positive Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, 1.0, accel, decel), 0.005);
+  EXPECT_NEAR(smoother->findEtaConstraint(0.0, 1.0, accel, decel), 0.005, 0.01);
   // Positive To 0 Decel
-  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, decel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(1.0, 0.0, accel, decel), 1);
   // Negative To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(-0.5, -1.5, accel, decel), 0.005);
+  EXPECT_NEAR(smoother->findEtaConstraint(-0.5, -1.5, accel, decel), 0.3366, 0.01);
   // Negative To Negative Decel
-  EXPECT_EQ(smoother->findEtaConstraint(-1.5, -0.5, accel, decel), 0.05);
+  EXPECT_NEAR(smoother->findEtaConstraint(-1.5, -0.5, accel, decel), 2.9, 0.01);
   // 0 To Negative Accel
-  EXPECT_EQ(smoother->findEtaConstraint(0.0, -1.0, accel, decel), 0.005);
+  EXPECT_NEAR(smoother->findEtaConstraint(0.0, -1.0, accel, decel), 0.005, 0.01);
   // Negative To 0 Decel
-  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, decel), 0.05);
+  EXPECT_EQ(smoother->findEtaConstraint(-1.0, 0.0, accel, decel), 1);
   // Negative to Positive
-  EXPECT_EQ(smoother->findEtaConstraint(-0.2, 0.8, accel, decel), 0.05);
+  EXPECT_NEAR(smoother->findEtaConstraint(-0.2, 0.8, accel, decel), -0.1875, 0.01);
   // Positive to Negative
-  EXPECT_EQ(smoother->findEtaConstraint(0.2, -0.8, accel, decel), 0.05);
+  EXPECT_NEAR(smoother->findEtaConstraint(0.2, -0.8, accel, decel), -0.1875, 0.01);
 }
 
 TEST(VelocitySmootherTest, testapplyConstraints)
@@ -327,12 +327,14 @@ TEST(VelocitySmootherTest, testapplyConstraints)
   // Too high, without eta
   EXPECT_NEAR(smoother->applyConstraints(1.0, 2.0, 1.5, -2.0, no_eta), 1.075, 0.01);
   // Too high, with eta applied on its own axis
-  EXPECT_NEAR(smoother->applyConstraints(1.0, 2.0, 1.5, -2.0, 0.075), 1.075, 0.01);
+  EXPECT_NEAR(smoother->applyConstraints(1.0, 2.0, 1.5, -2.0, 0.75), 1.075, 0.01);
   // On another virtual axis that is OK
-  EXPECT_NEAR(smoother->applyConstraints(0.5, 0.55, 1.5, -2.0, 0.075), 0.503, 0.01);
+  EXPECT_NEAR(smoother->applyConstraints(0.5, 0.75, 1.5, -2.0, 0.75), 0.5625, 0.01);
 
-  // In a more realistic situation, applied to angular
-  EXPECT_NEAR(smoother->applyConstraints(0.8, 1.0, 3.2, -3.2, 0.75), 1.075, 0.95);
+  // In a more realistic situation, applied to angular, too high
+  EXPECT_NEAR(smoother->applyConstraints(0.8, 2.0, 3.2, -3.2, 0.75), 0.96, 0.01);
+  // In a more realistic situation, applied to angular, OK
+  EXPECT_NEAR(smoother->applyConstraints(0.8, 1.2, 3.2, -3.2, 0.75), 0.9, 0.01);
 }
 
 TEST(VelocitySmootherTest, testapplyConstraintsPositiveToPositiveAccel)
@@ -815,6 +817,239 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   smoother->shutdown(state);
   smoother.reset();
 }
+
+TEST(VelocitySmootherTest, testCurvatureUpdatingOmegaLimit)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double eta = 1.0;
+  double curr_eta = 1.0;
+  double vel_accel_max = 2000.0;
+  double vel_accel_min = -2000.0;
+  double omega_accel_max = 10.0;
+  double omega_accel_min = -10.0;
+  double vel_limited;
+  double omega_limited;
+
+  // Omega_curr is zero
+  double vel_curr = 1.5;
+  double omega_curr = 0.0;
+  double vel_cmd = 2.0;
+  double omega_cmd = 1.5;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  EXPECT_NEAR(eta, 0.3333, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 0.6666, 0.001);
+  EXPECT_NEAR(omega_limited, 0.5, 0.001);
+
+  EXPECT_NEAR(vel_cmd / omega_cmd, vel_limited / omega_limited, 0.001);
+  EXPECT_NEAR(omega_cmd / vel_cmd, omega_limited / vel_limited, 0.001);
+
+  // Omega_cmd is zero
+  eta = 1.0;
+  vel_curr = 2.0;
+  omega_curr = -1.5;
+  vel_cmd = 1.5;
+  omega_cmd = 0.0;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  // No limitation, because eta is limited (<= 1.0)
+  EXPECT_NEAR(eta, 1.0, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 1.5, 0.001);
+  EXPECT_NEAR(omega_limited, -1.0, 0.001);
+  // Curvature is not fully updated, since eta is limited.
+  EXPECT_GT(vel_cmd / omega_cmd, vel_limited / omega_limited);
+  EXPECT_GT(omega_cmd / vel_cmd, omega_limited / vel_limited);
+  // Velocity sign switch
+  eta = 1.0;
+  vel_curr = -2.0;
+  omega_curr = 0.0;
+  vel_cmd = 2.0;
+  omega_cmd = 1.5;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  
+  EXPECT_NEAR(eta, 0.3333, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 0.6666, 0.001);
+  EXPECT_NEAR(omega_limited, 0.5, 0.001);
+  
+  EXPECT_NEAR(vel_cmd / omega_cmd, vel_limited / omega_limited, 0.001);
+  EXPECT_NEAR(omega_cmd / vel_cmd, omega_limited / vel_limited, 0.001);
+
+  // Omega sign switch
+  eta = 1.0;
+  vel_curr = 2.0;
+  omega_curr = -1.0;
+  vel_cmd = 1.0;
+  omega_cmd = 1.0;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+    eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+    eta = curr_eta;
+  }
+  // No limitations, since eta is limited (>= 0.0)
+  EXPECT_NEAR(eta, 1.0, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 1.0, 0.001);
+  EXPECT_NEAR(omega_limited, -0.5, 0.001);
+  
+  // Curvature is not fully updated, since eta is limited.
+  EXPECT_TRUE(vel_limited / omega_limited < 0.0);
+  EXPECT_TRUE(omega_limited / vel_limited < 0.0);
+}
+
+TEST(VelocitySmootherTest, testCurvatureUpdatingVelocityLimit)
+{
+  auto smoother =
+    std::make_shared<VelSmootherShim>();
+  rclcpp_lifecycle::State state;
+  // default frequency is 20.0
+  smoother->configure(state);
+  double eta = 1.0;
+  double curr_eta = 1.0;
+  double vel_accel_max = 2.0;
+  double vel_accel_min = -2.0;
+  double omega_accel_max = 20.0;
+  double omega_accel_min = -20.0;
+  double vel_limited;
+  double omega_limited;
+  
+  // Vel_curr is zero
+  double vel_curr = 0.0;
+  double omega_curr = 0.5;
+  double vel_cmd = 2.0;
+  double omega_cmd = 1.5;
+
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  EXPECT_NEAR(eta, 0.05, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 0.1, 0.001);
+  EXPECT_NEAR(omega_limited, 0.075, 0.001);
+
+  EXPECT_NEAR(vel_cmd / omega_cmd, vel_limited / omega_limited, 0.001);
+  EXPECT_NEAR(omega_cmd / vel_cmd, omega_limited / vel_limited, 0.001);
+
+  // Vel_cmd is zero
+  eta = 1.0;
+  vel_curr = -1.0;
+  omega_curr = 0.5;
+  vel_cmd = 0.0;
+  omega_cmd = 1.5;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  
+  // No limitation, because eta is limited (<= 1.0)
+  EXPECT_NEAR(eta, 1.0, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, -0.90, 0.001);
+  EXPECT_NEAR(omega_limited, 1.5, 0.001);
+  // No limitation, so curvature too low and negative
+  EXPECT_GT(vel_cmd / omega_cmd, vel_limited / omega_limited);
+  EXPECT_GT(omega_cmd / vel_cmd, omega_limited / vel_limited);
+  
+  // velocity sign change
+  eta = 1.0;
+  vel_curr = -0.05;
+  omega_curr = 0.5;
+  vel_cmd = 0.1;
+  omega_cmd = 1.5;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  
+  EXPECT_NEAR(eta, 0.5, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 0.05, 0.001);
+  EXPECT_NEAR(omega_limited, 0.75, 0.001);
+  
+  EXPECT_NEAR(vel_cmd / omega_cmd, vel_limited / omega_limited, 0.01);
+  EXPECT_NEAR(omega_cmd / vel_cmd, omega_limited / vel_limited, 0.01);
+  
+  // Velocity sign change
+  eta = 1.0;
+  vel_curr = 2.0;
+  omega_curr = 0.5;
+  vel_cmd = -2.0;
+  omega_cmd = 1.5;
+  
+  curr_eta = smoother->findEtaConstraint(vel_curr, vel_cmd, vel_accel_max, vel_accel_min);
+  EXPECT_LT(curr_eta, 0.0);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  curr_eta = smoother->findEtaConstraint(omega_curr, omega_cmd, omega_accel_max, omega_accel_min);
+  if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
+        eta = curr_eta;
+  }
+  
+  EXPECT_NEAR(eta, 1.0, 0.001);
+  vel_limited = smoother->applyConstraints(vel_curr, vel_cmd, vel_accel_max, vel_accel_min, eta);
+  omega_limited = smoother->applyConstraints(omega_curr, omega_cmd, omega_accel_max, omega_accel_min, eta);
+  EXPECT_NEAR(vel_limited, 1.9, 0.001);
+  EXPECT_NEAR(omega_limited, 1.5, 0.001);
+  // Curvature cannot be maintained
+  EXPECT_LT(vel_cmd / omega_cmd, vel_limited / omega_limited);
+  EXPECT_LT(omega_cmd / vel_cmd, omega_limited / vel_limited);
+}
+
 
 int main(int argc, char **argv)
 {
