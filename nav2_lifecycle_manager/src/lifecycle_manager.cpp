@@ -160,9 +160,9 @@ void
 LifecycleManager::publishIsActiveState()
 {
   if (is_active_pub_ && is_active_pub_->is_activated()) {
-    auto message = std_msgs::msg::Bool();
-    message.data = isActive();
-    is_active_pub_->publish(message);
+    auto message = std::make_unique<std_msgs::msg::Bool>();
+    message->data = isActive();
+    is_active_pub_->publish(std::move(message));
   }
 }
 
