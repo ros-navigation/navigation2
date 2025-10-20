@@ -1450,6 +1450,28 @@ AmclNode::freeMapDependentMemory()
 map_t *
 AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
 {
+  if (map_msg.info.width > INT16_MAX || map_msg.info.height > INT16_MAX) {
+    RCLCPP_ERROR(
+      get_logger(), "Map size is too large: width %u height %u. Maximum supported size is %d x %d.",
+      map_msg.info.width, map_msg.info.height, INT16_MAX, INT16_MAX);
+    return nullptr;
+  }
+
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(map_msg.info.width, map_msg.info.height, &num_cells)) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Map size overflowed during allocation. Map width and height multiplication overflow.");
+    return nullptr;
+  }
+
+  if (map_msg.data.size() < num_cells) {
+    RCLCPP_ERROR(
+      get_logger(), "Map data size (%zu) does not match width*height (%u).",
+      map_msg.data.size(), num_cells);
+    return nullptr;
+  }
+
   map_t * map = map_alloc();
 
   map->size_x = map_msg.info.width;

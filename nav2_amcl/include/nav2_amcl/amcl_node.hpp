@@ -59,6 +59,8 @@ namespace nav2_amcl
  */
 class AmclNode : public nav2_util::LifecycleNode
 {
+  friend class AmclNodeTest;
+
 public:
   /*
    * @brief AMCL constructor
