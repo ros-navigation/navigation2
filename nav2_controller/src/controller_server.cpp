@@ -49,26 +49,6 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
-  declare_parameter("controller_frequency", 20.0);
-
-  declare_parameter("progress_checker_plugins", default_progress_checker_ids_);
-  declare_parameter("goal_checker_plugins", default_goal_checker_ids_);
-  declare_parameter("controller_plugins", default_ids_);
-  declare_parameter("min_x_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter("min_y_velocity_threshold", rclcpp::ParameterValue(0.0001));
-  declare_parameter("min_theta_velocity_threshold", rclcpp::ParameterValue(0.0001));
-
-  declare_parameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-
-  declare_parameter("failure_tolerance", rclcpp::ParameterValue(0.0));
-  declare_parameter("use_realtime_priority", rclcpp::ParameterValue(false));
-  declare_parameter("publish_zero_velocity", rclcpp::ParameterValue(true));
-  declare_parameter("costmap_update_timeout", 0.30);  // 300ms
-
-  declare_parameter("odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter("odom_duration", rclcpp::ParameterValue(0.3));
-  declare_parameter("search_window", rclcpp::ParameterValue(2.0));
-
   // The costmap node is used in the implementation of the controller
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "local_costmap", std::string{get_namespace()},
@@ -91,7 +71,8 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring controller interface");
 
   RCLCPP_INFO(get_logger(), "getting progress checker plugins..");
-  get_parameter("progress_checker_plugins", progress_checker_ids_);
+  progress_checker_ids_ = declare_or_get_parameter(
+    "progress_checker_plugins", default_progress_checker_ids_);
   if (progress_checker_ids_ == default_progress_checker_ids_) {
     for (size_t i = 0; i < default_progress_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -101,7 +82,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   RCLCPP_INFO(get_logger(), "getting goal checker plugins..");
-  get_parameter("goal_checker_plugins", goal_checker_ids_);
+  goal_checker_ids_ = declare_or_get_parameter("goal_checker_plugins", default_goal_checker_ids_);
   if (goal_checker_ids_ == default_goal_checker_ids_) {
     for (size_t i = 0; i < default_goal_checker_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -110,7 +91,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     }
   }
 
-  get_parameter("controller_plugins", controller_ids_);
+  controller_ids_ = declare_or_get_parameter("controller_plugins", default_ids_);
   if (controller_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -123,21 +104,20 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   goal_checker_types_.resize(goal_checker_ids_.size());
   progress_checker_types_.resize(progress_checker_ids_.size());
 
-  get_parameter("controller_frequency", controller_frequency_);
-  get_parameter("min_x_velocity_threshold", min_x_velocity_threshold_);
-  get_parameter("min_y_velocity_threshold", min_y_velocity_threshold_);
-  get_parameter("min_theta_velocity_threshold", min_theta_velocity_threshold_);
+  controller_frequency_ = declare_or_get_parameter("controller_frequency", 20.0);
+  min_x_velocity_threshold_ = declare_or_get_parameter("min_x_velocity_threshold", 0.0001);
+  min_y_velocity_threshold_ = declare_or_get_parameter("min_y_velocity_threshold", 0.0001);
+  min_theta_velocity_threshold_ = declare_or_get_parameter("min_theta_velocity_threshold", 0.0001);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
-  std::string speed_limit_topic, odom_topic;
-  get_parameter("speed_limit_topic", speed_limit_topic);
-  get_parameter("odom_topic", odom_topic);
-  double odom_duration;
-  get_parameter("odom_duration", odom_duration);
-  get_parameter("failure_tolerance", failure_tolerance_);
-  get_parameter("use_realtime_priority", use_realtime_priority_);
-  get_parameter("publish_zero_velocity", publish_zero_velocity_);
-  get_parameter("search_window", search_window_);
+  std::string speed_limit_topic = declare_or_get_parameter(
+    "speed_limit_topic", std::string("speed_limit"));
+  std::string odom_topic = declare_or_get_parameter("odom_topic", std::string("odom"));
+  double odom_duration = declare_or_get_parameter("odom_duration", 0.3);
+  failure_tolerance_ = declare_or_get_parameter("failure_tolerance", 0.0);
+  use_realtime_priority_ = declare_or_get_parameter("use_realtime_priority", false);
+  publish_zero_velocity_ = declare_or_get_parameter("publish_zero_velocity", true);
+  search_window_ = declare_or_get_parameter("search_window", 2.0);
 
   costmap_ros_->configure();
   // Launch a thread to run the costmap node
@@ -231,8 +211,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   tracking_feedback_pub_ = create_publisher<nav2_msgs::msg::TrackingFeedback>("tracking_feedback");
 
-  double costmap_update_timeout_dbl;
-  get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
+  double costmap_update_timeout_dbl = declare_or_get_parameter("costmap_update_timeout", 0.30);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create the action server that we implement with our followPath method

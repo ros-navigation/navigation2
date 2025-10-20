@@ -31,10 +31,26 @@ public:
   {
   }
 
+  /**
+   * @brief Declare parameters needed for dynamic parameter testing.
+   *
+   * This method mirrors the parameter declarations in the
+   * on_configure method of ControllerServer.
+   */
+  void declareTestParameters()
+  {
+    declare_parameter("min_x_velocity_threshold", 0.0001);
+    declare_parameter("min_y_velocity_threshold", 0.0001);
+    declare_parameter("min_theta_velocity_threshold", 0.0001);
+    declare_parameter("failure_tolerance", 0.0);
+  }
+
   // Since we cannot call configure/activate due to costmaps
   // requiring TF
   void setDynamicCallback()
   {
+    declareTestParameters();
+
     auto node = shared_from_this();
     // Add callback for dynamic parameters
     dyn_params_handler_ = node->add_on_set_parameters_callback(
