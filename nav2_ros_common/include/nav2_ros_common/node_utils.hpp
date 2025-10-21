@@ -25,7 +25,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 
 using std::chrono::high_resolution_clock;
 using std::to_string;
@@ -195,7 +194,6 @@ inline void declare_parameter_if_not_declared(
  *
  * \param[in] node A node in which given parameter to be declared
  * \param[in] parameter_name Name of the parameter
- * \param[in] param_type The type of parameter
  * \param[in] parameter_descriptor Parameter descriptor (optional)
  * \return The value of the parameter or an exception
  */
@@ -203,12 +201,12 @@ template<typename ParameterT, typename NodeT>
 inline ParameterT declare_or_get_parameter(
   NodeT node,
   const std::string & parameter_name,
-  const rclcpp::ParameterType & param_type,
   const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
 {
   if (node->has_parameter(parameter_name)) {
     return node->get_parameter(parameter_name).template get_value<ParameterT>();
   }
+  auto param_type = rclcpp::ParameterValue{ParameterT{}}.get_type();
   auto parameter = node->declare_parameter(parameter_name, param_type, parameter_descriptor);
   if (parameter.get_type() == rclcpp::ParameterType::PARAMETER_NOT_SET) {
     std::string description = "Parameter " + parameter_name + " not in overrides";
