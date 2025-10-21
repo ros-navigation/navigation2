@@ -69,19 +69,9 @@ void SimpleGoalChecker::initialize(
   plugin_name_ = plugin_name;
   auto node = parent.lock();
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".stateful", rclcpp::ParameterValue(true));
-
-  node->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
-  node->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
-  node->get_parameter(plugin_name + ".stateful", stateful_);
+  xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
+  yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
+  stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
