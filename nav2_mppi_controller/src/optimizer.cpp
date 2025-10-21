@@ -177,7 +177,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
     last_command_vel_.angular.z = 0.0;
     last_command_vel_.linear.y  = 0.0;
   }
-  
+
   RCLCPP_INFO(logger_, "Optimizer reset");
 }
 
