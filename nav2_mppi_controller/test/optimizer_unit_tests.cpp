@@ -217,6 +217,44 @@ public:
   {
     return integrateStateVelocities(traj, state);
   }
+
+  void testCloseLoop()
+  {
+    settings_.open_loop = false;
+
+    mppi::models::State s;
+    s.reset(1000,50);
+    s.speed.linear.x = 0.25;
+    s.speed.angular.z = -0.7;
+    s.speed.linear.y = 0.1;
+
+    updateInitialStateVelocities(s);
+
+    EXPECT_FLOAT_EQ(s.vx(0,0), 0.25f);
+    EXPECT_FLOAT_EQ(s.wz(0,0), -0.7f);
+    EXPECT_FLOAT_EQ(s.vy(0,0), 0.1f);
+  }
+
+  void testOpenLoop()
+  {
+    settings_.open_loop = true;
+
+    last_command_vel_.linear.x = 0.6;
+    last_command_vel_.angular.z = 0.3;
+    last_command_vel_.linear.y = 0.1;
+
+    mppi::models::State s;
+    s.reset(1000, 50);
+    s.speed.linear.x = 0.11;
+    s.speed.angular.z = -0.22;
+    s.speed.linear.y = -0.05;
+
+    updateInitialStateVelocities(s);
+
+    EXPECT_FLOAT_EQ(s.vx(0,0), 0.6f);
+    EXPECT_FLOAT_EQ(s.wz(0,0), 0.3f);
+    EXPECT_FLOAT_EQ(s.vy(0,0), 0.1f);
+  }
 };
 
 TEST(OptimizerTests, BasicInitializedFunctions)
@@ -695,6 +733,20 @@ TEST(OptimizerTests, TestGetters)
   auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
   EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
+}
+
+TEST(OptimizerTests, DiffDrive_ClosedLoop_usesStateSpeed)
+{
+  OptimizerTester optimizer_tester;
+  optimizer_tester.testSetOmniModel();
+  optimizer_tester.testCloseLoop();
+}
+
+TEST(OptimizerTests, DiffDrive_OpenLoop_usesLastCmd)
+{
+  OptimizerTester optimizer_tester;
+  optimizer_tester.testSetOmniModel();
+  optimizer_tester.testOpenLoop();
 }
 
 int main(int argc, char **argv)
