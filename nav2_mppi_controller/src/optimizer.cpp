@@ -173,9 +173,9 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
 
   if (settings_.open_loop) {
-    last_command_vel_.linear.x  = 0.0;
+    last_command_vel_.linear.x = 0.0;
     last_command_vel_.angular.z = 0.0;
-    last_command_vel_.linear.y  = 0.0;
+    last_command_vel_.linear.y = 0.0;
   }
 
   RCLCPP_INFO(logger_, "Optimizer reset");
@@ -221,9 +221,9 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
   if (settings_.open_loop) {
-    last_command_vel_.linear.x  = control.twist.linear.x;
+    last_command_vel_.linear.x = control.twist.linear.x;
     last_command_vel_.angular.z = control.twist.angular.z;
-    last_command_vel_.linear.y  = control.twist.linear.y;
+    last_command_vel_.linear.y = control.twist.linear.y;
   }
 
   if (settings_.shift_control_sequence) {
