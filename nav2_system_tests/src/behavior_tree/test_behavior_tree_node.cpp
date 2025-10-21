@@ -601,6 +601,54 @@ EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npo
   std::filesystem::remove_all(tmp_dir);
 }
 
+TEST_F(BehaviorTreeTestFixture, TestSkipFilesWithMissingID) {
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  std::string tmp_dir = "/tmp/bt_test_missing_id";
+  std::filesystem::create_directories(tmp_dir);
+
+  // File with missing ID
+  std::string no_id_file = tmp_dir + "/no_id.xml";
+  write_file(no_id_file,
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree>\n"  // No ID attribute
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  std::string valid_file = tmp_dir + "/valid.xml";
+  write_file(valid_file,
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"ValidTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  std::stringstream captured_output;
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
+  bool result = bt_handler->loadBehaviorTree(valid_file, {tmp_dir});
+
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
+
+  std::string log_output = captured_output.str();
+
+  EXPECT_TRUE(result);
+  EXPECT_NE(log_output.find("Skipping BT file"), std::string::npos);
+  EXPECT_NE(log_output.find("(missing ID)"), std::string::npos);
+
+  std::filesystem::remove_all(tmp_dir);
+}
+
 
 /**
  * Test scenario:
