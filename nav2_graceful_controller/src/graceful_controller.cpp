@@ -97,6 +97,7 @@ void GracefulController::activate()
   local_plan_pub_->on_activate();
   motion_target_pub_->on_activate();
   slowdown_pub_->on_activate();
+  param_handler_->activateDynamicParametersCallback();
 }
 
 void GracefulController::deactivate()

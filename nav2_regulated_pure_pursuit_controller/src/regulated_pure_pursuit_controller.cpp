@@ -105,6 +105,7 @@ void RegulatedPurePursuitController::activate()
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
   is_rotating_to_heading_pub_->on_activate();
+  param_handler_->activateDynamicParametersCallback();
 }
 
 void RegulatedPurePursuitController::deactivate()
