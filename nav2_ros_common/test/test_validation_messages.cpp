@@ -242,6 +242,30 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   std::vector<int8_t> invalid_data(100 * 99, 0);   // Incorrect data size
   invalid_occupancy_grid.data = invalid_data;
   EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow uint32_t OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = 65536;
+  invalid_occupancy_grid.info.height = 65536;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow INT16_MAX OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = INT16_MAX + 1;
+  invalid_occupancy_grid.info.height = 100;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow INT16_MAX OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = 100;
+  invalid_occupancy_grid.info.height = INT16_MAX + 1;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
