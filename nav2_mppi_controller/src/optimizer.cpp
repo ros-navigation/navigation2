@@ -221,9 +221,9 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
   if (settings_.open_loop) {
-    last_command_vel_.linear.x = control.twist.linear.x;
+    last_command_vel_.linear.x  = control.twist.linear.x;
     last_command_vel_.angular.z = control.twist.angular.z;
-    last_command_vel_.linear.y = control.twist.linear.y;
+    last_command_vel_.linear.y  = control.twist.linear.y;
   }
 
   if (settings_.shift_control_sequence) {
