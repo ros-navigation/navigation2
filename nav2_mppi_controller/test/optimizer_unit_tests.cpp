@@ -223,16 +223,16 @@ public:
     settings_.open_loop = false;
 
     mppi::models::State s;
-    s.reset(1000,50);
+    s.reset(1000, 50);
     s.speed.linear.x = 0.25;
     s.speed.angular.z = -0.7;
     s.speed.linear.y = 0.1;
 
     updateInitialStateVelocities(s);
 
-    EXPECT_FLOAT_EQ(s.vx(0,0), 0.25f);
-    EXPECT_FLOAT_EQ(s.wz(0,0), -0.7f);
-    EXPECT_FLOAT_EQ(s.vy(0,0), 0.1f);
+    EXPECT_FLOAT_EQ(s.vx(0, 0), 0.25f);
+    EXPECT_FLOAT_EQ(s.wz(0, 0), -0.7f);
+    EXPECT_FLOAT_EQ(s.vy(0, 0), 0.1f);
   }
 
   void testOpenLoop()
@@ -251,9 +251,9 @@ public:
 
     updateInitialStateVelocities(s);
 
-    EXPECT_FLOAT_EQ(s.vx(0,0), 0.6f);
-    EXPECT_FLOAT_EQ(s.wz(0,0), 0.3f);
-    EXPECT_FLOAT_EQ(s.vy(0,0), 0.1f);
+    EXPECT_FLOAT_EQ(s.vx(0, 0), 0.6f);
+    EXPECT_FLOAT_EQ(s.wz(0, 0), 0.3f);
+    EXPECT_FLOAT_EQ(s.vy(0, 0), 0.1f);
   }
 };
 
