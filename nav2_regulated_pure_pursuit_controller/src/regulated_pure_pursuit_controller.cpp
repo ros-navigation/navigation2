@@ -171,25 +171,24 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   double & optimal_angular_vel
 )
 {
-  // ---- Parameters (assumed available in this scope) ----
-  const double A_MAX = params_->max_linear_accel;       // A_MAX
-  const double V_MAX = params_->desired_linear_vel;     // V_MAX
-  const double AW_MAX = params_->max_angular_accel;     // AW_MAX
-  const double W_MAX = params_->desired_angular_vel;    // W_MAX
-  const double DT = control_duration_;         // DT
+  const double & max_linear_accel = params_->max_linear_accel;
+  const double & desired_linear_vel = params_->desired_linear_vel;
+  const double & max_angular_accel = params_->max_angular_accel;
+  const double & desired_angular_vel = params_->desired_angular_vel;
+  const double & dt = control_duration_;
 
-  const double V_MIN = -V_MAX;
-  const double W_MIN = -W_MAX;
+  const double min_linear_vel = -desired_linear_vel;
+  const double min_angular_vel = -desired_angular_vel;
 
   // ---- 1) Dynamic Window ----
-  double dw_vmax = std::min(current_speed.linear.x + A_MAX * DT, V_MAX);
-  const double dw_vmin = std::max(current_speed.linear.x - A_MAX * DT, V_MIN);
-  double dw_wmax = std::min(current_speed.angular.z + AW_MAX * DT, W_MAX);
-  const double dw_wmin = std::max(current_speed.angular.z - AW_MAX * DT, W_MIN);
+  double dynamic_window_max_linear_vel = std::min(current_speed.linear.x + max_linear_accel * dt, desired_linear_vel);
+  const double dynamic_window_min_linear_vel = std::max(current_speed.linear.x - max_linear_accel * dt, min_linear_vel);
+  double dynamic_window_max_angular_vel = std::min(current_speed.angular.z + max_angular_accel * dt, desired_angular_vel);
+  const double dynamic_window_min_angular_vel = std::max(current_speed.angular.z - max_angular_accel * dt, min_angular_vel);
 
   // Reflect regulated v (tighten upper limit)
-  if (dw_vmax > regulated_linear_vel) {
-    dw_vmax = std::max(dw_vmin, regulated_linear_vel);
+  if (dynamic_window_max_linear_vel > regulated_linear_vel) {
+    dynamic_window_max_linear_vel = std::max(dynamic_window_min_linear_vel, regulated_linear_vel);
   }
 
   const double k = curvature;
@@ -197,14 +196,14 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   // ---- Curvature is 0 (w = 0) ----
   if (k == 0.0) {
     // If w=0 is within DW, then the maximum linear speed is adopted as it is.
-    if (dw_wmin <= 0.0 && 0.0 <= dw_wmax) {
-      optimal_linear_vel = dw_vmax;  // Always maximum v
+    if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
+      optimal_linear_vel = dynamic_window_max_linear_vel;  // Always maximum v
       optimal_angular_vel = 0.0;
       return;
     }
     // If w=0 is outside, choose the side closer to w=0 and with smaller |w|.
-    const double w_choice = (std::abs(dw_wmin) <= std::abs(dw_wmax)) ? dw_wmin : dw_wmax;
-    optimal_linear_vel = dw_vmax;    // Always maximum v
+    const double w_choice = (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) ? dynamic_window_min_angular_vel : dynamic_window_max_angular_vel;
+    optimal_linear_vel = dynamic_window_max_linear_vel;    // Always maximum v
     optimal_angular_vel = w_choice;
     return;
   }
@@ -215,32 +214,32 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
 
   // Intersection with vertical edges
   {
-    const double v1 = dw_vmin;
+    const double v1 = dynamic_window_min_linear_vel;
     const double w1 = k * v1;
-    if (w1 >= dw_wmin && w1 <= dw_wmax) {
+    if (w1 >= dynamic_window_min_angular_vel && w1 <= dynamic_window_max_angular_vel) {
       if (v1 > best_v) {best_v = v1; best_w = w1;}
     }
   }
   {
-    const double v2 = dw_vmax;
+    const double v2 = dynamic_window_max_linear_vel;
     const double w2 = k * v2;
-    if (w2 >= dw_wmin && w2 <= dw_wmax) {
+    if (w2 >= dynamic_window_min_angular_vel && w2 <= dynamic_window_max_angular_vel) {
       if (v2 > best_v) {best_v = v2; best_w = w2;}
     }
   }
 
   // Intersection with horizontal edge (k ! = 0)
   {
-    const double v3 = dw_wmin / k;
-    if (v3 >= dw_vmin && v3 <= dw_vmax) {
-      const double w3 = dw_wmin;
+    const double v3 = dynamic_window_min_angular_vel / k;
+    if (v3 >= dynamic_window_min_linear_vel && v3 <= dynamic_window_max_linear_vel) {
+      const double w3 = dynamic_window_min_angular_vel;
       if (v3 > best_v) {best_v = v3; best_w = w3;}
     }
   }
   {
-    const double v4 = dw_wmax / k;
-    if (v4 >= dw_vmin && v4 <= dw_vmax) {
-      const double w4 = dw_wmax;
+    const double v4 = dynamic_window_max_angular_vel / k;
+    if (v4 >= dynamic_window_min_linear_vel && v4 <= dynamic_window_max_linear_vel) {
+      const double w4 = dynamic_window_max_angular_vel;
       if (v4 > best_v) {best_v = v4; best_w = w4;}
     }
   }
@@ -256,10 +255,10 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   // Euclidean distance to the line w = k v among the 4 corners
   struct Corner { double v; double w; };
   const Corner corners[4] = {
-    {dw_vmin, dw_wmin},
-    {dw_vmin, dw_wmax},
-    {dw_vmax, dw_wmin},
-    {dw_vmax, dw_wmax}
+    {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
+    {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
+    {dynamic_window_max_linear_vel, dynamic_window_min_angular_vel},
+    {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
   };
 
   const double denom = std::sqrt(k * k + 1.0);  // Just sqrt once
