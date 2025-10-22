@@ -212,7 +212,8 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (parameter.as_double() > 0.0 &&
-        (param_name == plugin_name_ + ".decel_lim_x" || param_name == plugin_name_ + ".decel_lim_y" ||
+        (param_name == plugin_name_ + ".decel_lim_x" ||
+        param_name == plugin_name_ + ".decel_lim_y" ||
         param_name == plugin_name_ + ".decel_lim_theta"))
       {
         RCLCPP_WARN(

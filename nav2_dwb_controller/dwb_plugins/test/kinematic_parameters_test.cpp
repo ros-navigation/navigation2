@@ -102,7 +102,7 @@ TEST(KinematicParameters, SetAllParameters) {
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
-  
+
   EXPECT_EQ(kp.getDecelX(), -78.90);
 
   results = rec_param->set_parameters_atomically(
@@ -113,7 +113,7 @@ TEST(KinematicParameters, SetAllParameters) {
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
-  
+
   EXPECT_EQ(kp.getMaxX(), 23.45);
 
   results = rec_param->set_parameters_atomically(
@@ -124,7 +124,7 @@ TEST(KinematicParameters, SetAllParameters) {
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
-  
+
   EXPECT_EQ(kp.getAccX(), 56.78);
 }
 
