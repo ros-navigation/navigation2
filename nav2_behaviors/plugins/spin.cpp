@@ -37,7 +37,8 @@ Spin::Spin()
   cmd_yaw_(0.0),
   prev_yaw_(0.0),
   relative_yaw_(0.0),
-  simulate_ahead_time_(0.0)
+  simulate_ahead_time_(0.0),
+  cmd_disable_collision_checks_(false)
 {
 }
 
@@ -81,6 +82,8 @@ Status Spin::onRun(const std::shared_ptr<const SpinAction::Goal> command)
     RCLCPP_ERROR(logger_, "Current robot pose is not available.");
     return Status::FAILED;
   }
+
+  cmd_disable_collision_checks_ = command->disable_collision_checks;
 
   prev_yaw_ = tf2::getYaw(current_pose.pose.orientation);
   relative_yaw_ = 0.0;
@@ -163,6 +166,7 @@ bool Spin::isCollisionFree(
   geometry_msgs::msg::Pose2D & pose2d)
 {
   // Simulate ahead by simulate_ahead_time_ in cycle_frequency_ increments
+  if (cmd_disable_collision_checks_) return true;
   int cycle_count = 0;
   double sim_position_change;
   const int max_cycle_count = static_cast<int>(cycle_frequency_ * simulate_ahead_time_);
