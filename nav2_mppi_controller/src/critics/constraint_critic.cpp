@@ -84,17 +84,9 @@ void ConstraintCritic::score(CriticData & data)
     auto & wz = data.state.wz;
     const float min_turning_rad = acker->getMinTurningRadius();
 
-    // std::cout << "constraint_critic acker vx: " << data.state.vx(Eigen::seq(0, 9), 0).transpose() << std::endl;
-    // std::cout << "constraint_critic acker wz: " << data.state.wz(Eigen::seq(0, 9), 0).transpose() << std::endl;
-
     const float epsilon = 1e-6f;
     auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
     auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
-
-    // std::cout << "constraint_critic acker wz_safe: " << wz_safe(Eigen::seq(0, 9), 0).transpose() << std::endl;
-    // std::cout << "constraint_critic acker out_of_turning_rad_motion: " << out_of_turning_rad_motion(Eigen::seq(0, 9), 0).transpose() << std::endl;
-
-    // std::cout << "constraint_critic costs before: " << data.costs(Eigen::seq(0, 9)).transpose() << std::endl;
 
     if (power_ > 1u) {
       data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
