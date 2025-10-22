@@ -218,6 +218,16 @@ public:
     return integrateStateVelocities(traj, state);
   }
 
+  geometry_msgs::msg::Twist getLastCmdVel()
+  {
+    return last_command_vel_;
+  }
+
+  void enableOpenLoop()
+  {
+    settings_.open_loop = true;
+  }
+
   void testCloseLoop()
   {
     settings_.open_loop = false;
@@ -735,18 +745,30 @@ TEST(OptimizerTests, TestGetters)
   EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
 }
 
-TEST(OptimizerTests, DiffDrive_ClosedLoop_usesStateSpeed)
+TEST(OptimizerTests, Omni_ClosedLoop_usesStateSpeed)
 {
   OptimizerTester optimizer_tester;
   optimizer_tester.testSetOmniModel();
   optimizer_tester.testCloseLoop();
 }
 
-TEST(OptimizerTests, DiffDrive_OpenLoop_usesLastCmd)
+TEST(OptimizerTests, Omni_OpenLoop_usesLastCmd)
 {
   OptimizerTester optimizer_tester;
   optimizer_tester.testSetOmniModel();
   optimizer_tester.testOpenLoop();
+}
+
+TEST(OptimizerTests, Omni_OpenLoop_usesLastCmd_initValue)
+{
+  OptimizerTester optimizer_tester;
+  optimizer_tester.testSetOmniModel();
+  optimizer_tester.enableOpenLoop();
+  geometry_msgs::msg::Twist last_cmd_vel = optimizer_tester.getLastCmdVel();
+
+  EXPECT_FLOAT_EQ(last_cmd_vel.linear.x, 0.0f);
+  EXPECT_FLOAT_EQ(last_cmd_vel.angular.z, 0.0f);
+  EXPECT_FLOAT_EQ(last_cmd_vel.linear.y, 0.0f);
 }
 
 int main(int argc, char **argv)
