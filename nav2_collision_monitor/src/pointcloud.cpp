@@ -106,10 +106,34 @@ bool PointCloud::getData(
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*data_, "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*data_, "z");
 
+  bool height_present = false;
+  for (const auto & field : data_->fields) {
+    if (field.name == "height") {
+      height_present = true;
+    }
+  }
+
+// Reference height field
+  std::string height_field{"z"};
+  if (use_global_height_ && height_present) {
+    height_field = "height";
+  } else if (use_global_height_) {
+    RCLCPP_ERROR(logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud",
+      source_name_.c_str());
+    return false;
+  }
+  sensor_msgs::PointCloud2ConstIterator<float> iter_height(*data_, height_field);
+
   // Refill data array with PointCloud points in base frame
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     // Transform point coordinates from source frame -> to base frame
     tf2::Vector3 p_v3_s(*iter_x, *iter_y, *iter_z);
+
+    double data_height = *iter_z;
+    if (use_global_height_) {
+      data_height = *iter_height;
+      ++iter_height;
+    }
 
     // Check range from sensor origin before transformation
     double range = p_v3_s.length();
@@ -120,7 +144,7 @@ bool PointCloud::getData(
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
     // Refill data array
-    if (p_v3_b.z() >= min_height_ && p_v3_b.z() <= max_height_) {
+    if (data_height >= min_height_ && data_height <= max_height_) {
       data.push_back({p_v3_b.x(), p_v3_b.y()});
     }
   }
@@ -139,6 +163,8 @@ void PointCloud::getParameters(std::string & source_topic)
   min_height_ = node->declare_or_get_parameter(source_name_ + ".min_height", 0.05);
   max_height_ = node->declare_or_get_parameter(source_name_ + ".max_height", 0.5);
   min_range_ = node->declare_or_get_parameter(source_name_ + ".min_range", 0.0);
+  use_global_height_ = node->declare_or_get_parameter(
+    source_name_ + ".use_global_height", false);
   transport_type_ = node->declare_or_get_parameter(
     source_name_ + ".transport_type", std::string("raw"));
 }
@@ -171,6 +197,8 @@ PointCloud::dynamicParametersCallback(
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == source_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
+      } else if (param_name == source_name_ + "." + "use_global_height") {
+        use_global_height_ = parameter.as_bool();
       }
     }
   }
