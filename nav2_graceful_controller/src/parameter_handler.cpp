@@ -116,7 +116,7 @@ ParameterHandler::ParameterHandler(
   }
 }
 
-void ParameterHandler::activateDynamicParametersCallback()
+void ParameterHandler::activate()
 {
   auto node = node_.lock();
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -129,7 +129,7 @@ void ParameterHandler::activateDynamicParametersCallback()
       this, std::placeholders::_1));
 }
 
-ParameterHandler::~ParameterHandler()
+void ParameterHandler::deactivate()
 {
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
@@ -140,6 +140,10 @@ ParameterHandler::~ParameterHandler()
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
   on_set_params_handler_.reset();
+}
+
+ParameterHandler::~ParameterHandler()
+{
 }
 
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(

@@ -92,7 +92,12 @@ public:
   /**
   * @brief Registers callbacks for dynamic parameter handling.
   */
-  void activateDynamicParametersCallback();
+  void activate();
+
+  /**
+  * @brief Resets callbacks for dynamic parameter handling.
+  */
+  void deactivate();
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;

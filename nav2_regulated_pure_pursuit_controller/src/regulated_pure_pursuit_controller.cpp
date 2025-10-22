@@ -105,7 +105,7 @@ void RegulatedPurePursuitController::activate()
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
   is_rotating_to_heading_pub_->on_activate();
-  param_handler_->activateDynamicParametersCallback();
+  param_handler_->activate();
 }
 
 void RegulatedPurePursuitController::deactivate()
@@ -119,6 +119,7 @@ void RegulatedPurePursuitController::deactivate()
   carrot_pub_->on_deactivate();
   curvature_carrot_pub_->on_deactivate();
   is_rotating_to_heading_pub_->on_deactivate();
+  param_handler_->deactivate();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(

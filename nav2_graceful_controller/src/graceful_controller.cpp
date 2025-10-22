@@ -97,7 +97,7 @@ void GracefulController::activate()
   local_plan_pub_->on_activate();
   motion_target_pub_->on_activate();
   slowdown_pub_->on_activate();
-  param_handler_->activateDynamicParametersCallback();
+  param_handler_->activate();
 }
 
 void GracefulController::deactivate()
@@ -110,6 +110,7 @@ void GracefulController::deactivate()
   local_plan_pub_->on_deactivate();
   motion_target_pub_->on_deactivate();
   slowdown_pub_->on_deactivate();
+  param_handler_->deactivate();
 }
 
 geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
