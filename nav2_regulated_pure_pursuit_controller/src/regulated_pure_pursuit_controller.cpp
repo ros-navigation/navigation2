@@ -171,22 +171,23 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   double & optimal_angular_vel
 )
 {
+  const double & max_linear_vel = params_->max_linear_vel;
+  const double & min_linear_vel = params_->min_linear_vel;
+  const double & max_angular_vel = params_->max_angular_vel;
+  const double & min_angular_vel = params_->min_angular_vel;
+
   const double & max_linear_accel = params_->max_linear_accel;
-  const double & desired_linear_vel = params_->desired_linear_vel;
   const double & max_angular_accel = params_->max_angular_accel;
-  const double & desired_angular_vel = params_->desired_angular_vel;
   const double & dt = control_duration_;
 
-  const double min_linear_vel = -desired_linear_vel;
-  const double min_angular_vel = -desired_angular_vel;
 
   // ---- 1) Dynamic Window ----
   double dynamic_window_max_linear_vel = std::min(current_speed.linear.x + max_linear_accel * dt,
-      desired_linear_vel);
+      max_linear_vel);
   const double dynamic_window_min_linear_vel = std::max(current_speed.linear.x - max_linear_accel *
       dt, min_linear_vel);
   double dynamic_window_max_angular_vel = std::min(current_speed.angular.z + max_angular_accel * dt,
-      desired_angular_vel);
+      max_angular_vel);
   const double dynamic_window_min_angular_vel = std::max(current_speed.angular.z -
       max_angular_accel * dt, min_angular_vel);
 
@@ -359,7 +360,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     x_vel_sign = carrot_pose.pose.position.x >= 0.0 ? 1.0 : -1.0;
   }
 
-  linear_vel = params_->desired_linear_vel;
+  linear_vel = params_->max_linear_vel;
 
   // Make sure we're in compliance with basic constraints
   // For shouldRotateToPath, using x_vel_sign in order to support allow_reversing
@@ -534,7 +535,7 @@ void RegulatedPurePursuitController::applyConstraints(
     params_->approach_velocity_scaling_dist);
 
   // Limit linear velocities to be valid
-  linear_vel = std::clamp(fabs(linear_vel), 0.0, params_->desired_linear_vel);
+  linear_vel = std::clamp(fabs(linear_vel), 0.0, params_->max_linear_vel);
   linear_vel = sign * linear_vel;
 }
 
@@ -552,14 +553,14 @@ void RegulatedPurePursuitController::setSpeedLimit(
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
-    params_->desired_linear_vel = params_->base_desired_linear_vel;
+    params_->max_linear_vel = params_->base_max_linear_vel;
   } else {
     if (percentage) {
       // Speed limit is expressed in % from maximum speed of robot
-      params_->desired_linear_vel = params_->base_desired_linear_vel * speed_limit / 100.0;
+      params_->max_linear_vel = params_->base_max_linear_vel * speed_limit / 100.0;
     } else {
       // Speed limit is expressed in absolute value
-      params_->desired_linear_vel = speed_limit;
+      params_->max_linear_vel = speed_limit;
     }
   }
 }

@@ -33,8 +33,8 @@ namespace nav2_regulated_pure_pursuit_controller
 
 struct Parameters
 {
-  double desired_linear_vel, base_desired_linear_vel;
-  double desired_angular_vel;
+  double max_linear_vel, base_max_linear_vel, min_linear_vel;
+  double max_angular_vel, min_angular_vel;
   double lookahead_dist;
   double rotate_to_heading_angular_vel;
   double max_lookahead_dist;

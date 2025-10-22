@@ -35,7 +35,7 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  double getSpeed() {return params_->desired_linear_vel;}
+  double getSpeed() {return params_->max_linear_vel;}
 
   std::unique_ptr<geometry_msgs::msg::PointStamped> createCarrotMsgWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose)
@@ -439,7 +439,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.desired_linear_vel", 1.0),
+    {rclcpp::Parameter("test.max_linear_vel", 1.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
@@ -467,7 +467,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(node->get_parameter("test.desired_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_vel").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);

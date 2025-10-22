@@ -38,9 +38,13 @@ ParameterHandler::ParameterHandler(
   logger_ = logger;
 
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
+    node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".desired_angular_vel", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_vel", rclcpp::ParameterValue(1.0));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_angular_vel", rclcpp::ParameterValue(-1.0));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
@@ -116,9 +120,11 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
       node, plugin_name_ + ".velocity_feedback", rclcpp::ParameterValue(std::string("OPEN_LOOP")));
 
-  node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
-  params_.base_desired_linear_vel = params_.desired_linear_vel;
-  node->get_parameter(plugin_name_ + ".desired_angular_vel", params_.desired_angular_vel);
+  node->get_parameter(plugin_name_ + ".max_linear_vel", params_.max_linear_vel);
+  params_.base_max_linear_vel = params_.max_linear_vel;
+  node->get_parameter(plugin_name_ + ".min_linear_vel", params_.min_linear_vel);
+  node->get_parameter(plugin_name_ + ".max_angular_vel", params_.max_angular_vel);
+  node->get_parameter(plugin_name_ + ".min_angular_vel", params_.min_angular_vel);
   node->get_parameter(plugin_name_ + ".lookahead_dist", params_.lookahead_dist);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", params_.min_lookahead_dist);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", params_.max_lookahead_dist);
@@ -285,9 +291,9 @@ ParameterHandler::updateParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor") {
         params_.inflation_cost_scaling_factor = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".desired_linear_vel") {
-        params_.desired_linear_vel = parameter.as_double();
-        params_.base_desired_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_linear_vel") {
+        params_.max_linear_vel = parameter.as_double();
+        params_.base_max_linear_vel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".lookahead_dist") {
         params_.lookahead_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_lookahead_dist") {

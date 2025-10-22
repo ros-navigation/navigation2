@@ -65,7 +65,12 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 
 | Parameter | Description |
 |-----|----|
-| `desired_linear_vel` | The desired maximum linear velocity to use. |
+| `max_linear_vel` | The maximum linear velocity to use. |
+| `min_linear_vel` | The minimum linear velocity to use. |
+| `max_angular_vel` | The maximum angular velocity to use. |
+| `min_angular_vel` | The minimum angular velocity to use. |
+| `max_linear_accel` | The maximum linear acceleration to use. |
+| `max_angular_accel` | The maximum angular acceleration to use. |
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point |
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances |
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances |
@@ -88,10 +93,11 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `curvature_lookahead_dist` | Distance to lookahead to determine curvature for velocity regulation purposes. Only used if `use_fixed_curvature_lookahead` is enabled. |
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. |
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. |
-| `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled |
 | `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot. This is set by default to the maximum costmap extent, so it shouldn't be set manually unless there are loops within the local costmap. |
 | `interpolate_curvature_after_goal` | Needs use_fixed_curvature_lookahead to be true. Interpolate a carrot after the goal dedicated to the curvature calculation (to avoid oscillations at the end of the path) |
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
+| `use_dynamic_window ` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
+| `velocity_feedback ` | How the current velocity is obtained during dynamic window computation. "OPEN_LOOP" uses the last commanded velocity (recommended). "CLOSED_LOOP" uses odometry velocity (may hinder proper acceleration/deceleration) |
 
 Example fully-described XML with default parameter values:
 
@@ -117,7 +123,12 @@ controller_server:
       stateful: True
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.5
+      max_linear_vel: 0.5
+      min_linear_vel: 0.0
+      max_angular_vel: 1.0
+      min_angular_vel: -1.0
+      max_linear_accel: 0.5
+      max_angular_accel: 1.0
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -137,12 +148,12 @@ controller_server:
       curvature_lookahead_dist: 1.0
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
-      max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       interpolate_curvature_after_goal: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
+      use_dynamic_window: true
 ```
 
 ## Topics
