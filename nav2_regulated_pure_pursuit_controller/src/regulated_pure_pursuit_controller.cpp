@@ -181,10 +181,14 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   const double min_angular_vel = -desired_angular_vel;
 
   // ---- 1) Dynamic Window ----
-  double dynamic_window_max_linear_vel = std::min(current_speed.linear.x + max_linear_accel * dt, desired_linear_vel);
-  const double dynamic_window_min_linear_vel = std::max(current_speed.linear.x - max_linear_accel * dt, min_linear_vel);
-  double dynamic_window_max_angular_vel = std::min(current_speed.angular.z + max_angular_accel * dt, desired_angular_vel);
-  const double dynamic_window_min_angular_vel = std::max(current_speed.angular.z - max_angular_accel * dt, min_angular_vel);
+  double dynamic_window_max_linear_vel = std::min(current_speed.linear.x + max_linear_accel * dt,
+      desired_linear_vel);
+  const double dynamic_window_min_linear_vel = std::max(current_speed.linear.x - max_linear_accel *
+      dt, min_linear_vel);
+  double dynamic_window_max_angular_vel = std::min(current_speed.angular.z + max_angular_accel * dt,
+      desired_angular_vel);
+  const double dynamic_window_min_angular_vel = std::max(current_speed.angular.z -
+      max_angular_accel * dt, min_angular_vel);
 
   // Reflect regulated v (tighten upper limit)
   if (dynamic_window_max_linear_vel > regulated_linear_vel) {
@@ -202,7 +206,9 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
       return;
     }
     // If w=0 is outside, choose the side closer to w=0 and with smaller |w|.
-    const double w_choice = (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) ? dynamic_window_min_angular_vel : dynamic_window_max_angular_vel;
+    const double w_choice = (std::abs(dynamic_window_min_angular_vel) <=
+      std::abs(dynamic_window_max_angular_vel)) ? dynamic_window_min_angular_vel :
+      dynamic_window_max_angular_vel;
     optimal_linear_vel = dynamic_window_max_linear_vel;    // Always maximum v
     optimal_angular_vel = w_choice;
     return;
@@ -271,7 +277,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   best_v = corners[0][0];
   best_w = corners[0][1];
 
-  for (const auto &corner : corners) {
+  for (const auto & corner : corners) {
     const double d = euclid_dist(corner);
     // 1) Smaller distance → Adopted
     // 2) If distances are equal (~1e-12) → Choose the one with larger v (acceleration policy)
