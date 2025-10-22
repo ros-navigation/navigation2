@@ -162,6 +162,7 @@ public:
   void setPolygonVelocityVectors(
     const std::string & polygon_name,
     const std::vector<std::string> & polygons);
+  void setGlobalHeightParams(const std::string & source_name, const double min_height);
 
   // Setting TF chains
   void sendTransforms(const rclcpp::Time & stamp);
@@ -172,6 +173,9 @@ public:
   // Main topic/data working routines
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
+  void publishPointCloudWithHeight(
+    const double dist, const double height,
+    const rclcpp::Time & stamp);
   void publishRange(const double dist, const rclcpp::Time & stamp);
   void publishPolygon(const double dist, const rclcpp::Time & stamp);
   void publishCmdVel(const double x, const double y, const double tw);
@@ -491,6 +495,8 @@ void Tester::addSource(
       source_name + ".max_height", rclcpp::ParameterValue(1.0));
     cm_->set_parameter(
       rclcpp::Parameter(source_name + ".max_height", 1.0));
+    cm_->declare_parameter(
+      source_name + ".use_global_height", rclcpp::ParameterValue(false));
   } else if (type == RANGE) {
     cm_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("range"));
@@ -545,6 +551,17 @@ void Tester::setPolygonVelocityVectors(
 {
   cm_->declare_parameter(polygon_name + ".velocity_polygons", rclcpp::ParameterValue(polygons));
   cm_->set_parameter(rclcpp::Parameter(polygon_name + ".velocity_polygons", polygons));
+}
+
+void Tester::setGlobalHeightParams(const std::string & source_name, const double min_height)
+{
+  cm_->declare_or_get_parameter(
+    source_name + ".use_global_height", true);
+  cm_->set_parameter(rclcpp::Parameter(source_name + ".use_global_height", true));
+
+  cm_->declare_or_get_parameter(
+    source_name + ".min_height", min_height);
+  cm_->set_parameter(rclcpp::Parameter(source_name + ".min_height", min_height));
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -650,6 +667,45 @@ void Tester::publishPointCloud(const double dist, const rclcpp::Time & stamp)
   *iter_x = dist;
   *iter_y = -0.01;
   *iter_z = 0.2;
+
+  pointcloud_pub_->publish(std::move(msg));
+}
+
+void Tester::publishPointCloudWithHeight(
+  const double dist, const double height,
+  const rclcpp::Time & stamp)
+{
+  std::unique_ptr<sensor_msgs::msg::PointCloud2> msg =
+    std::make_unique<sensor_msgs::msg::PointCloud2>();
+  sensor_msgs::PointCloud2Modifier modifier(*msg);
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  modifier.setPointCloud2Fields(
+    4, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+    "height", 1, sensor_msgs::msg::PointField::FLOAT32);
+  modifier.resize(2);
+
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
+  sensor_msgs::PointCloud2Iterator<float> iter_height(*msg, "height");
+
+  // Point 0: (dist, 0.01, 0.2, height)
+  *iter_x = dist;
+  *iter_y = 0.01;
+  *iter_z = 0.2;
+  *iter_height = height;
+  ++iter_x; ++iter_y; ++iter_z; ++iter_height;
+
+  // Point 1: (dist, -0.01, 0.2, height)
+  *iter_x = dist;
+  *iter_y = -0.01;
+  *iter_z = 0.2;
+  *iter_height = height;
 
   pointcloud_pub_->publish(std::move(msg));
 }
@@ -1651,6 +1707,64 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
   ASSERT_EQ(action_state_->polygon_name, "VelocityPoylgon");
+
+  // Stop Collision Monitor node
+  cm_->stop();
+}
+
+TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
+{
+  // Set Collision Monitor parameters.
+  // Add velocity polygon with 2 sub polygon:
+  // 1. Forward:  0 -> 0.5 m/s
+  // 2. Backward: 0 -> -0.5 m/s
+  setCommonParameters();
+  addPolygon("VelocityPolygon", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("VelocityPolygon", "Forward", 0.0, 0.5, 0.0, 1.0, 4.0);
+  addPolygonVelocitySubPolygon("VelocityPolygon", "Backward", -0.5, 0.0, 0.0, 1.0, 2.0);
+  setPolygonVelocityVectors("VelocityPolygon", {"Forward", "Backward"});
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setGlobalHeightParams(POINTCLOUD_NAME, 0.5);
+  setVectors({"VelocityPolygon"}, {POINTCLOUD_NAME});
+
+  cm_->set_parameter(
+    rclcpp::Parameter("source_timeout", 2.0));
+
+  rclcpp::Time curr_time = cm_->now();
+  // Start Collision Monitor node
+  cm_->start();
+  // Check that robot stops when source is enabled
+  sendTransforms(curr_time);
+
+  // 1. Obstacle is in Forward velocity polygon and below global height
+  publishPointCloudWithHeight(3.0, 0.4, curr_time);
+  ASSERT_FALSE(waitData(std::hypot(3.0, 0.01), 500ms, curr_time));
+  publishCmdVel(0.4, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.4, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
+
+  // 2. Obstacle is in Forward velocity polygon and above global height
+  publishPointCloudWithHeight(3.0, 0.6, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(3.0, 0.01), 500ms, curr_time));
+  publishCmdVel(0.4, 0.0, 0.1);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+
+  // 3. Pointcloud without height field, invalid source.
+  publishPointCloud(2.5, curr_time);
+  ASSERT_FALSE(waitData(std::hypot(2.5, 0.01), 100ms, curr_time));
+  publishCmdVel(3.0, 3.0, 3.0);
+  ASSERT_FALSE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_EQ(action_state_->polygon_name, "invalid source");
 
   // Stop Collision Monitor node
   cm_->stop();
