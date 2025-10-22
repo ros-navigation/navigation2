@@ -255,7 +255,9 @@ ParameterHandler::updateParametersCallback(
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor") {
         params_.inflation_cost_scaling_factor = parameter.as_double();

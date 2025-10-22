@@ -236,6 +236,7 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   transformed_plan_pub_->on_activate();
   tracking_feedback_pub_->on_activate();
   action_server_->activate();
+  param_handler_->activate();
   auto node = shared_from_this();
 
   // create bond connection
@@ -268,6 +269,7 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   vel_publisher_->on_deactivate();
   transformed_plan_pub_->on_deactivate();
   tracking_feedback_pub_->on_deactivate();
+  param_handler_->deactivate();
 
   // destroy bond connection
   destroyBond();
