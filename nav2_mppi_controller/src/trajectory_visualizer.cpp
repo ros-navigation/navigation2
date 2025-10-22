@@ -118,7 +118,7 @@ void TrajectoryVisualizer::add(
     sorted_costs.emplace_back(i, trajectories.costs(i));
   }
   std::sort(sorted_costs.begin(), sorted_costs.end(),
-            [](const auto & a, const auto & b) { return a.second < b.second; });
+    [](const auto & a, const auto & b) {return a.second < b.second;});
 
   const float step = 1.0f / static_cast<float>(sorted_costs.size());
   float color_component = 1.0f;
