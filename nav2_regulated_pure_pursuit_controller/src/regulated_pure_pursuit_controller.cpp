@@ -194,7 +194,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   const double k = curvature;
 
   // ---- Curvature is 0 (w = 0) ----
-  if (k == 0.0) {
+  if (abs(k) < 1e-3) {
     // If w=0 is within DW, then the maximum linear speed is adopted as it is.
     if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
       optimal_linear_vel = dynamic_window_max_linear_vel;  // Always maximum v
@@ -209,7 +209,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   }
 
   // ---- 2) Select 'max v' from the candidates in the DW among the intersections. ----
-  double best_v = -1e300;     // Initial value for maximization
+  double best_v = -std::numeric_limits<double>::infinity();     // Initial value for maximization
   double best_w = 0.0;
 
   // Intersection with vertical edges
@@ -244,7 +244,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     }
   }
 
-  if (best_v > -1e290) {
+  if (best_v > -std::numeric_limits<double>::infinity()) {
     // Intersection found → Adopt max. v
     optimal_linear_vel = best_v;
     optimal_angular_vel = best_w;
@@ -272,7 +272,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   best_v = corners[0].v;
   best_w = corners[0].w;
 
-  for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < corners.size(); ++i) {
     const double d = euclid_dist(corners[i]);
     // 1) Smaller distance → Adopted
     // 2) If distances are equal (~1e-12) → Choose the one with larger v (acceleration policy)
@@ -394,7 +394,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     }
 
     // Apply curvature to angular velocity after constraining linear velocity
-    if (params_->use_dynamic_window == false) {
+    if (!params_->use_dynamic_window) {
       angular_vel = linear_vel * regulation_curvature;
     } else {
       // compute optimal path tracking velocity commands
