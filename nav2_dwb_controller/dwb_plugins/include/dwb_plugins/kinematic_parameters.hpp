@@ -142,6 +142,8 @@ public:
   KinematicsHandler();
   ~KinematicsHandler();
   void initialize(const nav2::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
+  void activate();
+  void deactivate();
 
   inline KinematicParameters getKinematics() {return *kinematics_.load();}
 

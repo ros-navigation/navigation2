@@ -55,16 +55,6 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-  auto node = node_.lock();
-  logger_ = node->get_logger();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
   delete kinematics_.load();
 }
 
@@ -74,6 +64,7 @@ void KinematicsHandler::initialize(
 {
   node_ = nh;
   plugin_name_ = plugin_name;
+  logger_ = nh->get_logger();
 
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
   declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
@@ -123,6 +114,15 @@ void KinematicsHandler::initialize(
   kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
   kinematics.base_max_speed_xy_ = kinematics.max_speed_xy_;
   kinematics.base_max_vel_theta_ = kinematics.max_vel_theta_;
+
+  kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
+  kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
+
+  update_kinematics(kinematics);
+}
+
+void KinematicsHandler::activate()
+{
   auto node = node_.lock();
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -133,11 +133,19 @@ void KinematicsHandler::initialize(
     std::bind(
       &KinematicsHandler::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
+}
 
-  kinematics.min_speed_xy_sq_ = kinematics.min_speed_xy_ * kinematics.min_speed_xy_;
-  kinematics.max_speed_xy_sq_ = kinematics.max_speed_xy_ * kinematics.max_speed_xy_;
-
-  update_kinematics(kinematics);
+void KinematicsHandler::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 void KinematicsHandler::setSpeedLimit(

@@ -43,57 +43,39 @@ using rcl_interfaces::msg::Parameter;
 using rcl_interfaces::msg::ParameterType;
 using rcl_interfaces::msg::ParameterEvent;
 
-class KinematicsHandlerTest : public dwb_plugins::KinematicsHandler
-{
-public:
-  void simulate_event(
-    std::vector<rclcpp::Parameter> parameters)
-  {
-    validateParameterUpdatesCallback(parameters);
-    updateParametersCallback(parameters);
-  }
-};
-
 TEST(KinematicParameters, SetAllParameters) {
   std::string nodeName = "test_node";
   auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
-  KinematicsHandlerTest kh;
+  dwb_plugins::KinematicsHandler kh;
   kh.initialize(node, nodeName);
+  kh.activate();
 
-  std::vector<rclcpp::Parameter> parameters;
-  rclcpp::Parameter
-    p_minX(nodeName + ".min_vel_x", 12.34),
-  p_maxX(nodeName + ".max_vel_x", 23.45),
-  p_minY(nodeName + ".min_vel_y", 34.56),
-  p_maxY(nodeName + ".max_vel_y", 45.67),
-  p_accX(nodeName + ".acc_lim_x", 56.78),
-  p_decelX(nodeName + ".acc_lim_y", 67.89),
-  p_accY(nodeName + ".decel_lim_x", 78.90),
-  p_decelY(nodeName + ".decel_lim_y", 89.01),
-  p_minSpeedXY(nodeName + ".min_speed_xy", 90.12),
-  p_maxSpeedXY(nodeName + ".max_speed_xy", 123.456),
-  p_maxTheta(nodeName + ".max_vel_theta", 345.678),
-  p_accTheta(nodeName + ".acc_lim_theta", 234.567),
-  p_decelTheta(nodeName + ".decel_lim_theta", 456.789),
-  p_minSpeedTheta(nodeName + ".min_speed_theta", 567.890);
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
 
-  parameters.push_back(p_minX);
-  parameters.push_back(p_minX);
-  parameters.push_back(p_maxX);
-  parameters.push_back(p_minY);
-  parameters.push_back(p_maxY);
-  parameters.push_back(p_accX);
-  parameters.push_back(p_accY);
-  parameters.push_back(p_decelX);
-  parameters.push_back(p_decelY);
-  parameters.push_back(p_minSpeedXY);
-  parameters.push_back(p_maxSpeedXY);
-  parameters.push_back(p_maxTheta);
-  parameters.push_back(p_accTheta);
-  parameters.push_back(p_decelTheta);
-  parameters.push_back(p_minSpeedTheta);
+  auto results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter(nodeName + ".min_vel_x", 12.34),
+    rclcpp::Parameter(nodeName + ".max_vel_x", 23.45),
+    rclcpp::Parameter(nodeName + ".min_vel_y", 34.56),
+    rclcpp::Parameter(nodeName + ".max_vel_y", 45.67),
+    rclcpp::Parameter(nodeName + ".acc_lim_x", 56.78),
+    rclcpp::Parameter(nodeName + ".acc_lim_y", 67.89),
+    rclcpp::Parameter(nodeName + ".decel_lim_x", -78.90),
+    rclcpp::Parameter(nodeName + ".decel_lim_y", -89.01),
+    rclcpp::Parameter(nodeName + ".min_speed_xy", 90.12),
+    rclcpp::Parameter(nodeName + ".max_speed_xy", 123.456),
+    rclcpp::Parameter(nodeName + ".max_vel_theta", 345.678),
+    rclcpp::Parameter(nodeName + ".acc_lim_theta", 234.567),
+    rclcpp::Parameter(nodeName + ".decel_lim_theta", -456.789),
+    rclcpp::Parameter(nodeName + ".min_speed_theta", 567.890),
+  });
 
-  kh.simulate_event(parameters);
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
 
   dwb_plugins::KinematicParameters kp = kh.getKinematics();
 
@@ -103,14 +85,47 @@ TEST(KinematicParameters, SetAllParameters) {
   EXPECT_EQ(kp.getMaxY(), 45.67);
   EXPECT_EQ(kp.getAccX(), 56.78);
   EXPECT_EQ(kp.getAccY(), 67.89);
-  EXPECT_EQ(kp.getDecelX(), 78.90);
-  EXPECT_EQ(kp.getDecelY(), 89.01);
+  EXPECT_EQ(kp.getDecelX(), -78.90);
+  EXPECT_EQ(kp.getDecelY(), -89.01);
   EXPECT_EQ(kp.getMinSpeedXY(), 90.12);
   EXPECT_EQ(kp.getMaxSpeedXY(), 123.456);
   EXPECT_EQ(kp.getAccTheta(), 234.567);
   EXPECT_EQ(kp.getMaxTheta(), 345.678);
-  EXPECT_EQ(kp.getDecelTheta(), 456.789);
+  EXPECT_EQ(kp.getDecelTheta(), -456.789);
   EXPECT_EQ(kp.getMinSpeedTheta(), 567.890);
+
+  results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter(nodeName + ".decel_lim_x", 1.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  
+  EXPECT_EQ(kp.getDecelX(), -78.90);
+
+  results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter(nodeName + ".max_vel_x", -1.0)
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  
+  EXPECT_EQ(kp.getMaxX(), 23.45);
+
+  results = rec_param->set_parameters_atomically(
+  {
+    rclcpp::Parameter(nodeName + ".acc_lim_x", -0.1)
+  });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  
+  EXPECT_EQ(kp.getAccX(), 56.78);
 }
 
 
