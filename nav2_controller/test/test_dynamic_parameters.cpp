@@ -25,29 +25,52 @@
 
 TEST(ControllerServerTest, test_dynamic_parameters)
 {
-  auto controller = std::make_shared<nav2_controller::ControllerServer>();
-  controller->configure();
-  controller->activate();
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  auto param_handler_ = std::make_unique<nav2_controller::ParameterHandler>(
+      node, node->get_logger());
+  param_handler_->activate();
+  auto params_ = param_handler_->getParams();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
-    controller->get_node_base_interface(), controller->get_node_topics_interface(),
-    controller->get_node_graph_interface(),
-    controller->get_node_services_interface());
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("min_x_velocity_threshold", 100.0),
       rclcpp::Parameter("min_y_velocity_threshold", 100.0),
       rclcpp::Parameter("min_theta_velocity_threshold", 100.0),
-      rclcpp::Parameter("failure_tolerance", 5.0)});
+      rclcpp::Parameter("failure_tolerance", 5.0),
+      rclcpp::Parameter("search_window", 10.0)});
 
   rclcpp::spin_until_future_complete(
-    controller->get_node_base_interface(),
+    node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(controller->get_parameter("min_x_velocity_threshold").as_double(), 100.0);
-  EXPECT_EQ(controller->get_parameter("min_y_velocity_threshold").as_double(), 100.0);
-  EXPECT_EQ(controller->get_parameter("min_theta_velocity_threshold").as_double(), 100.0);
-  EXPECT_EQ(controller->get_parameter("failure_tolerance").as_double(), 5.0);
+  EXPECT_EQ(params_->min_x_velocity_threshold, 100.0);
+  EXPECT_EQ(params_->min_y_velocity_threshold, 100.0);
+  EXPECT_EQ(params_->min_theta_velocity_threshold, 100.0);
+  EXPECT_EQ(params_->failure_tolerance, 5.0);
+  EXPECT_EQ(params_->search_window, 10.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("min_x_velocity_threshold", -1.0)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  
+  EXPECT_EQ(params_->min_x_velocity_threshold, 100.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("search_window", -0.1)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+  
+  EXPECT_EQ(params_->search_window, 10.0);
 }
 
 int main(int argc, char **argv)
