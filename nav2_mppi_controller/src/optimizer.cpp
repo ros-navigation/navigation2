@@ -358,13 +358,13 @@ void Optimizer::updateStateVelocities(
 
 void Optimizer::updateInitialStateVelocities(models::State & state) const
 {
-  const float state.vx.col(0) = settings_.open_loop ? last_command_vel_.linear.x :
+  state.vx.col(0) = settings_.open_loop ? last_command_vel_.linear.x :
     static_cast<float>(state.speed.linear.x);
-  const float state.wz.col(0) = settings_.open_loop ? last_command_vel_.angular.z :
+  state.wz.col(0) = settings_.open_loop ? last_command_vel_.angular.z :
     static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    const float state.vy.col(0) = settings_.open_loop ? last_command_vel_.linear.y :
+    state.vy.col(0) = settings_.open_loop ? last_command_vel_.linear.y :
       static_cast<float>(state.speed.linear.y);
   }
 }
