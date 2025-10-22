@@ -101,31 +101,77 @@ ParameterHandler::ParameterHandler(
     params_.allow_backward = false;
   }
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&ParameterHandler::dynamicParametersCallback, this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ParameterHandler::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 ParameterHandler::~ParameterHandler()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
-rcl_interfaces::msg::SetParametersResult
-ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-
+  result.successful = true;
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".allow_backward") {
+        if (params_.initial_rotation && parameter.as_bool()) {
+          RCLCPP_WARN(
+            logger_, "Initial rotation and allow backward parameters are both true, "
+            "rejecting parameter change.");
+          result.successful = false;
+        }
+      } else if(param_name == plugin_name_ + ".initial_rotation") {
+        if (parameter.as_bool() && params_.allow_backward) {
+          RCLCPP_WARN(
+            logger_, "Initial rotation and allow backward parameters are both true, "
+            "rejecting parameter change.");
+          result.successful = false;
+        }
+      }
+    }
+  }
+  return result;
+}
+void
+ParameterHandler::updateParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".min_lookahead") {
@@ -161,31 +207,16 @@ ParameterHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".initial_rotation") {
-        if (parameter.as_bool() && params_.allow_backward) {
-          RCLCPP_WARN(
-            logger_, "Initial rotation and allow backward parameters are both true, "
-            "rejecting parameter change.");
-          continue;
-        }
         params_.initial_rotation = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".prefer_final_rotation") {
         params_.prefer_final_rotation = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".allow_backward") {
-        if (params_.initial_rotation && parameter.as_bool()) {
-          RCLCPP_WARN(
-            logger_, "Initial rotation and allow backward parameters are both true, "
-            "rejecting parameter change.");
-          continue;
-        }
         params_.allow_backward = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_collision_detection") {
         params_.use_collision_detection = parameter.as_bool();
       }
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_graceful_controller

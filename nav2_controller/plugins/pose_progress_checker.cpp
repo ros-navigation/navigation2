@@ -39,8 +39,8 @@ void PoseProgressChecker::initialize(
   SimpleProgressChecker::initialize(parent, plugin_name);
   auto node = parent.lock();
 
-  required_movement_angle_ = node->declare_or_get_parameter(plugin_name +
-    ".required_movement_angle", 0.5);
+  required_movement_angle_ = node->declare_or_get_parameter(
+    plugin_name + ".required_movement_angle", 0.5);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
