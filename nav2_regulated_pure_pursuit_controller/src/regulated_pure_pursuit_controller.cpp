@@ -253,33 +253,32 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
 
   // ---- 3) If no intersection exists: Select the one with the smallest
   // Euclidean distance to the line w = k v among the 4 corners
-  struct Corner { double v; double w; };
-  const Corner corners[4] = {
+  const std::array<std::array<double, 2>, 4> corners = {{
     {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
     {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
     {dynamic_window_max_linear_vel, dynamic_window_min_angular_vel},
     {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
-  };
+  }};
 
   const double denom = std::sqrt(k * k + 1.0);  // Just sqrt once
 
-  auto euclid_dist = [&](const Corner & c) -> double {
+  auto euclid_dist = [&](const std::array<double, 2> & corner) -> double {
     // Distance from point (v, w) to line w - k v = 0
-      return std::abs(k * c.v - c.w) / denom;
+      return std::abs(k * corner[0] - corner[1]) / denom;
     };
 
-  double best_dist = 1e300;
-  best_v = corners[0].v;
-  best_w = corners[0].w;
+  double best_dist = std::numeric_limits<double>::infinity();
+  best_v = corners[0][0];
+  best_w = corners[0][1];
 
-  for (int i = 0; i < corners.size(); ++i) {
-    const double d = euclid_dist(corners[i]);
+  for (const auto &corner : corners) {
+    const double d = euclid_dist(corner);
     // 1) Smaller distance → Adopted
     // 2) If distances are equal (~1e-12) → Choose the one with larger v (acceleration policy)
-    if (d < best_dist || (std::abs(d - best_dist) <= 1e-12 && corners[i].v > best_v)) {
+    if (d < best_dist || (std::abs(d - best_dist) <= 1e-3 && corner[0] > best_v)) {
       best_dist = d;
-      best_v = corners[i].v;
-      best_w = corners[i].w;
+      best_v = corner[0];
+      best_w = corner[1];
     }
   }
 
