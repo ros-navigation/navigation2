@@ -60,7 +60,7 @@ TEST(ControllerServerTest, test_dynamic_parameters)
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
-  
+
   EXPECT_EQ(params_->min_x_velocity_threshold, 100.0);
 
   results = rec_param->set_parameters_atomically(
@@ -69,7 +69,7 @@ TEST(ControllerServerTest, test_dynamic_parameters)
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
-  
+
   EXPECT_EQ(params_->search_window, 10.0);
 }
 
