@@ -91,6 +91,7 @@ void RotationShimController::activate()
   in_rotation_ = false;
   last_angular_vel_ = std::numeric_limits<double>::max();
   position_goal_checker_->reset();
+  param_handler_->activate();
 }
 
 void RotationShimController::deactivate()
@@ -102,6 +103,7 @@ void RotationShimController::deactivate()
     plugin_name_.c_str());
 
   primary_controller_->deactivate();
+  param_handler_->deactivate();
 }
 
 void RotationShimController::cleanup()

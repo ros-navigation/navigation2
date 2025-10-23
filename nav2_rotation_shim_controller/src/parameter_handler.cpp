@@ -35,53 +35,23 @@ ParameterHandler::ParameterHandler(
   plugin_name_ = plugin_name;
   logger_ = logger;
 
-  double control_frequency;
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".angular_dist_threshold", rclcpp::ParameterValue(0.785));  // 45 deg
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".angular_disengage_threshold", rclcpp::ParameterValue(0.785 / 2.0));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".forward_sampling_distance", rclcpp::ParameterValue(0.5));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.8));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".simulate_ahead_time", rclcpp::ParameterValue(1.0));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".primary_controller", rclcpp::PARAMETER_STRING);
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".rotate_to_goal_heading", rclcpp::ParameterValue(false));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".rotate_to_heading_once", rclcpp::ParameterValue(false));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".closed_loop", rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name_ + ".use_path_orientations", rclcpp::ParameterValue(false));
-
-  node->get_parameter(plugin_name_ + ".angular_dist_threshold", params_.angular_dist_threshold);
-  node->get_parameter(plugin_name_ + ".angular_disengage_threshold",
-    params_.angular_disengage_threshold);
-  node->get_parameter(plugin_name_ + ".forward_sampling_distance",
-    params_.forward_sampling_distance);
-  node->get_parameter(
-    plugin_name_ + ".rotate_to_heading_angular_vel",
-    params_.rotate_to_heading_angular_vel);
-  node->get_parameter(plugin_name_ + ".max_angular_accel", params_.max_angular_accel);
-  node->get_parameter(plugin_name_ + ".simulate_ahead_time", params_.simulate_ahead_time);
-
-  params_.primary_controller = node->get_parameter(plugin_name_ +
-    ".primary_controller").as_string();
+  params_.angular_dist_threshold = node->declare_or_get_parameter(plugin_name_ + ".angular_dist_threshold", 0.785); // 45 deg
+  params_.angular_disengage_threshold = node->declare_or_get_parameter(plugin_name_ + ".angular_disengage_threshold", 0.785 / 2.0);
+  params_.forward_sampling_distance = node->declare_or_get_parameter(plugin_name_ + ".forward_sampling_distance", 0.5);
+  params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_heading_angular_vel", 1.8);
+  params_.max_angular_accel = node->declare_or_get_parameter(plugin_name_ + ".max_angular_accel", 3.2);
+  params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ + ".simulate_ahead_time", 1.0);
+  params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ + ".primary_controller");
+  params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_goal_heading", false);
+  params_.rotate_to_heading_once = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_heading_once", false);
+  params_.closed_loop = node->declare_or_get_parameter(plugin_name_ + ".closed_loop", true);
+  params_.use_path_orientations = node->declare_or_get_parameter(plugin_name_ + ".use_path_orientations", false);
+  double control_frequency = 20.0;
   node->get_parameter("controller_frequency", control_frequency);
   params_.control_duration = 1.0 / control_frequency;
-
-  node->get_parameter(plugin_name_ + ".rotate_to_goal_heading", params_.rotate_to_goal_heading);
-  node->get_parameter(plugin_name_ + ".rotate_to_heading_once", params_.rotate_to_heading_once);
-  node->get_parameter(plugin_name_ + ".closed_loop", params_.closed_loop);
-  node->get_parameter(plugin_name_ + ".use_path_orientations", params_.use_path_orientations);
 }
 
-void ParameterHandler::activateDynamicParameters()
+void ParameterHandler::activate()
 {
   auto node = node_.lock();
   post_set_params_handler_ = node->add_post_set_parameters_callback(
@@ -94,7 +64,7 @@ void ParameterHandler::activateDynamicParameters()
       this, std::placeholders::_1));
 }
 
-ParameterHandler::~ParameterHandler()
+void ParameterHandler::deactivate()
 {
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
@@ -105,6 +75,10 @@ ParameterHandler::~ParameterHandler()
     node->remove_on_set_parameters_callback(on_set_params_handler_.get());
   }
   on_set_params_handler_.reset();
+}
+
+ParameterHandler::~ParameterHandler()
+{
 }
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
   std::vector<rclcpp::Parameter> parameters)
@@ -148,7 +122,6 @@ ParameterHandler::updateParametersCallback(
     if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
-
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".angular_dist_threshold") {
         params_.angular_dist_threshold = parameter.as_double();

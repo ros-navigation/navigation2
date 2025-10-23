@@ -48,7 +48,7 @@ struct Parameters
 
 /**
  * @class nav2_rotation_shim_controller::ParameterHandler
- * @brief Handles parameters and dynamic parameters for RPP
+ * @brief Handles parameters and dynamic parameters for Rotation Shim
  */
 class ParameterHandler
 {
@@ -69,6 +69,16 @@ public:
   std::mutex & getMutex() {return mutex_;}
 
   Parameters * getParams() {return &params_;}
+
+    /**
+  * @brief Registers callbacks for dynamic parameter handling.
+  */
+  void activate();
+
+  /**
+  * @brief Resets callbacks for dynamic parameter handling.
+  */
+  void deactivate();
 
 protected:
   nav2::LifecycleNode::WeakPtr node_;
@@ -92,8 +102,6 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult
   validateParameterUpdatesCallback(std::vector<rclcpp::Parameter> parameters);
-
-  void activateDynamicParameters();
 
   // Dynamic parameters handler
   std::mutex mutex_;
