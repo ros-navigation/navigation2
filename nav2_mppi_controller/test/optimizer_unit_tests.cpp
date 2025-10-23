@@ -699,7 +699,7 @@ TEST(OptimizerTests, TestGetters)
 
 TEST(OptimizerTests, Omni_openLoopMppiTest)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   OptimizerTester optimizer_tester;
   node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
   node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
@@ -715,7 +715,8 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, &param_handler);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
   optimizer_tester.resetMotionModel();
   optimizer_tester.testSetOmniModel();
 
@@ -729,7 +730,7 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   geometry_msgs::msg::Pose goal;
   path.poses.resize(17);
 
-  const auto cmd1 = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
+  const auto [cmd1, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
 
   EXPECT_LE(std::abs(cmd1.twist.linear.x),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
@@ -738,7 +739,7 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   EXPECT_LE(std::abs(cmd1.twist.linear.y),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
 
-  const auto cmd2 = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
+  const auto [cmd2, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
 
   const double vx_delta = std::abs(cmd2.twist.linear.x - cmd1.twist.linear.x);
   const double wz_delta = std::abs(cmd2.twist.angular.z - cmd1.twist.angular.z);
