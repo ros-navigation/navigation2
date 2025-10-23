@@ -135,6 +135,13 @@ protected:
     */
   bool isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
 
+  /**
+    * @brief Check if the robot pose is within the set rotation tolerances
+    * @param robot_pose Robot's current pose to check
+    * @return bool If the robot pose is within the set rotation tolerances
+    */
+  bool isWithinRotationTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
+
   std::string name_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -142,6 +149,7 @@ protected:
 
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_inversion_;
+  nav_msgs::msg::Path global_plan_up_to_rotation_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   double max_robot_pose_search_dist_{0};
@@ -149,8 +157,14 @@ protected:
   double transform_tolerance_{0};
   float inversion_xy_tolerance_{0.2};
   float inversion_yaw_tolerance{0.4};
+  float rotation_xy_tolerance_{0.2};
+  float rotation_yaw_tolerance_{0.4};
+  float rotation_translation_threshold_{0.02};
+  float rotation_rotation_threshold_{0.785};
   bool enforce_path_inversion_{false};
+  bool enforce_path_rotation_{false};
   unsigned int inversion_locale_{0u};
+  unsigned int rotation_locale_{0u};
 };
 }  // namespace mppi
 
