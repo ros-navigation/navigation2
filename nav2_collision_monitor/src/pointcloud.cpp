@@ -153,7 +153,7 @@ void PointCloud::getParameters(std::string & source_topic)
   min_range_ = node->get_parameter(source_name_ + ".min_range").as_double();
   nav2_util::declare_parameter_if_not_declared(
     node, source_name_ + ".use_global_height", rclcpp::ParameterValue(false));
-  min_range_ = node->get_parameter(source_name_ + ".use_global_height").as_bool();
+  use_global_height_ = node->get_parameter(source_name_ + ".use_global_height").as_bool();
 }
 
 void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)

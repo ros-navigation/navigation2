@@ -555,12 +555,7 @@ void Tester::setPolygonVelocityVectors(
 
 void Tester::setGlobalHeightParams(const std::string & source_name, const double min_height)
 {
-  cm_->declare_or_get_parameter(
-    source_name + ".use_global_height", true);
   cm_->set_parameter(rclcpp::Parameter(source_name + ".use_global_height", true));
-
-  cm_->declare_or_get_parameter(
-    source_name + ".min_height", min_height);
   cm_->set_parameter(rclcpp::Parameter(source_name + ".min_height", min_height));
 }
 
