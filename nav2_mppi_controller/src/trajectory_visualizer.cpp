@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <memory>
+#include <vector>
+#include <algorithm>
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 
 namespace mppi
@@ -36,6 +38,7 @@ void TrajectoryVisualizer::on_configure(
 
   getParam(trajectory_step_, "trajectory_step", 5);
   getParam(time_step_, "time_step", 3);
+  getParam(time_step_elevation_, "time_step_elevation", 0.0f);
 
   reset();
 }
@@ -104,27 +107,95 @@ void TrajectoryVisualizer::add(
 }
 
 void TrajectoryVisualizer::add(
-  const models::Trajectories & trajectories, const std::string & marker_namespace)
+  const models::Trajectories & trajectories, const Eigen::ArrayXf & costs,
+  const std::string & marker_namespace,
+  const builtin_interfaces::msg::Time & cmd_stamp)
 {
   size_t n_rows = trajectories.x.rows();
   size_t n_cols = trajectories.x.cols();
-  const float shape_1 = static_cast<float>(n_cols);
-  points_->markers.reserve(floor(n_rows / trajectory_step_) * floor(n_cols * time_step_));
+  points_->markers.reserve(n_rows / trajectory_step_);
+
+  // Use percentile-based normalization to handle outliers
+  // Sort costs to find percentiles
+  std::vector<float> sorted_costs(costs.data(), costs.data() + costs.size());
+  std::sort(sorted_costs.begin(), sorted_costs.end());
+  
+  // Use 10th and 90th percentile for robust color mapping
+  size_t idx_5th = static_cast<size_t>(sorted_costs.size() * 0.1);
+  size_t idx_95th = static_cast<size_t>(sorted_costs.size() * 0.9);
+  
+  float min_cost = sorted_costs[idx_5th];
+  float max_cost = sorted_costs[idx_95th];
+  float cost_range = max_cost - min_cost;
+  
+  // Avoid division by zero
+  if (cost_range < 1e-6f) {
+    cost_range = 1.0f;
+  }
 
   for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-    for (size_t j = 0; j < n_cols; j += time_step_) {
-      const float j_flt = static_cast<float>(j);
-      float blue_component = 1.0f - j_flt / shape_1;
-      float green_component = j_flt / shape_1;
-
-      auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
-      auto scale = utils::createScale(0.03, 0.03, 0.03);
-      auto color = utils::createColor(0, green_component, blue_component, 1);
-      auto marker = utils::createMarker(
-        marker_id_++, pose, scale, color, frame_id_, marker_namespace);
-
-      points_->markers.push_back(marker);
+    float red_component, green_component, blue_component;
+    
+    // Normalize cost using percentile-based range, clamping outliers
+    float normalized_cost = (costs(i) - min_cost) / cost_range;
+    
+    // Clamp to [0, 1] range (handles outliers beyond percentiles)
+    normalized_cost = std::max(0.0f, std::min(1.0f, normalized_cost));
+    
+    // Apply power function for better visual distribution
+    normalized_cost = std::pow(normalized_cost, 0.5f);
+    
+    // Color scheme with smooth gradient:
+    // Green (0.0) -> Yellow-Green (0.25) -> Yellow (0.5) -> Orange (0.75) -> Red (1.0)
+    // Very high outlier costs (>95th percentile) will be clamped to red
+    blue_component = 0.0f;
+    
+    if (normalized_cost < 0.5f) {
+      // Transition from Green to Yellow (0.0 - 0.5)
+      float t = normalized_cost * 2.0f;  // Scale to [0, 1]
+      red_component = t;
+      green_component = 1.0f;
+    } else {
+      // Transition from Yellow to Red (0.5 - 1.0)
+      float t = (normalized_cost - 0.5f) * 2.0f;  // Scale to [0, 1]
+      red_component = 1.0f;
+      green_component = 1.0f - t;
     }
+
+    // Create line strip marker for this trajectory
+    visualization_msgs::msg::Marker marker;
+    marker.header.frame_id = frame_id_;
+    marker.header.stamp = cmd_stamp;
+    marker.ns = marker_namespace;
+    marker.id = marker_id_++;
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    
+    // Set line width
+    marker.scale.x = 0.01;  // Line width
+    
+    // Set color for entire trajectory
+    marker.color.r = red_component;
+    marker.color.g = green_component;
+    marker.color.b = blue_component;
+    marker.color.a = 0.8f;  // Slightly transparent
+    
+    // Add all points in this trajectory to the line strip
+    for (size_t j = 0; j < n_cols; j += time_step_) {
+      geometry_msgs::msg::Point point;
+      point.x = trajectories.x(i, j);
+      point.y = trajectories.y(i, j);
+      // Increment z by time_step_elevation_ for each time step
+      if (time_step_elevation_ > 0.0f) {
+        point.z = static_cast<float>(j) * time_step_elevation_;
+      } else {
+        point.z = 0.0f;
+      }
+      marker.points.push_back(point);
+    }
+    
+    points_->markers.push_back(marker);
   }
 }
 

@@ -119,6 +119,15 @@ public:
   const models::ControlSequence & getOptimalControlSequence();
 
   /**
+   * @brief Get the costs for trajectories for visualization
+   * @return Costs array
+   */
+  const Eigen::ArrayXf & getCosts() const
+  {
+    return costs_;
+  }
+
+  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative

@@ -19,6 +19,8 @@
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav2_ros_common/publisher.hpp"
 
 namespace mppi::critics
 {
@@ -53,6 +55,9 @@ protected:
 
   unsigned int power_{0};
   float weight_{0};
+  
+  bool visualize_{false};
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
 };
 
 }  // namespace mppi::critics

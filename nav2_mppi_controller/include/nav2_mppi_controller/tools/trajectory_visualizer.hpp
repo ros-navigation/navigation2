@@ -78,10 +78,14 @@ public:
     const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
-    * @brief Add candidate trajectories to visualize
+    * @brief Add candidate trajectories with costs to visualize
     * @param trajectories Candidate trajectories
+    * @param costs Cost array for each trajectory
     */
-  void add(const models::Trajectories & trajectories, const std::string & marker_namespace);
+  void add(
+    const models::Trajectories & trajectories, const Eigen::ArrayXf & costs,
+    const std::string & marker_namespace,
+    const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
     * @brief Visualize the plan
@@ -109,6 +113,7 @@ protected:
 
   size_t trajectory_step_{0};
   size_t time_step_{0};
+  float time_step_elevation_{0.0f};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

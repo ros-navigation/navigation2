@@ -29,6 +29,16 @@ void PathFollowCritic::initialize()
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0f);
+  getParam(visualize_, "visualize", false);
+
+  if (visualize_) {
+    auto node = parent_.lock();
+    if (node) {
+      target_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "/PathFollowCritic/furthest_reached_path_point", 1);
+      target_pose_pub_->on_activate();
+    }
+  }
 }
 
 void PathFollowCritic::score(CriticData & data)
@@ -60,6 +70,18 @@ void PathFollowCritic::score(CriticData & data)
 
   const auto path_x = data.path.x(offsetted_idx);
   const auto path_y = data.path.y(offsetted_idx);
+  // Visualize target pose if enabled
+  if (visualize_) {
+    auto node = parent_.lock();
+    geometry_msgs::msg::PoseStamped target_pose;
+    target_pose.header.frame_id = costmap_ros_->getGlobalFrameID();
+    target_pose.header.stamp = node->get_clock()->now();
+    target_pose.pose.position.x = path_x;
+    target_pose.pose.position.y = path_y;
+    target_pose.pose.position.z = 0.0;
+    target_pose.pose.orientation.w = 1.0;
+    target_pose_pub_->publish(target_pose);
+  }
 
   const int && rightmost_idx = data.trajectories.x.cols() - 1;
   const auto last_x = data.trajectories.x.col(rightmost_idx);

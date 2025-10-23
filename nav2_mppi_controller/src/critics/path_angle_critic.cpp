@@ -41,6 +41,7 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 0.785398f);
+  getParam(visualize_, "visualize", false);
 
   int mode = 0;
   getParam(mode, "mode", mode);
@@ -51,6 +52,15 @@ void PathAngleCritic::initialize()
       logger_,
       "Path angle mode set to no directional preference, but controller's settings "
       "don't allow for reversing! Setting mode to forward preference.");
+  }
+
+  if (visualize_) {
+    auto node = parent_.lock();
+    if (node) {
+      target_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+      "PathAngleCritic/furthest_reached_path_point", 1);
+      target_pose_pub_->on_activate();
+    }
   }
 
   RCLCPP_INFO(
@@ -74,6 +84,19 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_y = data.path.y(offsetted_idx);
   const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
+
+  // Visualize target pose if enabled
+  if (visualize_) {
+    auto node = parent_.lock();
+    geometry_msgs::msg::PoseStamped target_pose;
+    target_pose.header.frame_id = costmap_ros_->getGlobalFrameID();
+    target_pose.header.stamp = node->get_clock()->now();
+    target_pose.pose.position.x = goal_x;
+    target_pose.pose.position.y = goal_y;
+    target_pose.pose.position.z = 0.0;
+    target_pose.pose.orientation.w = 1.0;
+    target_pose_pub_->publish(target_pose);
+  }
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:

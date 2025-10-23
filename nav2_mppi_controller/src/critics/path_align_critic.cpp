@@ -30,6 +30,16 @@ void PathAlignCritic::initialize()
     threshold_to_consider_,
     "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
+  getParam(visualize_, "visualize", false);
+
+  if (visualize_) {
+    auto node = parent_.lock();
+    if (node) {
+      target_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "/PathAlignCritic/furthest_reached_path_point", 1);
+      target_pose_pub_->on_activate();
+    }
+  }
 
   RCLCPP_INFO(
     logger_,
@@ -48,6 +58,20 @@ void PathAlignCritic::score(CriticData & data)
   // Up to furthest only, closest path point is always 0 from path handler
   const size_t path_segments_count = *data.furthest_reached_path_point;
   float path_segments_flt = static_cast<float>(path_segments_count);
+  
+  // Visualize target pose if enabled
+  if (visualize_ && path_segments_count > 0) {
+    auto node = parent_.lock();
+    geometry_msgs::msg::PoseStamped target_pose;
+    target_pose.header.frame_id = costmap_ros_->getGlobalFrameID();
+    target_pose.header.stamp = node->get_clock()->now();
+    target_pose.pose.position.x = data.path.x(path_segments_count);
+    target_pose.pose.position.y = data.path.y(path_segments_count);
+    target_pose.pose.position.z = 0.0;
+    target_pose.pose.orientation.w = 1.0;
+    target_pose_pub_->publish(target_pose);
+  }
+  
   if (path_segments_count < offset_from_furthest_) {
     return;
   }

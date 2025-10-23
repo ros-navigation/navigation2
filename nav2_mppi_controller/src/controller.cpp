@@ -140,7 +140,12 @@ void MPPIController::visualize(
   const builtin_interfaces::msg::Time & cmd_stamp,
   const Eigen::ArrayXXf & optimal_trajectory)
 {
-  trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
+  trajectory_visualizer_.add(
+    optimizer_.getGeneratedTrajectories(), 
+    optimizer_.getCosts(),
+    "Candidate Trajectories Cost",
+    cmd_stamp);
+
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
   trajectory_visualizer_.visualize(std::move(transformed_plan));
 }
