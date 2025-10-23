@@ -269,75 +269,73 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     dynamic_window_max_angular_vel,
     dynamic_window_min_angular_vel);
 
-  // Reflect regulated v (tighten upper limit)
+  // clip dynamic window's max linear velocity to regulated linear velocity
   if (dynamic_window_max_linear_vel > regulated_linear_vel) {
     dynamic_window_max_linear_vel = std::max(dynamic_window_min_linear_vel, regulated_linear_vel);
   }
 
-  const double k = curvature;
+  // consider linear_vel - angular_vel space (horizontal and vertical axes respectively)
+  // Select the closest point to the line angular_vel = curvature * linear_vel within the dynamic window.
+  // If multiple points are equally close, select the one with the highest linear_vel.
 
-  // ---- Curvature is 0 (w = 0) ----
-  if (abs(k) < 1e-3) {
-    // If w=0 is within DW, then the maximum linear speed is adopted as it is.
+  // When curvature == 0, the line is angular_vel = 0
+  if (abs(curvature) < 1e-3) {
+    // If the line angular_vel = 0 intersects the dynamic window, select (dynamic_window_max_linear_vel, 0)
     if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
-      optimal_linear_vel = dynamic_window_max_linear_vel;  // Always maximum v
+      optimal_linear_vel = dynamic_window_max_linear_vel;
       optimal_angular_vel = 0.0;
-      return;
+    } else {
+    // If not, select (dynamic_window_max_linear_vel, angular vel within dynamic window closest to 0)
+      optimal_linear_vel = dynamic_window_max_linear_vel;
+      if (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) {
+        optimal_angular_vel = dynamic_window_min_angular_vel;
+      } else {
+        optimal_angular_vel = dynamic_window_max_angular_vel;
+      }
     }
-    // If w=0 is outside, choose the side closer to w=0 and with smaller |w|.
-    const double w_choice = (std::abs(dynamic_window_min_angular_vel) <=
-      std::abs(dynamic_window_max_angular_vel)) ? dynamic_window_min_angular_vel :
-      dynamic_window_max_angular_vel;
-    optimal_linear_vel = dynamic_window_max_linear_vel;    // Always maximum v
-    optimal_angular_vel = w_choice;
     return;
   }
 
-  // ---- 2) Select 'max v' from the candidates in the DW among the intersections. ----
-  double best_v = -std::numeric_limits<double>::infinity();     // Initial value for maximization
-  double best_w = 0.0;
+  // When the dynamic window and the line angular_vel = curvature * linear_vel intersect,
+  // select the intersection point that yields the highest linear velocity.
 
-  // Intersection with vertical edges
-  {
-    const double v1 = dynamic_window_min_linear_vel;
-    const double w1 = k * v1;
-    if (w1 >= dynamic_window_min_angular_vel && w1 <= dynamic_window_max_angular_vel) {
-      if (v1 > best_v) {best_v = v1; best_w = w1;}
-    }
-  }
-  {
-    const double v2 = dynamic_window_max_linear_vel;
-    const double w2 = k * v2;
-    if (w2 >= dynamic_window_min_angular_vel && w2 <= dynamic_window_max_angular_vel) {
-      if (v2 > best_v) {best_v = v2; best_w = w2;}
-    }
-  }
+  // List the four candidate intersection points
+  std::pair<double, double> candidates[] = {
+    {dynamic_window_min_linear_vel, curvature * dynamic_window_min_linear_vel},
+    {dynamic_window_max_linear_vel, curvature * dynamic_window_max_linear_vel},
+    {dynamic_window_min_angular_vel / curvature, dynamic_window_min_angular_vel},
+    {dynamic_window_max_angular_vel / curvature, dynamic_window_max_angular_vel}
+  };
 
-  // Intersection with horizontal edge (k ! = 0)
-  {
-    const double v3 = dynamic_window_min_angular_vel / k;
-    if (v3 >= dynamic_window_min_linear_vel && v3 <= dynamic_window_max_linear_vel) {
-      const double w3 = dynamic_window_min_angular_vel;
-      if (v3 > best_v) {best_v = v3; best_w = w3;}
-    }
-  }
-  {
-    const double v4 = dynamic_window_max_angular_vel / k;
-    if (v4 >= dynamic_window_min_linear_vel && v4 <= dynamic_window_max_linear_vel) {
-      const double w4 = dynamic_window_max_angular_vel;
-      if (v4 > best_v) {best_v = v4; best_w = w4;}
+  double best_linear_vel = -std::numeric_limits<double>::infinity();
+  double best_angular_vel = 0.0;
+
+  for (auto [linear_vel, angular_vel] : candidates) {
+    // Check whether the candidate lies within the dynamic window
+    if (linear_vel >= dynamic_window_min_linear_vel &&
+      linear_vel <= dynamic_window_max_linear_vel &&
+      angular_vel >= dynamic_window_min_angular_vel &&
+      angular_vel <= dynamic_window_max_angular_vel)
+    {
+      // Update if this candidate has the highest linear velocity so far
+      if (linear_vel > best_linear_vel) {
+        best_linear_vel = linear_vel;
+        best_angular_vel = angular_vel;
+      }
     }
   }
 
-  if (best_v > -std::numeric_limits<double>::infinity()) {
-    // Intersection found → Adopt max. v
-    optimal_linear_vel = best_v;
-    optimal_angular_vel = best_w;
+  // If best_linear_vel was updated, it means that a valid intersection exists
+  if (best_linear_vel > -std::numeric_limits<double>::infinity()) {
+    optimal_linear_vel = best_linear_vel;
+    optimal_angular_vel = best_angular_vel;
     return;
   }
 
-  // ---- 3) If no intersection exists: Select the one with the smallest
-  // Euclidean distance to the line w = k v among the 4 corners
+  // When the dynamic window and the line angular_vel = curvature * linear_vel have no intersection,
+  // select the point within the dynamic window that is closest to the line.
+
+  // Because the dynamic window is a convex region, the closest point must be one of its four corners.
   const std::array<std::array<double, 2>, 4> corners = {{
     {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
     {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
@@ -345,30 +343,30 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
   }};
 
-  const double denom = std::sqrt(k * k + 1.0);  // Just sqrt once
-
-  auto euclid_dist = [&](const std::array<double, 2> & corner) -> double {
-    // Distance from point (v, w) to line w - k v = 0
-      return std::abs(k * corner[0] - corner[1]) / denom;
+  // Compute the distance from a point (linear_vel, angular_vel) to the line angular_vel = curvature * linear_vel
+  const double denom = std::sqrt(curvature * curvature + 1.0);
+  auto compute_dist = [&](const std::array<double, 2> & corner) -> double {
+      return std::abs(curvature * corner[0] - corner[1]) / denom;
     };
 
-  double best_dist = std::numeric_limits<double>::infinity();
-  best_v = corners[0][0];
-  best_w = corners[0][1];
+  double closest_dist = std::numeric_limits<double>::infinity();
+  best_linear_vel = -std::numeric_limits<double>::infinity();
+  best_angular_vel = 0.0;
 
   for (const auto & corner : corners) {
-    const double d = euclid_dist(corner);
-    // 1) Smaller distance → Adopted
-    // 2) If distances are equal (~1e-12) → Choose the one with larger v (acceleration policy)
-    if (d < best_dist || (std::abs(d - best_dist) <= 1e-3 && corner[0] > best_v)) {
-      best_dist = d;
-      best_v = corner[0];
-      best_w = corner[1];
+    const double dist = compute_dist(corner);
+    // Update if this corner is closer to the line, or equally close but has a higher linear velocity
+    if (dist < closest_dist ||
+      (std::abs(dist - closest_dist) <= 1e-3 && corner[0] > best_linear_vel))
+    {
+      closest_dist = dist;
+      best_linear_vel = corner[0];
+      best_angular_vel = corner[1];
     }
   }
 
-  optimal_linear_vel = best_v;
-  optimal_angular_vel = best_w;
+  optimal_linear_vel = best_linear_vel;
+  optimal_angular_vel = best_angular_vel;
 }
 
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
