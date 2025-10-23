@@ -203,6 +203,7 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
       if (parameter.as_double() < 0.0 &&
         (param_name == plugin_name_ + ".max_vel_x" || param_name == plugin_name_ + ".max_vel_y" ||
         param_name == plugin_name_ + ".max_vel_theta" ||
+        param_name == plugin_name_ + ".max_speed_xy" ||
         param_name == plugin_name_ + ".acc_lim_x" || param_name == plugin_name_ + ".acc_lim_y" ||
         param_name == plugin_name_ + ".acc_lim_theta"))
       {
@@ -211,7 +212,7 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         "it should be >= 0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
-      } else if (parameter.as_double() > 0.0 &&
+      } else if (parameter.as_double() > 0.0 && // NOLINT
         (param_name == plugin_name_ + ".decel_lim_x" ||
         param_name == plugin_name_ + ".decel_lim_y" ||
         param_name == plugin_name_ + ".decel_lim_theta"))
