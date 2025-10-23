@@ -1,0 +1,97 @@
+# Copyright (c) 2025 lotusymt
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import os
+import unittest
+
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess, SetEnvironmentVariable
+from launch_ros.actions import Node
+import launch_testing
+from launch_testing.actions import ReadyToTest
+from launch_testing.asserts import assertExitCodes
+
+
+def generate_test_description():
+    pkg_share = get_package_share_directory('nav2_collision_monitor')
+    bag_dir = os.path.join(pkg_share, 'test', 'bags', 'cm_moving_obstacle')
+    params_yaml = os.path.join(
+        pkg_share, 'test', 'collision_monitor_node_bag.yaml')
+
+    test_exe = os.environ.get('TEST_EXECUTABLE')
+    if not test_exe:
+        raise RuntimeError('TEST_EXECUTABLE env var not set')
+
+    results_dir = os.environ.get('AMENT_TEST_RESULTS_DIR', '/tmp')
+    xml_dir = os.path.join(results_dir, 'nav2_collision_monitor')
+    os.makedirs(xml_dir, exist_ok=True)
+    gtest_xml = os.path.join(
+        xml_dir, 'collision_monitor_node_bag_gtest.gtest.xml')
+
+    clear_rosconsole = SetEnvironmentVariable(
+        name='ROSCONSOLE_CONFIG_FILE', value='')
+
+    lifecycle_mgr = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_collision_monitor',
+        output='screen',
+        parameters=[
+            {'use_sim_time': True},
+            {'autostart': True},
+            {'bond_timeout': 0.0},
+            {'node_names': ['collision_monitor']},
+        ],
+    )
+
+    collision_monitor = Node(
+        package='nav2_collision_monitor',
+        executable='collision_monitor',
+        name='collision_monitor',
+        output='screen',
+        parameters=[params_yaml, {'use_sim_time': True}],
+    )
+
+    bag_play = ExecuteProcess(
+        cmd=['ros2', 'bag', 'play', bag_dir, '--rate', '1.0',
+             '--read-ahead-queue-size', '1000'],
+        output='screen',
+    )
+
+    cm_gtest = ExecuteProcess(
+        cmd=[test_exe, f'--gtest_output=xml:{gtest_xml}'],
+        output='screen',
+    )
+
+    ld = LaunchDescription([
+        clear_rosconsole,
+        lifecycle_mgr,
+        collision_monitor,
+        bag_play,
+        cm_gtest,
+        ReadyToTest(),
+    ])
+    return ld, {'cm_gtest': cm_gtest}
+
+
+class TestWaitForGTest(unittest.TestCase):
+
+    def test_gtest_completed(self, proc_info, cm_gtest):
+        proc_info.assertWaitForShutdown(process=cm_gtest, timeout=120.0)
+
+
+@launch_testing.post_shutdown_test()
+class TestGTestExitCode(unittest.TestCase):
+
+    def test_gtest_passed(self, proc_info, cm_gtest):
+        assertExitCodes(proc_info, process=cm_gtest)

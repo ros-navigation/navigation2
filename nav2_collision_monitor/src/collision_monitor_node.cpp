@@ -308,7 +308,7 @@ bool CollisionMonitor::configurePolygons(
         polygons_.push_back(
           std::make_shared<VelocityPolygon>(
             node, polygon_name, tf_buffer_, base_frame_id, transform_tolerance));
-      }else {  // Error if something else
+      } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),
           "[%s]: Unknown polygon type: %s",
@@ -381,10 +381,11 @@ bool CollisionMonitor::configureSources(
         auto src = std::make_shared<CostmapSource>(
           node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
           transform_tolerance, source_timeout, base_shift_correction);
+
+        src->configure();
+
         sources_.push_back(src);
-        continue;
-      }  
-      else {  // Error if something else
+      } else { // Error if something else
         RCLCPP_ERROR(
           get_logger(),
           "[%s]: Unknown source type: %s",

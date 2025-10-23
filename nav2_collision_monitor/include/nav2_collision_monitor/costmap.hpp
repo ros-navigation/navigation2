@@ -1,42 +1,54 @@
-// Copyright (c) 2025 <Your Name>
+// Copyright (c) 2025 Angsa Robotics
+// Copyright (c) 2025 lotusymt
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
-
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #ifndef NAV2_COLLISION_MONITOR__COSTMAP_HPP_
 #define NAV2_COLLISION_MONITOR__COSTMAP_HPP_
 
-#include <memory>                   // shared_ptr / weak_ptr
-#include <string>                   // std::string
-#include <vector>                   // std::vector
-#include "nav2_collision_monitor/source.hpp"        // Base class Source (CM’s plugin interface)
-#include "nav2_msgs/msg/costmap.hpp"                // CHANGE: use Nav2 Costmap message
+#include <memory>
+#include <string>
+#include <vector>
+#include "nav2_collision_monitor/source.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include <nav2_ros_common/lifecycle_node.hpp>
 #include <nav2_ros_common/node_utils.hpp>
 
 namespace nav2_collision_monitor
 {
 
-class CostmapSource : public Source                  // Inherit CM’s Source (same as other inputs)
+class CostmapSource : public Source
 {
 public:
-  CostmapSource(                                     // Constructor declaration (no return type)
-    const nav2::LifecycleNode::WeakPtr & node ,  // Non-owning pointer to lifecycle node
-    const std::string & source_name,                 // Name used in params (e.g., "costmap")
-    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,// Shared TF buffer
-    const std::string & base_frame_id,               // Usually "base_link"
-    const std::string & global_frame_id,             // Usually "odom" or "map"
-    const tf2::Duration & transform_tolerance,       // TF timing slack
-    const rclcpp::Duration & source_timeout,         // Max data age allowed
-    const bool base_shift_correction);               // Whether to correct base motion drift
+  CostmapSource(
 
-  ~CostmapSource();                                  // Virtual dtor not required; explicit is fine
+    const nav2::LifecycleNode::WeakPtr & node,
+    const std::string & source_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const std::string & global_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const rclcpp::Duration & source_timeout,
+    const bool base_shift_correction);
 
-  void configure();                         // Where we declare params & create subscription
+  ~CostmapSource();
 
-  bool getData(                                      // CM calls this each tick to fetch obstacle points
+  void configure();
+
+  bool getData(
     const rclcpp::Time & curr_time,
     std::vector<Point> & data) override;
 
-  void getParameters(std::string & source_topic);    // Read: <source_name>.topic, <source_name>.cost_threshold
+  void getParameters(std::string & source_topic);
 
 private:
   void dataCallback(nav2_msgs::msg::Costmap::ConstSharedPtr msg);
@@ -44,12 +56,15 @@ private:
 
   nav2_msgs::msg::Costmap::ConstSharedPtr data_;     // Latest costmap message (thread-safe shared ptr)
   rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr data_sub_;
-  // ↑ The actual ROS2 subscription
 
-  int cost_threshold_{254};                          // Default: lethal cells only (254). Make it a param.
-  // (Nav2 costs: 0 free, 253 inscribed, 254 lethal, 255 unknown)
+  // Threshold for considering a cell as an obstacle. Valid range: 0..255.
+  // Typical choices: 253 (inscribed), 254 (lethal). Inflation = 1..252.
+  int cost_threshold_{253};
 
-  
+   // Whether 255 (NO_INFORMATION) should be treated as an obstacle.
+  bool treat_unknown_as_obstacle_{true};
+
+
 };
 
 }  // namespace nav2_collision_monitor

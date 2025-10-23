@@ -1,0 +1,25 @@
+# collision_monitor_node_bag.yaml
+collision_monitor:
+  ros__parameters:
+    use_sim_time: true
+    base_frame_id: base_footprint
+    odom_frame_id: odom
+    state_topic: collision_state
+    transform_tolerance: 0.05
+    source_timeout: 1.0
+    enable_stamped_cmd_vel: false
+
+
+    observation_sources: ["costmap"]
+    costmap:
+      type: "costmap"
+      topic: "/local_costmap/costmap"
+      cost_threshold: 253
+      enabled: True
+
+    polygons: [Detection]
+    Detection:
+      type: circle
+      action_type: stop
+      min_points: 1
+      radius: 1.0

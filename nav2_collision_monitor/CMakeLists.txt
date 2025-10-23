@@ -8,6 +8,7 @@ find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(rosgraph_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -148,6 +149,7 @@ install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
@@ -167,6 +169,7 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav2_msgs
   nav2_util
+  rosgraph_msgs
   rclcpp
   rclcpp_lifecycle
   sensor_msgs
