@@ -197,7 +197,11 @@ ParameterHandler::ParameterHandler(
       "it should be >0. Disabling cost regulated linear velocity scaling.");
     params_.use_cost_regulated_linear_velocity_scaling = false;
   }
+}
 
+void ParameterHandler::activate()
+{
+  auto node = node_.lock();
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &ParameterHandler::updateParametersCallback,
@@ -208,7 +212,7 @@ ParameterHandler::ParameterHandler(
       this, std::placeholders::_1));
 }
 
-ParameterHandler::~ParameterHandler()
+void ParameterHandler::deactivate()
 {
   auto node = node_.lock();
   if (post_set_params_handler_ && node) {
@@ -220,6 +224,11 @@ ParameterHandler::~ParameterHandler()
   }
   on_set_params_handler_.reset();
 }
+
+ParameterHandler::~ParameterHandler()
+{
+}
+
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
@@ -268,7 +277,9 @@ ParameterHandler::updateParametersCallback(
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor") {
         params_.inflation_cost_scaling_factor = parameter.as_double();

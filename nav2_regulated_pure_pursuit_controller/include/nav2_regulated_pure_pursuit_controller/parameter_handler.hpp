@@ -89,6 +89,16 @@ public:
 
   Parameters * getParams() {return &params_;}
 
+  /**
+  * @brief Registers callbacks for dynamic parameter handling.
+  */
+  void activate();
+
+  /**
+  * @brief Resets callbacks for dynamic parameter handling.
+  */
+  void deactivate();
+
 protected:
   nav2::LifecycleNode::WeakPtr node_;
 
