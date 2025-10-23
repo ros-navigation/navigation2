@@ -730,7 +730,8 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   geometry_msgs::msg::Pose goal;
   path.poses.resize(17);
 
-  const auto [cmd1, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
+  const auto [cmd1, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path,
+    goal, nullptr);
 
   EXPECT_LE(std::abs(cmd1.twist.linear.x),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
@@ -739,7 +740,8 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   EXPECT_LE(std::abs(cmd1.twist.linear.y),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
 
-  const auto [cmd2, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path, goal, nullptr);
+  const auto [cmd2, optimal_trajectory] = optimizer_tester.evalControl(pose, robot_speed, path,
+    goal, nullptr);
 
   const double vx_delta = std::abs(cmd2.twist.linear.x - cmd1.twist.linear.x);
   const double wz_delta = std::abs(cmd2.twist.angular.z - cmd1.twist.angular.z);
