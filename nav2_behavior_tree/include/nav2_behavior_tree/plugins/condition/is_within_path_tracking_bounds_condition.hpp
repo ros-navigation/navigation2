@@ -18,6 +18,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <limits>
 
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -51,12 +52,12 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("max_error", 0.5, "Maximum allowed tracking error")
+      BT::InputPort<double>("max_error", "Maximum allowed tracking error")
     };
   }
 
 private:
-  nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Logger logger_{rclcpp::get_logger("is_within_path_tracking_bounds_node")};
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   rclcpp::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
