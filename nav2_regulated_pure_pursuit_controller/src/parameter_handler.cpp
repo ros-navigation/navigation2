@@ -260,6 +260,10 @@ ParameterHandler::dynamicParametersCallback(
         params_.cancel_deceleration = parameter.as_double();
       } else if (name == plugin_name_ + ".rotate_to_heading_min_angle") {
         params_.rotate_to_heading_min_angle = parameter.as_double();
+      } else if (name == plugin_name_ + ".transform_tolerance") {
+        params_.transform_tolerance = parameter.as_double();
+      } else if (name == plugin_name_ + ".max_robot_pose_search_dist") {
+        params_.max_robot_pose_search_dist = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
@@ -286,6 +290,8 @@ ParameterHandler::dynamicParametersCallback(
           continue;
         }
         params_.allow_reversing = parameter.as_bool();
+      } else if (name == plugin_name_ + ".interpolate_curvature_after_goal") {
+        params_.interpolate_curvature_after_goal = parameter.as_bool();
       }
     }
   }
