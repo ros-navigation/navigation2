@@ -52,7 +52,8 @@ void IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback(
 
 void IsWithinPathTrackingBoundsCondition::initialize()
 {
-  getInput("max_error", max_error_);
+  getInput("max_error_left", max_error_left_);
+  getInput("max_error_right", max_error_right_);
 }
 
 BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
@@ -63,24 +64,44 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
 
   callback_group_executor_.spin_all(bt_loop_duration_);
 
-  if (!getInput("max_error", max_error_)) {
+  if (!getInput("max_error_left", max_error_left_)) {
+    RCLCPP_ERROR(logger_, "max_error_left parameter not provided");
+    return BT::NodeStatus::FAILURE;
+  }
+
+  if (max_error_left_ < 0.0) {
+    RCLCPP_WARN(logger_, "max_error_left should be positive, using absolute value");
+    max_error_left_ = std::abs(max_error_left_);
+  }
+
+  if (!getInput("max_error_right", max_error_right_)) {
     RCLCPP_ERROR(logger_, "max_error parameter not provided");
     return BT::NodeStatus::FAILURE;
   }
 
-  if (max_error_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_error should be positive, using absolute value");
-    max_error_ = std::abs(max_error_);
+  if (max_error_right_ < 0.0) {
+    RCLCPP_WARN(logger_, "max_error_right should be positive, using absolute value");
+    max_error_right_ = std::abs(max_error_right_);
   }
 
   if (last_error_ == std::numeric_limits<double>::max()) {
     RCLCPP_WARN(logger_, "No tracking feedback received yet.");
+    return BT::NodeStatus::FAILURE;
   }
 
-  if (last_error_ <= max_error_) {
-    return BT::NodeStatus::SUCCESS;
+  if (last_error_ > 0.0) {  // Positive = left side
+    if (last_error_ > max_error_left_) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      return BT::NodeStatus::SUCCESS;
+    }
+  } else {  // Negative = right side
+    if (std::abs(last_error_) > max_error_right_) {
+      return BT::NodeStatus::FAILURE;
+    } else {
+      return BT::NodeStatus::SUCCESS;
+    }
   }
-  return BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree

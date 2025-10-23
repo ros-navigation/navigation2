@@ -410,7 +410,8 @@
     </Condition>
 
     <Decorator ID="IsWithinPathTrackingBounds">
-      <input_port name="max_error">Maximum distance robot can go out in meters</input_port>
+      <input_port name="max_error_left">Maximum distance robot can go out from path in meters. On left side</input_port>
+      <input_port name="max_error_right">Maximum distance robot can go out from path in meters. On right side</input_port>
     </Decorator>
 
     <Condition ID="DistanceTraveled">

@@ -52,7 +52,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("max_error", "Maximum allowed tracking error")
+      BT::InputPort<double>("max_error_right", "Maximum allowed tracking error on the right side"),
+      BT::InputPort<double>("max_error_left", "Maximum allowed tracking error left side")
     };
   }
 
@@ -62,7 +63,8 @@ private:
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   rclcpp::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   double last_error_{0.0};
-  double max_error_{1.5};
+  double max_error_right_{1.5};
+  double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
 
   void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
