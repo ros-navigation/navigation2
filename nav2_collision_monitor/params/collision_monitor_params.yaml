@@ -98,4 +98,5 @@ collision_monitor:
       topic: "/intel_realsense_r200_depth/points"
       min_height: 0.1
       max_height: 0.5
+      use_global_height: False
       enabled: True
