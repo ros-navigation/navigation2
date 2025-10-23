@@ -163,14 +163,10 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    const auto vx_ptr = control_sequence.vx.data();
-    auto wz_ptr = control_sequence.wz.data();
-    int steps = control_sequence.vx.size();
-    for(int i = 0; i < steps; i++) {
-      float wz_constrained = fabs(*(vx_ptr + i) / min_turning_r_);
-      float & wz_curr = *(wz_ptr + i);
-      wz_curr = utils::clamp(-1 * wz_constrained, wz_constrained, wz_curr);
-    }
+    const auto wz_constrained = control_sequence.vx.abs() / min_turning_r_;
+    control_sequence.wz = control_sequence.wz
+      .max((-wz_constrained))
+      .min(wz_constrained);
   }
 
   /**

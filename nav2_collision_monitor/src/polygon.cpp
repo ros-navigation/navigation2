@@ -332,10 +332,8 @@ bool Polygon::getCommonParameters(
   try {
     // Get action type.
     // Leave it not initialized: the will cause an error if it will not set.
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".action_type", rclcpp::PARAMETER_STRING);
-    const std::string at_str =
-      node->get_parameter(polygon_name_ + ".action_type").as_string();
+    const std::string at_str = node->declare_or_get_parameter<std::string>(
+      polygon_name_ + ".action_type");
     if (at_str == "stop") {
       action_type_ = STOP;
     } else if (at_str == "slowdown") {
@@ -351,18 +349,11 @@ bool Polygon::getCommonParameters(
       return false;
     }
 
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
-    enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
-
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".min_points", rclcpp::ParameterValue(4));
-    min_points_ = node->get_parameter(polygon_name_ + ".min_points").as_int();
+    enabled_ = node->declare_or_get_parameter(polygon_name_ + ".enabled", true);
+    min_points_ = node->declare_or_get_parameter(polygon_name_ + ".min_points", 4);
 
     try {
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".max_points", rclcpp::PARAMETER_INTEGER);
-      min_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int() + 1;
+      min_points_ = node->declare_or_get_parameter<int>(polygon_name_ + ".max_points") + 1;
       RCLCPP_WARN(
         logger_,
         "[%s]: \"max_points\" parameter was deprecated. Use \"min_points\" instead to specify "
@@ -373,71 +364,49 @@ bool Polygon::getCommonParameters(
     }
 
     if (action_type_ == SLOWDOWN) {
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".slowdown_ratio", rclcpp::ParameterValue(0.5));
-      slowdown_ratio_ = node->get_parameter(polygon_name_ + ".slowdown_ratio").as_double();
+      slowdown_ratio_ = node->declare_or_get_parameter(polygon_name_ + ".slowdown_ratio", 0.5);
     }
 
     if (action_type_ == LIMIT) {
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".linear_limit", rclcpp::ParameterValue(0.5));
-      linear_limit_ = node->get_parameter(polygon_name_ + ".linear_limit").as_double();
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".angular_limit", rclcpp::ParameterValue(0.5));
-      angular_limit_ = node->get_parameter(polygon_name_ + ".angular_limit").as_double();
+      linear_limit_ = node->declare_or_get_parameter(polygon_name_ + ".linear_limit", 0.5);
+      angular_limit_ = node->declare_or_get_parameter(polygon_name_ + ".angular_limit", 0.5);
     }
 
     if (action_type_ == APPROACH) {
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".time_before_collision", rclcpp::ParameterValue(2.0));
-      time_before_collision_ =
-        node->get_parameter(polygon_name_ + ".time_before_collision").as_double();
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".simulation_time_step", rclcpp::ParameterValue(0.1));
-      simulation_time_step_ =
-        node->get_parameter(polygon_name_ + ".simulation_time_step").as_double();
+      time_before_collision_ = node->declare_or_get_parameter(
+        polygon_name_ + ".time_before_collision", 2.0);
+      simulation_time_step_ = node->declare_or_get_parameter(
+        polygon_name_ + ".simulation_time_step", 0.1);
     }
 
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".visualize", rclcpp::ParameterValue(false));
-    visualize_ = node->get_parameter(polygon_name_ + ".visualize").as_bool();
+    visualize_ = node->declare_or_get_parameter(polygon_name_ + ".visualize", false);
     if (visualize_) {
       // Get polygon topic parameter in case if it is going to be published
-      nav2::declare_parameter_if_not_declared(
-        node, polygon_name_ + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name_));
-      polygon_pub_topic = node->get_parameter(polygon_name_ + ".polygon_pub_topic").as_string();
+      polygon_pub_topic = node->declare_or_get_parameter(
+        polygon_name_ + ".polygon_pub_topic", polygon_name_);
     }
 
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".polygon_subscribe_transient_local", rclcpp::ParameterValue(false));
-    polygon_subscribe_transient_local_ =
-      node->get_parameter(polygon_name_ + ".polygon_subscribe_transient_local").as_bool();
+    polygon_subscribe_transient_local_ = node->declare_or_get_parameter(
+      polygon_name_ + ".polygon_subscribe_transient_local", false);
 
     if (use_dynamic_sub_topic) {
       if (action_type_ != APPROACH) {
         // Get polygon sub topic
-        nav2::declare_parameter_if_not_declared(
-          node, polygon_name_ + ".polygon_sub_topic", rclcpp::PARAMETER_STRING);
-        polygon_sub_topic =
-          node->get_parameter(polygon_name_ + ".polygon_sub_topic").as_string();
+        polygon_sub_topic = node->declare_or_get_parameter<std::string>(
+          polygon_name_ + ".polygon_sub_topic");
       } else {
         // Obtain the footprint topic to make a footprint subscription for approach polygon
-        nav2::declare_parameter_if_not_declared(
-          node, polygon_name_ + ".footprint_topic",
-          rclcpp::ParameterValue("local_costmap/published_footprint"));
-        footprint_topic =
-          node->get_parameter(polygon_name_ + ".footprint_topic").as_string();
+        footprint_topic = node->declare_or_get_parameter(
+          polygon_name_ + ".footprint_topic",
+          std::string("local_costmap/published_footprint"));
       }
     }
 
     // By default, use all observation sources for polygon
-    nav2::declare_parameter_if_not_declared(
-      node, "observation_sources", rclcpp::PARAMETER_STRING_ARRAY);
     const std::vector<std::string> observation_sources =
-      node->get_parameter("observation_sources").as_string_array();
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".sources_names", rclcpp::ParameterValue(observation_sources));
-    sources_names_ = node->get_parameter(polygon_name_ + ".sources_names").as_string_array();
+      node->declare_or_get_parameter<std::vector<std::string>>("observation_sources");
+    sources_names_ = node->declare_or_get_parameter(
+      polygon_name_ + ".sources_names", observation_sources);
 
     // Check the observation sources configured for polygon are defined
     for (auto source_name : sources_names_) {
@@ -480,13 +449,11 @@ bool Polygon::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter points fails, use dynamic subscription
   try {
     // Leave it uninitialized: it will throw an inner exception if the parameter is not set
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".points", rclcpp::PARAMETER_STRING);
-    std::string poly_string =
-      node->get_parameter(polygon_name_ + ".points").as_string();
+    std::string poly_string = node->declare_or_get_parameter<std::string>(
+      polygon_name_ + ".points");
 
     use_dynamic_sub = !getPolygonFromString(poly_string, poly_);
-  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+  } catch (const rclcpp::exceptions::InvalidParameterValueException &) {
     RCLCPP_INFO(
       logger_,
       "[%s]: Polygon points are not defined. Using dynamic subscription instead.",

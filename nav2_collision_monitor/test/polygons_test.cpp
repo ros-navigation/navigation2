@@ -310,60 +310,38 @@ void Tester::setCommonParameters(
 {
   test_node_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(action_type));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".action_type", action_type));
 
   test_node_->declare_parameter(
     polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   test_node_->declare_parameter(
     polygon_name + ".slowdown_ratio", rclcpp::ParameterValue(SLOWDOWN_RATIO));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".slowdown_ratio", SLOWDOWN_RATIO));
 
   test_node_->declare_parameter(
     polygon_name + ".linear_limit", rclcpp::ParameterValue(LINEAR_LIMIT));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".linear_limit", LINEAR_LIMIT));
 
   test_node_->declare_parameter(
     polygon_name + ".angular_limit", rclcpp::ParameterValue(ANGULAR_LIMIT));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".angular_limit", ANGULAR_LIMIT));
 
   test_node_->declare_parameter(
     polygon_name + ".time_before_collision",
     rclcpp::ParameterValue(TIME_BEFORE_COLLISION));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".time_before_collision", TIME_BEFORE_COLLISION));
 
   test_node_->declare_parameter(
     polygon_name + ".simulation_time_step", rclcpp::ParameterValue(SIMULATION_TIME_STEP));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".simulation_time_step", SIMULATION_TIME_STEP));
 
   test_node_->declare_parameter(
     polygon_name + ".visualize", rclcpp::ParameterValue(true));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".visualize", true));
 
   test_node_->declare_parameter(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(POLYGON_PUB_TOPIC));
-  test_node_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".polygon_pub_topic", POLYGON_PUB_TOPIC));
 
   test_node_->declare_parameter(
     "observation_sources", rclcpp::ParameterValue(observation_sources));
-  test_node_->set_parameter(
-    rclcpp::Parameter("observation_sources", observation_sources));
 
   if (!sources_names.empty()) {
     test_node_->declare_parameter(
       polygon_name + ".sources_names", rclcpp::ParameterValue(sources_names));
-    test_node_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".sources_names", sources_names));
   }
 }
 
@@ -373,18 +351,12 @@ void Tester::setPolygonParameters(
   if (is_static) {
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(points));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", points));
   } else {
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
 
     test_node_->declare_parameter(
       std::string(POLYGON_NAME) + ".footprint_topic", rclcpp::ParameterValue(FOOTPRINT_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(POLYGON_NAME) + ".footprint_topic", FOOTPRINT_TOPIC));
   }
 }
 
@@ -393,13 +365,9 @@ void Tester::setCircleParameters(const double radius, const bool is_static)
   if (is_static) {
     test_node_->declare_parameter(
       std::string(CIRCLE_NAME) + ".radius", rclcpp::ParameterValue(radius));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".radius", radius));
   } else {
     test_node_->declare_parameter(
       std::string(CIRCLE_NAME) + ".polygon_sub_topic", rclcpp::ParameterValue(POLYGON_SUB_TOPIC));
-    test_node_->set_parameter(
-      rclcpp::Parameter(std::string(CIRCLE_NAME) + ".polygon_sub_topic", POLYGON_SUB_TOPIC));
   }
 }
 
@@ -625,8 +593,6 @@ TEST_F(Tester, testPolygonUndeclaredPoints)
   // "points" and "polygon_sub_topic" parameters are not initialized
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
     tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
@@ -654,8 +620,6 @@ TEST_F(Tester, testPolygonIncorrectPoints1)
   // Triangle points
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_1_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_1_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -670,8 +634,6 @@ TEST_F(Tester, testPolygonIncorrectPoints2)
   // Odd number of elements
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INCORRECT_POINTS_2_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INCORRECT_POINTS_2_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -688,8 +650,6 @@ TEST_F(Tester, testPolygonMaxPoints)
   const int max_points = 5;
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".max_points", rclcpp::ParameterValue(max_points));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".max_points", max_points));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
@@ -989,11 +949,8 @@ TEST_F(Tester, testPolygonDefaultVisualize)
   // Use default parameters, visualize should be false by-default
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".action_type", rclcpp::ParameterValue("stop"));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".action_type", "stop"));
   std::vector<std::string> observation_sources = {OBSERVATION_SOURCE_NAME};
   test_node_->declare_parameter("observation_sources", rclcpp::ParameterValue(observation_sources));
-  test_node_->set_parameter(rclcpp::Parameter("observation_sources", observation_sources));
   setPolygonParameters(SQUARE_POLYGON_STR, true);
 
   // Create new polygon
@@ -1017,8 +974,6 @@ TEST_F(Tester, testPolygonInvalidPointsString)
   // Invalid points
   test_node_->declare_parameter(
     std::string(POLYGON_NAME) + ".points", rclcpp::ParameterValue(INVALID_POINTS_STR));
-  test_node_->set_parameter(
-    rclcpp::Parameter(std::string(POLYGON_NAME) + ".points", INVALID_POINTS_STR));
 
   polygon_ = std::make_shared<PolygonWrapper>(
     test_node_->weak_from_this(), POLYGON_NAME,
