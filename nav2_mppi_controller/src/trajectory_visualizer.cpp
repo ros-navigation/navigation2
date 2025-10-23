@@ -121,11 +121,11 @@ void TrajectoryVisualizer::add(
   std::sort(sorted_costs.begin(), sorted_costs.end());
 
   // Use 10th and 90th percentile for robust color mapping
-  size_t idx_5th = static_cast<size_t>(sorted_costs.size() * 0.1);
-  size_t idx_95th = static_cast<size_t>(sorted_costs.size() * 0.9);
+  size_t idx_10th = static_cast<size_t>(sorted_costs.size() * 0.1);
+  size_t idx_90th = static_cast<size_t>(sorted_costs.size() * 0.9);
 
-  float min_cost = sorted_costs[idx_5th];
-  float max_cost = sorted_costs[idx_95th];
+  float min_cost = sorted_costs[idx_10th];
+  float max_cost = sorted_costs[idx_90th];
   float cost_range = max_cost - min_cost;
 
   // Avoid division by zero
