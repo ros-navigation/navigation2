@@ -35,17 +35,27 @@ ParameterHandler::ParameterHandler(
   plugin_name_ = plugin_name;
   logger_ = logger;
 
-  params_.angular_dist_threshold = node->declare_or_get_parameter(plugin_name_ + ".angular_dist_threshold", 0.785); // 45 deg
-  params_.angular_disengage_threshold = node->declare_or_get_parameter(plugin_name_ + ".angular_disengage_threshold", 0.785 / 2.0);
-  params_.forward_sampling_distance = node->declare_or_get_parameter(plugin_name_ + ".forward_sampling_distance", 0.5);
-  params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_heading_angular_vel", 1.8);
-  params_.max_angular_accel = node->declare_or_get_parameter(plugin_name_ + ".max_angular_accel", 3.2);
-  params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ + ".simulate_ahead_time", 1.0);
-  params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ + ".primary_controller");
-  params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_goal_heading", false);
-  params_.rotate_to_heading_once = node->declare_or_get_parameter(plugin_name_ + ".rotate_to_heading_once", false);
+  params_.angular_dist_threshold = node->declare_or_get_parameter(plugin_name_ +
+    ".angular_dist_threshold", 0.785);                                                                            // 45 deg
+  params_.angular_disengage_threshold = node->declare_or_get_parameter(plugin_name_ +
+    ".angular_disengage_threshold", 0.785 / 2.0);
+  params_.forward_sampling_distance = node->declare_or_get_parameter(plugin_name_ +
+    ".forward_sampling_distance", 0.5);
+  params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(plugin_name_ +
+    ".rotate_to_heading_angular_vel", 1.8);
+  params_.max_angular_accel = node->declare_or_get_parameter(plugin_name_ + ".max_angular_accel",
+    3.2);
+  params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ +
+    ".simulate_ahead_time", 1.0);
+  params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
+    ".primary_controller");
+  params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ +
+    ".rotate_to_goal_heading", false);
+  params_.rotate_to_heading_once = node->declare_or_get_parameter(plugin_name_ +
+    ".rotate_to_heading_once", false);
   params_.closed_loop = node->declare_or_get_parameter(plugin_name_ + ".closed_loop", true);
-  params_.use_path_orientations = node->declare_or_get_parameter(plugin_name_ + ".use_path_orientations", false);
+  params_.use_path_orientations = node->declare_or_get_parameter(plugin_name_ +
+    ".use_path_orientations", false);
   double control_frequency = 20.0;
   node->get_parameter("controller_frequency", control_frequency);
   params_.control_duration = 1.0 / control_frequency;
