@@ -21,16 +21,16 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  last_error_(0.0)
+  last_error_(std::numeric_limits<double>::max())
 {
-  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  callback_group_ = node_->create_callback_group(
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  callback_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
-  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+  callback_group_executor_.add_callback_group(callback_group_, node->get_node_base_interface());
 
-  tracking_feedback_sub_ = node_->create_subscription<nav2_msgs::msg::TrackingFeedback>(
-    "/tracking_feedback",
+  tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
+    "tracking_feedback",
     std::bind(&IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback, this,
       std::placeholders::_1),
     rclcpp::SystemDefaultsQoS(),
@@ -39,8 +39,8 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   bt_loop_duration_ =
     config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 
-  RCLCPP_DEBUG(node_->get_logger(), "Initialized IsWithinPathTrackingBoundsCondition BT node");
-  RCLCPP_INFO_ONCE(node_->get_logger(), "Waiting for tracking error");
+  RCLCPP_INFO_ONCE(logger_, "Waiting for tracking error");
+  RCLCPP_INFO(logger_, "Initialized IsWithinPathTrackingBoundsCondition BT node");
   initialize();
 }
 
@@ -64,13 +64,17 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
   callback_group_executor_.spin_all(bt_loop_duration_);
 
   if (!getInput("max_error", max_error_)) {
-    RCLCPP_ERROR(node_->get_logger(), "max_error parameter not provided");
-    max_error_ = 1.0;  // Default fallback
+    RCLCPP_ERROR(logger_, "max_error parameter not provided");
+    return BT::NodeStatus::FAILURE;
   }
 
   if (max_error_ < 0.0) {
-    RCLCPP_WARN(node_->get_logger(), "max_error should be positive, using absolute value");
+    RCLCPP_WARN(logger_, "max_error should be positive, using absolute value");
     max_error_ = std::abs(max_error_);
+  }
+
+  if (last_error_ == std::numeric_limits<double>::max()) {
+    RCLCPP_WARN(logger_, "No tracking feedback received yet.");
   }
 
   if (last_error_ <= max_error_) {
