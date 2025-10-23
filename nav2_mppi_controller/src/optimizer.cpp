@@ -218,9 +218,7 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
-  if (settings_.open_loop) {
-    last_command_vel_ = control.twist;
-  }
+  last_command_vel_ = control.twist;
 
   if (settings_.shift_control_sequence) {
     shiftControlSequence();
@@ -265,7 +263,7 @@ void Optimizer::prepare(
   nav2_core::GoalChecker * goal_checker)
 {
   state_.pose = robot_pose;
-  state_.speed = robot_speed;
+  state_.speed = settings_.open_loop ? last_command_vel_ : robot_speed;
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero();
@@ -358,14 +356,11 @@ void Optimizer::updateStateVelocities(
 
 void Optimizer::updateInitialStateVelocities(models::State & state) const
 {
-  state.vx.col(0) = settings_.open_loop ? last_command_vel_.linear.x :
-    static_cast<float>(state.speed.linear.x);
-  state.wz.col(0) = settings_.open_loop ? last_command_vel_.angular.z :
-    static_cast<float>(state.speed.angular.z);
+  state.vx.col(0) = static_cast<float>(state.speed.linear.x);
+  state.wz.col(0) = static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    state.vy.col(0) = settings_.open_loop ? last_command_vel_.linear.y :
-      static_cast<float>(state.speed.linear.y);
+    state.vy.col(0) = static_cast<float>(state.speed.linear.y);
   }
 }
 
