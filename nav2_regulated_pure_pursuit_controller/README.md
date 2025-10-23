@@ -70,7 +70,9 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `max_angular_vel` | The maximum angular velocity to use. |
 | `min_angular_vel` | The minimum angular velocity to use. |
 | `max_linear_accel` | The maximum linear acceleration to use. |
+| `max_linear_decel` | The maximum linear deceleration to use. |
 | `max_angular_accel` | The maximum angular acceleration to use. |
+| `max_angular_decel` | The maximum angular deceleration to use. |
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point |
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances |
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances |
@@ -128,7 +130,9 @@ controller_server:
       max_angular_vel: 1.0
       min_angular_vel: -1.0
       max_linear_accel: 0.5
+      max_linear_decel: 0.5
       max_angular_accel: 1.0
+      max_angular_decel: 1.0
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
