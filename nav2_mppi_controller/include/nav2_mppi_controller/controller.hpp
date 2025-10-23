@@ -111,8 +111,7 @@ protected:
     */
   void visualize(
     const builtin_interfaces::msg::Time & cmd_stamp,
-    const Eigen::ArrayXXf & optimal_trajectory,
-  const Eigen::ArrayXXf & optimal_trajectory_unconstrained);
+    const Eigen::ArrayXXf & optimal_trajectory);
 
   std::string name_;
   nav2::LifecycleNode::WeakPtr parent_;
@@ -120,7 +119,6 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
-  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr opt_traj_unconstrained_pub_;
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;

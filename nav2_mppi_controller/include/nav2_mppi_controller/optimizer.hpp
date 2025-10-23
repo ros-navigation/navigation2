@@ -110,15 +110,14 @@ public:
    * @brief Get the optimal trajectory for a cycle for visualization
    * @return Optimal trajectory
    */
-  Eigen::ArrayXXf getOptimizedTrajectory(const models::ControlSequence& control_sequence) const;
+  Eigen::ArrayXXf getOptimizedTrajectory();
 
   /**
    * @brief Get the optimal control sequence for a cycle for visualization
    * @return Optimal control sequence
    */
   const models::ControlSequence & getOptimalControlSequence();
-  const models::ControlSequence & getOptimalControlSequenceUnconstrained();
-  const Eigen::ArrayXXf & getOptimalTrajectoryUnconstrained();
+
   /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
@@ -285,7 +284,6 @@ protected:
 
   models::State state_;
   models::ControlSequence control_sequence_;
-  models::ControlSequence control_sequence_virtual_;
   std::array<mppi::models::Control, 4> control_history_;
   models::Trajectories generated_trajectories_;
   models::Path path_;
@@ -294,8 +292,6 @@ protected:
   geometry_msgs::msg::TwistStamped prev_control_twist_;
   models::ControlSequence prev_control_sequence_;
   Eigen::Array3f initial_velocities_;
-
-  Eigen::ArrayXXf optimal_trajectory_unconstrained_;
 
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,

@@ -260,14 +260,14 @@ TEST(OptimizerTests, BasicInitializedFunctions)
   EXPECT_EQ(trajs.x.cols(), 50);
   EXPECT_TRUE(trajs.x.isApproxToConstant(0.0f));
 
-  // optimizer_tester.resetMotionModel();
-  // optimizer_tester.testSetOmniModel();
-  // auto traj = optimizer_tester.getOptimizedTrajectory();
-  // EXPECT_EQ(traj(5, 0), 0.0);  // x
-  // EXPECT_EQ(traj(5, 1), 0.0);  // y
-  // EXPECT_EQ(traj(5, 2), 0.0);  // yaw
-  // EXPECT_EQ(traj.rows(), 50);
-  // EXPECT_EQ(traj.cols(), 3);
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+  auto traj = optimizer_tester.getOptimizedTrajectory();
+  EXPECT_EQ(traj(5, 0), 0.0);  // x
+  EXPECT_EQ(traj(5, 1), 0.0);  // y
+  EXPECT_EQ(traj(5, 2), 0.0);  // yaw
+  EXPECT_EQ(traj.rows(), 50);
+  EXPECT_EQ(traj.cols(), 3);
 
   optimizer_tester.reset();
   optimizer_tester.shutdown();
