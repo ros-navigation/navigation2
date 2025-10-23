@@ -173,10 +173,10 @@ double PathHandler::getMaxCostmapDist()
 void PathHandler::setPath(const nav_msgs::msg::Path & plan)
 {
   global_plan_ = plan;
-  
+
   // Start with the full plan and progressively apply restrictions
   nav_msgs::msg::Path most_restrictive_plan = global_plan_;
-  
+
   // Check for rotation restrictions first
   if (enforce_path_rotation_) {
     rotation_locale_ = utils::removePosesAfterFirstRotation(
@@ -184,12 +184,12 @@ void PathHandler::setPath(const nav_msgs::msg::Path & plan)
       rotation_translation_threshold_,
       rotation_rotation_threshold_);
   }
-  
+
   // Check for inversion restrictions (may further restrict the path)
   if (enforce_path_inversion_) {
     inversion_locale_ = utils::removePosesAfterFirstInversion(most_restrictive_plan);
   }
-  
+
   // Set the working paths to the most restrictive version
   global_plan_up_to_rotation_ = most_restrictive_plan;
   global_plan_up_to_inversion_ = most_restrictive_plan;

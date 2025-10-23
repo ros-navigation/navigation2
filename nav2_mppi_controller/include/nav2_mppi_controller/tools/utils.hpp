@@ -646,7 +646,7 @@ inline unsigned int removePosesAfterFirstRotation(
   // Find first in-place rotation
   const unsigned int first_after_rotation = findFirstPathRotation(
     cropped_path, translation_threshold, rotation_threshold);
-  
+
   if (first_after_rotation == path.poses.size()) {
     return 0u;  // No rotation found
   }
