@@ -96,36 +96,10 @@ public:
         .cwiseMin(upper_bound_vx);
       state.vx.col(i) = state.cvx.col(i - 1);
 
-      // state.u(i) = state.cu(i-1)
-      // => we start from current robot speed (state.u(0)) and then apply u_virt (state.cu(i-1))
-      // but we also need to constrain u_virt before applying it based on static limits (max vel & curvature) to compute
-      // u_app
-      // then state.u(i) = u_app(i-1)
-      // ==>  x_k = F(x_k-1, u_app_k-1) = F(x_k-1, g(u_virt_k-1))
-
-      // u_app(0) should be limited on acceleration relative to either feedback (state.u(0)) as done now
-      // TODO 3 or ideally based on last published command
-
-      // state.vx.col(i) = state.cvx.col(i - 1)
-      //   .cwiseMax(lower_bound_vx)
-      //   .cwiseMin(upper_bound_vx);
-
       state.cwz.col(i - 1) = state.cwz.col(i - 1)
         .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
         .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
       state.wz.col(i) = state.cwz.col(i - 1);
-
-      // state.wz.col(i) = state.cwz.col(i - 1)
-      //   .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
-      //   .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
-
-      // constrain u_virt 0 & 1 to make sure accelerations are limited at the first step (state.vx(0) is from feedback)
-      // also constrain u_virt_1 as this is published as command
-      // if (i <= 2)
-      // {
-      //   state.cvx.col(i - 1) = state.vx.col(i);
-      //   state.cwz.col(i - 1) = state.wz.col(i);
-      // }
 
       if (is_holo) {
         auto lower_bound_vy = (state.vy.col(i - 1) >

@@ -96,8 +96,6 @@ void ConstraintCritic::score(CriticData & data)
       data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
         out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
     }
-    // std::cout << "constraint_critic costs after: " << data.costs(Eigen::seq(0, 9)).transpose() << std::endl;
-
     return;
   }
 }

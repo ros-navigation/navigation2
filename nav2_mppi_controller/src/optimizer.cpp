@@ -363,20 +363,13 @@ void Optimizer::prepare(
 
 void Optimizer::shiftControlSequence()
 {
-  // control_sequence_ = control_sequence_virtual_;
-
   auto size = control_sequence_.vx.size();
   utils::shiftColumnsByOnePlace(control_sequence_.vx, -1);
   utils::shiftColumnsByOnePlace(control_sequence_.wz, -1);
   control_sequence_.vx(size - 1) = control_sequence_.vx(size - 2);
   control_sequence_.wz(size - 1) = control_sequence_.wz(size - 2);
 
-  // std::cout << "\n\t control_sequence_ After:\n\t\t" << control_sequence_.vx(Eigen::seq(0, 5)).transpose() << "\n\t\t"
-  //           << control_sequence_.wz(Eigen::seq(0, 5)).transpose() << "\n\t\t"
-  //           /*<< control_sequence_.vx(Eigen::seq(Eigen::last -5, Eigen::last)).transpose()*/<< std::endl;
-
-  if (isHolonomic())
-  {
+  if (isHolonomic()) {
     utils::shiftColumnsByOnePlace(control_sequence_.vy, -1);
     control_sequence_.vy(size - 1) = control_sequence_.vy(size - 2);
   }
@@ -400,30 +393,12 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
 
-  // --tried 1 limit ctrl_seq_(0) based on accel_limit from current robot speed (= state.vx(0,0))  (instead of in predict -> see it still accel issue)
-  // TODO 4 or ideally based on last published command
-  // at this point, control_sequence_ contains the softmax mean of state_.cu (u_virt)]
-/*
-  float vx_last = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, control_sequence_.vx(0));
-  float wz_last = utils::clamp(-s.constraints.wz, s.constraints.wz, control_sequence_.wz(0));
-
-  control_sequence_.vx(0) = vx_last;
-  control_sequence_.wz(0) = wz_last;
-  float vy_last = 0;
-  if (isHolonomic()) {
-    vy_last = utils::clamp(-s.constraints.vy, s.constraints.vy, control_sequence_.vy(0));
-    control_sequence_.vy(0) = vy_last;
-  }
-*/
-  // limit acceleration between current feedback speed and first control in the sequence
-  // float vx_last = static_cast<float>(state_.speed.linear.x);
-  // float wz_last = static_cast<float>(state_.speed.angular.z);
+  // limit acceleration between current initial_velocities_ and first control in the sequence
   float vx_last = initial_velocities_(0);
   float wz_last = initial_velocities_(2);
 
   float vy_last = 0;
   if (isHolonomic()) {
-    // vy_last = static_cast<float>(state_.speed.linear.y);
     vy_last = initial_velocities_(1);
   }
 
@@ -438,18 +413,10 @@ void Optimizer::applyControlSequenceConstraints()
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
-    // if (i==0)
-    // {
-    //   std::cout << "control_sequence_.wz(0) BEFORE: " << control_sequence_.wz(i) << std::endl;
-    // }
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
     wz_curr = utils::clamp(wz_last - max_delta_wz, wz_last + max_delta_wz, wz_curr);
     wz_last = wz_curr;
 
-    // if (i==0)
-    // {
-    //   std::cout << "control_sequence_.wz(0) AFTER: " << control_sequence_.wz(i) << std::endl;
-    // }
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
@@ -463,11 +430,6 @@ void Optimizer::applyControlSequenceConstraints()
   }
 
   motion_model_->applyConstraints(control_sequence_);
-
-  // std::cout << "Control Sequence After Motion Model Constraints:\n";
-  // std::cout << "vx: " << control_sequence_.vx(Eigen::seq(0, 9)).transpose() << "\n";
-  // std::cout << "wz: " << control_sequence_.wz(Eigen::seq(0, 9)).transpose() << "\n";
-  // computeControlSequenceAccel(control_sequence_);
 }
 
 void Optimizer::updateStateVelocities(
@@ -479,17 +441,13 @@ void Optimizer::updateStateVelocities(
 
 void Optimizer::updateInitialStateVelocities(models::State & state)
 {
-  // state.vx.col(0) = static_cast<float>(state.speed.linear.x);
-  // state.wz.col(0) = static_cast<float>(state.speed.angular.z);
   state.vx.col(0) = control_sequence_.vx(0);
   state.wz.col(0) = control_sequence_.wz(0);
 
   if (isHolonomic()) {
-    // state.vy.col(0) = static_cast<float>(state.speed.linear.y);
     state.vy.col(0) = control_sequence_.vy(0);
   }
 
-  // save for later
   initial_velocities_(0) = control_sequence_.vx(0);
   initial_velocities_(1) = control_sequence_.vy(0);
   initial_velocities_(2) = control_sequence_.wz(0);
@@ -641,15 +599,10 @@ void Optimizer::updateControlSequence()
     costs_ += (gamma_vy * (bounded_noises_vy.rowwise() * vy_T).rowwise().sum()).eval();
   }
 
-  // std::cout << "costs_: " << costs_(Eigen::seq(0, 9)).transpose() << "\n";
-
   auto costs_normalized = costs_ - costs_.minCoeff();
   const float inv_temp = 1.0f / s.temperature;
   auto softmaxes = (-inv_temp * costs_normalized).exp().eval();
   softmaxes /= softmaxes.sum();
-
-  // std::cout << "costs_normalized: " << costs_normalized(Eigen::seq(0, 9)).transpose() << "\n";
-  // std::cout << "softmaxes: " << softmaxes(Eigen::seq(0, 9)).transpose() << "\n";
 
   auto softmax_mat = softmaxes.matrix();
   control_sequence_.vx = state_.cvx.transpose().matrix() * softmax_mat;
