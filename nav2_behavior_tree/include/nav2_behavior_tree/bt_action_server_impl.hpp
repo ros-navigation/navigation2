@@ -25,6 +25,10 @@
 #include <string>
 #include <vector>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
 #include "nav2_ros_common/node_utils.hpp"
@@ -179,7 +183,8 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_->set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
     wait_for_service_timeout_);
-  blackboard_->set<uint64_t>("run_id", run_id_);  // NOLINT
+  run_id_ = boost::uuids::to_string(uuid_generator_());
+  blackboard_->set<std::string>("run_id", run_id_);  // NOLINT
   return true;
 }
 
@@ -362,9 +367,8 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
     return;
   }
 
-  run_id_++;
-  blackboard_->set<uint64_t>("run_id", run_id_);
-
+  run_id_ = boost::uuids::to_string(uuid_generator_());
+  blackboard_->set<std::string>("run_id", run_id_);
   auto is_canceling = [&]() {
       if (action_server_ == nullptr) {
         RCLCPP_DEBUG(logger_, "Action server unavailable. Canceling.");
