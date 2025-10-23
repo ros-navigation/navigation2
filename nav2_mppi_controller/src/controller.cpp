@@ -141,7 +141,7 @@ void MPPIController::visualize(
   const Eigen::ArrayXXf & optimal_trajectory)
 {
   trajectory_visualizer_.add(
-    optimizer_.getGeneratedTrajectories(), 
+    optimizer_.getGeneratedTrajectories(),
     optimizer_.getCosts(),
     "Candidate Trajectories Cost",
     cmd_stamp);

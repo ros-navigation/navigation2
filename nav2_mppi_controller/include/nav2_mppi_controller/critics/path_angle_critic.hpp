@@ -83,7 +83,7 @@ protected:
 
   unsigned int power_{0};
   float weight_{0};
-  
+
   bool visualize_{false};
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
 };

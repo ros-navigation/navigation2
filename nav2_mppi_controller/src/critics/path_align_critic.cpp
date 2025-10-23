@@ -58,7 +58,7 @@ void PathAlignCritic::score(CriticData & data)
   // Up to furthest only, closest path point is always 0 from path handler
   const size_t path_segments_count = *data.furthest_reached_path_point;
   float path_segments_flt = static_cast<float>(path_segments_count);
-  
+
   // Visualize target pose if enabled
   if (visualize_ && path_segments_count > 0) {
     auto node = parent_.lock();
@@ -71,7 +71,7 @@ void PathAlignCritic::score(CriticData & data)
     target_pose.pose.orientation.w = 1.0;
     target_pose_pub_->publish(target_pose);
   }
-  
+
   if (path_segments_count < offset_from_furthest_) {
     return;
   }
