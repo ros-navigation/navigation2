@@ -256,60 +256,8 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
     shiftControlSequence();
   }
 
-  {
-    auto & s = settings_;
-    constexpr float epsilon = 1e-4f;
-
-    // Check if accelerations exceed constraints
-    double dt = (control.header.stamp.sec - prev_control_twist_.header.stamp.sec)
-                + 1e-9 * (control.header.stamp.nanosec - prev_control_twist_.header.stamp.nanosec);
-
-    float ax = (control.twist.linear.x - prev_control_twist_.twist.linear.x) / s.model_dt;
-    float ax_real = (control.twist.linear.x - prev_control_twist_.twist.linear.x) / dt;
-    if (std::abs(ax) > s.constraints.ax_max + epsilon) {
-      std::cout << "Acceleration constraint violated from last command "  << ":\t";
-      std::cout << "vx[i]: " << control.twist.linear.x << ", vx[i-1]: " << prev_control_twist_.twist.linear.x
-      << ", ax: " << ax << " real dt: " << dt << " real ax " << ax_real << "\n" ;
-    }
-    float wz = (control.twist.angular.z - prev_control_twist_.twist.angular.z) / s.model_dt;
-    float wz_real = (control.twist.angular.z - prev_control_twist_.twist.angular.z) / dt;
-    if (std::abs(wz) > s.constraints.az_max + epsilon) {
-      std::cout << "Angular Acceleration constraint violated from last command "  << ":\t";
-      std::cout << "wz[i]: " << control.twist.angular.z << ", wz[i-1]: " << prev_control_twist_.twist.angular.z
-      << ", az: " << wz << " real dt: " <<  dt << " real az " << wz_real << "\n" ;
-    }
-  }
-
-  prev_control_twist_ = control;
-  prev_control_sequence_ = control_sequence_;
-
   return std::make_tuple(control, optimal_trajectory);
 }
-
-void Optimizer::computeControlSequenceAccel(const models::ControlSequence& control_sequence)
-{
-  auto & s = settings_;
-
-  std::cout << std::endl;
-  for (long int i = 1; i < control_sequence.vx.size(); ++i) {
-    constexpr float epsilon = 1e-4f;
-
-    // Check if accelerations exceed constraints
-    float ax = (control_sequence.vx(i) - control_sequence.vx(i - 1)) / s.model_dt;
-    if (std::abs(ax) > s.constraints.ax_max + epsilon) {
-      std::cout << "****Acceleration constraint violated at index " << i << ":\n";
-      std::cout << "vx[i-1]: " << control_sequence.vx(i - 1) << ", vx[i]: " << control_sequence.vx(i) << ", ax: " << ax << "\n";
-    }
-
-    float wz_accel = (control_sequence.wz(i) - control_sequence.wz(i - 1)) / s.model_dt;
-    if (std::abs(wz_accel) > s.constraints.az_max + epsilon) {
-      std::cout << "***Angular acceleration constraint violated at index " << i << ":\n";
-      std::cout << "wz[i-1]: " << control_sequence.wz(i - 1) << ", wz[i]: " << control_sequence.wz(i) << ", wz_accel: " << wz_accel << "\n";
-    }
-  }
-  std::cout << std::endl;
-}
-
 
 void Optimizer::optimize()
 {
@@ -613,7 +561,6 @@ void Optimizer::updateControlSequence()
   }
 
   utils::savitskyGolayFilter(control_sequence_, control_history_, settings_);
-  control_sequence_virtual_ = control_sequence_;
 
   applyControlSequenceConstraints();
 }
