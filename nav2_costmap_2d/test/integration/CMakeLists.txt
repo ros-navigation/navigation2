@@ -72,7 +72,7 @@ target_link_libraries(test_costmap_subscriber_exec
   nav2_costmap_2d_client
 )
 
-ament_add_test(test_collision_checker
+ament_add_ros_isolated_test(test_collision_checker
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -92,7 +92,7 @@ ament_add_test(footprint_tests
     TEST_EXECUTABLE=$<TARGET_FILE:footprint_tests_exec>
 )
 
-ament_add_test(inflation_tests
+ament_add_ros_isolated_test(inflation_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -102,7 +102,7 @@ ament_add_test(inflation_tests
     TEST_EXECUTABLE=$<TARGET_FILE:inflation_tests_exec>
 )
 
-ament_add_test(obstacle_tests
+ament_add_ros_isolated_test(obstacle_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -112,7 +112,7 @@ ament_add_test(obstacle_tests
     TEST_EXECUTABLE=$<TARGET_FILE:obstacle_tests_exec>
 )
 
-ament_add_test(range_tests
+ament_add_ros_isolated_test(range_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -122,7 +122,7 @@ ament_add_test(range_tests
     TEST_EXECUTABLE=$<TARGET_FILE:range_tests_exec>
 )
 
-ament_add_test(plugin_container_tests
+ament_add_ros_isolated_test(plugin_container_tests
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -133,7 +133,7 @@ ament_add_test(plugin_container_tests
     STATIC_ODOM_TO_BASE_LINK=true
 )
 
-ament_add_test(test_costmap_publisher_exec
+ament_add_ros_isolated_test(test_costmap_publisher_exec
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -144,7 +144,7 @@ ament_add_test(test_costmap_publisher_exec
     STATIC_ODOM_TO_BASE_LINK=true
 )
 
-ament_add_test(test_costmap_subscriber_exec
+ament_add_ros_isolated_test(test_costmap_subscriber_exec
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/costmap_tests_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

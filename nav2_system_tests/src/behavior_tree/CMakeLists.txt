@@ -1,4 +1,4 @@
-ament_add_gtest(test_behavior_tree_node
+ament_add_ros_isolated_gtest(test_behavior_tree_node
   test_behavior_tree_node.cpp
   server_handler.cpp
 )
