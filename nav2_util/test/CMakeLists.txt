@@ -6,7 +6,7 @@ target_link_libraries(test_execution_timer ${library_name})
 ament_add_gtest(test_string_utils test_string_utils.cpp)
 target_link_libraries(test_string_utils ${library_name})
 
-ament_add_gtest(test_lifecycle_cli_node test_lifecycle_cli_node.cpp)
+ament_add_ros_isolated_gtest(test_lifecycle_cli_node test_lifecycle_cli_node.cpp)
 target_link_libraries(test_lifecycle_cli_node ${library_name} rclcpp_lifecycle::rclcpp_lifecycle)
 
 ament_add_gtest(test_geometry_utils test_geometry_utils.cpp)
