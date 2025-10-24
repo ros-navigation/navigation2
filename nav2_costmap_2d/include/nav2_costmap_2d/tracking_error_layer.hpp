@@ -51,13 +51,11 @@ public:
     nav2_costmap_2d::Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j);
   virtual void reset();
-  virtual void onFootprintChanged();
   virtual bool isClearable() {return false;}
 
   // Lifecycle methods
   virtual void activate();
   virtual void deactivate();
-  virtual void cleanup();
   std::vector<std::vector<double>> getWallPoints(const nav_msgs::msg::Path & segment);
   nav_msgs::msg::Path getPathSegment();
 
@@ -71,8 +69,7 @@ protected:
 private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
-  std::mutex path_mutex_;
-  std::mutex tracking_error_mutex_;
+  std::mutex data_mutex_;
   nav_msgs::msg::Path last_path_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
