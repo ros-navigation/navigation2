@@ -1,5 +1,6 @@
 // Copyright (c) 2020 Shrijit Singh
 // Copyright (c) 2020 Samsung Research America
+// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -79,6 +80,56 @@ public:
    * @brief Deactivate controller state machine
    */
   void deactivate() override;
+
+  /**
+   * @brief Compute the dynamic window (feasible velocity bounds) based on the current speed and the given velocity and acceleration constraints.
+   * @param current_speed  Current linear and angular velocity of the robot
+   * @param max_linear_vel Maximum linear velocity
+   * @param min_linear_vel Minimum linear velocity
+   * @param max_angular_vel Maximum angular velocity
+   * @param min_angular_vel Minimum angular velocity
+   * @param max_linear_accel Maximum linear acceleration
+   * @param max_linear_decel Maximum linear deceleration
+   * @param max_angular_accel Maximum angular acceleration
+   * @param max_angular_decel Maximum angular deceleration
+   * @param dt Control loop sampling period
+   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
+   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
+   * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
+   * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
+   */
+  void computeDynamicWindow(
+    const geometry_msgs::msg::Twist & current_speed,
+    const double & max_linear_vel,
+    const double & min_linear_vel,
+    const double & max_angular_vel,
+    const double & min_angular_vel,
+    const double & max_linear_accel,
+    const double & max_linear_decel,
+    const double & max_angular_accel,
+    const double & max_angular_decel,
+    const double & dt,
+    double & dynamic_window_max_linear_vel,
+    double & dynamic_window_min_linear_vel,
+    double & dynamic_window_max_angular_vel,
+    double & dynamic_window_min_angular_vel
+  );
+
+  /**
+   * @brief Compute the optimal command given the current pose, velocity and acceleration constraints using dynamic window
+   * @param curvature      Curvature of the path to follow
+   * @param current_speed  Current robot velocity
+   * @param regulated_linear_vel   Regulated linear velocity
+   * @param optimal_linear_vel   Optimal linear velocity to follow the path under velocity and acceleration constraints
+   * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
+   */
+  void computeOptimalVelocityUsingDynamicWindow(
+    const double & curvature,
+    const geometry_msgs::msg::Twist & current_speed,
+    const double & regulated_linear_vel,
+    double & optimal_linear_vel,
+    double & optimal_angular_vel
+  );
 
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
@@ -195,6 +246,7 @@ protected:
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
+  geometry_msgs::msg::Twist last_command_velocity_;
 
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
