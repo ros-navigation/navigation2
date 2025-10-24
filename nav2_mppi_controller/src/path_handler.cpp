@@ -44,6 +44,14 @@ void PathHandler::initialize(
     getParam(inversion_yaw_tolerance, "inversion_yaw_tolerance", 0.4);
     inversion_locale_ = 0u;
   }
+  getParam(enforce_path_rotation_, "enforce_path_rotation", false);
+  if (enforce_path_rotation_) {
+    getParam(rotation_xy_tolerance_, "rotation_xy_tolerance", 0.2);
+    getParam(rotation_yaw_tolerance_, "rotation_yaw_tolerance", 0.4);
+    getParam(rotation_translation_threshold_, "rotation_translation_threshold", 0.02);
+    getParam(rotation_rotation_threshold_, "rotation_rotation_threshold", 0.785);
+    rotation_locale_ = 0u;
+  }
 }
 
 std::pair<nav_msgs::msg::Path, PathIterator>
@@ -139,6 +147,15 @@ nav_msgs::msg::Path PathHandler::transformPath(
     }
   }
 
+  if (enforce_path_rotation_ && rotation_locale_ != 0u) {
+    if (isWithinRotationTolerances(global_pose)) {
+      // Robot has completed the rotation, unlock the rest of the path
+      global_plan_up_to_rotation_ = global_plan_;
+      global_plan_up_to_inversion_ = global_plan_;
+      rotation_locale_ = 0u;  // Reset since rotation is complete
+    }
+  }
+
   if (transformed_plan.poses.empty()) {
     throw nav2_core::InvalidPath("Resulting plan has 0 poses in it.");
   }
@@ -156,10 +173,26 @@ double PathHandler::getMaxCostmapDist()
 void PathHandler::setPath(const nav_msgs::msg::Path & plan)
 {
   global_plan_ = plan;
-  global_plan_up_to_inversion_ = global_plan_;
-  if (enforce_path_inversion_) {
-    inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+
+  // Start with the full plan and progressively apply restrictions
+  nav_msgs::msg::Path most_restrictive_plan = global_plan_;
+
+  // Check for rotation restrictions first
+  if (enforce_path_rotation_) {
+    rotation_locale_ = utils::removePosesAfterFirstRotation(
+      most_restrictive_plan,
+      rotation_translation_threshold_,
+      rotation_rotation_threshold_);
   }
+
+  // Check for inversion restrictions (may further restrict the path)
+  if (enforce_path_inversion_) {
+    inversion_locale_ = utils::removePosesAfterFirstInversion(most_restrictive_plan);
+  }
+
+  // Set the working paths to the most restrictive version
+  global_plan_up_to_rotation_ = most_restrictive_plan;
+  global_plan_up_to_inversion_ = most_restrictive_plan;
 }
 
 nav_msgs::msg::Path & PathHandler::getPath() {return global_plan_;}
@@ -200,6 +233,20 @@ bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStam
     tf2::getYaw(last_pose.pose.orientation));
 
   return distance <= inversion_xy_tolerance_ && fabs(angle_distance) <= inversion_yaw_tolerance;
+}
+
+bool PathHandler::isWithinRotationTolerances(const geometry_msgs::msg::PoseStamped & robot_pose)
+{
+  // Keep full path if we are within tolerance of the rotation pose
+  const auto last_pose = global_plan_up_to_rotation_.poses.back();
+  float distance = hypotf(
+    robot_pose.pose.position.x - last_pose.pose.position.x,
+    robot_pose.pose.position.y - last_pose.pose.position.y);
+
+  float angle_distance = angles::shortest_angular_distance(
+    tf2::getYaw(robot_pose.pose.orientation),
+    tf2::getYaw(last_pose.pose.orientation));
+  return distance <= rotation_xy_tolerance_ && fabs(angle_distance) <= rotation_yaw_tolerance_;
 }
 
 }  // namespace mppi

@@ -511,7 +511,70 @@ inline void savitskyGolayFilter(
 }
 
 /**
+ * @brief Find the first pose at which there is an in-place rotation in the path
+ * @param path Path to check
+ * @param translation_threshold Maximum translation per pose transition
+ * @param rotation_threshold Minimum total rotation to consider significant
+ * @return Index after the rotation sequence if found, path size if no rotation detected
+ */
+inline unsigned int findFirstPathRotation(
+  const nav_msgs::msg::Path & path,
+  float translation_threshold,
+  float rotation_threshold)
+{
+  if (path.poses.size() < 2) {
+    return path.poses.size();
+  }
+
+  // Iterate through path to find first rotation sequence
+  for (unsigned int start_idx = 0; start_idx < path.poses.size() - 1; ++start_idx) {
+    // Check initial translation
+    float ab_x = path.poses[start_idx + 1].pose.position.x -
+      path.poses[start_idx].pose.position.x;
+    float ab_y = path.poses[start_idx + 1].pose.position.y -
+      path.poses[start_idx].pose.position.y;
+    float initial_translation = sqrtf(ab_x * ab_x + ab_y * ab_y);
+
+    if (initial_translation >= translation_threshold) {
+      continue;  // Not a rotation sequence, try next pose
+    }
+
+    // Start of potential rotation sequence
+    float start_yaw = tf2::getYaw(path.poses[start_idx].pose.orientation);
+    unsigned int j = start_idx + 1;
+    unsigned int last_valid_j = j;  // Track the last pose in the rotation sequence
+
+    // Keep accumulating poses while translation remains small
+    while (j < path.poses.size() - 1) {
+      float next_x = path.poses[j + 1].pose.position.x - path.poses[j].pose.position.x;
+      float next_y = path.poses[j + 1].pose.position.y - path.poses[j].pose.position.y;
+      float next_translation = sqrtf(next_x * next_x + next_y * next_y);
+
+      // If individual translation is above threshold, end of rotation sequence
+      if (next_translation >= translation_threshold) {
+        break;
+      }
+
+      j++;
+      last_valid_j = j;  // Update the last valid pose in the sequence
+    }
+
+    // Check if we have accumulated enough rotation
+    float end_yaw = tf2::getYaw(path.poses[last_valid_j].pose.orientation);
+    float total_rotation = fabs(angles::shortest_angular_distance(start_yaw, end_yaw));
+
+    if (total_rotation > rotation_threshold) {
+      // Return the index after the last pose in the rotation sequence
+      return last_valid_j + 1;
+    }
+  }
+
+  return path.poses.size();  // No significant rotation detected
+}
+
+/**
  * @brief Find the iterator of the first pose at which there is an inversion on the path,
+ * or where the robot rotates in place
  * @param path to check for inversion
  * @return the first point after the inversion found in the path
  */
@@ -561,6 +624,38 @@ inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
     cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
   path = cropped_path;
   return first_after_inversion;
+}
+
+/**
+ * @brief Find and remove poses after the first in-place rotation in the path
+ * @param path to check for rotation
+ * @param translation_threshold Maximum translation per pose transition
+ * @param rotation_threshold Minimum total rotation to consider significant
+ * @return The location of the rotation, return 0 if none exist
+ */
+inline unsigned int removePosesAfterFirstRotation(
+  nav_msgs::msg::Path & path,
+  float translation_threshold,
+  float rotation_threshold)
+{
+  if (path.poses.size() < 2) {
+    return 0u;
+  }
+
+  nav_msgs::msg::Path cropped_path = path;
+  // Find first in-place rotation
+  const unsigned int first_after_rotation = findFirstPathRotation(
+    cropped_path, translation_threshold, rotation_threshold);
+
+  if (first_after_rotation == path.poses.size()) {
+    return 0u;  // No rotation found
+  }
+
+  // Remove poses after the rotation
+  cropped_path.poses.erase(
+    cropped_path.poses.begin() + first_after_rotation, cropped_path.poses.end());
+  path = cropped_path;
+  return first_after_rotation;
 }
 
 /**
