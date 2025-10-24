@@ -21,6 +21,7 @@
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/publisher.hpp"
 
 namespace mppi::critics
@@ -85,7 +86,7 @@ protected:
   float weight_{0};
 
   bool visualize_{false};
-  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr furthest_point_pub_;
 };
 
 }  // namespace mppi::critics

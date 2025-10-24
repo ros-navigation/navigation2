@@ -113,7 +113,6 @@ protected:
 
   size_t trajectory_step_{0};
   size_t time_step_{0};
-  float time_step_elevation_{0.0f};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

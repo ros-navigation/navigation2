@@ -38,7 +38,6 @@ void TrajectoryVisualizer::on_configure(
 
   getParam(trajectory_step_, "trajectory_step", 5);
   getParam(time_step_, "time_step", 3);
-  getParam(time_step_elevation_, "time_step_elevation", 0.0f);
 
   reset();
 }
@@ -186,12 +185,7 @@ void TrajectoryVisualizer::add(
       geometry_msgs::msg::Point point;
       point.x = trajectories.x(i, j);
       point.y = trajectories.y(i, j);
-      // Increment z by time_step_elevation_ for each time step
-      if (time_step_elevation_ > 0.0f) {
-        point.z = static_cast<float>(j) * time_step_elevation_;
-      } else {
-        point.z = 0.0f;
-      }
+      point.z = 0.0f;
       marker.points.push_back(point);
     }
 

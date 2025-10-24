@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <math.h>
 
@@ -57,9 +58,9 @@ void PathAngleCritic::initialize()
   if (visualize_) {
     auto node = parent_.lock();
     if (node) {
-      target_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+      furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
       "PathAngleCritic/furthest_reached_path_point", 1);
-      target_pose_pub_->on_activate();
+      furthest_point_pub_->on_activate();
     }
   }
 
@@ -86,16 +87,17 @@ void PathAngleCritic::score(CriticData & data)
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   // Visualize target pose if enabled
-  if (visualize_) {
-    auto node = parent_.lock();
-    geometry_msgs::msg::PoseStamped target_pose;
-    target_pose.header.frame_id = costmap_ros_->getGlobalFrameID();
-    target_pose.header.stamp = node->get_clock()->now();
-    target_pose.pose.position.x = goal_x;
-    target_pose.pose.position.y = goal_y;
-    target_pose.pose.position.z = 0.0;
-    target_pose.pose.orientation.w = 1.0;
-    target_pose_pub_->publish(target_pose);
+  if (visualize_ && furthest_point_pub_->get_subscription_count() > 0) {
+    auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
+    furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
+    furthest_point->header.stamp = clock_->now();
+    furthest_point->pose.position.x = goal_x;
+    furthest_point->pose.position.y = goal_y;
+    furthest_point->pose.position.z = 0.0;
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, goal_yaw);
+    furthest_point->pose.orientation = tf2::toMsg(quat);
+    furthest_point_pub_->publish(std::move(furthest_point));
   }
 
   switch (mode_) {
