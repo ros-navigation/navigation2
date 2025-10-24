@@ -50,7 +50,7 @@ target_include_directories(${test_planner_random_exec}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
-ament_add_test(test_planner_costmaps
+ament_add_ros_isolated_test(test_planner_costmaps
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_costmaps_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -60,7 +60,7 @@ ament_add_test(test_planner_costmaps
     TEST_MAP=${PROJECT_SOURCE_DIR}/maps/map.pgm
 )
 
-ament_add_test(test_planner_random
+ament_add_ros_isolated_test(test_planner_random
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_planner_random_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
