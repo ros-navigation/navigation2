@@ -39,7 +39,6 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   bt_loop_duration_ =
     config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 
-  RCLCPP_INFO_ONCE(logger_, "Waiting for tracking error");
   RCLCPP_INFO(logger_, "Initialized IsWithinPathTrackingBoundsCondition BT node");
   initialize();
 }
@@ -75,7 +74,7 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
   }
 
   if (!getInput("max_error_right", max_error_right_)) {
-    RCLCPP_ERROR(logger_, "max_error parameter not provided");
+    RCLCPP_ERROR(logger_, "max_error_right parameter not provided");
     return BT::NodeStatus::FAILURE;
   }
 
