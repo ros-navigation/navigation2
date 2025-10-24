@@ -36,7 +36,7 @@ ParameterHandler::ParameterHandler(
   logger_ = logger;
 
   params_.angular_dist_threshold = node->declare_or_get_parameter(plugin_name_ +
-    ".angular_dist_threshold", 0.785);                                                                            // 45 deg
+    ".angular_dist_threshold", 0.785);  // 45 deg
   params_.angular_disengage_threshold = node->declare_or_get_parameter(plugin_name_ +
     ".angular_disengage_threshold", 0.785 / 2.0);
   params_.forward_sampling_distance = node->declare_or_get_parameter(plugin_name_ +

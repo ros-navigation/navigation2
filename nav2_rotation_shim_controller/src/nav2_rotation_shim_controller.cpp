@@ -72,7 +72,7 @@ void RotationShimController::configure(
     return;
   }
 
-  primary_controller_->configure(parent, name, tf, costmap_ros);
+  primary_controller_->configure(parent, name + ".PrimaryController", tf, costmap_ros);
 
   // initialize collision checker and set costmap
   collision_checker_ = std::make_unique<nav2_costmap_2d::
