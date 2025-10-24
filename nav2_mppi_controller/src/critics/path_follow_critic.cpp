@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <Eigen/Dense>
 
@@ -29,6 +30,16 @@ void PathFollowCritic::initialize()
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0f);
+  getParam(visualize_, "visualize", false);
+
+  if (visualize_) {
+    auto node = parent_.lock();
+    if (node) {
+      furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "PathFollowCritic/furthest_reached_path_point", 1);
+      furthest_point_pub_->on_activate();
+    }
+  }
 }
 
 void PathFollowCritic::score(CriticData & data)
@@ -60,6 +71,19 @@ void PathFollowCritic::score(CriticData & data)
 
   const auto path_x = data.path.x(offsetted_idx);
   const auto path_y = data.path.y(offsetted_idx);
+  // Visualize target pose if enabled
+  if (visualize_ && furthest_point_pub_->get_subscription_count() > 0) {
+    auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
+    furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
+    furthest_point->header.stamp = clock_->now();
+    furthest_point->pose.position.x = path_x;
+    furthest_point->pose.position.y = path_y;
+    furthest_point->pose.position.z = 0.0;
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, data.path.yaws(offsetted_idx));
+    furthest_point->pose.orientation = tf2::toMsg(quat);
+    furthest_point_pub_->publish(std::move(furthest_point));
+  }
 
   const int && rightmost_idx = data.trajectories.x.cols() - 1;
   const auto last_x = data.trajectories.x.col(rightmost_idx);

@@ -147,10 +147,17 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   candidate_trajectories.y = Eigen::ArrayXXf::Ones(200, 12);
   candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(200, 12);
 
+  // Create costs array for the trajectories
+  Eigen::ArrayXf costs = Eigen::ArrayXf::LinSpaced(200, 0.0f, 100.0f);
+
+  builtin_interfaces::msg::Time cmd_stamp;
+  cmd_stamp.sec = 5;
+  cmd_stamp.nanosec = 10;
+
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(candidate_trajectories, "Candidate Trajectories");
+  vis.add(candidate_trajectories, costs, "Candidate Trajectories", cmd_stamp);
   nav_msgs::msg::Path bogus_path;
   vis.visualize(bogus_path);
 
