@@ -414,6 +414,8 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   node->declare_parameter(
     "PathFollower.rotate_to_goal_heading",
     true);
+  node->declare_parameter("controller_frequency", 1.0);
+  node->declare_parameter("PathFollower.PrimaryController.use_collision_detection", false);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -637,6 +639,26 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_once").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.closed_loop").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_path_orientations").as_bool(), true);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.angular_dist_threshold", -1.0)}
+  );
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("test.angular_dist_threshold").as_double(), 7.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.simulate_ahead_time", -0.1)}
+  );
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
 }
 
 int main(int argc, char **argv)
