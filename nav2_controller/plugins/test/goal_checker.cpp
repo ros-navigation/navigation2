@@ -40,7 +40,7 @@
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "eigen3/Eigen/Geometry"
+#include "nav_msgs/msg/path.hpp"
 
 using nav2_controller::SimpleGoalChecker;
 using nav2_controller::StoppedGoalChecker;
@@ -70,10 +70,11 @@ void checkMacro(
   v.linear.y = yv;
   v.angular.z = thetav;
 
+  nav_msgs::msg::Path transformed_global_plan;
   if (expected_result) {
-    EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v));
+    EXPECT_TRUE(gc.isGoalReached(pose0, pose1, v, transformed_global_plan));
   } else {
-    EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v));
+    EXPECT_FALSE(gc.isGoalReached(pose0, pose1, v, transformed_global_plan));
   }
 }
 
@@ -217,6 +218,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test2.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.yaw_goal_tolerance", 200.0),
+      rclcpp::Parameter("test2.path_length_tolerance", 200.0),
       rclcpp::Parameter("test2.stateful", true)});
 
   rclcpp::spin_until_future_complete(
@@ -225,6 +227,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
 
   EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.yaw_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test2.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.stateful").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances
@@ -255,23 +258,24 @@ TEST(StoppedGoalChecker, is_reached)
   // Current linear x position is tolerance away from goal
   current_pose.position.x = 0.25;
   velocity.linear.x = 0.25;
-  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  nav_msgs::msg::Path transformed_global_plan_;
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   // Current linear x speed exceeds tolerance
   velocity.linear.x = 0.25 + std::numeric_limits<double>::epsilon();
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   // Current linear x position is further than tolerance away from goal
   current_pose.position.x = 0.25 + std::numeric_limits<double>::epsilon();
   velocity.linear.x = 0.25;
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
   current_pose.position.x = 0.0;
@@ -282,16 +286,16 @@ TEST(StoppedGoalChecker, is_reached)
   current_pose.position.y = 0.25 / std::sqrt(2);
   velocity.linear.x = 0.25 / std::sqrt(2);
   velocity.linear.y = 0.25 / std::sqrt(2);
-  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   // Current linear speed exceeds tolerance
   velocity.linear.x = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
   velocity.linear.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
@@ -300,44 +304,53 @@ TEST(StoppedGoalChecker, is_reached)
   current_pose.position.y = 0.25 / std::sqrt(2) + std::numeric_limits<double>::epsilon();
   velocity.linear.x = 0.25 / std::sqrt(2);
   velocity.linear.y = 0.25 / std::sqrt(2);
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   current_pose.position.x = 0.0;
   velocity.linear.x = 0.0;
 
-
   // Current angular position is tolerance away from goal
-  auto quat =
-    (Eigen::AngleAxisd::Identity() * Eigen::AngleAxisd(0.25, Eigen::Vector3d::UnitZ())).coeffs();
-  // epsilon for orientation is a lot bigger than double limit, probably from TF getYaw
-  auto quat_epsilon =
-    (Eigen::AngleAxisd::Identity() *
-    Eigen::AngleAxisd(0.25 + 1.0E-15, Eigen::Vector3d::UnitZ())).coeffs();
-
-  current_pose.orientation.z = quat[2];
-  current_pose.orientation.w = quat[3];
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25);
   velocity.angular.z = 0.25;
-  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   // Current angular speed exceeds tolerance
   velocity.angular.z = 0.25 + std::numeric_limits<double>::epsilon();
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   sgc.reset();
   gc.reset();
 
   // Current angular position is further than tolerance away from goal
-  current_pose.orientation.z = quat_epsilon[2];
-  current_pose.orientation.w = quat_epsilon[3];
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25 + 1e-15);
   velocity.angular.z = 0.25;
-  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity));
-  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity));
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  sgc.reset();
+  gc.reset();
+
+  // Looping path, xy yaw tolerance reached but path longer than path_length_tolerance
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25);
+  geometry_msgs::msg::PoseStamped first_pose, second_pose, last_pose;
+  first_pose.pose.position.x = 9.55;
+  first_pose.pose.position.y = 7.77;
+  second_pose.pose.position.x = 13.7;
+  second_pose.pose.position.y = 7.84;
+  last_pose.pose.position.x = 9.54;
+  last_pose.pose.position.y = 7.77;
+  transformed_global_plan_.poses.push_back(first_pose);
+  transformed_global_plan_.poses.push_back(second_pose);
+  transformed_global_plan_.poses.push_back(last_pose);
+  EXPECT_FALSE(sgc.isGoalReached(first_pose.pose, last_pose.pose, velocity,
+    transformed_global_plan_));
+  EXPECT_FALSE(gc.isGoalReached(first_pose.pose, last_pose.pose, velocity,
+    transformed_global_plan_));
 }
 
 int main(int argc, char ** argv)

@@ -62,6 +62,73 @@ geometry_msgs::msg::PoseStamped getLookAheadPoint(
   double &, const nav_msgs::msg::Path &,
   const bool interpolate_after_goal = false);
 
+/**
+ * @brief Find the iterator of the first pose at which there is an inversion on the path,
+ * @param path to check for inversion
+ * @return the first point after the inversion found in the path
+ */
+inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
+{
+  // At least 3 poses for a possible inversion
+  if (path.poses.size() < 3) {
+    return path.poses.size();
+  }
+
+  // Iterating through the path to determine the position of the path inversion
+  for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
+    // We have two vectors for the dot product OA and AB. Determining the vectors.
+    float oa_x = path.poses[idx].pose.position.x -
+      path.poses[idx - 1].pose.position.x;
+    float oa_y = path.poses[idx].pose.position.y -
+      path.poses[idx - 1].pose.position.y;
+    float ab_x = path.poses[idx + 1].pose.position.x -
+      path.poses[idx].pose.position.x;
+    float ab_y = path.poses[idx + 1].pose.position.y -
+      path.poses[idx].pose.position.y;
+
+    // Checking for the existence of cusp, in the path, using the dot product.
+    float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
+    if (dot_product < 0.0f) {
+      return idx + 1;
+    }
+
+    if (
+      (hypot(oa_x, oa_y) == 0.0 &&
+      path.poses[idx - 1].pose.orientation !=
+      path.poses[idx].pose.orientation)
+      ||
+      (hypot(ab_x, ab_y) == 0.0 &&
+      path.poses[idx].pose.orientation !=
+      path.poses[idx + 1].pose.orientation))
+    {
+      // returning the distance since the points overlap
+      // but are not simply duplicate points (e.g. in place rotation)
+      return idx + 1;
+    }
+  }
+
+  return path.poses.size();
+}
+
+/**
+ * @brief Find and remove poses after the first inversion in the path
+ * @param path to check for inversion
+ * @return The location of the inversion, return 0 if none exist
+ */
+inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
+{
+  nav_msgs::msg::Path cropped_path = path;
+  const unsigned int first_after_inversion = findFirstPathInversion(cropped_path);
+  if (first_after_inversion == path.poses.size()) {
+    return 0u;
+  }
+
+  cropped_path.poses.erase(
+    cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
+  path = cropped_path;
+  return first_after_inversion;
+}
+
 }  // namespace nav2_util
 
 #endif  // NAV2_UTIL__CONTROLLER_UTILS_HPP_
