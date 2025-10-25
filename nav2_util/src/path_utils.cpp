@@ -82,4 +82,43 @@ PathSearchResult distance_from_path(
   return result;
 }
 
+bool transformPathInTargetFrame(
+  const nav_msgs::msg::Path & input_path,
+  nav_msgs::msg::Path & transformed_path,
+  tf2_ros::Buffer & tf_buffer, const std::string target_frame,
+  const double transform_timeout)
+{
+  static rclcpp::Logger logger = rclcpp::get_logger("transformPathInTargetFrame");
+
+  if(input_path.header.frame_id == target_frame) {
+    transformed_path = input_path;
+    return true;
+  }
+
+  transformed_path.header.frame_id = target_frame;
+  transformed_path.header.stamp = input_path.header.stamp;
+
+  for (const auto & input_pose : input_path.poses) {
+    geometry_msgs::msg::PoseStamped source_pose, transformed_pose;
+    source_pose.header.frame_id = input_path.header.frame_id;
+    source_pose.header.stamp = input_path.header.stamp;
+    source_pose.pose = input_pose.pose;
+
+    if (!nav2_util::transformPoseInTargetFrame(
+          source_pose, transformed_pose, tf_buffer, target_frame, transform_timeout))
+    {
+      RCLCPP_ERROR(
+        logger,
+        "Failed to transform path from '%s' to '%s'.",
+        input_path.header.frame_id.c_str(), target_frame.c_str());
+      return false;
+    }
+
+    transformed_pose.pose.position.z = 0.0;
+    transformed_path.poses.push_back(std::move(transformed_pose));
+  }
+
+  return true;
+}
+
 }  // namespace nav2_util

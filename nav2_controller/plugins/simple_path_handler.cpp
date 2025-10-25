@@ -73,9 +73,9 @@ void SimplePathHandler::initialize(
 double SimplePathHandler::getCostmapMaxExtent() const
 {
   const double max_costmap_dim_meters = std::max(
-    costmap_ros_->getCostmap()->getSizeInCellsX(),
-    costmap_ros_->getCostmap()->getSizeInCellsY());
-  return max_costmap_dim_meters * costmap_ros_->getCostmap()->getResolution() / 2.0;
+    costmap_ros_->getCostmap()->getSizeInMetersX(),
+    costmap_ros_->getCostmap()->getSizeInMetersY());
+  return max_costmap_dim_meters / 2.0;
 }
 
 void SimplePathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)

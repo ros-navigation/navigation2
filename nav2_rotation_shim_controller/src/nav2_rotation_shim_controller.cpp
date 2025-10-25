@@ -177,25 +177,16 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
     std::lock_guard<std::mutex> lock_reinit(mutex_);
 
     try {
-      geometry_msgs::msg::PoseStamped sampled_pt_goal = getSampledPathGoal();
-
-      if (!nav2_util::transformPoseInTargetFrame(
-          sampled_pt_goal, sampled_pt_goal, *tf_,
-          pose.header.frame_id))
-      {
-        throw nav2_core::ControllerTFError("Failed to transform pose to base frame!");
-      }
-
       geometry_msgs::msg::Pose pose_tolerance;
       geometry_msgs::msg::Twist vel_tolerance;
       goal_checker->getTolerances(pose_tolerance, vel_tolerance);
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
-      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity,
+      if (position_goal_checker_->isGoalReached(pose.pose, global_goal.pose, velocity,
           transformed_global_plan))
       {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
-        double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
+        double goal_yaw = tf2::getYaw(global_goal.pose.orientation);
 
         double angular_distance_to_heading = angles::shortest_angular_distance(pose_yaw, goal_yaw);
 
@@ -284,18 +275,6 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
       current_path_.poses[i].header.stamp = clock_->now();  // Get current time transformation
       return current_path_.poses[i];
     }
-  }
-
-  auto goal = current_path_.poses.back();
-  goal.header.frame_id = current_path_.header.frame_id;
-  goal.header.stamp = clock_->now();
-  return goal;
-}
-
-geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathGoal()
-{
-  if (current_path_.poses.empty()) {
-    throw nav2_core::InvalidPath("Path is empty - cannot find a goal point");
   }
 
   auto goal = current_path_.poses.back();

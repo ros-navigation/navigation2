@@ -123,13 +123,6 @@ protected:
   geometry_msgs::msg::PoseStamped getSampledPathPt();
 
   /**
-   * @brief Find the goal point in path
-   * May throw exception if the path is empty
-   * @return pt location of the output point
-   */
-  geometry_msgs::msg::PoseStamped getSampledPathGoal();
-
-  /**
    * @brief Uses TF to find the location of the sampled path point in base frame
    * @param pt location of the sampled path point
    * @return location of the pose in base frame

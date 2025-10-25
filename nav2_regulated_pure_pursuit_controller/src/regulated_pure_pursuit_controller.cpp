@@ -26,6 +26,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/controller_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 using std::hypot;
@@ -178,32 +179,14 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Transform the plan from costmap's global frame to robot base frame
-  auto transformGlobalPlanToLocal = [&](const auto & global_plan_pose) {
-      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
-      stamped_pose.header.frame_id = transformed_global_plan.header.frame_id;
-      stamped_pose.header.stamp = pose.header.stamp;
-      stamped_pose.pose = global_plan_pose.pose;
-
-      if (!nav2_util::transformPoseInTargetFrame(
-          stamped_pose, transformed_pose, *tf_,
-          costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
-      {
-        throw nav2_core::ControllerTFError(
-        "Unable to transform plan pose into local frame");
-      }
-
-      transformed_pose.pose.position.z = 0.0;
-      return transformed_pose;
-    };
-
   nav_msgs::msg::Path transformed_plan;
-  transformed_plan.header.frame_id = costmap_ros_->getBaseFrameID();
-  transformed_plan.header.stamp = pose.header.stamp;
-  std::transform(
-    transformed_global_plan.poses.begin(),
-    transformed_global_plan.poses.end(),
-    std::back_inserter(transformed_plan.poses),
-    transformGlobalPlanToLocal);
+  if (!nav2_util::transformPathInTargetFrame(
+      transformed_global_plan, transformed_plan, *tf_,
+      costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
+  {
+    throw nav2_core::ControllerTFError(
+    "Unable to transform plan pose into local frame");
+  }
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
