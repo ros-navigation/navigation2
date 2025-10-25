@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_msgs/action/follow_path.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
@@ -89,6 +90,7 @@ public:
   {
     // Register JSON definitions for the types used in the ports
     BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<std::vector<geometry_msgs::msg::PoseStamped>>();
 
     return providedBasicPorts(
       {
@@ -96,6 +98,8 @@ public:
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::InputPort<std::string>("progress_checker_id", ""),
+        BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>("key_poses",
+          "Key poses along the path"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
         BT::OutputPort<std::string>(
