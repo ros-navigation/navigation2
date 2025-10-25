@@ -36,13 +36,13 @@ ParameterHandler::ParameterHandler(
 
   params_.controller_frequency = node->declare_or_get_parameter("controller_frequency", 20.0);
   params_.min_x_velocity_threshold = node->declare_or_get_parameter("min_x_velocity_threshold",
-      0.0001);
+    0.0001);
   params_.min_y_velocity_threshold = node->declare_or_get_parameter("min_y_velocity_threshold",
-      0.0001);
+    0.0001);
   params_.min_theta_velocity_threshold =
     node->declare_or_get_parameter("min_theta_velocity_threshold", 0.0001);
   params_.speed_limit_topic = node->declare_or_get_parameter("speed_limit_topic",
-      std::string("speed_limit"));
+    std::string("speed_limit"));
   params_.failure_tolerance = node->declare_or_get_parameter("failure_tolerance", 0.0);
   params_.use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
   params_.publish_zero_velocity = node->declare_or_get_parameter("publish_zero_velocity", true);

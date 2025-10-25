@@ -218,6 +218,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test2.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.yaw_goal_tolerance", 200.0),
+      rclcpp::Parameter("test2.path_length_tolerance", 200.0),
       rclcpp::Parameter("test2.stateful", true)});
 
   rclcpp::spin_until_future_complete(
@@ -226,6 +227,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
 
   EXPECT_EQ(x->get_parameter("test2.xy_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.yaw_goal_tolerance").as_double(), 200.0);
+  EXPECT_EQ(x->get_parameter("test2.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.stateful").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances
@@ -330,6 +332,25 @@ TEST(StoppedGoalChecker, is_reached)
   velocity.angular.z = 0.25;
   EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
   EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan_));
+  sgc.reset();
+  gc.reset();
+
+  // Looping path, xy yaw tolerance reached but path longer than path_length_tolerance
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25);
+  geometry_msgs::msg::PoseStamped first_pose, second_pose, last_pose;
+  first_pose.pose.position.x = 9.55;
+  first_pose.pose.position.y = 7.77;
+  second_pose.pose.position.x = 13.7;
+  second_pose.pose.position.y = 7.84;
+  last_pose.pose.position.x = 9.54;
+  last_pose.pose.position.y = 7.77;
+  transformed_global_plan_.poses.push_back(first_pose);
+  transformed_global_plan_.poses.push_back(second_pose);
+  transformed_global_plan_.poses.push_back(last_pose);
+  EXPECT_FALSE(sgc.isGoalReached(first_pose.pose, last_pose.pose, velocity,
+    transformed_global_plan_));
+  EXPECT_FALSE(gc.isGoalReached(first_pose.pose, last_pose.pose, velocity,
+    transformed_global_plan_));
 }
 
 int main(int argc, char ** argv)

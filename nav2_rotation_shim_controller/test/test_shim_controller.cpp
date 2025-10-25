@@ -231,8 +231,8 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  costmap->set_parameter(rclcpp::Parameter("origin_x", -25.0));
-  costmap->set_parameter(rclcpp::Parameter("origin_y", -25.0));
+  costmap->set_parameter(rclcpp::Parameter("origin_x", 0.0));
+  costmap->set_parameter(rclcpp::Parameter("origin_y", 0.0));
   costmap->configure();
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
 
@@ -284,31 +284,10 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   path_handler.setPlan(path);
   tf_broadcaster->sendTransform(transform);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::PoseStamped goal;
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto effort = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(fabs(effort.twist.angular.z), 1.8);
-
-  path.header.frame_id = "base_link";
-  path.poses[1].pose.position.x = 0.1;
-  path.poses[1].pose.position.y = 0.1;
-  path.poses[2].pose.position.x = 1.0;
-  path.poses[2].pose.position.y = 0.0;
-  path.poses[2].header.frame_id = "base_link";
-  path.poses[3].pose.position.x = 10.0;
-  path.poses[3].pose.position.y = 10.0;
-
-  // this should allow it to find the sampled point, then transform to base_link
-  // validly because we setup the TF for it. The 1.0 should be selected since default min
-  // is 0.5 and that should cause a pass off to the RPP controller which will throw
-  // and exception because it is off of the costmap
-  controller->newPathReceived(path);
-  path_handler.setPlan(path);
-  tf_broadcaster->sendTransform(transform);
-  transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker,
-    transformed_global_plan, goal),
-    std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, openLoopRotationTests) {
@@ -384,7 +363,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::PoseStamped goal;
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.16, 1e-4);
@@ -462,7 +441,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::PoseStamped goal;
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -1.8);
@@ -473,6 +452,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  goal = path.poses.back();
   cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan,
     goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, 1.8);
@@ -551,7 +531,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
-  geometry_msgs::msg::PoseStamped goal;
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -0.025);

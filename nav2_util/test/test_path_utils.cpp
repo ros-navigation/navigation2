@@ -21,6 +21,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 geometry_msgs::msg::PoseStamped createPoseStamped(double x, double y)
 {
@@ -368,4 +369,84 @@ TEST(PathUtilsTest, FourArgThrowsOnStartIndexOutOfBounds)
   EXPECT_THROW(
     nav2_util::distance_from_path(path, robot_pose, 100, 5.0),  // 100 >= 3
     std::runtime_error);
+}
+
+TEST(TransformPathTest, SuccessfulTransform)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+  geometry_msgs::msg::TransformStamped tf;
+  tf.header.stamp = rclcpp::Time(0.0);
+  tf.header.frame_id = "map";
+  tf.child_frame_id = "base_link";
+  tf.transform.translation.x = 1.0;
+  tf.transform.translation.y = 2.0;
+  tf.transform.translation.z = 0.0;
+  tf.transform.rotation.w = 1.0;
+
+  tf_buffer_->setTransform(tf, "test_authority");
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "map";
+  input_path.header.stamp = rclcpp::Time(0.0);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 3.0;
+  pose.pose.position.y = 4.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "base_link", 1.0));
+
+  EXPECT_EQ(transformed_path.header.frame_id, "base_link");
+  EXPECT_EQ(transformed_path.poses.size(), 1u);
+  EXPECT_NEAR(transformed_path.poses.front().pose.position.x, 2.0, 1e-3);
+  EXPECT_NEAR(transformed_path.poses.front().pose.position.y, 2.0, 1e-3);
+  rclcpp::shutdown();
+}
+
+TEST(TransformPathTest, PathAlreadyInTargetFrame)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "map";
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 2.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "map", 0.1));
+
+  EXPECT_EQ(transformed_path.header.frame_id, "map");
+  EXPECT_EQ(transformed_path.poses.size(), 1u);
+  rclcpp::shutdown();
+}
+
+TEST(TransformPathTest, MissingTransform)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "odom";
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 1.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_FALSE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "base_link", 0.1));
+  rclcpp::shutdown();
 }

@@ -628,6 +628,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
 TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  tf->setUsingDedicatedThread(true);
 
   // Set initial rotation false and allow backward to true
   nav2::declare_parameter_if_not_declared(
@@ -658,7 +659,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   // Create the robot pose
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "test_robot_frame";
-  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.x = 2.0;
   robot_pose.pose.position.y = 0.0;
   robot_pose.pose.position.z = 0.0;
   robot_pose.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
@@ -678,15 +679,15 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   plan.header.frame_id = "test_global_frame";
   plan.poses.resize(3);
   plan.poses[0].header.frame_id = "test_global_frame";
-  plan.poses[0].pose.position.x = 0.0;
+  plan.poses[0].pose.position.x = 2.0;
   plan.poses[0].pose.position.y = 0.0;
   plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   plan.poses[1].header.frame_id = "test_global_frame";
-  plan.poses[1].pose.position.x = -1.0;
+  plan.poses[1].pose.position.x = 1.0;
   plan.poses[1].pose.position.y = 0.0;
   plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   plan.poses[2].header.frame_id = "test_global_frame";
-  plan.poses[2].pose.position.x = -2.0;
+  plan.poses[2].pose.position.x = 0.0;
   plan.poses[2].pose.position.y = 0.0;
   plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
   controller->newPathReceived(plan);
