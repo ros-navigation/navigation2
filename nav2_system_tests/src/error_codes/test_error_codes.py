@@ -49,6 +49,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     goal_pose1 = goal_pose
     goal_pose1.pose.position.x += 0.25
 
+    path.header.frame_id = 'map'
     path.poses.append(initial_pose)
     path.poses.append(goal_pose)
     path.poses.append(goal_pose1)

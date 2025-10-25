@@ -93,6 +93,8 @@ local_costmap:
       rolling_window: true
       width: 3
       height: 3
+      origin_x: -2.0
+      origin_y: -2.0
       resolution: 0.05
       robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer"]

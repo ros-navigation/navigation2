@@ -375,8 +375,10 @@ TEST(TransformPathTest, SuccessfulTransform)
 {
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   geometry_msgs::msg::TransformStamped tf;
   tf.header.stamp = rclcpp::Time(0.0);
@@ -412,8 +414,10 @@ TEST(TransformPathTest, PathAlreadyInTargetFrame)
 {
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   nav_msgs::msg::Path input_path, transformed_path;
   input_path.header.frame_id = "map";
 
@@ -435,8 +439,10 @@ TEST(TransformPathTest, MissingTransform)
 {
   rclcpp::init(0, nullptr);
   rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   nav_msgs::msg::Path input_path, transformed_path;
   input_path.header.frame_id = "odom";
 
