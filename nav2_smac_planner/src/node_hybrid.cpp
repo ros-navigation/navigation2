@@ -309,11 +309,6 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
             "cost without a known SE2 collision cost!");
   }
 
-  // this is the first node
-  if (getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
-    return NodeHybrid::travel_distance_cost;
-  }
-
   float travel_cost = 0.0;
   float travel_cost_raw =
     NodeHybrid::travel_distance_cost *
