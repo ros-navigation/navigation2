@@ -29,18 +29,22 @@ Please visit our [documentation site](https://docs.nav2.org/). [Please visit our
 Please thank our amazing sponsors for their generous support of Nav2 on behalf of the community to allow the project to continue to be professionally maintained, developed, and supported for the long-haul! [Open Navigation LLC](https://www.opennav.org/) provides project leadership, maintenance, development, and support services to the Nav2 & ROS community.
 
 <p align="center">
-  <img src="doc/sponsors_sept_2025.png" />
+  <img src="doc/sponsors_oct_2025.png" />
 </p>
 
 ### [Dexory](https://www.dexory.com/) develops robotics and AI logistics solutions to drive better business decisions using a digital twin of warehouses to provide inventory insights.
 
 ### [Nvidia](https://www.nvidia.com/en-us/deep-learning-ai/industries/robotics/) develops GPU and AI technologies that power modern robotics, autonomous driving, data centers, gaming, and more.
 
+### [AMD](https://www.amd.com/en/solutions/industrial/robotics.html) provides high-performance and adaptive computing solutions that empower robotics and autonomous systems with embedded SoCs, FPGAs, and Ryzen CPUs, and Radeon GPUs.
+
 ### [Polymath Robotics](https://www.polymathrobotics.com/) creates safety-critical navigation systems for industrial vehicles that are radically simple to enable and deploy.
 
 ### [Stereolabs](https://www.stereolabs.com/) produces the high-quality ZED stereo cameras with a complete vision pipeline from neural depth to SLAM, 3D object tracking, AI and more.
 
 ### [3Laws Robotics](https://3laws.io/) provide Supervisor ROS and Pro, easy-to-use dynamic collision avoidance solutions to improve safety and application throughput.
+
+### [Staer](https://staer.ai/) makes mobile robots truly autonomous and gives them the ability to map new environments, understand space, plan their movements, and continuously improve.
 
 ## Citation
 
