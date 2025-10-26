@@ -73,9 +73,15 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+      path_length_tolerance: 1.0
       stateful: True
     path_handler:
       plugin: "nav2_controller::SimplePathHandler"
+      prune_distance: 2.0
+      enforce_path_inversion: False
+      inversion_xy_tolerance: 0.2
+      inversion_yaw_tolerance: 0.4
+      interpolate_curvature_after_goal: False
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
