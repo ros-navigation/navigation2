@@ -49,6 +49,7 @@ public:
     const geometry_msgs::msg::PoseStamped & pose) override;
   geometry_msgs::msg::PoseStamped getTransformedGoal(
     const builtin_interfaces::msg::Time & stamp) override;
+  nav_msgs::msg::Path getPlan() {return global_plan_;}
 
 protected:
   /**
