@@ -18,7 +18,7 @@
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_controller/plugins/simple_path_handler.hpp"
-#include "nav2_util/controller_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
