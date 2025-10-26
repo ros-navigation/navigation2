@@ -240,7 +240,6 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   EXPECT_FALSE(handler.isWithinInversionTolerancesWrapper(robot_pose));
 
   // On top but off angled within tolerances
-  std::cout <<"111" << std::endl;
   robot_pose.pose.position.y = 0;
   robot_pose.pose.orientation.w = 0.9961947;
   robot_pose.pose.orientation.z = 0.0871558;
