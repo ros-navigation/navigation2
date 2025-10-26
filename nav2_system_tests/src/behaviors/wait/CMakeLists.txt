@@ -22,7 +22,7 @@ target_include_directories(${test_wait_behavior_exec}
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
-ament_add_test(test_wait_behavior
+ament_add_ros_isolated_test(test_wait_behavior
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_wait_behavior_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
