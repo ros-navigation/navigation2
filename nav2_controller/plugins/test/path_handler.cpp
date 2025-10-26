@@ -84,7 +84,6 @@ TEST(PathHandlerTests, GetAndPrunePath)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -109,7 +108,6 @@ TEST(PathHandlerTests, TestBounds)
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
-  std::string name = "test";
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -157,7 +155,6 @@ TEST(PathHandlerTests, TestTransforms)
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -213,7 +210,6 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
@@ -248,6 +244,41 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   // Offset spatially + off angled but both within tolerances
   robot_pose.pose.position.x = 9.10;
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
+}
+
+TEST(PathHandlerTests, TestDynamicParams)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically({
+    rclcpp::Parameter("dummy.max_robot_pose_search_dist", 100.0),
+    rclcpp::Parameter("dummy.inversion_xy_tolerance", 200.0),
+    rclcpp::Parameter("dummy.inversion_yaw_tolerance", 300.0),
+    rclcpp::Parameter("dummy.prune_distance", 400.0),
+    rclcpp::Parameter("dummy.enforce_path_inversion", true),
+    });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("dummy.max_robot_pose_search_dist").as_double(), 100.0);
+  EXPECT_EQ(node->get_parameter("dummy.inversion_xy_tolerance").as_double(), 200.0);
+  EXPECT_EQ(node->get_parameter("dummy.inversion_yaw_tolerance").as_double(), 300.0);
+  EXPECT_EQ(node->get_parameter("dummy.prune_distance").as_double(), 400.0);
+  EXPECT_EQ(node->get_parameter("dummy.enforce_path_inversion").as_bool(), true);
 }
 
 int main(int argc, char **argv)

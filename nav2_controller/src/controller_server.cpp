@@ -74,12 +74,12 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   try {
     param_handler_ = std::make_unique<ParameterHandler>(
       node, get_logger());
-    params_ = param_handler_->getParams();
   } catch (const std::exception & ex) {
     RCLCPP_FATAL(get_logger(), "%s", ex.what());
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
+  params_ = param_handler_->getParams();
 
   for (size_t i = 0; i != params_->progress_checker_ids.size(); i++) {
     try {
