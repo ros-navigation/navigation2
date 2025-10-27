@@ -390,6 +390,10 @@ bool NodeHybrid::isNodeValid(
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
 {
+  if (child == nullptr) {
+    return 0.0f;
+  }
+
   const float normalized_cost = child->getCost() / 252.0f;
   if (std::isnan(normalized_cost)) {
     throw std::runtime_error(
