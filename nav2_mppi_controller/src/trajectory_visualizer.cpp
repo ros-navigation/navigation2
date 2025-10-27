@@ -167,8 +167,8 @@ void TrajectoryVisualizer::add(
   size_t n_rows = trajectories.x.rows();
   points_->markers.reserve(n_rows / trajectory_step_);
 
-  // Visualize total costs if requested or if not doing per-critic visualization
-  if (publish_trajectories_with_total_cost_ || !visualize_per_critic) {
+  // Visualize total costs if requested
+  if (publish_trajectories_with_total_cost_) {
     createTrajectoryMarkers(trajectories, total_costs, "Total Costs", cmd_stamp);
   }
 
