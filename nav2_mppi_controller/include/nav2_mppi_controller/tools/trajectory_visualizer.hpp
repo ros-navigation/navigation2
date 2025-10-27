@@ -19,6 +19,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/trajectory.hpp"

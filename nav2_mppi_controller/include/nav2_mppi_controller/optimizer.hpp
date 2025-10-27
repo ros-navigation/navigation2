@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 

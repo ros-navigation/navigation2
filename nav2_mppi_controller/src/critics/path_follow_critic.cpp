@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <Eigen/Dense>
 

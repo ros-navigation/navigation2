@@ -14,7 +14,6 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include <math.h>
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace mppi::critics
 {
