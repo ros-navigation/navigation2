@@ -29,9 +29,9 @@ void PathFollowCritic::initialize()
   getParam(offset_from_furthest_, "offset_from_furthest", 6);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 5.0f);
-  getParam(visualize_, "visualize", false);
+  getParam(visualize_furthest_point_, "visualize_furthest_point", false);
 
-  if (visualize_) {
+  if (visualize_furthest_point_) {
     auto node = parent_.lock();
     if (node) {
       furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
@@ -71,7 +71,7 @@ void PathFollowCritic::score(CriticData & data)
   const auto path_x = data.path.x(offsetted_idx);
   const auto path_y = data.path.y(offsetted_idx);
   // Visualize target pose if enabled
-  if (visualize_ && furthest_point_pub_->get_subscription_count() > 0) {
+  if (visualize_furthest_point_ && furthest_point_pub_->get_subscription_count() > 0) {
     auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
     furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
     furthest_point->header.stamp = clock_->now();

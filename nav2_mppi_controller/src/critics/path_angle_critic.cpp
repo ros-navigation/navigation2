@@ -41,7 +41,7 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 0.785398f);
-  getParam(visualize_, "visualize", false);
+  getParam(visualize_furthest_point_, "visualize_furthest_point", false);
 
   int mode = 0;
   getParam(mode, "mode", mode);
@@ -54,7 +54,7 @@ void PathAngleCritic::initialize()
       "don't allow for reversing! Setting mode to forward preference.");
   }
 
-  if (visualize_) {
+  if (visualize_furthest_point_) {
     auto node = parent_.lock();
     if (node) {
       furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
@@ -86,7 +86,7 @@ void PathAngleCritic::score(CriticData & data)
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
 
   // Visualize target pose if enabled
-  if (visualize_ && furthest_point_pub_->get_subscription_count() > 0) {
+  if (visualize_furthest_point_ && furthest_point_pub_->get_subscription_count() > 0) {
     auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
     furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
     furthest_point->header.stamp = clock_->now();

@@ -30,9 +30,9 @@ void PathAlignCritic::initialize()
     threshold_to_consider_,
     "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
-  getParam(visualize_, "visualize", false);
+  getParam(visualize_furthest_point_, "visualize_furthest_point", false);
 
-  if (visualize_) {
+  if (visualize_furthest_point_) {
     auto node = parent_.lock();
     if (node) {
       furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
@@ -60,7 +60,7 @@ void PathAlignCritic::score(CriticData & data)
   float path_segments_flt = static_cast<float>(path_segments_count);
 
   // Visualize target pose if enabled
-  if (visualize_ && path_segments_count > 0 &&
+  if (visualize_furthest_point_ && path_segments_count > 0 &&
     furthest_point_pub_->get_subscription_count() > 0)
   {
     auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
