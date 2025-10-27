@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "nav2_behavior_tree/plugins/action/drive_on_heading_action.hpp"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 
-DriveOnHeadingAction::DriveOnHeadingAction(
-  const std::string & xml_tag_name,
-  const std::string & action_name,
-  const BT::NodeConfiguration & conf)
-: BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name, conf)
-{
+DriveOnHeadingAction::DriveOnHeadingAction(const std::string &xml_tag_name,
+                                           const std::string &action_name,
+                                           const BT::NodeConfiguration &conf)
+    : BtActionNode<nav2_msgs::action::DriveOnHeading>(xml_tag_name, action_name,
+                                                      conf) {}
+
+void DriveOnHeadingAction::initialize() {
   double dist;
   getInput("dist_to_travel", dist);
   double speed;
@@ -41,17 +41,22 @@ DriveOnHeadingAction::DriveOnHeadingAction(
   goal_.time_allowance = rclcpp::Duration::from_seconds(time_allowance);
 }
 
-}  // namespace nav2_behavior_tree
+void DriveOnHeadingAction::on_tick() {
+  if (status() == BT::NodeStatus::RUNNING) {
+    initialize();
+  }
+}
+
+} // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  BT::NodeBuilder builder =
-    [](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<nav2_behavior_tree::DriveOnHeadingAction>(
+BT_REGISTER_NODES(factory) {
+  BT::NodeBuilder builder = [](const std::string &name,
+                               const BT::NodeConfiguration &config) {
+    return std::make_unique<nav2_behavior_tree::DriveOnHeadingAction>(
         name, "drive_on_heading", config);
-    };
+  };
 
-  factory.registerBuilder<nav2_behavior_tree::DriveOnHeadingAction>("DriveOnHeading", builder);
+  factory.registerBuilder<nav2_behavior_tree::DriveOnHeadingAction>(
+      "DriveOnHeading", builder);
 }

@@ -20,14 +20,14 @@
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/drive_on_heading.hpp"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::DriveOnHeading
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps
+ * nav2_msgs::action::DriveOnHeading
  */
-class DriveOnHeadingAction : public BtActionNode<nav2_msgs::action::DriveOnHeading>
-{
+class DriveOnHeadingAction
+    : public BtActionNode<nav2_msgs::action::DriveOnHeading> {
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::DriveOnHeadingAction
@@ -35,26 +35,33 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  DriveOnHeadingAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf);
+  DriveOnHeadingAction(const std::string &xml_tag_name,
+                       const std::string &action_name,
+                       const BT::NodeConfiguration &conf);
 
   /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
-  static BT::PortsList providedPorts()
-  {
+  static BT::PortsList providedPorts() {
     return providedBasicPorts(
-      {
-        BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
-        BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
-        BT::InputPort<double>("time_allowance", 10.0, "Allowed time for driving on heading")
-      });
+        {BT::InputPort<double>("dist_to_travel", 0.15, "Distance to travel"),
+         BT::InputPort<double>("speed", 0.025, "Speed at which to travel"),
+         BT::InputPort<double>("time_allowance", 10.0,
+                               "Allowed time for driving on heading")});
   }
+
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
+   * @brief Function to perform some user-defined operation on tick
+   */
+  void on_tick() override;
 };
 
-}  // namespace nav2_behavior_tree
+} // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_
+#endif // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__DRIVE_ON_HEADING_ACTION_HPP_
