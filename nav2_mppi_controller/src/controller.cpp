@@ -79,7 +79,9 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker)
 {
-  auto start = std::chrono::steady_clock::now();
+  #ifdef BENCHMARK_TESTING
+  auto start = std::chrono::system_clock::now();
+  #endif
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   geometry_msgs::msg::Pose goal = path_handler_.getTransformedGoal(robot_pose.header.stamp).pose;
@@ -92,11 +94,13 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   auto [cmd, optimal_trajectory] =
     optimizer_.evalControl(robot_pose, robot_speed, transformed_plan, goal, goal_checker);
 
-  auto computation_end = std::chrono::steady_clock::now();
-  auto computation_time = std::chrono::duration_cast<std::chrono::microseconds>(
-    computation_end - start).count();
 
-  // Visualize everything in one consolidated call
+  #ifdef BENCHMARK_TESTING
+  auto end = std::chrono::system_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
+  #endif
+
   trajectory_visualizer_.visualize(
     std::move(transformed_plan),
     optimal_trajectory,
@@ -107,20 +111,6 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
     optimizer_.getGeneratedTrajectories(),
     optimizer_.getCosts(),
     optimizer_.getCriticCosts());
-
-  auto visualization_end = std::chrono::steady_clock::now();
-  auto visualization_time = std::chrono::duration_cast<std::chrono::microseconds>(
-    visualization_end - computation_end).count();
-  auto total_time = std::chrono::duration_cast<std::chrono::microseconds>(
-    visualization_end - start).count();
-
-  // Throttled info message every 5 seconds
-  RCLCPP_INFO_THROTTLE(
-    logger_, *parent_.lock()->get_clock(), 1000,
-    "Control loop timing - Computation: %ld μs, Visualization: %ld μs (%.1f%% of total %ld μs)",
-    computation_time, visualization_time,
-    (total_time > 0 ? (100.0 * visualization_time / total_time) : 0.0),
-    total_time);
 
   return cmd;
 }

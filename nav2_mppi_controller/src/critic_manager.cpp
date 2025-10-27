@@ -102,7 +102,7 @@ void CriticManager::evalTrajectoriesScores(
       break;
     }
 
-    // Store costs before critic evaluation (only if needed)
+    // Store costs before critic evaluation
     Eigen::ArrayXf costs_before;
     if (visualize_per_critic_costs_ || publish_critics_stats_) {
       costs_before = data.costs;
