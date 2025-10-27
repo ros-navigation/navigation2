@@ -390,16 +390,15 @@ bool NodeHybrid::isNodeValid(
 
 float NodeHybrid::getTraversalCost(const NodePtr & child)
 {
+  if (child == nullptr) {
+    return 0.0f;
+  }
+
   const float normalized_cost = child->getCost() / 252.0f;
   if (std::isnan(normalized_cost)) {
     throw std::runtime_error(
             "Node attempted to get traversal "
             "cost without a known SE2 collision cost!");
-  }
-
-  // this is the first node
-  if (getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
-    return NodeHybrid::travel_distance_cost;
   }
 
   const TurnDirection & child_turn_dir = child->getTurnDirection();
