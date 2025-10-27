@@ -35,18 +35,11 @@ void PluginContainerLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2::declare_parameter_if_not_declared(node, name_ + "." + "enabled",
-      rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(node, name_ + "." + "plugins",
-      rclcpp::ParameterValue(std::vector<std::string>{}));
-  nav2::declare_parameter_if_not_declared(node, name_ + "." + "combination_method",
-      rclcpp::ParameterValue(1));
-
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  node->get_parameter(name_ + "." + "plugins", plugin_names_);
-
-  int combination_method_param{};
-  node->get_parameter(name_ + "." + "combination_method", combination_method_param);
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  plugin_names_ = node->declare_or_get_parameter(
+    name_ + "." + "plugins", std::vector<std::string>{});
+  int combination_method_param = node->declare_or_get_parameter(
+    name_ + "." + "combination_method", 1);
   combination_method_ = combination_method_from_int(combination_method_param);
 
   dyn_params_handler_ = node->add_on_set_parameters_callback(

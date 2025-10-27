@@ -70,8 +70,6 @@ public:
     // Set CostmapFilter ROS-parameters
     node_->declare_parameter(
       std::string(FILTER_NAME) + ".filter_info_topic", rclcpp::ParameterValue("filter_info"));
-    node_->set_parameter(
-      rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", "filter_info"));
   }
 
   ~TestNode()
