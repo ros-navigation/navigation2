@@ -24,10 +24,15 @@ namespace mppi::models
  */
 struct ControlConstraints
 {
-  double vx_max;
-  double vx_min;
-  double vy;
-  double wz;
+  float vx_max;
+  float vx_min;
+  float vy;
+  float wz;
+  float ax_max;
+  float ax_min;
+  float ay_min;
+  float ay_max;
+  float az_max;
 };
 
 /**
@@ -36,9 +41,9 @@ struct ControlConstraints
  */
 struct SamplingStd
 {
-  double vx;
-  double vy;
-  double wz;
+  float vx;
+  float vy;
+  float wz;
 };
 
 }  // namespace mppi::models

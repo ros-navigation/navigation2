@@ -2,15 +2,16 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav_2d_msgs</name>
-  <version>1.2.0</version>
-  <description>Basic message types for two dimensional navigation, extending from geometry_msgs::Pose2D.</description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <version>1.4.0</version>
+  <description>Basic message types for two dimensional navigation, extending from geometry_msgs::Pose.</description>
+  <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
   <build_export_depend>rosidl_default_runtime</build_export_depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>rosidl_default_generators</depend>

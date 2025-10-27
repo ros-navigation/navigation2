@@ -22,10 +22,14 @@
 #include <utility>
 #include <vector>
 
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/twist_publisher.hpp"
+#include "nav2_util/twist_subscriber.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 namespace nav2_velocity_smoother
 {
@@ -34,7 +38,7 @@ namespace nav2_velocity_smoother
  * @class nav2_velocity_smoother::VelocitySmoother
  * @brief This class that smooths cmd_vel velocities for robot bases
  */
-class VelocitySmoother : public nav2_util::LifecycleNode
+class VelocitySmoother : public nav2::LifecycleNode
 {
 public:
   /**
@@ -79,41 +83,42 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Activates member variables
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Deactivates member variables
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Calls clean up states and resets member variables.
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
    * @brief Callback for incoming velocity commands
    * @param msg Twist message
    */
   void inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
 
   /**
    * @brief Main worker timer function
@@ -129,14 +134,13 @@ protected:
 
   // Network interfaces
   std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr
-    smoothed_cmd_pub_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
+  std::unique_ptr<nav2_util::TwistPublisher> smoothed_cmd_pub_;
+  std::unique_ptr<nav2_util::TwistSubscriber> cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   rclcpp::Clock::SharedPtr clock_;
-  geometry_msgs::msg::Twist last_cmd_;
-  geometry_msgs::msg::Twist::SharedPtr command_;
+  geometry_msgs::msg::TwistStamped last_cmd_;
+  geometry_msgs::msg::TwistStamped::SharedPtr command_;
 
   // Parameters
   double smoothing_frequency_;
@@ -145,6 +149,7 @@ protected:
   bool open_loop_;
   bool stopped_{true};
   bool scale_velocities_;
+  bool is_6dof_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;

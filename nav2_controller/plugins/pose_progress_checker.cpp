@@ -18,11 +18,12 @@
 #include <memory>
 #include <vector>
 #include "angles/angles.h"
-#include "nav_2d_utils/conversions.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
@@ -31,16 +32,15 @@ namespace nav2_controller
 {
 
 void PoseProgressChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   plugin_name_ = plugin_name;
   SimpleProgressChecker::initialize(parent, plugin_name);
   auto node = parent.lock();
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, plugin_name + ".required_movement_angle", rclcpp::ParameterValue(0.5));
-  node->get_parameter_or(plugin_name + ".required_movement_angle", required_movement_angle_, 0.5);
+  required_movement_angle_ = node->declare_or_get_parameter(
+    plugin_name + ".required_movement_angle", 0.5);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -51,27 +51,26 @@ bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
-  geometry_msgs::msg::Pose2D current_pose2d;
-  current_pose2d = nav_2d_utils::poseToPose2D(current_pose.pose);
-
-  if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose2d)) {
-    resetBaselinePose(current_pose2d);
+  if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose.pose)) {
+    resetBaselinePose(current_pose.pose);
     return true;
   }
   return clock_->now() - baseline_time_ <= time_allowance_;
 }
 
-bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose2D & pose)
+bool PoseProgressChecker::isRobotMovedEnough(const geometry_msgs::msg::Pose & pose)
 {
   return pose_distance(pose, baseline_pose_) > radius_ ||
          poseAngleDistance(pose, baseline_pose_) > required_movement_angle_;
 }
 
 double PoseProgressChecker::poseAngleDistance(
-  const geometry_msgs::msg::Pose2D & pose1,
-  const geometry_msgs::msg::Pose2D & pose2)
+  const geometry_msgs::msg::Pose & pose1,
+  const geometry_msgs::msg::Pose & pose2)
 {
-  return abs(angles::shortest_angular_distance(pose1.theta, pose2.theta));
+  double theta1 = tf2::getYaw(pose1.orientation);
+  double theta2 = tf2::getYaw(pose2.orientation);
+  return std::abs(angles::shortest_angular_distance(theta1, theta2));
 }
 
 rcl_interfaces::msg::SetParametersResult
@@ -79,11 +78,14 @@ PoseProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".required_movement_angle") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".required_movement_angle") {
         required_movement_angle_ = parameter.as_double();
       }
     }

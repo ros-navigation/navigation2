@@ -19,7 +19,7 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_waypoint_follower
 {
@@ -32,23 +32,23 @@ PhotoAtWaypoint::~PhotoAtWaypoint()
 }
 
 void PhotoAtWaypoint::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
 {
   auto node = parent.lock();
 
   curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>();
 
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".enabled",
     rclcpp::ParameterValue(true));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".image_topic",
     rclcpp::ParameterValue("/camera/color/image_raw"));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".save_dir",
     rclcpp::ParameterValue("/tmp/waypoint_images"));
-  nav2_util::declare_parameter_if_not_declared(
+  nav2::declare_parameter_if_not_declared(
     node, plugin_name + ".image_format",
     rclcpp::ParameterValue("png"));
 
@@ -61,14 +61,14 @@ void PhotoAtWaypoint::initialize(
   // get inputted save directory and make sure it exists, if not log and create  it
   save_dir_ = save_dir_as_string;
   try {
-    if (!std::experimental::filesystem::exists(save_dir_)) {
+    if (!std::filesystem::exists(save_dir_)) {
       RCLCPP_WARN(
         logger_,
         "Provided save directory for photo at waypoint plugin does not exist,"
         "provided directory is: %s, the directory will be created automatically.",
         save_dir_.c_str()
       );
-      if (!std::experimental::filesystem::create_directory(save_dir_)) {
+      if (!std::filesystem::create_directory(save_dir_)) {
         RCLCPP_ERROR(
           logger_,
           "Failed to create directory!: %s required by photo at waypoint plugin, "
@@ -93,7 +93,7 @@ void PhotoAtWaypoint::initialize(
       logger_, "Initializing photo at waypoint plugin, subscribing to camera topic named; %s",
       image_topic_.c_str());
     camera_image_subscriber_ = node->create_subscription<sensor_msgs::msg::Image>(
-      image_topic_, rclcpp::SystemDefaultsQoS(),
+      image_topic_,
       std::bind(&PhotoAtWaypoint::imageCallback, this, std::placeholders::_1));
   }
 }
@@ -110,19 +110,19 @@ bool PhotoAtWaypoint::processAtWaypoint(
   }
   try {
     // construct the full path to image filename
-    std::experimental::filesystem::path file_name = std::to_string(
+    std::filesystem::path file_name = std::to_string(
       curr_waypoint_index) + "_" +
       std::to_string(curr_pose.header.stamp.sec) + "." + image_format_;
-    std::experimental::filesystem::path full_path_image_path = save_dir_ / file_name;
+    std::filesystem::path full_path_image_path = save_dir_ / file_name;
 
     // save the taken photo at this waypoint to given directory
     std::lock_guard<std::mutex> guard(global_mutex_);
     cv::Mat curr_frame_mat;
     deepCopyMsg2Mat(curr_frame_msg_, curr_frame_mat);
-    cv::imwrite(full_path_image_path.c_str(), curr_frame_mat);
+    cv::imwrite(full_path_image_path.string().c_str(), curr_frame_mat);
     RCLCPP_INFO(
       logger_,
-      "Photo has been taken sucessfully at waypoint %i", curr_waypoint_index);
+      "Photo has been taken successfully at waypoint %i", curr_waypoint_index);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       logger_,

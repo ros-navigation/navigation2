@@ -26,13 +26,15 @@
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
+#include "nav2_msgs/msg/tracking_feedback.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
-#include "nav_2d_utils/odom_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/simple_action_server.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/robot_utils.hpp"
+#include "nav2_util/odometry_utils.hpp"
+#include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
@@ -45,7 +47,7 @@ class ProgressChecker;
  * @brief This class hosts variety of plugins of different algorithms to
  * complete control tasks from the exposed FollowPath action server.
  */
-class ControllerServer : public nav2_util::LifecycleNode
+class ControllerServer : public nav2::LifecycleNode
 {
 public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
@@ -73,7 +75,7 @@ protected:
    * @throw pluginlib::PluginlibException When failed to initialize controller
    * plugin
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates member variables
    *
@@ -82,7 +84,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates member variables
    *
@@ -91,7 +93,7 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Calls clean up states and resets member variables.
    *
@@ -100,19 +102,19 @@ protected:
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state LifeCycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   using Action = nav2_msgs::action::FollowPath;
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
+  using ActionServer = nav2::SimpleActionServer<Action>;
 
   // Our action server implements the FollowPath action
-  std::unique_ptr<ActionServer> action_server_;
+  typename ActionServer::SharedPtr action_server_;
 
   /**
    * @brief FollowPath action server callback. Handles action server updates and
@@ -176,12 +178,16 @@ protected:
    */
   void publishZeroVelocity();
   /**
+   * @brief Called on goal exit
+   */
+  void onGoalExit(bool force_stop);
+  /**
    * @brief Checks if goal is reached
    * @return true or false
    */
   bool isGoalReached();
   /**
-   * @brief Obtain current pose of the robot
+   * @brief Obtain current pose of the robot in costmap's frame
    * @param pose To store current pose of the robot
    * @return true if able to obtain current pose of the robot, else false
    */
@@ -203,12 +209,12 @@ protected:
    * @param Twist The current Twist from odometry
    * @return Twist Twist after thresholds applied
    */
-  nav_2d_msgs::msg::Twist2D getThresholdedTwist(const nav_2d_msgs::msg::Twist2D & twist)
+  geometry_msgs::msg::Twist getThresholdedTwist(const geometry_msgs::msg::Twist & twist)
   {
-    nav_2d_msgs::msg::Twist2D twist_thresh;
-    twist_thresh.x = getThresholdedVelocity(twist.x, min_x_velocity_threshold_);
-    twist_thresh.y = getThresholdedVelocity(twist.y, min_y_velocity_threshold_);
-    twist_thresh.theta = getThresholdedVelocity(twist.theta, min_theta_velocity_threshold_);
+    geometry_msgs::msg::Twist twist_thresh;
+    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, min_x_velocity_threshold_);
+    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, min_y_velocity_threshold_);
+    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, min_theta_velocity_threshold_);
     return twist_thresh;
   }
 
@@ -225,12 +231,13 @@ protected:
 
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  std::unique_ptr<nav2_util::NodeThread> costmap_thread_;
+  std::unique_ptr<nav2::NodeThread> costmap_thread_;
 
   // Publishers and subscribers
-  std::unique_ptr<nav_2d_utils::OdomSubscriber> odom_sub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
-  rclcpp::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+  std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
+  std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
+  nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
+  nav2::Publisher<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_pub_;
 
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
@@ -263,11 +270,18 @@ protected:
   double min_x_velocity_threshold_;
   double min_y_velocity_threshold_;
   double min_theta_velocity_threshold_;
+  double search_window_;
+  size_t start_index_;
 
   double failure_tolerance_;
+  bool use_realtime_priority_;
+  bool publish_zero_velocity_;
+  rclcpp::Duration costmap_update_timeout_;
 
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;
+
+  geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
   // Last time the controller generated a valid command
   rclcpp::Time last_valid_cmd_time_;

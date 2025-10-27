@@ -39,11 +39,11 @@
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 using rcl_interfaces::msg::ParameterType;
@@ -62,26 +62,16 @@ SimpleGoalChecker::SimpleGoalChecker()
 }
 
 void SimpleGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
 {
   plugin_name_ = plugin_name;
   auto node = parent.lock();
 
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".xy_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".yaw_goal_tolerance", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".stateful", rclcpp::ParameterValue(true));
-
-  node->get_parameter(plugin_name + ".xy_goal_tolerance", xy_goal_tolerance_);
-  node->get_parameter(plugin_name + ".yaw_goal_tolerance", yaw_goal_tolerance_);
-  node->get_parameter(plugin_name + ".stateful", stateful_);
+  xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
+  yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
+  stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
@@ -114,7 +104,7 @@ bool SimpleGoalChecker::isGoalReached(
   double dyaw = angles::shortest_angular_distance(
     tf2::getYaw(query_pose.orientation),
     tf2::getYaw(goal_pose.orientation));
-  return fabs(dyaw) < yaw_goal_tolerance_;
+  return fabs(dyaw) <= yaw_goal_tolerance_;
 }
 
 bool SimpleGoalChecker::getTolerances(
@@ -145,18 +135,20 @@ SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto & parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".xy_goal_tolerance") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".xy_goal_tolerance") {
         xy_goal_tolerance_ = parameter.as_double();
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-      } else if (name == plugin_name_ + ".yaw_goal_tolerance") {
+      } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == plugin_name_ + ".stateful") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == plugin_name_ + ".stateful") {
         stateful_ = parameter.as_bool();
       }
     }

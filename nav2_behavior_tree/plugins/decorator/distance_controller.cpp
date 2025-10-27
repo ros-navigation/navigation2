@@ -21,12 +21,11 @@
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.hpp"
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/decorator/distance_controller.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -39,19 +38,19 @@ DistanceController::DistanceController(
   first_time_(false)
 {
   getInput("distance", distance_);
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceController>(
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
 }
 
 inline BT::NodeStatus DistanceController::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
     // Reset the starting position since we're starting a new iteration of
     // the distance controller (moving from IDLE to RUNNING)
     if (!nav2_util::getCurrentPose(
@@ -90,8 +89,9 @@ inline BT::NodeStatus DistanceController::tick()
     const BT::NodeStatus child_state = child_node_->executeTick();
 
     switch (child_state) {
+      case BT::NodeStatus::SKIPPED:
       case BT::NodeStatus::RUNNING:
-        return BT::NodeStatus::RUNNING;
+        return child_state;
 
       case BT::NodeStatus::SUCCESS:
         if (!nav2_util::getCurrentPose(
@@ -114,7 +114,7 @@ inline BT::NodeStatus DistanceController::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceController>("DistanceController");

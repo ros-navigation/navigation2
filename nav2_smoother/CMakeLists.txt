@@ -1,80 +1,113 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_smoother)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_core REQUIRED)
-find_package(nav2_common REQUIRED)
 find_package(angles REQUIRED)
+find_package(backward_ros REQUIRED)
+find_package(nav2_common REQUIRED)
+find_package(nav2_core REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(nav_2d_utils REQUIRED)
-find_package(nav_2d_msgs REQUIRED)
-find_package(pluginlib REQUIRED)
-
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 nav2_package()
 
-include_directories(
-  include
-)
-
 set(executable_name smoother_server)
 set(library_name ${executable_name}_core)
-
-set(dependencies
-  angles
-  rclcpp
-  rclcpp_components
-  rclcpp_action
-  rclcpp_components
-  std_msgs
-  nav2_msgs
-  nav_2d_utils
-  nav_2d_msgs
-  nav2_util
-  nav2_core
-  pluginlib
-)
 
 # Main library
 add_library(${library_name} SHARED
   src/nav2_smoother.cpp
 )
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_include_directories(${library_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${library_name} PUBLIC
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+  Eigen3::Eigen
+)
+target_link_libraries(${library_name} PRIVATE
+  rclcpp_components::component
+  tf2::tf2
 )
 
 # Main executable
 add_executable(${executable_name}
   src/main.cpp
 )
-ament_target_dependencies(${executable_name}
-  ${dependencies}
-)
-target_link_libraries(${executable_name} ${library_name})
+target_include_directories(${executable_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${executable_name} PRIVATE rclcpp::rclcpp ${library_name})
 
 # Simple Smoother plugin
 add_library(simple_smoother SHARED
   src/simple_smoother.cpp
 )
-ament_target_dependencies(simple_smoother
-  ${dependencies}
+target_include_directories(simple_smoother
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(simple_smoother PUBLIC
+  angles::angles
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2::tf2
+  tf2_ros::tf2_ros
+  nav2_ros_common::nav2_ros_common
+)
+target_link_libraries(simple_smoother PRIVATE
+  pluginlib::pluginlib
 )
 
 # Savitzky Golay Smoother plugin
 add_library(savitzky_golay_smoother SHARED
   src/savitzky_golay_smoother.cpp
 )
-ament_target_dependencies(savitzky_golay_smoother
-  ${dependencies}
+target_include_directories(savitzky_golay_smoother
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(savitzky_golay_smoother PUBLIC
+  angles::angles
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_util::nav2_util_core
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2::tf2
+  nav2_ros_common::nav2_ros_common
+  tf2_ros::tf2_ros
+)
+target_link_libraries(savitzky_golay_smoother PRIVATE
+  pluginlib::pluginlib
 )
 
 pluginlib_export_plugin_description_file(nav2_core plugins.xml)
@@ -87,12 +120,18 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_index_cpp REQUIRED)
+  find_package(rclcpp_action REQUIRED)
+
+  ament_find_gtest()
+  add_subdirectory(test)
 endif()
 
 rclcpp_components_register_nodes(${library_name} "nav2_smoother::SmootherServer")
 
 install(
   TARGETS ${library_name} simple_smoother savitzky_golay_smoother
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -103,17 +142,24 @@ install(TARGETS ${executable_name}
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-  find_package(ament_cmake_gtest REQUIRED)
-  add_subdirectory(test)
-endif()
-
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name} simple_smoother savitzky_golay_smoother)
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(
+  angles
+  nav2_core
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  pluginlib
+  rclcpp
+  nav2_ros_common
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  Eigen3
+)
+ament_export_targets(${library_name})
 ament_package()

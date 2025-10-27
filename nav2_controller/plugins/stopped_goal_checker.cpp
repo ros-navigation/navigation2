@@ -39,7 +39,7 @@
 #include <vector>
 #include "nav2_controller/plugins/stopped_goal_checker.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 using std::hypot;
 using std::fabs;
@@ -56,7 +56,7 @@ StoppedGoalChecker::StoppedGoalChecker()
 }
 
 void StoppedGoalChecker::initialize(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -65,15 +65,10 @@ void StoppedGoalChecker::initialize(
 
   auto node = parent.lock();
 
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nav2_util::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
-
-  node->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  rot_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".rot_stopped_velocity", 0.25);
+  trans_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".trans_stopped_velocity", 0.25);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -119,13 +114,16 @@ StoppedGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
 
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".rot_stopped_velocity") {
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".rot_stopped_velocity") {
         rot_stopped_velocity_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".trans_stopped_velocity") {
+      } else if (param_name == plugin_name_ + ".trans_stopped_velocity") {
         trans_stopped_velocity_ = parameter.as_double();
       }
     }

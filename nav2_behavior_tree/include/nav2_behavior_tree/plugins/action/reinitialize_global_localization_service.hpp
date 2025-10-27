@@ -19,12 +19,15 @@
 
 #include "nav2_behavior_tree/bt_service_node.hpp"
 #include "std_srvs/srv/empty.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::Empty
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class ReinitializeGlobalLocalizationService : public BtServiceNode<std_srvs::srv::Empty>
 {

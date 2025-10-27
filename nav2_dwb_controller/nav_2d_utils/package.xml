@@ -2,22 +2,24 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav_2d_utils</name>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
   <description>A handful of useful utility functions for nav_2d packages.</description>
-  <maintainer email="davidvlu@gmail.com">David V. Lu!!</maintainer>
+  <maintainer email="david@metrorobots.com">David V. Lu!!</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_2d_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_geometry_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>nav2_util</depend>
+  <depend>rclcpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>

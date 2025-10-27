@@ -20,11 +20,12 @@
 #include <string>
 #include <vector>
 
-#include "behaviortree_cpp_v3/behavior_tree.h"
-#include "behaviortree_cpp_v3/bt_factory.h"
-#include "behaviortree_cpp_v3/xml_parsing.h"
-#include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
+#include "behaviortree_cpp/behavior_tree.h"
+#include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
+#include "behaviortree_cpp/xml_parsing.h"
 
+#include "nav2_ros_common/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -46,7 +47,9 @@ public:
    * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
    * @param plugin_libraries vector of BT plugin library names to load
    */
-  explicit BehaviorTreeEngine(const std::vector<std::string> & plugin_libraries);
+  explicit BehaviorTreeEngine(
+    const std::vector<std::string> & plugin_libraries,
+    nav2::LifecycleNode::SharedPtr node);
   virtual ~BehaviorTreeEngine() {}
 
   /**
@@ -84,14 +87,55 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
-   * @brief Function to explicitly reset all BT nodes to initial state
-   * @param root_node Pointer to BT root node
+   * @brief Extract BehaviorTree ID from BT file path or BT ID
+   * @param file_or_id
+   * @return std::string
    */
-  void haltAllActions(BT::TreeNode * root_node);
+  std::string extractBehaviorTreeID(const std::string & file_or_id);
+
+    /**
+   * @brief Function to create a BT from a BehaviorTree ID
+   * @param tree_id BehaviorTree ID
+   * @param blackboard Blackboard for BT
+   * @return BT::Tree Created behavior tree
+    */
+  BT::Tree createTree(
+    const std::string & tree_id,
+    BT::Blackboard::Ptr blackboard);
+
+  /**
+   * @brief Add Groot2 monitor to publish BT status changes
+   * @param tree BT to monitor
+   * @param server_port Groot2 Server port, first of the pair (server_port, publisher_port)
+   */
+  void addGrootMonitoring(BT::Tree * tree, uint16_t server_port);
+
+  /**
+   * @brief Reset groot monitor
+   */
+  void resetGrootMonitor();
+
+  /**
+   * @brief Function to register a BT from an XML file
+   * @param file_path Path to BT XML file
+   */
+  void registerTreeFromFile(const std::string & file_path);
+
+  /**
+   * @brief Function to explicitly reset all BT nodes to initial state
+   * @param tree Tree to halt
+   */
+  void haltAllActions(BT::Tree & tree);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
+
+  // Groot2 monitor
+  std::unique_ptr<BT::Groot2Publisher> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -23,55 +23,81 @@ void ConstraintCritic::initialize()
   auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
 
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 4.0);
+  getParam(weight_, "cost_weight", 4.0f);
   RCLCPP_INFO(
     logger_, "ConstraintCritic instantiated with %d power and %f weight.",
     power_, weight_);
 
   float vx_max, vy_max, vx_min;
-  getParentParam(vx_max, "vx_max", 0.5);
-  getParentParam(vy_max, "vy_max", 0.0);
-  getParentParam(vx_min, "vx_min", -0.35);
+  getParentParam(vx_max, "vx_max", 0.5f);
+  getParentParam(vy_max, "vy_max", 0.0f);
+  getParentParam(vx_min, "vx_min", -0.35f);
 
-  const float min_sgn = vx_min > 0.0 ? 1.0 : -1.0;
-  max_vel_ = std::sqrt(vx_max * vx_max + vy_max * vy_max);
-  min_vel_ = min_sgn * std::sqrt(vx_min * vx_min + vy_max * vy_max);
+  const float min_sgn = vx_min > 0.0f ? 1.0f : -1.0f;
+  max_vel_ = sqrtf(vx_max * vx_max + vy_max * vy_max);
+  min_vel_ = min_sgn * sqrtf(vx_min * vx_min + vy_max * vy_max);
 }
 
 void ConstraintCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
-
   if (!enabled_) {
     return;
   }
 
-  auto sgn = xt::where(data.state.vx > 0.0, 1.0, -1.0);
-  auto vel_total = sgn * xt::sqrt(data.state.vx * data.state.vx + data.state.vy * data.state.vy);
-  auto out_of_max_bounds_motion = xt::maximum(vel_total - max_vel_, 0);
-  auto out_of_min_bounds_motion = xt::maximum(min_vel_ - vel_total, 0);
+  // Differential motion model
+  auto diff = dynamic_cast<DiffDriveMotionModel *>(data.motion_model.get());
+  if (diff != nullptr) {
+    if (power_ > 1u) {
+      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).pow(power_).eval();
+    } else {
+      data.costs += (((((data.state.vx - max_vel_).max(0.0f) + (min_vel_ - data.state.vx).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval()) * weight_).eval();
+    }
+    return;
+  }
 
+  // Omnidirectional motion model
+  auto omni = dynamic_cast<OmniMotionModel *>(data.motion_model.get());
+  if (omni != nullptr) {
+    auto & vx = data.state.vx;
+    unsigned int n_rows = data.state.vx.rows();
+    unsigned int n_cols = data.state.vx.cols();
+    Eigen::ArrayXXf sgn(n_rows, n_cols);
+    sgn = vx.unaryExpr([](const float x){return copysignf(1.0f, x);});
+
+    auto vel_total = sgn * (data.state.vx.square() + data.state.vy.square()).sqrt();
+    if (power_ > 1u) {
+      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).pow(power_).eval();
+    } else {
+      data.costs += ((((vel_total - max_vel_).max(0.0f) + (min_vel_ - vel_total).
+        max(0.0f)) * data.model_dt).rowwise().sum().eval() * weight_).eval();
+    }
+    return;
+  }
+
+  // Ackermann motion model
   auto acker = dynamic_cast<AckermannMotionModel *>(data.motion_model.get());
   if (acker != nullptr) {
     auto & vx = data.state.vx;
     auto & wz = data.state.wz;
-    auto out_of_turning_rad_motion = xt::maximum(
-      acker->getMinTurningRadius() - (xt::fabs(vx) / xt::fabs(wz)), 0.0);
+    const float min_turning_rad = acker->getMinTurningRadius();
 
-    data.costs += xt::pow(
-      xt::sum(
-        (std::move(out_of_max_bounds_motion) +
-        std::move(out_of_min_bounds_motion) +
-        std::move(out_of_turning_rad_motion)) *
-        data.model_dt, {1}, immediate) * weight_, power_);
+    const float epsilon = 1e-6f;
+    auto wz_safe = wz.abs().max(epsilon);  // Replace small wz values to avoid division by 0
+    auto out_of_turning_rad_motion = (min_turning_rad - (vx.abs() / wz_safe)).max(0.0f);
+
+    if (power_ > 1u) {
+      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+        out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() *
+        weight_).pow(power_).eval();
+    } else {
+      data.costs += ((((vx - max_vel_).max(0.0f) + (min_vel_ - vx).max(0.0f) +
+        out_of_turning_rad_motion) * data.model_dt).rowwise().sum().eval() * weight_).eval();
+    }
     return;
   }
-
-  data.costs += xt::pow(
-    xt::sum(
-      (std::move(out_of_max_bounds_motion) +
-      std::move(out_of_min_bounds_motion)) *
-      data.model_dt, {1}, immediate) * weight_, power_);
 }
 
 }  // namespace mppi::critics

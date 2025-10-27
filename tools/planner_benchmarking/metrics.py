@@ -13,50 +13,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from geometry_msgs.msg import PoseStamped
-from nav2_simple_commander.robot_navigator import BasicNavigator
-import rclpy
-from ament_index_python.packages import get_package_share_directory
-
+import glob
 import math
 import os
 import pickle
-import glob
+from random import randint, seed, uniform
 import time
+
+from builtin_interfaces.msg import Time
+from geometry_msgs.msg import PoseStamped
+from nav2_simple_commander.robot_navigator import BasicNavigator
 import numpy as np
-
-from random import seed
-from random import randint
-from random import uniform
-
+from numpy.typing import NDArray
+import rclpy
 from transforms3d.euler import euler2quat
 
 
-def getPlannerResults(navigator, initial_pose, goal_pose, planners):
+def getPlannerResults(
+        navigator: BasicNavigator, initial_pose: PoseStamped,
+        goal_pose: PoseStamped, planners: list[str]) -> list[PoseStamped]:
     results = []
     for planner in planners:
         path = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
         if path is not None and path.error_code == 0:
             results.append(path)
         else:
-            print(planner, "planner failed to produce the path")
+            print(planner, 'planner failed to produce the path')
             return results
     return results
 
 
-def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
+def getRandomStart(
+        costmap: NDArray[np.float32], max_cost: int,
+        side_buffer: int, time_stamp: Time, res: float) -> PoseStamped:
     start = PoseStamped()
     start.header.frame_id = 'map'
     start.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         if costmap[row, col] < max_cost:
-            start.pose.position.x = col*res
-            start.pose.position.y = row*res
+            start.pose.position.x = col * res
+            start.pose.position.y = row * res
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             start.pose.orientation.w = quad[0]
             start.pose.orientation.x = quad[1]
@@ -66,18 +67,20 @@ def getRandomStart(costmap, max_cost, side_buffer, time_stamp, res):
     return start
 
 
-def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
+def getRandomGoal(
+        costmap: NDArray[np.float32], start: PoseStamped,
+        max_cost: int, side_buffer: int, time_stamp: Time, res: float) -> PoseStamped:
     goal = PoseStamped()
     goal.header.frame_id = 'map'
     goal.header.stamp = time_stamp
     while True:
-        row = randint(side_buffer, costmap.shape[0]-side_buffer)
-        col = randint(side_buffer, costmap.shape[1]-side_buffer)
+        row = randint(side_buffer, costmap.shape[0] - side_buffer)
+        col = randint(side_buffer, costmap.shape[1] - side_buffer)
 
         start_x = start.pose.position.x
         start_y = start.pose.position.y
-        goal_x = col*res
-        goal_y = row*res
+        goal_x = col * res
+        goal_y = row * res
         x_diff = goal_x - start_x
         y_diff = goal_y - start_y
         dist = math.sqrt(x_diff ** 2 + y_diff ** 2)
@@ -86,7 +89,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
             goal.pose.position.x = goal_x
             goal.pose.position.y = goal_y
 
-            yaw = uniform(0, 1) * 2*math.pi
+            yaw = uniform(0, 1) * 2 * math.pi
             quad = euler2quat(0.0, 0.0, yaw)
             goal.pose.orientation.w = quad[0]
             goal.pose.orientation.x = quad[1]
@@ -96,7 +99,7 @@ def getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res):
     return goal
 
 
-def main():
+def main() -> None:
     rclpy.init()
 
     navigator = BasicNavigator()
@@ -111,30 +114,30 @@ def main():
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d',  'SmacLattice']
+    planners = ['Navfn', 'ThetaStar', 'SmacHybrid', 'Smac2d', 'SmacLattice']
     max_cost = 210
     side_buffer = 100
     time_stamp = navigator.get_clock().now().to_msg()
-    results = []
+    results: list[list[PoseStamped]] = []
     seed(33)
 
     random_pairs = 100
     res = costmap_msg.metadata.resolution
     i = 0
     while len(results) != random_pairs:
-        print("Cycle: ", i, "out of: ", random_pairs)
+        print('Cycle: ', i, 'out of: ', random_pairs)
         start = getRandomStart(costmap, max_cost, side_buffer, time_stamp, res)
         goal = getRandomGoal(costmap, start, max_cost, side_buffer, time_stamp, res)
-        print("Start", start)
-        print("Goal", goal)
+        print('Start', start)
+        print('Goal', goal)
         result = getPlannerResults(navigator, start, goal, planners)
         if len(result) == len(planners):
             results.append(result)
             i = i + 1
         else:
-            print("One of the planners was invalid")
+            print('One of the planners was invalid')
 
-    print("Write Results...")
+    print('Write Results...')
     with open(os.getcwd() + '/results.pickle', 'wb+') as f:
         pickle.dump(results, f, pickle.HIGHEST_PROTOCOL)
 
@@ -143,7 +146,7 @@ def main():
 
     with open(os.getcwd() + '/planners.pickle', 'wb+') as f:
         pickle.dump(planners, f, pickle.HIGHEST_PROTOCOL)
-    print("Write Complete")
+    print('Write Complete')
     exit(0)
 
 

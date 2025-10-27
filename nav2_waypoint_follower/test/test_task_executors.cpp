@@ -22,23 +22,14 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_waypoint_follower/plugins/photo_at_waypoint.hpp"
 #include "nav2_waypoint_follower/plugins/wait_at_waypoint.hpp"
 #include "nav2_waypoint_follower/plugins/input_at_waypoint.hpp"
 
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WaypointFollowerTest, WaitAtWaypoint)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
+  auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
 
   node->declare_parameter("WAW.waypoint_pause_duration", 50);
 
@@ -67,22 +58,24 @@ TEST(WaypointFollowerTest, WaitAtWaypoint)
 
 TEST(WaypointFollowerTest, InputAtWaypoint)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
-  auto pub = node->create_publisher<std_msgs::msg::Empty>("input_at_waypoint/input", 1);
+  auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
+  auto pub = node->create_publisher<std_msgs::msg::Empty>("input_at_waypoint/input");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
   auto publish_message =
-    [&, this]() -> void
+    [&]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<std_msgs::msg::Empty>();
       pub->publish(std::move(msg));
-      rclcpp::spin_some(node->shared_from_this()->get_node_base_interface());
+      executor.spin_some();
     };
 
   std::unique_ptr<nav2_waypoint_follower::InputAtWaypoint> iaw(
     new nav2_waypoint_follower::InputAtWaypoint
   );
   iaw->initialize(node, std::string("IAW"));
+  executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   auto start_time = node->now();
 
@@ -109,15 +102,16 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
 
 TEST(WaypointFollowerTest, PhotoAtWaypoint)
 {
-  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("testWaypointNode");
-  auto pub = node->create_publisher<sensor_msgs::msg::Image>("/camera/color/image_raw", 1);
+  auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
+  auto pub = node->create_publisher<sensor_msgs::msg::Image>("/camera/color/image_raw");
   pub->on_activate();
+  rclcpp::executors::SingleThreadedExecutor executor;
   std::condition_variable cv;
   std::mutex mtx;
   std::unique_lock<std::mutex> lck(mtx, std::defer_lock);
   bool data_published = false;
   auto publish_message =
-    [&, this]() -> void
+    [&]() -> void
     {
       rclcpp::Rate(5).sleep();
       auto msg = std::make_unique<sensor_msgs::msg::Image>();
@@ -133,7 +127,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
         msg->data.push_back(fake_data++);
       }
       pub->publish(std::move(msg));
-      rclcpp::spin_some(node->shared_from_this()->get_node_base_interface());
+      executor.spin_some();
       lck.lock();
       data_published = true;
       cv.notify_one();
@@ -144,6 +138,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
     new nav2_waypoint_follower::PhotoAtWaypoint
   );
   paw->initialize(node, std::string("PAW"));
+  executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   // no images, throws because can't write
   geometry_msgs::msg::PoseStamped pose;
@@ -161,4 +156,17 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(paw->processAtWaypoint(pose, 0));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

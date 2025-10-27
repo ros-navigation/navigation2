@@ -20,17 +20,15 @@
 #include <memory>
 #include <algorithm>
 #include <mutex>
+#include <limits>
 
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_core/controller.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
-#include "angles/angles.h"
+#include "nav2_controller/plugins/position_goal_checker.hpp"
 
 namespace nav2_rotation_shim_controller
 {
@@ -60,7 +58,7 @@ public:
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -106,6 +104,11 @@ public:
    */
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
+  /**
+   * @brief Reset the state of the controller
+   */
+  void reset() override;
+
 protected:
   /**
    * @brief Finds the point on the path that is roughly the sampling
@@ -114,6 +117,13 @@ protected:
    * @return pt location of the output point
    */
   geometry_msgs::msg::PoseStamped getSampledPathPt();
+
+  /**
+   * @brief Find the goal point in path
+   * May throw exception if the path is empty
+   * @return pt location of the output point
+   */
+  geometry_msgs::msg::PoseStamped getSampledPathGoal();
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame
@@ -146,13 +156,20 @@ protected:
     const geometry_msgs::msg::PoseStamped & pose);
 
   /**
+   * @brief Checks if the goal has changed based on the given path.
+   * @param path The path to compare with the current goal.
+   * @return True if the goal has changed, false otherwise.
+   */
+  bool isGoalChanged(const nav_msgs::msg::Path & path);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
-  rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RotationShimController")};
@@ -165,13 +182,18 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  double forward_sampling_distance_, angular_dist_threshold_;
+  double forward_sampling_distance_, angular_dist_threshold_, angular_disengage_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
+  bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
+  bool closed_loop_;
+  bool use_path_orientations_;
+  double last_angular_vel_ = std::numeric_limits<double>::max();
 
   // Dynamic parameters handler
   std::mutex mutex_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::unique_ptr<nav2_controller::PositionGoalChecker> position_goal_checker_;
 };
 
 }  // namespace nav2_rotation_shim_controller

@@ -14,17 +14,23 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <set>
 #include <string>
 
-#include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2/LinearMath/Matrix3x3.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/truncate_path_action.hpp"
 
 
@@ -33,7 +39,7 @@ class TruncatePathTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("change_goal_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("change_goal_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -41,7 +47,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -70,13 +76,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr TruncatePathTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr TruncatePathTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * TruncatePathTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> TruncatePathTestFixture::factory_ = nullptr;
@@ -87,7 +93,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <TruncatePath distance="1.0" input_path="{path}" output_path="{truncated_path}"/>
         </BehaviorTree>
@@ -127,7 +133,7 @@ TEST_F(TruncatePathTestFixture, test_tick)
   }
 
   nav_msgs::msg::Path truncated_path;
-  config_->blackboard->get("truncated_path", truncated_path);
+  EXPECT_TRUE(config_->blackboard->get("truncated_path", truncated_path));
 
   EXPECT_NE(path, truncated_path);
   EXPECT_EQ(truncated_path.poses.size(), 2u);

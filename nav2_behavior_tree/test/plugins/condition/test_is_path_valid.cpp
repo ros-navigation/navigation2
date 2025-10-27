@@ -52,11 +52,11 @@ class IsPathValidTestFixture : public ::testing::Test
 public:
   void SetUp()
   {
-    node_ = std::make_shared<rclcpp::Node>("test_is_path_valid_condition");
+    node_ = std::make_shared<nav2::LifecycleNode>("test_is_path_valid_condition");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
     config_ = new BT::NodeConfiguration();
     config_->blackboard = BT::Blackboard::create();
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
     config_->blackboard->set<std::chrono::milliseconds>(
       "server_timeout",
       std::chrono::milliseconds(10));
@@ -76,14 +76,14 @@ public:
   static std::shared_ptr<IsPathValidService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
 std::shared_ptr<IsPathValidService> IsPathValidTestFixture::server_ = nullptr;
-rclcpp::Node::SharedPtr IsPathValidTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr IsPathValidTestFixture::node_ = nullptr;
 BT::NodeConfiguration * IsPathValidTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> IsPathValidTestFixture::factory_ = nullptr;
 std::shared_ptr<BT::Tree> IsPathValidTestFixture::tree_ = nullptr;
@@ -92,7 +92,7 @@ TEST_F(IsPathValidTestFixture, test_behavior)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <IsPathValid/>
         </BehaviorTree>

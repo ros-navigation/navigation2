@@ -20,12 +20,12 @@
 #include <string>
 #include <vector>
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
 #include "nav2_core/behavior_tree_navigator.hpp"
 #include "pluginlib/class_loader.hpp"
 
@@ -37,14 +37,14 @@ namespace nav2_bt_navigator
  * @brief An action server that uses behavior tree for navigating a robot to its
  * goal position.
  */
-class BtNavigator : public nav2_util::LifecycleNode
+class BtNavigator : public nav2::LifecycleNode
 {
 public:
   /**
    * @brief A constructor for nav2_bt_navigator::BtNavigator class
    * @param options Additional options to control creation of the node.
    */
-  explicit BtNavigator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit BtNavigator(rclcpp::NodeOptions options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for nav2_bt_navigator::BtNavigator class
    */
@@ -59,31 +59,31 @@ protected:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates action server
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets member variables
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in shutdown state
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   // To handle all the BT related execution
   pluginlib::ClassLoader<nav2_core::NavigatorBase> class_loader_;
@@ -97,6 +97,7 @@ protected:
   std::string robot_frame_;
   std::string global_frame_;
   double transform_tolerance_;
+  double filter_duration_;
   std::string odom_topic_;
 
   // Spinning transform that can be used by the node

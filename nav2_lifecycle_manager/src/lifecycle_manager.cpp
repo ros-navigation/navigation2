@@ -42,6 +42,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
+  declare_parameter("service_timeout", 5.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
 
@@ -54,6 +55,11 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   bond_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::duration<double>(bond_timeout_s));
 
+  double service_timeout_s;
+  get_parameter("service_timeout", service_timeout_s);
+  service_timeout_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::duration<double>(service_timeout_s));
+
   double respawn_timeout_s;
   get_parameter("bond_respawn_max_duration", respawn_timeout_s);
   bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
@@ -61,17 +67,6 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
-  manager_srv_ = create_service<ManageLifecycleNodes>(
-    get_name() + std::string("/manage_nodes"),
-    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
-    callback_group_);
-
-  is_active_srv_ = create_service<std_srvs::srv::Trigger>(
-    get_name() + std::string("/is_active"),
-    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
-    rclcpp::SystemDefaultsQoS(),
-    callback_group_);
 
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
@@ -91,7 +86,9 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
     0s,
     [this]() -> void {
       init_timer_->cancel();
+      createLifecyclePublishers();
       createLifecycleServiceClients();
+      createLifecycleServiceServers();
       if (autostart_) {
         init_timer_ = this->create_wall_timer(
           0s,
@@ -103,10 +100,10 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
       }
       auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
       executor->add_callback_group(callback_group_, get_node_base_interface());
-      service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
+      service_thread_ = std::make_unique<nav2::NodeThread>(executor);
     });
   diagnostics_updater_.setHardwareID("Nav2");
-  diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateActiveDiagnostic);
+  diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateDiagnostic);
 }
 
 LifecycleManager::~LifecycleManager()
@@ -125,6 +122,12 @@ LifecycleManager::managerCallback(
     case ManageLifecycleNodes::Request::STARTUP:
       response->success = startup();
       break;
+    case ManageLifecycleNodes::Request::CONFIGURE:
+      response->success = configure();
+      break;
+    case ManageLifecycleNodes::Request::CLEANUP:
+      response->success = cleanup();
+      break;
     case ManageLifecycleNodes::Request::RESET:
       response->success = reset();
       break;
@@ -141,22 +144,65 @@ LifecycleManager::managerCallback(
 }
 
 void
+LifecycleManager::setState(const NodeState & state)
+{
+  managed_nodes_state_ = state;
+  publishIsActiveState();
+}
+
+inline bool
+LifecycleManager::isActive()
+{
+  return managed_nodes_state_ == NodeState::ACTIVE;
+}
+
+void
+LifecycleManager::publishIsActiveState()
+{
+  if (is_active_pub_ && is_active_pub_->is_activated()) {
+    auto message = std::make_unique<std_msgs::msg::Bool>();
+    message->data = isActive();
+    is_active_pub_->publish(std::move(message));
+  }
+}
+
+void
 LifecycleManager::isActiveCallback(
   const std::shared_ptr<rmw_request_id_t>/*request_header*/,
   const std::shared_ptr<std_srvs::srv::Trigger::Request>/*request*/,
   std::shared_ptr<std_srvs::srv::Trigger::Response> response)
 {
-  response->success = system_active_;
+  response->success = isActive();
 }
 
 void
-LifecycleManager::CreateActiveDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
+LifecycleManager::CreateDiagnostic(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
-  if (system_active_) {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Nav2 is active");
-  } else {
-    stat.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Nav2 is inactive");
+  unsigned char error_level;
+  std::string message;
+  switch (managed_nodes_state_) {
+    case NodeState::ACTIVE:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are active";
+      break;
+    case NodeState::INACTIVE:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are inactive";
+      break;
+    case NodeState::UNCONFIGURED:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+      message = "Managed nodes are unconfigured";
+      break;
+    case NodeState::FINALIZED:
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+      message = "Managed nodes have been shut down";
+      break;
+    default:  // NodeState::UNKNOWN
+      error_level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+      message = "An error has occurred during a node state transition";
+      break;
   }
+  stat.summary(error_level, message);
 }
 
 void
@@ -170,11 +216,56 @@ LifecycleManager::createLifecycleServiceClients()
 }
 
 void
+LifecycleManager::createLifecycleServiceServers()
+{
+  message("Creating and initializing lifecycle service servers");
+  // Since the LifecycleManager is a special node in that it manages other nodes,
+  // this is an rclcpp::Node, meaning we can't use the node->create_server API.
+  // to make a Nav2 ServiceServer. This must be constructed manually using the interfaces.
+  manager_srv_ = nav2::interfaces::create_service<ManageLifecycleNodes>(
+    shared_from_this(),
+    get_name() + std::string("/manage_nodes"),
+    std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
+    callback_group_);
+
+  is_active_srv_ = nav2::interfaces::create_service<std_srvs::srv::Trigger>(
+    shared_from_this(),
+    get_name() + std::string("/is_active"),
+    std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
+    callback_group_);
+}
+
+void
+LifecycleManager::createLifecyclePublishers()
+{
+  message("Creating and initializing lifecycle publishers");
+
+  is_active_pub_ = nav2::interfaces::create_publisher<std_msgs::msg::Bool>(
+    shared_from_this(),
+    get_name() + std::string("/managed_nodes_activated"),
+    nav2::qos::LatchedPublisherQoS(),
+    callback_group_);
+  is_active_pub_->on_activate();
+  // Publish the initial state once at startup
+  publishIsActiveState();
+}
+
+void
 LifecycleManager::destroyLifecycleServiceClients()
 {
   message("Destroying lifecycle service clients");
   for (auto & kv : node_map_) {
     kv.second.reset();
+  }
+}
+
+void
+LifecycleManager::destroyLifecyclePublishers()
+{
+  message("Destroying lifecycle publishers");
+  if (is_active_pub_) {
+    is_active_pub_->on_deactivate();
+    is_active_pub_.reset();
   }
 }
 
@@ -213,8 +304,9 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition) ||
-    !(node_map_[node_name]->get_state() == transition_state_map_[transition]))
+  if (!node_map_[node_name]->change_state(transition, std::chrono::milliseconds(-1),
+      service_timeout_) ||
+    !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
   {
     RCLCPP_ERROR(get_logger(), "Failed to change state for node: %s", node_name.c_str());
     return false;
@@ -270,6 +362,7 @@ void
 LifecycleManager::shutdownAllNodes()
 {
   message("Deactivate, cleanup, and shutdown nodes");
+  setState(NodeState::FINALIZED);
   changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE);
   changeStateForAllNodes(Transition::TRANSITION_CLEANUP);
   changeStateForAllNodes(Transition::TRANSITION_UNCONFIGURED_SHUTDOWN);
@@ -283,23 +376,52 @@ LifecycleManager::startup()
     !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
   {
     RCLCPP_ERROR(get_logger(), "Failed to bring up all requested nodes. Aborting bringup.");
+    setState(NodeState::UNKNOWN);
     return false;
   }
   message("Managed nodes are active");
-  system_active_ = true;
+  setState(NodeState::ACTIVE);
   createBondTimer();
+  return true;
+}
+
+bool
+LifecycleManager::configure()
+{
+  message("Configuring managed nodes...");
+  if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE)) {
+    RCLCPP_ERROR(get_logger(), "Failed to configure all requested nodes. Aborting bringup.");
+    setState(NodeState::UNKNOWN);
+    return false;
+  }
+  message("Managed nodes are now configured");
+  setState(NodeState::INACTIVE);
+  return true;
+}
+
+bool
+LifecycleManager::cleanup()
+{
+  message("Cleaning up managed nodes...");
+  if (!changeStateForAllNodes(Transition::TRANSITION_CLEANUP)) {
+    RCLCPP_ERROR(get_logger(), "Failed to cleanup all requested nodes. Aborting cleanup.");
+    setState(NodeState::UNKNOWN);
+    return false;
+  }
+  message("Managed nodes have been cleaned up");
+  setState(NodeState::UNCONFIGURED);
   return true;
 }
 
 bool
 LifecycleManager::shutdown()
 {
-  system_active_ = false;
   destroyBondTimer();
 
   message("Shutting down managed nodes...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
+  destroyLifecyclePublishers();
   message("Managed nodes have been shut down");
   return true;
 }
@@ -307,7 +429,6 @@ LifecycleManager::shutdown()
 bool
 LifecycleManager::reset(bool hard_reset)
 {
-  system_active_ = false;
   destroyBondTimer();
 
   message("Resetting managed nodes...");
@@ -317,27 +438,30 @@ LifecycleManager::reset(bool hard_reset)
   {
     if (!hard_reset) {
       RCLCPP_ERROR(get_logger(), "Failed to reset nodes: aborting reset");
+      setState(NodeState::UNKNOWN);
       return false;
     }
   }
 
   message("Managed nodes have been reset");
+  setState(NodeState::UNCONFIGURED);
   return true;
 }
 
 bool
 LifecycleManager::pause()
 {
-  system_active_ = false;
   destroyBondTimer();
 
   message("Pausing managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_DEACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to pause nodes: aborting pause");
+    setState(NodeState::UNKNOWN);
     return false;
   }
 
   message("Managed nodes have been paused");
+  setState(NodeState::INACTIVE);
   return true;
 }
 
@@ -347,11 +471,12 @@ LifecycleManager::resume()
   message("Resuming managed nodes...");
   if (!changeStateForAllNodes(Transition::TRANSITION_ACTIVATE)) {
     RCLCPP_ERROR(get_logger(), "Failed to resume nodes: aborting resume");
+    setState(NodeState::UNKNOWN);
     return false;
   }
 
   message("Managed nodes are active");
-  system_active_ = true;
+  setState(NodeState::ACTIVE);
   createBondTimer();
   return true;
 }
@@ -412,7 +537,7 @@ LifecycleManager::registerRclPreshutdownCallback()
 void
 LifecycleManager::checkBondConnections()
 {
-  if (!system_active_ || !rclcpp::ok() || bond_map_.empty()) {
+  if (!isActive() || !rclcpp::ok() || bond_map_.empty()) {
     return;
   }
 
@@ -457,9 +582,9 @@ LifecycleManager::checkBondRespawnConnection()
     bond_respawn_start_time_ = now();
   }
 
-  // Note: system_active_ is inverted since this should be in a failure
+  // Note: isActive() is inverted since this should be in a failure
   // condition. If another outside user actives the system again, this should not process.
-  if (system_active_ || !rclcpp::ok() || node_names_.empty()) {
+  if (isActive() || !rclcpp::ok() || node_names_.empty()) {
     bond_respawn_start_time_ = rclcpp::Time(0);
     bond_respawn_timer_.reset();
     return;
@@ -474,7 +599,7 @@ LifecycleManager::checkBondRespawnConnection()
     }
 
     try {
-      node_map_[node_name]->get_state();  // Only won't throw if the server exists
+      node_map_[node_name]->get_state(service_timeout_);  // Only won't throw if the server exists
       live_servers++;
     } catch (...) {
       break;

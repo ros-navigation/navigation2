@@ -72,6 +72,12 @@ BeamModel::sensorFunction(LaserData * data, pf_sample_set_t * set)
     step = (data->range_count - 1) / (self->max_beams_ - 1);
     for (i = 0; i < data->range_count; i += step) {
       obs_range = data->ranges[i][0];
+
+      // Check for NaN
+      if (isnan(obs_range)) {
+        continue;
+      }
+
       obs_bearing = data->ranges[i][1];
 
       // Compute the range according to the map

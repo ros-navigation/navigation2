@@ -19,13 +19,13 @@
 
 namespace nav2_smoother
 {
-using namespace smoother_utils;  // NOLINT
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
+using nav2_util::PathSegment;
 
 void SimpleSmoother::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>/*footprint_sub*/)
@@ -47,6 +47,8 @@ void SimpleSmoother::configure(
     node, name + ".do_refinement", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
     node, name + ".refinement_num", rclcpp::ParameterValue(2));
+  declare_parameter_if_not_declared(
+    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
 
   node->get_parameter(name + ".tolerance", tolerance_);
   node->get_parameter(name + ".max_its", max_its_);
@@ -54,6 +56,7 @@ void SimpleSmoother::configure(
   node->get_parameter(name + ".w_smooth", smooth_w_);
   node->get_parameter(name + ".do_refinement", do_refinement_);
   node->get_parameter(name + ".refinement_num", refinement_num_);
+  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
 }
 
 bool SimpleSmoother::smooth(
@@ -65,15 +68,20 @@ bool SimpleSmoother::smooth(
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time.seconds();
 
-  bool success = true, reversing_segment;
-  unsigned int segments_smoothed = 0;
+  bool reversing_segment;
   nav_msgs::msg::Path curr_path_segment;
   curr_path_segment.header = path.header;
 
-  std::vector<PathSegment> path_segments = findDirectionalPathSegments(path);
+  std::vector<nav2_util::PathSegment> path_segments{PathSegment{
+      0u, static_cast<unsigned int>(path.poses.size() - 1)}};
+  if (enforce_path_inversion_) {
+    path_segments = nav2_util::findDirectionalPathSegments(path);
+  }
+
+  std::lock_guard<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getMutex()));
 
   for (unsigned int i = 0; i != path_segments.size(); i++) {
-    if (path_segments[i].end - path_segments[i].start > 9) {
+    if (path_segments[i].end - path_segments[i].start > 3) {
       // Populate path segment
       curr_path_segment.poses.clear();
       std::copy(
@@ -86,15 +94,9 @@ bool SimpleSmoother::smooth(
       time_remaining = max_time.seconds() - duration_cast<duration<double>>(now - start).count();
       refinement_ctr_ = 0;
 
-      bool segment_was_smoothed = smoothImpl(
-        curr_path_segment, reversing_segment, costmap.get(), time_remaining);
-
-      if (segment_was_smoothed) {
-        segments_smoothed++;
-      }
-
-      // Smooth path segment naively
-      success = success && segment_was_smoothed;
+      // Attempt to smooth the segment
+      // May throw SmootherTimedOut
+      smoothImpl(curr_path_segment, reversing_segment, costmap.get(), time_remaining);
 
       // Assemble the path changes to the main path
       std::copy(
@@ -104,14 +106,10 @@ bool SimpleSmoother::smooth(
     }
   }
 
-  if (segments_smoothed == 0) {
-    throw nav2_core::FailedToSmoothPath("No segments were smoothed");
-  }
-
-  return success;
+  return true;
 }
 
-bool SimpleSmoother::smoothImpl(
+void SimpleSmoother::smoothImpl(
   nav_msgs::msg::Path & path,
   bool & reversing_segment,
   const nav2_costmap_2d::Costmap2D * costmap,
@@ -139,8 +137,8 @@ bool SimpleSmoother::smoothImpl(
         logger_,
         "Number of iterations has exceeded limit of %i.", max_its_);
       path = last_path;
-      updateApproximatePathOrientations(path, reversing_segment);
-      return false;
+      nav2_util::updateApproximatePathOrientations(path, reversing_segment);
+      return;
     }
 
     // Make sure still have time left to process
@@ -151,7 +149,7 @@ bool SimpleSmoother::smoothImpl(
         logger_,
         "Smoothing time exceeded allowed duration of %0.2f.", max_time);
       path = last_path;
-      updateApproximatePathOrientations(path, reversing_segment);
+      nav2_util::updateApproximatePathOrientations(path, reversing_segment);
       throw nav2_core::SmootherTimedOut("Smoothing time exceed allowed duration");
     }
 
@@ -185,24 +183,23 @@ bool SimpleSmoother::smoothImpl(
           "Smoothing process resulted in an infeasible collision. "
           "Returning the last path before the infeasibility was introduced.");
         path = last_path;
-        updateApproximatePathOrientations(path, reversing_segment);
-        return false;
+        nav2_util::updateApproximatePathOrientations(path, reversing_segment);
+        return;
       }
     }
 
     last_path = new_path;
   }
 
-  // Lets do additional refinement, it shouldn't take more than a couple milliseconds
+  // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   // but really puts the path quality over the top.
   if (do_refinement_ && refinement_ctr_ < refinement_num_) {
     refinement_ctr_++;
     smoothImpl(new_path, reversing_segment, costmap, max_time);
   }
 
-  updateApproximatePathOrientations(new_path, reversing_segment);
+  nav2_util::updateApproximatePathOrientations(new_path, reversing_segment);
   path = new_path;
-  return true;
 }
 
 double SimpleSmoother::getFieldByDim(

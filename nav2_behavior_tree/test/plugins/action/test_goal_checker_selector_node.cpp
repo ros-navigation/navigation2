@@ -19,8 +19,8 @@
 #include <set>
 #include <string>
 
-#include "utils/test_action_server.hpp"
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
+#include "behaviortree_cpp/bt_factory.h"
 #include "nav2_behavior_tree/plugins/action/goal_checker_selector_node.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -30,7 +30,14 @@ class GoalCheckerSelectorTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("goal_checker_selector_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("goal_checker_selector_test_fixture");
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(node_->get_node_base_interface());
+
+    // Configure and activate the lifecycle node
+    node_->configure();
+    node_->activate();
+
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -38,7 +45,10 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>("node", node_);
+    config_->blackboard->set("node", node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
 
     BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & config) {
         return std::make_unique<nav2_behavior_tree::GoalCheckerSelector>(name, config);
@@ -51,10 +61,15 @@ public:
 
   static void TearDownTestCase()
   {
+    // Properly deactivate and cleanup the lifecycle node
+    node_->deactivate();
+    node_->cleanup();
+
     delete config_;
     config_ = nullptr;
     node_.reset();
     factory_.reset();
+    executor_.reset();
   }
 
   void TearDown() override
@@ -63,13 +78,16 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
+  static rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr GoalCheckerSelectorTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr GoalCheckerSelectorTestFixture::node_ = nullptr;
+rclcpp::executors::SingleThreadedExecutor::SharedPtr GoalCheckerSelectorTestFixture::executor_ =
+  nullptr;
 
 BT::NodeConfiguration * GoalCheckerSelectorTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> GoalCheckerSelectorTestFixture::factory_ = nullptr;
@@ -80,7 +98,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="SimpleGoalCheck" topic_name="goal_checker_selector_custom_topic_name"/>
         </BehaviorTree>
@@ -95,7 +113,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "SimpleGoalCheck");
 
@@ -103,11 +121,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   selected_goal_checker_cmd.data = "AngularGoalChecker";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto goal_checker_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("goal_checker_selector_custom_topic_name", qos);
+  goal_checker_selector_pub->on_activate();
 
   // publish a few updates of the selected_goal_checker
   auto start = node_->now();
@@ -115,11 +133,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
     tree_->rootNode()->executeTick();
     goal_checker_selector_pub->publish(selected_goal_checker_cmd);
 
-    rclcpp::spin_some(node_);
+    executor_->spin_some();
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("AngularGoalChecker", selected_goal_checker_result);
 }
 
@@ -128,7 +146,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="GridBased"/>
         </BehaviorTree>
@@ -143,7 +161,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   // check default value
   std::string selected_goal_checker_result;
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
   EXPECT_EQ(selected_goal_checker_result, "GridBased");
 
@@ -151,11 +169,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   selected_goal_checker_cmd.data = "RRT";
 
-  rclcpp::QoS qos(rclcpp::KeepLast(1));
-  qos.transient_local().reliable();
+  rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
   auto goal_checker_selector_pub =
     node_->create_publisher<std_msgs::msg::String>("goal_checker_selector", qos);
+  goal_checker_selector_pub->on_activate();
 
   // publish a few updates of the selected_goal_checker
   auto start = node_->now();
@@ -163,11 +181,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
     tree_->rootNode()->executeTick();
     goal_checker_selector_pub->publish(selected_goal_checker_cmd);
 
-    rclcpp::spin_some(node_);
+    executor_->spin_some();
   }
 
   // check goal_checker updated
-  config_->blackboard->get("selected_goal_checker", selected_goal_checker_result);
+  EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
   EXPECT_EQ("RRT", selected_goal_checker_result);
 }
 

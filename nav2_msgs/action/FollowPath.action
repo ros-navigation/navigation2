@@ -1,10 +1,10 @@
-#goal definition
+# goal definition
 nav_msgs/Path path
 string controller_id
 string goal_checker_id
 string progress_checker_id
 ---
-#result definition
+# result definition
 
 # Error codes
 # Note: The expected priority order of the errors should match the message order
@@ -16,10 +16,13 @@ uint16 INVALID_PATH=103
 uint16 PATIENCE_EXCEEDED=104
 uint16 FAILED_TO_MAKE_PROGRESS=105
 uint16 NO_VALID_CONTROL=106
+uint16 CONTROLLER_TIMED_OUT=107
 
 std_msgs/Empty result
 uint16 error_code
+string error_msg
 ---
-#feedback definition
-float32 distance_to_goal
-float32 speed
+# feedback definition
+# Real-time tracking error indicating which side of the path the robot is on
+# If the tracking_error is positive, the robot is to the left of the path
+nav2_msgs/TrackingFeedback tracking_feedback

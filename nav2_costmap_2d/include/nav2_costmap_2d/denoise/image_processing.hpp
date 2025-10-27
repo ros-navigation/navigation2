@@ -21,6 +21,8 @@
 #include <array>
 #include <memory>
 #include <limits>
+#include <string>
+#include <utility>
 
 namespace nav2_costmap_2d
 {
@@ -77,9 +79,9 @@ void morphologyOperation(
   const Image<uint8_t> & input, Image<uint8_t> & output,
   const Image<uint8_t> & shape, AggregateFn aggregate);
 
-using ShapeBuffer3x3 = std::array<uint8_t, 9>;
+using ShapeBuffer3x3 = std::array<uint8_t, 9>;  // NOLINT
 inline Image<uint8_t> createShape(ShapeBuffer3x3 & buffer, ConnectivityType connectivity);
-} // namespace imgproc_impl
+}  // namespace imgproc_impl
 
 /**
  * @brief Perform morphological dilation
@@ -95,7 +97,7 @@ inline void dilate(
   const Image<uint8_t> & input, Image<uint8_t> & output,
   ConnectivityType connectivity, Max && max_function)
 {
-  using namespace imgproc_impl;
+  using namespace imgproc_impl;  // NOLINT
   ShapeBuffer3x3 shape_buffer;
   Image<uint8_t> shape = createShape(shape_buffer, connectivity);
   morphologyOperation(input, output, shape, max_function);
@@ -376,7 +378,7 @@ struct EquivalenceLabelTreesBase
 
 struct LabelOverflow : public std::runtime_error
 {
-  LabelOverflow(const std::string & message)
+  explicit LabelOverflow(const std::string & message)
   : std::runtime_error(message) {}
 };
 
@@ -414,7 +416,8 @@ public:
     }
 
     // Label 0 is reserved for the background pixels, i.e. labels[0] is always 0
-    labels_ = {0};
+    labels_.clear();
+    labels_.resize(1, 0);
     next_free_ = 1;
   }
 
@@ -464,7 +467,6 @@ public:
   {
     Label k = 1;
     for (Label i = 1; i < next_free_; ++i) {
-
       if (labels_[i] < i) {
         labels_[i] = labels_[labels_[i]];
       } else {
@@ -504,7 +506,7 @@ private:
        * '~' - row continuation in the same style */
       max_labels = (rows * columns) / 3 + 1;
     }
-    ++max_labels; // add zero label
+    ++max_labels;  // add zero label
     max_labels = std::min(max_labels, size_t(std::numeric_limits<Label>::max()));
     return max_labels;
   }
@@ -568,7 +570,7 @@ struct ProcessPixel<ConnectivityType::Way8>
   {
     Label & current = label.e();
 
-    //The decision tree traversal. See reference article for details
+    // The decision tree traversal. See reference article for details
     if (!is_bg(image.e())) {
       if (label.b()) {
         current = label.b();
@@ -760,17 +762,20 @@ void morphologyOperation(
     };
 
   // Apply the central shape row.
-  // This operation is applicable to all rows of the image, because at any position of the sliding window,
+  // This operation is applicable to all rows of the image,
+  // because at any position of the sliding window,
   // its central row is located on the image. So we start from the zero line of input and output
   probeRows(input, 0, output, 0, shape.row(1), set);
 
   if (input.rows() > 1) {
     // Apply the top shape row.
     // In the uppermost position of the sliding window, its first row is outside the image border.
-    // Therefore, we start filling the output image starting from the line 1 and will process input.rows() - 1 lines in total
+    // Therefore, we start filling the output image starting from the line 1 and will process
+    // input.rows() - 1 lines in total
     probeRows(input, 0, output, 1, shape.row(0), update);
     // Apply the bottom shape row.
-    // Similarly, the input image starting from the line 1 and will process input.rows() - 1 lines in total
+    // Similarly, the input image starting from the line 1 and will process
+    // input.rows() - 1 lines in total
     probeRows(input, 1, output, 0, shape.row(2), update);
   }
 }
@@ -812,8 +817,8 @@ Label connectedComponentsImpl(
   const Image<uint8_t> & image, Image<Label> & labels,
   imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, const IsBg & is_background)
 {
-  using namespace imgproc_impl;
-  using PixelPass = ProcessPixel<connectivity>;
+  using namespace imgproc_impl;  // NOLINT
+  using PixelPass = ProcessPixel<connectivity>;  // NOLINT
 
   // scanning phase
   // scan row 0
@@ -986,9 +991,10 @@ private:
     const IsBg & is_background) const
   {
     // Creates an image labels in which each obstacles group is labeled with a unique code
-    auto components = connectedComponents<connectivity>(image, buffer, label_trees, is_background);
-    const Label groups_count = components.second;
-    const Image<Label> & labels = components.first;
+    Label groups_count;
+    auto labels = connectedComponents<connectivity>(
+      image, buffer, label_trees,
+      is_background, groups_count);
 
     // Calculates the size of each group.
     // Group size is equal to the number of pixels with the same label
@@ -1029,24 +1035,27 @@ private:
 }  // namespace imgproc_impl
 
 template<ConnectivityType connectivity, class Label, class IsBg>
-std::pair<Image<Label>, Label> connectedComponents(
+Image<Label> connectedComponents(
   const Image<uint8_t> & image, MemoryBuffer & buffer,
-  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees, const IsBg & is_background)
+  imgproc_impl::EquivalenceLabelTrees<Label> & label_trees,
+  const IsBg & is_background,
+  Label & total_labels)
 {
-  using namespace imgproc_impl;
+  using namespace imgproc_impl;  // NOLINT
   const size_t pixels = image.rows() * image.columns();
 
   if (pixels == 0) {
-    return {Image<Label>{}, 0};
+    total_labels = 0;
+    return Image<Label>{};
   }
 
   Label * image_buffer = buffer.get<Label>(pixels);
   Image<Label> labels(image.rows(), image.columns(), image_buffer, image.columns());
   label_trees.reset(image.rows(), image.columns(), connectivity);
-  const Label total_labels = connectedComponentsImpl<connectivity>(
+  total_labels = connectedComponentsImpl<connectivity>(
     image, labels, label_trees,
     is_background);
-  return std::make_pair(labels, total_labels);
+  return labels;
 }
 
 }  // namespace nav2_costmap_2d

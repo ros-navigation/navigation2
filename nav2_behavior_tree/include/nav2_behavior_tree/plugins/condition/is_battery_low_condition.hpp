@@ -19,10 +19,11 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
-#include "behaviortree_cpp_v3/condition_node.h"
+#include "behaviortree_cpp/condition_node.h"
 
 namespace nav2_behavior_tree
 {
@@ -30,6 +31,8 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is low and FAILURE otherwise
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class IsBatteryLowCondition : public BT::ConditionNode
 {
@@ -50,6 +53,16 @@ public:
    * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override;
+
+  /**
+   * @brief Function to read parameters and initialize class variables
+   */
+  void initialize();
+
+  /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
 
   /**
    * @brief Creates list of BT ports
@@ -73,14 +86,15 @@ private:
    */
   void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
 
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
+  nav2::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
   std::string battery_topic_;
   double min_battery_;
   bool is_voltage_;
   bool is_battery_low_;
+  std::chrono::milliseconds bt_loop_duration_;
 };
 
 }  // namespace nav2_behavior_tree

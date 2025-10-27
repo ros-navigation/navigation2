@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
@@ -31,31 +31,18 @@
 
 using namespace nav2_smac_planner;  // NOLINT
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 class SmootherWrapper : public nav2_smac_planner::Smoother
 {
 public:
   explicit SmootherWrapper(const SmootherParams & params)
   : nav2_smac_planner::Smoother(params)
   {}
-
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
-  {
-    return findDirectionalPathSegments(path);
-  }
 };
 
 TEST(SmootherTest, test_full_smoother)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSmootherTest");
   nav2_smac_planner::SmootherParams params;
   params.get(node, "test");
   double maxtime = 1.0;
@@ -87,23 +74,36 @@ TEST(SmootherTest, test_full_smoother)
   nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
     nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
   int max_iterations = 10000;
-  float tolerance = 10.0;
-  int it_on_approach = 10;
+  float tolerance = 0.0;
+  int terminal_checking_interval = 5000;
   double max_planning_time = 120.0;
   int num_it = 0;
 
   a_star.initialize(
-    false, max_iterations, std::numeric_limits<int>::max(), max_planning_time, 401, size_theta);
+    false, max_iterations,
+    std::numeric_limits<int>::max(), terminal_checking_interval, max_planning_time, 401,
+    size_theta);
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmapi = costmap_ros->getCostmap();
+  *costmapi = *costmap;
+
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
-    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap, size_theta, node);
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
 
   // Create A* search to smooth
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(5u, 5u, 0u);
   a_star.setGoal(45u, 45u, 36u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
-  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance));
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // Convert to world coordinates and get length to compare to smoothed length
   nav_msgs::msg::Path plan;
@@ -127,9 +127,6 @@ TEST(SmootherTest, test_full_smoother)
     x_m = path[i].x;
     y_m = path[i].y;
   }
-
-  // Check that we accurately detect that this path has a reversing segment
-  EXPECT_EQ(smoother->findDirectionalPathSegmentsWrapper(plan).size(), 2u);
 
   // Test smoother, should succeed with same number of points
   // and shorter overall length, while still being collision free.
@@ -162,12 +159,19 @@ TEST(SmootherTest, test_full_smoother)
   double max_no_time = 0.0;
   EXPECT_FALSE(smoother->smooth(plan, costmap, max_no_time));
 
-  // Failure mode: Path is in collision, do 2x to exercise overlapping point
-  // attempts to update orientation should also fail
-  pose.pose.position.x = 1.25;
-  pose.pose.position.y = 1.25;
-  plan.poses.push_back(pose);
-  plan.poses.push_back(pose);
+  // Failure mode: invalid path and invalid orientation
+  // make the end of the path invalid
+  geometry_msgs::msg::PoseStamped lastPose = plan.poses.back();
+  unsigned int mx, my;
+  costmap->worldToMap(lastPose.pose.position.x, lastPose.pose.position.y, mx, my);
+  for (unsigned int i = mx - 5; i <= mx + 5; ++i) {
+    for (unsigned int j = my - 5; j <= my + 5; ++j) {
+      costmap->setCost(i, j, 254);
+    }
+  }
+
+  // duplicate last pose to make the orientation update fail
+  plan.poses.push_back(lastPose);
   EXPECT_FALSE(smoother->smooth(plan, costmap, maxtime));
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.z, 1.0, 1e-3);
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.x, 0.0, 1e-3);
@@ -175,4 +179,18 @@ TEST(SmootherTest, test_full_smoother)
   EXPECT_NEAR(plan.poses.end()[-2].pose.orientation.w, 0.0, 1e-3);
 
   delete costmap;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

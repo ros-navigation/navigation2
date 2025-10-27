@@ -20,7 +20,6 @@
 #include "nav2_util/geometry_utils.hpp"
 
 #include "nav2_behavior_tree/plugins/condition/distance_traveled_condition.hpp"
-#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -32,21 +31,29 @@ DistanceTraveledCondition::DistanceTraveledCondition(
   distance_(1.0),
   transform_tolerance_(0.1)
 {
+}
+
+void DistanceTraveledCondition::initialize()
+{
   getInput("distance", distance_);
 
-  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
 
-  global_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "global_frame", this);
-  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string, DistanceTraveledCondition>(
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
 }
 
 BT::NodeStatus DistanceTraveledCondition::tick()
 {
-  if (status() == BT::NodeStatus::IDLE) {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
+  if (!BT::isStatusActive(status())) {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
         transform_tolerance_))
@@ -82,7 +89,7 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::DistanceTraveledCondition>("DistanceTraveled");

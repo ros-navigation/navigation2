@@ -36,13 +36,16 @@
 
 #include <cmath>
 
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
 #include "rclcpp/duration.hpp"
 
 #include "dwb_core/exceptions.hpp"
 
 namespace dwb_core
 {
-const geometry_msgs::msg::Pose2D & getClosestPose(
+const geometry_msgs::msg::Pose & getClosestPose(
   const dwb_msgs::msg::Trajectory2D & trajectory,
   const double time_offset)
 {
@@ -66,7 +69,7 @@ const geometry_msgs::msg::Pose2D & getClosestPose(
   return trajectory.poses[closest_index];
 }
 
-geometry_msgs::msg::Pose2D projectPose(
+geometry_msgs::msg::Pose projectPose(
   const dwb_msgs::msg::Trajectory2D & trajectory,
   const double time_offset)
 {
@@ -91,12 +94,20 @@ geometry_msgs::msg::Pose2D projectPose(
       double ratio = (goal_time - rclcpp::Duration(trajectory.time_offsets[i])).seconds() /
         time_diff;
       double inv_ratio = 1.0 - ratio;
-      const geometry_msgs::msg::Pose2D & pose_a = trajectory.poses[i];
-      const geometry_msgs::msg::Pose2D & pose_b = trajectory.poses[i + 1];
-      geometry_msgs::msg::Pose2D projected;
-      projected.x = pose_a.x * inv_ratio + pose_b.x * ratio;
-      projected.y = pose_a.y * inv_ratio + pose_b.y * ratio;
-      projected.theta = pose_a.theta * inv_ratio + pose_b.theta * ratio;
+      const auto & pose_a = trajectory.poses[i];
+      const auto & pose_b = trajectory.poses[i + 1];
+
+      geometry_msgs::msg::Pose projected;
+      projected.position.x = pose_a.position.x * inv_ratio + pose_b.position.x * ratio;
+      projected.position.y = pose_a.position.y * inv_ratio + pose_b.position.y * ratio;
+      projected.position.z = pose_a.position.z * inv_ratio + pose_b.position.z * ratio;
+
+      // Interpolate orientation using slerp
+      tf2::Quaternion q1, q2;
+      tf2::fromMsg(pose_a.orientation, q1);
+      tf2::fromMsg(pose_b.orientation, q2);
+      projected.orientation = tf2::toMsg(q1.slerp(q2, ratio));
+
       return projected;
     }
   }

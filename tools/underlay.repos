@@ -1,33 +1,41 @@
 repositories:
-  # BehaviorTree/BehaviorTree.CPP:
-  #   type: git
-  #   url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
-  #   version: master
+  BehaviorTree/BehaviorTree.CPP:
+    type: git
+    url: https://github.com/BehaviorTree/BehaviorTree.CPP.git
+    version: 4.6.2
   # ros/angles:
   #   type: git
   #   url: https://github.com/ros/angles.git
   #   version: ros2
-  # ros-simulation/gazebo_ros_pkgs:
-  #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
-  #   version: ros2
   # ros-perception/vision_opencv:
   #   type: git
   #   url: https://github.com/ros-perception/vision_opencv.git
-  #   version: ros2
+  #   version: rolling
   # ros/bond_core:
   #   type: git
   #   url: https://github.com/ros/bond_core.git
+  #   version: ros2
+  # ros/diagnostics:
+  #   type: git
+  #   url: https://github.com/ros/diagnostics.git
+  #   version: ros2-devel
+  # ros/geographic_info:
+  #   type: git
+  #   url: https://github.com/ros-geographic-info/geographic_info.git
   #   version: ros2
   # ompl/ompl:
   #   type: git
   #   url: https://github.com/ompl/ompl.git
   #   version: main
-  # ros-simulation/gazebo_ros_pkgs:
+  # robot_localization/robot_localization:
   #   type: git
-  #   url: https://github.com/ros-simulation/gazebo_ros_pkgs.git
+  #   url:  https://github.com/cra-ros-pkg/robot_localization.git
   #   version: ros2
-  ros2/geometry2:
-    type: git
-    url: https://github.com/ros2/geometry2.git
-    version: rolling
+  # ros-navigation/nav2_minimal_turtlebot_simulation:
+  #   type: git
+  #   url:  https://github.com/ros-navigation/nav2_minimal_turtlebot_simulation.git
+  #  version: 091b5ff12436890a54de6325df3573ae110e912b
+  # ros/common_interfaces:
+  #   type: git
+  #   url:  https://github.com/ros2/common_interfaces.git
+  #   version: rolling

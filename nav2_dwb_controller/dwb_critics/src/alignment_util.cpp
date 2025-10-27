@@ -34,18 +34,23 @@
 
 #include "dwb_critics/alignment_util.hpp"
 #include <cmath>
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using std::cos;
 using std::sin;
 
 namespace dwb_critics
 {
-geometry_msgs::msg::Pose2D getForwardPose(const geometry_msgs::msg::Pose2D & pose, double distance)
+geometry_msgs::msg::Pose getForwardPose(const geometry_msgs::msg::Pose & pose, double distance)
 {
-  geometry_msgs::msg::Pose2D forward_pose;
-  forward_pose.x = pose.x + distance * cos(pose.theta);
-  forward_pose.y = pose.y + distance * sin(pose.theta);
-  forward_pose.theta = pose.theta;
+  geometry_msgs::msg::Pose forward_pose;
+  double theta = tf2::getYaw(pose.orientation);
+  forward_pose.position.x = pose.position.x + distance * cos(theta);
+  forward_pose.position.y = pose.position.y + distance * sin(theta);
+  forward_pose.position.z = pose.position.z;
+  forward_pose.orientation = pose.orientation;
   return forward_pose;
 }
+
 }  // namespace dwb_critics

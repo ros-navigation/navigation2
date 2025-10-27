@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>nav2_core</name>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
   <description>A set of headers for plugins core to the Nav2 stack</description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="carl.r.delsey@intel.com">Carl Delsey</maintainer>
@@ -11,23 +11,19 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>backward_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav2_behavior_tree</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_util</depend>
+  <depend>nav_msgs</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>nav2_costmap_2d</depend>
-  <depend>pluginlib</depend>
-  <depend>nav_msgs</depend>
   <depend>tf2_ros</depend>
-  <depend>nav2_util</depend>
-  <depend>nav2_behavior_tree</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_cmake_pytest</test_depend>
-  <test_depend>launch</test_depend>
-  <test_depend>launch_testing</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -112,7 +112,7 @@ inline Eigen::Matrix<T, 2, 1> tangentDir(
     return result;
   }
 
-  // tangent is prependicular to (pt - center)
+  // tangent is perpendicular to (pt - center)
   // Note: not determining + or - direction here, this should be handled at the caller side
   return Eigen::Matrix<T, 2, 1>(center[1] - pt[1], pt[0] - center[0]);
 }

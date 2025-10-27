@@ -21,10 +21,10 @@
 #include <functional>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -119,7 +119,7 @@ protected:
   std::vector<Point> keepout_points_;
 
 private:
-  nav2_util::LifecycleNode::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -200,15 +200,17 @@ void TestNode::rePublishMask()
 void TestNode::waitSome(const std::chrono::nanoseconds & duration)
 {
   rclcpp::Time start_time = node_->now();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
   while (rclcpp::ok() && node_->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
 
 void TestNode::createKeepoutFilter(const std::string & global_frame)
 {
-  node_ = std::make_shared<nav2_util::LifecycleNode>("test_node");
+  node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -229,8 +231,10 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
   keepout_filter_->initializeFilter(INFO_TOPIC);
 
   // Wait until mask will be received by KeepoutFilter
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node_->get_node_base_interface());
   while (!keepout_filter_->isActive()) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(10ms);
   }
 }
@@ -284,7 +288,7 @@ void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_
 
 void TestNode::testStandardScenario(unsigned char free_value, unsigned char keepout_value)
 {
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Intersection window: added 4 points
   keepout_filter_->process(*master_grid_, 2, 2, 5, 5, pose);
   keepout_points_.push_back(Point{3, 3});
@@ -292,7 +296,7 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   keepout_points_.push_back(Point{4, 3});
   keepout_points_.push_back(Point{4, 4});
   verifyMasterGrid(free_value, keepout_value);
-  // Two windows outside on the horisontal/vertical edge: no new points added
+  // Two windows outside on the horizontal/vertical edge: no new points added
   keepout_filter_->process(*master_grid_, 3, 6, 5, 7, pose);
   keepout_filter_->process(*master_grid_, 6, 3, 7, 5, pose);
   verifyMasterGrid(free_value, keepout_value);
@@ -308,9 +312,10 @@ void TestNode::testStandardScenario(unsigned char free_value, unsigned char keep
   verifyMasterGrid(free_value, keepout_value);
 }
 
+
 void TestNode::testFramesScenario(unsigned char free_value, unsigned char keepout_value)
 {
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Intersection window: added all 9 points because of map->odom frame shift
   keepout_filter_->process(*master_grid_, 2, 2, 5, 5, pose);
   keepout_points_.push_back(Point{2, 2});
@@ -341,7 +346,7 @@ void TestNode::reset()
 
 TEST_F(TestNode, testFreeMasterLethalKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -356,7 +361,7 @@ TEST_F(TestNode, testFreeMasterLethalKeepout)
 
 TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(
     nav2_costmap_2d::NO_INFORMATION,
     (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE) / 2,
@@ -376,13 +381,13 @@ TEST_F(TestNode, testUnknownMasterNonLethalKeepout)
 
 TEST_F(TestNode, testFreeKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_FREE, "map");
   publishMaps();
   createKeepoutFilter("map");
 
   // Test KeepoutFilter
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Check whole area window
   keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
   // There should be no one point appeared on master_grid_ after process()
@@ -395,13 +400,13 @@ TEST_F(TestNode, testFreeKeepout)
 
 TEST_F(TestNode, testUnknownKeepout)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_UNKNOWN, "map");
   publishMaps();
   createKeepoutFilter("map");
 
   // Test KeepoutFilter
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   // Check whole area window
   keepout_filter_->process(*master_grid_, 0, 0, 10, 10, pose);
   // There should be no one point appeared on master_grid_ after process()
@@ -414,7 +419,7 @@ TEST_F(TestNode, testUnknownKeepout)
 
 TEST_F(TestNode, testInfoRePublish)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -433,7 +438,7 @@ TEST_F(TestNode, testInfoRePublish)
 
 TEST_F(TestNode, testMaskRePublish)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("map");
@@ -451,7 +456,7 @@ TEST_F(TestNode, testMaskRePublish)
 
 TEST_F(TestNode, testDifferentFrames)
 {
-  // Initilize test system
+  // Initialize test system
   createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
   publishMaps();
   createKeepoutFilter("odom");

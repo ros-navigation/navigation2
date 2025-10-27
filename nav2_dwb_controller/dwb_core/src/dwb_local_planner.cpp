@@ -44,16 +44,15 @@
 #include "dwb_msgs/msg/critic_score.hpp"
 #include "nav_2d_msgs/msg/twist2_d.hpp"
 #include "nav_2d_utils/conversions.hpp"
-#include "nav_2d_utils/tf_help.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/lifecycle_node.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 
 namespace dwb_core
@@ -66,7 +65,7 @@ DWBLocalPlanner::DWBLocalPlanner()
 }
 
 void DWBLocalPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -112,8 +111,7 @@ void DWBLocalPlanner::configure(
   std::string traj_generator_name;
 
   double transform_tolerance;
-  node->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance);
-  transform_tolerance_ = rclcpp::Duration::from_seconds(transform_tolerance);
+  node->get_parameter(dwb_plugin_name_ + ".transform_tolerance", transform_tolerance_);
   RCLCPP_INFO(logger_, "Setting transform_tolerance to %f", transform_tolerance);
 
   node->get_parameter(dwb_plugin_name_ + ".prune_plan", prune_plan_);
@@ -153,12 +151,14 @@ void
 DWBLocalPlanner::activate()
 {
   pub_->on_activate();
+  traj_generator_->activate();
 }
 
 void
 DWBLocalPlanner::deactivate()
 {
   pub_->on_deactivate();
+  traj_generator_->deactivate();
 }
 
 void
@@ -237,15 +237,14 @@ DWBLocalPlanner::loadCritics()
 void
 DWBLocalPlanner::setPlan(const nav_msgs::msg::Path & path)
 {
-  auto path2d = nav_2d_utils::pathToPath2D(path);
   for (TrajectoryCritic::Ptr & critic : critics_) {
     critic->reset();
   }
 
   traj_generator_->reset();
 
-  pub_->publishGlobalPlan(path2d);
-  global_plan_ = path2d;
+  pub_->publishGlobalPlan(path);
+  global_plan_ = path;
 }
 
 geometry_msgs::msg::TwistStamped
@@ -261,7 +260,7 @@ DWBLocalPlanner::computeVelocityCommands(
 
   try {
     nav_2d_msgs::msg::Twist2DStamped cmd_vel2d = computeVelocityCommands(
-      nav_2d_utils::poseStampedToPose2D(pose),
+      pose,
       nav_2d_utils::twist3Dto2D(velocity), results);
     pub_->publishEvaluation(results);
     geometry_msgs::msg::TwistStamped cmd_vel;
@@ -284,8 +283,8 @@ DWBLocalPlanner::computeVelocityCommands(
 
 void
 DWBLocalPlanner::prepareGlobalPlan(
-  const nav_2d_msgs::msg::Pose2DStamped & pose, nav_2d_msgs::msg::Path2D & transformed_plan,
-  nav_2d_msgs::msg::Pose2DStamped & goal_pose, bool publish_plan)
+  const geometry_msgs::msg::PoseStamped & pose, nav_msgs::msg::Path & transformed_plan,
+  geometry_msgs::msg::PoseStamped & goal_pose, bool publish_plan)
 {
   transformed_plan = transformGlobalPlan(pose);
   if (publish_plan) {
@@ -293,15 +292,16 @@ DWBLocalPlanner::prepareGlobalPlan(
   }
 
   goal_pose.header.frame_id = global_plan_.header.frame_id;
-  goal_pose.pose = global_plan_.poses.back();
-  nav_2d_utils::transformPose(
-    tf_, costmap_ros_->getGlobalFrameID(), goal_pose,
-    goal_pose, transform_tolerance_);
+  goal_pose.header.stamp = pose.header.stamp;
+  goal_pose.pose = global_plan_.poses.back().pose;
+  nav2_util::transformPoseInTargetFrame(
+    goal_pose, goal_pose, *tf_,
+    costmap_ros_->getGlobalFrameID(), transform_tolerance_);
 }
 
 nav_2d_msgs::msg::Twist2DStamped
 DWBLocalPlanner::computeVelocityCommands(
-  const nav_2d_msgs::msg::Pose2DStamped & pose,
+  const geometry_msgs::msg::PoseStamped & pose,
   const nav_2d_msgs::msg::Twist2D & velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results)
 {
@@ -310,8 +310,8 @@ DWBLocalPlanner::computeVelocityCommands(
     results->header.stamp = clock_->now();
   }
 
-  nav_2d_msgs::msg::Path2D transformed_plan;
-  nav_2d_msgs::msg::Pose2DStamped goal_pose;
+  nav_msgs::msg::Path transformed_plan;
+  geometry_msgs::msg::PoseStamped goal_pose;
 
   prepareGlobalPlan(pose, transformed_plan, goal_pose);
 
@@ -364,7 +364,7 @@ DWBLocalPlanner::computeVelocityCommands(
 
 dwb_msgs::msg::TrajectoryScore
 DWBLocalPlanner::coreScoringAlgorithm(
-  const geometry_msgs::msg::Pose2D & pose,
+  const geometry_msgs::msg::Pose & pose,
   const nav_2d_msgs::msg::Twist2D velocity,
   std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results)
 {
@@ -461,19 +461,19 @@ DWBLocalPlanner::scoreTrajectory(
   return score;
 }
 
-nav_2d_msgs::msg::Path2D
+nav_msgs::msg::Path
 DWBLocalPlanner::transformGlobalPlan(
-  const nav_2d_msgs::msg::Pose2DStamped & pose)
+  const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_.poses.empty()) {
     throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
   // let's get the pose of the robot in the frame of the plan
-  nav_2d_msgs::msg::Pose2DStamped robot_pose;
-  if (!nav_2d_utils::transformPose(
-      tf_, global_plan_.header.frame_id, pose,
-      robot_pose, transform_tolerance_))
+  geometry_msgs::msg::PoseStamped robot_pose;
+  if (!nav2_util::transformPoseInTargetFrame(
+      pose, robot_pose, *tf_,
+      global_plan_.header.frame_id, transform_tolerance_))
   {
     throw nav2_core::
           ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -514,12 +514,12 @@ DWBLocalPlanner::transformGlobalPlan(
   auto prune_point = nav2_util::geometry_utils::first_after_integrated_distance(
     global_plan_.poses.begin(), global_plan_.poses.end(), forward_prune_distance_);
 
-  // Find the first pose in the plan (upto prune_point) that's less than transform_start_threshold
+  // Find the first pose in the plan (up to prune_point) that's less than transform_start_threshold
   // from the robot.
   auto transformation_begin = std::find_if(
     begin(global_plan_.poses), prune_point,
     [&](const auto & global_plan_pose) {
-      return euclidean_distance(robot_pose.pose, global_plan_pose) < transform_start_threshold;
+      return euclidean_distance(robot_pose, global_plan_pose) < transform_start_threshold;
     });
 
   // Find the first pose in the end of the plan that's further than transform_end_threshold
@@ -527,24 +527,29 @@ DWBLocalPlanner::transformGlobalPlan(
   auto transformation_end = std::find_if(
     transformation_begin, global_plan_.poses.end(),
     [&](const auto & global_plan_pose) {
-      return euclidean_distance(global_plan_pose, robot_pose.pose) > transform_end_threshold;
+      return euclidean_distance(global_plan_pose, robot_pose) > transform_end_threshold;
     });
 
   // Transform the near part of the global plan into the robot's frame of reference.
-  nav_2d_msgs::msg::Path2D transformed_plan;
+  nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = pose.header.stamp;
 
   // Helper function for the transform below. Converts a pose2D from global
   // frame to local
   auto transformGlobalPoseToLocal = [&](const auto & global_plan_pose) {
-      nav_2d_msgs::msg::Pose2DStamped stamped_pose, transformed_pose;
+      geometry_msgs::msg::PoseStamped stamped_pose, transformed_pose;
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
-      stamped_pose.pose = global_plan_pose;
-      nav_2d_utils::transformPose(
-        tf_, transformed_plan.header.frame_id,
-        stamped_pose, transformed_pose, transform_tolerance_);
-      return transformed_pose.pose;
+      stamped_pose.header.stamp = robot_pose.header.stamp;
+      stamped_pose.pose = global_plan_pose.pose;
+      if (!nav2_util::transformPoseInTargetFrame(
+          stamped_pose, transformed_pose, *tf_,
+          transformed_plan.header.frame_id, transform_tolerance_))
+      {
+        throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
+      }
+      transformed_pose.pose.position.z = 0.0;
+      return transformed_pose;
     };
 
   std::transform(

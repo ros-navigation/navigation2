@@ -21,10 +21,9 @@
 #include <string>
 
 #include "nlohmann/json.hpp"
-#include "Eigen/Core"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "geometry_msgs/msg/pose.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -46,9 +45,9 @@ inline geometry_msgs::msg::Pose getWorldCoords(
 {
   geometry_msgs::msg::Pose msg;
   msg.position.x =
-    static_cast<float>(costmap->getOriginX()) + (mx + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginX()) + mx * costmap->getResolution();
   msg.position.y =
-    static_cast<float>(costmap->getOriginY()) + (my + 0.5) * costmap->getResolution();
+    static_cast<float>(costmap->getOriginY()) + my * costmap->getResolution();
   return msg;
 }
 
@@ -76,27 +75,28 @@ inline geometry_msgs::msg::Quaternion getWorldOrientation(
 inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
-  bool inflation_layer_found = false;
   std::vector<std::shared_ptr<nav2_costmap_2d::Layer>>::iterator layer;
 
   // check if the costmap has an inflation layer
-  for (layer = costmap->getLayeredCostmap()->getPlugins()->begin();
-    layer != costmap->getLayeredCostmap()->getPlugins()->end();
-    ++layer)
-  {
-    std::shared_ptr<nav2_costmap_2d::InflationLayer> inflation_layer =
-      std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
-    if (!inflation_layer) {
-      continue;
-    }
-
-    inflation_layer_found = true;
+  const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(costmap);
+  if (inflation_layer != nullptr) {
     double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
     double resolution = costmap->getCostmap()->getResolution();
+    double inflation_radius = inflation_layer->getInflationRadius();
+    if (inflation_radius < circum_radius) {
+      RCLCPP_ERROR(
+        rclcpp::get_logger("computeCircumscribedCost"),
+        "The inflation radius (%f) is smaller than the circumscribed radius (%f) "
+        "If this is an SE2-collision checking plugin, it cannot use costmap potential "
+        "field to speed up collision checking by only checking the full footprint "
+        "when robot is within possibly-inscribed radius of an obstacle. This may "
+        "significantly slow down planning times!",
+        inflation_radius, circum_radius);
+      result = 0.0;
+      return result;
+    }
     result = static_cast<double>(inflation_layer->computeCost(circum_radius / resolution));
-  }
-
-  if (!inflation_layer_found) {
+  } else {
     RCLCPP_WARN(
       rclcpp::get_logger("computeCircumscribedCost"),
       "No inflation layer found in costmap configuration. "
@@ -172,12 +172,14 @@ inline std::vector<geometry_msgs::msg::Point> transformFootprintToEdges(
   const double & x = pose.position.x;
   const double & y = pose.position.y;
   const double & yaw = tf2::getYaw(pose.orientation);
+  const double sin_yaw = sin(yaw);
+  const double cos_yaw = cos(yaw);
 
   std::vector<geometry_msgs::msg::Point> out_footprint;
   out_footprint.resize(2 * footprint.size());
   for (unsigned int i = 0; i < footprint.size(); i++) {
-    out_footprint[2 * i].x = x + cos(yaw) * footprint[i].x - sin(yaw) * footprint[i].y;
-    out_footprint[2 * i].y = y + sin(yaw) * footprint[i].x + cos(yaw) * footprint[i].y;
+    out_footprint[2 * i].x = x + cos_yaw * footprint[i].x - sin_yaw * footprint[i].y;
+    out_footprint[2 * i].y = y + sin_yaw * footprint[i].x + cos_yaw * footprint[i].y;
     if (i == 0) {
       out_footprint.back().x = out_footprint[i].x;
       out_footprint.back().y = out_footprint[i].y;

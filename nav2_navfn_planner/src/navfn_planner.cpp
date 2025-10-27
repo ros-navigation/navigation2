@@ -35,12 +35,12 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_util/costmap.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
-using nav2_util::declare_parameter_if_not_declared;
+using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -61,7 +61,7 @@ NavfnPlanner::~NavfnPlanner()
 
 void
 NavfnPlanner::configure(
-  const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
@@ -115,6 +115,10 @@ NavfnPlanner::deactivate()
   RCLCPP_INFO(
     logger_, "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
+  auto node = node_.lock();
+  if (dyn_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
   dyn_params_handler_.reset();
 }
 
@@ -129,7 +133,8 @@ NavfnPlanner::cleanup()
 
 nav_msgs::msg::Path NavfnPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
-  const geometry_msgs::msg::PoseStamped & goal)
+  const geometry_msgs::msg::PoseStamped & goal,
+  std::function<bool()> cancel_checker)
 {
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
@@ -145,12 +150,6 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
             std::to_string(goal.pose.position.y) + ") was outside bounds");
-  }
-
-  if (costmap_->getCost(mx_start, my_start) == nav2_costmap_2d::LETHAL_OBSTACLE) {
-    throw nav2_core::StartOccupied(
-            "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
-            std::to_string(start.pose.position.y) + ") was in lethal cost");
   }
 
   if (tolerance_ == 0 && costmap_->getCost(mx_goal, my_goal) == nav2_costmap_2d::LETHAL_OBSTACLE) {
@@ -189,7 +188,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
     return path;
   }
 
-  if (!makePlan(start.pose, goal.pose, tolerance_, path)) {
+  if (!makePlan(start.pose, goal.pose, tolerance_, cancel_checker, path)) {
     throw nav2_core::NoValidPathCouldBeFound(
             "Failed to create plan with tolerance of: " + std::to_string(tolerance_) );
   }
@@ -220,6 +219,7 @@ bool
 NavfnPlanner::makePlan(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & goal, double tolerance,
+  std::function<bool()> cancel_checker,
   nav_msgs::msg::Path & plan)
 {
   // clear the plan, just in case
@@ -227,8 +227,6 @@ NavfnPlanner::makePlan(
 
   plan.header.stamp = clock_->now();
   plan.header.frame_id = global_frame_;
-
-  // TODO(orduno): add checks for start and goal reference frame -- should be in global frame
 
   double wx = start.position.x;
   double wy = start.position.y;
@@ -266,15 +264,12 @@ NavfnPlanner::makePlan(
   map_goal[0] = mx;
   map_goal[1] = my;
 
-  // TODO(orduno): Explain why we are providing 'map_goal' to setStart().
-  //               Same for setGoal, seems reversed. Computing backwards?
-
   planner_->setStart(map_goal);
   planner_->setGoal(map_start);
   if (use_astar_) {
-    planner_->calcNavFnAstar();
+    planner_->calcNavFnAstar(cancel_checker);
   } else {
-    planner_->calcNavFnDijkstra(true);
+    planner_->calcNavFnDijkstra(cancel_checker, true);
   }
 
   double resolution = costmap_->getResolution();
@@ -298,11 +293,13 @@ NavfnPlanner::makePlan(
       p.position.x = goal.position.x - tolerance;
       while (p.position.x <= goal.position.x + tolerance) {
         potential = getPointPotential(p.position);
-        double sdist = squared_distance(p, goal);
-        if (potential < POT_HIGH && sdist < best_sdist) {
-          best_sdist = sdist;
-          best_pose = p;
-          found_legal = true;
+        if (potential < POT_HIGH) {
+          double sdist = squared_distance(p, goal);
+          if (sdist < best_sdist) {
+            best_sdist = sdist;
+            best_pose = p;
+            found_legal = true;
+          }
         }
         p.position.x += resolution;
       }
@@ -356,11 +353,11 @@ NavfnPlanner::smoothApproachToGoal(
   const geometry_msgs::msg::Pose & goal,
   nav_msgs::msg::Path & plan)
 {
-  // Replace the last pose of the computed path if it's actually further away
-  // to the second to last pose than the goal pose.
   if (plan.poses.size() >= 2) {
     auto second_to_last_pose = plan.poses.end()[-2];
     auto last_pose = plan.poses.back();
+    // Replace the last pose of the computed path if it's actually further away
+    // to the second to last pose than the goal pose.
     if (
       squared_distance(last_pose.pose, second_to_last_pose.pose) >
       squared_distance(goal, second_to_last_pose.pose))
@@ -368,9 +365,15 @@ NavfnPlanner::smoothApproachToGoal(
       plan.poses.back().pose = goal;
       return;
     }
+    // Replace the last pose of the computed path if its position matches but orientation differs
+    if (squared_distance(last_pose.pose, goal) < 1e-6) {
+      plan.poses.back().pose = goal;
+      return;
+    }
   }
   geometry_msgs::msg::PoseStamped goal_copy;
   goal_copy.pose = goal;
+  goal_copy.header = plan.header;
   plan.poses.push_back(goal_copy);
 }
 
@@ -420,6 +423,7 @@ NavfnPlanner::getPlanFromPotential(
     mapToWorld(x[i], y[i], world_x, world_y);
 
     geometry_msgs::msg::PoseStamped pose;
+    pose.header = plan.header;
     pose.pose.position.x = world_x;
     pose.pose.position.y = world_y;
     pose.pose.position.z = 0.0;
@@ -526,19 +530,21 @@ NavfnPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameter
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
-    const auto & type = parameter.get_type();
-    const auto & name = parameter.get_name();
-
-    if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == name_ + ".tolerance") {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if(param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == name_ + ".tolerance") {
         tolerance_ = parameter.as_double();
       }
-    } else if (type == ParameterType::PARAMETER_BOOL) {
-      if (name == name_ + ".use_astar") {
+    } else if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == name_ + ".use_astar") {
         use_astar_ = parameter.as_bool();
-      } else if (name == name_ + ".allow_unknown") {
+      } else if (param_name == name_ + ".allow_unknown") {
         allow_unknown_ = parameter.as_bool();
-      } else if (name == name_ + ".use_final_approach_orientation") {
+      } else if (param_name == name_ + ".use_final_approach_orientation") {
         use_final_approach_orientation_ = parameter.as_bool();
       }
     }

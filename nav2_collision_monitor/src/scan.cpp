@@ -17,13 +17,15 @@
 #include <cmath>
 #include <functional>
 
+#include "tf2/transform_datatypes.hpp"
+
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 Scan::Scan(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -47,6 +49,7 @@ Scan::~Scan()
 
 void Scan::configure()
 {
+  Source::configure();
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -57,48 +60,28 @@ void Scan::configure()
   // Laser scanner has no own parameters
   getCommonParameters(source_topic);
 
-  rclcpp::QoS scan_qos = rclcpp::SensorDataQoS();  // set to default
   data_sub_ = node->create_subscription<sensor_msgs::msg::LaserScan>(
-    source_topic, scan_qos,
-    std::bind(&Scan::dataCallback, this, std::placeholders::_1));
+    source_topic,
+    std::bind(&Scan::dataCallback, this, std::placeholders::_1),
+    nav2::qos::SensorDataQoS());
 }
 
-void Scan::getData(
+bool Scan::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data) const
+  std::vector<Point> & data)
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   tf2::Transform tf_transform;
-  if (base_shift_correction_) {
-    // Obtaining the transform to get data from source frame and time where it was received
-    // to the base frame and current time
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, data_->header.stamp,
-        base_frame_id_, curr_time, global_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
-      return;
-    }
-  } else {
-    // Obtaining the transform to get data from source frame to base frame without time shift
-    // considered. Less accurate but much more faster option not dependent on state estimation
-    // frames.
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
-      return;
-    }
+  if (!getTransform(curr_time, data_->header, tf_transform)) {
+    return false;
   }
 
   // Calculate poses and refill data array
@@ -117,6 +100,7 @@ void Scan::getData(
     }
     angle += data_->angle_increment;
   }
+  return true;
 }
 
 void Scan::dataCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr msg)

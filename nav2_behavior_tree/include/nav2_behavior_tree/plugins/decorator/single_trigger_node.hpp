@@ -18,14 +18,16 @@
 #include <chrono>
 #include <string>
 
-#include "behaviortree_cpp_v3/decorator_node.h"
+#include "behaviortree_cpp/decorator_node.h"
 
 namespace nav2_behavior_tree
 {
 
 /**
  * @brief A BT::DecoratorNode that triggers its child only once and returns FAILURE
- * for every succeeding tick
+ * for every succeeding tick (reset when halted)
+ * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
+ *       It will re-initialize when halted.
  */
 class SingleTrigger : public BT::DecoratorNode
 {

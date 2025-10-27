@@ -42,14 +42,14 @@
 #include <vector>
 #include <chrono>
 
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 using namespace std::chrono_literals;
 
 namespace nav2_costmap_2d
 {
 ObservationBuffer::ObservationBuffer(
-  const nav2_util::LifecycleNode::WeakPtr & parent,
+  const nav2::LifecycleNode::WeakPtr & parent,
   std::string topic_name,
   double observation_keep_time,
   double expected_update_rate,

@@ -24,10 +24,9 @@
 
 #include "nav2_core/smoother.hpp"
 #include "nav2_constrained_smoother/smoother.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
 
 namespace nav2_constrained_smoother
 {
@@ -57,7 +56,7 @@ public:
    * @param costmap_ros Costmap2DROS object of environment
    */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub) override;

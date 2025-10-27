@@ -14,17 +14,20 @@
 
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 
+#include <Eigen/Dense>
+
 namespace mppi::critics
 {
 
 void PreferForwardCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 5.0);
+  getParam(weight_, "cost_weight", 5.0f);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.5);
+    "threshold_to_consider", 0.5f);
 
   RCLCPP_INFO(
     logger_, "PreferForwardCritic instantiated with %d power and %f weight.", power_, weight_);
@@ -32,21 +35,22 @@ void PreferForwardCritic::initialize()
 
 void PreferForwardCritic::score(CriticData & data)
 {
-  using xt::evaluation_strategy::immediate;
-
   if (!enabled_) {
     return;
   }
 
-  if (utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path)) {
+  if (data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 
-  auto backward_motion = xt::maximum(-data.state.vx, 0);
-  data.costs += xt::pow(
-    xt::sum(
-      std::move(
-        backward_motion) * data.model_dt, {1}, immediate) * weight_, power_);
+  if (power_ > 1u) {
+    data.costs += (
+      (data.state.vx.unaryExpr([&](const float & x){return std::max(-x, 0.0f);}) *
+      data.model_dt).rowwise().sum() * weight_).pow(power_);
+  } else {
+    data.costs += (data.state.vx.unaryExpr([&](const float & x){return std::max(-x, 0.0f);}) *
+      data.model_dt).rowwise().sum() * weight_;
+  }
 }
 
 }  // namespace mppi::critics

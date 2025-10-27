@@ -2,7 +2,7 @@
 
 A smoother plugin for `nav2_smoother` based on the original deprecated smoother in `nav2_smac_planner` by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) and put into operational state by [**RoboTech Vision**](https://robotechvision.com/). Suitable for applications which need planned global path to be pushed away from obstacles and/or for Reeds-Shepp motion models.
 
-See documentation on navigation.ros.org: https://navigation.ros.org/configuration/packages/configuring-constrained-smoother.html
+See documentation on docs.nav2.org: https://docs.nav2.org/configuration/packages/configuring-constrained-smoother.html
 
 
 Example of configuration (see indoor_navigation package of this repo for a full launch configuration):
@@ -26,13 +26,13 @@ smoother_server:
       w_cost: 0.015                 # weight to steer robot away from collision and cost
 
       # Parameters used to improve obstacle avoidance near cusps (forward/reverse movement changes)
-      # See the [docs page](https://navigation.ros.org/configuration/packages/configuring-constrained-smoother) for further clarification
+      # See the [docs page](https://docs.nav2.org/configuration/packages/configuring-constrained-smoother) for further clarification
       w_cost_cusp_multiplier: 3.0   # option to have higher weight during forward/reverse direction change which is often accompanied with dangerous rotations
       cusp_zone_length: 2.5         # length of the section around cusp in which nodes use w_cost_cusp_multiplier (w_cost rises gradually inside the zone towards the cusp point, whose costmap weight equals w_cost*w_cost_cusp_multiplier)
 
       # Points in robot frame to grab costmap values from. Format: [x1, y1, weight1, x2, y2, weight2, ...]
       # IMPORTANT: Requires much higher number of iterations to actually improve the path. Uncomment only if you really need it (highly elongated/asymmetric robots)
-      # See the [docs page](https://navigation.ros.org/configuration/packages/configuring-constrained-smoother) for further clarification
+      # See the [docs page](https://docs.nav2.org/configuration/packages/configuring-constrained-smoother) for further clarification
       # cost_check_points: [-0.185, 0.0, 1.0]
 
       optimizer:

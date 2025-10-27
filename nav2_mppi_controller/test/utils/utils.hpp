@@ -19,9 +19,10 @@
 #include <vector>
 #include <iostream>
 #include <string_view>
+
 #include <rclcpp/executors.hpp>
 
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -31,11 +32,14 @@
 
 using namespace std::chrono_literals;  // NOLINT
 
-void waitSome(const std::chrono::nanoseconds & duration, auto & node)
+template<typename TNode>
+void waitSome(const std::chrono::nanoseconds & duration, TNode & node)
 {
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node->get_node_base_interface());
   rclcpp::Time start_time = node->now();
   while (rclcpp::ok() && node->now() - start_time <= rclcpp::Duration(duration)) {
-    rclcpp::spin_some(node->get_node_base_interface());
+    executor.spin_some();
     std::this_thread::sleep_for(3ms);
   }
 }
@@ -43,7 +47,7 @@ void waitSome(const std::chrono::nanoseconds & duration, auto & node)
 void sendTf(
   std::string_view source, std::string_view dest,
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster,
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node, size_t n)
+  nav2::LifecycleNode::SharedPtr node, size_t n)
 {
   while (--n != 0u) {
     auto t = geometry_msgs::msg::TransformStamped();
@@ -83,11 +87,12 @@ void printMap(const nav2_costmap_2d::Costmap2D & costmap)
 /**
  * Print costmap with trajectory and goal point to stdout.
  * @param costmap map to be printed.
- * @param trajectory trajectory container (xt::tensor) to be printed.
+ * @param trajectory trajectory container (Eigen::Array) to be printed.
  * @param goal_point goal point to be printed.
  */
+template<typename TTrajectory>
 void printMapWithTrajectoryAndGoal(
-  nav2_costmap_2d::Costmap2D & costmap, const auto & trajectory,
+  nav2_costmap_2d::Costmap2D & costmap, const TTrajectory & trajectory,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   const unsigned int trajectory_cost = 1;
@@ -107,7 +112,7 @@ void printMapWithTrajectoryAndGoal(
   // add trajectory on map
   unsigned int point_mx = 0;
   unsigned int point_my = 0;
-  for (size_t i = 0; i < trajectory.shape()[0]; ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap2d.worldToMap(trajectory(i, 0), trajectory(i, 1), point_mx, point_my);
     costmap2d.setCost(point_mx, point_my, trajectory_cost);
   }
@@ -169,17 +174,18 @@ void addObstacle(nav2_costmap_2d::Costmap2D * costmap, TestObstaclesSettings s)
 
 /**
  * Check the trajectory for collisions with obstacles on the map.
- * @param trajectory trajectory container (xt::tensor) to be checked.
+ * @param trajectory trajectory container (Eigen::Array) to be checked.
  * @param costmap costmap with obstacles
  * @return true - if the trajectory crosses an obstacle on the map, false - if
  * not
  */
-bool inCollision(const auto & trajectory, const nav2_costmap_2d::Costmap2D & costmap)
+template<typename TTrajectory>
+bool inCollision(const TTrajectory & trajectory, const nav2_costmap_2d::Costmap2D & costmap)
 {
   unsigned int point_mx = 0;
   unsigned int point_my = 0;
 
-  for (size_t i = 0; i < trajectory.shape(0); ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap.worldToMap(trajectory(i, 0), trajectory(i, 1), point_mx, point_my);
     auto cost_ = costmap.getCost(point_mx, point_my);
     if (cost_ > nav2_costmap_2d::FREE_SPACE || cost_ == nav2_costmap_2d::NO_INFORMATION) {
@@ -198,8 +204,9 @@ unsigned char getCost(const nav2_costmap_2d::Costmap2D & costmap, double x, doub
   return costmap.getCost(point_mx, point_my);
 }
 
+template<typename TTrajectory>
 bool isGoalReached(
-  const auto & trajectory, const nav2_costmap_2d::Costmap2D & costmap,
+  const TTrajectory & trajectory, const nav2_costmap_2d::Costmap2D & costmap,
   const geometry_msgs::msg::PoseStamped & goal)
 {
   unsigned int trajectory_j = 0;
@@ -233,7 +240,7 @@ bool isGoalReached(
     };
   // clang-format on
 
-  for (size_t i = 0; i < trajectory.shape(0); ++i) {
+  for (size_t i = 0; i < trajectory.rows(); ++i) {
     costmap.worldToMap(trajectory(i, 0), trajectory(i, 1), trajectory_j, trajectory_i);
     if (match_near(trajectory_i, trajectory_j)) {
       return true;

@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Samsung Research America, @artofnothingness Alexey Budyakov
+// Copyright (c) 2023 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,27 +14,21 @@
 
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xmath.hpp>
-
 namespace mppi::critics
 {
 
-using namespace xt::placeholders;  // NOLINT
-using xt::evaluation_strategy::immediate;
-
 void PathAlignCritic::initialize()
 {
+  auto getParentParam = parameters_handler_->getParamGetter(parent_name_);
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
-  getParam(weight_, "cost_weight", 10.0);
-
-  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07);
+  getParam(weight_, "cost_weight", 10.0f);
+  getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
   getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
   getParam(
     threshold_to_consider_,
-    "threshold_to_consider", 0.5);
+    "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
 
   RCLCPP_INFO(
@@ -45,87 +39,120 @@ void PathAlignCritic::initialize()
 
 void PathAlignCritic::score(CriticData & data)
 {
-  // Don't apply close to goal, let the goal critics take over
-  if (!enabled_ ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
-  {
+  if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 
   // Don't apply when first getting bearing w.r.t. the path
   utils::setPathFurthestPointIfNotSet(data);
-  if (*data.furthest_reached_path_point < offset_from_furthest_) {
+  // Up to furthest only, closest path point is always 0 from path handler
+  const size_t path_segments_count = *data.furthest_reached_path_point;
+  float path_segments_flt = static_cast<float>(path_segments_count);
+  if (path_segments_count < offset_from_furthest_) {
     return;
   }
 
   // Don't apply when dynamic obstacles are blocking significant proportions of the local path
   utils::setPathCostsIfNotSet(data, costmap_ros_);
-  const size_t closest_initial_path_point = utils::findPathTrajectoryInitialPoint(data);
-  unsigned int invalid_ctr = 0;
-  const float range = *data.furthest_reached_path_point - closest_initial_path_point;
-  for (size_t i = closest_initial_path_point; i < *data.furthest_reached_path_point; i++) {
-    if (!(*data.path_pts_valid)[i]) {invalid_ctr++;}
-    if (static_cast<float>(invalid_ctr) / range > max_path_occupancy_ratio_ && invalid_ctr > 2) {
+  std::vector<bool> & path_pts_valid = *data.path_pts_valid;
+  float invalid_ctr = 0.0f;
+  for (size_t i = 0; i < path_segments_count; i++) {
+    if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
+    if (invalid_ctr / path_segments_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
       return;
     }
   }
 
-  const auto & T_x = data.trajectories.x;
-  const auto & T_y = data.trajectories.y;
-  const auto & T_yaw = data.trajectories.yaws;
+  const size_t batch_size = data.trajectories.x.rows();
+  Eigen::ArrayXf cost(data.costs.rows());
+  cost.setZero();
 
-  const auto P_x = xt::view(data.path.x, xt::range(_, -1));  // path points
-  const auto P_y = xt::view(data.path.y, xt::range(_, -1));  // path points
-  const auto P_yaw = xt::view(data.path.yaws, xt::range(_, -1));  // path points
+  // Find integrated distance in the path
+  std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
+  std::vector<utils::Pose2D> path(path_segments_count);
+  float dx = 0.0f, dy = 0.0f;
+  for (unsigned int i = 1; i != path_segments_count; i++) {
+    auto & pose = path[i - 1];
+    pose.x = data.path.x(i - 1);
+    pose.y = data.path.y(i - 1);
+    pose.theta = data.path.yaws(i - 1);
 
-  const size_t batch_size = T_x.shape(0);
-  const size_t time_steps = T_x.shape(1);
-  const size_t traj_pts_eval = floor(time_steps / trajectory_point_step_);
-  const size_t path_segments_count = data.path.x.shape(0) - 1;
-  auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
-
-  if (path_segments_count < 1) {
-    return;
+    dx = data.path.x(i) - pose.x;
+    dy = data.path.y(i) - pose.y;
+    path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
   }
 
-  float dist_sq = 0, dx = 0, dy = 0, dyaw = 0, summed_dist = 0;
-  double min_dist_sq = std::numeric_limits<float>::max();
-  size_t min_s = 0;
+  // Finish populating the path vector
+  auto & final_pose = path[path_segments_count - 1];
+  final_pose.x = data.path.x(path_segments_count - 1);
+  final_pose.y = data.path.y(path_segments_count - 1);
+  final_pose.theta = data.path.yaws(path_segments_count - 1);
+
+  float summed_path_dist = 0.0f, dyaw = 0.0f;
+  unsigned int num_samples = 0u;
+  unsigned int path_pt = 0u;
+  float traj_integrated_distance = 0.0f;
+
+  int strided_traj_rows = data.trajectories.x.rows();
+  int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
+  int outer_stride = strided_traj_rows * trajectory_point_step_;
+  // Get strided trajectory information
+  const auto T_x = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.x.data(),
+      strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_y = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.y.data(),
+      strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_yaw = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
+      Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_sampled_size = T_x.cols();
 
   for (size_t t = 0; t < batch_size; ++t) {
-    summed_dist = 0;
-    for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
-      min_dist_sq = std::numeric_limits<float>::max();
-      min_s = 0;
-
-      // Find closest path segment to the trajectory point
-      for (size_t s = 0; s < path_segments_count - 1; s++) {
-        xt::xtensor_fixed<float, xt::xshape<2>> P;
-        dx = P_x(s) - T_x(t, p);
-        dy = P_y(s) - T_y(t, p);
-        if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(P_yaw(s), T_yaw(t, p));
-          dist_sq = dx * dx + dy * dy + dyaw * dyaw;
-        } else {
-          dist_sq = dx * dx + dy * dy;
-        }
-        if (dist_sq < min_dist_sq) {
-          min_dist_sq = dist_sq;
-          min_s = s;
-        }
-      }
+    summed_path_dist = 0.0f;
+    num_samples = 0u;
+    traj_integrated_distance = 0.0f;
+    path_pt = 0u;
+    float Tx_m1 = T_x(t, 0);
+    float Ty_m1 = T_y(t, 0);
+    for (int p = 1; p < traj_sampled_size; p++) {
+      const float Tx = T_x(t, p);
+      const float Ty = T_y(t, p);
+      dx = Tx - Tx_m1;
+      dy = Ty - Ty_m1;
+      Tx_m1 = Tx;
+      Ty_m1 = Ty;
+      traj_integrated_distance += sqrtf(dx * dx + dy * dy);
+      path_pt = utils::findClosestPathPt(
+        path_integrated_distances, traj_integrated_distance, path_pt);
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
-      if (min_s != 0 && (*data.path_pts_valid)[min_s]) {
-        summed_dist += std::sqrt(min_dist_sq);
+      if (path_pts_valid[path_pt]) {
+        const auto & pose = path[path_pt];
+        dx = pose.x - Tx;
+        dy = pose.y - Ty;
+        num_samples++;
+        if (use_path_orientations_) {
+          dyaw = angles::shortest_angular_distance(pose.theta, T_yaw(t, p));
+          summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
+        } else {
+          summed_path_dist += sqrtf(dx * dx + dy * dy);
+        }
       }
     }
-
-    cost[t] = summed_dist / traj_pts_eval;
+    if (num_samples > 0u) {
+      cost(t) = summed_path_dist / static_cast<float>(num_samples);
+    } else {
+      cost(t) = 0.0f;
+    }
   }
 
-  data.costs += xt::pow(std::move(cost) * weight_, power_);
+  if (power_ > 1u) {
+    data.costs += (cost * weight_).pow(power_).eval();
+  } else {
+    data.costs += (cost * weight_).eval();
+  }
 }
 
 }  // namespace mppi::critics

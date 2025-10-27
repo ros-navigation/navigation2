@@ -34,7 +34,7 @@ class PathLongerOnApproachTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("path_longer_on_approach_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("path_longer_on_approach_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -42,7 +42,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
 
@@ -71,13 +71,13 @@ public:
   }
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr PathLongerOnApproachTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr PathLongerOnApproachTestFixture::node_ = nullptr;
 
 BT::NodeConfiguration * PathLongerOnApproachTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> PathLongerOnApproachTestFixture::factory_ = nullptr;
@@ -89,7 +89,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   // create tree
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PathLongerOnApproach path="{path}" prox_len="5.0" length_factor="2.0">
             <AlwaysSuccess/>
@@ -106,7 +106,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set("path", new_path);
 
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
@@ -115,7 +115,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
   // create tree
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
           <PathLongerOnApproach path="{path}" prox_len="20.0" length_factor="1.0">
             <AlwaysFailure/>
@@ -132,7 +132,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 3.0m
     old_path.poses[i - 1].pose.position.x = 3.0 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", old_path);
+  config_->blackboard->set("path", old_path);
   tree_->rootNode()->executeTick();
 
   // set new path on blackboard
@@ -141,7 +141,7 @@ TEST_F(PathLongerOnApproachTestFixture, test_tick)
     // Assuming distance between waypoints to be 1.5m
     new_path.poses[i].pose.position.x = 1.5 * i;
   }
-  config_->blackboard->set<nav_msgs::msg::Path>("path", new_path);
+  config_->blackboard->set("path", new_path);
   tree_->rootNode()->executeTick();
 
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);

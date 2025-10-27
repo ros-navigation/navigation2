@@ -23,12 +23,14 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_constrained_smoother/constrained_smoother.hpp"
 
@@ -38,7 +40,7 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {
@@ -82,7 +84,12 @@ public:
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
     costmap_msg_ = msg;
-    costmap_received_ = true;
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
+      msg->metadata.size_x, msg->metadata.size_y,
+      msg->metadata.resolution, msg->metadata.origin.position.x,
+      msg->metadata.origin.position.y);
+
+    processCurrentCostmapMsg();
   }
 };
 
@@ -100,11 +107,10 @@ protected:
   SmootherTest() {SetUp();}
   ~SmootherTest() {}
 
-  void SetUp()
+  void SetUp() override
   {
     node_lifecycle_ =
-      std::make_shared<rclcpp_lifecycle::LifecycleNode>(
-      "ConstrainedSmootherTestNode", rclcpp::NodeOptions());
+      std::make_shared<nav2::LifecycleNode>("ConstrainedSmootherTestNode");
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -373,7 +379,7 @@ protected:
   {
     auto output = input;
     for (size_t i = 1; i < input.size() - 1; i++) {
-      // add offset prependicular to path
+      // add offset perpendicular to path
       Eigen::Vector2d direction =
         (input[i + 1].block<2, 1>(0, 0) - input[i - 1].block<2, 1>(0, 0)).normalized();
       output[i].block<2, 1>(
@@ -383,23 +389,23 @@ protected:
     return output;
   }
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_lifecycle_;
+  nav2::LifecycleNode::SharedPtr node_lifecycle_;
   std::shared_ptr<nav2_constrained_smoother::ConstrainedSmoother> smoother_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
 
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     path_poses_pub_orig_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr path_poses_pub_;
+  nav2::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
     path_poses_pub_cmp_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DPublisher> costmap_pub_;
 
   int cusp_i_ = -1;
   QualityCriterion3 mvmt_smoothness_criterion_ =
     [this](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_) {
@@ -981,7 +987,7 @@ TEST_F(SmootherTest, testingDownsamplingUpsampling)
   int cusp_i_out = 6;  // for upsampled path
   QualityCriterion3 mvmt_smoothness_criterion_out =
     [&cusp_i_out](int i, const Eigen::Vector3d & prev_p, const Eigen::Vector3d & p,
-      const Eigen::Vector3d & next_p) {
+    const Eigen::Vector3d & next_p) {
       Eigen::Vector2d prev_mvmt = p.block<2, 1>(0, 0) - prev_p.block<2, 1>(0, 0);
       Eigen::Vector2d next_mvmt = next_p.block<2, 1>(0, 0) - p.block<2, 1>(0, 0);
       if (i == cusp_i_out) {

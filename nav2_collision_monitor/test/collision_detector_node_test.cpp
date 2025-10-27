@@ -25,15 +25,16 @@
 #include <limits>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_detector_node.hpp"
@@ -45,11 +46,12 @@ static constexpr double EPSILON = 1e-5;
 static const char BASE_FRAME_ID[]{"base_link"};
 static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
-static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
+static const char POLYGON_NAME[]{"Polygon"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
+static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
 static const double SIMULATION_TIME_STEP{0.01};
 static const double TRANSFORM_TOLERANCE{0.5};
@@ -68,7 +70,8 @@ enum SourceType
   SOURCE_UNKNOWN = 0,
   SCAN = 1,
   POINTCLOUD = 2,
-  RANGE = 3
+  RANGE = 3,
+  POLYGON_SOURCE = 4
 };
 
 class CollisionDetectorWrapper : public nav2_collision_monitor::CollisionDetector
@@ -76,25 +79,25 @@ class CollisionDetectorWrapper : public nav2_collision_monitor::CollisionDetecto
 public:
   void start()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_activate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_activate(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void stop()
   {
-    ASSERT_EQ(on_deactivate(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_cleanup(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
-    ASSERT_EQ(on_shutdown(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_deactivate(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_cleanup(get_current_state()), nav2::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_shutdown(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void configure()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::SUCCESS);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
   void cant_configure()
   {
-    ASSERT_EQ(on_configure(get_current_state()), nav2_util::CallbackReturn::FAILURE);
+    ASSERT_EQ(on_configure(get_current_state()), nav2::CallbackReturn::FAILURE);
   }
 
   bool correctDataReceived(const double expected_dist, const rclcpp::Time & stamp)
@@ -139,49 +142,81 @@ public:
   void publishScan(const double dist, const rclcpp::Time & stamp);
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
   void publishRange(const double dist, const rclcpp::Time & stamp);
+  void publishPolygon(const double dist, const rclcpp::Time & stamp);
   bool waitData(
     const double expected_dist,
     const std::chrono::nanoseconds & timeout,
     const rclcpp::Time & stamp);
   bool waitState(const std::chrono::nanoseconds & timeout);
   void stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg);
+  bool waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout);
+  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg);
 
 protected:
   // CollisionDetector node
   std::shared_ptr<CollisionDetectorWrapper> cd_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
   // Data source publishers
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
+  nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr
+    scan_pub_;
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    pointcloud_pub_;
+  nav2::Publisher<sensor_msgs::msg::Range>::SharedPtr
+    range_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
+    polygon_source_pub_;
 
-  rclcpp::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
+  nav2::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
+
+  // CollisionMonitor collision points markers
+  nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
+    collision_points_marker_sub_;
+  visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
 };  // Tester
 
 Tester::Tester()
 {
   cd_ = std::make_shared<CollisionDetectorWrapper>();
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(cd_->get_node_base_interface());
 
   scan_pub_ = cd_->create_publisher<sensor_msgs::msg::LaserScan>(
     SCAN_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  scan_pub_->on_activate();
   pointcloud_pub_ = cd_->create_publisher<sensor_msgs::msg::PointCloud2>(
     POINTCLOUD_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  pointcloud_pub_->on_activate();
   range_pub_ = cd_->create_publisher<sensor_msgs::msg::Range>(
     RANGE_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  range_pub_->on_activate();
+  polygon_source_pub_ = cd_->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
+    POLYGON_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  polygon_source_pub_->on_activate();
 
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
-    STATE_TOPIC, rclcpp::SystemDefaultsQoS(),
+    STATE_TOPIC,
     std::bind(&Tester::stateCallback, this, std::placeholders::_1));
+
+  collision_points_marker_sub_ = cd_->create_subscription<visualization_msgs::msg::MarkerArray>(
+    COLLISION_POINTS_MARKERS_TOPIC,
+    std::bind(&Tester::collisionPointsMarkerCallback, this, std::placeholders::_1));
 }
 
 Tester::~Tester()
 {
   scan_pub_.reset();
+  pointcloud_pub_->on_deactivate();
   pointcloud_pub_.reset();
+  range_pub_->on_deactivate();
   range_pub_.reset();
+  polygon_source_pub_->on_deactivate();
+  polygon_source_pub_.reset();
+  collision_points_marker_sub_.reset();
 
   cd_.reset();
+  executor_.reset();
 }
 
 bool Tester::waitState(const std::chrono::nanoseconds & timeout)
@@ -191,7 +226,21 @@ bool Tester::waitState(const std::chrono::nanoseconds & timeout)
     if (state_msg_) {
       return true;
     }
-    rclcpp::spin_some(cd_->get_node_base_interface());
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
+bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
+{
+  collision_points_marker_msg_ = nullptr;
+  rclcpp::Time start_time = cd_->now();
+  while (rclcpp::ok() && cd_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (collision_points_marker_msg_) {
+      return true;
+    }
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -202,29 +251,24 @@ void Tester::stateCallback(nav2_msgs::msg::CollisionDetectorState::SharedPtr msg
   state_msg_ = msg;
 }
 
+void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
+{
+  collision_points_marker_msg_ = msg;
+}
+
 void Tester::setCommonParameters()
 {
   cd_->declare_parameter(
     "base_frame_id", rclcpp::ParameterValue(BASE_FRAME_ID));
-  cd_->set_parameter(
-    rclcpp::Parameter("base_frame_id", BASE_FRAME_ID));
   cd_->declare_parameter(
     "odom_frame_id", rclcpp::ParameterValue(ODOM_FRAME_ID));
-  cd_->set_parameter(
-    rclcpp::Parameter("odom_frame_id", ODOM_FRAME_ID));
 
   cd_->declare_parameter(
     "transform_tolerance", rclcpp::ParameterValue(TRANSFORM_TOLERANCE));
-  cd_->set_parameter(
-    rclcpp::Parameter("transform_tolerance", TRANSFORM_TOLERANCE));
   cd_->declare_parameter(
     "source_timeout", rclcpp::ParameterValue(SOURCE_TIMEOUT));
-  cd_->set_parameter(
-    rclcpp::Parameter("source_timeout", SOURCE_TIMEOUT));
   cd_->declare_parameter(
     "frequency", rclcpp::ParameterValue(FREQUENCY));
-  cd_->set_parameter(
-    rclcpp::Parameter("frequency", FREQUENCY));
 }
 
 void Tester::addPolygon(
@@ -234,56 +278,39 @@ void Tester::addPolygon(
   if (type == POLYGON) {
     cd_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("polygon"));
-    cd_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "polygon"));
 
-    const std::vector<double> points {
-      size, size, size, -size, -size, -size, -size, size};
+    const std::string points = "[[" +
+      std::to_string(size) + ", " + std::to_string(size) + "], [" +
+      std::to_string(size) + ", " + std::to_string(-size) + "], [" +
+      std::to_string(-size) + ", " + std::to_string(-size) + "], [" +
+      std::to_string(-size) + ", " + std::to_string(size) + "]]";
     cd_->declare_parameter(
       polygon_name + ".points", rclcpp::ParameterValue(points));
-    cd_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".points", points));
   } else if (type == CIRCLE) {
     cd_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("circle"));
-    cd_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "circle"));
 
     cd_->declare_parameter(
       polygon_name + ".radius", rclcpp::ParameterValue(size));
-    cd_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".radius", size));
   } else {  // type == POLYGON_UNKNOWN
     cd_->declare_parameter(
       polygon_name + ".type", rclcpp::ParameterValue("unknown"));
-    cd_->set_parameter(
-      rclcpp::Parameter(polygon_name + ".type", "unknown"));
   }
 
   cd_->declare_parameter(
     polygon_name + ".action_type", rclcpp::ParameterValue(at));
-  cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".action_type", at));
 
   cd_->declare_parameter(
     polygon_name + ".min_points", rclcpp::ParameterValue(MIN_POINTS));
-  cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".min_points", MIN_POINTS));
 
   cd_->declare_parameter(
     polygon_name + ".simulation_time_step", rclcpp::ParameterValue(SIMULATION_TIME_STEP));
-  cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".simulation_time_step", SIMULATION_TIME_STEP));
 
   cd_->declare_parameter(
     polygon_name + ".visualize", rclcpp::ParameterValue(false));
-  cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".visualize", false));
 
   cd_->declare_parameter(
     polygon_name + ".polygon_pub_topic", rclcpp::ParameterValue(polygon_name));
-  cd_->set_parameter(
-    rclcpp::Parameter(polygon_name + ".polygon_pub_topic", polygon_name));
 }
 
 void Tester::addSource(
@@ -292,43 +319,35 @@ void Tester::addSource(
   if (type == SCAN) {
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("scan"));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "scan"));
   } else if (type == POINTCLOUD) {
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("pointcloud"));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "pointcloud"));
 
     cd_->declare_parameter(
       source_name + ".min_height", rclcpp::ParameterValue(0.1));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".min_height", 0.1));
     cd_->declare_parameter(
       source_name + ".max_height", rclcpp::ParameterValue(1.0));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".max_height", 1.0));
   } else if (type == RANGE) {
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("range"));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "range"));
 
     cd_->declare_parameter(
       source_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 200));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".obstacles_angle", M_PI / 200));
+  } else if (type == POLYGON_SOURCE) {
+    cd_->declare_parameter(
+      source_name + ".type", rclcpp::ParameterValue("polygon"));
+
+    cd_->declare_parameter(
+      source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
+    cd_->declare_parameter(
+      source_name + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
   } else {  // type == SOURCE_UNKNOWN
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
-    cd_->set_parameter(
-      rclcpp::Parameter(source_name + ".type", "unknown"));
   }
 
   cd_->declare_parameter(
     source_name + ".topic", rclcpp::ParameterValue(source_name));
-  cd_->set_parameter(
-    rclcpp::Parameter(source_name + ".topic", source_name));
 }
 
 void Tester::setVectors(
@@ -336,10 +355,7 @@ void Tester::setVectors(
   const std::vector<std::string> & sources)
 {
   cd_->declare_parameter("polygons", rclcpp::ParameterValue(polygons));
-  cd_->set_parameter(rclcpp::Parameter("polygons", polygons));
-
   cd_->declare_parameter("observation_sources", rclcpp::ParameterValue(sources));
-  cd_->set_parameter(rclcpp::Parameter("observation_sources", sources));
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -441,6 +457,32 @@ void Tester::publishRange(const double dist, const rclcpp::Time & stamp)
   range_pub_->publish(std::move(msg));
 }
 
+void Tester::publishPolygon(const double dist, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<geometry_msgs::msg::PolygonInstanceStamped> msg =
+    std::make_unique<geometry_msgs::msg::PolygonInstanceStamped>();
+
+  msg->header.frame_id = SOURCE_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  geometry_msgs::msg::Point32 p;
+  p.x = 1.0;
+  p.y = dist;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = -1.0;
+  p.y = dist + 1.0;
+  msg->polygon.polygon.points.push_back(p);
+  p.x = 1.0;
+  p.y = dist + 1.0;
+  msg->polygon.polygon.points.push_back(p);
+  msg->polygon.id = 1u;
+
+  polygon_source_pub_->publish(std::move(msg));
+}
+
 bool Tester::waitData(
   const double expected_dist,
   const std::chrono::nanoseconds & timeout,
@@ -451,7 +493,7 @@ bool Tester::waitData(
     if (cd_->correctDataReceived(expected_dist, stamp)) {
       return true;
     }
-    rclcpp::spin_some(cd_->get_node_base_interface());
+    executor_->spin_some();
     std::this_thread::sleep_for(10ms);
   }
   return false;
@@ -509,7 +551,6 @@ TEST_F(Tester, testSourcesNotSet)
   cd_->declare_parameter(
     "polygons",
     rclcpp::ParameterValue(std::vector<std::string>{"DetectionRegion"}));
-  cd_->set_parameter(rclcpp::Parameter("polygons", std::vector<std::string>{"DetectionRegion"}));
 
   // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
@@ -676,6 +717,62 @@ TEST_F(Tester, testPointcloudDetection)
   ASSERT_EQ(state_msg_->detections[0], true);
 
   // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testPolygonSourceDetection)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Detector parameters.
+  setCommonParameters();
+  // Create polygon
+  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addSource(POLYGON_NAME, POLYGON_SOURCE);
+  setVectors({"DetectionRegion"}, {POLYGON_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is in DetectionRegion
+  publishPolygon(2.5, curr_time);
+
+  ASSERT_TRUE(waitData(std::hypot(2.5, 1.0), 500ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testCollisionPointsMarkers)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Monitor parameters.
+  // Making two polygons: outer polygon for slowdown and inner for robot stop.
+  setCommonParameters();
+  addSource(SCAN_NAME, SCAN);
+  setVectors({}, {SCAN_NAME});
+
+  // Start Collision Monitor node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_EQ(collision_points_marker_msg_->markers[0].points.size(), 0u);
+
+  publishScan(0.5, curr_time);
+  ASSERT_TRUE(waitData(0.5, 500ms, curr_time));
+  ASSERT_TRUE(waitCollisionPointsMarker(500ms));
+  ASSERT_NE(collision_points_marker_msg_->markers[0].points.size(), 0u);
+  // Stop Collision Monitor node
   cd_->stop();
 }
 

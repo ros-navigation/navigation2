@@ -1,0 +1,38 @@
+<!--
+  This Behavior Tree undocks the robot, performs some token application, then returns to the dock.
+  Shown below is an example of how you could use dock & undock actions in your application.
+
+  Shown in the comment below is an example of how you could dock based on battery status as a possible common adaption:
+  <ReactiveFallback name="DockIfBatteryLow">
+    <inverter>
+      <IsBatteryLow min_battery="0.2"/>
+    </inverter>
+    <DockRobot dock_id="{my_dock}">
+  </ReactiveFallback>
+-->
+
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="ApplicationTaskWithDocking">
+      <!-- Force application success so we always attempt docking -->
+      <ForceSuccess>
+        <Sequence>
+          <!-- Undock the robot if currently on dock to start -->
+          <ReactiveFallback name="UndockIfDocked">
+            <inverter>
+              <IsBatteryCharging/>
+            </inverter>
+            <UndockRobot dock_type="{dock_type}" error_code_id="{undock_robot_error_code}" error_msg="{undock_robot_error_msg}" />
+          </ReactiveFallback>
+          <!-- Token Application -->
+          <NavigateToPose goal="{picking_location}" error_code_id="{nav_to_pose_error_code}" error_msg="{nav_to_pose_error_msg}"/>
+          <Wait wait_duration="5"/>
+          <NavigateToPose goal="{placing_location}" error_code_id="{nav_to_pose__error_code}" error_msg="{nav_to_pose_error_msg}"/>
+          <Wait wait_duration="5" error_code_id="{wait_error_code}" error_msg="{wait_error_msg}"/>
+        </Sequence>
+      </ForceSuccess>
+      <!-- Always dock back at charger at end -->
+      <DockRobot dock_id="{dock_id}" error_code_id="{dock_robot_error_code}" error_msg="{dock_robot_error_msg}"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

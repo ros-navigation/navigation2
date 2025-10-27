@@ -11,5 +11,3 @@ As a Robot user I want my robot to know its location on a given map of an indoor
    - The robot should be able to deduce it's own position on a map autonomously
 
 - Are there any non-functional requirements? (build system, tools, performance, etc)
-
-

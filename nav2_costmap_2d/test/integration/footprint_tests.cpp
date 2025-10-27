@@ -41,16 +41,8 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 class FootprintTestNode
 {
@@ -201,4 +193,17 @@ TEST_F(TestNode, footprint_from_same_level_param)
   EXPECT_EQ(5.0f, footprint[2].x);
   EXPECT_EQ(6.0f, footprint[2].y);
   EXPECT_EQ(0.0f, footprint[2].z);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

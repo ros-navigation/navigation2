@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format ="3">
   <name>nav2_costmap_2d</name>
-  <version>1.2.0</version>
+  <version>1.4.0</version>
   <description>
     This package provides an implementation of a 2D costmap that takes in sensor
     data from the world, builds a 2D or 3D occupancy grid of the data (depending
@@ -19,6 +19,8 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
 
+  <depend>angles</depend>
+  <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>
@@ -30,6 +32,7 @@
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>rmw</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
@@ -38,7 +41,9 @@
   <depend>tf2_ros</depend>
   <depend>tf2_sensor_msgs</depend>
   <depend>visualization_msgs</depend>
-  <depend>angles</depend>
+  <depend>nav2_ros_common</depend>
+  <depend>point_cloud_transport</depend>
+  <depend>point_cloud_transport_plugins</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -49,6 +54,6 @@
   <test_depend>nav2_lifecycle_manager</test_depend>
 
   <export>
-	  <build_type>ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

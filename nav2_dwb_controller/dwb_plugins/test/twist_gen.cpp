@@ -41,13 +41,15 @@
 #include "dwb_plugins/standard_traj_generator.hpp"
 #include "dwb_plugins/limited_accel_generator.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_ros_common/node_utils.hpp"
+#include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using std::hypot;
 using std::fabs;
 using dwb_plugins::StandardTrajectoryGenerator;
 
-geometry_msgs::msg::Pose2D origin;
+geometry_msgs::msg::Pose origin;
 nav_2d_msgs::msg::Twist2D zero;
 nav_2d_msgs::msg::Twist2D forward;
 
@@ -83,7 +85,7 @@ std::vector<rclcpp::Parameter> getDefaultKinematicParameters()
   return parameters;
 }
 
-rclcpp_lifecycle::LifecycleNode::SharedPtr makeTestNode(
+nav2::LifecycleNode::SharedPtr makeTestNode(
   const std::string & name,
   const std::vector<rclcpp::Parameter> & overrides = {})
 {
@@ -92,7 +94,7 @@ rclcpp_lifecycle::LifecycleNode::SharedPtr makeTestNode(
   node_options.parameter_overrides().insert(
     node_options.parameter_overrides().end(), overrides.begin(), overrides.end());
 
-  auto node = rclcpp_lifecycle::LifecycleNode::make_shared(name, node_options);
+  auto node = std::make_shared<nav2::LifecycleNode>(name, "", node_options);
   node->on_configure(node->get_current_state());
   node->on_activate(node->get_current_state());
 
@@ -171,7 +173,7 @@ TEST(VelocityIterator, min_xy)
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
-  // Expect even more since theres no min_speed_xy
+  // Expect even more since there's no min_speed_xy
   EXPECT_EQ(twists.size(), 2015u);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
 }
@@ -182,7 +184,7 @@ TEST(VelocityIterator, min_theta)
   StandardTrajectoryGenerator gen;
   gen.initialize(nh, "dwb");
   std::vector<nav_2d_msgs::msg::Twist2D> twists = gen.getTwists(zero);
-  // Expect even more since theres no min_speed_xy
+  // Expect even more since there's no min_speed_xy
   EXPECT_EQ(twists.size(), 2015u);
   checkLimits(twists, 0.0, 0.55, -0.1, 0.1, -1.0, 1.0);
 }
@@ -293,20 +295,20 @@ TEST(VelocityIterator, nonzero)
     0.24622144504490268, 0.0, 0.1);
 }
 
-void matchPose(const geometry_msgs::msg::Pose2D & a, const geometry_msgs::msg::Pose2D & b)
+void matchPose(const geometry_msgs::msg::Pose & a, const geometry_msgs::msg::Pose & b)
 {
-  EXPECT_DOUBLE_EQ(a.x, b.x);
-  EXPECT_DOUBLE_EQ(a.y, b.y);
-  EXPECT_DOUBLE_EQ(a.theta, b.theta);
+  EXPECT_DOUBLE_EQ(a.position.x, b.position.x);
+  EXPECT_DOUBLE_EQ(a.position.y, b.position.y);
+  EXPECT_DOUBLE_EQ(tf2::getYaw(a.orientation), tf2::getYaw(b.orientation));
 }
 
 void matchPose(
-  const geometry_msgs::msg::Pose2D & a, const double x, const double y,
+  const geometry_msgs::msg::Pose & a, const double x, const double y,
   const double theta)
 {
-  EXPECT_DOUBLE_EQ(a.x, x);
-  EXPECT_DOUBLE_EQ(a.y, y);
-  EXPECT_DOUBLE_EQ(a.theta, theta);
+  EXPECT_DOUBLE_EQ(a.position.x, x);
+  EXPECT_DOUBLE_EQ(a.position.y, y);
+  EXPECT_DOUBLE_EQ(tf2::getYaw(a.orientation), theta);
 }
 
 void matchTwist(const nav_2d_msgs::msg::Twist2D & a, const nav_2d_msgs::msg::Twist2D & b)

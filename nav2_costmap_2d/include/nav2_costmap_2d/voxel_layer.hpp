@@ -39,7 +39,6 @@
 #define NAV2_COSTMAP_2D__VOXEL_LAYER_HPP_
 
 #include <vector>
-#include "message_filters/subscriber.h"
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav2_costmap_2d/layer.hpp>
@@ -143,15 +142,15 @@ protected:
     double * max_y);
 
   bool publish_voxel_;
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
+  nav2::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
   nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   int unknown_threshold_, mark_threshold_, size_z_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+  nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
     clearing_endpoints_pub_;
 
   /**
-   * @brief Covert world coordinates into map coordinates
+   * @brief Convert world coordinates into map coordinates
    */
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,
@@ -171,7 +170,7 @@ protected:
   }
 
   /**
-   * @brief Covert world coordinates into map coordinates
+   * @brief Convert world coordinates into map coordinates
    */
   inline bool worldToMap3D(
     double wx, double wy, double wz, unsigned int & mx, unsigned int & my,
@@ -193,7 +192,7 @@ protected:
   }
 
   /**
-   * @brief Covert map coordinates into world coordinates
+   * @brief Convert map coordinates into world coordinates
    */
   inline void mapToWorld3D(
     unsigned int mx, unsigned int my, unsigned int mz, double & wx,

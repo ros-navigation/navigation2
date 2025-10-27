@@ -1,27 +1,22 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_lifecycle_manager)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
+find_package(bondcpp REQUIRED)
+find_package(diagnostic_updater REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rclcpp_components REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(bondcpp REQUIRED)
-find_package(diagnostic_updater REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
-
-include_directories(
-  include
-)
 
 set(library_name ${PROJECT_NAME}_core)
 
@@ -29,43 +24,44 @@ add_library(${library_name} SHARED
   src/lifecycle_manager.cpp
   src/lifecycle_manager_client.cpp
 )
-
-set(dependencies
-  geometry_msgs
-  lifecycle_msgs
-  nav2_msgs
-  nav2_util
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  rclcpp_components
-  std_msgs
-  std_srvs
-  tf2_geometry_msgs
-  bondcpp
-  diagnostic_updater
+target_include_directories(${library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
+target_link_libraries(${library_name} PUBLIC
+  bondcpp::bondcpp
+  diagnostic_updater::diagnostic_updater
+  nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  ${std_srvs_TARGETS}
+)
+target_link_libraries(${library_name} PRIVATE
+  ${diagnostic_msgs_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  rclcpp_components::component
 )
 
 add_executable(lifecycle_manager
   src/main.cpp
 )
-
-target_link_libraries(lifecycle_manager
-  ${library_name}
+target_include_directories(lifecycle_manager
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-
-ament_target_dependencies(lifecycle_manager
-  ${dependencies}
+target_link_libraries(lifecycle_manager PRIVATE
+  ${library_name}
+  rclcpp::rclcpp
+  nav2_ros_common::nav2_ros_common
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_lifecycle_manager::LifecycleManager")
 
-install(TARGETS
-  ${library_name}
+install(TARGETS ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -76,7 +72,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/ DESTINATION include/)
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -84,12 +80,16 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
+  find_package(rclcpp_lifecycle REQUIRED)
+
+  ament_find_gtest()
 
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(bondcpp diagnostic_updater nav2_util rclcpp rclcpp_action std_srvs nav2_ros_common)
+ament_export_targets(${library_name})
 
 ament_package()

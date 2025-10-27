@@ -35,14 +35,17 @@
  * Author: Alexey Merzlyakov
  *********************************************************************/
 
+#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
+
 #include <string>
 #include <memory>
 #include <algorithm>
-#include "tf2/convert.h"
+#include "tf2/convert.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-#include "nav2_costmap_2d/costmap_filters/keepout_filter.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/occ_grid_utils.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -58,22 +61,34 @@ void KeepoutFilter::initializeFilter(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  filter_info_topic_ = filter_info_topic;
+  filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
   // Setting new costmap filter info subscriber
   RCLCPP_INFO(
     logger_,
     "KeepoutFilter: Subscribing to \"%s\" topic for filter info...",
     filter_info_topic_.c_str());
   filter_info_sub_ = node->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(
-    filter_info_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1));
+    filter_info_topic_,
+    std::bind(&KeepoutFilter::filterInfoCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
+
+  declareParameter("override_lethal_cost", rclcpp::ParameterValue(false));
+  node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
+  declareParameter("lethal_override_cost", rclcpp::ParameterValue(MAX_NON_OBSTACLE));
+  node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
+
+  // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
+  lethal_override_cost_ = \
+    std::clamp<unsigned int>(lethal_override_cost_, FREE_SPACE, MAX_NON_OBSTACLE);
+  lethal_state_update_max_x_ = lethal_state_update_max_y_ = std::numeric_limits<double>::lowest();
+  lethal_state_update_min_x_ = lethal_state_update_min_y_ = std::numeric_limits<double>::max();
 }
 
 void KeepoutFilter::filterInfoCallback(
@@ -81,7 +96,7 @@ void KeepoutFilter::filterInfoCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -108,7 +123,7 @@ void KeepoutFilter::filterInfoCallback(
       BASE_DEFAULT, MULTIPLIER_DEFAULT);
   }
 
-  mask_topic_ = msg->filter_mask_topic;
+  mask_topic_ = joinWithParentNamespace(msg->filter_mask_topic);
 
   // Setting new filter mask subscriber
   RCLCPP_INFO(
@@ -116,8 +131,9 @@ void KeepoutFilter::filterInfoCallback(
     "KeepoutFilter: Subscribing to \"%s\" topic for filter mask...",
     mask_topic_.c_str());
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-    mask_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1));
+    mask_topic_,
+    std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1),
+    nav2::qos::LatchedSubscriptionQoS());
 }
 
 void KeepoutFilter::maskCallback(
@@ -125,7 +141,7 @@ void KeepoutFilter::maskCallback(
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node = node_.lock();
+  nav2::LifecycleNode::SharedPtr node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
@@ -144,12 +160,86 @@ void KeepoutFilter::maskCallback(
 
   // Store filter_mask_
   filter_mask_ = msg;
+  has_updated_data_ = true;
+  x_ = y_ = 0;
+  width_ = msg->info.width;
+  height_ = msg->info.height;
+}
+
+void KeepoutFilter::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
+  double * min_x, double * min_y, double * max_x, double * max_y)
+{
+  if (!enabled_) {
+    return;
+  }
+
+  CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
+
+  // If new keepout zone received
+  if(has_updated_data_) {
+    double wx, wy;
+    layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
+    *min_x = std::min(wx, *min_x);
+    *min_y = std::min(wy, *min_y);
+
+    layered_costmap_->getCostmap()->mapToWorld(x_ + width_, y_ + height_, wx, wy);
+    *max_x = std::max(wx, *max_x);
+    *max_y = std::max(wy, *max_y);
+
+    has_updated_data_ = false;
+    return;
+  }
+
+  // Let's find the pose's cost if we are allowed to override the lethal cost
+  is_pose_lethal_ = false;
+  if (override_lethal_cost_) {
+    geometry_msgs::msg::Pose pose;
+    pose.position.x = robot_x;
+    pose.position.y = robot_y;
+    pose.position.z = 0.0;
+    pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
+    geometry_msgs::msg::Pose mask_pose;
+    if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
+      unsigned int mask_robot_i, mask_robot_j;
+      if (nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
+        mask_robot_i, mask_robot_j))
+      {
+        auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
+        is_pose_lethal_ = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
+        if (is_pose_lethal_) {
+          RCLCPP_WARN_THROTTLE(
+            logger_, *(clock_), 2000,
+            "KeepoutFilter: Pose is in keepout zone, reducing cost override to navigate out.");
+        }
+      }
+    }
+
+    // If in lethal space or just exited lethal space,
+    // we need to update all possible spaces touched during this state
+    if (is_pose_lethal_ || (last_pose_lethal_ && !is_pose_lethal_)) {
+      lethal_state_update_min_x_ = std::min(*min_x, lethal_state_update_min_x_);
+      *min_x = lethal_state_update_min_x_;
+      lethal_state_update_min_y_ = std::min(*min_y, lethal_state_update_min_y_);
+      *min_y = lethal_state_update_min_y_;
+      lethal_state_update_max_x_ = std::max(*max_x, lethal_state_update_max_x_);
+      *max_x = lethal_state_update_max_x_;
+      lethal_state_update_max_y_ = std::max(*max_y, lethal_state_update_max_y_);
+      *max_y = lethal_state_update_max_y_;
+    } else {
+      // If out of lethal space, reset managed lethal state sizes
+      lethal_state_update_min_x_ = std::numeric_limits<double>::max();
+      lethal_state_update_min_y_ = std::numeric_limits<double>::max();
+      lethal_state_update_max_x_ = std::numeric_limits<double>::lowest();
+      lethal_state_update_max_y_ = std::numeric_limits<double>::lowest();
+    }
+  }
 }
 
 void KeepoutFilter::process(
   nav2_costmap_2d::Costmap2D & master_grid,
   int min_i, int min_j, int max_i, int max_j,
-  const geometry_msgs::msg::Pose2D & /*pose*/)
+  const geometry_msgs::msg::Pose & /*pose*/)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -163,8 +253,8 @@ void KeepoutFilter::process(
 
   tf2::Transform tf2_transform;
   tf2_transform.setIdentity();  // initialize by identical transform
-  int mg_min_x, mg_min_y;  // masger_grid indexes of bottom-left window corner
-  int mg_max_x, mg_max_y;  // masger_grid indexes of top-right window corner
+  int mg_min_x, mg_min_y;  // master_grid indexes of bottom-left window corner
+  int mg_max_x, mg_max_y;  // master_grid indexes of top-right window corner
 
   const std::string mask_frame = filter_mask_->header.frame_id;
 
@@ -228,7 +318,7 @@ void KeepoutFilter::process(
     mg_min_y = std::max(min_j, mg_min_y);
 
     // Calculating bounds corresponding to top-right window (2) corner
-    // filter_mask_ -> master_grid intexes conversion
+    // filter_mask_ -> master_grid indexes conversion
     wx = filter_mask_->info.origin.position.x +
       filter_mask_->info.width * filter_mask_->info.resolution + half_cell_size;
     wy = filter_mask_->info.origin.position.y +
@@ -244,10 +334,10 @@ void KeepoutFilter::process(
   }
 
   // unsigned<-signed conversions.
-  unsigned const int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
-  unsigned const int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
-  unsigned const int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
-  unsigned const int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
+  const unsigned int mg_min_x_u = static_cast<unsigned int>(mg_min_x);
+  const unsigned int mg_min_y_u = static_cast<unsigned int>(mg_min_y);
+  const unsigned int mg_max_x_u = static_cast<unsigned int>(mg_max_x);
+  const unsigned int mg_max_y_u = static_cast<unsigned int>(mg_max_y);
 
   unsigned int i, j;  // master_grid iterators
   unsigned int index;  // corresponding index of master_grid
@@ -278,18 +368,25 @@ void KeepoutFilter::process(
         msk_wy = gl_wy;
       }
       // Get mask coordinates corresponding to (i, j) point at filter_mask_
-      if (worldToMask(filter_mask_, msk_wx, msk_wy, mx, my)) {
+      if (nav2_util::worldToMap(filter_mask_, msk_wx, msk_wy, mx, my)) {
         data = getMaskCost(filter_mask_, mx, my);
         // Update if mask_ data is valid and greater than existing master_grid's one
         if (data == NO_INFORMATION) {
           continue;
         }
+
         if (data > old_data || old_data == NO_INFORMATION) {
-          master_array[index] = data;
+          if (override_lethal_cost_ && is_pose_lethal_) {
+            master_array[index] = lethal_override_cost_;
+          } else {
+            master_array[index] = data;
+          }
         }
       }
     }
   }
+
+  last_pose_lethal_ = is_pose_lethal_;
 }
 
 void KeepoutFilter::resetFilter()

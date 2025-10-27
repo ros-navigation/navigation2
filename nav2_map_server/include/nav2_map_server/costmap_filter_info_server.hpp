@@ -18,13 +18,14 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap_filter_info.hpp"
 
 namespace nav2_map_server
 {
 
-class CostmapFilterInfoServer : public nav2_util::LifecycleNode
+class CostmapFilterInfoServer : public nav2::LifecycleNode
 {
 public:
   /**
@@ -44,34 +45,34 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Publishes a CostmapFilterInfo message
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Deactivates publisher
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Resets publisher
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called when in Shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 private:
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
+  nav2::Publisher<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr publisher_;
 
   nav2_msgs::msg::CostmapFilterInfo msg_;
 };  // CostmapFilterInfoServer

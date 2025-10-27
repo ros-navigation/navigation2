@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v16\
+              - "<< parameters.key >>-v40\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v16\
+              - "<< parameters.key >>-v40\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v16\
+            key: "<< parameters.key >>-v40\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -482,7 +482,7 @@ _environments:
 executors:
   release_exec:
     docker:
-      - image: ghcr.io/ros-planning/navigation2:main
+      - image: ghcr.io/ros-navigation/navigation2:main
     resource_class: large
     working_directory: /opt/overlay_ws
     environment:
@@ -519,7 +519,12 @@ jobs:
       - build_source:
           packages_skip_regex: << parameters.packages_skip_regex >>
   system_build: &system_build
-    <<: *release_build
+    <<: *job_build
+    executor: release_exec
+    steps:
+      - restore_build
+      - build_source:
+          packages_skip_regex: << parameters.packages_skip_regex >>
   release_test: &release_test
     <<: *job_test
     executor: release_exec
@@ -531,33 +536,40 @@ jobs:
       - report_coverage
 
 _parameters:
-  release_parameters: &release_parameters
-    packages_skip_regex: "nav2_system_tests"
+  release_build_parameters: &release_build_parameters
+    packages_skip_regex: "'(nav2_system_tests|nav2_smac_planner|nav2_mppi_controller|nav2_route|nav2_rviz_plugins|nav2_rotation_shim_controller|nav2_waypoint_follower|nav2_smoother|opennav_docking|opennav_following|nav2_behaviors|nav2_bringup|navigation2)'"
+  system_build_parameters: &system_build_parameters
+    packages_skip_regex: ""
+  release_test_parameters: &release_test_parameters
+    packages_skip_regex: ""
 
 workflows:
   version: 2
   build_and_test:
     jobs:
       - release_build:
-          <<: *release_parameters
+          <<: *release_build_parameters
       - system_build:
+          <<: *system_build_parameters
           requires:
             - release_build
       - release_test:
+          <<: *release_test_parameters
           requires:
             - system_build
           cache_test: true
   nightly:
     jobs:
       - release_build:
-          <<: *release_parameters
+          <<: *release_build_parameters
       - system_build:
+          <<: *system_build_parameters
           requires:
             - release_build
       - release_test:
           requires:
             - system_build
-          <<: *release_parameters
+          <<: *release_test_parameters
           matrix:
             alias: release_test
             parameters:

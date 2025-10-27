@@ -40,9 +40,8 @@
 #include <string>
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "tf2_ros/transform_listener.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -73,7 +72,7 @@ public:
    * @param  costmap_ros A pointer to the costmap
    */
   virtual void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr &,
+    const nav2::LifecycleNode::WeakPtr &,
     std::string name, std::shared_ptr<tf2_ros::Buffer>,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>) = 0;
 
@@ -88,7 +87,7 @@ public:
   virtual void activate() = 0;
 
   /**
-   * @brief Method to deactive planner and any threads involved in execution.
+   * @brief Method to deactivate planner and any threads involved in execution.
    */
   virtual void deactivate() = 0;
 
@@ -115,6 +114,16 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * goal_checker) = 0;
+
+  /**
+   * @brief Cancel the current control action
+   * @return True if the cancellation was successful. If false is returned, computeVelocityCommands
+   * will be called until cancel returns true.
+   */
+  virtual bool cancel()
+  {
+    return true;
+  }
 
   /**
    * @brief Limits the maximum linear speed of the robot.

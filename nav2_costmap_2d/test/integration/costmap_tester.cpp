@@ -38,7 +38,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_listener.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 
@@ -115,7 +115,7 @@ void CostmapTester::compareCells(
 
   if (cell_cost == nav2_costmap_2d::LETHAL_OBSTACLE) {
     // if the cell is a lethal obstacle,
-    // then we know that all its neighbors should have equal or slighlty less cost
+    // then we know that all its neighbors should have equal or slightly less cost
     unsigned char expected_lowest_cost = 0;
     EXPECT_TRUE(
       neighbor_cost >= expected_lowest_cost ||
@@ -129,7 +129,8 @@ void CostmapTester::compareCells(
       RCLCPP_ERROR(
         rclcpp::get_logger(
           "costmap_tester"),
-        "Cell cost (%d, %d): %d, neighbor cost (%d, %d): %d, expected lowest cost: %d, cell distance: %.2f, furthest valid distance: %.2f", // NOLINT
+        "Cell cost (%d, %d): %d, neighbor cost (%d, %d): %d, expected lowest cost:"
+        " %d, cell distance: %.2f, furthest valid distance: %.2f",
         x, y, cell_cost, nx, ny, neighbor_cost, expected_lowest_cost,
         cell_distance, furthest_valid_distance);
       RCLCPP_ERROR(
@@ -161,7 +162,7 @@ void testCallback()
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = nav2_util::LifecycleNode::make_shared("costmap_tester");
+  auto node = nav2::LifecycleNode::make_shared("costmap_tester");
   testing::InitGoogleTest(&argc, argv);
 
   tf_ = new tf2_ros::Buffer(node->get_clock());

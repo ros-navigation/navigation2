@@ -18,14 +18,16 @@
 #include <cmath>
 #include <functional>
 
-#include "nav2_util/node_utils.hpp"
+#include "tf2/transform_datatypes.hpp"
+
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 Range::Range(
-  const nav2_util::LifecycleNode::WeakPtr & node,
+  const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::string & base_frame_id,
@@ -49,6 +51,7 @@ Range::~Range()
 
 void Range::configure()
 {
+  Source::configure();
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
@@ -58,23 +61,23 @@ void Range::configure()
 
   getParameters(source_topic);
 
-  rclcpp::QoS range_qos = rclcpp::SensorDataQoS();  // set to default
   data_sub_ = node->create_subscription<sensor_msgs::msg::Range>(
-    source_topic, range_qos,
-    std::bind(&Range::dataCallback, this, std::placeholders::_1));
+    source_topic,
+    std::bind(&Range::dataCallback, this, std::placeholders::_1),
+    nav2::qos::SensorDataQoS());
 }
 
-void Range::getData(
+bool Range::getData(
   const rclcpp::Time & curr_time,
-  std::vector<Point> & data) const
+  std::vector<Point> & data)
 {
   // Ignore data from the source if it is not being published yet or
   // not being published for a long time
   if (data_ == nullptr) {
-    return;
+    return false;
   }
   if (!sourceValid(data_->header.stamp, curr_time)) {
-    return;
+    return false;
   }
 
   // Ignore data, if its range is out of scope of range sensor abilities
@@ -83,32 +86,12 @@ void Range::getData(
       logger_,
       "[%s]: Data range %fm is out of {%f..%f} sensor span. Ignoring...",
       source_name_.c_str(), data_->range, data_->min_range, data_->max_range);
-    return;
+    return false;
   }
 
   tf2::Transform tf_transform;
-  if (base_shift_correction_) {
-    // Obtaining the transform to get data from source frame and time where it was received
-    // to the base frame and current time
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, data_->header.stamp,
-        base_frame_id_, curr_time, global_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
-      return;
-    }
-  } else {
-    // Obtaining the transform to get data from source frame to base frame without time shift
-    // considered. Less accurate but much more faster option not dependent on state estimation
-    // frames.
-    if (
-      !nav2_util::getTransform(
-        data_->header.frame_id, base_frame_id_,
-        transform_tolerance_, tf_buffer_, tf_transform))
-    {
-      return;
-    }
+  if (!getTransform(curr_time, data_->header, tf_transform)) {
+    return false;
   }
 
   // Calculate poses and refill data array
@@ -141,6 +124,8 @@ void Range::getData(
 
   // Refill data array
   data.push_back({p_v3_b.x(), p_v3_b.y()});
+
+  return true;
 }
 
 void Range::getParameters(std::string & source_topic)
@@ -152,9 +137,8 @@ void Range::getParameters(std::string & source_topic)
 
   getCommonParameters(source_topic);
 
-  nav2_util::declare_parameter_if_not_declared(
-    node, source_name_ + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 180));
-  obstacles_angle_ = node->get_parameter(source_name_ + ".obstacles_angle").as_double();
+  obstacles_angle_ = node->declare_or_get_parameter(
+    source_name_ + ".obstacles_angle", M_PI / 180);
 }
 
 void Range::dataCallback(sensor_msgs::msg::Range::ConstSharedPtr msg)

@@ -3,9 +3,9 @@
 The ``nav2_velocity_smoother`` is a package containing a lifecycle-component node for smoothing velocities sent by Nav2 to robot controllers.
 The aim of this package is to implement velocity, acceleration, and deadband smoothing from Nav2 to reduce wear-and-tear on robot motors and hardware controllers by smoothing out the accelerations/jerky movements that might be present with some local trajectory planners' control efforts.
 
-It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/). 
+It supports differential drive and omnidirectional robot platforms primarily, but is applicable to ackermann as well with some interpretations of ``Twist``. It was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101/) while at [Samsung Research](https://www.sra.samsung.com/).
 
-See its [Configuration Guide Page](https://navigation.ros.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
+See its [Configuration Guide Page](https://docs.nav2.org/configuration/packages/configuring-velocity-smoother.html) for additional parameter descriptions.
 
 ## Features
 
@@ -25,7 +25,7 @@ This package was created to do the following:
 
 This is a lifecycle-component node, using the lifecycle manager for state management and composition for process management.
 It is designed to take in a command from Nav2's controller server and smooth it for use on robot hardware controllers.
-Thusly, it takes in a command via the `cmd_vel` topic and produces a smoothed output on `smoothed_cmd_vel`.
+Thusly, it takes in a command via the `cmd_vel` topic and produces a smoothed output on `cmd_vel_smoothed`.
 
 The node is designed on a regular timer running at a configurable rate.
 This is in contrast to simply computing a smoothed velocity command in the callback of each `cmd_vel` input from Nav2.
@@ -59,14 +59,15 @@ velocity_smoother:
    	max_decel: [-2.5, 0.0, -3.2]  # Maximum deceleration, ordered [Ax, Ay, Aw]
    	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
    	odom_duration: 0.1  # Period of time (s) to sample odometry information in for velocity estimation
+	enable_stamped_cmd_vel: false # Whether to stamp the velocity. True uses TwistStamped. False uses Twist
 ```
 
 ## Topics
 
 | Topic            | Type                    | Use                           |
 |------------------|-------------------------|-------------------------------|
-| smoothed_cmd_vel | geometry_msgs/Twist     | Publish smoothed velocities   |
-| cmd_vel          | geometry_msgs/Twist     | Subscribe to input velocities |
+| cmd_vel_smoothed | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Publish smoothed velocities   |
+| cmd_vel          | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Subscribe to input velocities |
 
 
 ## Install
@@ -85,3 +86,5 @@ When in doubt, open-loop is a reasonable choice for most users.
 The minimum and maximum velocities for rotation (e.g. ``Vw``) represent left and right turns. While we make it possible to specify these separately, most users would be wise to set these values the same (but signed) for rotation. Additionally, the parameters are signed, so it is important to specify maximum deceleration with negative signs to represent deceleration. Minimum velocities with negatives when moving backward, so backward movement can be restricted by setting this to ``0``.
 
 Deadband velocities are minimum thresholds, below which we set its value to `0`. This can be useful when your robot's breaking torque from stand still is non-trivial so sending very small values will pull high amounts of current.
+
+The `VelocitySmoother` node makes use of a [nav2_util::TwistSubscriber](../nav2_util/README.md#twist-publisher-and-twist-subscriber-for-commanded-velocities).

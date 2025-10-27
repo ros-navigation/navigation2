@@ -26,11 +26,11 @@ RecoveryNode::RecoveryNode(
   number_of_retries_(1),
   retry_count_(0)
 {
-  getInput("number_of_retries", number_of_retries_);
 }
 
 BT::NodeStatus RecoveryNode::tick()
 {
+  getInput("number_of_retries", number_of_retries_);
   const unsigned children_count = children_nodes_.size();
 
   if (children_count != 2) {
@@ -45,12 +45,20 @@ BT::NodeStatus RecoveryNode::tick()
 
     if (current_child_idx_ == 0) {
       switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+          // If first child is skipped, the entire branch is considered skipped
+          halt();
+          return BT::NodeStatus::SKIPPED;
+
         case BT::NodeStatus::SUCCESS:
-          {
-            // reset node and return success when first child returns success
-            halt();
-            return BT::NodeStatus::SUCCESS;
-          }
+          // reset node and return success when first child returns success
+          // also halt the recovery action as the main action is successful, reset its state
+          ControlNode::haltChild(1);
+          halt();
+          return BT::NodeStatus::SUCCESS;
+
+        case BT::NodeStatus::RUNNING:
+          return BT::NodeStatus::RUNNING;
 
         case BT::NodeStatus::FAILURE:
           {
@@ -66,44 +74,41 @@ BT::NodeStatus RecoveryNode::tick()
             }
           }
 
-        case BT::NodeStatus::RUNNING:
-          {
-            return BT::NodeStatus::RUNNING;
-          }
-
         default:
-          {
-            throw BT::LogicError("A child node must never return IDLE");
-          }
+          throw BT::LogicError("A child node must never return IDLE");
       }  // end switch
 
     } else if (current_child_idx_ == 1) {
       switch (child_status) {
+        case BT::NodeStatus::SKIPPED:
+          {
+            // if we skip the recovery (maybe a precondition fails), then we
+            // should assume that no recovery is possible. For this reason,
+            // we should return FAILURE and reset the index.
+            // This does not count as a retry.
+            current_child_idx_ = 0;
+            ControlNode::haltChild(1);
+            return BT::NodeStatus::FAILURE;
+          }
+        case BT::NodeStatus::RUNNING:
+          return child_status;
+
         case BT::NodeStatus::SUCCESS:
           {
             // halt second child, increment recovery count, and tick first child in next iteration
             ControlNode::haltChild(1);
             retry_count_++;
-            current_child_idx_--;
+            current_child_idx_ = 0;
           }
           break;
 
         case BT::NodeStatus::FAILURE:
-          {
-            // reset node and return failure if second child fails
-            halt();
-            return BT::NodeStatus::FAILURE;
-          }
-
-        case BT::NodeStatus::RUNNING:
-          {
-            return BT::NodeStatus::RUNNING;
-          }
+          // reset node and return failure if second child fails
+          halt();
+          return BT::NodeStatus::FAILURE;
 
         default:
-          {
-            throw BT::LogicError("A child node must never return IDLE");
-          }
+          throw BT::LogicError("A child node must never return IDLE");
       }  // end switch
     }
   }  // end while loop
@@ -122,7 +127,7 @@ void RecoveryNode::halt()
 
 }  // namespace nav2_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<nav2_behavior_tree::RecoveryNode>("RecoveryNode");

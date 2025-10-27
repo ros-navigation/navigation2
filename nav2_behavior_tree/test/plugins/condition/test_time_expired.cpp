@@ -32,6 +32,7 @@ class TimeExpiredConditionTestFixture : public nav2_behavior_tree::BehaviorTreeT
 public:
   void SetUp()
   {
+    config_->input_ports["seconds"] = 1.0;
     bt_node_ = std::make_shared<nav2_behavior_tree::TimeExpiredCondition>(
       "time_expired", *config_);
   }

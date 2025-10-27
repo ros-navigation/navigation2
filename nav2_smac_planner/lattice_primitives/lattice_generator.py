@@ -14,16 +14,22 @@
 
 from collections import defaultdict
 from enum import Enum
+from typing import Any, Dict, List, Tuple, TypedDict
 
-from helper import angle_difference, interpolate_yaws
-
+from nav2_smac_planner.lattice_primitives.helper import angle_difference, interpolate_yaws
+from nav2_smac_planner.lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
+                                                             Trajectory, TrajectoryParameters)
+from nav2_smac_planner.lattice_primitives.trajectory_generator import TrajectoryGenerator
 import numpy as np
-
 from rtree import index
 
-from trajectory import Path, Trajectory, TrajectoryParameters
 
-from trajectory_generator import TrajectoryGenerator
+class ConfigDict(TypedDict):
+    grid_resolution: float
+    turning_radius: float
+    stopping_threshold: int
+    num_of_headings: int
+    motion_model: str
 
 
 class LatticeGenerator:
@@ -31,7 +37,7 @@ class LatticeGenerator:
     Handles all the logic for computing the minimal control set.
 
     Computes the minimal control set for a vehicle given its parameters.
-    Includes handling the propogating and searching along wavefronts as
+    Includes handling the propagating and searching along wavefronts as
     well as determining if a trajectory is part of the minimal set based
     on previously added trajectories.
     """
@@ -50,22 +56,21 @@ class LatticeGenerator:
         Y = 2
         BOTH = 3
 
-    def __init__(self, config: dict):
+    def __init__(self, config: ConfigDict):
         """Init the lattice generator from the user supplied config."""
         self.trajectory_generator = TrajectoryGenerator(config)
         self.grid_resolution = config['grid_resolution']
         self.turning_radius = config['turning_radius']
         self.stopping_threshold = config['stopping_threshold']
         self.num_of_headings = config['num_of_headings']
-        self.headings = \
-            self._get_heading_discretization(config['num_of_headings'])
+        self.headings = self._get_heading_discretization(config['num_of_headings'])
 
         self.motion_model = self.MotionModel[config['motion_model'].upper()]
 
         self.DISTANCE_THRESHOLD = 0.5 * self.grid_resolution
         self.ROTATION_THRESHOLD = 0.5 * (2 * np.pi / self.num_of_headings)
 
-    def _get_wave_front_points(self, pos: int) -> np.array:
+    def _get_wave_front_points(self, pos: int) -> FloatNDArray:
         """
         Calculate the end points that lie on the wave front.
 
@@ -102,7 +107,7 @@ class LatticeGenerator:
 
         return np.array(positions)
 
-    def _get_heading_discretization(self, number_of_headings: int) -> list:
+    def _get_heading_discretization(self, number_of_headings: int) -> List[int]:
         """
         Calculate the heading discretization based on the number of headings.
 
@@ -119,7 +124,7 @@ class LatticeGenerator:
             A list of headings in radians
 
         """
-        max_val = int((((number_of_headings + 4) / 4) - 1) / 2)
+        max_val = int(number_of_headings / 8)
 
         outer_edge_x = []
         outer_edge_y = []
@@ -136,7 +141,8 @@ class LatticeGenerator:
 
         return sorted([np.arctan2(j, i) for i, j in zip(outer_edge_x, outer_edge_y)])
 
-    def _point_to_line_distance(self, p1: np.array, p2: np.array, q: np.array) -> float:
+    def _point_to_line_distance(self, p1: FloatNDArray, p2: FloatNDArray,
+                                q: FloatNDArray) -> AnyFloat:
         """
         Return the shortest distance from a point to a line segment.
 
@@ -170,7 +176,7 @@ class LatticeGenerator:
         self, trajectory: Trajectory, prior_end_poses: index.Rtree
     ) -> bool:
         """
-        Determine wheter a trajectory is a minimal trajectory.
+        Determine whether a trajectory is a minimal trajectory.
 
         Uses an RTree for speedup.
 
@@ -246,7 +252,7 @@ class LatticeGenerator:
 
         return self.turning_radius * min(heading_diff)
 
-    def _generate_minimal_spanning_set(self) -> dict:
+    def _generate_minimal_spanning_set(self) -> Dict[float, List[Trajectory]]:
         """
         Generate the minimal spanning set.
 
@@ -260,7 +266,7 @@ class LatticeGenerator:
             a list of trajectories that begin at that angle
 
         """
-        quadrant1_end_poses = defaultdict(list)
+        quadrant1_end_poses: Dict[int, List[Tuple[Any, int]]] = defaultdict(list)
 
         # Since we only compute for quadrant 1 we only need headings between
         # 0 and 90 degrees
@@ -343,7 +349,7 @@ class LatticeGenerator:
         # we can leverage symmetry to create the complete minimal set
         return self._create_complete_minimal_spanning_set(quadrant1_end_poses)
 
-    def _flip_angle(self, angle: float, flip_type: Flip) -> float:
+    def _flip_angle(self, angle: int, flip_type: Flip) -> float:
         """
         Return the the appropriate flip of the angle in self.headings.
 
@@ -375,8 +381,8 @@ class LatticeGenerator:
         return self.headings[int(heading_idx)]
 
     def _create_complete_minimal_spanning_set(
-        self, single_quadrant_minimal_set: dict
-    ) -> dict:
+        self, single_quadrant_minimal_set: Dict[int, List[Tuple[Any, int]]]
+    ) -> Dict[float, List[Trajectory]]:
         """
         Create the full minimal spanning set from a single quadrant set.
 
@@ -395,7 +401,7 @@ class LatticeGenerator:
             in all quadrants
 
         """
-        all_trajectories = defaultdict(list)
+        all_trajectories: Dict[float, List[Trajectory]] = defaultdict(list)
 
         for start_angle in single_quadrant_minimal_set.keys():
 
@@ -430,6 +436,9 @@ class LatticeGenerator:
                         )
                     )
 
+                    if unflipped_trajectory is None or flipped_x_trajectory is None:
+                        raise ValueError('No trajectory was found')
+
                     all_trajectories[
                         unflipped_trajectory.parameters.start_angle
                     ].append(unflipped_trajectory)
@@ -463,6 +472,9 @@ class LatticeGenerator:
                             self.grid_resolution,
                         )
                     )
+
+                    if unflipped_trajectory is None or flipped_y_trajectory is None:
+                        raise ValueError('No trajectory was found')
 
                     all_trajectories[
                         unflipped_trajectory.parameters.start_angle
@@ -518,6 +530,10 @@ class LatticeGenerator:
                         )
                     )
 
+                    if (unflipped_trajectory is None or flipped_y_trajectory is None or
+                       flipped_x_trajectory is None or flipped_xy_trajectory is None):
+                        raise ValueError('No trajectory was found')
+
                     all_trajectories[
                         unflipped_trajectory.parameters.start_angle
                     ].append(unflipped_trajectory)
@@ -533,7 +549,8 @@ class LatticeGenerator:
 
         return all_trajectories
 
-    def _handle_motion_model(self, spanning_set: dict) -> dict:
+    def _handle_motion_model(self, spanning_set: Dict[float, List[Trajectory]]
+                             ) -> Dict[float, List[Trajectory]]:
         """
         Add the appropriate motions for the user supplied motion model.
 
@@ -567,11 +584,11 @@ class LatticeGenerator:
             return omni_spanning_set
 
         else:
-            print('No handling implemented for Motion Model: ' +
-                  f'{self.motion_model}')
+            print('No handling implemented for Motion Model: ' + f'{self.motion_model}')
             raise NotImplementedError
 
-    def _add_in_place_turns(self, spanning_set: dict) -> dict:
+    def _add_in_place_turns(self, spanning_set: Dict[float, List[Trajectory]]
+                            ) -> Dict[float, List[Trajectory]]:
         """
         Add in place turns to the spanning set.
 
@@ -629,7 +646,8 @@ class LatticeGenerator:
 
         return spanning_set
 
-    def _add_horizontal_motions(self, spanning_set: dict) -> dict:
+    def _add_horizontal_motions(self, spanning_set: Dict[float, List[Trajectory]]
+                                ) -> Dict[float, List[Trajectory]]:
         """
         Add horizontal sliding motions to the spanning set.
 
@@ -729,7 +747,7 @@ class LatticeGenerator:
 
         return spanning_set
 
-    def run(self):
+    def run(self) -> Dict[float, List[Trajectory]]:
         """
         Run the lattice generator.
 

@@ -18,7 +18,7 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 #include "utils/test_service.hpp"
 #include "nav2_behavior_tree/plugins/action/clear_costmap_service.hpp"
@@ -36,7 +36,7 @@ class ClearEntireCostmapServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_entire_costmap_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_entire_costmap_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -44,7 +44,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -53,8 +53,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearEntireCostmapService>("ClearEntireCostmap");
   }
@@ -81,13 +84,13 @@ public:
   static std::shared_ptr<ClearEntireCostmapService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr ClearEntireCostmapServiceTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr ClearEntireCostmapServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearEntireCostmapService> ClearEntireCostmapServiceTestFixture::server_ = nullptr;
 BT::NodeConfiguration * ClearEntireCostmapServiceTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> ClearEntireCostmapServiceTestFixture::factory_ = nullptr;
@@ -97,7 +100,7 @@ TEST_F(ClearEntireCostmapServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearEntireCostmap service_name="clear_entire_costmap"/>
         </BehaviorTree>
@@ -122,7 +125,7 @@ class ClearCostmapExceptRegionServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_costmap_except_region_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_costmap_except_region_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -130,7 +133,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -139,8 +142,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapExceptRegionService>(
       "ClearCostmapExceptRegion");
@@ -168,13 +174,13 @@ public:
   static std::shared_ptr<ClearCostmapExceptRegionService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr
+nav2::LifecycleNode::SharedPtr
 ClearCostmapExceptRegionServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearCostmapExceptRegionService>
 ClearCostmapExceptRegionServiceTestFixture::server_ = nullptr;
@@ -189,7 +195,7 @@ TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapExceptRegion service_name="clear_costmap_except_region"/>
         </BehaviorTree>
@@ -214,7 +220,7 @@ class ClearCostmapAroundRobotServiceTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("clear_costmap_around_robot_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_costmap_around_robot_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -222,7 +228,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -231,8 +237,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundRobotService>(
       "ClearCostmapAroundRobot");
@@ -260,13 +269,13 @@ public:
   static std::shared_ptr<ClearCostmapAroundRobotService> server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr
+nav2::LifecycleNode::SharedPtr
 ClearCostmapAroundRobotServiceTestFixture::node_ = nullptr;
 std::shared_ptr<ClearCostmapAroundRobotService>
 ClearCostmapAroundRobotServiceTestFixture::server_ = nullptr;
@@ -281,9 +290,104 @@ TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <ClearCostmapAroundRobot service_name="clear_costmap_around_robot"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+}
+
+class ClearCostmapAroundPoseService : public TestService<nav2_msgs::srv::ClearCostmapAroundPose>
+{
+public:
+  ClearCostmapAroundPoseService()
+  : TestService("clear_costmap_around_pose")
+  {}
+};
+
+class ClearCostmapAroundPoseServiceTestFixture : public ::testing::Test
+{
+public:
+  static void SetUpTestCase()
+  {
+    node_ = std::make_shared<nav2::LifecycleNode>("clear_costmap_around_pose_test_fixture");
+    factory_ = std::make_shared<BT::BehaviorTreeFactory>();
+
+    config_ = new BT::NodeConfiguration();
+
+    // Create the blackboard that will be shared by all of the nodes in the tree
+    config_->blackboard = BT::Blackboard::create();
+    // Put items on the blackboard
+    config_->blackboard->set(
+      "node",
+      node_);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "server_timeout",
+      std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "bt_loop_duration",
+      std::chrono::milliseconds(10));
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
+
+    factory_->registerNodeType<nav2_behavior_tree::ClearCostmapAroundPoseService>(
+      "ClearCostmapAroundPose");
+  }
+
+  static void TearDownTestCase()
+  {
+    delete config_;
+    config_ = nullptr;
+    node_.reset();
+    server_.reset();
+    factory_.reset();
+  }
+
+  void SetUp() override
+  {
+    config_->blackboard->set("number_recoveries", 0);
+  }
+
+  void TearDown() override
+  {
+    tree_.reset();
+  }
+
+  static std::shared_ptr<ClearCostmapAroundPoseService> server_;
+
+protected:
+  static nav2::LifecycleNode::SharedPtr node_;
+  static BT::NodeConfiguration * config_;
+  static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
+  static std::shared_ptr<BT::Tree> tree_;
+};
+
+nav2::LifecycleNode::SharedPtr
+ClearCostmapAroundPoseServiceTestFixture::node_ = nullptr;
+std::shared_ptr<ClearCostmapAroundPoseService>
+ClearCostmapAroundPoseServiceTestFixture::server_ = nullptr;
+BT::NodeConfiguration
+* ClearCostmapAroundPoseServiceTestFixture::config_ = nullptr;
+std::shared_ptr<BT::BehaviorTreeFactory>
+ClearCostmapAroundPoseServiceTestFixture::factory_ = nullptr;
+std::shared_ptr<BT::Tree>
+ClearCostmapAroundPoseServiceTestFixture::tree_ = nullptr;
+
+TEST_F(ClearCostmapAroundPoseServiceTestFixture, test_tick)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearCostmapAroundPose service_name="clear_costmap_around_pose"/>
         </BehaviorTree>
       </root>)";
 
@@ -318,6 +422,12 @@ int main(int argc, char ** argv)
       rclcpp::spin(ClearCostmapAroundRobotServiceTestFixture::server_);
     });
 
+  ClearCostmapAroundPoseServiceTestFixture::server_ =
+    std::make_shared<ClearCostmapAroundPoseService>();
+  std::thread server_thread_around_pose([]() {
+      rclcpp::spin(ClearCostmapAroundPoseServiceTestFixture::server_);
+    });
+
   int all_successful = RUN_ALL_TESTS();
 
   // shutdown ROS
@@ -325,6 +435,7 @@ int main(int argc, char ** argv)
   server_thread.join();
   server_thread_except_region.join();
   server_thread_around_robot.join();
+  server_thread_around_pose.join();
 
   return all_successful;
 }

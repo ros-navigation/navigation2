@@ -18,9 +18,9 @@
 #include <set>
 #include <string>
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
-#include "utils/test_action_server.hpp"
+#include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/wait_action.hpp"
 
 class WaitActionServer : public TestActionServer<nav2_msgs::action::Wait>
@@ -42,7 +42,7 @@ class WaitActionTestFixture : public ::testing::Test
 public:
   static void SetUpTestCase()
   {
-    node_ = std::make_shared<rclcpp::Node>("wait_action_test_fixture");
+    node_ = std::make_shared<nav2::LifecycleNode>("wait_action_test_fixture");
     factory_ = std::make_shared<BT::BehaviorTreeFactory>();
 
     config_ = new BT::NodeConfiguration();
@@ -50,7 +50,7 @@ public:
     // Create the blackboard that will be shared by all of the nodes in the tree
     config_->blackboard = BT::Blackboard::create();
     // Put items on the blackboard
-    config_->blackboard->set<rclcpp::Node::SharedPtr>(
+    config_->blackboard->set(
       "node",
       node_);
     config_->blackboard->set<std::chrono::milliseconds>(
@@ -59,8 +59,11 @@ public:
     config_->blackboard->set<std::chrono::milliseconds>(
       "bt_loop_duration",
       std::chrono::milliseconds(10));
-    config_->blackboard->set<bool>("initial_pose_received", false);
-    config_->blackboard->set<int>("number_recoveries", 0);
+    config_->blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
+    config_->blackboard->set("initial_pose_received", false);
+    config_->blackboard->set("number_recoveries", 0);
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -94,13 +97,13 @@ public:
   static std::shared_ptr<WaitActionServer> action_server_;
 
 protected:
-  static rclcpp::Node::SharedPtr node_;
+  static nav2::LifecycleNode::SharedPtr node_;
   static BT::NodeConfiguration * config_;
   static std::shared_ptr<BT::BehaviorTreeFactory> factory_;
   static std::shared_ptr<BT::Tree> tree_;
 };
 
-rclcpp::Node::SharedPtr WaitActionTestFixture::node_ = nullptr;
+nav2::LifecycleNode::SharedPtr WaitActionTestFixture::node_ = nullptr;
 std::shared_ptr<WaitActionServer> WaitActionTestFixture::action_server_ = nullptr;
 BT::NodeConfiguration * WaitActionTestFixture::config_ = nullptr;
 std::shared_ptr<BT::BehaviorTreeFactory> WaitActionTestFixture::factory_ = nullptr;
@@ -110,34 +113,34 @@ TEST_F(WaitActionTestFixture, test_ports)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
             <Wait />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 1);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 1.0);
 
   xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="10" />
+            <Wait wait_duration="10.0" />
         </BehaviorTree>
       </root>)";
 
   tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
-  EXPECT_EQ(tree_->rootNode()->getInput<int>("wait_duration"), 10);
+  EXPECT_EQ(tree_->rootNode()->getInput<double>("wait_duration"), 10.0);
 }
 
 TEST_F(WaitActionTestFixture, test_tick)
 {
   std::string xml_txt =
     R"(
-      <root main_tree_to_execute = "MainTree" >
+      <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <Wait wait_duration="-5"/>
+            <Wait wait_duration="-5.0"/>
         </BehaviorTree>
       </root>)";
 

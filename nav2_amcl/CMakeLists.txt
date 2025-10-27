@@ -1,91 +1,145 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(nav2_amcl)
 
 find_package(ament_cmake REQUIRED)
-find_package(nav2_common REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(message_filters REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nav2_common REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(pluginlib REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
-
-include_directories(
-  include
-)
 
 include(CheckSymbolExists)
 check_symbol_exists(drand48 stdlib.h HAVE_DRAND48)
 
-add_subdirectory(src/pf)
-add_subdirectory(src/map)
-add_subdirectory(src/motion_model)
-add_subdirectory(src/sensors)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wno-gnu-folding-constant)
+endif()
+
+add_library(pf_lib SHARED
+  src/pf/pf.c
+  src/pf/pf_kdtree.c
+  src/pf/pf_pdf.c
+  src/pf/pf_vector.c
+  src/pf/eig3.c
+  src/pf/pf_draw.c
+)
+target_include_directories(pf_lib
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+if(HAVE_DRAND48)
+  target_compile_definitions(pf_lib PRIVATE "HAVE_DRAND48")
+endif()
+
+add_library(map_lib SHARED
+  src/map/map.c
+  src/map/map_range.c
+  src/map/map_draw.c
+  src/map/map_cspace.cpp
+)
+target_include_directories(map_lib
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>")
+
+add_library(motions_lib SHARED
+  src/motion_model/omni_motion_model.cpp
+  src/motion_model/differential_motion_model.cpp
+)
+target_include_directories(motions_lib
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(motions_lib PUBLIC
+  pf_lib
+  pluginlib::pluginlib
+  nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
+)
+
+add_library(sensors_lib SHARED
+  src/sensors/laser/laser.cpp
+  src/sensors/laser/beam_model.cpp
+  src/sensors/laser/likelihood_field_model.cpp
+  src/sensors/laser/likelihood_field_model_prob.cpp
+)
+target_include_directories(sensors_lib
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(sensors_lib PUBLIC
+  pf_lib
+  map_lib
+  nav2_ros_common::nav2_ros_common
+)
 
 set(executable_name amcl)
-
-add_executable(${executable_name}
-  src/main.cpp
-)
 
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
   src/amcl_node.cpp
 )
-
-target_include_directories(${library_name} PRIVATE src/include)
-
 if(HAVE_DRAND48)
   target_compile_definitions(${library_name} PRIVATE "HAVE_DRAND48")
 endif()
-
-set(dependencies
-  rclcpp
-  rclcpp_lifecycle
-  rclcpp_components
-  message_filters
-  tf2_geometry_msgs
-  geometry_msgs
-  nav_msgs
-  sensor_msgs
-  std_srvs
-  tf2_ros
-  tf2
-  nav2_util
-  nav2_msgs
-  pluginlib
+target_include_directories(${library_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  message_filters::message_filters
+  nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
+  ${sensor_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  pluginlib::pluginlib
+  sensors_lib
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${nav_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  tf2::tf2
+  ${nav2_msgs_TARGETS}
+)
+target_link_libraries(${library_name} PRIVATE
+  rclcpp_components::component
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-ament_target_dependencies(${executable_name}
-  ${dependencies}
+add_executable(${executable_name}
+  src/main.cpp
 )
-
-target_link_libraries(${executable_name}
+target_include_directories(${executable_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${executable_name} PRIVATE
   ${library_name}
-)
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
-)
-
-target_link_libraries(${library_name}
-  map_lib pf_lib sensors_lib
+  nav2_ros_common::nav2_ros_common
 )
 
 rclcpp_components_register_nodes(${library_name} "nav2_amcl::AmclNode")
 
-install(TARGETS ${library_name}
+install(TARGETS ${library_name} pf_lib map_lib motions_lib sensors_lib
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -96,7 +150,7 @@ install(TARGETS ${executable_name}
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
@@ -104,11 +158,33 @@ if(BUILD_TESTING)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
+
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_find_gtest()
+
+  add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include)
+ament_export_include_directories("include/${PROJECT_NAME}")
 ament_export_libraries(${library_name} pf_lib sensors_lib motions_lib map_lib)
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(
+  geometry_msgs
+  message_filters
+  nav_msgs
+  nav2_msgs
+  nav2_util
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  std_srvs
+  tf2
+  tf2_ros
+  nav2_ros_common
+)
+ament_export_targets(${library_name})
 pluginlib_export_plugin_description_file(nav2_amcl plugins.xml)
 ament_package()

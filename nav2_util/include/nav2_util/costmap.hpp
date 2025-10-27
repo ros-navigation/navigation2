@@ -18,7 +18,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -55,7 +55,7 @@ public:
    * @param unknown_cost_value Internal costmap cell value for unknown space
    */
   Costmap(
-    rclcpp::Node * node, bool trinary_costmap = true, bool track_unknown_space = true,
+    nav2::LifecycleNode * node, bool trinary_costmap = true, bool track_unknown_space = true,
     int lethal_threshold = 100, int unknown_cost_value = -1);
   Costmap() = delete;
   ~Costmap();
@@ -118,7 +118,7 @@ private:
   uint8_t interpret_value(const int8_t value) const;
 
   // Costmap isn't itself a node
-  rclcpp::Node * node_;
+  nav2::LifecycleNode * node_;
 
   // TODO(orduno): For now, only holding costs from static map
   nav2_msgs::msg::CostmapMetaData costmap_properties_;

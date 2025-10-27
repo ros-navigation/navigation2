@@ -19,8 +19,8 @@
 #include <string>
 #include <chrono>
 
-#include "behaviortree_cpp_v3/action_node.h"
-#include "nav2_util/node_utils.hpp"
+#include "behaviortree_cpp/action_node.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
@@ -49,16 +49,16 @@ public:
     const BT::NodeConfiguration & conf)
   : BT::ActionNodeBase(xml_tag_name, conf), action_name_(action_name)
   {
-    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+    node_ = config().blackboard->template get<nav2::LifecycleNode::SharedPtr>("node");
     callback_group_ = node_->create_callback_group(
       rclcpp::CallbackGroupType::MutuallyExclusive,
       false);
     callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
     // Get the required items from the blackboard
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+    getInputOrBlackboard("server_timeout", server_timeout_);
+    wait_for_service_timeout_ =
+      config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
     std::string remapped_action_name;
     if (getInput("server_name", remapped_action_name)) {
@@ -85,14 +85,14 @@ public:
   void createActionClient(const std::string & action_name)
   {
     // Now that we have the ROS node to use, create the action client for this BT action
-    action_client_ = rclcpp_action::create_client<ActionT>(node_, action_name, callback_group_);
+    action_client_ = node_->create_action_client<ActionT>(action_name, callback_group_);
 
     // Make sure the server is actually there before continuing
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for \"%s\" action server", action_name.c_str());
-    if (!action_client_->wait_for_action_server(1s)) {
+    if (!action_client_->wait_for_action_server(wait_for_service_timeout_)) {
       RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" action server not available after waiting for 1 s",
-        action_name.c_str());
+        node_->get_logger(), "\"%s\" action server not available after waiting for %.2fs",
+        action_name.c_str(), wait_for_service_timeout_.count() / 1000.0);
       throw std::runtime_error(
               std::string("Action server ") + action_name +
               std::string(" not available"));
@@ -116,7 +116,7 @@ public:
     return basic;
   }
 
-  void halt()
+  void halt() override
   {
   }
 
@@ -158,16 +158,18 @@ public:
 
 protected:
   std::string action_name_;
-  typename std::shared_ptr<rclcpp_action::Client<ActionT>> action_client_;
+  typename nav2::ActionClient<ActionT>::SharedPtr action_client_;
 
   // The node that will be used for any ROS operations
-  rclcpp::Node::SharedPtr node_;
+  nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
 
   // The timeout value while waiting for response from a server when a
   // new action goal is canceled
   std::chrono::milliseconds server_timeout_;
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
 };
 
 }  // namespace nav2_behavior_tree

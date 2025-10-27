@@ -25,11 +25,7 @@
  * CVS: $Id: map.c 1713 2003-08-23 04:03:43Z inspectorg $
 **************************************************************************/
 
-#include <assert.h>
-#include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "nav2_amcl/map/map.hpp"
 
@@ -52,6 +48,9 @@ map_t * map_alloc(void)
 
   // Allocate storage for main map
   map->cells = (map_cell_t *) NULL;
+
+  // Initialize max_occ_dist to 0.0
+  map->max_occ_dist = 0.0;
 
   return map;
 }

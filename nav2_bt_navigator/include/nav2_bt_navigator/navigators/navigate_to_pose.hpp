@@ -53,7 +53,7 @@ public:
    * @param odom_smoother Object to get current smoothed robot's speed
    */
   bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
+    nav2::LifecycleNode::WeakPtr node,
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
 
   /**
@@ -72,14 +72,14 @@ public:
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() {return std::string("navigate_to_pose");}
+  std::string getName() override {return std::string("navigate_to_pose");}
 
   /**
    * @brief Get navigator's default BT
    * @param node WeakPtr to the lifecycle node
    * @return string Filepath to default XML
    */
-  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+  std::string getDefaultBTFilepath(nav2::LifecycleNode::WeakPtr node) override;
 
 protected:
   /**
@@ -116,13 +116,14 @@ protected:
   /**
    * @brief Goal pose initialization on the blackboard
    * @param goal Action template's goal message to process
+   * @return bool if goal was initialized successfully to be processed
    */
-  void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
+  bool initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+  nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+  nav2::ActionClient<ActionT>::SharedPtr self_client_;
 
   std::string goal_blackboard_id_;
   std::string path_blackboard_id_;

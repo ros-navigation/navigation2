@@ -28,10 +28,13 @@
 #include <string>
 
 #include "nav2_rviz_plugins/goal_common.hpp"
+#include "nav2_rviz_plugins/utils.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "rviz_common/display_context.hpp"
+#include "rviz_common/load_resource.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 using namespace std::chrono_literals;
 
@@ -75,22 +78,22 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   const char * nft_goal_msg = "Start navigating through poses";
   const char * cancel_waypoint_msg = "Cancel waypoint / viapoint accumulation mode";
 
-  const QString navigation_active("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_active("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td><font color=green>active</color></td></tr></table>");
-  const QString navigation_inactive("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_inactive("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td>inactive</td></tr></table>");
-  const QString navigation_unknown("<table><tr><td width=100><b>Navigation:</b></td>"
+  const QString navigation_unknown("<table><tr><td width=150><b>Navigation:</b></td>"
     "<td>unknown</td></tr></table>");
-  const QString localization_active("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_active("<table><tr><td width=150><b>Localization:</b></td>"
     "<td><font color=green>active</color></td></tr></table>");
-  const QString localization_inactive("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_inactive("<table><tr><td width=150><b>Localization:</b></td>"
     "<td>inactive</td></tr></table>");
-  const QString localization_unknown("<table><tr><td width=100><b>Localization:</b></td>"
+  const QString localization_unknown("<table><tr><td width=150><b>Localization:</b></td>"
     "<td>unknown</td></tr></table>");
 
   navigation_status_indicator_->setText(navigation_unknown);
   localization_status_indicator_->setText(localization_unknown);
-  navigation_goal_status_indicator_->setText(getGoalStatusLabel());
+  navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
   number_of_loops_->setText("Num of loops");
   navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
   navigation_status_indicator_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -317,9 +320,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(pause_resume_button_, "toolTip", resume_msg);
   paused_->assignProperty(pause_resume_button_, "enabled", true);
 
-  paused_->assignProperty(navigation_mode_button_, "text", "Start navigation");
-  paused_->assignProperty(navigation_mode_button_, "toolTip", resume_msg);
-  paused_->assignProperty(navigation_mode_button_, "enabled", true);
+  paused_->assignProperty(navigation_mode_button_, "text", "");
+  paused_->assignProperty(navigation_mode_button_, "enabled", false);
 
   paused_->assignProperty(save_waypoints_button_, "text", "Save WPs");
   paused_->assignProperty(save_waypoints_button_, "enabled", false);
@@ -423,7 +425,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   // ROSAction Transitions: So when actions are updated remotely (failing, succeeding, etc)
   // the state of the application will also update. This means that if in the processing
-  // states and then goes inactive, move back to the idle state. Vise versa as well.
+  // states and then goes inactive, move back to the idle state. Vice versa as well.
   ROSActionQTransition * idleTransition = new ROSActionQTransition(QActionState::INACTIVE);
   idleTransition->setTargetState(running_);
   idle_->addTransition(idleTransition);
@@ -453,6 +455,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   auto options = rclcpp::NodeOptions().arguments(
     {"--ros-args", "--remap", "__node:=rviz_navigation_dialog_action_client", "--"});
   client_node_ = std::make_shared<rclcpp::Node>("_", options);
+  executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+  executor_->add_node(client_node_);
 
   client_nav_ = std::make_shared<nav2_lifecycle_manager::LifecycleManagerClient>(
     "lifecycle_manager_navigation", client_node_);
@@ -481,7 +485,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     initial_thread_, &InitialThread::navigationInactive,
     [this, navigation_inactive] {
       navigation_status_indicator_->setText(navigation_inactive);
-      navigation_goal_status_indicator_->setText(getGoalStatusLabel());
+      navigation_goal_status_indicator_->setText(nav2_rviz_plugins::getGoalStatusLabel());
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
     });
   QObject::connect(
@@ -522,9 +526,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QVBoxLayout * group_box_layout = new QVBoxLayout;
 
   QGroupBox * groupBox = new QGroupBox(tr("Tools for WP-Following"));
-  image_ = new QImage("src/navigation2/doc/nav2_logo_small.png");
   imgDisplayLabel_ = new QLabel("");
-  imgDisplayLabel_->setPixmap(QPixmap::fromImage(*image_));
+  imgDisplayLabel_->setPixmap(
+    rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/classes/nav2_logo_small.png"));
 
   status_layout->addWidget(navigation_status_indicator_);
   status_layout->addWidget(localization_status_indicator_);
@@ -672,7 +676,7 @@ void Nav2Panel::loophandler()
 
 void Nav2Panel::handleGoalLoader()
 {
-  acummulated_poses_.clear();
+  acummulated_poses_ = nav_msgs::msg::Goals();
 
   std::cout << "Loading Waypoints!" << std::endl;
 
@@ -696,7 +700,7 @@ void Nav2Panel::handleGoalLoader()
     auto waypoint = waypoint_iter[it->first.as<std::string>()];
     auto pose = waypoint["pose"].as<std::vector<double>>();
     auto orientation = waypoint["orientation"].as<std::vector<double>>();
-    acummulated_poses_.push_back(convert_to_msg(pose, orientation));
+    acummulated_poses_.goals.push_back(convert_to_msg(pose, orientation));
   }
 
   // Publishing Waypoint Navigation marker after loading wp's
@@ -728,7 +732,7 @@ void Nav2Panel::handleGoalSaver()
 {
 // Check if the waypoints are accumulated
 
-  if (acummulated_poses_.empty()) {
+  if (acummulated_poses_.goals.empty()) {
     std::cout << "No accumulated Points to Save!" << std::endl;
     return;
   } else {
@@ -741,18 +745,19 @@ void Nav2Panel::handleGoalSaver()
   out << YAML::BeginMap;
 
   // Save WPs to data structure
-  for (unsigned int i = 0; i < acummulated_poses_.size(); ++i) {
+  for (unsigned int i = 0; i < acummulated_poses_.goals.size(); ++i) {
     out << YAML::Key << "waypoint" + std::to_string(i);
     out << YAML::BeginMap;
     out << YAML::Key << "pose";
     std::vector<double> pose =
-    {acummulated_poses_[i].pose.position.x, acummulated_poses_[i].pose.position.y,
-      acummulated_poses_[i].pose.position.z};
+    {acummulated_poses_.goals[i].pose.position.x, acummulated_poses_.goals[i].pose.position.y,
+      acummulated_poses_.goals[i].pose.position.z};
     out << YAML::Value << pose;
     out << YAML::Key << "orientation";
     std::vector<double> orientation =
-    {acummulated_poses_[i].pose.orientation.w, acummulated_poses_[i].pose.orientation.x,
-      acummulated_poses_[i].pose.orientation.y, acummulated_poses_[i].pose.orientation.z};
+    {acummulated_poses_.goals[i].pose.orientation.w, acummulated_poses_.goals[i].pose.orientation.x,
+      acummulated_poses_.goals[i].pose.orientation.y,
+      acummulated_poses_.goals[i].pose.orientation.z};
     out << YAML::Value << orientation;
     out << YAML::EndMap;
   }
@@ -775,7 +780,15 @@ void Nav2Panel::handleGoalSaver()
 void
 Nav2Panel::onInitialize()
 {
-  auto node = getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+  node_ptr_ = getDisplayContext()->getRosNodeAbstraction().lock();
+  if (node_ptr_ == nullptr) {
+    // The node no longer exists, so just don't initialize
+    RCLCPP_ERROR(
+      rclcpp::get_logger("nav2_panel"),
+      "Underlying ROS node no longer exists, initialization failed");
+    return;
+  }
+  rclcpp::Node::SharedPtr node = node_ptr_->get_raw_node();
 
   // declaring parameter to get the base frame
   node->declare_parameter("base_frame", rclcpp::ParameterValue(std::string("base_footprint")));
@@ -821,14 +834,14 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
-        getGoalStatusLabel(msg->status_list.back().status));
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       // Clearing all the stored values once reaching the final goal
       if (
         loop_count_ == stoi(nr_of_loops_->displayText().toStdString()) &&
-        goal_index_ == static_cast<int>(store_poses_.size()) - 1 &&
+        goal_index_ == static_cast<int>(store_poses_.goals.size()) - 1 &&
         msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED)
       {
-        store_poses_.clear();
+        store_poses_ = nav_msgs::msg::Goals();
         waypoint_status_indicator_->clear();
         loop_no_ = "0";
         loop_count_ = 0;
@@ -840,7 +853,7 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
       navigation_goal_status_indicator_->setText(
-        getGoalStatusLabel(msg->status_list.back().status));
+        nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
         navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
       }
@@ -857,12 +870,12 @@ Nav2Panel::startThread()
 void
 Nav2Panel::onPause()
 {
-  QFuture<void> futureNav =
+  QFuture<bool> futureNav =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<void> futureLoc =
+  QFuture<bool> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::pause,
@@ -872,12 +885,12 @@ Nav2Panel::onPause()
 void
 Nav2Panel::onResume()
 {
-  QFuture<void> futureNav =
+  QFuture<bool> futureNav =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<void> futureLoc =
+  QFuture<bool> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::resume,
@@ -887,12 +900,12 @@ Nav2Panel::onResume()
 void
 Nav2Panel::onStartup()
 {
-  QFuture<void> futureNav =
+  QFuture<bool> futureNav =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<void> futureLoc =
+  QFuture<bool> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
@@ -902,12 +915,12 @@ Nav2Panel::onStartup()
 void
 Nav2Panel::onShutdown()
 {
-  QFuture<void> futureNav =
+  QFuture<bool> futureNav =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
       client_nav_.get(), std::placeholders::_1), server_timeout_);
-  QFuture<void> futureLoc =
+  QFuture<bool> futureLoc =
     QtConcurrent::run(
     std::bind(
       &nav2_lifecycle_manager::LifecycleManagerClient::reset,
@@ -924,8 +937,8 @@ Nav2Panel::onCancel()
       &Nav2Panel::onCancelButtonPressed,
       this));
   waypoint_status_indicator_->clear();
-  store_poses_.clear();
-  acummulated_poses_.clear();
+  store_poses_ = nav_msgs::msg::Goals();
+  acummulated_poses_ = nav_msgs::msg::Goals();
 }
 
 void Nav2Panel::onResumedWp()
@@ -955,12 +968,12 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(theta);
 
-  if (store_poses_.empty()) {
+  if (store_poses_.goals.empty()) {
     if (state_machine_.configuration().contains(accumulating_)) {
       waypoint_status_indicator_->clear();
-      acummulated_poses_.push_back(pose);
+      acummulated_poses_.goals.push_back(pose);
     } else {
-      acummulated_poses_.clear();
+      acummulated_poses_ = nav_msgs::msg::Goals();
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
@@ -978,7 +991,7 @@ Nav2Panel::onCancelButtonPressed()
   if (navigation_goal_handle_) {
     auto future_cancel = navigation_action_client_->async_cancel_goal(navigation_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel goal");
@@ -991,7 +1004,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel =
       waypoint_follower_action_client_->async_cancel_goal(waypoint_follower_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel waypoint follower");
@@ -1004,7 +1017,7 @@ Nav2Panel::onCancelButtonPressed()
     auto future_cancel =
       nav_through_poses_action_client_->async_cancel_goal(nav_through_poses_goal_handle_);
 
-    if (rclcpp::spin_until_future_complete(client_node_, future_cancel, server_timeout_) !=
+    if (executor_->spin_until_future_complete(future_cancel, server_timeout_) !=
       rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR(client_node_->get_logger(), "Failed to cancel nav through pose action");
@@ -1019,7 +1032,7 @@ Nav2Panel::onCancelButtonPressed()
 void
 Nav2Panel::onAccumulatedWp()
 {
-  if (acummulated_poses_.empty()) {
+  if (acummulated_poses_.goals.empty()) {
     state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
     waypoint_status_indicator_->setText(
       "<b> Note: </b> Uh oh! Someone forgot to select the waypoints");
@@ -1041,7 +1054,7 @@ Nav2Panel::onAccumulatedWp()
 
   /** Making sure that the pose array does not get updated
    *  between the process**/
-  if (store_poses_.empty()) {
+  if (store_poses_.goals.empty()) {
     std::cout << "Start waypoint" << std::endl;
 
     // Setting the final loop value on the text box for sanity
@@ -1054,12 +1067,12 @@ Nav2Panel::onAccumulatedWp()
     if (store_initial_pose_) {
       try {
         init_transform = tf2_buffer_->lookupTransform(
-          acummulated_poses_[0].header.frame_id, base_frame_,
+          acummulated_poses_.goals[0].header.frame_id, base_frame_,
           tf2::TimePointZero);
       } catch (const tf2::TransformException & ex) {
         RCLCPP_INFO(
           client_node_->get_logger(), "Could not transform %s to %s: %s",
-          acummulated_poses_[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
+          acummulated_poses_.goals[0].header.frame_id.c_str(), base_frame_.c_str(), ex.what());
         return;
       }
 
@@ -1075,24 +1088,24 @@ Nav2Panel::onAccumulatedWp()
       initial_pose.pose.orientation.w = init_transform.transform.rotation.w;
 
       // inserting the acummulated pose
-      acummulated_poses_.insert(acummulated_poses_.begin(), initial_pose);
+      acummulated_poses_.goals.insert(acummulated_poses_.goals.begin(), initial_pose);
       updateWpNavigationMarkers();
       initial_pose_stored_ = true;
       if (loop_count_ == 0) {
         goal_index_ = 1;
       }
     } else if (!store_initial_pose_ && initial_pose_stored_) {
-      acummulated_poses_.erase(
-        acummulated_poses_.begin(),
-        acummulated_poses_.begin());
+      acummulated_poses_.goals.erase(
+        acummulated_poses_.goals.begin(),
+        acummulated_poses_.goals.begin());
     }
   } else {
     std::cout << "Resuming waypoint" << std::endl;
   }
 
-  startWaypointFollowing(acummulated_poses_);
+  startWaypointFollowing(acummulated_poses_.goals);
   store_poses_ = acummulated_poses_;
-  acummulated_poses_.clear();
+  acummulated_poses_ = nav_msgs::msg::Goals();
 }
 
 void
@@ -1105,8 +1118,8 @@ Nav2Panel::onAccumulatedNTP()
 void
 Nav2Panel::onAccumulating()
 {
-  acummulated_poses_.clear();
-  store_poses_.clear();
+  acummulated_poses_ = nav_msgs::msg::Goals();
+  store_poses_ = nav_msgs::msg::Goals();
   loop_count_ = 0;
   loop_no_ = "0";
   initial_pose_stored_ = false;
@@ -1126,7 +1139,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = waypoint_follower_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1147,7 +1160,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = nav_through_poses_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1168,7 +1181,7 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         return;
       }
 
-      rclcpp::spin_some(client_node_);
+      executor_->spin_some();
       auto status = navigation_goal_handle_->get_status();
 
       // Check if the goal is still executing
@@ -1212,7 +1225,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::FollowWaypoints>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       waypoint_follower_goal_handle_.reset();
     };
@@ -1225,7 +1238,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 
   auto future_goal_handle =
     waypoint_follower_action_client_->async_send_goal(waypoint_follower_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -1243,7 +1256,7 @@ Nav2Panel::startWaypointFollowing(std::vector<geometry_msgs::msg::PoseStamped> p
 }
 
 void
-Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> poses)
+Nav2Panel::startNavThroughPoses(nav_msgs::msg::Goals poses)
 {
   auto is_action_server_ready =
     nav_through_poses_action_client_->wait_for_action_server(std::chrono::seconds(5));
@@ -1261,8 +1274,8 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
-    nav_through_poses_goal_.poses.size());
-  for (auto waypoint : nav_through_poses_goal_.poses) {
+    nav_through_poses_goal_.poses.goals.size());
+  for (auto waypoint : nav_through_poses_goal_.poses.goals) {
     RCLCPP_DEBUG(
       client_node_->get_logger(),
       "\t(%lf, %lf)", waypoint.pose.position.x, waypoint.pose.position.y);
@@ -1270,14 +1283,14 @@ Nav2Panel::startNavThroughPoses(std::vector<geometry_msgs::msg::PoseStamped> pos
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       nav_through_poses_goal_handle_.reset();
     };
 
   auto future_goal_handle =
     nav_through_poses_action_client_->async_send_goal(nav_through_poses_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -1316,14 +1329,14 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
-    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+    nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
   send_goal_options.result_callback = [this](auto) {
       navigation_goal_handle_.reset();
     };
 
   auto future_goal_handle =
     navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
-  if (rclcpp::spin_until_future_complete(client_node_, future_goal_handle, server_timeout_) !=
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
@@ -1373,14 +1386,14 @@ Nav2Panel::updateWpNavigationMarkers()
 
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
-  for (size_t i = 0; i < acummulated_poses_.size(); i++) {
+  for (size_t i = 0; i < acummulated_poses_.goals.size(); i++) {
     // Draw a green arrow at the waypoint pose
     visualization_msgs::msg::Marker arrow_marker;
-    arrow_marker.header = acummulated_poses_[i].header;
+    arrow_marker.header = acummulated_poses_.goals[i].header;
     arrow_marker.id = getUniqueId();
     arrow_marker.type = visualization_msgs::msg::Marker::ARROW;
     arrow_marker.action = visualization_msgs::msg::Marker::ADD;
-    arrow_marker.pose = acummulated_poses_[i].pose;
+    arrow_marker.pose = acummulated_poses_.goals[i].pose;
     arrow_marker.scale.x = 0.3;
     arrow_marker.scale.y = 0.05;
     arrow_marker.scale.z = 0.02;
@@ -1394,11 +1407,11 @@ Nav2Panel::updateWpNavigationMarkers()
 
     // Draw a red circle at the waypoint pose
     visualization_msgs::msg::Marker circle_marker;
-    circle_marker.header = acummulated_poses_[i].header;
+    circle_marker.header = acummulated_poses_.goals[i].header;
     circle_marker.id = getUniqueId();
     circle_marker.type = visualization_msgs::msg::Marker::SPHERE;
     circle_marker.action = visualization_msgs::msg::Marker::ADD;
-    circle_marker.pose = acummulated_poses_[i].pose;
+    circle_marker.pose = acummulated_poses_.goals[i].pose;
     circle_marker.scale.x = 0.05;
     circle_marker.scale.y = 0.05;
     circle_marker.scale.z = 0.05;
@@ -1412,11 +1425,11 @@ Nav2Panel::updateWpNavigationMarkers()
 
     // Draw the waypoint number
     visualization_msgs::msg::Marker marker_text;
-    marker_text.header = acummulated_poses_[i].header;
+    marker_text.header = acummulated_poses_.goals[i].header;
     marker_text.id = getUniqueId();
     marker_text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
     marker_text.action = visualization_msgs::msg::Marker::ADD;
-    marker_text.pose = acummulated_poses_[i].pose;
+    marker_text.pose = acummulated_poses_.goals[i].pose;
     marker_text.pose.position.z += 0.2;  // draw it on top of the waypoint
     marker_text.scale.x = 0.07;
     marker_text.scale.y = 0.07;
@@ -1438,41 +1451,6 @@ Nav2Panel::updateWpNavigationMarkers()
   }
 
   wp_navigation_markers_pub_->publish(std::move(marker_array));
-}
-
-inline QString
-Nav2Panel::getGoalStatusLabel(int8_t status)
-{
-  std::string status_str;
-  switch (status) {
-    case action_msgs::msg::GoalStatus::STATUS_EXECUTING:
-      status_str = "<font color=green>active</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_SUCCEEDED:
-      status_str = "<font color=green>reached</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_CANCELED:
-      status_str = "<font color=orange>canceled</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_ABORTED:
-      status_str = "<font color=red>aborted</color>";
-      break;
-
-    case action_msgs::msg::GoalStatus::STATUS_UNKNOWN:
-      status_str = "unknown";
-      break;
-
-    default:
-      status_str = "inactive";
-      break;
-  }
-  return QString(
-    std::string(
-      "<table><tr><td width=100><b>Feedback:</b></td><td>" +
-      status_str + "</td></tr></table>").c_str());
 }
 
 inline QString

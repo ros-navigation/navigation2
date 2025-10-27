@@ -18,14 +18,15 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 
-#include "tf2/time.h"
-#include "tf2_ros/buffer.h"
+#include "tf2/time.hpp"
+#include "tf2_ros/buffer.hpp"
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
@@ -50,7 +51,7 @@ public:
    * @param transform_tolerance Transform tolerance
    */
   Polygon(
-    const nav2_util::LifecycleNode::WeakPtr & node,
+    const nav2::LifecycleNode::WeakPtr & node,
     const std::string & polygon_name,
     const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     const std::string & base_frame_id,
@@ -85,6 +86,11 @@ public:
    * @return Action type for current polygon
    */
   ActionType getActionType() const;
+  /**
+   * @brief Obtains polygon enabled state
+   * @return Whether polygon is enabled
+   */
+  bool getEnabled() const;
   /**
    * @brief Obtains polygon minimum points to enter inside polygon causing the action
    * @return Minimum number of data readings within a zone to trigger the action
@@ -122,15 +128,21 @@ public:
   virtual void getPolygon(std::vector<Point> & poly) const;
 
   /**
+   * @brief Obtains the name of the observation sources for current polygon.
+   * @return Names of the observation sources
+   */
+  std::vector<std::string> getSourcesNames() const;
+
+  /**
    * @brief Returns true if polygon points were set.
-   * Othewise, prints a warning and returns false.
+   * Otherwise, prints a warning and returns false.
    */
   virtual bool isShapeSet();
 
   /**
    * @brief Updates polygon from footprint subscriber (if any)
    */
-  void updatePolygon();
+  virtual void updatePolygon(const Velocity & /*cmd_vel_in*/);
 
   /**
    * @brief Gets number of points inside given polygon
@@ -141,15 +153,27 @@ public:
   virtual int getPointsInside(const std::vector<Point> & points) const;
 
   /**
+   * @brief Gets number of points inside given polygon
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's points to be checked as value
+   * @return Number of points inside polygon,
+   * for sources in map that are associated with current polygon.
+   * If there are no points, returns zero value.
+   */
+  virtual int getPointsInside(
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const;
+
+  /**
    * @brief Obtains estimated (simulated) time before a collision.
    * Applicable for APPROACH model.
-   * @param collision_points Array of 2D obstacle points
+   * @param sources_collision_points_map Map containing source name as key,
+   * and input array of source's 2D obstacle points as value
    * @param velocity Simulated robot velocity
    * @return Estimated time before a collision. If there is no collision,
    * return value will be negative.
    */
   double getCollisionTime(
-    const std::vector<Point> & collision_points,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
     const Velocity & velocity) const;
 
   /**
@@ -160,14 +184,24 @@ public:
 protected:
   /**
    * @brief Supporting routine obtaining ROS-parameters common for all shapes
-   * @param polygon_pub_topic Output name of polygon publishing topic
+   * @param polygon_pub_topic Output name of polygon or radius subscription topic.
+   * Empty, if no polygon subscription.
+   * @param polygon_sub_topic Output name of polygon publishing topic
+   * @param footprint_topic Output name of footprint topic.
+   * Empty, if no footprint subscription.
+   * @param use_dynamic_sub If false, the parameter polygon_sub_topic or footprint_topic
+   * will not be declared
    * @return True if all parameters were obtained or false in failure case
    */
-  bool getCommonParameters(std::string & polygon_pub_topic);
+  bool getCommonParameters(
+    std::string & polygon_sub_topic,
+    std::string & polygon_pub_topic,
+    std::string & footprint_topic,
+    bool use_dynamic_sub = false);
 
   /**
    * @brief Supporting routine obtaining polygon-specific ROS-parameters
-   * @brief polygon_sub_topic Output name of polygon subscription topic.
+   * @param polygon_sub_topic Output name of polygon or radius subscription topic.
    * Empty, if no polygon subscription.
    * @param polygon_pub_topic Output name of polygon publishing topic
    * @param footprint_topic Output name of footprint topic.
@@ -178,6 +212,13 @@ protected:
     std::string & polygon_sub_topic,
     std::string & polygon_pub_topic,
     std::string & footprint_topic);
+
+  /**
+   * @brief Creates polygon or radius topic subscription
+   * @param polygon_sub_topic Output name of polygon or radius subscription topic.
+   * Empty, if no polygon subscription.
+   */
+  virtual void createSubscription(std::string & polygon_sub_topic);
 
   /**
    * @brief Updates polygon from geometry_msgs::msg::PolygonStamped message
@@ -192,18 +233,28 @@ protected:
   void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg);
 
   /**
-   * @brief Checks if point is inside polygon
-   * @param point Given point to check
-   * @return True if given point is inside polygon, otherwise false
+   * @brief Callback executed when a parameter change is detected
+   * @param event ParameterEvent message
    */
-  bool isPointInside(const Point & point) const;
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
+  /**
+   * @brief Extracts Polygon points from a string with of the form [[x1,y1],[x2,y2],[x3,y3]...]
+   * @param poly_string Input String containing the verteceis of the polygon
+   * @param polygon Output Point vector with all the vertices of the polygon
+   * @return True if all parameters were obtained or false in failure case
+   */
+  bool getPolygonFromString(std::string & poly_string, std::vector<Point> & polygon);
 
   // ----- Variables -----
 
   /// @brief Collision Monitor node
-  nav2_util::LifecycleNode::WeakPtr node_;
+  nav2::LifecycleNode::WeakPtr node_;
   /// @brief Collision monitor node logger stored for further usage
   rclcpp::Logger logger_{rclcpp::get_logger("collision_monitor")};
+  /// @brief Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Basic parameters
   /// @brief Name of polygon
@@ -222,10 +273,16 @@ protected:
   double time_before_collision_;
   /// @brief Time step for robot movement simulation
   double simulation_time_step_;
+  /// @brief Whether polygon is enabled
+  bool enabled_;
+  /// @brief Whether the subscription to polygon topic has transient local QoS durability
+  bool polygon_subscribe_transient_local_;
   /// @brief Polygon subscription
-  rclcpp::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
+  nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
   /// @brief Footprint subscriber
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
+  /// @brief Name of the observation sources to check for polygon
+  std::vector<std::string> sources_names_;
 
   // Global variables
   /// @brief TF buffer
@@ -234,6 +291,8 @@ protected:
   std::string base_frame_id_;
   /// @brief Transform tolerance
   tf2::Duration transform_tolerance_;
+  /// @brief Collision monitor node's clock
+  rclcpp::Clock::SharedPtr node_clock_;
 
   // Visualization
   /// @brief Whether to publish the polygon
@@ -241,7 +300,7 @@ protected:
   /// @brief Polygon, used for: 1. visualization; 2. storing latest dynamic polygon message
   geometry_msgs::msg::PolygonStamped polygon_;
   /// @brief Polygon publisher for visualization purposes
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
+  nav2::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_pub_;
 
   /// @brief Polygon points (vertices) in a base_frame_id_
   std::vector<Point> poly_;

@@ -1,0 +1,21 @@
+#goal definition
+uint32 number_of_loops
+uint32 goal_index 0
+geographic_msgs/GeoPose[] gps_poses
+---
+#result definition
+
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint16 NONE=0
+uint16 UNKNOWN=600
+uint16 TASK_EXECUTOR_FAILED=601
+uint16 NO_WAYPOINTS_GIVEN=602
+uint16 STOP_ON_MISSED_WAYPOINT=603
+
+WaypointStatus[] missed_waypoints
+int16 error_code
+string error_msg
+---
+#feedback
+uint32 current_waypoint

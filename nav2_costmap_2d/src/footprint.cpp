@@ -34,21 +34,20 @@
 #include <vector>
 
 #include "geometry_msgs/msg/point32.hpp"
-#include "nav2_costmap_2d/array_parser.hpp"
+#include "nav2_util/array_parser.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
 
 namespace nav2_costmap_2d
 {
 
-void calculateMinAndMaxDistances(
-  const std::vector<geometry_msgs::msg::Point> & footprint,
-  double & min_dist, double & max_dist)
+std::pair<double, double> calculateMinAndMaxDistances(
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
-  min_dist = std::numeric_limits<double>::max();
-  max_dist = 0.0;
+  double min_dist = std::numeric_limits<double>::max();
+  double max_dist = 0.0;
 
   if (footprint.size() <= 2) {
-    return;
+    return std::pair<double, double>(min_dist, max_dist);
   }
 
   for (unsigned int i = 0; i < footprint.size() - 1; ++i) {
@@ -68,9 +67,11 @@ void calculateMinAndMaxDistances(
     footprint.front().x, footprint.front().y);
   min_dist = std::min(min_dist, std::min(vertex_dist, edge_dist));
   max_dist = std::max(max_dist, std::max(vertex_dist, edge_dist));
+
+  return std::pair<double, double>(min_dist, max_dist);
 }
 
-geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
+geometry_msgs::msg::Point32 toPoint32(const geometry_msgs::msg::Point & pt)
 {
   geometry_msgs::msg::Point32 point32;
   point32.x = pt.x;
@@ -79,7 +80,7 @@ geometry_msgs::msg::Point32 toPoint32(geometry_msgs::msg::Point pt)
   return point32;
 }
 
-geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt)
+geometry_msgs::msg::Point toPoint(const geometry_msgs::msg::Point32 & pt)
 {
   geometry_msgs::msg::Point point;
   point.x = pt.x;
@@ -88,20 +89,22 @@ geometry_msgs::msg::Point toPoint(geometry_msgs::msg::Point32 pt)
   return point;
 }
 
-geometry_msgs::msg::Polygon toPolygon(std::vector<geometry_msgs::msg::Point> pts)
+geometry_msgs::msg::Polygon toPolygon(const std::vector<geometry_msgs::msg::Point> & pts)
 {
   geometry_msgs::msg::Polygon polygon;
-  for (unsigned int i = 0; i < pts.size(); i++) {
-    polygon.points.push_back(toPoint32(pts[i]));
+  polygon.points.reserve(pts.size());
+  for (const auto & pt : pts) {
+    polygon.points.push_back(toPoint32(pt));
   }
   return polygon;
 }
 
-std::vector<geometry_msgs::msg::Point> toPointVector(geometry_msgs::msg::Polygon::SharedPtr polygon)
+std::vector<geometry_msgs::msg::Point> toPointVector(const geometry_msgs::msg::Polygon & polygon)
 {
   std::vector<geometry_msgs::msg::Point> pts;
-  for (unsigned int i = 0; i < polygon->points.size(); i++) {
-    pts.push_back(toPoint(polygon->points[i]));
+  pts.reserve(polygon.points.size());
+  for (const auto & point : polygon.points) {
+    pts.push_back(toPoint(point));
   }
   return pts;
 }
@@ -176,7 +179,7 @@ bool makeFootprintFromString(
   std::vector<geometry_msgs::msg::Point> & footprint)
 {
   std::string error;
-  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
+  std::vector<std::vector<float>> vvf = nav2_util::parseVVF(footprint_string, error);
 
   if (error != "") {
     RCLCPP_ERROR(
@@ -193,7 +196,8 @@ bool makeFootprintFromString(
     RCLCPP_ERROR(
       rclcpp::get_logger(
         "nav2_costmap_2d"),
-      "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
+      "You must specify at least three points for the robot footprint,"
+      " reverting to previous footprint.");
     return false;
   }
   footprint.reserve(vvf.size());
@@ -208,7 +212,8 @@ bool makeFootprintFromString(
       RCLCPP_ERROR(
         rclcpp::get_logger(
           "nav2_costmap_2d"),
-        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+        "Points in the footprint specification must be pairs of numbers."
+        " Found a point with %d numbers.",
         static_cast<int>(vvf[i].size()));
       return false;
     }

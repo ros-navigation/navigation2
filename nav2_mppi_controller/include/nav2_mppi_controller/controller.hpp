@@ -23,10 +23,9 @@
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
-
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/controller.hpp"
 #include "nav2_core/goal_checker.hpp"
-#include "rclcpp/rclcpp.hpp"
 
 namespace nav2_mppi_controller
 {
@@ -53,7 +52,7 @@ public:
     * @param costmap_ros Costmap2DROS object of environment
     */
   void configure(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
+    const nav2::LifecycleNode::WeakPtr & parent,
     std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
@@ -105,14 +104,20 @@ protected:
   /**
     * @brief Visualize trajectories
     * @param transformed_plan Transformed input plan
+    * @param cmd_stamp Command stamp
+    * @param optimal_trajectory Optimal trajectory, if already computed
     */
-  void visualize(nav_msgs::msg::Path transformed_plan);
+  void visualize(
+    nav_msgs::msg::Path transformed_plan,
+    const builtin_interfaces::msg::Time & cmd_stamp,
+    const Eigen::ArrayXXf & optimal_trajectory);
 
   std::string name_;
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
+  nav2::LifecycleNode::WeakPtr parent_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
@@ -120,6 +125,7 @@ protected:
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
+  bool publish_optimal_trajectory_;
 };
 
 }  // namespace nav2_mppi_controller

@@ -1,37 +1,53 @@
 add_library(${library_name} SHARED
   costmap.cpp
-  node_utils.cpp
   lifecycle_service_client.cpp
   string_utils.cpp
-  lifecycle_utils.cpp
-  lifecycle_node.cpp
   robot_utils.cpp
-  node_thread.cpp
+  controller_utils.cpp
   odometry_utils.cpp
+  array_parser.cpp
+  path_utils.cpp
 )
-
-ament_target_dependencies(${library_name}
-  rclcpp
-  nav2_msgs
-  tf2
-  tf2_ros
-  nav_msgs
-  geometry_msgs
-  lifecycle_msgs
-  rclcpp_lifecycle
-  tf2_geometry_msgs
-  bondcpp
+target_include_directories(${library_name}
+  PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${library_name} PUBLIC
+  bondcpp::bondcpp
+  ${geometry_msgs_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${rcl_interfaces_TARGETS}
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_ros::tf2_ros
+  tf2::tf2
+  ${tf2_geometry_msgs_TARGETS}
+  pluginlib::pluginlib
+  nav2_ros_common::nav2_ros_common
+)
+target_link_libraries(${library_name} PRIVATE
+  ${bond_TARGETS}
+)
+target_include_directories(${library_name} PUBLIC
+  "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
 add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
-target_link_libraries(lifecycle_bringup ${library_name})
+target_link_libraries(lifecycle_bringup PRIVATE ${library_name} rclcpp::rclcpp)
 
-find_package(Boost REQUIRED COMPONENTS program_options)
+add_executable(base_footprint_publisher
+  base_footprint_publisher.cpp
+)
+target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp ${tf2_msgs_TARGETS})
 
 install(TARGETS
   ${library_name}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

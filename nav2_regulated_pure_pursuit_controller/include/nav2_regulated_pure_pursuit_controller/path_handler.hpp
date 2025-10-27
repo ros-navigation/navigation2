@@ -21,13 +21,13 @@
 #include <algorithm>
 #include <mutex>
 
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
-#include "geometry_msgs/msg/pose2_d.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -43,7 +43,7 @@ public:
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::PathHandler
    */
   PathHandler(
-    tf2::Duration transform_tolerance,
+    double transform_tolerance,
     std::shared_ptr<tf2_ros::Buffer> tf,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
 
@@ -58,23 +58,12 @@ public:
    * - Outside the local_costmap (collision avoidance cannot be assured)
    * @param pose pose to transform
    * @param max_robot_pose_search_dist Distance to search for matching nearest path point
+   * @param reject_unit_path If true, fail if path has only one pose
    * @return Path in new frame
    */
   nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose,
-    double max_robot_pose_search_dist);
-
-  /**
-   * @brief Transform a pose to another frame.
-   * @param frame Frame ID to transform to
-   * @param in_pose Pose input to transform
-   * @param out_pose transformed output
-   * @return bool if successful
-   */
-  bool transformPose(
-    const std::string frame,
-    const geometry_msgs::msg::PoseStamped & in_pose,
-    geometry_msgs::msg::PoseStamped & out_pose) const;
+    double max_robot_pose_search_dist, bool reject_unit_path = false);
 
   void setPlan(const nav_msgs::msg::Path & path) {global_plan_ = path;}
 
@@ -88,7 +77,7 @@ protected:
   double getCostmapMaxExtent() const;
 
   rclcpp::Logger logger_ {rclcpp::get_logger("RPPPathHandler")};
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;

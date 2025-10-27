@@ -44,7 +44,9 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
-#include "rclcpp/rclcpp.hpp"
+
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 
 /**
  * @class VoxelGrid
@@ -112,7 +114,7 @@ public:
 
     unsigned int marked_bits = *col >> 16;
 
-    // make sure the number of bits in each is below our thesholds
+    // make sure the number of bits in each is below our thresholds
     return !bitsBelowThreshold(marked_bits, marked_threshold);
   }
 
@@ -146,7 +148,7 @@ public:
     unsigned int unknown_bits = uint16_t(*col >> 16) ^ uint16_t(*col);
     unsigned int marked_bits = *col >> 16;
 
-    // make sure the number of bits in each is below our thesholds
+    // make sure the number of bits in each is below our thresholds
     if (bitsBelowThreshold(unknown_bits, 1) && bitsBelowThreshold(marked_bits, 1)) {
       costmap[index] = 0;
     }
@@ -392,7 +394,7 @@ public:
       unsigned int unknown_bits = uint16_t(*col >> 16) ^ uint16_t(*col);
       unsigned int marked_bits = *col >> 16;
 
-      // make sure the number of bits in each is below our thesholds
+      // make sure the number of bits in each is below our thresholds
       if (bitsBelowThreshold(marked_bits, marked_clear_threshold_)) {
         if (bitsBelowThreshold(unknown_bits, unknown_clear_threshold_)) {
           costmap_[offset] = free_cost_;

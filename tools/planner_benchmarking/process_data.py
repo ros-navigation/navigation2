@@ -13,19 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import math
-
 import os
-from ament_index_python.packages import get_package_share_directory
 import pickle
 
-import seaborn as sns
 import matplotlib.pylab as plt
+from nav2_msgs.action import ComputePathToPose
+from nav2_msgs.msg import Costmap
+from nav_msgs.msg import Path
+import numpy as np
+import seaborn as sns
 from tabulate import tabulate
 
 
-def getPaths(results):
+def getPaths(results: list[ComputePathToPose.Result]) -> list[Path]:
     paths = []
     for result in results:
         for path in result:
@@ -33,41 +34,43 @@ def getPaths(results):
     return paths
 
 
-def getTimes(results):
+def getTimes(results: list[ComputePathToPose.Result]) -> list[float]:
     times = []
     for result in results:
         for time in result:
-            times.append(time.planning_time.nanosec/1e09 + time.planning_time.sec)
+            times.append(time.planning_time.nanosec / 1e09 + time.planning_time.sec)
     return times
 
 
-def getMapCoordsFromPaths(paths, resolution):
+def getMapCoordsFromPaths(paths: list[Path], resolution: float) -> list[list[float]]:
     coords = []
     for path in paths:
         x = []
         y = []
         for pose in path.poses:
-            x.append(pose.pose.position.x/resolution)
-            y.append(pose.pose.position.y/resolution)
+            x.append(pose.pose.position.x / resolution)
+            y.append(pose.pose.position.y / resolution)
         coords.append(x)
         coords.append(y)
     return coords
 
 
-def getPathLength(path):
-    path_length = 0
+def getPathLength(path: Path) -> float:
+    path_length = 0.0
     x_prev = path.poses[0].pose.position.x
     y_prev = path.poses[0].pose.position.y
     for i in range(1, len(path.poses)):
         x_curr = path.poses[i].pose.position.x
         y_curr = path.poses[i].pose.position.y
-        path_length = path_length + math.sqrt((x_curr-x_prev)**2 + (y_curr-y_prev)**2)
+        path_length = path_length + math.sqrt(
+            (x_curr - x_prev) ** 2 + (y_curr - y_prev) ** 2
+        )
         x_prev = x_curr
         y_prev = y_curr
     return path_length
 
 
-def plotResults(costmap, paths):
+def plotResults(costmap: Costmap, paths: list[Path]) -> None:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
@@ -76,18 +79,20 @@ def plotResults(costmap, paths):
     plt.figure(3)
     ax = sns.heatmap(data, cmap='Greys', cbar=False)
     for i in range(0, len(coords), 2):
-        ax.plot(coords[i], coords[i+1], linewidth=0.7)
+        ax.plot(coords[i], coords[i + 1], linewidth=0.7)
     plt.axis('off')
     ax.set_aspect('equal', 'box')
     plt.show()
 
 
-def averagePathCost(paths, costmap, num_of_planners):
+def averagePathCost(
+        paths: list[Path], costmap: Costmap,
+        num_of_planners: int) -> list[list[float]]:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
 
-    average_path_costs = []
+    average_path_costs: list[list[float]] = []
     for i in range(num_of_planners):
         average_path_costs.append([])
 
@@ -95,19 +100,19 @@ def averagePathCost(paths, costmap, num_of_planners):
     for i in range(0, len(coords), 2):
         costs = []
         for j in range(len(coords[i])):
-            costs.append(data[math.floor(coords[i+1][j])][math.floor(coords[i][j])])
-        average_path_costs[k % num_of_planners].append(sum(costs)/len(costs))
+            costs.append(data[math.floor(coords[i + 1][j])][math.floor(coords[i][j])])
+        average_path_costs[k % num_of_planners].append(sum(costs) / len(costs))
         k += 1
 
     return average_path_costs
 
 
-def maxPathCost(paths, costmap, num_of_planners):
+def maxPathCost(paths: list[Path], costmap: Costmap, num_of_planners: int) -> list[list[float]]:
     coords = getMapCoordsFromPaths(paths, costmap.metadata.resolution)
     data = np.asarray(costmap.data)
     data.resize(costmap.metadata.size_y, costmap.metadata.size_x)
 
-    max_path_costs = []
+    max_path_costs: list[list[float]] = []
     for i in range(num_of_planners):
         max_path_costs.append([])
 
@@ -115,7 +120,7 @@ def maxPathCost(paths, costmap, num_of_planners):
     for i in range(0, len(coords), 2):
         max_cost = 0
         for j in range(len(coords[i])):
-            cost = data[math.floor(coords[i+1][j])][math.floor(coords[i][j])]
+            cost = data[math.floor(coords[i + 1][j])][math.floor(coords[i][j])]
             if max_cost < cost:
                 max_cost = cost
         max_path_costs[k % num_of_planners].append(max_cost)
@@ -124,9 +129,9 @@ def maxPathCost(paths, costmap, num_of_planners):
     return max_path_costs
 
 
-def main():
+def main() -> None:
 
-    print("Read data")
+    print('Read data')
     with open(os.getcwd() + '/results.pickle', 'rb') as f:
         results = pickle.load(f)
 
@@ -137,19 +142,18 @@ def main():
         costmap = pickle.load(f)
 
     paths = getPaths(results)
-    path_lengths = []
+    path_lengths_list = []
 
     for path in paths:
-        path_lengths.append(getPathLength(path))
-    path_lengths = np.asarray(path_lengths)
+        path_lengths_list.append(getPathLength(path))
+    path_lengths = np.asarray(path_lengths_list)
     total_paths = len(paths)
 
-    path_lengths.resize((int(total_paths/len(planners)), len(planners)))
+    path_lengths.resize((int(total_paths / len(planners)), len(planners)))
     path_lengths = path_lengths.transpose()
 
-    times = getTimes(results)
-    times = np.asarray(times)
-    times.resize((int(total_paths/len(planners)), len(planners)))
+    times = np.asarray(getTimes(results))
+    times.resize((int(total_paths / len(planners)), len(planners)))
     times = np.transpose(times)
 
     # Costs
@@ -157,12 +161,26 @@ def main():
     max_path_costs = np.asarray(maxPathCost(paths, costmap, len(planners)))
 
     # Generate table
-    planner_table = [['Planner', 'Average path length (m)', 'Average Time (s)',
-                      'Average cost', 'Max cost']]
+    planner_table = [
+        [
+            'Planner',
+            'Average path length (m)',
+            'Average Time (s)',
+            'Average cost',
+            'Max cost',
+        ]
+    ]
 
     for i in range(0, len(planners)):
-        planner_table.append([planners[i], np.average(path_lengths[i]), np.average(times[i]),
-                              np.average(average_path_costs[i]), np.average(max_path_costs[i])])
+        planner_table.append(
+            [
+                planners[i],
+                np.average(path_lengths[i]),
+                np.average(times[i]),
+                np.average(average_path_costs[i]),
+                np.average(max_path_costs[i]),
+            ]
+        )
 
     # Visualize results
     print(tabulate(planner_table))

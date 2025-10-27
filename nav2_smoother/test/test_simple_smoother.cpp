@@ -20,21 +20,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
 #include "nav2_core/smoother_exceptions.hpp"
 
-using namespace smoother_utils;  // NOLINT
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
-
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
 
 class SmootherWrapper : public nav2_smoother::SimpleSmoother
 {
@@ -42,11 +33,6 @@ public:
   SmootherWrapper()
   : nav2_smoother::SimpleSmoother()
   {
-  }
-
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
-  {
-    return findDirectionalPathSegments(path);
   }
 
   void setMaxItsToInvalid()
@@ -57,8 +43,8 @@ public:
 
 TEST(SmootherTest, test_simple_smoother)
 {
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node =
-    std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacSmootherTest");
+  nav2::LifecycleNode::SharedPtr node =
+    std::make_shared<nav2::LifecycleNode>("SmacSmootherTest");
 
   std::shared_ptr<nav2_msgs::msg::Costmap> costmap_msg =
     std::make_shared<nav2_msgs::msg::Costmap>();
@@ -76,16 +62,15 @@ TEST(SmootherTest, test_simple_smoother)
     }
   }
 
-  std::weak_ptr<rclcpp_lifecycle::LifecycleNode> parent = node;
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   dummy_costmap->costmapCallback(costmap_msg);
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
   std::shared_ptr<nav2_costmap_2d::FootprintSubscriber> dummy_footprint;
   auto smoother = std::make_unique<SmootherWrapper>();
-  smoother->configure(parent, "test", dummy_tf, dummy_costmap, dummy_footprint);
+  smoother->configure(node, "test", dummy_tf, dummy_costmap, dummy_footprint);
 
   // Test that an irregular distributed path becomes more distributed
   nav_msgs::msg::Path straight_irregular_path;
@@ -180,7 +165,7 @@ TEST(SmootherTest, test_simple_smoother)
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.x, 0.607, 0.01);
   EXPECT_NEAR(straight_regular_path.poses[5].pose.position.y, 0.387, 0.01);
 
-  // Test that collisions are rejected
+  // Test that collisions are disregarded
   nav_msgs::msg::Path collision_path;
   collision_path.poses.resize(11);
   collision_path.poses[0].pose.position.x = 0.0;
@@ -205,7 +190,7 @@ TEST(SmootherTest, test_simple_smoother)
   collision_path.poses[9].pose.position.y = 1.4;
   collision_path.poses[10].pose.position.x = 1.5;
   collision_path.poses[10].pose.position.y = 1.5;
-  EXPECT_THROW(smoother->smooth(collision_path, max_time), nav2_core::FailedToSmoothPath);
+  EXPECT_TRUE(smoother->smooth(collision_path, max_time));
 
   // test cusp / reversing segments
   nav_msgs::msg::Path reversing_path;
@@ -232,7 +217,7 @@ TEST(SmootherTest, test_simple_smoother)
   reversing_path.poses[9].pose.position.y = 0.1;
   reversing_path.poses[10].pose.position.x = 0.5;
   reversing_path.poses[10].pose.position.y = 0.0;
-  EXPECT_THROW(smoother->smooth(reversing_path, max_time), nav2_core::FailedToSmoothPath);
+  EXPECT_TRUE(smoother->smooth(reversing_path, max_time));
 
   // test rotate in place
   tf2::Quaternion quat1, quat2;
@@ -244,7 +229,18 @@ TEST(SmootherTest, test_simple_smoother)
   straight_irregular_path.poses[6].pose.position.x = 0.5;
   straight_irregular_path.poses[6].pose.position.y = 0.5;
   straight_irregular_path.poses[6].pose.orientation = tf2::toMsg(quat2);
-  EXPECT_THROW(smoother->smooth(straight_irregular_path, max_time), nav2_core::FailedToSmoothPath);
+  EXPECT_TRUE(smoother->smooth(straight_irregular_path, max_time));
+
+  // test approach
+  nav_msgs::msg::Path approach_path;
+  approach_path.poses.resize(3);
+  approach_path.poses[0].pose.position.x = 0.5;
+  approach_path.poses[0].pose.position.y = 0.0;
+  approach_path.poses[1].pose.position.x = 0.5;
+  approach_path.poses[1].pose.position.y = 0.1;
+  approach_path.poses[2].pose.position.x = 0.5;
+  approach_path.poses[2].pose.position.y = 0.2;
+  EXPECT_TRUE(smoother->smooth(approach_path, max_time));
 
   // test max iterations
   smoother->setMaxItsToInvalid();
@@ -272,5 +268,18 @@ TEST(SmootherTest, test_simple_smoother)
   max_its_path.poses[9].pose.position.y = 0.9;
   max_its_path.poses[10].pose.position.x = 0.5;
   max_its_path.poses[10].pose.position.y = 1.0;
-  EXPECT_THROW(smoother->smooth(max_its_path, max_time), nav2_core::FailedToSmoothPath);
+  EXPECT_TRUE(smoother->smooth(max_its_path, max_time));
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

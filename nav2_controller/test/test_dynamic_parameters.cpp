@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -31,10 +31,26 @@ public:
   {
   }
 
+  /**
+   * @brief Declare parameters needed for dynamic parameter testing.
+   *
+   * This method mirrors the parameter declarations in the
+   * on_configure method of ControllerServer.
+   */
+  void declareTestParameters()
+  {
+    declare_parameter("min_x_velocity_threshold", 0.0001);
+    declare_parameter("min_y_velocity_threshold", 0.0001);
+    declare_parameter("min_theta_velocity_threshold", 0.0001);
+    declare_parameter("failure_tolerance", 0.0);
+  }
+
   // Since we cannot call configure/activate due to costmaps
   // requiring TF
   void setDynamicCallback()
   {
+    declareTestParameters();
+
     auto node = shared_from_this();
     // Add callback for dynamic parameters
     dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -51,14 +67,6 @@ public:
   }
 };
 
-class RclCppFixture
-{
-public:
-  RclCppFixture() {rclcpp::init(0, nullptr);}
-  ~RclCppFixture() {rclcpp::shutdown();}
-};
-RclCppFixture g_rclcppfixture;
-
 TEST(WPTest, test_dynamic_parameters)
 {
   auto controller = std::make_shared<ControllerShim>();
@@ -70,8 +78,7 @@ TEST(WPTest, test_dynamic_parameters)
     controller->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("controller_frequency", 100.0),
-      rclcpp::Parameter("min_x_velocity_threshold", 100.0),
+    {rclcpp::Parameter("min_x_velocity_threshold", 100.0),
       rclcpp::Parameter("min_y_velocity_threshold", 100.0),
       rclcpp::Parameter("min_theta_velocity_threshold", 100.0),
       rclcpp::Parameter("failure_tolerance", 5.0)});
@@ -80,9 +87,21 @@ TEST(WPTest, test_dynamic_parameters)
     controller->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(controller->get_parameter("controller_frequency").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_x_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_y_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("min_theta_velocity_threshold").as_double(), 100.0);
   EXPECT_EQ(controller->get_parameter("failure_tolerance").as_double(), 5.0);
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  rclcpp::init(0, nullptr);
+
+  int result = RUN_ALL_TESTS();
+
+  rclcpp::shutdown();
+
+  return result;
 }

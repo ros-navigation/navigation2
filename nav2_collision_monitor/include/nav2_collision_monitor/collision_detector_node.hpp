@@ -22,20 +22,23 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "tf2/time.h"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2/time.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_msgs/msg/collision_detector_state.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/polygon.hpp"
 #include "nav2_collision_monitor/circle.hpp"
+#include "nav2_collision_monitor/velocity_polygon.hpp"
 #include "nav2_collision_monitor/source.hpp"
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -43,7 +46,7 @@ namespace nav2_collision_monitor
 /**
  * @brief Collision Monitor ROS2 node
  */
-class CollisionDetector : public nav2_util::LifecycleNode
+class CollisionDetector : public nav2::LifecycleNode
 {
 public:
   /**
@@ -63,31 +66,31 @@ protected:
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Activates LifecyclePublishers, polygons and main processor, creates bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Deactivates LifecyclePublishers, polygons and main processor, destroys bond connection
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief: Resets all subscribers/publishers, polygons/data sources arrays
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Called in shutdown state
    * @param state Lifecycle Node's state
    * @return Success or Failure
    */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
 protected:
   /**
@@ -145,8 +148,11 @@ protected:
   std::vector<std::shared_ptr<Source>> sources_;
 
   /// @brief collision monitor state publisher
-  rclcpp_lifecycle::LifecyclePublisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr
+  nav2::Publisher<nav2_msgs::msg::CollisionDetectorState>::SharedPtr
     state_pub_;
+  /// @brief Collision points marker publisher
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+    collision_points_marker_pub_;
   /// @brief timer that runs actions
   rclcpp::TimerBase::SharedPtr timer_;
 

@@ -17,12 +17,13 @@
 #include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace mppi
 {
 
 void PathHandler::initialize(
-  rclcpp_lifecycle::LifecycleNode::WeakPtr parent, const std::string & name,
+  nav2::LifecycleNode::WeakPtr parent, const std::string & name,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap,
   std::shared_ptr<tf2_ros::Buffer> buffer, ParametersHandler * param_handler)
 {
@@ -75,7 +76,7 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
 
   unsigned int mx, my;
-  // Find the furthest relevent pose on the path to consider within costmap
+  // Find the furthest relevant pose on the path to consider within costmap
   // bounds
   // Transforming it to the costmap frame in the same loop
   for (auto global_plan_pose = closest_point; global_plan_pose != pruned_plan_end;
@@ -85,7 +86,8 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    transformPose(costmap_->getGlobalFrameID(), *global_plan_pose, costmap_plan_pose);
+    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_buffer_,
+        costmap_->getGlobalFrameID(), transform_tolerance_);
 
     // Check if pose is inside the costmap
     if (!costmap_->getCostmap()->worldToMap(
@@ -109,7 +111,9 @@ geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
   }
 
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!transformPose(global_plan_up_to_inversion_.header.frame_id, pose, robot_pose)) {
+  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_buffer_,
+      global_plan_up_to_inversion_.header.frame_id, transform_tolerance_))
+  {
     throw nav2_core::ControllerTFError(
             "Unable to transform robot pose into global plan's frame");
   }
@@ -120,7 +124,7 @@ geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
 nav_msgs::msg::Path PathHandler::transformPath(
   const geometry_msgs::msg::PoseStamped & robot_pose)
 {
-  // Find relevent bounds of path to use
+  // Find relevant bounds of path to use
   geometry_msgs::msg::PoseStamped global_pose =
     transformToGlobalPlanFrame(robot_pose);
   auto [transformed_plan, lower_bound] = getGlobalPlanConsideringBoundsInCostmapFrame(global_pose);
@@ -142,32 +146,11 @@ nav_msgs::msg::Path PathHandler::transformPath(
   return transformed_plan;
 }
 
-bool PathHandler::transformPose(
-  const std::string & frame, const geometry_msgs::msg::PoseStamped & in_pose,
-  geometry_msgs::msg::PoseStamped & out_pose) const
-{
-  if (in_pose.header.frame_id == frame) {
-    out_pose = in_pose;
-    return true;
-  }
-
-  try {
-    tf_buffer_->transform(
-      in_pose, out_pose, frame,
-      tf2::durationFromSec(transform_tolerance_));
-    out_pose.header.frame_id = frame;
-    return true;
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(logger_, "Exception in transformPose: %s", ex.what());
-  }
-  return false;
-}
-
 double PathHandler::getMaxCostmapDist()
 {
   const auto & costmap = costmap_->getCostmap();
-  return std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY()) *
-         costmap->getResolution() / 2.0;
+  return static_cast<double>(std::max(costmap->getSizeInCellsX(), costmap->getSizeInCellsY())) *
+         costmap->getResolution() * 0.50;
 }
 
 void PathHandler::setPath(const nav_msgs::msg::Path & plan)
@@ -186,15 +169,33 @@ void PathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
   plan.poses.erase(plan.poses.begin(), end);
 }
 
+geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
+  const builtin_interfaces::msg::Time & stamp)
+{
+  auto goal = global_plan_.poses.back();
+  goal.header.frame_id = global_plan_.header.frame_id;
+  goal.header.stamp = stamp;
+  if (goal.header.frame_id.empty()) {
+    throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
+  }
+  geometry_msgs::msg::PoseStamped transformed_goal;
+  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *tf_buffer_,
+      costmap_->getGlobalFrameID(), transform_tolerance_))
+  {
+    throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");
+  }
+  return transformed_goal;
+}
+
 bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Keep full path if we are within tolerance of the inversion pose
   const auto last_pose = global_plan_up_to_inversion_.poses.back();
-  double distance = std::hypot(
+  float distance = hypotf(
     robot_pose.pose.position.x - last_pose.pose.position.x,
     robot_pose.pose.position.y - last_pose.pose.position.y);
 
-  double angle_distance = angles::shortest_angular_distance(
+  float angle_distance = angles::shortest_angular_distance(
     tf2::getYaw(robot_pose.pose.orientation),
     tf2::getYaw(last_pose.pose.orientation));
 

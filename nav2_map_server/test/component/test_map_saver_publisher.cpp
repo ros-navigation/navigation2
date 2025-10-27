@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <string>
 #include <memory>
 
@@ -23,7 +23,7 @@
 #define TEST_DIR TEST_DIRECTORY
 
 using namespace nav2_map_server;  // NOLINT
-using std::experimental::filesystem::path;
+using std::filesystem::path;
 
 class TestPublisher : public rclcpp::Node
 {
