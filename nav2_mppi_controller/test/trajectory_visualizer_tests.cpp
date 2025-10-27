@@ -133,6 +133,9 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
+  builtin_interfaces::msg::Time cmd_stamp;
+  cmd_stamp.sec = 5;
+  cmd_stamp.nanosec = 10;
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -147,10 +150,12 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   candidate_trajectories.y = Eigen::ArrayXXf::Ones(200, 12);
   candidate_trajectories.yaws = Eigen::ArrayXXf::Ones(200, 12);
 
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Random(200);
+
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "fkmap", parameters_handler.get());
   vis.on_activate();
-  vis.add(candidate_trajectories, "Candidate Trajectories");
+  vis.add(candidate_trajectories, costs, {}, cmd_stamp);
   nav_msgs::msg::Path bogus_path;
   vis.visualize(bogus_path);
 
