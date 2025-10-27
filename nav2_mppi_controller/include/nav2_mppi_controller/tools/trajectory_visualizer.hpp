@@ -80,11 +80,14 @@ public:
   /**
     * @brief Add candidate trajectories with costs to visualize
     * @param trajectories Candidate trajectories
-    * @param costs Cost array for each trajectory
+    * @param total_costs Total cost array for each trajectory
+    * @param individual_critics_cost Optional vector of (critic_name, cost_array) pairs for per-critic visualization
+    * @param cmd_stamp Timestamp for the markers
     */
   void add(
-    const models::Trajectories & trajectories, const Eigen::ArrayXf & costs,
-    const std::string & marker_namespace,
+    const models::Trajectories & trajectories,
+    const Eigen::ArrayXf & total_costs,
+    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost = {},
     const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
@@ -113,6 +116,9 @@ protected:
 
   size_t trajectory_step_{0};
   size_t time_step_{0};
+  bool publish_optimal_trajectory_{false};
+  bool publish_trajectories_with_total_cost_{false};
+  bool publish_trajectories_with_individual_cost_{false};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

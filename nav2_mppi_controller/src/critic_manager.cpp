@@ -37,7 +37,11 @@ void CriticManager::getParams()
   auto node = parent_.lock();
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(critic_names_, "critics", std::vector<std::string>{}, ParameterType::Static);
-  getParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
+  
+  // Read visualization parameters from Visualization namespace
+  auto getVisualizerParam = parameters_handler_->getParamGetter(name_ + ".Visualization");
+  getVisualizerParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
+  getVisualizerParam(visualize_per_critic_costs_, "publish_trajectories_with_individual_cost", false, ParameterType::Static);
 }
 
 void CriticManager::loadCritics()
@@ -83,28 +87,45 @@ void CriticManager::evalTrajectoriesScores(
     stats_msg->costs_sum.reserve(critics_.size());
   }
 
+  // Initialize per-critic costs tracking only if requested
+  if (visualize_per_critic_costs_) {
+    if (!data.individual_critics_cost) {
+      data.individual_critics_cost = std::vector<std::pair<std::string, Eigen::ArrayXf>>();
+    }
+    data.individual_critics_cost->clear();
+    data.individual_critics_cost->reserve(critics_.size());
+  }
+
   for (size_t i = 0; i < critics_.size(); ++i) {
     if (data.fail_flag) {
       break;
     }
 
-    // Store costs before critic evaluation
+    // Store costs before critic evaluation (only if needed)
     Eigen::ArrayXf costs_before;
-    if (publish_critics_stats_) {
+    if (visualize_per_critic_costs_ || publish_critics_stats_) {
       costs_before = data.costs;
     }
 
     critics_[i]->score(data);
 
-    // Calculate statistics if publishing is enabled
-    if (publish_critics_stats_) {
-      stats_msg->critics.push_back(critic_names_[i]);
-
-      // Calculate sum of costs added by this individual critic
+    // Calculate cost contribution from this critic
+    if (visualize_per_critic_costs_ || publish_critics_stats_) {
       Eigen::ArrayXf cost_diff = data.costs - costs_before;
-      float costs_sum = cost_diff.sum();
-      stats_msg->costs_sum.push_back(costs_sum);
-      stats_msg->changed.push_back(costs_sum != 0.0f);
+      
+      if (visualize_per_critic_costs_) {
+        data.individual_critics_cost->emplace_back(critic_names_[i], cost_diff);
+      }
+
+      // Calculate statistics if publishing is enabled
+      if (publish_critics_stats_) {
+        stats_msg->critics.push_back(critic_names_[i]);
+
+        // Calculate sum of costs added by this individual critic
+        float costs_sum = cost_diff.sum();
+        stats_msg->costs_sum.push_back(costs_sum);
+        stats_msg->changed.push_back(costs_sum != 0.0f);
+      }
     }
   }
 

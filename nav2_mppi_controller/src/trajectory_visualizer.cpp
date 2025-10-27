@@ -34,10 +34,13 @@ void TrajectoryVisualizer::on_configure(
   optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
   parameters_handler_ = parameters_handler;
 
-  auto getParam = parameters_handler->getParamGetter(name + ".TrajectoryVisualizer");
+  auto getParam = parameters_handler->getParamGetter(name + ".Visualization");
 
   getParam(trajectory_step_, "trajectory_step", 5);
   getParam(time_step_, "time_step", 3);
+  getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
+  getParam(publish_trajectories_with_total_cost_, "publish_trajectories_with_total_cost", false);
+  getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost", false);
 
   reset();
 }
@@ -106,90 +109,125 @@ void TrajectoryVisualizer::add(
 }
 
 void TrajectoryVisualizer::add(
-  const models::Trajectories & trajectories, const Eigen::ArrayXf & costs,
-  const std::string & marker_namespace,
+  const models::Trajectories & trajectories,
+  const Eigen::ArrayXf & total_costs,
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
+  // Check if we should visualize per-critic costs
+  bool visualize_per_critic = !individual_critics_cost.empty() && 
+                               publish_trajectories_with_individual_cost_ &&
+                               trajectories_publisher_->get_subscription_count() > 0;
+
   size_t n_rows = trajectories.x.rows();
   size_t n_cols = trajectories.x.cols();
   points_->markers.reserve(n_rows / trajectory_step_);
 
-  // Use percentile-based normalization to handle outliers
-  // Sort costs to find percentiles
-  std::vector<float> sorted_costs(costs.data(), costs.data() + costs.size());
-  std::sort(sorted_costs.begin(), sorted_costs.end());
-
-  // Use 10th and 90th percentile for robust color mapping
-  size_t idx_10th = static_cast<size_t>(sorted_costs.size() * 0.1);
-  size_t idx_90th = static_cast<size_t>(sorted_costs.size() * 0.9);
-
-  float min_cost = sorted_costs[idx_10th];
-  float max_cost = sorted_costs[idx_90th];
-  float cost_range = max_cost - min_cost;
-
-  // Avoid division by zero
-  if (cost_range < 1e-6f) {
-    cost_range = 1.0f;
-  }
-
-  for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-    float red_component, green_component, blue_component;
-
-    // Normalize cost using percentile-based range, clamping outliers
-    float normalized_cost = (costs(i) - min_cost) / cost_range;
-
-    // Clamp to [0, 1] range (handles outliers beyond percentiles)
-    normalized_cost = std::max(0.0f, std::min(1.0f, normalized_cost));
-
-    // Apply power function for better visual distribution
-    normalized_cost = std::pow(normalized_cost, 0.5f);
-
-    // Color scheme with smooth gradient:
-    // Green (0.0) -> Yellow-Green (0.25) -> Yellow (0.5) -> Orange (0.75) -> Red (1.0)
-    // Very high outlier costs (>95th percentile) will be clamped to red
-    blue_component = 0.0f;
-
-    if (normalized_cost < 0.5f) {
-      // Transition from Green to Yellow (0.0 - 0.5)
-      float t = normalized_cost * 2.0f;  // Scale to [0, 1]
-      red_component = t;
-      green_component = 1.0f;
-    } else {
-      // Transition from Yellow to Red (0.5 - 1.0)
-      float t = (normalized_cost - 0.5f) * 2.0f;  // Scale to [0, 1]
-      red_component = 1.0f;
-      green_component = 1.0f - t;
+  // Helper lambda to create a trajectory marker with given costs and namespace
+  auto create_trajectory_markers = [&](
+    const Eigen::ArrayXf & costs,
+    const std::string & ns,
+    bool use_collision_coloring) {
+    
+    // Find min/max cost for normalization
+    float min_cost = std::numeric_limits<float>::max();
+    float max_cost = std::numeric_limits<float>::lowest();
+    
+    for (Eigen::Index i = 0; i < costs.size(); ++i) {
+      // Skip collision trajectories for min/max calculation if using collision coloring
+      if (use_collision_coloring && costs(i) >= 1000000.0f) {
+        continue;
+      }
+      min_cost = std::min(min_cost, costs(i));
+      max_cost = std::max(max_cost, costs(i));
+    }
+    
+    float cost_range = max_cost - min_cost;
+    
+    // Avoid division by zero
+    if (cost_range < 1e-6f) {
+      cost_range = 1.0f;
     }
 
-    // Create line strip marker for this trajectory
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = frame_id_;
-    marker.header.stamp = cmd_stamp;
-    marker.ns = marker_namespace;
-    marker.id = marker_id_++;
-    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.pose.orientation.w = 1.0;
+    for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+      float red_component, green_component, blue_component;
 
-    // Set line width
-    marker.scale.x = 0.01;  // Line width
+      // Check if this trajectory is in collision (cost >= 1000000)
+      bool in_collision = use_collision_coloring && costs(i) >= 1000000.0f;
+      
+      // Check if cost is zero (no contribution from this critic)
+      bool zero_cost = std::abs(costs(i)) < 1e-6f;
+      
+      if (in_collision) {
+        // Fixed red color for collision trajectories
+        red_component = 1.0f;
+        green_component = 0.0f;
+        blue_component = 0.0f;
+      } else if (zero_cost) {
+        // Gray color for zero cost (no contribution)
+        red_component = 0.5f;
+        green_component = 0.5f;
+        blue_component = 0.5f;
+      } else {
+        // Normal gradient for non-collision trajectories
+        float normalized_cost = (costs(i) - min_cost) / cost_range;
+        normalized_cost = std::clamp(normalized_cost, 0.0f, 1.0f);
 
-    // Set color for entire trajectory
-    marker.color.r = red_component;
-    marker.color.g = green_component;
-    marker.color.b = blue_component;
-    marker.color.a = 0.8f;  // Slightly transparent
+        // Color scheme: Green (low cost) -> Yellow -> Red (high cost)
+        blue_component = 0.0f;
+        if (normalized_cost < 0.5f) {
+          // Green to Yellow (0.0 - 0.5)
+          red_component = normalized_cost * 2.0f;
+          green_component = 1.0f;
+        } else {
+          // Yellow to Red (0.5 - 1.0)
+          red_component = 1.0f;
+          green_component = 2.0f * (1.0f - normalized_cost);
+        }
+      }
 
-    // Add all points in this trajectory to the line strip
-    for (size_t j = 0; j < n_cols; j += time_step_) {
-      geometry_msgs::msg::Point point;
-      point.x = trajectories.x(i, j);
-      point.y = trajectories.y(i, j);
-      point.z = 0.0f;
-      marker.points.push_back(point);
+      // Create line strip marker for this trajectory
+      visualization_msgs::msg::Marker marker;
+      marker.header.frame_id = frame_id_;
+      marker.header.stamp = cmd_stamp;
+      marker.ns = ns;
+      marker.id = marker_id_++;
+      marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+      marker.action = visualization_msgs::msg::Marker::ADD;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = 0.01;  // Line width
+      marker.color.r = red_component;
+      marker.color.g = green_component;
+      marker.color.b = blue_component;
+      marker.color.a = 1.0;
+
+      // Add all points in this trajectory to the line strip
+      for (size_t j = 0; j < n_cols; j += time_step_) {
+        geometry_msgs::msg::Point point;
+        point.x = trajectories.x(i, j);
+        point.y = trajectories.y(i, j);
+        point.z = 0.0f;
+        marker.points.push_back(point);
+      }
+      
+      points_->markers.push_back(marker);
+    }
+  };
+
+  // If visualizing per-critic costs
+  if (visualize_per_critic) {
+    // Visualize total costs if requested
+    if (publish_trajectories_with_total_cost_) {
+      create_trajectory_markers(total_costs, "Total Costs", false);
     }
 
-    points_->markers.push_back(marker);
+    // Visualize each critic's contribution
+    for (const auto & [critic_name, costs] : individual_critics_cost) {
+      create_trajectory_markers(costs, critic_name, true);  // Use collision coloring
+    }
+  } else {
+    // Simple visualization with just total costs
+    create_trajectory_markers(total_costs, "Total Costs", false);
   }
 }
 
@@ -206,7 +244,7 @@ void TrajectoryVisualizer::visualize(const nav_msgs::msg::Path & plan)
     trajectories_publisher_->publish(std::move(points_));
   }
 
-  if (optimal_path_pub_->get_subscription_count() > 0) {
+  if (publish_optimal_trajectory_ && optimal_path_pub_->get_subscription_count() > 0) {
     optimal_path_pub_->publish(std::move(optimal_path_));
   }
 

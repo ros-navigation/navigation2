@@ -128,6 +128,19 @@ public:
   }
 
   /**
+   * @brief Get the per-critic costs for trajectories for visualization
+   * @return Vector of (critic_name, costs) pairs
+   */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
+  {
+    if (critics_data_.individual_critics_cost) {
+      return *critics_data_.individual_critics_cost;
+    }
+    static const std::vector<std::pair<std::string, Eigen::ArrayXf>> empty;
+    return empty;
+  }
+
+  /**
    * @brief Set the maximum speed based on the speed limits callback
    * @param speed_limit Limit of the speed for use
    * @param percentage Whether the speed limit is absolute or relative
@@ -293,7 +306,7 @@ protected:
 
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
-    costs_, settings_.model_dt, false, nullptr, nullptr,
+    costs_, std::nullopt, settings_.model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};

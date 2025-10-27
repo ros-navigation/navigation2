@@ -44,6 +44,7 @@ struct CriticData
   const geometry_msgs::msg::Pose & goal;
 
   Eigen::ArrayXf & costs;
+  std::optional<std::vector<std::pair<std::string, Eigen::ArrayXf>>> individual_critics_cost;
   float & model_dt;
 
   bool fail_flag;

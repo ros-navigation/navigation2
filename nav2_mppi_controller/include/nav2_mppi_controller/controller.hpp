@@ -124,8 +124,8 @@ protected:
   PathHandler path_handler_;
   TrajectoryVisualizer trajectory_visualizer_;
 
-  bool visualize_;
-  bool publish_optimal_trajectory_;
+  bool publish_optimal_trajectory_msg_;
+  bool publish_optimal_footprints_;
 };
 
 }  // namespace nav2_mppi_controller

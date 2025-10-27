@@ -36,9 +36,11 @@ void MPPIController::configure(
   auto node = parent_.lock();
   // Get high-level controller parameters
   auto getParam = parameters_handler_->getParamGetter(name_);
-  getParam(visualize_, "visualize", false);
 
-  getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
+  // Get visualization parameters
+  auto getVisParam = parameters_handler_->getParamGetter(name_ + ".Visualization");
+  getVisParam(publish_optimal_trajectory_msg_, "publish_optimal_trajectory_msg", false);
+  getVisParam(publish_optimal_footprints_, "publish_optimal_footprints", false);
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
@@ -47,7 +49,7 @@ void MPPIController::configure(
     parent_, name_,
     costmap_ros_->getGlobalFrameID(), parameters_handler_.get());
 
-  if (publish_optimal_trajectory_) {
+  if (publish_optimal_trajectory_msg_) {
     opt_traj_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
       "~/optimal_trajectory");
   }
@@ -115,11 +117,10 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
 #endif
 
-  if (publish_optimal_trajectory_ && opt_traj_pub_->get_subscription_count() > 0) {
+  if (publish_optimal_trajectory_msg_ && opt_traj_pub_->get_subscription_count() > 0) {
     std_msgs::msg::Header trajectory_header;
     trajectory_header.stamp = cmd.header.stamp;
     trajectory_header.frame_id = costmap_ros_->getGlobalFrameID();
-
     auto trajectory_msg = utils::toTrajectoryMsg(
       optimal_trajectory,
       optimizer_.getOptimalControlSequence(),
@@ -128,9 +129,15 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
     opt_traj_pub_->publish(std::move(trajectory_msg));
   }
 
-  if (visualize_) {
-    visualize(std::move(transformed_plan), cmd.header.stamp, optimal_trajectory);
+  if (publish_optimal_footprints_ && opt_footprints_pub_->get_subscription_count() > 0) {
+    if (optimal_trajectory.size() == 0) {
+      optimal_trajectory = optimizer_.getOptimizedTrajectory();
+    }
+    auto footprints_msg = createFootprintMarkers(optimal_trajectory, cmd.header);
+    opt_footprints_pub_->publish(std::move(footprints_msg));
   }
+
+  visualize(std::move(transformed_plan), cmd.header.stamp, optimal_trajectory);
 
   return cmd;
 }
@@ -140,10 +147,11 @@ void MPPIController::visualize(
   const builtin_interfaces::msg::Time & cmd_stamp,
   const Eigen::ArrayXXf & optimal_trajectory)
 {
+  // Visualize candidate trajectories (with per-critic costs if available)
   trajectory_visualizer_.add(
     optimizer_.getGeneratedTrajectories(),
     optimizer_.getCosts(),
-    "Candidate Trajectories Cost",
+    optimizer_.getCriticCosts(),
     cmd_stamp);
 
   trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
