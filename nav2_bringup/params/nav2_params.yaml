@@ -140,14 +140,14 @@ controller_server:
       motion_model: "DiffDrive"
       regenerate_noises: true
       Visualization:
-        publish_critics_stats: true
-        publish_optimal_trajectory_msg: true
-        publish_optimal_trajectory: true
-        publish_transformed_path: true
-        publish_trajectories_with_total_cost: true
-        publish_trajectories_with_individual_cost: true
-        publish_optimal_footprints: true
-        publish_optimal_path: true
+        publish_critics_stats: false
+        publish_optimal_trajectory_msg: false
+        publish_optimal_trajectory: false
+        publish_transformed_path: false
+        publish_trajectories_with_total_cost: false
+        publish_trajectories_with_individual_cost: false
+        publish_optimal_footprints: false
+        publish_optimal_path: false
         trajectory_step: 5
         time_step: 3
         footprint_downsample_factor: 3
