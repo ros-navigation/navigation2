@@ -511,6 +511,59 @@ inline void savitskyGolayFilter(
 }
 
 /**
+ * @brief Find the first pose at which there is an in-place rotation in the path
+ * @param path Path to check
+ * @param rotation_threshold Minimum rotation angle to consider this an in-place rotation
+ * @return Index after the rotation sequence if found, path size if no rotation detected
+ */
+inline unsigned int findFirstPathRotation(
+  const nav_msgs::msg::Path & path,
+  float rotation_threshold)
+{
+  if (path.poses.size() < 2) {
+    return path.poses.size();
+  }
+
+  // Iterate through path to find first in-place rotation
+  for (unsigned int idx = 0; idx < path.poses.size() - 1; ++idx) {
+    float dx = path.poses[idx + 1].pose.position.x - path.poses[idx].pose.position.x;
+    float dy = path.poses[idx + 1].pose.position.y - path.poses[idx].pose.position.y;
+    float translation = sqrtf(dx * dx + dy * dy);
+
+    // Check if poses are at roughly the same location
+    if (translation < 1e-3) {
+      float yaw1 = tf2::getYaw(path.poses[idx].pose.orientation);
+      float yaw2 = tf2::getYaw(path.poses[idx + 1].pose.orientation);
+      float rotation = fabs(angles::shortest_angular_distance(yaw1, yaw2));
+
+      // Check if this meets the minimum rotation threshold
+      if (rotation > rotation_threshold) {
+        // Found start of in-place rotation, now find where it ends
+        unsigned int end_idx = idx + 1;
+
+        // Continue while we have minimal translation (still rotating in place)
+        while (end_idx < path.poses.size() - 1) {
+          float next_dx = path.poses[end_idx + 1].pose.position.x -
+            path.poses[end_idx].pose.position.x;
+          float next_dy = path.poses[end_idx + 1].pose.position.y -
+            path.poses[end_idx].pose.position.y;
+          float next_translation = sqrtf(next_dx * next_dx + next_dy * next_dy);
+
+          if (next_translation >= 1e-3) {
+            break;  // End of in-place rotation sequence
+          }
+          end_idx++;
+        }
+
+        return end_idx;
+      }
+    }
+  }
+
+  return path.poses.size();  // No significant rotation detected
+}
+
+/**
  * @brief Find the iterator of the first pose at which there is an inversion on the path,
  * @param path to check for inversion
  * @return the first point after the inversion found in the path
@@ -545,22 +598,35 @@ inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
 }
 
 /**
- * @brief Find and remove poses after the first inversion in the path
- * @param path to check for inversion
- * @return The location of the inversion, return 0 if none exist
+ * @brief Find and remove poses after the first inversion or in-place rotation in the path
+ * @param path Path to check for inversion or rotation
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
+ * @return The location of the inversion/rotation, return 0 if none exist
  */
-inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
+inline unsigned int removePosesAfterFirstInversion(
+  nav_msgs::msg::Path & path,
+  float rotation_threshold = 0.0f)
 {
   nav_msgs::msg::Path cropped_path = path;
+
+  // Check for in-place rotation first (if enabled)
+  unsigned int first_constraint = path.poses.size();
+  if (rotation_threshold > 0.0f) {
+    first_constraint = findFirstPathRotation(cropped_path, rotation_threshold);
+  }
+
+  // Check for inversion and take whichever comes first
   const unsigned int first_after_inversion = findFirstPathInversion(cropped_path);
-  if (first_after_inversion == path.poses.size()) {
-    return 0u;
+  first_constraint = std::min(first_constraint, first_after_inversion);
+
+  if (first_constraint == path.poses.size()) {
+    return 0u;  // No constraint found
   }
 
   cropped_path.poses.erase(
-    cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
+    cropped_path.poses.begin() + first_constraint, cropped_path.poses.end());
   path = cropped_path;
-  return first_after_inversion;
+  return first_constraint;
 }
 
 /**
