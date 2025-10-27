@@ -30,11 +30,9 @@ using rcl_interfaces::msg::ParameterType;
 ParameterHandler::ParameterHandler(
   nav2::LifecycleNode::SharedPtr node, std::string & plugin_name,
   rclcpp::Logger & logger, const double costmap_size_x)
+: nav2_util::ParameterHandler<Parameters>(node, logger)
 {
-  node_ = node;
   plugin_name_ = plugin_name;
-  logger_ = logger;
-
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
   declare_parameter_if_not_declared(
@@ -114,36 +112,6 @@ ParameterHandler::ParameterHandler(
       "setting allow backward to false.");
     params_.allow_backward = false;
   }
-}
-
-void ParameterHandler::activate()
-{
-  auto node = node_.lock();
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-}
-
-void ParameterHandler::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
-}
-
-ParameterHandler::~ParameterHandler()
-{
 }
 
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
