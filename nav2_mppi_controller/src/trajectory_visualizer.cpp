@@ -297,6 +297,11 @@ void TrajectoryVisualizer::visualize(
     add(candidate_trajectories, costs, critic_costs, stamp);
   }
 
+  // Add optimal trajectory to populate optimal_path_
+  if (publish_optimal_trajectory_ && optimal_trajectory.rows() > 0) {
+    add(optimal_trajectory, "Optimal Trajectory", stamp);
+  }
+
   // Publish trajectories
   if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));
