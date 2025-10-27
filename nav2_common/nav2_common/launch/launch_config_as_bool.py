@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Sequence
+
 import launch
 from launch import LaunchContext
 from launch.substitutions import LaunchConfiguration
 from launch.utilities import perform_substitutions
 
 
+@launch.frontend.expose_substitution('as-bool')
 class LaunchConfigAsBool(launch.Substitution):
     """
     Converts a LaunchConfiguration value into a normalized boolean string: 'true' or 'false'.
@@ -29,6 +32,16 @@ class LaunchConfigAsBool(launch.Substitution):
     def __init__(self, name: str) -> None:
         super().__init__()
         self._config = LaunchConfiguration(name)
+
+    @classmethod
+    def parse(cls, data: Sequence[launch.SomeSubstitutionsType]):
+        if len(data) != 1:
+            raise TypeError(f'as-bool substitution takes 1 arg, got {len(data)}')
+        kwargs = {
+            'name': data[0]
+        }
+        return cls, kwargs
+
 
     def perform(self, context: LaunchContext) -> str:
         value = perform_substitutions(context, [self._config])
