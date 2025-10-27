@@ -22,6 +22,8 @@
 
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/footprint.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
@@ -88,13 +90,32 @@ public:
     const models::Trajectories & trajectories,
     const Eigen::ArrayXf & total_costs,
     const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost = {},
-    const builtin_interfaces::msg::Time & cmd_stamp);
+    const builtin_interfaces::msg::Time & cmd_stamp = builtin_interfaces::msg::Time());
 
   /**
-    * @brief Visualize the plan
+    * @brief Visualize the plan and optimal footprints
     * @param plan Plan to visualize
+    * @param optimal_trajectory Optimal trajectory for footprint visualization
+    * @param header Message header for footprints
+    * @param costmap_ros Costmap ROS pointer for footprint and frame information
     */
-  void visualize(const nav_msgs::msg::Path & plan);
+  void visualize(
+    const nav_msgs::msg::Path & plan,
+    const Eigen::ArrayXXf & optimal_trajectory = Eigen::ArrayXXf(),
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros = nullptr);
+
+  /**
+    * @brief Create footprint markers from trajectory
+    * @param trajectory Optimal trajectory
+    * @param header Message header
+    * @param costmap_ros Costmap ROS pointer for footprint and frame information
+    * @return MarkerArray containing footprint polygons
+    */
+  visualization_msgs::msg::MarkerArray createFootprintMarkers(
+    const Eigen::ArrayXXf & trajectory,
+    const std_msgs::msg::Header & header,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
 
   /**
     * @brief Reset object
@@ -107,6 +128,7 @@ protected:
     trajectories_publisher_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
+  nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr optimal_footprints_pub_;
 
   std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;
@@ -119,6 +141,7 @@ protected:
   bool publish_optimal_trajectory_{false};
   bool publish_trajectories_with_total_cost_{false};
   bool publish_trajectories_with_individual_cost_{false};
+  bool publish_optimal_footprints_{false};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };

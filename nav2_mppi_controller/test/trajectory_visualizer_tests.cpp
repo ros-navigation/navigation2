@@ -133,6 +133,9 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
+  builtin_interfaces::msg::Time cmd_stamp;
+  cmd_stamp.sec = 5;
+  cmd_stamp.nanosec = 10;
 
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(

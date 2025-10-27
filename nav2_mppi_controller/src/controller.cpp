@@ -40,7 +40,6 @@ void MPPIController::configure(
   // Get visualization parameters
   auto getVisParam = parameters_handler_->getParamGetter(name_ + ".Visualization");
   getVisParam(publish_optimal_trajectory_msg_, "publish_optimal_trajectory_msg", false);
-  getVisParam(publish_optimal_footprints_, "publish_optimal_footprints", false);
 
   // Configure composed objects
   optimizer_.initialize(parent_, name_, costmap_ros_, tf_buffer_, parameters_handler_.get());
@@ -129,22 +128,14 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
     opt_traj_pub_->publish(std::move(trajectory_msg));
   }
 
-  if (publish_optimal_footprints_ && opt_footprints_pub_->get_subscription_count() > 0) {
-    if (optimal_trajectory.size() == 0) {
-      optimal_trajectory = optimizer_.getOptimizedTrajectory();
-    }
-    auto footprints_msg = createFootprintMarkers(optimal_trajectory, cmd.header);
-    opt_footprints_pub_->publish(std::move(footprints_msg));
-  }
-
-  visualize(std::move(transformed_plan), cmd.header.stamp, optimal_trajectory);
+  visualize(std::move(transformed_plan), cmd.header, optimal_trajectory);
 
   return cmd;
 }
 
 void MPPIController::visualize(
   nav_msgs::msg::Path transformed_plan,
-  const builtin_interfaces::msg::Time & cmd_stamp,
+  const std_msgs::msg::Header & header,
   const Eigen::ArrayXXf & optimal_trajectory)
 {
   // Visualize candidate trajectories (with per-critic costs if available)
@@ -152,10 +143,10 @@ void MPPIController::visualize(
     optimizer_.getGeneratedTrajectories(),
     optimizer_.getCosts(),
     optimizer_.getCriticCosts(),
-    cmd_stamp);
+    header.stamp);
 
-  trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", cmd_stamp);
-  trajectory_visualizer_.visualize(std::move(transformed_plan));
+  trajectory_visualizer_.add(optimal_trajectory, "Optimal Trajectory", header.stamp);
+  trajectory_visualizer_.visualize(std::move(transformed_plan), optimal_trajectory, header, costmap_ros_);
 }
 
 void MPPIController::setPlan(const nav_msgs::msg::Path & path)
