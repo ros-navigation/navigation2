@@ -511,90 +511,83 @@ inline void savitskyGolayFilter(
 }
 
 /**
- * @brief Find the first pose at which there is an in-place rotation in the path
- * @param path Path to check
- * @param rotation_threshold Minimum rotation angle to consider this an in-place rotation
- * @return Index after the rotation sequence if found, path size if no rotation detected
+ * @brief Find the iterator of the first pose at which there is an inversion or in-place rotation in the path
+ * @param path to check for inversion or rotation
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
+ * @return the first point after the inversion or rotation found in the path
  */
-inline unsigned int findFirstPathRotation(
-  const nav_msgs::msg::Path & path,
-  float rotation_threshold)
+inline unsigned int findFirstPathInversion(
+  nav_msgs::msg::Path & path,
+  float rotation_threshold = 0.0f)
 {
   if (path.poses.size() < 2) {
     return path.poses.size();
   }
 
-  // Iterate through path to find first in-place rotation
-  for (unsigned int idx = 0; idx < path.poses.size() - 1; ++idx) {
-    float dx = path.poses[idx + 1].pose.position.x - path.poses[idx].pose.position.x;
-    float dy = path.poses[idx + 1].pose.position.y - path.poses[idx].pose.position.y;
-    float translation = sqrtf(dx * dx + dy * dy);
+  unsigned int first_constraint = path.poses.size();
 
-    // Check if poses are at roughly the same location
-    if (translation < 1e-3) {
-      float yaw1 = tf2::getYaw(path.poses[idx].pose.orientation);
-      float yaw2 = tf2::getYaw(path.poses[idx + 1].pose.orientation);
-      float rotation = fabs(angles::shortest_angular_distance(yaw1, yaw2));
+  // Check for in-place rotation first (if enabled)
+  if (rotation_threshold > 0.0f) {
+    for (unsigned int idx = 0; idx < path.poses.size() - 1; ++idx) {
+      float dx = path.poses[idx + 1].pose.position.x - path.poses[idx].pose.position.x;
+      float dy = path.poses[idx + 1].pose.position.y - path.poses[idx].pose.position.y;
+      float translation = sqrtf(dx * dx + dy * dy);
 
-      // Check if this meets the minimum rotation threshold
-      if (rotation > rotation_threshold) {
-        // Found start of in-place rotation, now find where it ends
-        unsigned int end_idx = idx + 1;
+      // Check if poses are at roughly the same location
+      if (translation < 1e-3) {
+        float yaw1 = tf2::getYaw(path.poses[idx].pose.orientation);
+        float yaw2 = tf2::getYaw(path.poses[idx + 1].pose.orientation);
+        float rotation = fabs(angles::shortest_angular_distance(yaw1, yaw2));
 
-        // Continue while we have minimal translation (still rotating in place)
-        while (end_idx < path.poses.size() - 1) {
-          float next_dx = path.poses[end_idx + 1].pose.position.x -
-            path.poses[end_idx].pose.position.x;
-          float next_dy = path.poses[end_idx + 1].pose.position.y -
-            path.poses[end_idx].pose.position.y;
-          float next_translation = sqrtf(next_dx * next_dx + next_dy * next_dy);
+        // Check if this meets the minimum rotation threshold
+        if (rotation > rotation_threshold) {
+          // Found start of in-place rotation, now find where it ends
+          unsigned int end_idx = idx + 1;
 
-          if (next_translation >= 1e-3) {
-            break;  // End of in-place rotation sequence
+          // Continue while we have minimal translation (still rotating in place)
+          while (end_idx < path.poses.size() - 1) {
+            float next_dx = path.poses[end_idx + 1].pose.position.x -
+              path.poses[end_idx].pose.position.x;
+            float next_dy = path.poses[end_idx + 1].pose.position.y -
+              path.poses[end_idx].pose.position.y;
+            float next_translation = sqrtf(next_dx * next_dx + next_dy * next_dy);
+
+            if (next_translation >= 1e-3) {
+              break;  // End of in-place rotation sequence
+            }
+            end_idx++;
           }
-          end_idx++;
-        }
 
-        return end_idx;
+          first_constraint = end_idx;
+          break;
+        }
       }
     }
   }
 
-  return path.poses.size();  // No significant rotation detected
-}
+  // Check for inversion (at least 3 poses needed)
+  if (path.poses.size() >= 3) {
+    for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
+      // We have two vectors for the dot product OA and AB. Determining the vectors.
+      float oa_x = path.poses[idx].pose.position.x -
+        path.poses[idx - 1].pose.position.x;
+      float oa_y = path.poses[idx].pose.position.y -
+        path.poses[idx - 1].pose.position.y;
+      float ab_x = path.poses[idx + 1].pose.position.x -
+        path.poses[idx].pose.position.x;
+      float ab_y = path.poses[idx + 1].pose.position.y -
+        path.poses[idx].pose.position.y;
 
-/**
- * @brief Find the iterator of the first pose at which there is an inversion on the path,
- * @param path to check for inversion
- * @return the first point after the inversion found in the path
- */
-inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
-{
-  // At least 3 poses for a possible inversion
-  if (path.poses.size() < 3) {
-    return path.poses.size();
-  }
-
-  // Iterating through the path to determine the position of the path inversion
-  for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
-    // We have two vectors for the dot product OA and AB. Determining the vectors.
-    float oa_x = path.poses[idx].pose.position.x -
-      path.poses[idx - 1].pose.position.x;
-    float oa_y = path.poses[idx].pose.position.y -
-      path.poses[idx - 1].pose.position.y;
-    float ab_x = path.poses[idx + 1].pose.position.x -
-      path.poses[idx].pose.position.x;
-    float ab_y = path.poses[idx + 1].pose.position.y -
-      path.poses[idx].pose.position.y;
-
-    // Checking for the existence of cusp, in the path, using the dot product.
-    float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
-    if (dot_product < 0.0f) {
-      return idx + 1;
+      // Checking for the existence of cusp, in the path, using the dot product.
+      float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
+      if (dot_product < 0.0f) {
+        first_constraint = std::min(first_constraint, idx + 1);
+        break;
+      }
     }
   }
 
-  return path.poses.size();
+  return first_constraint;
 }
 
 /**
@@ -609,15 +602,7 @@ inline unsigned int removePosesAfterFirstInversion(
 {
   nav_msgs::msg::Path cropped_path = path;
 
-  // Check for in-place rotation first (if enabled)
-  unsigned int first_constraint = path.poses.size();
-  if (rotation_threshold > 0.0f) {
-    first_constraint = findFirstPathRotation(cropped_path, rotation_threshold);
-  }
-
-  // Check for inversion and take whichever comes first
-  const unsigned int first_after_inversion = findFirstPathInversion(cropped_path);
-  first_constraint = std::min(first_constraint, first_after_inversion);
+  const unsigned int first_constraint = findFirstPathInversion(cropped_path, rotation_threshold);
 
   if (first_constraint == path.poses.size()) {
     return 0u;  // No constraint found
