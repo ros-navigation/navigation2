@@ -42,12 +42,6 @@ void TrajectoryVisualizer::on_configure(
   getParam(publish_trajectories_with_total_cost_, "publish_trajectories_with_total_cost", false);
   getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost",
       false);
-  getParam(publish_optimal_footprints_, "publish_optimal_footprints", false);
-
-  if (publish_optimal_footprints_) {
-    optimal_footprints_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "~/optimal_footprints", rclcpp::SystemDefaultsQoS());
-  }
 
   reset();
 }
