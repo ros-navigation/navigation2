@@ -37,11 +37,12 @@ void CriticManager::getParams()
   auto node = parent_.lock();
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(critic_names_, "critics", std::vector<std::string>{}, ParameterType::Static);
-  
+
   // Read visualization parameters from Visualization namespace
   auto getVisualizerParam = parameters_handler_->getParamGetter(name_ + ".Visualization");
   getVisualizerParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
-  getVisualizerParam(visualize_per_critic_costs_, "publish_trajectories_with_individual_cost", false, ParameterType::Static);
+  getVisualizerParam(visualize_per_critic_costs_, "publish_trajectories_with_individual_cost",
+      false, ParameterType::Static);
 }
 
 void CriticManager::loadCritics()
@@ -112,7 +113,7 @@ void CriticManager::evalTrajectoriesScores(
     // Calculate cost contribution from this critic
     if (visualize_per_critic_costs_ || publish_critics_stats_) {
       Eigen::ArrayXf cost_diff = data.costs - costs_before;
-      
+
       if (visualize_per_critic_costs_) {
         data.individual_critics_cost->emplace_back(critic_names_[i], cost_diff);
       }

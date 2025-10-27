@@ -114,7 +114,8 @@ TEST(CriticManagerTests, BasicCriticOperations)
   Eigen::ArrayXf costs;
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr, nullptr,
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt, false, nullptr,
+    nullptr,
     std::nullopt, std::nullopt};
 
   data.fail_flag = true;

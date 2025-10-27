@@ -40,7 +40,8 @@ void TrajectoryVisualizer::on_configure(
   getParam(time_step_, "time_step", 3);
   getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
   getParam(publish_trajectories_with_total_cost_, "publish_trajectories_with_total_cost", false);
-  getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost", false);
+  getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost",
+      false);
 
   reset();
 }
@@ -115,9 +116,9 @@ void TrajectoryVisualizer::add(
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
   // Check if we should visualize per-critic costs
-  bool visualize_per_critic = !individual_critics_cost.empty() && 
-                               publish_trajectories_with_individual_cost_ &&
-                               trajectories_publisher_->get_subscription_count() > 0;
+  bool visualize_per_critic = !individual_critics_cost.empty() &&
+    publish_trajectories_with_individual_cost_ &&
+    trajectories_publisher_->get_subscription_count() > 0;
 
   size_t n_rows = trajectories.x.rows();
   size_t n_cols = trajectories.x.cols();
@@ -128,91 +129,91 @@ void TrajectoryVisualizer::add(
     const Eigen::ArrayXf & costs,
     const std::string & ns,
     bool use_collision_coloring) {
-    
-    // Find min/max cost for normalization
-    float min_cost = std::numeric_limits<float>::max();
-    float max_cost = std::numeric_limits<float>::lowest();
-    
-    for (Eigen::Index i = 0; i < costs.size(); ++i) {
-      // Skip collision trajectories for min/max calculation if using collision coloring
-      if (use_collision_coloring && costs(i) >= 1000000.0f) {
-        continue;
-      }
-      min_cost = std::min(min_cost, costs(i));
-      max_cost = std::max(max_cost, costs(i));
-    }
-    
-    float cost_range = max_cost - min_cost;
-    
-    // Avoid division by zero
-    if (cost_range < 1e-6f) {
-      cost_range = 1.0f;
-    }
 
-    for (size_t i = 0; i < n_rows; i += trajectory_step_) {
-      float red_component, green_component, blue_component;
+    // Find min/max cost for normalization
+      float min_cost = std::numeric_limits<float>::max();
+      float max_cost = std::numeric_limits<float>::lowest();
+
+      for (Eigen::Index i = 0; i < costs.size(); ++i) {
+      // Skip collision trajectories for min/max calculation if using collision coloring
+        if (use_collision_coloring && costs(i) >= 1000000.0f) {
+          continue;
+        }
+        min_cost = std::min(min_cost, costs(i));
+        max_cost = std::max(max_cost, costs(i));
+      }
+
+      float cost_range = max_cost - min_cost;
+
+    // Avoid division by zero
+      if (cost_range < 1e-6f) {
+        cost_range = 1.0f;
+      }
+
+      for (size_t i = 0; i < n_rows; i += trajectory_step_) {
+        float red_component, green_component, blue_component;
 
       // Check if this trajectory is in collision (cost >= 1000000)
-      bool in_collision = use_collision_coloring && costs(i) >= 1000000.0f;
-      
+        bool in_collision = use_collision_coloring && costs(i) >= 1000000.0f;
+
       // Check if cost is zero (no contribution from this critic)
-      bool zero_cost = std::abs(costs(i)) < 1e-6f;
-      
-      if (in_collision) {
+        bool zero_cost = std::abs(costs(i)) < 1e-6f;
+
+        if (in_collision) {
         // Fixed red color for collision trajectories
-        red_component = 1.0f;
-        green_component = 0.0f;
-        blue_component = 0.0f;
-      } else if (zero_cost) {
+          red_component = 1.0f;
+          green_component = 0.0f;
+          blue_component = 0.0f;
+        } else if (zero_cost) {
         // Gray color for zero cost (no contribution)
-        red_component = 0.5f;
-        green_component = 0.5f;
-        blue_component = 0.5f;
-      } else {
+          red_component = 0.5f;
+          green_component = 0.5f;
+          blue_component = 0.5f;
+        } else {
         // Normal gradient for non-collision trajectories
-        float normalized_cost = (costs(i) - min_cost) / cost_range;
-        normalized_cost = std::clamp(normalized_cost, 0.0f, 1.0f);
+          float normalized_cost = (costs(i) - min_cost) / cost_range;
+          normalized_cost = std::clamp(normalized_cost, 0.0f, 1.0f);
 
         // Color scheme: Green (low cost) -> Yellow -> Red (high cost)
-        blue_component = 0.0f;
-        if (normalized_cost < 0.5f) {
+          blue_component = 0.0f;
+          if (normalized_cost < 0.5f) {
           // Green to Yellow (0.0 - 0.5)
-          red_component = normalized_cost * 2.0f;
-          green_component = 1.0f;
-        } else {
+            red_component = normalized_cost * 2.0f;
+            green_component = 1.0f;
+          } else {
           // Yellow to Red (0.5 - 1.0)
-          red_component = 1.0f;
-          green_component = 2.0f * (1.0f - normalized_cost);
+            red_component = 1.0f;
+            green_component = 2.0f * (1.0f - normalized_cost);
+          }
         }
-      }
 
       // Create line strip marker for this trajectory
-      visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = frame_id_;
-      marker.header.stamp = cmd_stamp;
-      marker.ns = ns;
-      marker.id = marker_id_++;
-      marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
-      marker.action = visualization_msgs::msg::Marker::ADD;
-      marker.pose.orientation.w = 1.0;
-      marker.scale.x = 0.01;  // Line width
-      marker.color.r = red_component;
-      marker.color.g = green_component;
-      marker.color.b = blue_component;
-      marker.color.a = 1.0;
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = frame_id_;
+        marker.header.stamp = cmd_stamp;
+        marker.ns = ns;
+        marker.id = marker_id_++;
+        marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.01; // Line width
+        marker.color.r = red_component;
+        marker.color.g = green_component;
+        marker.color.b = blue_component;
+        marker.color.a = 1.0;
 
       // Add all points in this trajectory to the line strip
-      for (size_t j = 0; j < n_cols; j += time_step_) {
-        geometry_msgs::msg::Point point;
-        point.x = trajectories.x(i, j);
-        point.y = trajectories.y(i, j);
-        point.z = 0.0f;
-        marker.points.push_back(point);
+        for (size_t j = 0; j < n_cols; j += time_step_) {
+          geometry_msgs::msg::Point point;
+          point.x = trajectories.x(i, j);
+          point.y = trajectories.y(i, j);
+          point.z = 0.0f;
+          marker.points.push_back(point);
+        }
+
+        points_->markers.push_back(marker);
       }
-      
-      points_->markers.push_back(marker);
-    }
-  };
+    };
 
   // If visualizing per-critic costs
   if (visualize_per_critic) {
