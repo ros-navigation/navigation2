@@ -21,6 +21,7 @@
 #include <string>
 
 #include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/msg/trajectory.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
@@ -29,6 +30,7 @@
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 #include "nav2_mppi_controller/models/trajectories.hpp"
+#include "nav2_mppi_controller/models/control_sequence.hpp"
 
 namespace mppi
 {
@@ -93,17 +95,52 @@ public:
     const builtin_interfaces::msg::Time & cmd_stamp = builtin_interfaces::msg::Time());
 
   /**
-    * @brief Visualize the plan and optimal footprints
-    * @param plan Plan to visualize
-    * @param optimal_trajectory Optimal trajectory for footprint visualization
-    * @param header Message header for footprints
-    * @param costmap_ros Costmap ROS pointer for footprint and frame information
+    * @brief Visualize all trajectory data in one call
+    * @param plan Transformed plan to visualize
+    * @param optimal_trajectory Optimal trajectory
+    * @param control_sequence Control sequence for optimal trajectory
+    * @param model_dt Model time step
+    * @param stamp Timestamp for the visualization
+    * @param costmap_ros Costmap ROS pointer
+    * @param candidate_trajectories Generated candidate trajectories
+    * @param costs Total costs for each trajectory
+    * @param critic_costs Per-critic costs for each trajectory
     */
   void visualize(
-    const nav_msgs::msg::Path & plan,
-    const Eigen::ArrayXXf & optimal_trajectory = Eigen::ArrayXXf(),
-    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros = nullptr);
+    nav_msgs::msg::Path plan,
+    const Eigen::ArrayXXf & optimal_trajectory,
+    const models::ControlSequence & control_sequence,
+    float model_dt,
+    const builtin_interfaces::msg::Time & stamp,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+    const models::Trajectories & candidate_trajectories,
+    const Eigen::ArrayXf & costs,
+    const std::vector<std::pair<std::string, Eigen::ArrayXf>> & critic_costs);
+
+  /**
+    * @brief Visualize without optimizer (for testing)
+    * @param plan Transformed plan to visualize
+    */
+  void visualize(nav_msgs::msg::Path plan);
+
+  /**
+    * @brief Reset object
+    */
+  void reset();
+
+protected:
+  /**
+    * @brief Create trajectory markers with cost-based coloring
+    * @param trajectories Set of trajectories to visualize
+    * @param costs Cost array for each trajectory
+    * @param ns Namespace for the markers
+    * @param cmd_stamp Timestamp for the markers
+    */
+  void createTrajectoryMarkers(
+    const models::Trajectories & trajectories,
+    const Eigen::ArrayXf & costs,
+    const std::string & ns,
+    const builtin_interfaces::msg::Time & cmd_stamp);
 
   /**
     * @brief Create footprint markers from trajectory
@@ -117,18 +154,13 @@ public:
     const std_msgs::msg::Header & header,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros);
 
-  /**
-    * @brief Reset object
-    */
-  void reset();
-
-protected:
   std::string frame_id_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     trajectories_publisher_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_path_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr optimal_path_pub_;
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr optimal_footprints_pub_;
+  nav2::Publisher<nav2_msgs::msg::Trajectory>::SharedPtr optimal_trajectory_msg_pub_;
 
   std::unique_ptr<nav_msgs::msg::Path> optimal_path_;
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;
@@ -142,6 +174,10 @@ protected:
   bool publish_trajectories_with_total_cost_{false};
   bool publish_trajectories_with_individual_cost_{false};
   bool publish_optimal_footprints_{false};
+  bool publish_optimal_trajectory_msg_{false};
+  bool publish_transformed_path_{false};
+  bool publish_optimal_path_{false};
+  int footprint_downsample_factor_{3};
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 };
