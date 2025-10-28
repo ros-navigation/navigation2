@@ -48,7 +48,7 @@ ParameterHandler::ParameterHandler(
   params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ +
     ".simulate_ahead_time", 1.0);
   params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
-    ".primary_controller");
+    ".primary_controller.plugin");
   params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ +
     ".rotate_to_goal_heading", false);
   params_.rotate_to_heading_once = node->declare_or_get_parameter(plugin_name_ +

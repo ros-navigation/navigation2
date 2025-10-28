@@ -95,7 +95,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
     node->get_node_services_interface());
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter(
-        "PathFollower.primary_controller",
+        "PathFollower.primary_controller.plugin",
         std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"))});
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -124,7 +124,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   auto controller = std::make_shared<RotationShimShim>();
@@ -173,7 +173,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   node->declare_parameter("controller_frequency", 1.0);
@@ -246,7 +246,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter("controller_frequency", 1.0);
 
@@ -331,7 +331,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
@@ -409,13 +409,13 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "PathFollower.rotate_to_goal_heading",
     true);
   node->declare_parameter("controller_frequency", 1.0);
-  node->declare_parameter("PathFollower.PrimaryController.use_collision_detection", false);
+  node->declare_parameter("PathFollower.primary_controller.use_collision_detection", false);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -484,7 +484,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
@@ -563,7 +563,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "PathFollower.rotate_to_heading_once",
@@ -602,7 +602,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "test.primary_controller",
+    "test.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   auto controller = std::make_shared<RotationShimShim>();
@@ -620,7 +620,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 7.0),
       rclcpp::Parameter("test.max_angular_accel", 7.0),
       rclcpp::Parameter("test.simulate_ahead_time", 7.0),
-      rclcpp::Parameter("test.primary_controller", std::string("HI")),
+      rclcpp::Parameter("test.primary_controller.plugin", std::string("HI")),
       rclcpp::Parameter("test.rotate_to_goal_heading", true),
       rclcpp::Parameter("test.rotate_to_heading_once", true),
       rclcpp::Parameter("test.closed_loop", false),
