@@ -48,15 +48,10 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     params_file = os.path.join(nav2_bringup_dir, 'params/nav2_params.yaml')
-
-    # Replace the `use_astar` setting on the params file
-    param_substitutions = {
-        'controller_server.ros__parameters.FollowPath.prune_distance': '1.0',
-        'controller_server.ros__parameters.FollowPath.forward_prune_distance': '1.0'}
     configured_params = RewrittenYaml(
         source_file=params_file,
         root_key='',
-        param_rewrites=param_substitutions,
+        param_rewrites={},
         value_rewrites={
             'KEEPOUT_ZONE_ENABLED': 'False',
             'SPEED_ZONE_ENABLED': 'False',
