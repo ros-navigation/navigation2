@@ -46,7 +46,8 @@ ParameterHandler::ParameterHandler(
   params_.failure_tolerance = node->declare_or_get_parameter("failure_tolerance", 0.0);
   params_.use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
   params_.publish_zero_velocity = node->declare_or_get_parameter("publish_zero_velocity", true);
-  double costmap_update_timeout_dbl = node->declare_or_get_parameter("costmap_update_timeout", 0.30);
+  double costmap_update_timeout_dbl = node->declare_or_get_parameter("costmap_update_timeout",
+    0.30);
   params_.costmap_update_timeout = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
   params_.odom_topic = node->declare_or_get_parameter("odom_topic", std::string("odom"));
   params_.odom_duration = node->declare_or_get_parameter("odom_duration", 0.3);
