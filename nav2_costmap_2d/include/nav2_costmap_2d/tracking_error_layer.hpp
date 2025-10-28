@@ -37,7 +37,7 @@
 namespace nav2_costmap_2d
 {
 
-class TrackingErrorLayer : public nav2_costmap_2d::CostmapLayer
+class TrackingErrorLayer : public nav2_costmap_2d::Layer
 {
 public:
   TrackingErrorLayer();
@@ -72,9 +72,6 @@ private:
   std::mutex data_mutex_;
   nav_msgs::msg::Path last_path_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   size_t temp_step_;
   int step_;

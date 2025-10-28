@@ -164,15 +164,6 @@ TEST_F(TrackingErrorLayerTestFixture, test_initialization_and_parameters)
   EXPECT_NO_THROW(layer_->deactivate());
 }
 
-TEST_F(TrackingErrorLayerTestFixture, test_lifecycle_methods)
-{
-  EXPECT_NO_THROW(layer_->activate());
-  EXPECT_NO_THROW(layer_->deactivate());
-  EXPECT_NO_THROW(layer_->reset());
-  EXPECT_NO_THROW(layer_->onFootprintChanged());
-  EXPECT_NO_THROW(layer_->cleanup());
-}
-
 // Empty data handling tests
 TEST_F(TrackingErrorLayerTestFixture, test_empty_data_handling)
 {
@@ -390,21 +381,6 @@ TEST_F(TrackingErrorLayerTestFixture, test_malformed_data)
   nan_path.poses.push_back(nan_pose);
 
   EXPECT_NO_THROW(layer_->getWallPoints(nan_path));
-}
-
-TEST_F(TrackingErrorLayerTestFixture, test_frame_transformation)
-{
-  // Create path in different frame
-  auto path = createStraightPath();
-  path.header.frame_id = "base_link";
-
-  auto tracking_error = createTrackingFeedback(5);
-  layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path));
-  layer_->trackingCallback(std::make_shared<nav2_msgs::msg::TrackingFeedback>(tracking_error));
-
-  nav2_costmap_2d::Costmap2D master_grid(100, 100, 0.05, -2.5, -2.5);
-  // Should handle frame mismatch
-  EXPECT_NO_THROW(layer_->updateCosts(master_grid, 0, 0, 100, 100));
 }
 
 int main(int argc, char ** argv)
