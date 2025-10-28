@@ -29,6 +29,7 @@
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
+#include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
@@ -851,4 +852,264 @@ TEST(CriticTests, VelocityDeadbandCritic)
   critic.score(data);
   // 35.0 weight * 0.1 model_dt * (0.07 + 0.06 + 0.059) * 30 timesteps = 56.7
   EXPECT_NEAR(costs(1), 19.845, 0.01);
+}
+
+  class PathHugCriticTest : public ::testing::Test
+{
+protected:
+  mppi::critics::PathHugCritic critic_;
+  mppi::models::State state_;
+  mppi::models::Path path_;
+  mppi::models::Trajectories traj_;
+  geometry_msgs::msg::Pose goal_;
+  Eigen::ArrayXf costs_;
+  float model_dt_{0.1f};
+  CriticData data_;
+
+  PathHugCriticTest()
+  : data_{state_, traj_, path_, goal_, costs_, model_dt_,
+      false, nullptr, nullptr, std::nullopt, std::nullopt}
+  {}
+
+  void SetUp() override
+  {
+    state_.reset(1, 3);
+    path_.reset(3);
+    traj_.reset(1, 3);
+    costs_ = Eigen::ArrayXf::Zero(1);
+    goal_ = geometry_msgs::msg::Pose();
+
+    auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+    node->declare_parameter("critic.sample_stride", 1);
+    auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+      "dummy_costmap", "", true);
+    std::string name = "critic";
+    ParametersHandler param_handler(node, name);
+    rclcpp_lifecycle::State lstate;
+    costmap_ros->on_configure(lstate);
+
+    critic_.on_configure(node, "mppi", name, costmap_ros, &param_handler);
+  }
+};
+
+TEST_F(PathHugCriticTest, InitializesCorrectly)
+{
+  EXPECT_EQ(critic_.getName(), "critic");
+  // Test that parameters are loaded correctly
+  EXPECT_NO_THROW(critic_.score(data_));
+}
+
+TEST_F(PathHugCriticTest, HandlesEmptyPath)
+{
+  path_.reset(0);
+  traj_.reset(1, 3);
+  costs_ = Eigen::ArrayXf::Zero(1);
+
+  // Set up a valid trajectory
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  EXPECT_NO_THROW(critic_.score(data_));
+  EXPECT_EQ(costs_(0), 0.0);
+}
+
+TEST_F(PathHugCriticTest, HandlesEmptyTrajectory)
+{
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  traj_.reset(1, 0);  // Empty trajectory
+  costs_ = Eigen::ArrayXf::Zero(1);
+
+  EXPECT_NO_THROW(critic_.score(data_));
+  EXPECT_EQ(costs_(0), 0.0);
+}
+
+TEST_F(PathHugCriticTest, TrajectoryOnPathHasLowCost)
+{
+  // Path: straight line from (0,0) to (2,0)
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  // Trajectory: exactly on the path
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  critic_.score(data_);
+  EXPECT_NEAR(costs_(0), 0.0, 0.1);
+}
+
+TEST_F(PathHugCriticTest, TrajectoryOffPathHasCost)
+{
+  // Path: straight line from (0,0) to (2,0)
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  // Trajectory: parallel to path, 1 unit offset
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  critic_.score(data_);
+
+  EXPECT_NEAR(costs_(0), 10.0, 2.0);
+}
+
+TEST_F(PathHugCriticTest, LargerDeviationHasHigherCost)
+{
+  // Path: straight line from (0,0) to (2,0)
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  // Test small deviation first
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 0.5; traj_.y(0, 2) = 0.5;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  critic_.score(data_);
+  float small_deviation_cost = costs_(0);
+
+  // Test large deviation
+  traj_.y(0, 0) = 2.0; traj_.y(0, 1) = 2.0; traj_.y(0, 2) = 2.0;
+
+  costs_.setZero();
+  critic_.score(data_);
+  float large_deviation_cost = costs_(0);
+
+  EXPECT_GT(large_deviation_cost, 1.5 * small_deviation_cost);
+}
+
+TEST_F(PathHugCriticTest, VariableDeviationCost)
+{
+  // Path: straight line from (0,0) to (4,0)
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 2; path_.x(2) = 4;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  // Trajectory with variable deviation
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 2; traj_.x(0, 2) = 4;
+  traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 1.5; traj_.y(0, 2) = 0.5;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  critic_.score(data_);
+  // Should be reasonable cost based on average deviation
+  EXPECT_GT(costs_(0), 2.0);
+  EXPECT_LT(costs_(0), 15.0);
+}
+
+TEST_F(PathHugCriticTest, BatchMultipleTrajectories)
+{
+  // Path: straight line from (0,0) to (2,0)
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  traj_.reset(3, 3);
+  costs_ = Eigen::ArrayXf::Zero(3);
+
+  // Trajectory 0: on path
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  // Trajectory 1: small deviation
+  traj_.x(1, 0) = 0; traj_.x(1, 1) = 1; traj_.x(1, 2) = 2;
+  traj_.y(1, 0) = 0.5; traj_.y(1, 1) = 0.5; traj_.y(1, 2) = 0.5;
+  traj_.yaws(1, 0) = 0; traj_.yaws(1, 1) = 0; traj_.yaws(1, 2) = 0;
+
+  // Trajectory 2: large deviation
+  traj_.x(2, 0) = 0; traj_.x(2, 1) = 1; traj_.x(2, 2) = 2;
+  traj_.y(2, 0) = 3.0; traj_.y(2, 1) = 3.0; traj_.y(2, 2) = 3.0;
+  traj_.yaws(2, 0) = 0; traj_.yaws(2, 1) = 0; traj_.yaws(2, 2) = 0;
+
+  critic_.score(data_);
+
+  EXPECT_NEAR(costs_(0), 0.0, 0.1);  // On path
+  EXPECT_GT(costs_(1), 0.0);          // Small deviation
+  EXPECT_GT(costs_(2), costs_(1));    // Large deviation > small deviation
+  EXPECT_GT(costs_(2), 2.0 * costs_(1));  // Significantly higher cost
+}
+
+TEST_F(PathHugCriticTest, SearchWindowLimitsPathSearch)
+{
+  // Create a long path
+  path_.reset(10);
+  for (int i = 0; i < 10; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+    path_.yaws(i) = 0;
+  }
+
+  // Trajectory that starts far from beginning of path
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 8; traj_.x(0, 1) = 9; traj_.x(0, 2) = 10;
+  traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  EXPECT_NO_THROW(critic_.score(data_));
+  EXPECT_GT(costs_(0), 0.0);
+}
+
+TEST_F(PathHugCriticTest, HandlesTrajectoryLongerThanPath)
+{
+  // Short path
+  path_.reset(2);
+  path_.x(0) = 0; path_.x(1) = 1;
+  path_.y(0) = 0; path_.y(1) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0;
+
+  // Long trajectory
+  traj_.reset(1, 5);
+  for (int i = 0; i < 5; ++i) {
+    traj_.x(0, i) = i;
+    traj_.y(0, i) = 0.5;
+    traj_.yaws(0, i) = 0;
+  }
+
+  costs_.setZero();
+  EXPECT_NO_THROW(critic_.score(data_));
+  EXPECT_GT(costs_(0), 0.0);
+}
+
+TEST_F(PathHugCriticTest, CostScalesWithWeight)
+{
+  // This test would require access to weight parameter or multiple critic instances
+  // For now, just verify basic functionality
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+  path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  costs_.setZero();
+  critic_.score(data_);
+
+  // Should be proportional to weight parameter (default 5.0)
+  EXPECT_GT(costs_(0), 3.0);
+  EXPECT_LT(costs_(0), 15.0);
 }
