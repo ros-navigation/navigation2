@@ -39,10 +39,16 @@ void PathHandler::initialize(
   getParam(prune_distance_, "prune_distance", 1.5);
   getParam(transform_tolerance_, "transform_tolerance", 0.1);
   getParam(enforce_path_inversion_, "enforce_path_inversion", false);
-  if (enforce_path_inversion_) {
+  getParam(enforce_path_rotation_, "enforce_path_rotation", false);
+
+  if (enforce_path_inversion_ || enforce_path_rotation_) {
     getParam(inversion_xy_tolerance_, "inversion_xy_tolerance", 0.2);
-    getParam(inversion_yaw_tolerance, "inversion_yaw_tolerance", 0.4);
+    getParam(inversion_yaw_tolerance_, "inversion_yaw_tolerance", 0.4);
     inversion_locale_ = 0u;
+  }
+
+  if (enforce_path_rotation_) {
+    getParam(minimum_rotation_angle_, "minimum_rotation_angle", 0.785);
   }
 }
 
@@ -131,11 +137,16 @@ nav_msgs::msg::Path PathHandler::transformPath(
 
   prunePlan(global_plan_up_to_inversion_, lower_bound);
 
-  if (enforce_path_inversion_ && inversion_locale_ != 0u) {
+  if ((enforce_path_inversion_ || enforce_path_rotation_) && inversion_locale_ != 0u) {
     if (isWithinInversionTolerances(global_pose)) {
+      // Robot has reached the inversion/rotation point, unlock the rest of the path
       prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
       global_plan_up_to_inversion_ = global_plan_;
-      inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+
+      // Recompute locale on the updated path
+      float rotation_check = enforce_path_rotation_ ? minimum_rotation_angle_ : 0.0f;
+      inversion_locale_ = utils::removePosesAfterFirstInversion(
+        global_plan_up_to_inversion_, rotation_check);
     }
   }
 
@@ -156,10 +167,12 @@ double PathHandler::getMaxCostmapDist()
 void PathHandler::setPath(const nav_msgs::msg::Path & plan)
 {
   global_plan_ = plan;
-  global_plan_up_to_inversion_ = global_plan_;
-  if (enforce_path_inversion_) {
-    inversion_locale_ = utils::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
-  }
+  global_plan_up_to_inversion_ = plan;
+
+  // Find and restrict to the first rotation or inversion constraint
+  float rotation_check = enforce_path_rotation_ ? minimum_rotation_angle_ : 0.0f;
+  inversion_locale_ = utils::removePosesAfterFirstInversion(
+    global_plan_up_to_inversion_, rotation_check);
 }
 
 nav_msgs::msg::Path & PathHandler::getPath() {return global_plan_;}
@@ -199,7 +212,7 @@ bool PathHandler::isWithinInversionTolerances(const geometry_msgs::msg::PoseStam
     tf2::getYaw(robot_pose.pose.orientation),
     tf2::getYaw(last_pose.pose.orientation));
 
-  return distance <= inversion_xy_tolerance_ && fabs(angle_distance) <= inversion_yaw_tolerance;
+  return distance <= inversion_xy_tolerance_ && fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
 }  // namespace mppi
