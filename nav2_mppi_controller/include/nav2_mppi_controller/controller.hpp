@@ -104,9 +104,12 @@ public:
 protected:
   /**
     * @brief Visualize trajectories
+    * @param global_plan Global input plan
     * @param transformed_plan Transformed input plan
     */
-  void visualize(nav_msgs::msg::Path transformed_plan);
+  void visualize(
+    nav_msgs::msg::Path global_plan,
+    nav_msgs::msg::Path transformed_plan);
 
   std::string name_;
   rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;

@@ -83,9 +83,12 @@ public:
 
   /**
     * @brief Visualize the plan
-    * @param plan Plan to visualize
+    * @param global_plan Global Plan to visualize
+    * @param transformed_plan Transformed Plan to visualize
     */
-  void visualize(const nav_msgs::msg::Path & plan);
+  void visualize(
+    const nav_msgs::msg::Path & global_plan,
+    const nav_msgs::msg::Path & transformed_plan);
 
   /**
     * @brief Reset object
@@ -96,6 +99,7 @@ protected:
   std::string frame_id_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>>
   trajectories_publisher_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> global_path_pub_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>> transformed_path_pub_;
 
   std::unique_ptr<visualization_msgs::msg::MarkerArray> points_;

@@ -92,6 +92,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   last_time_called_ = clock_->now();
 
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+  nav_msgs::msg::Path global_plan = path_handler_.getPath();
   nav_msgs::msg::Path transformed_plan = path_handler_.transformPath(robot_pose);
 
   nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
@@ -107,17 +108,19 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
 #endif
 
   if (visualize_) {
-    visualize(std::move(transformed_plan));
+    visualize(std::move(global_plan), std::move(transformed_plan));
   }
 
   return cmd;
 }
 
-void MPPIController::visualize(nav_msgs::msg::Path transformed_plan)
+void MPPIController::visualize(
+  nav_msgs::msg::Path global_plan,
+  nav_msgs::msg::Path transformed_plan)
 {
   trajectory_visualizer_.add(optimizer_.getGeneratedTrajectories(), "Candidate Trajectories");
   trajectory_visualizer_.add(optimizer_.getOptimizedTrajectory(), "Optimal Trajectory");
-  trajectory_visualizer_.visualize(std::move(transformed_plan));
+  trajectory_visualizer_.visualize(std::move(global_plan), std::move(transformed_plan));
 }
 
 void MPPIController::setPlan(const nav_msgs::msg::Path & path)
