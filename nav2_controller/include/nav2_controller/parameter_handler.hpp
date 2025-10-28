@@ -40,7 +40,7 @@ struct Parameters
   double failure_tolerance;
   bool use_realtime_priority;
   bool publish_zero_velocity;
-  double costmap_update_timeout;
+  rclcpp::Duration  costmap_update_timeout{0,0};
   std::string odom_topic;
   double odom_duration;
   double search_window;

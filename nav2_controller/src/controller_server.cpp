@@ -40,8 +40,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
   path_handler_loader_("nav2_core", "nav2_core::PathHandler"),
-  start_index_(0),
-  costmap_update_timeout_(300ms)
+  start_index_(0)
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
@@ -193,8 +192,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   transformed_plan_pub_ = create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   tracking_feedback_pub_ = create_publisher<nav2_msgs::msg::TrackingFeedback>("tracking_feedback");
-
-  costmap_update_timeout_ = rclcpp::Duration::from_seconds(params_->costmap_update_timeout);
 
   // Create the action server that we implement with our followPath method
   // This may throw due to real-time prioritization if user doesn't have real-time permissions
@@ -492,7 +489,7 @@ void ControllerServer::computeControl()
       rclcpp::Rate r(100);
       auto waiting_start = now();
       while (!costmap_ros_->isCurrent()) {
-        if (now() - waiting_start > costmap_update_timeout_) {
+        if (now() - waiting_start > params_->costmap_update_timeout) {
           throw nav2_core::ControllerTimedOut("Costmap timed out waiting for update");
         }
         r.sleep();
