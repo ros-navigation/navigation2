@@ -225,52 +225,25 @@ void TrackingErrorLayer::updateCosts(
 
   auto wall_points = getWallPoints(transformed_segment);
 
-  // Separate left and right wall points
-  std::vector<std::vector<double>> left_wall_points, right_wall_points;
-  for (size_t i = 0; i < wall_points.size(); i += 2) {
-    if (i + 1 < wall_points.size()) {
-      left_wall_points.push_back(wall_points[i]);  // Even indices = left
-      right_wall_points.push_back(wall_points[i + 1]);  // Odd indices = right
-    }
-  }
-
-  // Use Bresenham to get consistent lines
-  for (size_t i = 1; i < left_wall_points.size(); ++i) {
-    double x0 = left_wall_points[i - 1][0];
-    double y0 = left_wall_points[i - 1][1];
-    double x1 = left_wall_points[i][0];
-    double y1 = left_wall_points[i][1];
-
-    unsigned int map_x0, map_y0, map_x1, map_y1;
-    if (master_grid.worldToMap(x0, y0, map_x0, map_y0) &&
-      master_grid.worldToMap(x1, y1, map_x1, map_y1))
-    {
-      auto cells = nav2_util::geometry_utils::bresenhamLine(
-        static_cast<int>(map_x0), static_cast<int>(map_y0),
-        static_cast<int>(map_x1), static_cast<int>(map_y1));
-
-      for (const auto & cell : cells) {
-        master_grid.setCost(cell.first, cell.second, nav2_costmap_2d::LETHAL_OBSTACLE);
-      }
-    }
-  }
-
-  for (size_t i = 1; i < right_wall_points.size(); ++i) {
-    double x0 = right_wall_points[i - 1][0];
-    double y0 = right_wall_points[i - 1][1];
-    double x1 = right_wall_points[i][0];
-    double y1 = right_wall_points[i][1];
-
-    unsigned int map_x0, map_y0, map_x1, map_y1;
-    if (master_grid.worldToMap(x0, y0, map_x0, map_y0) &&
-      master_grid.worldToMap(x1, y1, map_x1, map_y1))
-    {
-      auto cells = nav2_util::geometry_utils::bresenhamLine(
-        static_cast<int>(map_x0), static_cast<int>(map_y0),
-        static_cast<int>(map_x1), static_cast<int>(map_y1));
-
-      for (const auto & cell : cells) {
-        master_grid.setCost(cell.first, cell.second, nav2_costmap_2d::LETHAL_OBSTACLE);
+  // Create 3x3 blocks around each wall point
+  for (const auto & point : wall_points) {
+    double wx = point[0];
+    double wy = point[1];
+    
+    unsigned int center_x, center_y;
+    if (master_grid.worldToMap(wx, wy, center_x, center_y)) {
+      // Create 3x3 block centered on the point
+      for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+          unsigned int map_x = center_x + dx;
+          unsigned int map_y = center_y + dy;
+          
+          // Check bounds before setting cost
+          if (map_x < master_grid.getSizeInCellsX() && 
+              map_y < master_grid.getSizeInCellsY()) {
+            master_grid.setCost(map_x, map_y, nav2_costmap_2d::LETHAL_OBSTACLE);
+          }
+        }
       }
     }
   }
