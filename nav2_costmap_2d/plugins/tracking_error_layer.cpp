@@ -64,9 +64,6 @@ void TrackingErrorLayer::onInitialize()
     std::bind(
       &TrackingErrorLayer::dynamicParametersCallback,
       this, std::placeholders::_1));
-  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  tf_buffer_->setUsingDedicatedThread(true);
-  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 void TrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
@@ -86,11 +83,9 @@ void TrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }
-  useExtraBounds(min_x, min_y, max_x, max_y);
   *min_x = std::min(*min_x, robot_x - look_ahead_);
   *max_x = std::max(*max_x, robot_x + look_ahead_);
   *min_y = std::min(*min_y, robot_y - look_ahead_);
@@ -206,8 +201,6 @@ void TrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-
   if (!enabled_) {
     return;
   }
@@ -224,7 +217,7 @@ void TrackingErrorLayer::updateCosts(
   for (const auto & pose : segment.poses) {
     geometry_msgs::msg::PoseStamped transformed_pose;
     if (nav2_util::transformPoseInTargetFrame(
-          pose, transformed_pose, *tf_buffer_, costmap_frame, 0.1))
+          pose, transformed_pose, *tf_, costmap_frame, 0.1))
     {
       transformed_segment.poses.push_back(transformed_pose);
     }
@@ -286,7 +279,6 @@ void TrackingErrorLayer::updateCosts(
 rcl_interfaces::msg::SetParametersResult TrackingErrorLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
 
@@ -381,12 +373,6 @@ void TrackingErrorLayer::deactivate()
 
 void TrackingErrorLayer::reset()
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  
-  // Clear the costmap data
-  resetMaps();
-  
-  // Mark as current
   current_ = true;
 }
 
