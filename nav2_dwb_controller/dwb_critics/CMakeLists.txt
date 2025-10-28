@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME} SHARED
   src/prefer_forward.cpp
   src/rotate_to_goal.cpp
   src/twirling.cpp
+  src/path_hug.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

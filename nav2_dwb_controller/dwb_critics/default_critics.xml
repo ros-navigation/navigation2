@@ -38,5 +38,9 @@
       <description>Penalize trajectories with rotational velocities
       </description>
     </class>
+    <class type="dwb_critics::PathHugCritic" base_class_type="dwb_core::TrajectoryCritic">
+      <description>Penalize trajectories according to their distance to the path and their alignment with it.
+      </description>
+    </class>
   </library>
 </class_libraries>
