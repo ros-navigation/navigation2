@@ -83,6 +83,7 @@ add_library(mppi_critics SHARED
   src/critics/prefer_forward_critic.cpp
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
+  src/critics/path_hug_critic.cpp
 )
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND APPLE)
     # Apple Clang: use C++20 and optimization, omit -fconcepts
