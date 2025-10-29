@@ -138,6 +138,7 @@ public:
     const double & curvature,
     const geometry_msgs::msg::Twist & current_speed,
     const double & regulated_linear_vel,
+    const double & sign,
     double & optimal_linear_vel,
     double & optimal_angular_vel
   );

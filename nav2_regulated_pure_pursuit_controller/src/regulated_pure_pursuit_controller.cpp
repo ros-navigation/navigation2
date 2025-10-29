@@ -270,6 +270,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   const double & curvature,
   const geometry_msgs::msg::Twist & current_speed,
   const double & regulated_linear_vel,
+  const double & sign,
   double & optimal_linear_vel,
   double & optimal_angular_vel
 )
@@ -347,7 +348,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     {dynamic_window_max_angular_vel / curvature, dynamic_window_max_angular_vel}
   };
 
-  double best_linear_vel = -std::numeric_limits<double>::infinity();
+  double best_linear_vel = -std::numeric_limits<double>::infinity() * sign;
   double best_angular_vel = 0.0;
 
   for (auto [linear_vel, angular_vel] : candidates) {
@@ -357,8 +358,8 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
       angular_vel >= dynamic_window_min_angular_vel &&
       angular_vel <= dynamic_window_max_angular_vel)
     {
-      // Update if this candidate has the highest linear velocity so far
-      if (linear_vel > best_linear_vel) {
+      // Select the candidate with the largest linear velocity (considering moving direction)
+      if (linear_vel * sign > best_linear_vel * sign) {
         best_linear_vel = linear_vel;
         best_angular_vel = angular_vel;
       }
@@ -366,7 +367,7 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   }
 
   // If best_linear_vel was updated, it means that a valid intersection exists
-  if (best_linear_vel > -std::numeric_limits<double>::infinity()) {
+  if (best_linear_vel != -std::numeric_limits<double>::infinity() * sign) {
     optimal_linear_vel = best_linear_vel;
     optimal_angular_vel = best_angular_vel;
     return;
@@ -390,14 +391,14 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     };
 
   double closest_dist = std::numeric_limits<double>::infinity();
-  best_linear_vel = -std::numeric_limits<double>::infinity();
+  best_linear_vel = -std::numeric_limits<double>::infinity() * sign;
   best_angular_vel = 0.0;
 
   for (const auto & corner : corners) {
     const double dist = compute_dist(corner);
-    // Update if this corner is closer to the line, or equally close but has a higher linear velocity
+    // Update if this corner is closer to the line, or equally close but has a larger linear velocity (considering moving direction)
     if (dist < closest_dist ||
-      (std::abs(dist - closest_dist) <= 1e-3 && corner[0] > best_linear_vel))
+      (std::abs(dist - closest_dist) <= 1e-3 && corner[0] * sign > best_linear_vel * sign))
     {
       closest_dist = dist;
       best_linear_vel = corner[0];
@@ -525,11 +526,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       if (params_->velocity_feedback == "CLOSED_LOOP") {
         // using odom velocity as a current velocity (not recommended)
         computeOptimalVelocityUsingDynamicWindow(regulation_curvature, speed, regulated_linear_vel,
+            x_vel_sign,
             linear_vel, angular_vel);
       } else {
         // using last command velocity as a current velocity (recommended)
         computeOptimalVelocityUsingDynamicWindow(regulation_curvature, last_command_velocity_,
-            regulated_linear_vel, linear_vel, angular_vel);
+            regulated_linear_vel, x_vel_sign, linear_vel, angular_vel);
       }
     }
   }

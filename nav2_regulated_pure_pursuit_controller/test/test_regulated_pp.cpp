@@ -114,15 +114,27 @@ public:
       dynamic_window_min_angular_vel);
   }
 
+  void applyRegulationToDynamicWindowWrapper(
+    const double & regulated_linear_vel,
+    double & dynamic_window_max_linear_vel,
+    double & dynamic_window_min_linear_vel)
+  {
+    return applyRegulationToDynamicWindow(
+      regulated_linear_vel,
+      dynamic_window_max_linear_vel,
+      dynamic_window_min_linear_vel);
+  }
+
   void computeOptimalVelocityUsingDynamicWindowWrapper(
     const double & curvature,
     const geometry_msgs::msg::Twist & current_speed,
     const double & regulated_linear_vel,
+    const double & sign,
     double & optimal_linear_vel,
     double & optimal_angular_vel)
   {
     return computeOptimalVelocityUsingDynamicWindow(
-      curvature, current_speed, regulated_linear_vel,
+      curvature, current_speed, regulated_linear_vel, sign,
       optimal_linear_vel, optimal_angular_vel);
   }
 };
@@ -495,6 +507,23 @@ TEST(RegulatedPurePursuitTest, computeDynamicWindow)
 
 }
 
+TEST(RegulatedPurePursuitTest, applyRegulationToDynamicWindow)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+
+  double regulated_linear_vel = 0.5;
+  double dynamic_window_max_linear_vel;
+  double dynamic_window_min_linear_vel;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.525);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.475);
+}
+
 TEST(RegulatedPurePursuitTest, computeOptimalVelocityUsingDynamicWindow)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
@@ -559,11 +588,12 @@ TEST(RegulatedPurePursuitTest, computeOptimalVelocityUsingDynamicWindow)
   current_speed.linear.x = 0.5;
   current_speed.angular.z = 0.2;
   double regulated_linear_vel = 0.5;
+  double sign = 1.0;
   double optimal_linear_vel = 0.0;
   double optimal_angular_vel = 0.0;
 
   ctrl->computeOptimalVelocityUsingDynamicWindow(
-    curvature, current_speed, regulated_linear_vel,
+    curvature, current_speed, regulated_linear_vel, sign,
     optimal_linear_vel, optimal_angular_vel);
 
   EXPECT_EQ(optimal_linear_vel, 0.525);
