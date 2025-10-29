@@ -116,6 +116,17 @@ public:
   );
 
   /**
+   * @brief Apply regulated linear velocity to the dynamic window
+   * @param regulated_linear_vel   Regulated linear velocity
+   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
+   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
+   */
+  void applyRegulationToDynamicWindow(
+    const double & regulated_linear_vel,
+    double & dynamic_window_max_linear_vel,
+    double & dynamic_window_min_linear_vel);
+
+  /**
    * @brief Compute the optimal command given the current pose, velocity and acceleration constraints using dynamic window
    * @param curvature      Curvature of the path to follow
    * @param current_speed  Current robot velocity

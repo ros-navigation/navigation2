@@ -227,6 +227,45 @@ void RegulatedPurePursuitController::computeDynamicWindow(
                  dynamic_window_min_angular_vel);
 }
 
+void RegulatedPurePursuitController::applyRegulationToDynamicWindow(
+  const double & regulated_linear_vel,
+  double & dynamic_window_max_linear_vel,
+  double & dynamic_window_min_linear_vel)
+{
+  // Extract the portion of the dynamic window that lies within the range [0, regulated_linear_vel]
+  double dynamic_window_max_linear_vel_temp;
+  double dynamic_window_min_linear_vel_temp;
+  if (regulated_linear_vel >= 0.0) {
+    dynamic_window_max_linear_vel_temp = std::min(
+      dynamic_window_max_linear_vel, regulated_linear_vel);
+    dynamic_window_min_linear_vel_temp = std::max(
+      dynamic_window_min_linear_vel, 0.0);
+  } else {
+    dynamic_window_max_linear_vel_temp = std::min(
+      dynamic_window_max_linear_vel, 0.0);
+    dynamic_window_min_linear_vel_temp = std::max(
+      dynamic_window_min_linear_vel, regulated_linear_vel);
+  }
+
+  if (dynamic_window_max_linear_vel_temp >= dynamic_window_min_linear_vel_temp) {
+    dynamic_window_max_linear_vel = dynamic_window_max_linear_vel_temp;
+    dynamic_window_min_linear_vel = dynamic_window_min_linear_vel_temp;
+  } else {
+    // No valid portion of the dynamic window remains after applying the regulation
+    if (dynamic_window_min_linear_vel > 0.0) {
+      // If the dynamic window is entirely in the positive range,
+      // collapse both bounds to dynamic_window_min_linear_vel
+      dynamic_window_max_linear_vel = dynamic_window_min_linear_vel;
+    } else {
+      // If the dynamic window is entirely in the negative range,
+      // collapse both bounds to dynamic_window_max_linear_vel
+      dynamic_window_min_linear_vel = dynamic_window_max_linear_vel;
+    }
+  }
+
+  return;
+}
+
 void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
   const double & curvature,
   const geometry_msgs::msg::Twist & current_speed,
@@ -269,10 +308,11 @@ void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
     dynamic_window_max_angular_vel,
     dynamic_window_min_angular_vel);
 
-  // clip dynamic window's max linear velocity to regulated linear velocity
-  if (dynamic_window_max_linear_vel > regulated_linear_vel) {
-    dynamic_window_max_linear_vel = std::max(dynamic_window_min_linear_vel, regulated_linear_vel);
-  }
+  // apply regulation to Dynamic Window
+  applyRegulationToDynamicWindow(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
 
   // consider linear_vel - angular_vel space (horizontal and vertical axes respectively)
   // Select the closest point to the line angular_vel = curvature * linear_vel within the dynamic window.
