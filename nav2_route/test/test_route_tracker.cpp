@@ -69,7 +69,7 @@ TEST(RouteTrackerTest, test_get_robot_pose)
     node->get_node_timers_interface());
   tf->setCreateTimerInterface(timer_interface);
   auto transform_listener = std::make_shared<tf2_ros::TransformListener>(*tf);
-  tf2_ros::TransformBroadcaster broadcaster(node);
+  auto broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   RouteTracker tracker;
@@ -81,7 +81,7 @@ TEST(RouteTrackerTest, test_get_robot_pose)
   transform.header.frame_id = "map";
   transform.header.stamp = node->now();
   transform.child_frame_id = "base_link";
-  broadcaster.sendTransform(transform);
+  broadcaster->sendTransform(transform);
   EXPECT_NO_THROW(tracker.getRobotPose());
 }
 

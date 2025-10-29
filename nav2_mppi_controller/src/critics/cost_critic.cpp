@@ -64,8 +64,8 @@ void CostCritic::initialize()
     "in both the costmap and the cost critic.");
     if (costmap_ros_->getUseRadius()) {
       throw nav2_core::ControllerException(
-      "Considering footprint in collision checking but no robot footprint provided in the "
-      "costmap.");
+      "Considering footprint in CostCritic but no robot footprint provided in the "
+      "costmap (robot radius used instead). Disable considering footprint.");
     }
   }
 

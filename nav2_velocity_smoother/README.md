@@ -25,7 +25,7 @@ This package was created to do the following:
 
 This is a lifecycle-component node, using the lifecycle manager for state management and composition for process management.
 It is designed to take in a command from Nav2's controller server and smooth it for use on robot hardware controllers.
-Thusly, it takes in a command via the `cmd_vel` topic and produces a smoothed output on `smoothed_cmd_vel`.
+Thusly, it takes in a command via the `cmd_vel` topic and produces a smoothed output on `cmd_vel_smoothed`.
 
 The node is designed on a regular timer running at a configurable rate.
 This is in contrast to simply computing a smoothed velocity command in the callback of each `cmd_vel` input from Nav2.
@@ -66,7 +66,7 @@ velocity_smoother:
 
 | Topic            | Type                    | Use                           |
 |------------------|-------------------------|-------------------------------|
-| smoothed_cmd_vel | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Publish smoothed velocities   |
+| cmd_vel_smoothed | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Publish smoothed velocities   |
 | cmd_vel          | geometry_msgs/Twist or  geometry_msgs/TwistStamped | Subscribe to input velocities |
 
 

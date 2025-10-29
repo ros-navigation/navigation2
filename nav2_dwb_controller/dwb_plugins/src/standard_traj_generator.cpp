@@ -97,6 +97,16 @@ void StandardTrajectoryGenerator::initialize(
   nh->get_parameter(plugin_name + ".limit_vel_cmd_in_traj", limit_vel_cmd_in_traj_);
 }
 
+void StandardTrajectoryGenerator::activate()
+{
+  kinematics_handler_->activate();
+}
+
+void StandardTrajectoryGenerator::deactivate()
+{
+  kinematics_handler_->deactivate();
+}
+
 void StandardTrajectoryGenerator::initializeIterator(
   const nav2::LifecycleNode::SharedPtr & nh)
 {

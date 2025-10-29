@@ -62,20 +62,16 @@ void Source::getCommonParameters(std::string & source_topic)
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".topic",
-    rclcpp::ParameterValue("scan"));  // Set default topic for laser scanner
-  source_topic = node->get_parameter(source_name_ + ".topic").as_string();
+  source_topic = node->declare_or_get_parameter(
+    source_name_ + ".topic", std::string("scan"));  // Set default topic for laser scanner
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".enabled", rclcpp::ParameterValue(true));
-  enabled_ = node->get_parameter(source_name_ + ".enabled").as_bool();
+  enabled_ = node->declare_or_get_parameter(
+    source_name_ + ".enabled", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, source_name_ + ".source_timeout",
-    rclcpp::ParameterValue(source_timeout_.seconds()));      // node source_timeout by default
   source_timeout_ = rclcpp::Duration::from_seconds(
-    node->get_parameter(source_name_ + ".source_timeout").as_double());
+    node->declare_or_get_parameter(
+      source_name_ + ".source_timeout",
+      source_timeout_.seconds()));  // node source_timeout by default
 }
 
 bool Source::sourceValid(

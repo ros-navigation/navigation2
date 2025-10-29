@@ -25,13 +25,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_testing.legacy import LaunchTestService
 from nav2_common.launch import RewrittenYaml
-from nav2_simple_commander.utils import kill_os_processes
 
 
 def generate_launch_description() -> LaunchDescription:
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
-    ros_gz_sim_dir = get_package_share_directory('ros_gz_sim')
 
     world_sdf_xacro = os.path.join(sim_dir, 'worlds', 'tb3_sandbox.sdf.xacro')
     robot_sdf = os.path.join(sim_dir, 'urdf', 'gz_waffle.sdf.xacro')
@@ -72,11 +70,9 @@ def generate_launch_description() -> LaunchDescription:
                 'GZ_SIM_RESOURCE_PATH',
                 str(Path(os.path.join(sim_dir)).parent.resolve())
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(ros_gz_sim_dir, 'launch', 'gz_sim.launch.py')
-                ),
-                launch_arguments={'gz_args': ['-r -s ', world_sdf_xacro]}.items(),
+            ExecuteProcess(
+                cmd=['gz', 'sim', '-r', '-s', world_sdf_xacro],
+                output='screen',
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -133,7 +129,6 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     ls = LaunchService(argv=argv)
     ls.include_launch_description(ld)
     return_code = lts.run(ls)  # type: ignore[no-untyped-call]
-    kill_os_processes('gz sim')
     return return_code
 
 

@@ -37,11 +37,6 @@ public:
   explicit SmootherWrapper(const SmootherParams & params)
   : nav2_smac_planner::Smoother(params)
   {}
-
-  std::vector<PathSegment> findDirectionalPathSegmentsWrapper(nav_msgs::msg::Path path)
-  {
-    return findDirectionalPathSegments(path);
-  }
 };
 
 TEST(SmootherTest, test_full_smoother)
@@ -132,10 +127,6 @@ TEST(SmootherTest, test_full_smoother)
     x_m = path[i].x;
     y_m = path[i].y;
   }
-
-  // Check that we accurately detect that this path has a reversing segment
-  auto path_segs = smoother->findDirectionalPathSegmentsWrapper(plan);
-  EXPECT_TRUE(path_segs.size() == 2u || path_segs.size() == 3u);
 
   // Test smoother, should succeed with same number of points
   // and shorter overall length, while still being collision free.

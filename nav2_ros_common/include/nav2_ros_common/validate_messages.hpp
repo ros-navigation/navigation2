@@ -169,6 +169,20 @@ bool validateMsg(const nav_msgs::msg::OccupancyGrid & msg)
   if (msg.data.size() != msg.info.width * msg.info.height) {
     return false;                                                          // check map-size
   }
+
+  if (msg.info.width > INT16_MAX || msg.info.height > INT16_MAX) {
+    // avoid overflow in nav2_amcl::convertMap()
+    // because map_t size_x and size_y are int
+    return false;
+  }
+
+  uint32_t num_cells;
+  if (__builtin_mul_overflow(msg.info.width, msg.info.height, &num_cells)) {
+    // avoid overflow msg.info.width * msg.info.height in nav2_amcl::convertMap()
+    return false;
+  }
+
+
   return true;
 }
 

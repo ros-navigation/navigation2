@@ -315,6 +315,12 @@
       <output_port name="pose">Stamped extracted pose</output_port>
     </Action>
 
+    <Action ID="ToggleCollisionMonitor">
+      <input_port name="enable">Whether to enable collision monitoring</input_port>
+      <input_port name="service_name">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="GetCurrentPose">
       <input_port name="global_frame">Global reference frame</input_port>
       <input_port name="robot_base_frame">robot base frame</input_port>
@@ -390,6 +396,15 @@
       <input_port name="server_timeout"> Server timeout </input_port>
       <input_port name="max_cost"> Maximum cost of the path </input_port>
       <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+    </Condition>
+
+    <Condition ID="IsPoseOccupied">
+      <input_port name="pose">Pose to check whether it is occupied</input_port>
+      <input_port name="service_name">Service name to call GetCosts</input_port>
+      <input_port name="cost_threshold">The cost threshold above which a pose is considered occupied</input_port>
+      <input_port name="use_footprint">Whether to use the footprint cost or the point cost</input_port>
+      <input_port name="consider_unknown_as_obstacle"> If unknown cost is considered valid </input_port>
+      <input_port name="server_timeout"> Server timeout </input_port>
     </Condition>
 
     <Condition ID="WouldAControllerRecoveryHelp">

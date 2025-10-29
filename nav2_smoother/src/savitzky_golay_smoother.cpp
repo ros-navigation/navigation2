@@ -19,11 +19,10 @@
 
 namespace nav2_smoother
 {
-
-using namespace smoother_utils;  // NOLINT
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
 using nav2::declare_parameter_if_not_declared;
+using nav2_util::PathSegment;
 
 void SavitzkyGolaySmoother::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
@@ -89,7 +88,7 @@ bool SavitzkyGolaySmoother::smooth(
   std::vector<PathSegment> path_segments{
     PathSegment{0u, static_cast<unsigned int>(path.poses.size() - 1)}};
   if (enforce_path_inversion_) {
-    path_segments = findDirectionalPathSegments(path);
+    path_segments = nav2_util::findDirectionalPathSegments(path);
   }
 
   // Minimum point size to smooth is SG filter size + start + end
@@ -171,7 +170,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
     }
   }
 
-  updateApproximatePathOrientations(path, reversing_segment);
+  nav2_util::updateApproximatePathOrientations(path, reversing_segment);
   return true;
 }
 

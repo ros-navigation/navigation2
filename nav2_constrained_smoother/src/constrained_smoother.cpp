@@ -32,7 +32,6 @@
 
 #include "tf2/utils.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using nav2_util::geometry_utils::euclidean_distance;
 using namespace nav2_costmap_2d;  // NOLINT
 

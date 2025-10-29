@@ -321,6 +321,7 @@ void DockingServer::dockRobot()
           // We are docked, wait for charging to begin
           RCLCPP_INFO(
             get_logger(), "Made contact with dock, waiting for charge to start (if applicable).");
+          publishZeroVelocity();
           if (waitForCharge(dock)) {
             if (dock->plugin->isCharger()) {
               RCLCPP_INFO(get_logger(), "Robot is charging!");

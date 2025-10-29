@@ -75,6 +75,7 @@ bt_navigator:
       - compute_path
       - dock_robot
       - drive_on_heading
+      - follow_object
       - follow_path
       - nav_thru_poses
       - nav_to_pose
@@ -485,6 +486,7 @@ velocity_smoother:
 
 collision_monitor:
   ros__parameters:
+    enabled: True
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"

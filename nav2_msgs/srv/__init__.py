@@ -10,6 +10,7 @@ from nav2_msgs.srv._manage_lifecycle_nodes import ManageLifecycleNodes
 from nav2_msgs.srv._reload_dock_database import ReloadDockDatabase
 from nav2_msgs.srv._save_map import SaveMap
 from nav2_msgs.srv._set_initial_pose import SetInitialPose
+from nav2_msgs.srv._toggle import Toggle
 
 __all__ = [
     'ClearCostmapAroundRobot',
@@ -24,4 +25,5 @@ __all__ = [
     'ReloadDockDatabase',
     'SaveMap',
     'SetInitialPose',
+    'Toggle',
 ]

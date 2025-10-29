@@ -31,26 +31,8 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
     "nav2_behaviors::DriveOnHeading",
     "nav2_behaviors::Wait"}
 {
-  declare_parameter(
-    "local_costmap_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-
-  declare_parameter(
-    "global_costmap_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-
-  declare_parameter(
-    "local_footprint_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
-
-  declare_parameter(
-    "global_footprint_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
-
   declare_parameter("cycle_frequency", rclcpp::ParameterValue(10.0));
-  declare_parameter("behavior_plugins", default_ids_);
-
-  get_parameter("behavior_plugins", behavior_ids_);
+  behavior_ids_ = declare_or_get_parameter("behavior_plugins", default_ids_);
   if (behavior_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
@@ -63,12 +45,6 @@ BehaviorServer::BehaviorServer(const rclcpp::NodeOptions & options)
   declare_parameter(
     "global_frame",
     rclcpp::ParameterValue(std::string("map")));
-  declare_parameter(
-    "robot_base_frame",
-    rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter(
-    "transform_tolerance",
-    rclcpp::ParameterValue(0.1));
 }
 
 
@@ -140,16 +116,17 @@ void BehaviorServer::configureBehaviorPlugins()
 
 void BehaviorServer::setupResourcesForBehaviorPlugins()
 {
-  std::string local_costmap_topic, global_costmap_topic;
-  std::string local_footprint_topic, global_footprint_topic;
-  std::string robot_base_frame;
-  double transform_tolerance;
-  get_parameter("local_costmap_topic", local_costmap_topic);
-  get_parameter("global_costmap_topic", global_costmap_topic);
-  get_parameter("local_footprint_topic", local_footprint_topic);
-  get_parameter("global_footprint_topic", global_footprint_topic);
-  get_parameter("robot_base_frame", robot_base_frame);
-  transform_tolerance = get_parameter("transform_tolerance").as_double();
+  std::string local_costmap_topic = declare_or_get_parameter(
+    "local_costmap_topic", std::string("local_costmap/costmap_raw"));
+  std::string global_costmap_topic = declare_or_get_parameter(
+    "global_costmap_topic", std::string("global_costmap/costmap_raw"));
+  std::string local_footprint_topic = declare_or_get_parameter(
+    "local_footprint_topic", std::string("local_costmap/published_footprint"));
+  std::string global_footprint_topic = declare_or_get_parameter(
+    "global_footprint_topic", std::string("global_costmap/published_footprint"));
+  std::string robot_base_frame = declare_or_get_parameter(
+    "robot_base_frame", std::string("base_link"));
+  double transform_tolerance = declare_or_get_parameter("transform_tolerance", 0.1);
 
   bool need_local_costmap = false;
   bool need_global_costmap = false;

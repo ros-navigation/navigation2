@@ -111,19 +111,15 @@ protected:
     node_lifecycle_ =
       std::make_shared<nav2::LifecycleNode>(
       "LifecycleBehaviorTestNode", rclcpp::NodeOptions());
-    node_lifecycle_->declare_parameter(
-      "local_costmap_topic",
-      rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-    node_lifecycle_->declare_parameter(
-      "local_footprint_topic",
-      rclcpp::ParameterValue(std::string("local_costmap/published_footprint")));
 
-    node_lifecycle_->declare_parameter(
-      "global_costmap_topic",
-      rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-    node_lifecycle_->declare_parameter(
-      "global_footprint_topic",
-      rclcpp::ParameterValue(std::string("global_costmap/published_footprint")));
+    std::string local_costmap_topic = node_lifecycle_->declare_or_get_parameter(
+      "local_costmap_topic", std::string("local_costmap/costmap_raw"));
+    std::string local_footprint_topic = node_lifecycle_->declare_or_get_parameter(
+      "local_footprint_topic", std::string("local_costmap/published_footprint"));
+    std::string global_costmap_topic = node_lifecycle_->declare_or_get_parameter(
+      "global_costmap_topic", std::string("global_costmap/costmap_raw"));
+    std::string global_footprint_topic = node_lifecycle_->declare_or_get_parameter(
+      "global_footprint_topic", std::string("global_costmap/published_footprint"));
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_lifecycle_->get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -131,13 +127,6 @@ protected:
       node_lifecycle_->get_node_timers_interface());
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-    std::string local_costmap_topic, global_costmap_topic;
-    std::string local_footprint_topic, global_footprint_topic;
-    node_lifecycle_->get_parameter("local_costmap_topic", local_costmap_topic);
-    node_lifecycle_->get_parameter("global_costmap_topic", global_costmap_topic);
-    node_lifecycle_->get_parameter("local_footprint_topic", local_footprint_topic);
-    node_lifecycle_->get_parameter("global_footprint_topic", global_footprint_topic);
 
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> local_costmap_sub_ =
       std::make_shared<nav2_costmap_2d::CostmapSubscriber>(

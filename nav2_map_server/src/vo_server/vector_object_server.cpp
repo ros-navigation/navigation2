@@ -157,8 +157,7 @@ bool VectorObjectServer::obtainParams()
   for (std::string shape_name : shape_names) {
     std::string shape_type;
     try {
-      shape_type = nav2::declare_or_get_parameter<std::string>(node, shape_name + ".type",
-          rclcpp::PARAMETER_STRING);
+      shape_type = nav2::declare_or_get_parameter<std::string>(node, shape_name + ".type");
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(
         get_logger(), "Error while getting shape %s type: %s", shape_name.c_str(), ex.what());

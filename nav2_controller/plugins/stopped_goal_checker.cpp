@@ -65,15 +65,10 @@ void StoppedGoalChecker::initialize(
 
   auto node = parent.lock();
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".rot_stopped_velocity", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".trans_stopped_velocity", rclcpp::ParameterValue(0.25));
-
-  node->get_parameter(plugin_name + ".rot_stopped_velocity", rot_stopped_velocity_);
-  node->get_parameter(plugin_name + ".trans_stopped_velocity", trans_stopped_velocity_);
+  rot_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".rot_stopped_velocity", 0.25);
+  trans_stopped_velocity_ = node->declare_or_get_parameter(
+    plugin_name + ".trans_stopped_velocity", 0.25);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(

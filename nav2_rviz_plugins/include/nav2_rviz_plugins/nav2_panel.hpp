@@ -17,6 +17,8 @@
 
 #include <QtWidgets>
 #include <QBasicTimer>
+#include <QStateMachine>
+#include <QSignalTransition>
 #undef NO_ERROR
 
 #include <memory>

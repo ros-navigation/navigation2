@@ -160,6 +160,12 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
 
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_find_gtest()
+
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories("include/${PROJECT_NAME}")
