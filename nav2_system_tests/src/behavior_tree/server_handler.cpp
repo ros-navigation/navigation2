@@ -31,9 +31,9 @@ ServerHandler::ServerHandler()
 {
   node_ = rclcpp::Node::make_shared("behavior_tree_tester");
 
-  clear_local_costmap_server = std::make_unique<DummyService<nav2_msgs::srv::ClearEntireCostmap>>(
+  clear_local_costmap_server = std::make_unique<DummyClearCostmapService>(
     node_, "local_costmap/clear_entirely_local_costmap");
-  clear_global_costmap_server = std::make_unique<DummyService<nav2_msgs::srv::ClearEntireCostmap>>(
+  clear_global_costmap_server = std::make_unique<DummyClearCostmapService>(
     node_, "global_costmap/clear_entirely_global_costmap");
   compute_path_to_pose_server = std::make_unique<DummyComputePathToPoseActionServer>(node_);
   follow_path_server = std::make_unique<DummyFollowPathActionServer>(node_);

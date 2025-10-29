@@ -48,11 +48,22 @@ protected:
     const std::shared_ptr<typename ServiceT::Response> response)
   {
     (void)request_header;
-    (void)response;
     current_request_ = request;
+    setSuccessIfExists(response);
   }
 
 private:
+  template<typename T>
+  auto setSuccessIfExists(std::shared_ptr<T> response) -> decltype(response->success, void())
+  {
+    response->success = true;
+  }
+  
+  template<typename T>
+  void setSuccessIfExists(T)
+  {
+  }
+
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
   std::shared_ptr<typename ServiceT::Request> current_request_;
 };
