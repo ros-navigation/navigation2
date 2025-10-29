@@ -82,6 +82,16 @@ public:
     }
   }
 
+  /**
+  * @brief Registers callbacks for dynamic parameter handling.
+  */
+  void activate();
+
+  /**
+  * @brief Resets callbacks for dynamic parameter handling.
+  */
+  void deactivate();
+
 protected:
   /**
    * @brief Initialize the VelocityIterator pointer. Put in its own function for easy overriding

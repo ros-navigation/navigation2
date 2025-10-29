@@ -697,6 +697,64 @@ TEST(OptimizerTests, TestGetters)
   EXPECT_EQ(optimizer_tester.getSettings().model_dt, 0.05f);
 }
 
+TEST(OptimizerTests, Omni_openLoopMppiTest)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.model_dt", rclcpp::ParameterValue(0.05));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(80));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  optimizer_tester.resetMotionModel();
+  optimizer_tester.testSetOmniModel();
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 999;
+  geometry_msgs::msg::Twist robot_speed;
+  robot_speed.linear.x = 100.0;
+  robot_speed.angular.z = 100.0;
+  robot_speed.linear.y = 100.0;
+  nav_msgs::msg::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.poses.resize(17);
+
+  auto [cmd1, optimal_trajectory1] = optimizer_tester.evalControl(pose, robot_speed, path,
+    goal, nullptr);
+
+  EXPECT_LE(std::abs(cmd1.twist.linear.x),
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
+  EXPECT_LE(std::abs(cmd1.twist.angular.z),
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().az_max);
+  EXPECT_LE(std::abs(cmd1.twist.linear.y),
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
+
+  auto [cmd2, optimal_trajectory2] = optimizer_tester.evalControl(pose, robot_speed, path,
+    goal, nullptr);
+
+  const double vx_delta = std::abs(cmd2.twist.linear.x - cmd1.twist.linear.x);
+  const double wz_delta = std::abs(cmd2.twist.angular.z - cmd1.twist.angular.z);
+  const double vy_delta = std::abs(cmd2.twist.linear.y - cmd1.twist.linear.y);
+
+  EXPECT_LE(vx_delta,
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
+  EXPECT_LE(wz_delta,
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().az_max);
+  EXPECT_LE(vy_delta,
+    optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
