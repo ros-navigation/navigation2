@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_msgs/srv/clear_costmap_except_region.hpp"
@@ -138,6 +139,33 @@ private:
    * @brief Get the robot's position in the costmap using the master costmap
    */
   bool getPosition(double & x, double & y) const;
+
+  /**
+   * @brief Validates requested plugins and returns lists of valid and invalid plugins
+   * @param requested_plugins List of plugin names to validate
+   * @param layers Pointer to all available layers
+   * @param valid_plugins Output: list of valid plugin names
+   * @param invalid_plugins Output: list of invalid plugins with reasons
+   */
+  void validateAndCategorizePlugins(
+    const std::vector<std::string> & requested_plugins,
+    const std::vector<std::shared_ptr<Layer>> * layers,
+    std::vector<std::string> & valid_plugins,
+    std::vector<std::string> & invalid_plugins) const;
+
+  /**
+   * @brief Validates plugins and clears valid ones using provided callback
+   * @param plugins List of plugin names to clear
+   * @param layers Pointer to all available layers
+   * @param clear_callback Function to call for each valid plugin
+   * @param operation_name Name of the operation for logging (e.g. "clearAroundPose")
+   * @return true if all requested plugins were valid and cleared, false otherwise
+   */
+  bool validateAndClearPlugins(
+    const std::vector<std::string> & plugins,
+    const std::vector<std::shared_ptr<Layer>> * layers,
+    std::function<void(std::shared_ptr<CostmapLayer> &)> clear_callback,
+    const std::string & operation_name) const;
 
   /**
    * @brief Determines whether a specific layer should be cleared based on plugin list and clearable status
