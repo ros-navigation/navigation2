@@ -47,7 +47,7 @@ public:
 protected:
   void scoreArcLength(CriticData & data, std::vector<bool> & path_pts_valid);
   void scoreGeometric(CriticData & data, std::vector<bool> & path_pts_valid);
-  void updatePathCache(const models::Path & path);
+  void updatePathCache(const models::Path & path, size_t path_segments_count);
   float computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx);
 
 
@@ -60,6 +60,17 @@ protected:
   bool use_path_orientations_{false};
   unsigned int power_{0};
   float weight_{0};
+
+  //Caching variables
+  size_t path_size_cache_{0};
+  Eigen::ArrayXf path_x_cache_;
+  Eigen::ArrayXf path_y_cache_;
+  Eigen::ArrayXf segment_dx_;
+  Eigen::ArrayXf segment_dy_;
+  Eigen::ArrayXf segment_len_sq_;
+  Eigen::ArrayXf segment_lengths_;
+  Eigen::ArrayXf cumulative_distances_;
+  Eigen::Array<Eigen::Index, Eigen::Dynamic, 1> closest_indices_;
 };
 
 }  // namespace mppi::critics
