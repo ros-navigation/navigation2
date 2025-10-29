@@ -45,10 +45,18 @@ public:
   void score(CriticData & data) override;
 
 protected:
+  void scoreArcLength(CriticData & data, std::vector<bool> & path_pts_valid);
+  void scoreGeometric(CriticData & data, std::vector<bool> & path_pts_valid);
+  void updatePathCache(const models::Path & path);
+  float computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx);
+
+
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
   float threshold_to_consider_{0};
   float max_path_occupancy_ratio_{0};
+  bool use_geometric_alignment_{false};
+  double search_window_{2.0};
   bool use_path_orientations_{false};
   unsigned int power_{0};
   float weight_{0};
