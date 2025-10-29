@@ -26,43 +26,45 @@ void PathAlignCritic::initialize()
   getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
   getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
-  getParam(
-    threshold_to_consider_,
-    "threshold_to_consider", 0.5f);
+  getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
-  getParam(use_geometric_alignment_,"use_geometric_alignment");
-  getParam(search_window_,"search_window")
+  getParam(use_geometric_alignment_, "use_geometric_alignment", false);
+  getParam(search_window_, "search_window", 2.0);
 
   RCLCPP_INFO(
     logger_,
-    "ReferenceTrajectoryCritic instantiated with %d power and %f weight",
-    power_, weight_);
+    "PathAlignCritic instantiated with %d power, %f weight, mode: %s",
+    power_, weight_, use_geometric_alignment_ ? "geometric" : "arc-length");
 }
 
-void PathAlignCritic::score(CriticData & data){
+void PathAlignCritic::score(CriticData & data)
+{
   if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
     return;
   }
 
-  // Don't apply when first getting bearing w.r.t. the path
   utils::setPathFurthestPointIfNotSet(data);
-  // Up to furthest only, closest path point is always 0 from path handler
   const size_t path_segments_count = *data.furthest_reached_path_point;
-  float path_segments_flt = static_cast<float>(path_segments_count);
+  
   if (path_segments_count < offset_from_furthest_) {
     return;
   }
 
-  // Don't apply when dynamic obstacles are blocking significant proportions of the local path
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   std::vector<bool> & path_pts_valid = *data.path_pts_valid;
+  
   float invalid_ctr = 0.0f;
   for (size_t i = 0; i < path_segments_count; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / path_segments_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
+    if (invalid_ctr / static_cast<float>(path_segments_count) > max_path_occupancy_ratio_ && 
+        invalid_ctr > 2.0f) {
       return;
     }
   }
+
+  // Update path cache (shared by both modes)
+  updatePathCache(data.path, path_segments_count);
+
   if (use_geometric_alignment_) {
     scoreGeometric(data, path_pts_valid);
   } else {
@@ -72,103 +74,86 @@ void PathAlignCritic::score(CriticData & data){
 
 void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path_pts_valid)
 {
-  // Original PathAlignCritic implementation
   const size_t path_segments_count = *data.furthest_reached_path_point;
   const size_t batch_size = data.trajectories.x.rows();
-  Eigen::ArrayXf cost(data.costs.rows());
+  Eigen::ArrayXf cost(batch_size);
   cost.setZero();
 
-  std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
-  std::vector<utils::Pose2D> path(path_segments_count);
-  float dx = 0.0f, dy = 0.0f;
-  
-  for (unsigned int i = 1; i != path_segments_count; i++) {
-    auto & pose = path[i - 1];
-    pose.x = data.path.x(i - 1);
-    pose.y = data.path.y(i - 1);
-    pose.theta = data.path.yaws(i - 1);
-
-    dx = data.path.x(i) - pose.x;
-    dy = data.path.y(i) - pose.y;
-    path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
+  // Use cached cumulative distances instead of recomputing
+  std::vector<float> path_integrated_distances(path_segments_count);
+  for (size_t i = 0; i < path_segments_count; ++i) {
+    path_integrated_distances[i] = cumulative_distances_(i);
   }
 
-  auto & final_pose = path[path_segments_count - 1];
-  final_pose.x = data.path.x(path_segments_count - 1);
-  final_pose.y = data.path.y(path_segments_count - 1);
-  final_pose.theta = data.path.yaws(path_segments_count - 1);
+  // Build path poses for orientation matching
+  std::vector<utils::Pose2D> path(path_segments_count);
+  for (unsigned int i = 0; i < path_segments_count; ++i) {
+    path[i].x = data.path.x(i);
+    path[i].y = data.path.y(i);
+    path[i].theta = data.path.yaws(i);
+  }
 
-  float summed_path_dist = 0.0f, dyaw = 0.0f;
+  float summed_path_dist = 0.0f, dyaw = 0.0f, dx = 0.0f, dy = 0.0f;
   unsigned int num_samples = 0u;
   unsigned int path_pt = 0u;
   float traj_integrated_distance = 0.0f;
 
-  int strided_traj_rows = data.trajectories.x.rows();
-  int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
-  int outer_stride = strided_traj_rows * trajectory_point_step_;
-  
-  const auto T_x = Eigen::Map<const Eigen::ArrayXXf, 0, Eigen::Stride<-1, -1>>(
-    data.trajectories.x.data(), strided_traj_rows, strided_traj_cols, 
-    Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto T_y = Eigen::Map<const Eigen::ArrayXXf, 0, Eigen::Stride<-1, -1>>(
-    data.trajectories.y.data(), strided_traj_rows, strided_traj_cols, 
-    Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto T_yaw = Eigen::Map<const Eigen::ArrayXXf, 0, Eigen::Stride<-1, -1>>(
-    data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
-    Eigen::Stride<-1, -1>(outer_stride, 1));
-  const auto traj_sampled_size = T_x.cols();
+  // Use same striding approach as geometric mode for consistency
+  const Eigen::Index traj_length = data.trajectories.x.cols();
+  const int effective_stride = std::max(1, std::min(trajectory_point_step_, static_cast<int>(traj_length)));
+  const int num_sample_points = (traj_length + effective_stride - 1) / effective_stride;
 
   for (size_t t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
     num_samples = 0u;
     traj_integrated_distance = 0.0f;
     path_pt = 0u;
-    float Tx_m1 = T_x(t, 0);
-    float Ty_m1 = T_y(t, 0);
     
-    for (int p = 1; p < traj_sampled_size; p++) {
-      const float Tx = T_x(t, p);
-      const float Ty = T_y(t, p);
-      dx = Tx - Tx_m1;
-      dy = Ty - Ty_m1;
-      Tx_m1 = Tx;
-      Ty_m1 = Ty;
+    float prev_x = data.trajectories.x(t, 0);
+    float prev_y = data.trajectories.y(t, 0);
+    
+    for (int sample_idx = 1; sample_idx < num_sample_points; ++sample_idx) {
+      const Eigen::Index traj_col = sample_idx * effective_stride;
+      if (traj_col >= traj_length) {break;}
+      
+      const float curr_x = data.trajectories.x(t, traj_col);
+      const float curr_y = data.trajectories.y(t, traj_col);
+      
+      dx = curr_x - prev_x;
+      dy = curr_y - prev_y;
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
+      
       path_pt = utils::findClosestPathPt(path_integrated_distances, traj_integrated_distance, path_pt);
 
       if (path_pts_valid[path_pt]) {
         const auto & pose = path[path_pt];
-        dx = pose.x - Tx;
-        dy = pose.y - Ty;
+        dx = pose.x - curr_x;
+        dy = pose.y - curr_y;
         num_samples++;
         if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(pose.theta, T_yaw(t, p));
+          dyaw = angles::shortest_angular_distance(pose.theta, data.trajectories.yaws(t, traj_col));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
           summed_path_dist += sqrtf(dx * dx + dy * dy);
         }
       }
+      
+      prev_x = curr_x;
+      prev_y = curr_y;
     }
+    
     cost(t) = (num_samples > 0u) ? summed_path_dist / static_cast<float>(num_samples) : 0.0f;
   }
 
   if (power_ > 1u) {
-    data.costs += (cost * weight_).pow(power_).eval();
+    data.costs += (cost * weight_).pow(power_);
   } else {
-    data.costs += (cost * weight_).eval();
+    data.costs += cost * weight_;
   }
 }
 
 void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path_pts_valid)
 {
-  // PathHugCritic geometric approach with obstacle awareness
-  if (static_cast<Eigen::Index>(data.path.x.size()) != static_cast<Eigen::Index>(path_size_cache_) ||
-      (data.path.x.size() > 0 && path_x_cache_.size() == data.path.x.size() &&
-       (data.path.x.array() != path_x_cache_.array()).any()))
-  {
-    updatePathCache(data.path);
-  }
-
   const auto & traj_x = data.trajectories.x;
   const auto & traj_y = data.trajectories.y;
   const Eigen::Index batch_size = traj_x.rows();
@@ -219,25 +204,41 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
   }
 }
 
-void PathAlignCritic::updatePathCache(const models::Path & path)
+void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_segments_count)
 {
-  path_size_cache_ = path.x.size();
-  path_x_cache_ = path.x;
-  path_y_cache_ = path.y;
+  // Only update if path changed
+  const Eigen::Index path_segments_idx = static_cast<Eigen::Index>(path_segments_count);
+  if (path_segments_idx == static_cast<Eigen::Index>(path_size_cache_) &&
+      path_x_cache_.size() == path_segments_idx &&
+      (path.x.head(path_segments_idx).array() == path_x_cache_.head(path_segments_idx).array()).all())
+  {
+    return;  // Path unchanged, use cached values
+  }
 
-  const Eigen::Index path_size = path.x.size();
-  if (path_size < 2) {return;}
+  path_size_cache_ = path_segments_count;
+  
+  if (static_cast<Eigen::Index>(path_x_cache_.size()) != path_segments_idx) {
+    path_x_cache_.resize(path_segments_idx);
+    path_y_cache_.resize(path_segments_idx);
+  }
+  
+  path_x_cache_.head(path_segments_idx) = path.x.head(path_segments_idx);
+  path_y_cache_.head(path_segments_idx) = path.y.head(path_segments_idx);
 
-  if (segment_lengths_.size() != path_size - 1) {
-    segment_lengths_.resize(path_size - 1);
-    cumulative_distances_.resize(path_size);
-    segment_dx_.resize(path_size - 1);
-    segment_dy_.resize(path_size - 1);
-    segment_len_sq_.resize(path_size - 1);
+  if (path_segments_count < 2) {return;}
+
+  const Eigen::Index num_segments = path_segments_idx - 1;
+  
+  if (static_cast<Eigen::Index>(segment_lengths_.size()) != num_segments) {
+    segment_lengths_.resize(num_segments);
+    cumulative_distances_.resize(path_segments_idx);
+    segment_dx_.resize(num_segments);
+    segment_dy_.resize(num_segments);
+    segment_len_sq_.resize(num_segments);
   }
 
   cumulative_distances_(0) = 0.0;
-  for (Eigen::Index i = 0; i < path_size - 1; ++i) {
+  for (Eigen::Index i = 0; i < num_segments; ++i) {
     segment_dx_(i) = path.x(i + 1) - path.x(i);
     segment_dy_(i) = path.y(i + 1) - path.y(i);
     segment_len_sq_(i) = segment_dx_(i) * segment_dx_(i) + segment_dy_(i) * segment_dy_(i);
@@ -248,7 +249,9 @@ void PathAlignCritic::updatePathCache(const models::Path & path)
 
 float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx)
 {
-  const Eigen::Index path_size = path_x_cache_.size();
+  const Eigen::Index path_size = path_size_cache_;
+  if (path_size < 2) {return std::numeric_limits<float>::max();}
+  
   float min_dist_sq = std::numeric_limits<float>::max();
   
   Eigen::Index start_idx = std::max(0L, closest_seg_idx - 2);
