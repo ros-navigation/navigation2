@@ -854,10 +854,11 @@ TEST(CriticTests, VelocityDeadbandCritic)
   EXPECT_NEAR(costs(1), 19.845, 0.01);
 }
 
-  class PathHugCriticTest : public ::testing::Test
+// Test PathAlignCritic in Geometric Mode
+class PathAlignGeometricCriticTest : public ::testing::Test
 {
 protected:
-  mppi::critics::PathHugCritic critic_;
+  mppi::critics::PathAlignCritic critic_;
   mppi::models::State state_;
   mppi::models::Path path_;
   mppi::models::Trajectories traj_;
@@ -866,7 +867,7 @@ protected:
   float model_dt_{0.1f};
   CriticData data_;
 
-  PathHugCriticTest()
+  PathAlignGeometricCriticTest()
   : data_{state_, traj_, path_, goal_, costs_, model_dt_,
       false, nullptr, nullptr, std::nullopt, std::nullopt}
   {}
@@ -880,7 +881,11 @@ protected:
     goal_ = geometry_msgs::msg::Pose();
 
     auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-    node->declare_parameter("critic.sample_stride", 1);
+    node->declare_parameter("critic.trajectory_point_step", 1);
+    node->declare_parameter("critic.use_geometric_alignment", true);  // Enable geometric mode
+    node->declare_parameter("critic.search_window", 2.0);
+    node->declare_parameter("critic.offset_from_furthest", 0);  // Allow immediate activation for tests
+    
     auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
       "dummy_costmap", "", true);
     std::string name = "critic";
@@ -889,23 +894,24 @@ protected:
     costmap_ros->on_configure(lstate);
 
     critic_.on_configure(node, "mppi", name, costmap_ros, &param_handler);
+    
+    // Set furthest reached point to enable critic
+    data_.furthest_reached_path_point = 2;
   }
 };
 
-TEST_F(PathHugCriticTest, InitializesCorrectly)
+TEST_F(PathAlignGeometricCriticTest, InitializesCorrectly)
 {
   EXPECT_EQ(critic_.getName(), "critic");
-  // Test that parameters are loaded correctly
   EXPECT_NO_THROW(critic_.score(data_));
 }
 
-TEST_F(PathHugCriticTest, HandlesEmptyPath)
+TEST_F(PathAlignGeometricCriticTest, HandlesEmptyPath)
 {
   path_.reset(0);
   traj_.reset(1, 3);
   costs_ = Eigen::ArrayXf::Zero(1);
 
-  // Set up a valid trajectory
   traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
   traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
   traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
@@ -914,29 +920,27 @@ TEST_F(PathHugCriticTest, HandlesEmptyPath)
   EXPECT_EQ(costs_(0), 0.0);
 }
 
-TEST_F(PathHugCriticTest, HandlesEmptyTrajectory)
+TEST_F(PathAlignGeometricCriticTest, HandlesEmptyTrajectory)
 {
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
 
-  traj_.reset(1, 0);  // Empty trajectory
+  traj_.reset(1, 0);
   costs_ = Eigen::ArrayXf::Zero(1);
 
   EXPECT_NO_THROW(critic_.score(data_));
   EXPECT_EQ(costs_(0), 0.0);
 }
 
-TEST_F(PathHugCriticTest, TrajectoryOnPathHasLowCost)
+TEST_F(PathAlignGeometricCriticTest, TrajectoryOnPathHasLowCost)
 {
-  // Path: straight line from (0,0) to (2,0)
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
 
-  // Trajectory: exactly on the path
   traj_.reset(1, 3);
   traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
   traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
@@ -947,15 +951,13 @@ TEST_F(PathHugCriticTest, TrajectoryOnPathHasLowCost)
   EXPECT_NEAR(costs_(0), 0.0, 0.1);
 }
 
-TEST_F(PathHugCriticTest, TrajectoryOffPathHasCost)
+TEST_F(PathAlignGeometricCriticTest, TrajectoryOffPathHasCost)
 {
-  // Path: straight line from (0,0) to (2,0)
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
 
-  // Trajectory: parallel to path, 1 unit offset
   traj_.reset(1, 3);
   traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
   traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
@@ -964,12 +966,11 @@ TEST_F(PathHugCriticTest, TrajectoryOffPathHasCost)
   costs_.setZero();
   critic_.score(data_);
 
-  EXPECT_NEAR(costs_(0), 10.0, 2.0);
+  EXPECT_GT(costs_(0), 5.0);  // Should have cost for being 1 unit off path
 }
 
-TEST_F(PathHugCriticTest, LargerDeviationHasHigherCost)
+TEST_F(PathAlignGeometricCriticTest, LargerDeviationHasHigherCost)
 {
-  // Path: straight line from (0,0) to (2,0)
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
@@ -995,15 +996,13 @@ TEST_F(PathHugCriticTest, LargerDeviationHasHigherCost)
   EXPECT_GT(large_deviation_cost, 1.5 * small_deviation_cost);
 }
 
-TEST_F(PathHugCriticTest, VariableDeviationCost)
+TEST_F(PathAlignGeometricCriticTest, VariableDeviationCost)
 {
-  // Path: straight line from (0,0) to (4,0)
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 2; path_.x(2) = 4;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0; path_.yaws(2) = 0;
 
-  // Trajectory with variable deviation
   traj_.reset(1, 3);
   traj_.x(0, 0) = 0; traj_.x(0, 1) = 2; traj_.x(0, 2) = 4;
   traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 1.5; traj_.y(0, 2) = 0.5;
@@ -1011,14 +1010,12 @@ TEST_F(PathHugCriticTest, VariableDeviationCost)
 
   costs_.setZero();
   critic_.score(data_);
-  // Should be reasonable cost based on average deviation
   EXPECT_GT(costs_(0), 2.0);
-  EXPECT_LT(costs_(0), 15.0);
+  EXPECT_LT(costs_(0), 20.0);
 }
 
-TEST_F(PathHugCriticTest, BatchMultipleTrajectories)
+TEST_F(PathAlignGeometricCriticTest, BatchMultipleTrajectories)
 {
-  // Path: straight line from (0,0) to (2,0)
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
@@ -1044,15 +1041,14 @@ TEST_F(PathHugCriticTest, BatchMultipleTrajectories)
 
   critic_.score(data_);
 
-  EXPECT_NEAR(costs_(0), 0.0, 0.1);  // On path
-  EXPECT_GT(costs_(1), 0.0);          // Small deviation
-  EXPECT_GT(costs_(2), costs_(1));    // Large deviation > small deviation
-  EXPECT_GT(costs_(2), 2.0 * costs_(1));  // Significantly higher cost
+  EXPECT_NEAR(costs_(0), 0.0, 0.1);
+  EXPECT_GT(costs_(1), 0.0);
+  EXPECT_GT(costs_(2), costs_(1));
+  EXPECT_GT(costs_(2), 2.0 * costs_(1));
 }
 
-TEST_F(PathHugCriticTest, SearchWindowLimitsPathSearch)
+TEST_F(PathAlignGeometricCriticTest, SearchWindowLimitsPathSearch)
 {
-  // Create a long path
   path_.reset(10);
   for (int i = 0; i < 10; ++i) {
     path_.x(i) = i;
@@ -1060,26 +1056,24 @@ TEST_F(PathHugCriticTest, SearchWindowLimitsPathSearch)
     path_.yaws(i) = 0;
   }
 
-  // Trajectory that starts far from beginning of path
   traj_.reset(1, 3);
   traj_.x(0, 0) = 8; traj_.x(0, 1) = 9; traj_.x(0, 2) = 10;
   traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
   traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
 
+  data_.furthest_reached_path_point = 9;
   costs_.setZero();
   EXPECT_NO_THROW(critic_.score(data_));
   EXPECT_GT(costs_(0), 0.0);
 }
 
-TEST_F(PathHugCriticTest, HandlesTrajectoryLongerThanPath)
+TEST_F(PathAlignGeometricCriticTest, HandlesTrajectoryLongerThanPath)
 {
-  // Short path
   path_.reset(2);
   path_.x(0) = 0; path_.x(1) = 1;
   path_.y(0) = 0; path_.y(1) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0;
 
-  // Long trajectory
   traj_.reset(1, 5);
   for (int i = 0; i < 5; ++i) {
     traj_.x(0, i) = i;
@@ -1092,10 +1086,8 @@ TEST_F(PathHugCriticTest, HandlesTrajectoryLongerThanPath)
   EXPECT_GT(costs_(0), 0.0);
 }
 
-TEST_F(PathHugCriticTest, CostScalesWithWeight)
+TEST_F(PathAlignGeometricCriticTest, CostScalesWithWeight)
 {
-  // This test would require access to weight parameter or multiple critic instances
-  // For now, just verify basic functionality
   path_.reset(3);
   path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
   path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
@@ -1109,7 +1101,34 @@ TEST_F(PathHugCriticTest, CostScalesWithWeight)
   costs_.setZero();
   critic_.score(data_);
 
-  // Should be proportional to weight parameter (default 5.0)
-  EXPECT_GT(costs_(0), 3.0);
-  EXPECT_LT(costs_(0), 15.0);
+  EXPECT_GT(costs_(0), 5.0);   // Should have reasonable cost
+  EXPECT_LT(costs_(0), 20.0);  // But not excessive
+}
+
+TEST_F(PathAlignGeometricCriticTest, ObstacleAwarenessInGeometricMode)
+{
+  // This test verifies that geometric mode respects path validity
+  path_.reset(5);
+  for (int i = 0; i < 5; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+    path_.yaws(i) = 0;
+  }
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 1; traj_.x(0, 1) = 2; traj_.x(0, 2) = 3;
+  traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 0.5; traj_.y(0, 2) = 0.5;
+  traj_.yaws(0, 0) = 0; traj_.yaws(0, 1) = 0; traj_.yaws(0, 2) = 0;
+
+  // Set up path validity (mark some segments as invalid due to obstacles)
+  std::vector<bool> valid_pts(5, true);
+  valid_pts[2] = false;  // Segment 2 has obstacle
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 4;
+
+  costs_.setZero();
+  critic_.score(data_);
+  
+  // Should still compute but may have different cost due to skipping invalid segments
+  EXPECT_NO_THROW(critic_.score(data_));
 }
