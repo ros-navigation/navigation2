@@ -125,16 +125,19 @@ public:
       dynamic_window_min_linear_vel);
   }
 
-  void computeOptimalVelocityUsingDynamicWindowWrapper(
+  void computeOptimalVelocityWithinDynamicWindowWrapper(
+    const double & dynamic_window_max_linear_vel,
+    const double & dynamic_window_min_linear_vel,
+    const double & dynamic_window_max_angular_vel,
+    const double & dynamic_window_min_angular_vel,
     const double & curvature,
-    const geometry_msgs::msg::Twist & current_speed,
-    const double & regulated_linear_vel,
     const double & sign,
     double & optimal_linear_vel,
     double & optimal_angular_vel)
   {
-    return computeOptimalVelocityUsingDynamicWindow(
-      curvature, current_speed, regulated_linear_vel, sign,
+    return computeOptimalVelocityWithinDynamicWindow(
+      dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+      dynamic_window_min_angular_vel, curvature, sign,
       optimal_linear_vel, optimal_angular_vel);
   }
 };
@@ -524,76 +527,23 @@ TEST(RegulatedPurePursuitTest, applyRegulationToDynamicWindow)
   EXPECT_EQ(dynamic_window_min_linear_vel, 0.475);
 }
 
-TEST(RegulatedPurePursuitTest, computeOptimalVelocityUsingDynamicWindow)
+TEST(RegulatedPurePursuitTest, computeOptimalVelocityWithinDynamicWindow)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  std::string name = "PathFollower";
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
 
-  // declare parameters
-  constexpr double max_linear_vel = 0.6;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_linear_vel",
-    rclcpp::ParameterValue(max_linear_vel));
-  constexpr double min_linear_vel = 0.0;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".min_linear_vel",
-    rclcpp::ParameterValue(min_linear_vel));
-  constexpr double max_angular_vel = 1.2;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_angular_vel",
-    rclcpp::ParameterValue(max_angular_vel));
-  constexpr double min_angular_vel = -1.2;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".min_angular_vel",
-    rclcpp::ParameterValue(min_angular_vel));
-  constexpr double max_linear_accel = 0.5;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_linear_accel",
-    rclcpp::ParameterValue(max_linear_accel));
-  constexpr double max_linear_decel = 0.5;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_linear_decel",
-    rclcpp::ParameterValue(max_linear_decel));
-  constexpr double max_angular_accel = 1.0;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_angular_accel",
-    rclcpp::ParameterValue(max_angular_accel));
-  constexpr double max_angular_decel = 1.0;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".max_angular_decel",
-    rclcpp::ParameterValue(max_angular_decel));
-  constexpr double control_frequency = 20.0;
-  nav2::declare_parameter_if_not_declared(
-    node,
-    name + ".controller_frequency",
-    rclcpp::ParameterValue(control_frequency));
-
-  ctrl->configure(node, name, tf, costmap);
+  double dynamic_window_max_linear_vel = 0.5;
+  double dynamic_window_min_linear_vel = 0.0;
+  double dynamic_window_max_angular_vel = 0.5;
+  double dynamic_window_min_angular_vel = -0.5;
 
   double curvature = 0.5;
-  geometry_msgs::msg::Twist current_speed = geometry_msgs::msg::Twist();
-  current_speed.linear.x = 0.5;
-  current_speed.angular.z = 0.2;
-  double regulated_linear_vel = 0.5;
   double sign = 1.0;
   double optimal_linear_vel = 0.0;
   double optimal_angular_vel = 0.0;
 
-  ctrl->computeOptimalVelocityUsingDynamicWindow(
-    curvature, current_speed, regulated_linear_vel, sign,
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
     optimal_linear_vel, optimal_angular_vel);
 
   EXPECT_EQ(optimal_linear_vel, 0.525);

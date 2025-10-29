@@ -266,68 +266,38 @@ void RegulatedPurePursuitController::applyRegulationToDynamicWindow(
   return;
 }
 
-void RegulatedPurePursuitController::computeOptimalVelocityUsingDynamicWindow(
+void RegulatedPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
+  const double & dynamic_window_max_linear_vel,
+  const double & dynamic_window_min_linear_vel,
+  const double & dynamic_window_max_angular_vel,
+  const double & dynamic_window_min_angular_vel,
   const double & curvature,
-  const geometry_msgs::msg::Twist & current_speed,
-  const double & regulated_linear_vel,
   const double & sign,
   double & optimal_linear_vel,
   double & optimal_angular_vel
 )
 {
-  const double & max_linear_vel = params_->max_linear_vel;
-  const double & min_linear_vel = params_->min_linear_vel;
-  const double & max_angular_vel = params_->max_angular_vel;
-  const double & min_angular_vel = params_->min_angular_vel;
-
-  const double & max_linear_accel = params_->max_linear_accel;
-  const double & max_linear_decel = params_->max_linear_decel;
-  const double & max_angular_accel = params_->max_angular_accel;
-  const double & max_angular_decel = params_->max_angular_decel;
-
-  const double & dt = control_duration_;
-
-  double dynamic_window_max_linear_vel;
-  double dynamic_window_min_linear_vel;
-  double dynamic_window_max_angular_vel;
-  double dynamic_window_min_angular_vel;
-
-  // compute Dynamic Window
-  computeDynamicWindow(
-    current_speed,
-    max_linear_vel,
-    min_linear_vel,
-    max_angular_vel,
-    min_angular_vel,
-    max_linear_accel,
-    max_linear_decel,
-    max_angular_accel,
-    max_angular_decel,
-    dt,
-    dynamic_window_max_linear_vel,
-    dynamic_window_min_linear_vel,
-    dynamic_window_max_angular_vel,
-    dynamic_window_min_angular_vel);
-
-  // apply regulation to Dynamic Window
-  applyRegulationToDynamicWindow(
-    regulated_linear_vel,
-    dynamic_window_max_linear_vel,
-    dynamic_window_min_linear_vel);
-
   // consider linear_vel - angular_vel space (horizontal and vertical axes respectively)
   // Select the closest point to the line angular_vel = curvature * linear_vel within the dynamic window.
-  // If multiple points are equally close, select the one with the highest linear_vel.
+  // If multiple points are equally close, select the one with the largest linear_vel.
 
   // When curvature == 0, the line is angular_vel = 0
   if (abs(curvature) < 1e-3) {
-    // If the line angular_vel = 0 intersects the dynamic window, select (dynamic_window_max_linear_vel, 0)
-    if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
+    // linear velocity
+    if (sign >= 0.0) {
+      // If moving forward, select the max linear vel
       optimal_linear_vel = dynamic_window_max_linear_vel;
+    } else {
+      // If moving backward, select the min linear vel
+      optimal_linear_vel = dynamic_window_min_linear_vel;
+    }
+
+    // angular velocity
+    // If the line angular_vel = 0 intersects the dynamic window,angular_vel = 0.0
+    if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
       optimal_angular_vel = 0.0;
     } else {
-    // If not, select (dynamic_window_max_linear_vel, angular vel within dynamic window closest to 0)
-      optimal_linear_vel = dynamic_window_max_linear_vel;
+    // If not, select angular vel within dynamic window closest to 0
       if (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) {
         optimal_angular_vel = dynamic_window_min_angular_vel;
       } else {
@@ -523,16 +493,66 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       // compute optimal path tracking velocity commands
       // considering velocity and acceleration constraints
       const double regulated_linear_vel = linear_vel;
+      geometry_msgs::msg::Twist current_speed;
       if (params_->velocity_feedback == "CLOSED_LOOP") {
         // using odom velocity as a current velocity (not recommended)
-        computeOptimalVelocityUsingDynamicWindow(regulation_curvature, speed, regulated_linear_vel,
-            x_vel_sign,
-            linear_vel, angular_vel);
+        current_speed = speed;
       } else {
         // using last command velocity as a current velocity (recommended)
-        computeOptimalVelocityUsingDynamicWindow(regulation_curvature, last_command_velocity_,
-            regulated_linear_vel, x_vel_sign, linear_vel, angular_vel);
+        current_speed = last_command_velocity_;
       }
+
+      const double & max_linear_vel = params_->max_linear_vel;
+      const double & min_linear_vel = params_->min_linear_vel;
+      const double & max_angular_vel = params_->max_angular_vel;
+      const double & min_angular_vel = params_->min_angular_vel;
+
+      const double & max_linear_accel = params_->max_linear_accel;
+      const double & max_linear_decel = params_->max_linear_decel;
+      const double & max_angular_accel = params_->max_angular_accel;
+      const double & max_angular_decel = params_->max_angular_decel;
+
+      const double & dt = control_duration_;
+
+      double dynamic_window_max_linear_vel;
+      double dynamic_window_min_linear_vel;
+      double dynamic_window_max_angular_vel;
+      double dynamic_window_min_angular_vel;
+
+      // compute Dynamic Window
+      computeDynamicWindow(
+        current_speed,
+        max_linear_vel,
+        min_linear_vel,
+        max_angular_vel,
+        min_angular_vel,
+        max_linear_accel,
+        max_linear_decel,
+        max_angular_accel,
+        max_angular_decel,
+        dt,
+        dynamic_window_max_linear_vel,
+        dynamic_window_min_linear_vel,
+        dynamic_window_max_angular_vel,
+        dynamic_window_min_angular_vel);
+
+      // apply regulation to Dynamic Window
+      applyRegulationToDynamicWindow(
+        regulated_linear_vel,
+        dynamic_window_max_linear_vel,
+        dynamic_window_min_linear_vel);
+
+      // compute optimal velocity within Dynamic Window
+      computeOptimalVelocityWithinDynamicWindow(
+        dynamic_window_max_linear_vel,
+        dynamic_window_min_linear_vel,
+        dynamic_window_max_angular_vel,
+        dynamic_window_min_angular_vel,
+        regulation_curvature,
+        x_vel_sign,
+        linear_vel,
+        angular_vel
+      );
     }
   }
 

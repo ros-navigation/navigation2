@@ -127,17 +127,22 @@ public:
     double & dynamic_window_min_linear_vel);
 
   /**
-   * @brief Compute the optimal command given the current pose, velocity and acceleration constraints using dynamic window
+   * @brief Compute the optimal velocity to follow the path within the dynamic window
+   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
+   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
+   * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
+   * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
    * @param curvature      Curvature of the path to follow
-   * @param current_speed  Current robot velocity
-   * @param regulated_linear_vel   Regulated linear velocity
+   * @param sign           Velocity sign (forward or backward)
    * @param optimal_linear_vel   Optimal linear velocity to follow the path under velocity and acceleration constraints
    * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
    */
-  void computeOptimalVelocityUsingDynamicWindow(
+  void computeOptimalVelocityWithinDynamicWindow(
+    const double & dynamic_window_max_linear_vel,
+    const double & dynamic_window_min_linear_vel,
+    const double & dynamic_window_max_angular_vel,
+    const double & dynamic_window_min_angular_vel,
     const double & curvature,
-    const geometry_msgs::msg::Twist & current_speed,
-    const double & regulated_linear_vel,
     const double & sign,
     double & optimal_linear_vel,
     double & optimal_angular_vel
