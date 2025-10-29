@@ -58,7 +58,7 @@ private:
   {
     response->success = true;
   }
-  
+
   template<typename T>
   void setSuccessIfExists(T)
   {
