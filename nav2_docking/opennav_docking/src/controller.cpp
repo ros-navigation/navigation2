@@ -77,9 +77,14 @@ Controller::Controller(
   node->get_parameter("controller.v_linear_max", v_linear_max_);
   node->get_parameter("controller.v_angular_max", v_angular_max_);
   node->get_parameter("controller.slowdown_radius", slowdown_radius_);
+
+  // Initialize Smooth Control Law
+  // Keeping the maximum deceleration as INFINITY, until this parameter is
+  // available for docking (currently only works for Graceful Controller).
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
-    k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
-    v_angular_max_);
+    k_phi_, k_delta_, beta_, lambda_,
+    slowdown_radius_, INFINITY,
+    v_linear_min_, v_linear_max_, v_angular_max_);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
