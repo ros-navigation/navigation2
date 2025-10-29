@@ -268,7 +268,7 @@ TEST_F(TestNode, testDifferentInflationLayers) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
 }
 
 TEST_F(TestNode, testDifferentInflationLayers2) {
@@ -317,7 +317,7 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
 }
 
 TEST_F(TestNode, testResetting) {
@@ -447,7 +447,7 @@ TEST_F(TestNode, testClearing) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 29);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
   ASSERT_EQ(olayer_b->getCost(9, 9), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   pclayer_a->clearArea(-1, -1, 10, 10, false);
