@@ -61,6 +61,14 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 
 Note: The maximum allowed time to collision is thresholded by the lookahead point, starting in Humble. This is such that collision checking isn't significantly overshooting the path, which can cause issues in constrained environments. For example, if there were a straight-line path going towards a wall that then turned left, if this parameter was set to high, then it would detect a collision past the point of actual robot intended motion. Thusly, if a robot is moving fast, selecting further out lookahead points is not only a matter of behavioral stability for Pure Pursuit, but also gives a robot further predictive collision detection capabilities. The max allowable time parameter is still in place for slow commands, as described in detail above.
 
+## Dynamic Window Pure Pursuit Features
+
+This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](www.linkedin.com/in/fumiya-ohnishi-23b124202).
+Unlike the standard Pure Pursuit, DWPP enables the consideration of velocity and acceleration constraints when computing velocity commands.
+An overview of the algorithm can be found here: [DWPP Algorithm](https://github.com/Decwest/nav2_dynamic_window_pure_pursuit_controller/blob/main/algorithm.md).
+
+A link to the paper and its citation will be provided once it becomes publicly available.
+
 ## Configuration
 
 | Parameter | Description |
@@ -98,8 +106,8 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot. This is set by default to the maximum costmap extent, so it shouldn't be set manually unless there are loops within the local costmap. |
 | `interpolate_curvature_after_goal` | Needs use_fixed_curvature_lookahead to be true. Interpolate a carrot after the goal dedicated to the curvature calculation (to avoid oscillations at the end of the path) |
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
-| `use_dynamic_window ` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
-| `velocity_feedback ` | How the current velocity is obtained during dynamic window computation. "OPEN_LOOP" uses the last commanded velocity (recommended). "CLOSED_LOOP" uses odometry velocity (may hinder proper acceleration/deceleration) |
+| `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
+| `velocity_feedback` | How the current velocity is obtained during dynamic window computation. "OPEN_LOOP" uses the last commanded velocity (recommended). "CLOSED_LOOP" uses odometry velocity (may hinder proper acceleration/deceleration) |
 
 Example fully-described XML with default parameter values:
 
@@ -141,7 +149,7 @@ controller_server:
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
-      approach_velocity_scaling_dist: 1.0
+      approach_velocity_scaling_dist: 0.6
       use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
@@ -149,15 +157,18 @@ controller_server:
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
       use_fixed_curvature_lookahead: false
-      curvature_lookahead_dist: 1.0
+      curvature_lookahead_dist: 0.6
       use_rotate_to_heading: true
+      allow_reversing: false
       rotate_to_heading_min_angle: 0.785
       max_robot_pose_search_dist: 10.0
       interpolate_curvature_after_goal: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
+      min_distance_to_obstacle: 0.0
       use_dynamic_window: true
+      velocity_feedback: "OPEN_LOOP"
 ```
 
 ## Topics
