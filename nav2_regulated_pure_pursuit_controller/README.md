@@ -180,3 +180,7 @@ To tune to get Pure Pursuit behaviors, set all boolean parameters to false and m
 Currently, there is no rotate to goal behaviors, so it is expected that the path approach orientations are the orientations of the goal or the goal checker has been set with a generous `min_theta_velocity_threshold`. Implementations for rotating to goal heading are on the way.
 
 The choice of lookahead distances are highly dependent on robot size, responsiveness, controller update rate, and speed. Please make sure to tune this for your platform, although the `regulated` features do largely make heavy tuning of this value unnecessary. If you see wiggling, increase the distance or scale. If it's not converging as fast to the path as you'd like, decrease it.
+
+When `use_dynamic_window` is set to True, the velocity, acceleration, and deceleration limits are enforced during the velocity command computation.
+Note that the velocity smoother clips the velocity commands output by this controller based on its own velocity and acceleration constraints before publishing cmd_vel.
+Therefore, the velocity smoother’s `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` parameters must be consistent with this controller’s corresponding velocity, acceleration, and deceleration settings.
