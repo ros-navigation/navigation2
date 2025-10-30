@@ -167,21 +167,24 @@ double calculateCurvature(geometry_msgs::msg::Point lookahead_point)
 
 void RegulatedPurePursuitController::computeDynamicWindow(
   const geometry_msgs::msg::Twist & current_speed,
-  const double & max_linear_vel,
-  const double & min_linear_vel,
-  const double & max_angular_vel,
-  const double & min_angular_vel,
-  const double & max_linear_accel,
-  const double & max_linear_decel,
-  const double & max_angular_accel,
-  const double & max_angular_decel,
-  const double & dt,
   double & dynamic_window_max_linear_vel,
   double & dynamic_window_min_linear_vel,
   double & dynamic_window_max_angular_vel,
   double & dynamic_window_min_angular_vel
 )
 {
+  const double & max_linear_vel = params_->max_linear_vel;
+  const double & min_linear_vel = params_->min_linear_vel;
+  const double & max_angular_vel = params_->max_angular_vel;
+  const double & min_angular_vel = params_->min_angular_vel;
+
+  const double & max_linear_accel = params_->max_linear_accel;
+  const double & max_linear_decel = params_->max_linear_decel;
+  const double & max_angular_accel = params_->max_angular_accel;
+  const double & max_angular_decel = params_->max_angular_decel;
+
+  const double & dt = control_duration_;
+
   constexpr double Eps = 1e-2;
 
   // function to compute dynamic window for a single dimension
@@ -491,7 +494,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       angular_vel = linear_vel * regulation_curvature;
     } else {
       // compute optimal path tracking velocity commands
-      // considering velocity and acceleration constraints
+      // considering velocity and acceleration constraints (DWPP)
       const double regulated_linear_vel = linear_vel;
       geometry_msgs::msg::Twist current_speed;
       if (params_->velocity_feedback == "CLOSED_LOOP") {
@@ -501,36 +504,12 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
         // using last command velocity as a current velocity (recommended)
         current_speed = last_command_velocity_;
       }
-
-      const double & max_linear_vel = params_->max_linear_vel;
-      const double & min_linear_vel = params_->min_linear_vel;
-      const double & max_angular_vel = params_->max_angular_vel;
-      const double & min_angular_vel = params_->min_angular_vel;
-
-      const double & max_linear_accel = params_->max_linear_accel;
-      const double & max_linear_decel = params_->max_linear_decel;
-      const double & max_angular_accel = params_->max_angular_accel;
-      const double & max_angular_decel = params_->max_angular_decel;
-
-      const double & dt = control_duration_;
-
-      double dynamic_window_max_linear_vel;
-      double dynamic_window_min_linear_vel;
-      double dynamic_window_max_angular_vel;
-      double dynamic_window_min_angular_vel;
+      double dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+        dynamic_window_max_angular_vel, dynamic_window_min_angular_vel;
 
       // compute Dynamic Window
       computeDynamicWindow(
         current_speed,
-        max_linear_vel,
-        min_linear_vel,
-        max_angular_vel,
-        min_angular_vel,
-        max_linear_accel,
-        max_linear_decel,
-        max_angular_accel,
-        max_angular_decel,
-        dt,
         dynamic_window_max_linear_vel,
         dynamic_window_min_linear_vel,
         dynamic_window_max_angular_vel,
