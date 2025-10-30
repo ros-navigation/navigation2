@@ -125,6 +125,15 @@ public:
    */
   void setCollisionChecker(GridCollisionChecker * collision_checker);
 
+
+  /**
+   * @brief Used to limit the planner to explore ahead of the specified pose
+   * @param search_bounds the pose beyoind which we want to limit the planner
+   * @param start_point the start point
+   * @param allow_goal_overshoot enable/disable this feature
+   */
+  void setSearchBounds(const geometry_msgs::msg::Pose& search_bounds, const geometry_msgs::msg::Point& start_point, bool allow_goal_overshoot);
+
   /**
    * @brief Set the goal for planning, as a node index
    * @param mx The node X index of the goal
@@ -269,6 +278,13 @@ protected:
    */
   inline void populateExpansionsLog(
     const NodePtr & node, std::vector<std::tuple<float, float, float>> * expansions_log);
+
+  /**
+   * @brief check the position of a node, with respect to a pose. If it is behind the pose then return true
+   * @param node the node which we want to check
+   * @param pose the pose relative to which we want to check the position of the node
+   */
+  bool isBehindPose(const NodePtr& node, const geometry_msgs::msg::Pose& pose);
 
   bool _traverse_unknown;
   bool _is_initialized;

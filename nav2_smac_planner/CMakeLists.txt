@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(nav2_smac_planner)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(angles REQUIRED)
@@ -43,6 +46,7 @@ add_library(${library_name}_common SHARED
   src/node_hybrid.cpp
   src/node_lattice.cpp
   src/smoother.cpp
+  src/types.cpp
 )
 # Add GenerateExportHeader support for symbol visibility, as we are using
 # static members we need to explicitly export them on Windows, as

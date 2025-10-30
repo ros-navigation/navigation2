@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <alloca.h>
 #include <string>
 #include <memory>
 #include <vector>
@@ -74,6 +75,10 @@ void SmacPlannerHybrid::configure(
   nav2::declare_parameter_if_not_declared(
     node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
   node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
+
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".allow_goal_overshoot", rclcpp::ParameterValue(false));
+  nav2::get_parameter(name + ".allow_goal_overshoot", _search_info.allow_goal_overshoot)
 
   nav2::declare_parameter_if_not_declared(
     node, name + ".angle_quantization_bins", rclcpp::ParameterValue(72));
@@ -400,6 +405,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     _costmap_ros->getUseRadius(),
     findCircumscribedCost(_costmap_ros));
   _a_star->setCollisionChecker(&_collision_checker);
+  _a_star->setSearchBounds(goal.pose, start.pose.position, _search_info.allow_goal_overshoot);
 
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;

@@ -102,6 +102,26 @@ void AStarAlgorithm<Node2D>::initialize(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
 }
 
+template<>
+bool AStarAlgorithm<Node2D>::isBehindPose(
+  const NodePtr & node,
+  const geometry_msgs::msg::Pose & pose)
+{
+  const Node2D::Coordinates node_coords = node->getCoords(node->getIndex());
+  const geometry_msgs::msg::Pose node_in_world_frame =  Utils::getWorldCoords(node_coords.x, node_coords.y, _costmap);
+  return Utils::isBehindPose(node_in_world_frame.position, pose);
+}
+
+template<typename NodeT>
+bool AStarAlgorithm<NodeT>::isBehindPose(
+  const NodePtr & node,
+  const geometry_msgs::msg::Pose & pose)
+{
+  typename NodeT::Coordinates node_coords = node->pose;
+  const geometry_msgs::msg::Pose node_in_world_frame =  Utils::getWorldCoords(node_coords.x, node_coords.y, _costmap);
+  return Utils::isBehindPose(node_in_world_frame.position, pose);
+}
+
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision_checker)
 {
@@ -118,6 +138,15 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
     NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
   _expander->setCollisionChecker(_collision_checker);
+}
+
+template <typename NodeT>
+void AStarAlgorithm<NodeT>::setSearchBounds(const geometry_msgs::msg::Pose& search_bounds, const geometry_msgs::msg::Point& start_point, bool allow_goal_overshoot)
+{
+  _search_info.setSearchBound(search_bounds);
+  _search_info.setStart(start_point);
+  _search_info.allow_goal_overshoot = allow_goal_overshoot;
+  _expander->setSearchBounds(search_bounds, start_point, allow_goal_overshoot);
 }
 
 template<typename NodeT>
@@ -367,6 +396,7 @@ bool AStarAlgorithm<NodeT>::createPath(
   NeighborIterator neighbor_iterator;
   int analytic_iterations = 0;
   int closest_distance = std::numeric_limits<int>::max();
+  const bool is_start_behind_goal = _search_info.isStartBehindSearchBounds();
 
   // Given an index, return a node ptr reference if its collision-free and valid
   const uint64_t max_index = static_cast<uint64_t>(getSizeX()) *
@@ -379,6 +409,14 @@ bool AStarAlgorithm<NodeT>::createPath(
         return false;
       }
 
+      if (!_search_info.allow_goal_overshoot){
+        auto iter = _graph.find(index);
+        if (iter != _graph.end()) {
+               if (isBehindPose(&(iter->second), _search_info.getSearchBound()) != is_start_behind_goal){
+                return false;
+               }
+            }
+        }
       neighbor_rtn = addToGraph(index);
       return true;
     };
@@ -445,6 +483,12 @@ bool AStarAlgorithm<NodeT>::createPath(
       neighbor_iterator != neighbors.end(); ++neighbor_iterator)
     {
       neighbor = *neighbor_iterator;
+
+      if (!_search_info.allow_goal_overshoot) {
+        if ((isBehindPose(neighbor, _search_info.getSearchBound())) != is_start_behind_goal) {
+          continue;
+        }
+      }
 
       // 4.1) Compute the cost to go to this node
       g_cost = current_node->getAccumulatedCost() + current_node->getTraversalCost(neighbor);

@@ -44,7 +44,7 @@ inline geometry_msgs::msg::Quaternion orientationAroundZAxis(double angle)
 }
 
 /**
- * @brief Get the euclidean distance between 2 geometry_msgs::Points
+ * @brief Get the euclidean distance between 2 geometry_msgs::msg::Points
  * @param pos1 First point
  * @param pos1 Second point
  * @param is_3d True if a true L2 distance is desired (default false)
@@ -67,7 +67,7 @@ inline double euclidean_distance(
 }
 
 /**
- * @brief Get the L2 distance between 2 geometry_msgs::Poses
+ * @brief Get the L2 distance between 2 geometry_msgs::msg::Poses
  * @param pos1 First pose
  * @param pos1 Second pose
  * @param is_3d True if a true L2 distance is desired (default false)
@@ -90,7 +90,7 @@ inline double euclidean_distance(
 }
 
 /**
- * @brief Get the L2 distance between 2 geometry_msgs::PoseStamped
+ * @brief Get the L2 distance between 2 geometry_msgs::msg::PoseStamped
  * @param pos1 First pose
  * @param pos1 Second pose
  * @param is_3d True if a true L2 distance is desired (default false)

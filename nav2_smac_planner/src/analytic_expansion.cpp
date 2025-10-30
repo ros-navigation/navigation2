@@ -43,6 +43,15 @@ void AnalyticExpansion<NodeT>::setCollisionChecker(
 }
 
 template<typename NodeT>
+void AnalyticExpansion<NodeT>::setSearchBounds(
+  const geometry_msgs::msg::Pose &search_bounds, const geometry_msgs::msg::Point& start_point, bool allow_goal_overshoot)
+{
+  _search_info.setSearchBound(search_bounds);
+  _search_info.setStart(start_point);
+  _search_info.allow_goal_overshoot = allow_goal_overshoot;
+}
+
+template<typename NodeT>
 typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalyticExpansion(
   const NodePtr & current_node,
   const NodeVector & coarse_check_goals,
@@ -204,6 +213,8 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   // When "from" and "to" are zero or one cell away,
   // num_intervals == 0
   possible_nodes.nodes.reserve(num_intervals);  // We won't store this node or the goal
+  const bool is_start_behind_goal = _search_info.isStartBehindSearchBounds();
+
   std::vector<double> reals;
   double theta;
 
@@ -221,6 +232,16 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
   for (float i = 1; i <= num_intervals; i++) {
     state_space->interpolate(from(), to(), i / num_intervals, s());
     reals = s.reals();
+
+    if (!_search_info.allow_goal_overshoot){
+      geometry_msgs::msg::Pose node_in_world_frame = Utils::getWorldCoords(reals[0], reals[1], _collision_checker->getCostmap());
+      const bool is_node_behind_goal = Utils::isBehindPose(node_in_world_frame.position, _search_info.getSearchBound());
+      if (is_node_behind_goal != is_start_behind_goal){ // not equal means not on the same side
+          failure = true;
+          break;
+      }
+    }
+
     // Make sure in range [0, 2PI)
     theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
     theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
