@@ -63,7 +63,7 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 
 ## Dynamic Window Pure Pursuit Features
 
-This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](www.linkedin.com/in/fumiya-ohnishi-23b124202).
+This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](https://www.linkedin.com/in/fumiya-ohnishi-23b124202).
 Unlike the standard Pure Pursuit, DWPP enables the consideration of velocity and acceleration constraints when computing velocity commands.
 An overview of the algorithm can be found here: [DWPP Algorithm](https://github.com/Decwest/nav2_dynamic_window_pure_pursuit_controller/blob/main/algorithm.md).
 
