@@ -281,7 +281,8 @@ void RegulatedPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
 )
 {
   // consider linear_vel - angular_vel space (horizontal and vertical axes respectively)
-  // Select the closest point to the line angular_vel = curvature * linear_vel within the dynamic window.
+  // Select the closest point to the line
+  // angular_vel = curvature * linear_vel within the dynamic window.
   // If multiple points are equally close, select the one with the largest linear_vel.
 
   // When curvature == 0, the line is angular_vel = 0
@@ -349,7 +350,8 @@ void RegulatedPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
   // When the dynamic window and the line angular_vel = curvature * linear_vel have no intersection,
   // select the point within the dynamic window that is closest to the line.
 
-  // Because the dynamic window is a convex region, the closest point must be one of its four corners.
+  // Because the dynamic window is a convex region,
+  // the closest point must be one of its four corners.
   const std::array<std::array<double, 2>, 4> corners = {{
     {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
     {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
@@ -357,7 +359,8 @@ void RegulatedPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
     {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
   }};
 
-  // Compute the distance from a point (linear_vel, angular_vel) to the line angular_vel = curvature * linear_vel
+  // Compute the distance from a point (linear_vel, angular_vel)
+  // to the line angular_vel = curvature * linear_vel
   const double denom = std::sqrt(curvature * curvature + 1.0);
   auto compute_dist = [&](const std::array<double, 2> & corner) -> double {
       return std::abs(curvature * corner[0] - corner[1]) / denom;
@@ -369,7 +372,8 @@ void RegulatedPurePursuitController::computeOptimalVelocityWithinDynamicWindow(
 
   for (const auto & corner : corners) {
     const double dist = compute_dist(corner);
-    // Update if this corner is closer to the line, or equally close but has a larger linear velocity (considering moving direction)
+    // Update if this corner is closer to the line,
+    // or equally close but has a larger linear velocity (considering moving direction)
     if (dist < closest_dist ||
       (std::abs(dist - closest_dist) <= 1e-3 && corner[0] * sign > best_linear_vel * sign))
     {
