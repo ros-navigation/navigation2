@@ -58,3 +58,31 @@ target_link_libraries(collision_detector_node_test
   tf2_ros::tf2_ros
   ${visualization_msgs_TARGETS}
 )
+
+
+# Install bag + params so the launch file can find them via get_package_share_directory()
+install(DIRECTORY bags/cm_moving_obstacle
+  DESTINATION share/${PROJECT_NAME}/test/bags)
+install(FILES collision_monitor_node_bag.yaml
+  DESTINATION share/${PROJECT_NAME}/test)
+
+find_package(GTest REQUIRED)
+
+add_executable(collision_monitor_node_bag_gtest
+  collision_monitor_node_bag.cpp
+)
+target_link_libraries(collision_monitor_node_bag_gtest
+  GTest::gtest_main
+  ${monitor_library_name}
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
+  nav2_util::nav2_util_core
+  ${nav2_msgs_TARGETS}
+)
+
+add_launch_test(collision_monitor_node_bag.launch.py
+  TIMEOUT 120
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  ENV TEST_EXECUTABLE=$<TARGET_FILE:collision_monitor_node_bag_gtest>
+)
+

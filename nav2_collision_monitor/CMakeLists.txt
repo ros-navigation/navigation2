@@ -37,7 +37,9 @@ add_library(${monitor_library_name} SHARED
   src/polygon_source.cpp
   src/range.cpp
   src/kinematics.cpp
+  src/costmap.cpp
 )
+
 target_include_directories(${monitor_library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -146,6 +148,8 @@ install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
+  find_package(rosgraph_msgs REQUIRED)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
@@ -165,6 +169,7 @@ ament_export_dependencies(
   nav2_costmap_2d
   nav2_msgs
   nav2_util
+  rosgraph_msgs
   rclcpp
   rclcpp_lifecycle
   sensor_msgs
