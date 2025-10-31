@@ -48,7 +48,7 @@ The data may be obtained from different data sources:
 
 > **⚠️ when using CostmapSource**
 > Collision Monitor normally **bypasses the costmap** to minimize reaction latency using fresh sensor data.
-
+> Use at your own caution or when using external costmap sources from derived sources.
 
 
 ### Design

@@ -37,8 +37,6 @@ class FakeCMSource(Node):
 
     def __init__(self):
         super().__init__('fake_cm_bag_source')
-        # Use sim time so /clock drives timestamps
-        # self.set_parameters([Parameter('use_sim_time', value=True)])
 
         # Publishers
         self.clock_pub = self.create_publisher(ClockMsg, '/clock', 10)

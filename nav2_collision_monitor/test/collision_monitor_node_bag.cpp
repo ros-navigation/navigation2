@@ -52,7 +52,6 @@ public:
     stop_window_start_ = this->declare_parameter<double>("stop_window_start", 3.0);
     stop_window_end_ = this->declare_parameter<double>("stop_window_end", 8.0);
 
-
     // Velocity classification thresholds (on the topic we evaluate)
     stop_thresh_ = this->declare_parameter<double>("stop_thresh", 0.02);             // |vx| <= stop => stopped
     resume_thresh_ = this->declare_parameter<double>("resume_thresh", 0.10);         //  vx  >= resume => resumed

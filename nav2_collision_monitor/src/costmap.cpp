@@ -14,18 +14,16 @@
 // limitations under the License.
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_collision_monitor/costmap.hpp"
-#include <functional>
 #include <cmath>
 #include <tf2/time.hpp>
 #include <tf2_ros/buffer.hpp>
 #include <tf2_ros/transform_listener.hpp>
-#include <nav2_ros_common/lifecycle_node.hpp>
 #include <nav2_ros_common/node_utils.hpp>
+#include <nav2_ros_common/qos_profiles.hpp>
+#include <nav2_costmap_2d/cost_values.hpp>
 
 namespace nav2_collision_monitor
 {
-
-
 CostmapSource::CostmapSource(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
@@ -43,7 +41,6 @@ CostmapSource::CostmapSource(
   RCLCPP_INFO(logger_, "[%s]: Creating CostmapSource", source_name_.c_str());
 }
 
-
 CostmapSource::~CostmapSource()
 {
   RCLCPP_INFO(logger_, "[%s]: Destroying CostmapSource", source_name_.c_str());
@@ -59,19 +56,17 @@ void CostmapSource::configure()
   }
   std::string source_topic;
   getParameters(source_topic);
-  rclcpp::QoS qos = rclcpp::SystemDefaultsQoS();
-
-
   data_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
       source_topic,
      std::bind(&CostmapSource::dataCallback, this, std::placeholders::_1),
-      qos);
+     nav2::qos::StandardTopicQoS());
 }
 
 bool CostmapSource::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {
+  auto node = node_.lock();
   if (data_ == nullptr) {
     return false;
   }
@@ -89,7 +84,6 @@ bool CostmapSource::getData(
     }
   }
 
-
   // Extract lethal/inscribed cells and transform to base frame
   const auto & cm = *data_;
   const auto & meta = cm.metadata;
@@ -98,17 +92,18 @@ bool CostmapSource::getData(
     for (unsigned int x = 0; x < meta.size_x; ++x) {
       const int idx = y * meta.size_x + x;
 
-      const uint8_t c = cm.data[idx];
-      const bool is_obstacle = (c >= cost_threshold_ && c < 255) ||
-        (treat_unknown_as_obstacle_ && c == 255);
+      const uint8_t cell_cost = cm.data[idx];
+      const bool is_obstacle =
+        (cell_cost >= cost_threshold_ && cell_cost < nav2_costmap_2d::NO_INFORMATION) ||
+        (treat_unknown_as_obstacle_ && cell_cost == nav2_costmap_2d::NO_INFORMATION);
       if (is_obstacle) {
         const double wx = meta.origin.position.x + (x + 0.5) * meta.resolution;
         const double wy = meta.origin.position.y + (y + 0.5) * meta.resolution;
         tf2::Vector3 p_v3_s(wx, wy, 0.0);
         tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
         data.push_back({p_v3_b.x(), p_v3_b.y()});
-        RCLCPP_INFO(logger_, "[%s] Lethal cell at (%f, %f)",
-          source_name_.c_str(), wx, wy);
+        RCLCPP_DEBUG_THROTTLE(logger_, *node->get_clock(), 2000 /*ms*/,
+  "[%s] Found obstacles in costmap", source_name_.c_str());
       }
     }
   }
@@ -125,9 +120,8 @@ void CostmapSource::getParameters(std::string & source_topic)
 
   // Cost threshold (0–255). 253 = inscribed 254 = lethal; 255 = NO_INFORMATION.
   const auto thresh_name = source_name_ + ".cost_threshold";
-  nav2::declare_parameter_if_not_declared(
-      node, thresh_name, rclcpp::ParameterValue(253));
-  int v = node->get_parameter(thresh_name).as_int();
+  // Minimal change (no range descriptor)
+  int v = node->declare_or_get_parameter<int>(thresh_name, 253);  // declare if missing, else get
   v = std::max(0, std::min(255, v));  // clamp
   if (v != node->get_parameter(thresh_name).as_int()) {
     RCLCPP_WARN(node->get_logger(), "Clamping %s to %d", thresh_name.c_str(), v);
@@ -136,9 +130,7 @@ void CostmapSource::getParameters(std::string & source_topic)
 
   // Whether 255 (NO_INFORMATION) should be treated as an obstacle.
   const auto unk_name = source_name_ + ".treat_unknown_as_obstacle";
-  nav2::declare_parameter_if_not_declared(
-      node, unk_name, rclcpp::ParameterValue(true));
-  treat_unknown_as_obstacle_ = node->get_parameter(unk_name).as_bool();
+  treat_unknown_as_obstacle_ = node->declare_or_get_parameter<bool>(unk_name, true);
 }
 
 void CostmapSource::dataCallback(nav2_msgs::msg::Costmap::ConstSharedPtr msg)
