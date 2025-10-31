@@ -47,8 +47,17 @@ ParameterHandler::ParameterHandler(
     3.2);
   params_.simulate_ahead_time = node->declare_or_get_parameter(plugin_name_ +
     ".simulate_ahead_time", 1.0);
-  params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
-    ".primary_controller.plugin");
+  try {
+    params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
+      ".primary_controller.plugin");
+  } catch (const rclcpp::exceptions::InvalidParameterValueException & e) {
+      RCLCPP_WARN(logger_, "the primary controller must be defined in a namespace:\n"
+      "  primary_controller:\n"
+      "    plugin: <controller_plugin_name>\n"
+      "    ... other parameters ...\n"
+      "Please update your YAML configuration. "
+      "See the migration guide: https://docs.nav2.org/migration/Kilted.html#namespace-added-for-primary-controller-parameters-in-rotation-shim-controller");
+  }
   params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ +
     ".rotate_to_goal_heading", false);
   params_.rotate_to_heading_once = node->declare_or_get_parameter(plugin_name_ +
