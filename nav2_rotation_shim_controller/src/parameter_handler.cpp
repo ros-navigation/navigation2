@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "nav2_rotation_shim_controller/parameter_handler.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 
 namespace nav2_rotation_shim_controller
 {
@@ -60,6 +61,8 @@ ParameterHandler::ParameterHandler(
       // NOLINTNEXTLINE
       "https://docs.nav2.org/migration/Kilted.html#namespace-added-for-primary-controller-parameters-in-rotation-shim-controller"
     );
+    throw nav2_core::ControllerException(
+      "Failed to get 'primary_controller.plugin' parameter");
   }
   params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ +
     ".rotate_to_goal_heading", false);
