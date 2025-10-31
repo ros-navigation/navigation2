@@ -51,7 +51,7 @@ ParameterHandler::ParameterHandler(
     params_.primary_controller = node->declare_or_get_parameter<std::string>(plugin_name_ +
       ".primary_controller.plugin");
   } catch (const rclcpp::exceptions::InvalidParameterValueException & e) {
-      RCLCPP_WARN(logger_, "the primary controller must be defined in a namespace:\n"
+    RCLCPP_WARN(logger_, "the primary controller must be defined in a namespace:\n"
       "  primary_controller:\n"
       "    plugin: <controller_plugin_name>\n"
       "    ... other parameters ...\n"
