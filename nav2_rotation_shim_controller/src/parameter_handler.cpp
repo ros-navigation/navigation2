@@ -57,7 +57,8 @@ ParameterHandler::ParameterHandler(
       "    ... other parameters ...\n"
       "Please update your YAML configuration. "
       "See the migration guide: "
-      "https://docs.nav2.org/migration/Kilted.html#namespace-added-for-primary-controller-parameters-in-rotation-shim-controller" // NOLINT
+      // NOLINTNEXTLINE
+      "https://docs.nav2.org/migration/Kilted.html#namespace-added-for-primary-controller-parameters-in-rotation-shim-controller"
     );
   }
   params_.rotate_to_goal_heading = node->declare_or_get_parameter(plugin_name_ +
