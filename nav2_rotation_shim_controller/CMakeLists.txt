@@ -24,7 +24,8 @@ nav2_package()
 set(library_name nav2_rotation_shim_controller)
 
 add_library(${library_name} SHARED
-  src/nav2_rotation_shim_controller.cpp)
+  src/nav2_rotation_shim_controller.cpp
+  src/parameter_handler.cpp)
 target_include_directories(${library_name}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
