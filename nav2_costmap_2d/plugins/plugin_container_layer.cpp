@@ -49,12 +49,6 @@ void PluginContainerLayer::onInitialize()
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
   combination_method_ = combination_method_from_int(combination_method_param);
 
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &PluginContainerLayer::dynamicParametersCallback,
-      this,
-      std::placeholders::_1));
-
   plugin_types_.resize(plugin_names_.size());
 
   for (unsigned int i = 0; i < plugin_names_.size(); ++i) {
@@ -129,6 +123,16 @@ void PluginContainerLayer::updateCosts(
 
 void PluginContainerLayer::activate()
 {
+  auto node = node_.lock();
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &PluginContainerLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PluginContainerLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
@@ -138,6 +142,15 @@ void PluginContainerLayer::activate()
 
 void PluginContainerLayer::deactivate()
 {
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin(); plugin != plugins_.end();
     ++plugin)
   {
@@ -205,11 +218,18 @@ void PluginContainerLayer::clearArea(int start_x, int start_y, int end_x, int en
   }
 }
 
-rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult PluginContainerLayer::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter>/*parameters*/)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  return result;
+}
+
+void PluginContainerLayer::updateParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -223,15 +243,12 @@ rcl_interfaces::msg::SetParametersResult PluginContainerLayer::dynamicParameters
         combination_method_ = combination_method_from_int(parameter.as_int());
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+      if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
         current_ = false;
       }
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_costmap_2d

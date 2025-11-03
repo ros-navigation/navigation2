@@ -163,11 +163,23 @@ protected:
   bool isEqual(double a, double b, double epsilon);
 
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    std::vector<rclcpp::Parameter> parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
@@ -208,7 +220,8 @@ protected:
   tf2::Duration transform_tolerance_;
   nav_msgs::msg::OccupancyGrid::SharedPtr map_buffer_;
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
 };
 
 }  // namespace nav2_costmap_2d

@@ -79,10 +79,14 @@ InflationLayer::InflationLayer()
 InflationLayer::~InflationLayer()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
   delete access_;
 }
 
@@ -106,9 +110,13 @@ InflationLayer::onInitialize()
     node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
     node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
 
-    dyn_params_handler_ = node->add_on_set_parameters_callback(
+    post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &InflationLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+    on_set_params_handler_ = node->add_on_set_parameters_callback(
       std::bind(
-        &InflationLayer::dynamicParametersCallback,
+        &InflationLayer::validateParameterUpdatesCallback,
         this, std::placeholders::_1));
   }
 
@@ -428,16 +436,35 @@ InflationLayer::generateIntegerDistances()
   return level;
 }
 
-/**
-  * @brief Callback executed when a parameter change is detected
-  * @param event ParameterEvent message
-  */
-rcl_interfaces::msg::SetParametersResult
-InflationLayer::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult InflationLayer::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+InflationLayer::updateParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
 
   bool need_cache_recompute = false;
 
@@ -449,32 +476,24 @@ InflationLayer::dynamicParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "inflation_radius" &&
-        inflation_radius_ != parameter.as_double())
-      {
+      if (param_name == name_ + "." + "inflation_radius") {
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
-      } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
-        getCostScalingFactor() != parameter.as_double())
-      {
+      } else if (param_name == name_ + "." + "cost_scaling_factor") {
         cost_scaling_factor_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+      if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
-        inflate_unknown_ != parameter.as_bool())
-      {
+      } else if (param_name == name_ + "." + "inflate_unknown") {
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
-      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
-        inflate_around_unknown_ != parameter.as_bool())
-      {
+      } else if (param_name == name_ + "." + "inflate_around_unknown") {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
       }
@@ -484,9 +503,6 @@ InflationLayer::dynamicParametersCallback(
   if (need_cache_recompute) {
     matchSize();
   }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_costmap_2d

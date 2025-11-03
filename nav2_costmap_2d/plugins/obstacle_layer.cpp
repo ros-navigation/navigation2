@@ -66,10 +66,14 @@ namespace nav2_costmap_2d
 ObstacleLayer::~ObstacleLayer()
 {
   auto node = node_.lock();
-  if (dyn_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
   }
-  dyn_params_handler_.reset();
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
   for (auto & notifier : observation_notifiers_) {
     notifier.reset();
   }
@@ -108,12 +112,6 @@ void ObstacleLayer::onInitialize()
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
   combination_method_ = combination_method_from_int(combination_method_param);
-
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ObstacleLayer::dynamicParametersCallback,
-      this,
-      std::placeholders::_1));
 
   RCLCPP_INFO(
     logger_,
@@ -356,12 +354,35 @@ void ObstacleLayer::onInitialize()
   }
 }
 
-rcl_interfaces::msg::SetParametersResult
-ObstacleLayer::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult ObstacleLayer::validateParameterUpdatesCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (auto parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+ObstacleLayer::updateParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -377,7 +398,7 @@ ObstacleLayer::dynamicParametersCallback(
         max_obstacle_height_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+      if (param_name == name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
         if (enabled_) {
           current_ = false;
@@ -391,9 +412,6 @@ ObstacleLayer::dynamicParametersCallback(
       }
     }
   }
-
-  result.successful = true;
-  return result;
 }
 
 void
@@ -783,6 +801,16 @@ ObstacleLayer::raytraceFreespace(
 void
 ObstacleLayer::activate()
 {
+  auto node = node_.lock();
+  // Add callback for dynamic parameters
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &ObstacleLayer::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
   for (auto & notifier : observation_notifiers_) {
     notifier->clear();
   }
@@ -799,6 +827,15 @@ ObstacleLayer::activate()
 void
 ObstacleLayer::deactivate()
 {
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
   for (unsigned int i = 0; i < observation_subscribers_.size(); ++i) {
     if (observation_subscribers_[i] != NULL) {
       observation_subscribers_[i]->unsubscribe();
