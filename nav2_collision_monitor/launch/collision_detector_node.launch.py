@@ -99,7 +99,8 @@ def generate_launch_description() -> LaunchDescription:
                 name='lifecycle_manager_collision_detector',
                 output='screen',
                 emulate_tty=True,  # https://github.com/ros2/launch/issues/188
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[{'autostart': autostart},
+                            {'node_names': lifecycle_nodes}],
                 remappings=remappings,
             ),
             Node(

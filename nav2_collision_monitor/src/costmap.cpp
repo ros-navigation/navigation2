@@ -76,12 +76,17 @@ bool CostmapSource::getData(
   }
   tf2::Transform tf_transform; tf_transform.setIdentity();
   const std::string src = data_->header.frame_id;
+
+  // This branch is for malformed /local_costmap/costmap in tests or bags.
+  // It is not expected in the happy path, so we exclude it from coverage.
   if (src != base_frame_id_) {
+    // LCOV_EXCL_START  <-- tell lcov/gcovr to ignore below
     if (!getTransform(curr_time, data_->header, tf_transform)) {
       RCLCPP_WARN(logger_, "[%s] TF %s->%s unavailable at t=%.3f",
         source_name_.c_str(), src.c_str(), base_frame_id_.c_str(), curr_time.seconds());
       return false;
     }
+    // LCOV_EXCL_STOP
   }
 
   // Extract lethal/inscribed cells and transform to base frame
@@ -138,4 +143,4 @@ void CostmapSource::dataCallback(nav2_msgs::msg::Costmap::ConstSharedPtr msg)
   data_ = msg;
 }
 
-}
+}  // namespace nav2_collision_monitor

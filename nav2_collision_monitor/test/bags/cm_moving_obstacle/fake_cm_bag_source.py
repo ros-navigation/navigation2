@@ -22,20 +22,22 @@ from rclpy.node import Node
 from rosgraph_msgs.msg import Clock as ClockMsg
 from std_msgs.msg import Header
 
-
 # --- standardized imports ---
-
-
-# - /clock: simulated time (monotonic)
-# - /cmd_vel_smoothed: small forward velocity
-# - /local_costmap/costmap: lethal cell near robot only from t∈[3,8]s
+# This node is meant to *mimic* what a recorded bag would provide:
+# - /clock: so the rest of the system can run in sim time
+# - /cmd_vel_smoothed: so there is a "robot is trying to move" signal
+# - /local_costmap/costmap: so Collision Monitor sees an obstacle only in a time window
 #
-# Matches your YAML: base_frame_id: base_footprint, cost_threshold: 254, radius: 0.4
+# Test intent:
+#   0..3s   → no obstacle → robot should keep going
+#   3..8s   → obstacle right under robot → CM should stop it
+#   8s..+   → obstacle gone → CM should let it move again
+# This must match the YAML used by the real CM test.
 
 
 class FakeCMSource(Node):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('fake_cm_bag_source')
 
         # Publishers
@@ -57,7 +59,7 @@ class FakeCMSource(Node):
 
         self.timer = self.create_timer(0.05, self.tick)  # 20 Hz
 
-    def tick(self):
+    def tick(self) -> None:
         # 1) /clock
         # in tick()
         now_ns = time.monotonic_ns() - self.t0_ns
@@ -87,10 +89,12 @@ class FakeCMSource(Node):
         meta.origin = self.origin
         cm.metadata = meta
 
+        # Start with all-free costmap
         data = np.zeros((self.size_y, self.size_x), dtype=np.uint8)
 
         if 3.0 <= now_s <= 8.0:
-            # Put a lethal cell exactly at robot center (inside 0.4 m circle)
+            # During the "danger window", make the cell under the robot lethal.
+            # This is what should make CM stop the robot.
             cx = self.size_x // 2
             cy = self.size_y // 2
             data[cy, cx] = 254  # lethal
@@ -99,7 +103,7 @@ class FakeCMSource(Node):
         self.costmap_pub.publish(cm)
 
 
-def main():
+def main(args: list[str] | None = None) -> None:
     rclpy.init()
     node = FakeCMSource()
     try:

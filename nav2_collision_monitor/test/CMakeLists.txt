@@ -85,4 +85,3 @@ add_launch_test(collision_monitor_node_bag.launch.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   ENV TEST_EXECUTABLE=$<TARGET_FILE:collision_monitor_node_bag_gtest>
 )
-
