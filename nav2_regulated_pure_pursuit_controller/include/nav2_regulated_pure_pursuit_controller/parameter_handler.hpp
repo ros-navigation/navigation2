@@ -75,7 +75,7 @@ public:
    * @brief Constructor for nav2_regulated_pure_pursuit_controller::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
     rclcpp::Logger & logger, const double costmap_size_x);
 
