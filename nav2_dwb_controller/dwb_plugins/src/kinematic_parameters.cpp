@@ -189,11 +189,11 @@ void KinematicsHandler::setSpeedLimit(
 }
 
 rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -229,12 +229,12 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
 }
 
 void
-KinematicsHandler::updateParametersCallback(std::vector<rclcpp::Parameter> parameters)
+KinematicsHandler::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   KinematicParameters kinematics(*kinematics_.load());
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {

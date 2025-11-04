@@ -87,7 +87,7 @@ protected:
    * @param parameters List of parameters that have been updated.
    */
   void
-  updateParametersCallback(std::vector<rclcpp::Parameter> parameters) override;
+  updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
   /**
    * @brief Validate incoming parameter updates before applying them.
@@ -98,7 +98,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult
-  validateParameterUpdatesCallback(std::vector<rclcpp::Parameter> parameters) override;
+  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
   std::string plugin_name_;
 };

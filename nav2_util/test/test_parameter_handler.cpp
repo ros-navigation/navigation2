@@ -27,14 +27,14 @@ struct DummyParams
 class TestParameterHandler : public nav2_util::ParameterHandler<DummyParams>
 {
 public:
-  TestParameterHandler(nav2::LifecycleNode::SharedPtr node, rclcpp::Logger & logger)
+  TestParameterHandler(const nav2::LifecycleNode::SharedPtr & node, rclcpp::Logger & logger)
   : ParameterHandler<DummyParams>(node, logger) {}
 
   bool validated = false;
   bool updated = false;
 
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter>/*parameters*/) override
+    const std::vector<rclcpp::Parameter> & /*parameters*/) override
   {
     validated = true;
     rcl_interfaces::msg::SetParametersResult result;
@@ -42,7 +42,7 @@ public:
     return result;
   }
 
-  void updateParametersCallback(std::vector<rclcpp::Parameter>/*parameters*/) override
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & /*parameters*/) override
   {
     updated = true;
   }

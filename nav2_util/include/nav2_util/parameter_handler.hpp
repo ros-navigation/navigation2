@@ -39,7 +39,7 @@ public:
    * @brief Constructor for nav2_util::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     rclcpp::Logger & logger)
   : node_(node), logger_(logger) {}
 
@@ -105,7 +105,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   virtual rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter> parameters) = 0;
+    const std::vector<rclcpp::Parameter> & parameters) = 0;
 
   /**
    * @brief Apply parameter updates after validation
@@ -113,7 +113,7 @@ protected:
    * It updates the internal configuration of the node with the new parameter values.
    * @param parameters List of parameters that have been updated.
    */
-  virtual void updateParametersCallback(std::vector<rclcpp::Parameter> parameters) = 0;
+  virtual void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) = 0;
 };
 
 }  // namespace nav2_util

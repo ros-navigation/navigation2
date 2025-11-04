@@ -65,7 +65,7 @@ public:
    * @brief Constructor for nav2_graceful_controller::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
     rclcpp::Logger & logger, const double costmap_size_x);
 
@@ -79,7 +79,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter> parameters) override;
+    const std::vector<rclcpp::Parameter> & parameters) override;
 
   /**
    * @brief Apply parameter updates after validation
@@ -87,7 +87,7 @@ protected:
    * It updates the internal configuration of the node with the new parameter values.
    * @param parameters List of parameters that have been updated.
    */
-  void updateParametersCallback(std::vector<rclcpp::Parameter> parameters) override;
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
   std::string plugin_name_;
 };
