@@ -227,7 +227,7 @@ void CostCritic::score(CriticData & data)
       }
 
       // Let near-collision trajectory points be punished severely
-      if (cost_for_scoring >= near_collision_cost_) {
+      if (cost_for_scoring >= near_collision_cost_ && !near_goal) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
         traj_cost += cost_for_scoring;
