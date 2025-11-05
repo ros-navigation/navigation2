@@ -57,7 +57,7 @@ public:
    * @brief Constructor for nav2_rotation_shim_controller::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
     rclcpp::Logger & logger);
 
@@ -90,7 +90,7 @@ protected:
    * @param parameters List of parameters that have been updated.
    */
   void
-  updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   /**
    * @brief Validate incoming parameter updates before applying them.
@@ -101,7 +101,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult
-  validateParameterUpdatesCallback(std::vector<rclcpp::Parameter> parameters);
+  validateParameterUpdatesCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   // Dynamic parameters handler
   std::mutex mutex_;

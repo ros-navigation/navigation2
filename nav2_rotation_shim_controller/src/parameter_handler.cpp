@@ -29,7 +29,7 @@ using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
-  nav2::LifecycleNode::SharedPtr node,
+  const nav2::LifecycleNode::SharedPtr & node,
   std::string & plugin_name, rclcpp::Logger & logger)
 {
   node_ = node;
@@ -106,11 +106,11 @@ ParameterHandler::~ParameterHandler()
 {
 }
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -137,7 +137,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
 }
 void
 ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 
