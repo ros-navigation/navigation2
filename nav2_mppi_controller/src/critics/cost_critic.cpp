@@ -197,16 +197,15 @@ void CostCritic::score(CriticData & data)
       bool use_footprint_cost = consider_footprint_ &&
         (pose_cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f);
 
-      if (use_footprint_cost)
-      {
+      if (use_footprint_cost) {
         cost_for_scoring = static_cast<float>(collision_checker_.footprintCostAtPose(
             static_cast<double>(Tx), static_cast<double>(Ty), static_cast<double>(traj_yaw(i, j)),
             costmap_ros_->getRobotFootprint()));
       }
-      
+
       // Check for collision based on the appropriate cost
       bool in_collision = false;
-      
+
       switch (static_cast<unsigned char>(cost_for_scoring)) {
         case (nav2_costmap_2d::LETHAL_OBSTACLE):
           in_collision = true;
@@ -220,7 +219,7 @@ void CostCritic::score(CriticData & data)
         default:
           in_collision = false;
       }
-      
+
       if (in_collision) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
