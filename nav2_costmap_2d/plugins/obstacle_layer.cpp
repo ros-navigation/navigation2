@@ -355,11 +355,11 @@ void ObstacleLayer::onInitialize()
 }
 
 rcl_interfaces::msg::SetParametersResult ObstacleLayer::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {
@@ -380,11 +380,11 @@ rcl_interfaces::msg::SetParametersResult ObstacleLayer::validateParameterUpdates
 
 void
 ObstacleLayer::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {

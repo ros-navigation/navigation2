@@ -734,11 +734,11 @@ Costmap2DROS::transformPoseToGlobalFrame(
 }
 
 rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
@@ -784,12 +784,12 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
 }
 
 void
-Costmap2DROS::updateParametersCallback(std::vector<rclcpp::Parameter> parameters)
+Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   bool resize_map = false;
   std::lock_guard<std::mutex> lock_reinit(_dynamic_parameter_mutex);
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {

@@ -219,7 +219,7 @@ void PluginContainerLayer::clearArea(int start_x, int start_y, int end_x, int en
 }
 
 rcl_interfaces::msg::SetParametersResult PluginContainerLayer::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter>/*parameters*/)
+  const std::vector<rclcpp::Parameter> & /*parameters*/)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
@@ -227,11 +227,11 @@ rcl_interfaces::msg::SetParametersResult PluginContainerLayer::validateParameter
 }
 
 void PluginContainerLayer::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(name_ + ".") != 0) {

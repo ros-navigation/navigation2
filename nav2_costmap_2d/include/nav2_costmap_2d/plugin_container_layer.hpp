@@ -116,7 +116,7 @@ public:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter> parameters);
+    const std::vector<rclcpp::Parameter> & parameters);
 
   /**
    * @brief Apply parameter updates after validation
@@ -124,7 +124,7 @@ public:
    * It updates the internal configuration of the node with the new parameter values.
    * @param parameters List of parameters that have been updated.
    */
-  void updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
 private:
   /// @brief Dynamic parameters handler
