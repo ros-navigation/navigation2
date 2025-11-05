@@ -397,11 +397,6 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
             "cost without a known SE2 collision cost!");
   }
 
-  // this is the first node
-  if (getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
-    return NodeHybrid::travel_distance_cost;
-  }
-
   const TurnDirection & child_turn_dir = child->getTurnDirection();
   float travel_cost_raw = motion_table.travel_costs[child->getMotionPrimitiveIndex()];
   float travel_cost = 0.0;
@@ -419,7 +414,7 @@ float NodeHybrid::getTraversalCost(const NodePtr & child)
     // New motion is a straight motion, no additional costs to be applied
     travel_cost = travel_cost_raw;
   } else {
-    if (getTurnDirection() == child_turn_dir) {
+    if (getTurnDirection() == child_turn_dir || getMotionPrimitiveIndex() == std::numeric_limits<unsigned int>::max()) {
       // Turning motion but keeps in same direction: encourages to commit to turning if starting it
       travel_cost = travel_cost_raw * motion_table.non_straight_penalty;
     } else {
