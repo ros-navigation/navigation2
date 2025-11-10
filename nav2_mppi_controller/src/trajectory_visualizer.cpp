@@ -31,7 +31,6 @@ void TrajectoryVisualizer::on_configure(
   auto getParam = parameters_handler->getParamGetter(name + ".Visualization");
   getParam(trajectory_step_, "trajectory_step", 5);
   getParam(time_step_, "time_step", 3);
-  getParam(publish_optimal_trajectory_, "publish_optimal_trajectory", false);
   getParam(publish_trajectories_with_total_cost_, "publish_trajectories_with_total_cost", false);
   getParam(publish_trajectories_with_individual_cost_, "publish_trajectories_with_individual_cost",
       false);
@@ -298,7 +297,7 @@ void TrajectoryVisualizer::visualize(
   }
 
   // Add optimal trajectory to populate optimal_path_
-  if (publish_optimal_trajectory_ && optimal_trajectory.rows() > 0) {
+  if (publish_optimal_path_ && optimal_trajectory.rows() > 0) {
     add(optimal_trajectory, "Optimal Trajectory", stamp);
   }
 
@@ -308,7 +307,7 @@ void TrajectoryVisualizer::visualize(
   }
 
   // Publish optimal path if enabled
-  if (publish_optimal_trajectory_ && optimal_path_pub_ &&
+  if (publish_optimal_path_ && optimal_path_pub_ &&
     optimal_path_pub_->get_subscription_count() > 0)
   {
     optimal_path_pub_->publish(std::move(optimal_path_));
@@ -351,7 +350,7 @@ void TrajectoryVisualizer::visualize(nav_msgs::msg::Path plan)
     trajectories_publisher_->publish(std::move(points_));
   }
 
-  if (publish_optimal_trajectory_ && optimal_path_pub_ &&
+  if (publish_optimal_path_ && optimal_path_pub_ &&
     optimal_path_pub_->get_subscription_count() > 0)
   {
     optimal_path_pub_->publish(std::move(optimal_path_));

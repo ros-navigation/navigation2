@@ -172,7 +172,6 @@ protected:
 
   size_t trajectory_step_{0};
   size_t time_step_{0};
-  bool publish_optimal_trajectory_{false};
   bool publish_trajectories_with_total_cost_{false};
   bool publish_trajectories_with_individual_cost_{false};
   bool publish_optimal_footprints_{false};
