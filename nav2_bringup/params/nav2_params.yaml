@@ -142,7 +142,6 @@ controller_server:
       Visualization:
         publish_critics_stats: false
         publish_optimal_trajectory_msg: false
-        publish_optimal_trajectory: false
         publish_transformed_path: false
         publish_trajectories_with_total_cost: false
         publish_trajectories_with_individual_cost: false
