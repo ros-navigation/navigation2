@@ -256,8 +256,9 @@ inline ParamType declare_or_get_parameter(
   }
 
   auto return_value = param_interface
-    ->declare_parameter(parameter_name, rclcpp::ParameterValue{default_value},
-      parameter_descriptor)
+    ->declare_parameter(
+    parameter_name, rclcpp::ParameterValue{default_value},
+    parameter_descriptor)
     .get<ParamType>();
 
   const bool no_param_override = param_interface->get_parameter_overrides().find(parameter_name) ==
@@ -265,8 +266,8 @@ inline ParamType declare_or_get_parameter(
   if (no_param_override) {
     if (warn_if_no_override) {
       RCLCPP_WARN_STREAM(
-            logger,
-            "Failed to get param " << parameter_name << " from overrides, using default value.");
+        logger,
+        "Failed to get param " << parameter_name << " from overrides, using default value.");
     }
     if (strict_param_loading) {
       std::string description = "Parameter " + parameter_name +
@@ -305,7 +306,8 @@ inline ParamType declare_or_get_parameter(
   declare_parameter_if_not_declared(node, "strict_param_loading", rclcpp::ParameterValue(false));
   bool strict_param_loading{false};
   node->get_parameter("strict_param_loading", strict_param_loading);
-  return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
+  return declare_or_get_parameter(
+    node->get_logger(), node->get_node_parameters_interface(),
     parameter_name, default_value, warn_if_no_override, strict_param_loading, parameter_descriptor);
 }
 
@@ -352,21 +354,21 @@ inline void setSoftRealTimePriority()
   thread_precedence_policy_data_t policy;
   policy.importance = 63;  // 0–63, higher = more priority
   kern_return_t result = thread_policy_set(
-      thread,
-      THREAD_PRECEDENCE_POLICY,
-      (thread_policy_t)&policy,
-      THREAD_PRECEDENCE_POLICY_COUNT);
+    thread,
+    THREAD_PRECEDENCE_POLICY,
+    (thread_policy_t)&policy,
+    THREAD_PRECEDENCE_POLICY_COUNT);
 
   if (result != KERN_SUCCESS) {
-      // Construct the message once with the full context
-      std::string errmsg = 
-        "Failed to set THREAD_PRECEDENCE_POLICY on macOS. "
-        "Thread priority remains at default. "
-        "Mach Error Code: ";
+    // Construct the message once with the full context
+    std::string errmsg =
+      "Failed to set THREAD_PRECEDENCE_POLICY on macOS. "
+      "Thread priority remains at default. "
+      "Mach Error Code: ";
 
-      // Append the numerical result code and throw
-      throw std::runtime_error(errmsg + std::to_string(result));
-    }
+    // Append the numerical result code and throw
+    throw std::runtime_error(errmsg + std::to_string(result));
+  }
 #else
   // Linux: True real-time scheduling (requires privileges)
   sched_param sch;
@@ -418,8 +420,9 @@ inline void replaceOrAddArgument(
   std::vector<std::string> & arguments, const std::string & option,
   const std::string & arg_name, const std::string & new_argument)
 {
-  auto argument = std::find_if(arguments.begin(), arguments.end(),
-      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  auto argument = std::find_if(
+    arguments.begin(), arguments.end(),
+    [arg_name](const std::string & value) {return value.find(arg_name) != std::string::npos;});
   if (argument != arguments.end()) {
     *argument = new_argument;
   } else {
