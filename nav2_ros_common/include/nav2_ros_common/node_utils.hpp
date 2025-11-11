@@ -26,6 +26,15 @@
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
 
+#ifdef __APPLE__
+  #include <pthread.h>
+  #include <mach/mach.h>
+  #include <mach/thread_policy.h>
+#else
+  #include <sched.h>
+  #include <errno.h>
+#endif
+
 using std::chrono::high_resolution_clock;
 using std::to_string;
 using std::string;
@@ -337,6 +346,29 @@ inline std::string get_plugin_type_param(
  */
 inline void setSoftRealTimePriority()
 {
+#ifdef __APPLE__
+  // macOS: Use Mach thread API (approximate real-time priority)
+  thread_port_t thread = pthread_mach_thread_np(pthread_self());
+  thread_precedence_policy_data_t policy;
+  policy.importance = 63;  // 0–63, higher = more priority
+  kern_return_t result = thread_policy_set(
+      thread,
+      THREAD_PRECEDENCE_POLICY,
+      (thread_policy_t)&policy,
+      THREAD_PRECEDENCE_POLICY_COUNT);
+
+  if (result != KERN_SUCCESS) {
+      // Construct the message once with the full context
+      std::string errmsg = 
+        "Failed to set THREAD_PRECEDENCE_POLICY on macOS. "
+        "Thread priority remains at default. "
+        "Mach Error Code: ";
+
+      // Append the numerical result code and throw
+      throw std::runtime_error(errmsg + std::to_string(result));
+    }
+#else
+  // Linux: True real-time scheduling (requires privileges)
   sched_param sch;
   sch.sched_priority = 49;
   if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
@@ -346,6 +378,7 @@ inline void setSoftRealTimePriority()
       "realtime prioritization! Error: ");
     throw std::runtime_error(errmsg + std::strerror(errno));
   }
+#endif
 }
 
 template<typename InterfaceT>
