@@ -40,7 +40,6 @@
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
-using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
