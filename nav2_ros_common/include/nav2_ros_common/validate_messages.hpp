@@ -73,7 +73,6 @@ bool validateMsg(const std::array<double, N> & msg)
       // Reject extreme values (security: prevent DoS attacks)
       return false;
     }
-
   }
 
   return true;
