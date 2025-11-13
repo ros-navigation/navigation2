@@ -56,7 +56,7 @@ bool validateMsg(const double & num)
   return true;
 }
 
-const double MAX_COVARIANCE = 1e9;
+const double MAX_COVARIANCE = 1e6;
 const double MIN_COVARIANCE = 1e-4;
 
 template<size_t N>
