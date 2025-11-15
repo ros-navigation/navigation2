@@ -14,7 +14,7 @@
 
 from collections.abc import Generator
 import tempfile
-from typing import Optional, TypeAlias, Union
+from typing import Optional, TypeAlias, Union, Sequence
 
 import launch
 import yaml
@@ -35,6 +35,7 @@ class DictItemReference:
         self.dictionary[self.dictKey] = value
 
 
+@launch.frontend.expose_substitution('rewritten-yaml')
 class RewrittenYaml(launch.Substitution):
     """
     Substitution that modifies the given YAML file.
@@ -89,6 +90,10 @@ class RewrittenYaml(launch.Substitution):
                 )
         if root_key is not None:
             self.__root_key = normalize_to_list_of_substitutions(root_key)
+
+    @classmethod
+    def parse(cls, data: Sequence[launch.SomeSubstitutionsType]):
+        raise NotImplementedError()
 
     @property
     def name(self) -> list[launch.Substitution]:
