@@ -424,12 +424,34 @@ void PlannerServer::computePlanThroughPoses()
       }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(
-        curr_start, curr_goal, goal->planner_id,
-        cancel_checker);
+      nav_msgs::msg::Path curr_path;
+      try {
+        curr_path = getPlan(curr_start, curr_goal, goal->planner_id, cancel_checker);
+      } catch (nav2_core::PlannerException & ex) {
+        if (i == 0 || !partial_plan_allowed_) {
+          throw;
+        }
+
+        exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
+        RCLCPP_WARN(get_logger(),
+          "Planner server failed to compute full path. Outputting partial path instead.");
+
+        break;
+      }
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
-        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
+        auto exception =
+          nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
+
+        if (i == 0 || !partial_plan_allowed_) {
+          throw exception;
+        }
+
+        exceptionWarning(curr_start, curr_goal, goal->planner_id, exception, result->error_msg);
+        RCLCPP_WARN(get_logger(),
+          "Planner server failed to compute full path. Outputting partial path instead.");
+
+        break;
       }
 
       // Concatenate paths together, but skip the first pose of subsequent paths
