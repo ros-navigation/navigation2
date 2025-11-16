@@ -44,6 +44,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
+  partial_plan_allowed_{true},
   costmap_update_timeout_(1s),
   costmap_(nullptr)
 {
@@ -53,6 +54,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("costmap_update_timeout", 1.0);
+  declare_parameter("allow_partial_planning", true);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -131,6 +133,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Planner Server has %s planners available.", planner_ids_concat_.c_str());
+
+  get_parameter("allow_partial_planning", partial_plan_allowed_);
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
@@ -749,6 +753,12 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             " than 0.0 to turn on duration overrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
+      }
+    }
+
+    if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "allow_partial_planning") {
+        partial_plan_allowed_ = parameter.as_bool();
       }
     }
   }
