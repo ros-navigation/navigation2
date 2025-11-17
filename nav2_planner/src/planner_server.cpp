@@ -464,6 +464,7 @@ void PlannerServer::computePlanThroughPoses()
           concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
       }
       concat_path.header = curr_path.header;
+      result->last_reached_index = (i != goal->goals.goals.size() - 1) ? i + 1 : -1;
     }
 
     // Publish the plan for visualization purposes

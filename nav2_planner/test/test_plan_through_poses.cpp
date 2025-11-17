@@ -361,6 +361,7 @@ TEST_F(Tester, testPlannerNoObstacles)
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
+  EXPECT_EQ(result.last_reached_index, Action::Result::ALL_GOALS);
 
   const auto & result_poses = result.path.poses;
   EXPECT_NEAR(result_poses.back().pose.position.x, pose4.position.x, PLANNER_TOLERANCE);
@@ -464,6 +465,7 @@ TEST_F(Tester, testPlannerWithMiddleObstacle)
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
+  EXPECT_EQ(result.last_reached_index, 1);
 
   const auto & result_poses = result.path.poses;
   EXPECT_NEAR(result_poses.back().pose.position.x, pose2.position.x, PLANNER_TOLERANCE);
@@ -519,6 +521,7 @@ TEST_F(Tester, testPlannerWithFarObstacle)
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
+  EXPECT_EQ(result.last_reached_index, 2);
 
   const auto & result_poses = result.path.poses;
   EXPECT_NEAR(result_poses.back().pose.position.x, pose3.position.x, PLANNER_TOLERANCE);
