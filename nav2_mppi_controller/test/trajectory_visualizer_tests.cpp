@@ -40,13 +40,13 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
-  
+
   // Set parameter to enable transformed path publishing
   node->declare_parameter(
     "my_name.Visualization.publish_transformed_path", rclcpp::ParameterValue(true));
-  
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
-  
+
   nav_msgs::msg::Path received_path;
   nav_msgs::msg::Path pub_path;
   pub_path.header.frame_id = "fake_frame";
@@ -73,11 +73,11 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
-  
+
   // Set parameter to enable trajectory publishing
   node->declare_parameter(
     "my_name.Visualization.publish_trajectories_with_total_cost", rclcpp::ParameterValue(true));
-  
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
 
   visualization_msgs::msg::MarkerArray received_msg;
@@ -143,13 +143,13 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
-  
+
   // Set parameter to enable trajectory publishing
   node->declare_parameter(
     "my_name.Visualization.publish_trajectories_with_total_cost", rclcpp::ParameterValue(true));
-  
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
-  
+
   builtin_interfaces::msg::Time cmd_stamp;
   cmd_stamp.sec = 5;
   cmd_stamp.nanosec = 10;
@@ -186,13 +186,13 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   std::string name = "test";
-  
+
   // Set parameter to enable optimal path publishing
   node->declare_parameter(
     "my_name.Visualization.publish_optimal_path", rclcpp::ParameterValue(true));
-  
+
   auto parameters_handler = std::make_unique<ParametersHandler>(node, name);
-  
+
   builtin_interfaces::msg::Time cmd_stamp;
   cmd_stamp.sec = 5;
   cmd_stamp.nanosec = 10;
