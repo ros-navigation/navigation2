@@ -41,6 +41,7 @@ void ComputePathThroughPosesAction::on_tick()
 BT::NodeStatus ComputePathThroughPosesAction::on_success()
 {
   setOutput("path", result_.result->path);
+  setOutput("last_reached_index", result_.result->last_reached_index);
   // Set empty error code, action was successful
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
