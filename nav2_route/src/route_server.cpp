@@ -383,6 +383,31 @@ void RouteServer::exceptionWarning(
     goal->goal.pose.position.x, goal->goal.pose.position.y, goal->goal_id, ex.what());
 }
 
+// Explicit template instantiations
+template bool RouteServer::isRequestValid<RouteServer::ComputeRoute>(
+  std::shared_ptr<nav2_util::SimpleActionServer<RouteServer::ComputeRoute>> &);
+template bool RouteServer::isRequestValid<RouteServer::ComputeAndTrackRoute>(
+  std::shared_ptr<nav2_util::SimpleActionServer<RouteServer::ComputeAndTrackRoute>> &);
+
+template Route RouteServer::findRoute<RouteServer::ComputeRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeRouteGoal>,
+  ReroutingState &);
+template Route RouteServer::findRoute<RouteServer::ComputeAndTrackRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeAndTrackRouteGoal>,
+  ReroutingState &);
+
+template void RouteServer::processRouteRequest<RouteServer::ComputeRoute>(
+  std::shared_ptr<nav2_util::SimpleActionServer<RouteServer::ComputeRoute>> &);
+template void RouteServer::processRouteRequest<RouteServer::ComputeAndTrackRoute>(
+  std::shared_ptr<nav2_util::SimpleActionServer<RouteServer::ComputeAndTrackRoute>> &);
+
+template void RouteServer::exceptionWarning<RouteServer::ComputeRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeRouteGoal>,
+  const std::exception &);
+template void RouteServer::exceptionWarning<RouteServer::ComputeAndTrackRouteGoal>(
+  const std::shared_ptr<const RouteServer::ComputeAndTrackRouteGoal>,
+  const std::exception &);
+
 }  // namespace nav2_route
 
 #include "rclcpp_components/register_node_macro.hpp"
