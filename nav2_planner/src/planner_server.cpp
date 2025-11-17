@@ -44,7 +44,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
-  partial_plan_allowed_{true},
+  partial_plan_allowed_{false},
   costmap_update_timeout_(1s),
   costmap_(nullptr)
 {
@@ -54,7 +54,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("costmap_update_timeout", 1.0);
-  declare_parameter("allow_partial_planning", true);
+  declare_parameter("allow_partial_planning", false);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
