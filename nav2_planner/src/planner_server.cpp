@@ -435,7 +435,6 @@ void PlannerServer::computePlanThroughPoses()
         exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
         RCLCPP_WARN(get_logger(),
           "Planner server failed to compute full path. Outputting partial path instead.");
-
         break;
       }
 
@@ -450,7 +449,6 @@ void PlannerServer::computePlanThroughPoses()
         exceptionWarning(curr_start, curr_goal, goal->planner_id, exception, result->error_msg);
         RCLCPP_WARN(get_logger(),
           "Planner server failed to compute full path. Outputting partial path instead.");
-
         break;
       }
 
