@@ -947,6 +947,8 @@ AmclNode::initParameters()
   scan_topic_ = this->declare_or_get_parameter("scan_topic", std::string{"scan"});
   map_topic_ = this->declare_or_get_parameter("map_topic", std::string{"map"});
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
+  allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
+    "allow_parameter_qos_overrides", true);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1343,8 +1345,8 @@ AmclNode::initTransforms()
 void
 AmclNode::initMessageFilters()
 {
-  auto sub_opt = rclcpp::SubscriptionOptions();
-  sub_opt.callback_group = callback_group_;
+  auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(

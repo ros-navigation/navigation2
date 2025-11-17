@@ -262,6 +262,7 @@ protected:
   bool rolling_window_;
   bool was_reset_;
   nav2_costmap_2d::CombinationMethod combination_method_;
+  bool allow_parameter_qos_overrides_;
 };
 
 }  // namespace nav2_costmap_2d

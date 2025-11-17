@@ -48,6 +48,7 @@
 #include "nav2_util/raytrace_line_2d.hpp"
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "rclcpp/version.h"
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::ObstacleLayer, nav2_costmap_2d::Layer)
@@ -95,6 +96,8 @@ void ObstacleLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
+  allow_parameter_qos_overrides_ = nav2::declare_or_get_parameter(node,
+    "allow_parameter_qos_overrides", true);
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
@@ -132,9 +135,6 @@ void ObstacleLayer::onInitialize()
   was_reset_ = false;
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
-
-  auto sub_opt = rclcpp::SubscriptionOptions();
-  sub_opt.callback_group = callback_group_;
 
   // now we need to split the topics based on whitespace which we can use a stringstream for
   std::stringstream ss(topics_string);
@@ -235,6 +235,9 @@ void ObstacleLayer::onInitialize()
 
     // create a callback for the topic
     if (data_type == "LaserScan") {
+      auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+        topic, allow_parameter_qos_overrides_, callback_group_);
+
       // For Kilted and Older Support from Message Filters API change
       #if RCLCPP_VERSION_GTE(29, 6, 0)
       std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> sub;
@@ -289,6 +292,9 @@ void ObstacleLayer::onInitialize()
           tf_filter_tolerance));
 
     } else {
+      auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+        topic, allow_parameter_qos_overrides_, callback_group_);
+
       // For Rolling and Newer Support from PointCloudTransport API change
       #if RCLCPP_VERSION_GTE(30, 0, 0)
       std::shared_ptr<point_cloud_transport::SubscriberFilter> sub;
