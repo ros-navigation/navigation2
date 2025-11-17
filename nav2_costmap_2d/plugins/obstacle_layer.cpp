@@ -527,8 +527,8 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
-    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
-    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
+    unsigned int cell_max_range = cellDistance(obs.obstacle_max_range_);
+    unsigned int cell_min_range = cellDistance(obs.obstacle_min_range_);
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -549,20 +549,27 @@ ObstacleLayer::updateBounds(
         continue;
       }
 
-      // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist =
-        (px -
-        obs.origin_.x) * (px - obs.origin_.x) + (py - obs.origin_.y) * (py - obs.origin_.y) +
-        (pz - obs.origin_.z) * (pz - obs.origin_.z);
+      // compute the distance from the hitpoint to the pointcloud's origin
+      // Calculate the distance in cells to match the ray trace algorithm used for clearing
+      // obstacles (see Costmap2D::raytraceLine).
+      unsigned int origin_cell_x;
+      unsigned int origin_cell_y;
+      worldToMap(obs.origin_.x, obs.origin_.y, origin_cell_x, origin_cell_y);
+      unsigned int point_cell_x;
+      unsigned int point_cell_y;
+      worldToMap(px, py, point_cell_x, point_cell_y);
+      int delta_x = point_cell_x - origin_cell_x;
+      int delta_y = point_cell_y - origin_cell_y;
+      unsigned int max_delta = std::max(std::abs(delta_x), std::abs(delta_y));
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_max_range) {
+      if (max_delta > cell_max_range) {
         RCLCPP_DEBUG(logger_, "The point is too far away");
         continue;
       }
 
-      // if the point is too close, do not conisder it
-      if (sq_dist < sq_obstacle_min_range) {
+      // if the point is too close, do not consider it
+      if (max_delta < cell_min_range) {
         RCLCPP_DEBUG(logger_, "The point is too close");
         continue;
       }
