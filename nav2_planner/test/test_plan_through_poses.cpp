@@ -357,7 +357,7 @@ TEST_F(Tester, testPlannerNoObstacles)
   ActionGoalHandle::WrappedResult action_result;
   waitForResult(gh_future, action_result, 2s);
 
-  EXPECT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
@@ -412,7 +412,7 @@ TEST_F(Tester, testPlannerWithNearObstacle)
   ActionGoalHandle::WrappedResult action_result;
   waitForResult(gh_future, action_result, 2s);
 
-  EXPECT_EQ(action_result.code, rclcpp_action::ResultCode::ABORTED);
+  ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::ABORTED);
 
   planner_->stop();
   stopTesterNode();
@@ -460,7 +460,7 @@ TEST_F(Tester, testPlannerWithMiddleObstacle)
   ActionGoalHandle::WrappedResult action_result;
   waitForResult(gh_future, action_result, 2s);
 
-  EXPECT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
@@ -515,7 +515,7 @@ TEST_F(Tester, testPlannerWithFarObstacle)
   ActionGoalHandle::WrappedResult action_result;
   waitForResult(gh_future, action_result, 2s);
 
-  EXPECT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
+  ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::SUCCEEDED);
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
@@ -573,7 +573,7 @@ TEST_F(Tester, testPlannerWithoutPartialPlanning)
   ActionGoalHandle::WrappedResult action_result;
   waitForResult(gh_future, action_result, 2s);
 
-  EXPECT_EQ(action_result.code, rclcpp_action::ResultCode::ABORTED);
+  ASSERT_EQ(action_result.code, rclcpp_action::ResultCode::ABORTED);
 
   planner_->stop();
   stopTesterNode();
