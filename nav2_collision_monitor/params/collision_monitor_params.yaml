@@ -104,7 +104,7 @@ collision_monitor:
       enabled: True
     # costmap:
     #   type: "costmap"
-    #   topic: "local_costmap/costmap"   # relative, respects namespaces
+    #   topic: "local_costmap/costmap"
     #   cost_threshold: 254
     #   enabled: True
     #   treat_unknown_as_obstacle: True

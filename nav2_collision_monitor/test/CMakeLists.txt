@@ -12,6 +12,8 @@ target_link_libraries(sources_test
   rclcpp::rclcpp
   nav2_util::nav2_util_core
   ${sensor_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
   tf2_ros::tf2_ros
 )
 
@@ -52,6 +54,8 @@ ament_add_gtest(collision_detector_node_test collision_detector_node_test.cpp)
 target_link_libraries(collision_detector_node_test
   ${detector_library_name}
   ${geometry_msgs_TARGETS}
+  ${nav2_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
   rclcpp::rclcpp
   ${sensor_msgs_TARGETS}
