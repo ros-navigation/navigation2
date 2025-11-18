@@ -79,8 +79,6 @@ bool CostmapSource::getData(
   tf2::Transform tf_transform; tf_transform.setIdentity();
   const std::string src = data_->header.frame_id;
 
-  // This branch is for malformed /local_costmap/costmap in tests or bags.
-  // It is not expected in the happy path, so we exclude it from coverage.
   if (src != base_frame_id_) {
     if (!getTransform(curr_time, data_->header, tf_transform)) {
       RCLCPP_WARN(logger_, "[%s] TF %s->%s unavailable at t=%.3f",

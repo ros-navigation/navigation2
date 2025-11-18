@@ -61,7 +61,6 @@ public:
     stop_thresh_ = this->declare_parameter<double>("stop_thresh", 0.02);             // |vx| <= stop
     resume_thresh_ = this->declare_parameter<double>(
       "resume_thresh", 0.10);  //  vx  >= resume
-
     debounce_n_ = this->declare_parameter<int>(
       "debounce_n", 3);  // need K in arow
 
@@ -144,12 +143,17 @@ public:
 
     if (!R.have_data) {return R;}
 
-    // helper: pick samples in a time range
-    auto in_range = [&](double t0, double t1){
-        std::vector<Sample> out; out.reserve(samples_.size());
-        for (const auto & s : samples_) {if (s.t >= t0 && s.t <= t1) {out.push_back(s);}}
+    auto in_range = [&](double t0, double t1) {       // helper: pick samples in [t0, t1]
+        std::vector<Sample> out;
+        out.reserve(samples_.size());
+        for (const auto & s : samples_) {
+          if (s.t >= t0 && s.t <= t1) {
+            out.push_back(s);
+          }
+        }
         return out;
       };
+
 
     // Segments:
     // 0..(3 - 0.2) → must be clean (no stop)  (guard band)
@@ -193,9 +197,12 @@ public:
     // 4) false-stop%: outside the window we should mostly be moving
     const size_t clean_total = pre_seg.size() + post_seg.size();
     if (clean_total > 0) {
-      auto count_stopped = [&](const std::vector<Sample> & seg){
-          return std::count_if(seg.begin(), seg.end(),
-                   [&](const Sample & s){return std::fabs(s.vx) <= stop_thresh_;});
+      auto count_stopped = [&](const std::vector<Sample> & seg) {
+          return std::count_if(
+            seg.begin(), seg.end(),
+            [&](const Sample & s) {
+              return std::fabs(s.vx) <= stop_thresh_;
+            });
         };
       const size_t clean_stopped = count_stopped(pre_seg) + count_stopped(post_seg);
       R.false_stop_pct = static_cast<double>(clean_stopped) / static_cast<double>(clean_total);
