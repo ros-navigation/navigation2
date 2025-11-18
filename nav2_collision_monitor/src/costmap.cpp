@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_collision_monitor/costmap.hpp"
 #include <cmath>
