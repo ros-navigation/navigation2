@@ -372,6 +372,7 @@ map_saver:
 
 planner_server:
   ros__parameters:
+    allow_partial_planning: false
     expected_planner_frequency: 20.0
     planner_plugins: ["GridBased"]
     costmap_update_timeout: 1.0

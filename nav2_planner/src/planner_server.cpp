@@ -44,6 +44,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
   default_ids_{"GridBased"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
+  partial_plan_allowed_{false},
   costmap_update_timeout_(1s),
   costmap_(nullptr)
 {
@@ -53,6 +54,7 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   declare_parameter("planner_plugins", default_ids_);
   declare_parameter("expected_planner_frequency", 1.0);
   declare_parameter("costmap_update_timeout", 1.0);
+  declare_parameter("allow_partial_planning", false);
 
   get_parameter("planner_plugins", planner_ids_);
   if (planner_ids_ == default_ids_) {
@@ -131,6 +133,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(
     get_logger(),
     "Planner Server has %s planners available.", planner_ids_concat_.c_str());
+
+  get_parameter("allow_partial_planning", partial_plan_allowed_);
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
@@ -420,12 +424,32 @@ void PlannerServer::computePlanThroughPoses()
       }
 
       // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(
-        curr_start, curr_goal, goal->planner_id,
-        cancel_checker);
+      nav_msgs::msg::Path curr_path;
+      try {
+        curr_path = getPlan(curr_start, curr_goal, goal->planner_id, cancel_checker);
+      } catch (nav2_core::PlannerException & ex) {
+        if (i == 0 || !partial_plan_allowed_) {
+          throw;
+        }
+
+        exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
+        RCLCPP_WARN(get_logger(),
+          "Planner server failed to compute full path. Outputting partial path instead.");
+        break;
+      }
 
       if (!validatePath<ActionThroughPoses>(curr_goal, curr_path, goal->planner_id)) {
-        throw nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
+        auto exception =
+          nav2_core::NoValidPathCouldBeFound(goal->planner_id + " generated a empty path");
+
+        if (i == 0 || !partial_plan_allowed_) {
+          throw exception;
+        }
+
+        exceptionWarning(curr_start, curr_goal, goal->planner_id, exception, result->error_msg);
+        RCLCPP_WARN(get_logger(),
+          "Planner server failed to compute full path. Outputting partial path instead.");
+        break;
       }
 
       // Concatenate paths together, but skip the first pose of subsequent paths
@@ -440,6 +464,12 @@ void PlannerServer::computePlanThroughPoses()
           concat_path.poses.end(), curr_path.poses.begin() + 1, curr_path.poses.end());
       }
       concat_path.header = curr_path.header;
+
+      if (i == goal->goals.goals.size() - 1) {
+        result->last_reached_index = ActionThroughPosesResult::ALL_GOALS;
+      } else {
+        result->last_reached_index = i;
+      }
     }
 
     // Publish the plan for visualization purposes
@@ -749,6 +779,12 @@ PlannerServer::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
             " than 0.0 to turn on duration overrun warning messages", parameter.as_double());
           max_planner_duration_ = 0.0;
         }
+      }
+    }
+
+    if (param_type == ParameterType::PARAMETER_BOOL) {
+      if (param_name == "allow_partial_planning") {
+        partial_plan_allowed_ = parameter.as_bool();
       }
     }
   }
