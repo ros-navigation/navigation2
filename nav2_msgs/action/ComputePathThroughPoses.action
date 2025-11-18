@@ -23,7 +23,7 @@ uint16 NO_VALID_PATH=308
 uint16 NO_VIAPOINTS_GIVEN=309
 
 nav_msgs/Path path
-int16 last_reached_index
+int16 last_reached_index -1
 builtin_interfaces/Duration planning_time
 uint16 error_code
 string error_msg
