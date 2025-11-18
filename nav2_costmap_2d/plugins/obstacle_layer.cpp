@@ -786,6 +786,17 @@ ObstacleLayer::raytraceFreespace(
 
     unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
     unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
+
+    // Calculate the distance to the endpoint in cells to limit the maximum length of the raytrace
+    // and avoid clearing the endpoint cell.
+    int delta_x = x1 - x0;
+    int delta_y = y1 - y0;
+    unsigned int cell_dist_to_endpoint = std::max(std::abs(delta_x), std::abs(delta_y));
+    if (cell_dist_to_endpoint < 1) {
+      continue;
+    }
+    cell_raytrace_max_range = std::min(cell_raytrace_max_range, cell_dist_to_endpoint - 1);
+
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
     nav2_util::raytraceLine(
