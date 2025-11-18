@@ -29,21 +29,16 @@ using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
   nav2::LifecycleNode::SharedPtr node, std::string & plugin_name,
-  rclcpp::Logger & logger, const double costmap_size_x)
+  rclcpp::Logger & logger)
 {
   node_ = node;
   plugin_name_ = plugin_name;
   logger_ = logger;
 
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_lookahead", rclcpp::ParameterValue(0.25));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_lookahead", rclcpp::ParameterValue(1.0));
-  declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_robot_pose_search_dist",
-    rclcpp::ParameterValue(costmap_size_x / 2.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".k_phi", rclcpp::ParameterValue(2.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".k_delta", rclcpp::ParameterValue(1.0));
   declare_parameter_if_not_declared(node, plugin_name_ + ".beta", rclcpp::ParameterValue(0.4));
@@ -73,17 +68,8 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_collision_detection", rclcpp::ParameterValue(true));
 
-  node->get_parameter(plugin_name_ + ".transform_tolerance", params_.transform_tolerance);
   node->get_parameter(plugin_name_ + ".min_lookahead", params_.min_lookahead);
   node->get_parameter(plugin_name_ + ".max_lookahead", params_.max_lookahead);
-  node->get_parameter(
-    plugin_name_ + ".max_robot_pose_search_dist", params_.max_robot_pose_search_dist);
-  if (params_.max_robot_pose_search_dist < 0.0) {
-    RCLCPP_WARN(
-      logger_, "Max robot search distance is negative, setting to max to search"
-      " every point on path for the closest value.");
-    params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
-  }
 
   node->get_parameter(plugin_name_ + ".k_phi", params_.k_phi);
   node->get_parameter(plugin_name_ + ".k_delta", params_.k_delta);
@@ -198,9 +184,7 @@ ParameterHandler::updateParametersCallback(
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".transform_tolerance") {
-        params_.transform_tolerance = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".min_lookahead") {
+      if (param_name == plugin_name_ + ".min_lookahead") {
         params_.min_lookahead = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_lookahead") {
         params_.max_lookahead = parameter.as_double();

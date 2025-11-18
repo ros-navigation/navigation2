@@ -160,19 +160,6 @@ std::shared_ptr<mppi::Optimizer> getDummyOptimizer(
   return optimizer;
 }
 
-template<typename TNode, typename TCostMap, typename TFBuffer, typename TParamHandler>
-mppi::PathHandler getDummyPathHandler(
-  TNode node, TCostMap costmap_ros, TFBuffer tf_buffer,
-  TParamHandler * params_handler)
-{
-  mppi::PathHandler path_handler;
-  nav2::LifecycleNode::WeakPtr weak_ptr_node{node};
-
-  path_handler.initialize(weak_ptr_node, node->get_name(), costmap_ros, tf_buffer, params_handler);
-
-  return path_handler;
-}
-
 template<typename TNode, typename TCostMap, typename TFBuffer>
 std::shared_ptr<nav2_mppi_controller::MPPIController> getDummyController(
   TNode node, TFBuffer tf_buffer,

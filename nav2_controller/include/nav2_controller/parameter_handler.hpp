@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Alberto J. Tudela Roldán
+// Copyright (c) 2022 Samsung Research America
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_GRACEFUL_CONTROLLER__PARAMETER_HANDLER_HPP_
-#define NAV2_GRACEFUL_CONTROLLER__PARAMETER_HANDLER_HPP_
+#ifndef NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
+#define NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -21,55 +21,55 @@
 #include <algorithm>
 #include <mutex>
 
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_graceful_controller
+namespace nav2_controller
 {
 
 struct Parameters
 {
-  double min_lookahead;
-  double max_lookahead;
-  double k_phi;
-  double k_delta;
-  double beta;
-  double lambda;
-  double v_linear_min;
-  double v_linear_max;
-  double v_linear_max_initial;
-  double v_angular_max;
-  double v_angular_max_initial;
-  double v_angular_min_in_place;
-  double slowdown_radius;
-  bool initial_rotation;
-  double initial_rotation_tolerance;
-  bool prefer_final_rotation;
-  double rotation_scaling_factor;
-  bool allow_backward;
-  double in_place_collision_resolution;
-  bool use_collision_detection;
+  double controller_frequency;
+  double min_x_velocity_threshold;
+  double min_y_velocity_threshold;
+  double min_theta_velocity_threshold;
+  std::string speed_limit_topic;
+  double failure_tolerance;
+  bool use_realtime_priority;
+  bool publish_zero_velocity;
+  rclcpp::Duration  costmap_update_timeout{0, 0};
+  std::string odom_topic;
+  double odom_duration;
+  double search_window;
+  std::vector<std::string> progress_checker_ids;
+  std::vector<std::string> progress_checker_types;
+  std::vector<std::string> goal_checker_ids;
+  std::vector<std::string> goal_checker_types;
+  std::vector<std::string> controller_ids;
+  std::vector<std::string> controller_types;
+  std::vector<std::string> path_handler_ids;
+  std::vector<std::string> path_handler_types;
 };
 
 /**
- * @class nav2_graceful_controller::ParameterHandler
- * @brief Handles parameters and dynamic parameters for GracefulMotionController
+ * @class nav2_controller::ParameterHandler
+ * @brief Handles parameters and dynamic parameters for Controller Server
  */
 class ParameterHandler
 {
 public:
   /**
-   * @brief Constructor for nav2_graceful_controller::ParameterHandler
+   * @brief Constructor for nav2_controller::ParameterHandler
    */
   ParameterHandler(
     nav2::LifecycleNode::SharedPtr node,
-    std::string & plugin_name,
-    rclcpp::Logger & logger);
+    const rclcpp::Logger & logger);
 
   /**
-   * @brief Destructor for nav2_graceful_controller::ParameterHandler
+   * @brief Destrructor for nav2_controller::ParameterHandler
    */
   ~ParameterHandler();
 
@@ -115,9 +115,19 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("ControllerServer")};
+
+  const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
+  const std::vector<std::string> default_progress_checker_types_{
+    "nav2_controller::SimpleProgressChecker"};
+  const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
+  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
+  const std::vector<std::string> default_controller_ids_{"FollowPath"};
+  const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
+  const std::vector<std::string> default_path_handler_ids_{"path_handler"};
+  const std::vector<std::string> default_path_handler_types_{"nav2_controller::SimplePathHandler"};
 };
 
-}  // namespace nav2_graceful_controller
+}  // namespace nav2_controller
 
-#endif  // NAV2_GRACEFUL_CONTROLLER__PARAMETER_HANDLER_HPP_
+#endif  // NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
