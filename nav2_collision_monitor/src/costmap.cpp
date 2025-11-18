@@ -59,9 +59,9 @@ void CostmapSource::configure()
   std::string source_topic;
   getParameters(source_topic);
   data_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
-      source_topic,
-     std::bind(&CostmapSource::dataCallback, this, std::placeholders::_1),
-     nav2::qos::StandardTopicQoS());
+    source_topic,
+    std::bind(&CostmapSource::dataCallback, this, std::placeholders::_1),
+    nav2::qos::StandardTopicQoS());
 }
 
 bool CostmapSource::getData(
@@ -82,13 +82,11 @@ bool CostmapSource::getData(
   // This branch is for malformed /local_costmap/costmap in tests or bags.
   // It is not expected in the happy path, so we exclude it from coverage.
   if (src != base_frame_id_) {
-    // LCOV_EXCL_START  <-- tell lcov/gcovr to ignore below
     if (!getTransform(curr_time, data_->header, tf_transform)) {
       RCLCPP_WARN(logger_, "[%s] TF %s->%s unavailable at t=%.3f",
         source_name_.c_str(), src.c_str(), base_frame_id_.c_str(), curr_time.seconds());
       return false;
     }
-    // LCOV_EXCL_STOP
   }
 
   // Extract lethal/inscribed cells and transform to base frame
@@ -108,11 +106,13 @@ bool CostmapSource::getData(
         tf2::Vector3 p_v3_s(wx, wy, 0.0);
         tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
         data.push_back({p_v3_b.x(), p_v3_b.y()});
-        RCLCPP_DEBUG_THROTTLE(logger_, *node->get_clock(), 2000 /*ms*/,
-  "[%s] Found obstacles in costmap", source_name_.c_str());
+        RCLCPP_DEBUG_THROTTLE(
+          logger_, *node->get_clock(), 2000 /*ms*/,
+          "[%s] Found obstacles in costmap", source_name_.c_str());
       }
     }
   }
+
   return true;
 }
 
