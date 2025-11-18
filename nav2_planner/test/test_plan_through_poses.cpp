@@ -465,7 +465,9 @@ TEST_F(Tester, testPlannerWithMiddleObstacle)
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
-  EXPECT_EQ(result.last_reached_index, 1);
+
+  // Pose 2 will be the first goal with index 0 in the goals list.
+  EXPECT_EQ(result.last_reached_index, 0);
 
   const auto & result_poses = result.path.poses;
   EXPECT_NEAR(result_poses.back().pose.position.x, pose2.position.x, PLANNER_TOLERANCE);
@@ -521,7 +523,9 @@ TEST_F(Tester, testPlannerWithFarObstacle)
   auto & result = *action_result.result;
 
   EXPECT_EQ(result.error_code, Action::Result::NONE);
-  EXPECT_EQ(result.last_reached_index, 2);
+
+  // Pose 3 will be the second goal with index 1 in the goals list.
+  EXPECT_EQ(result.last_reached_index, 1);
 
   const auto & result_poses = result.path.poses;
   EXPECT_NEAR(result_poses.back().pose.position.x, pose3.position.x, PLANNER_TOLERANCE);
