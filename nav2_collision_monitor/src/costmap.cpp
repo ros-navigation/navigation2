@@ -24,6 +24,7 @@
 
 namespace nav2_collision_monitor
 {
+
 CostmapSource::CostmapSource(
   const nav2::LifecycleNode::WeakPtr & node,
   const std::string & source_name,
