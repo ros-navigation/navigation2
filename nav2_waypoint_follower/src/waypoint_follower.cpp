@@ -78,7 +78,7 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
       500), false);
 
   from_ll_to_map_client_ = node->create_client<robot_localization::srv::FromLL>(
-    "/fromLL",
+    "fromLL",
     true /*creates and spins an internal executor*/);
 
   gps_action_server_ = create_action_server<ActionTGPS>(
