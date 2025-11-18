@@ -6,6 +6,7 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 ---
 #result definition
 
+# last reached index enum for all goals reached
 int16 ALL_GOALS = -1
 
 # Error codes
