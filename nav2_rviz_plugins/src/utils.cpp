@@ -66,7 +66,14 @@ void pluginLoader(
     }
   }
 
-  auto str_arr = parameters.get()[0].as_string_array();
+  auto result = parameters.get();
+  if (result.empty()) {
+    RCLCPP_ERROR(node->get_logger(),
+    "Parameter '%s' not found on server '%s'",
+    plugin_type.c_str(), server_name.c_str());
+    return;
+  }
+  auto str_arr = result[0].as_string_array();
   combo_box->addItem("Default");
   for (auto str : str_arr) {
     combo_box->addItem(QString::fromStdString(str));
