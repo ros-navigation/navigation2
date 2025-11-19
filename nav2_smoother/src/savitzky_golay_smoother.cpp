@@ -141,7 +141,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
 
   auto applyFilterOverAxes =
     [&](std::vector<geometry_msgs::msg::PoseStamped> & plan_pts,
-      const std::vector<Eigen::Vector2d> & init_plan_pts) -> void
+    const std::vector<Eigen::Vector2d> & init_plan_pts) -> void
     {
       // First point is fixed
       for (unsigned int idx = 1; idx != path_size - 1; idx++) {

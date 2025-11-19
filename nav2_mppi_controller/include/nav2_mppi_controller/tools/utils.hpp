@@ -456,7 +456,7 @@ inline void savitskyGolayFilter(
 
   auto applyFilterOverAxis =
     [&](Eigen::ArrayXf & sequence, const Eigen::ArrayXf & initial_sequence,
-      const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
+    const float hist_0, const float hist_1, const float hist_2, const float hist_3) -> void
     {
       float pt_m4 = hist_0;
       float pt_m3 = hist_1;

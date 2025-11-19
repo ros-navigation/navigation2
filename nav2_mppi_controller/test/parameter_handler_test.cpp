@@ -87,7 +87,7 @@ TEST(ParameterHandlerTest, PrePostDynamicCallbackTest)
     };
 
   auto dynamicCb = [&](const rclcpp::Parameter & /*param*/,
-      rcl_interfaces::msg::SetParametersResult & /*result*/) {
+    rcl_interfaces::msg::SetParametersResult & /*result*/) {
       dynamic_triggered = true;
     };
 
