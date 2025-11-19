@@ -108,10 +108,6 @@ void Costmap2DROS::init()
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
 
-  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
-  declare_parameter("map_vis_z", rclcpp::ParameterValue(0.0));
-  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
-  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
   declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
   declare_parameter("height", rclcpp::ParameterValue(5));
   declare_parameter("width", rclcpp::ParameterValue(5));
@@ -120,20 +116,12 @@ void Costmap2DROS::init()
   declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
   declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
   declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
-  declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
-  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
   declare_parameter("resolution", rclcpp::ParameterValue(0.1));
   declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
   declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
-  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
-  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
   declare_parameter("initial_transform_timeout", rclcpp::ParameterValue(60.0));
   declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
-  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
-  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  declare_parameter("subscribe_to_stamped_footprint", rclcpp::ParameterValue(false));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -402,27 +390,29 @@ Costmap2DROS::getParameters()
   RCLCPP_DEBUG(get_logger(), " getParameters");
 
   // Get all of the required parameters
-  get_parameter("always_send_full_costmap", always_send_full_costmap_);
-  get_parameter("map_vis_z", map_vis_z_);
-  get_parameter("footprint", footprint_);
-  get_parameter("footprint_padding", footprint_padding_);
+  always_send_full_costmap_ = declare_or_get_parameter("always_send_full_costmap", false);
+  map_vis_z_ = declare_or_get_parameter("map_vis_z", 0.0);
+  footprint_ = declare_or_get_parameter("footprint", std::string("[]"));
+  footprint_padding_ = declare_or_get_parameter("footprint_padding", 0.01f);
+  map_publish_frequency_ = declare_or_get_parameter("publish_frequency", 1.0);
+  rolling_window_ = declare_or_get_parameter("rolling_window", false);
+  track_unknown_space_ = declare_or_get_parameter("track_unknown_space", false);
+  transform_tolerance_ = declare_or_get_parameter("transform_tolerance", 0.3);
+  map_update_frequency_ = declare_or_get_parameter("update_frequency", 5.0);
+  filter_names_ = declare_or_get_parameter("filters", std::vector<std::string>());
+  subscribe_to_stamped_footprint_ = declare_or_get_parameter(
+    "subscribe_to_stamped_footprint", false);
+
   get_parameter("global_frame", global_frame_);
   get_parameter("height", map_height_meters_);
   get_parameter("origin_x", origin_x_);
   get_parameter("origin_y", origin_y_);
-  get_parameter("publish_frequency", map_publish_frequency_);
   get_parameter("resolution", resolution_);
   get_parameter("robot_base_frame", robot_base_frame_);
   get_parameter("robot_radius", robot_radius_);
-  get_parameter("rolling_window", rolling_window_);
-  get_parameter("track_unknown_space", track_unknown_space_);
-  get_parameter("transform_tolerance", transform_tolerance_);
   get_parameter("initial_transform_timeout", initial_transform_timeout_);
-  get_parameter("update_frequency", map_update_frequency_);
   get_parameter("width", map_width_meters_);
   get_parameter("plugins", plugin_names_);
-  get_parameter("filters", filter_names_);
-  get_parameter("subscribe_to_stamped_footprint", subscribe_to_stamped_footprint_);
 
   auto node = shared_from_this();
 

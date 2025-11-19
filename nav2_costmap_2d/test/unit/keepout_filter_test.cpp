@@ -219,12 +219,8 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
 
   node_->declare_parameter(
     std::string(FILTER_NAME) + ".transform_tolerance", rclcpp::ParameterValue(0.5));
-  node_->set_parameter(
-    rclcpp::Parameter(std::string(FILTER_NAME) + ".transform_tolerance", 0.5));
   node_->declare_parameter(
     std::string(FILTER_NAME) + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
-  node_->set_parameter(
-    rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC));
 
   keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
   keepout_filter_->initialize(&layers, std::string(FILTER_NAME), tf_buffer_.get(), node_, nullptr);
