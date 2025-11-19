@@ -349,25 +349,28 @@ inline std::string get_plugin_type_param(
 inline void setSoftRealTimePriority()
 {
 #ifdef __APPLE__
-  // macOS: Use Mach thread API (approximate real-time priority)
+  // macOS: Use Mach thread API to approximate real-time scheduling
   thread_port_t thread = pthread_mach_thread_np(pthread_self());
-  thread_precedence_policy_data_t policy;
-  policy.importance = 63;  // 0–63, higher = more priority
+
+  thread_time_constraint_policy_data_t policy;
+  policy.period = 1000;       // in microseconds (1 kHz loop)
+  policy.computation = 800;   // expected compute time per period
+  policy.constraint = 1000;   // max latency
+  policy.preemptible = 1;     // allow preemption by higher-priority threads
+
   kern_return_t result = thread_policy_set(
     thread,
-    THREAD_PRECEDENCE_POLICY,
+    THREAD_TIME_CONSTRAINT_POLICY,
     (thread_policy_t)&policy,
-    THREAD_PRECEDENCE_POLICY_COUNT);
+    THREAD_TIME_CONSTRAINT_POLICY_COUNT
+  );
 
   if (result != KERN_SUCCESS) {
-    // Construct the message once with the full context
     std::string errmsg =
-      "Failed to set THREAD_PRECEDENCE_POLICY on macOS. "
-      "Thread priority remains at default. "
-      "Mach Error Code: ";
-
-    // Append the numerical result code and throw
-    throw std::runtime_error(errmsg + std::to_string(result));
+      "Failed to set THREAD_TIME_CONSTRAINT_POLICY on macOS. "
+      "Thread remains at default priority. Mach Error Code: " +
+      std::to_string(result);
+    throw std::runtime_error(errmsg);
   }
 #else
   // Linux: True real-time scheduling (requires privileges)
