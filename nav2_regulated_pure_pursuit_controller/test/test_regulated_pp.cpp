@@ -35,7 +35,7 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  double getSpeed() {return params_->desired_linear_vel;}
+  double getSpeed() {return params_->max_linear_vel;}
 
   std::unique_ptr<geometry_msgs::msg::PointStamped> createCarrotMsgWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose)
@@ -90,6 +90,45 @@ public:
     const geometry_msgs::msg::PoseStamped & pose)
   {
     return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
+  }
+
+  void computeDynamicWindowWrapper(
+    const geometry_msgs::msg::Twist & current_speed,
+    double & dynamic_window_max_linear_vel,
+    double & dynamic_window_min_linear_vel,
+    double & dynamic_window_max_angular_vel,
+    double & dynamic_window_min_angular_vel)
+  {
+    return computeDynamicWindow(current_speed,
+      dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+      dynamic_window_min_angular_vel);
+  }
+
+  void applyRegulationToDynamicWindowWrapper(
+    const double & regulated_linear_vel,
+    double & dynamic_window_max_linear_vel,
+    double & dynamic_window_min_linear_vel)
+  {
+    return applyRegulationToDynamicWindow(
+      regulated_linear_vel,
+      dynamic_window_max_linear_vel,
+      dynamic_window_min_linear_vel);
+  }
+
+  void computeOptimalVelocityWithinDynamicWindowWrapper(
+    const double & dynamic_window_max_linear_vel,
+    const double & dynamic_window_min_linear_vel,
+    const double & dynamic_window_max_angular_vel,
+    const double & dynamic_window_min_angular_vel,
+    const double & curvature,
+    const double & sign,
+    double & optimal_linear_vel,
+    double & optimal_angular_vel)
+  {
+    return computeOptimalVelocityWithinDynamicWindow(
+      dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+      dynamic_window_min_angular_vel, curvature, sign,
+      optimal_linear_vel, optimal_angular_vel);
   }
 };
 
@@ -422,6 +461,344 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
   // EXPECT_NEAR(linear_vel, 0.5, 0.01);
 }
 
+TEST(RegulatedPurePursuitTest, computeDynamicWindow)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+
+  // declare parameters
+  constexpr double max_linear_vel = 0.5;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_linear_vel",
+    rclcpp::ParameterValue(max_linear_vel));
+  constexpr double min_linear_vel = -0.5;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".min_linear_vel",
+    rclcpp::ParameterValue(min_linear_vel));
+  constexpr double max_angular_vel = 1.0;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_angular_vel",
+    rclcpp::ParameterValue(max_angular_vel));
+  constexpr double min_angular_vel = -1.0;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".min_angular_vel",
+    rclcpp::ParameterValue(min_angular_vel));
+  constexpr double max_linear_accel = 0.5;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_linear_accel",
+    rclcpp::ParameterValue(max_linear_accel));
+  constexpr double max_linear_decel = 1.0;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_linear_decel",
+    rclcpp::ParameterValue(max_linear_decel));
+  constexpr double max_angular_accel = 1.0;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_angular_accel",
+    rclcpp::ParameterValue(max_angular_accel));
+  constexpr double max_angular_decel = 2.0;
+  nav2::declare_parameter_if_not_declared(
+    node,
+    name + ".max_angular_decel",
+    rclcpp::ParameterValue(max_angular_decel));
+
+  ctrl->configure(node, name, tf, costmap);
+
+  double dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel;
+  geometry_msgs::msg::Twist current_speed = geometry_msgs::msg::Twist();
+
+  // case1: current linear velocity is positive, angular velocity is positive,
+  // clip by max linear vel
+  current_speed.linear.x = 0.5; current_speed.angular.z = 0.2;
+
+  ctrl->computeDynamicWindowWrapper(
+    current_speed,
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.5);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.45);
+  EXPECT_EQ(dynamic_window_max_angular_vel, 0.25);
+  EXPECT_EQ(dynamic_window_min_angular_vel, 0.10);
+
+  // case2: current linear velocity is positive, angular velocity is negative
+  current_speed.linear.x = 0.3; current_speed.angular.z = -0.2;
+
+  ctrl->computeDynamicWindowWrapper(
+    current_speed,
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.325);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.25);
+  EXPECT_EQ(dynamic_window_max_angular_vel, -0.1);
+  EXPECT_EQ(dynamic_window_min_angular_vel, -0.25);
+
+  // case3: current linear velocity is zero, angular velocity is zero
+  current_speed.linear.x = 0.0; current_speed.angular.z = -0.0;
+
+  ctrl->computeDynamicWindowWrapper(
+    current_speed,
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.025);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.025);
+  EXPECT_EQ(dynamic_window_max_angular_vel, 0.05);
+  EXPECT_EQ(dynamic_window_min_angular_vel, -0.05);
+
+  // case4: current linear velocity is negative, angular velocity is positive
+  current_speed.linear.x = -0.3; current_speed.angular.z = 0.2;
+
+  ctrl->computeDynamicWindowWrapper(
+    current_speed,
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.25);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.325);
+  EXPECT_EQ(dynamic_window_max_angular_vel, 0.25);
+  EXPECT_EQ(dynamic_window_min_angular_vel, 0.10);
+
+  // case5: current linear velocity is negative, angular velocity is negative,
+  // clipped by min lenear vel
+  current_speed.linear.x = -0.5; current_speed.angular.z = -0.2;
+
+  ctrl->computeDynamicWindowWrapper(
+    current_speed,
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
+    dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.45);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.5);
+  EXPECT_EQ(dynamic_window_max_angular_vel, -0.1);
+  EXPECT_EQ(dynamic_window_min_angular_vel, -0.25);
+}
+
+TEST(RegulatedPurePursuitTest, applyRegulationToDynamicWindow)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+
+  double regulated_linear_vel;
+  double dynamic_window_max_linear_vel, dynamic_window_min_linear_vel;
+
+  regulated_linear_vel = 0.3;
+  dynamic_window_max_linear_vel = 0.5, dynamic_window_min_linear_vel = 0.4;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.4);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.4);
+
+  dynamic_window_max_linear_vel = 0.4, dynamic_window_min_linear_vel = 0.2;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.3);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.2);
+
+  dynamic_window_max_linear_vel = 0.2, dynamic_window_min_linear_vel = 0.1;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.2);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.1);
+
+  dynamic_window_max_linear_vel = 0.1, dynamic_window_min_linear_vel = -0.2;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.1);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.0);
+
+  dynamic_window_max_linear_vel = -0.1, dynamic_window_min_linear_vel = -0.3;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.1);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.1);
+
+  regulated_linear_vel = -0.3;
+  dynamic_window_max_linear_vel = 0.3, dynamic_window_min_linear_vel = 0.1;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.1);
+  EXPECT_EQ(dynamic_window_min_linear_vel, 0.1);
+
+  dynamic_window_max_linear_vel = 0.1, dynamic_window_min_linear_vel = -0.2;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, 0.0);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.2);
+
+  dynamic_window_max_linear_vel = -0.2, dynamic_window_min_linear_vel = -0.3;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.2);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.3);
+
+  dynamic_window_max_linear_vel = -0.2, dynamic_window_min_linear_vel = -0.4;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.2);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.3);
+
+  dynamic_window_max_linear_vel = -0.4, dynamic_window_min_linear_vel = -0.5;
+
+  ctrl->applyRegulationToDynamicWindowWrapper(
+    regulated_linear_vel,
+    dynamic_window_max_linear_vel,
+    dynamic_window_min_linear_vel);
+
+  EXPECT_EQ(dynamic_window_max_linear_vel, -0.4);
+  EXPECT_EQ(dynamic_window_min_linear_vel, -0.4);
+}
+
+TEST(RegulatedPurePursuitTest, computeOptimalVelocityWithinDynamicWindow)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+
+  double dynamic_window_max_linear_vel = 0.3, dynamic_window_min_linear_vel = 0.1;
+  double dynamic_window_max_angular_vel = 0.1, dynamic_window_min_angular_vel = -0.1;
+  double curvature = 0.0;
+  double sign = 1.0;
+  double optimal_linear_vel;
+  double optimal_angular_vel;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.3);
+  EXPECT_EQ(optimal_angular_vel, 0.0);
+
+
+  dynamic_window_max_linear_vel = 0.3, dynamic_window_min_linear_vel = 0.1;
+  dynamic_window_max_angular_vel = 0.3, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.3);
+  EXPECT_EQ(optimal_angular_vel, 0.1);
+
+  curvature = 1.0;
+  dynamic_window_max_linear_vel = 0.2, dynamic_window_min_linear_vel = 0.0;
+  dynamic_window_max_angular_vel = 0.3, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.2);
+  EXPECT_EQ(optimal_angular_vel, 0.2);
+
+  dynamic_window_max_linear_vel = 0.4, dynamic_window_min_linear_vel = 0.3;
+  dynamic_window_max_angular_vel = 0.2, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.3);
+  EXPECT_EQ(optimal_angular_vel, 0.2);
+
+  sign = -1.0;
+  curvature = 0.0;
+  dynamic_window_max_linear_vel = 0.3, dynamic_window_min_linear_vel = 0.1;
+  dynamic_window_max_angular_vel = 0.1, dynamic_window_min_angular_vel = -0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.1);
+  EXPECT_EQ(optimal_angular_vel, 0.0);
+
+  dynamic_window_max_linear_vel = 0.3, dynamic_window_min_linear_vel = 0.1;
+  dynamic_window_max_angular_vel = 0.3, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.1);
+  EXPECT_EQ(optimal_angular_vel, 0.1);
+
+  curvature = 1.0;
+  dynamic_window_max_linear_vel = 0.2, dynamic_window_min_linear_vel = 0.0;
+  dynamic_window_max_angular_vel = 0.3, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.1);
+  EXPECT_EQ(optimal_angular_vel, 0.1);
+
+  dynamic_window_max_linear_vel = 0.4, dynamic_window_min_linear_vel = 0.3;
+  dynamic_window_max_angular_vel = 0.2, dynamic_window_min_angular_vel = 0.1;
+
+  ctrl->computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window_max_linear_vel, dynamic_window_min_linear_vel, dynamic_window_max_angular_vel,
+    dynamic_window_min_angular_vel, curvature, sign,
+    optimal_linear_vel, optimal_angular_vel);
+
+  EXPECT_EQ(optimal_linear_vel, 0.3);
+  EXPECT_EQ(optimal_angular_vel, 0.2);
+}
+
 TEST(RegulatedPurePursuitTest, testDynamicParameter)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("Smactest");
@@ -439,7 +816,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.desired_linear_vel", 1.0),
+    {rclcpp::Parameter("test.max_linear_vel", 1.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
@@ -467,7 +844,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(node->get_parameter("test.desired_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_vel").as_double(), 1.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
