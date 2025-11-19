@@ -190,6 +190,9 @@ protected:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
+  std::vector<geometry_msgs::msg::Point> robot_footprint_;
+  double robot_radius_;
+
   // TF buffer
   std::shared_ptr<tf2_ros::Buffer> tf_;
 

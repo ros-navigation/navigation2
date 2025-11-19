@@ -69,6 +69,24 @@ NavfnPlanner::configure(
   name_ = name;
   costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
+  robot_footprint_ = costmap_ros->getRobotFootprint();
+
+  double max_radius = 0.0;
+  for (const auto& point : robot_footprint_) {
+    double dist = sqrt(point.x * point.x + point.y * point.y);
+    max_radius = std::max(max_radius, dist);
+  }
+
+  robot_radius_ = max_radius;
+  RCLCPP_INFO(logger_, "Calculated robot radius: %.3f meters", robot_radius_);
+
+  RCLCPP_INFO(logger_, "Robot footprint has %zu points:", robot_footprint_.size());
+  for (size_t i = 0; i < robot_footprint_.size(); i++) {
+    RCLCPP_INFO(
+      logger_, 
+      "  Point %zu: (%.3f, %.3f)", 
+      i, robot_footprint_[i].x, robot_footprint_[i].y);
+  }
 
   node_ = parent;
   auto node = parent.lock();
@@ -228,8 +246,26 @@ NavfnPlanner::makePlan(
     return false;
   }
 
-  // clear the starting cell within the costmap because we know it can't be an obstacle
-  clearRobotCell(mx, my);
+  int radius_cells = static_cast<int>(robot_radius_ / costmap_->getResolution());
+  RCLCPP_INFO(
+    logger_, 
+    "Clearing robot footprint: radius = %.3f m = %d cells", 
+    robot_radius_, radius_cells);
+
+  for (int dx = -radius_cells; dx <= radius_cells; dx++) {
+    for (int dy = -radius_cells; dy <= radius_cells; dy++) {
+      if (dx*dx + dy*dy <= radius_cells*radius_cells) {
+        unsigned int clear_x = mx + dx;
+        unsigned int clear_y = my + dy;
+        // Check bounds before clearing
+        if (clear_x < costmap_->getSizeInCellsX() && 
+            clear_y < costmap_->getSizeInCellsY()) {
+          clearRobotCell(clear_x, clear_y);
+        }
+      }
+    }
+  }
+
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
 
@@ -276,6 +312,13 @@ NavfnPlanner::makePlan(
 
   p = goal;
   double potential = getPointPotential(p.position);
+  // RCLCPP_INFO(
+  //   logger_, "Potential at goal (%.2f, %.2f): %.2f",
+  //   goal.position.x, goal.position.y, potential);
+  // double curr_pose_potential = getPointPotential(start.position);
+  // RCLCPP_INFO(
+  //   logger_, "Potential at start (%.2f, %.2f): %.2f",
+  //   start.position.x, start.position.y, curr_pose_potential);
   if (potential < POT_HIGH) {
     // Goal is reachable by itself
     best_pose = p;
@@ -284,13 +327,15 @@ NavfnPlanner::makePlan(
     // Goal is not reachable. Trying to find nearest to the goal
     // reachable point within its tolerance region
     double best_sdist = std::numeric_limits<double>::max();
-
     p.position.y = goal.position.y - tolerance;
     while (p.position.y <= goal.position.y + tolerance) {
       p.position.x = goal.position.x - tolerance;
       while (p.position.x <= goal.position.x + tolerance) {
         potential = getPointPotential(p.position);
         double sdist = squared_distance(p, goal);
+        // RCLCPP_INFO(
+        //   logger_, "Potential: %.2f, SqrDist: %.2f at (%.2f, %.2f)",
+        //   potential, sdist, p.position.x, p.position.y);
         if (potential < POT_HIGH && sdist < best_sdist) {
           best_sdist = sdist;
           best_pose = p;
@@ -301,6 +346,8 @@ NavfnPlanner::makePlan(
       p.position.y += resolution;
     }
   }
+
+  // RCLCPP_INFO(logger_, "Found Legal: %s", found_legal ? "true" : "false");
 
   if (found_legal) {
     // extract the plan
@@ -438,10 +485,18 @@ NavfnPlanner::getPointPotential(const geometry_msgs::msg::Point & world_point)
 {
   unsigned int mx, my;
   if (!worldToMap(world_point.x, world_point.y, mx, my)) {
+    // RCLCPP_ERROR(
+    //   logger_,
+    //   "getPointPotential failed: (%.2f, %.2f) is outside the costmap",
+    //   world_point.x, world_point.y);
     return std::numeric_limits<double>::max();
   }
 
   unsigned int index = my * planner_->nx + mx;
+  // RCLCPP_INFO(
+  //   logger_,
+  //   "getPointPotential: world_point (%.2f, %.2f) => map_point (%d, %d) => index %d",
+  //   world_point.x, world_point.y, mx, my, index);
   return planner_->potarr[index];
 }
 
@@ -486,6 +541,10 @@ bool
 NavfnPlanner::worldToMap(double wx, double wy, unsigned int & mx, unsigned int & my)
 {
   if (wx < costmap_->getOriginX() || wy < costmap_->getOriginY()) {
+    RCLCPP_ERROR(
+      logger_,
+      "worldToMap failed: (%.2f, %.2f) is below costmap origin (%.2f, %.2f)",
+      wx, wy, costmap_->getOriginX(), costmap_->getOriginY());
     return false;
   }
 
