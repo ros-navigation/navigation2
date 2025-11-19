@@ -412,7 +412,7 @@ public:
 
   bool dataReceived() const
   {
-    return data_ != nullptr;
+    return hasData();
   }
 };  // CostmapWrapper
 

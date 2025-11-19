@@ -508,43 +508,36 @@ void Tester::publishCostmap(const double dist, const rclcpp::Time & stamp)
   std::unique_ptr<nav2_msgs::msg::Costmap> msg =
     std::make_unique<nav2_msgs::msg::Costmap>();
 
-  msg->header.frame_id = SOURCE_FRAME_ID;
+  // Costmap in odom frame (more typical for Nav2 costmaps)
+  msg->header.frame_id = ODOM_FRAME_ID;
   msg->header.stamp = stamp;
 
-  // Set up metadata for a 20x20 costmap with 0.1m resolution
+  // Metadata: 20x20 grid, 0.1 m resolution
   msg->metadata.map_load_time = stamp;
   msg->metadata.update_time = stamp;
   msg->metadata.layer = "test_layer";
-  msg->metadata.resolution = 0.1;  // 10cm resolution
+  msg->metadata.resolution = 0.1;
   msg->metadata.size_x = 20;
   msg->metadata.size_y = 20;
-  // Place origin so that obstacle at distance 'dist' is in the costmap
-  msg->metadata.origin.position.x = -1.0;
-  msg->metadata.origin.position.y = dist - 1.0;
+
+  // Choose origin so that cell (0,0) center is exactly at (0, dist)
+  msg->metadata.origin.position.x = -0.05;       // 0.05 = 0.5 * resolution
+  msg->metadata.origin.position.y = dist - 0.05;   // dist - 0.5 * resolution
   msg->metadata.origin.position.z = 0.0;
   msg->metadata.origin.orientation.w = 1.0;
 
-  // Create a costmap with an obstacle at distance 'dist'
-  msg->data.resize(400, 0);  // 20x20 = 400 cells
+  // Initialize all cells as free
+  msg->data.assign(msg->metadata.size_x * msg->metadata.size_y, 0);
 
-  // Calculate cell index for obstacle at (0, dist) in costmap coordinates
-  // Costmap origin is at (-1.0, dist-1.0), so (0, dist) is at cell (10, 10)
-  const int obstacle_x = 10;
-  const int obstacle_y = 10;
+  // Put one lethal obstacle at cell (0,0)
+  const int obstacle_x = 0;
+  const int obstacle_y = 0;
   const int obstacle_idx = obstacle_y * msg->metadata.size_x + obstacle_x;
-
-  // Set obstacle cells to lethal cost
   msg->data[obstacle_idx] = nav2_costmap_2d::LETHAL_OBSTACLE;
-  // Set surrounding cells as well for better detection
-  if (obstacle_idx + 1 < 400) {
-    msg->data[obstacle_idx + 1] = nav2_costmap_2d::LETHAL_OBSTACLE;
-  }
-  if (obstacle_idx + msg->metadata.size_x < 400) {
-    msg->data[obstacle_idx + msg->metadata.size_x] = nav2_costmap_2d::LETHAL_OBSTACLE;
-  }
 
   costmap_pub_->publish(std::move(msg));
 }
+
 
 bool Tester::waitData(
   const double expected_dist,

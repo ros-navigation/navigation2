@@ -103,6 +103,12 @@ public:
    */
   void getParameters(std::string & source_topic);
 
+  /**
+   * @brief Check if costmap data has been received.
+   * @return true if data has been received, false otherwise.
+   */
+  bool hasData() const {return data_ != nullptr;}
+
 private:
   /**
    * @brief Subscription callback to store the latest costmap message.

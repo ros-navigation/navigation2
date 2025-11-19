@@ -72,6 +72,7 @@ add_library(${detector_library_name} SHARED
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
+  src/costmap.cpp
   src/range.cpp
   src/kinematics.cpp
 )
