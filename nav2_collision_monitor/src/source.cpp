@@ -117,7 +117,7 @@ Source::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(source_name_ + ".") != 0) {
+    if (param_name.find(source_name_ + ".") != 0) {
       continue;
     }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {

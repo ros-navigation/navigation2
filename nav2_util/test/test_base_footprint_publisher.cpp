@@ -65,7 +65,7 @@ TEST(TestBaseFootprintPublisher, TestBaseFootprintPublisher)
   EXPECT_EQ(t.transform.translation.z, 0.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

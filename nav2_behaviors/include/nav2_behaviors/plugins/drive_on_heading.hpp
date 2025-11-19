@@ -256,7 +256,8 @@ protected:
       this->behavior_name_ + ".minimum_speed", 0.10);
 
     if (acceleration_limit_ <= 0.0 || deceleration_limit_ >= 0.0) {
-      RCLCPP_ERROR(this->logger_,
+      RCLCPP_ERROR(
+        this->logger_,
         "DriveOnHeading: acceleration_limit and deceleration_limit must be "
         "positive and negative respectively");
       acceleration_limit_ = std::abs(acceleration_limit_);

@@ -58,14 +58,14 @@ BT::NodeStatus IsPoseOccupiedCondition::tick()
 
   auto response = client_->invoke(request, server_timeout_);
 
-  if(!response->success) {
+  if (!response->success) {
     RCLCPP_ERROR(
       node_->get_logger(),
       "GetCosts service call failed");
     return BT::NodeStatus::FAILURE;
   }
 
-  if((response->costs[0] == 255 && !consider_unknown_as_obstacle_) ||
+  if ((response->costs[0] == 255 && !consider_unknown_as_obstacle_) ||
     response->costs[0] < cost_threshold_)
   {
     return BT::NodeStatus::FAILURE;

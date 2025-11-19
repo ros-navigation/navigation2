@@ -56,8 +56,9 @@ public:
         rclcpp::CallbackGroupType::MutuallyExclusive,
         false);
       callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      callback_group_executor_->add_callback_group(callback_group_,
-          provided_node->get_node_base_interface());
+      callback_group_executor_->add_callback_group(
+        callback_group_,
+        provided_node->get_node_base_interface());
     }
     // When a nullptr is passed, the client will use the default callback group
     client_ = rclcpp::create_client<ServiceT>(
@@ -68,7 +69,8 @@ public:
       rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group_);
 
-    nav2::setIntrospectionMode(this->client_,
+    nav2::setIntrospectionMode(
+      this->client_,
       provided_node->get_node_parameters_interface(), clock_);
   }
 

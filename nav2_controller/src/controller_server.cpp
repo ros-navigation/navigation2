@@ -659,8 +659,8 @@ void ControllerServer::computeAndPublishVelocity()
   end_pose_.header.stamp = pose.header.stamp;
 
   if (!nav2_util::transformPoseInTargetFrame(
-        end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-        costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
@@ -672,8 +672,8 @@ void ControllerServer::computeAndPublishVelocity()
     // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
-      pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-            current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
+        pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_path_.header.frame_id, costmap_ros_->getTransformTolerance()))
     {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
