@@ -82,7 +82,7 @@ TEST(WPTest, test_dynamic_parameters)
   follower.reset();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

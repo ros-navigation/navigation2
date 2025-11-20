@@ -105,8 +105,9 @@ void ObstacleLayer::onInitialize()
   node->get_parameter("track_unknown_space", track_unknown_space);
   node->get_parameter("transform_tolerance", transform_tolerance);
   node->get_parameter(name_ + "." + "observation_sources", topics_string);
-  double tf_filter_tolerance = nav2::declare_or_get_parameter(node, name_ + "." +
-      "tf_filter_tolerance", 0.05);
+  double tf_filter_tolerance = nav2::declare_or_get_parameter(
+    node, name_ + "." +
+    "tf_filter_tolerance", 0.05);
 
   int combination_method_param{};
   node->get_parameter(name_ + "." + "combination_method", combination_method_param);
@@ -288,7 +289,8 @@ void ObstacleLayer::onInitialize()
       observation_subscribers_.push_back(sub);
 
       observation_notifiers_.push_back(filter);
-      observation_notifiers_.back()->setTolerance(rclcpp::Duration::from_seconds(
+      observation_notifiers_.back()->setTolerance(
+        rclcpp::Duration::from_seconds(
           tf_filter_tolerance));
 
     } else {

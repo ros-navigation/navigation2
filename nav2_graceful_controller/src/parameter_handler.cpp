@@ -160,9 +160,9 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
@@ -173,7 +173,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
             "rejecting parameter change.");
           result.successful = false;
         }
-      } else if(param_name == plugin_name_ + ".initial_rotation") {
+      } else if (param_name == plugin_name_ + ".initial_rotation") {
         if (parameter.as_bool() && params_.allow_backward) {
           RCLCPP_WARN(
             logger_, "Initial rotation and allow backward parameters are both true, "
