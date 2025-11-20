@@ -107,12 +107,15 @@ public:
   ~KinematicsHandler();
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
-  inline KinematicParameters getKinematics() {return *kinematics_.load();}
+  inline KinematicParameters getKinematics() {
+    auto ptr = std::atomic_load(&kinematics_);
+    return *ptr;
+  }
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
 protected:
-  std::atomic<KinematicParameters *> kinematics_;
+  std::shared_ptr<KinematicParameters> kinematics_;
 
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;

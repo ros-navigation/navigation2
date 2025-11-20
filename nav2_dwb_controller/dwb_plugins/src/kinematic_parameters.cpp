@@ -50,12 +50,12 @@ namespace dwb_plugins
 
 KinematicsHandler::KinematicsHandler()
 {
-  kinematics_.store(new KinematicParameters);
+  kinematics_ = std::make_shared<KinematicParameters>();
 }
 
 KinematicsHandler::~KinematicsHandler()
 {
-  delete kinematics_.load();
+
 }
 
 void KinematicsHandler::initialize(
@@ -134,7 +134,8 @@ void
 KinematicsHandler::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  KinematicParameters kinematics(*kinematics_.load());
+  auto current_kinematics = std::atomic_load(&kinematics_);
+  KinematicParameters kinematics(*current_kinematics);
 
   for (auto & changed_parameter : event->changed_parameters) {
     const auto & type = changed_parameter.value.type;
@@ -179,9 +180,9 @@ KinematicsHandler::on_parameter_event_callback(
 }
 
 void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
-{
-  delete kinematics_.load();
-  kinematics_.store(new KinematicParameters(kinematics));
-}
+ {
+   auto new_kinematics = std::make_shared<KinematicParameters>(kinematics);
+   std::atomic_store(&kinematics_, new_kinematics);
+ }
 
 }  // namespace dwb_plugins
