@@ -244,6 +244,7 @@ protected:
   std::vector<std::string> default_types_;
   std::vector<std::string> planner_ids_;
   std::vector<std::string> planner_types_;
+  bool partial_plan_allowed_;
   double max_planner_duration_;
   rclcpp::Duration costmap_update_timeout_;
   std::string planner_ids_concat_;

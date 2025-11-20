@@ -151,12 +151,14 @@ void
 DWBLocalPlanner::activate()
 {
   pub_->on_activate();
+  traj_generator_->activate();
 }
 
 void
 DWBLocalPlanner::deactivate()
 {
   pub_->on_deactivate();
+  traj_generator_->deactivate();
 }
 
 void

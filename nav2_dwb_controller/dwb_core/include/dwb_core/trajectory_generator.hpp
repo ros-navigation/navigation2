@@ -75,6 +75,14 @@ public:
   virtual void initialize(
     const nav2::LifecycleNode::SharedPtr & nh,
     const std::string & plugin_name) = 0;
+  /**
+   * @brief Activate callbacks as needed
+  */
+  virtual void activate() = 0;
+  /**
+   * @brief Deactivate callbacks as needed
+  */
+  virtual void deactivate() = 0;
   virtual void reset() {}
   /**
    * @brief Start a new iteration based on the current velocity

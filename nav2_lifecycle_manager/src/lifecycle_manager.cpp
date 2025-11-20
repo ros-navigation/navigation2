@@ -242,7 +242,7 @@ LifecycleManager::createLifecyclePublishers()
 
   is_active_pub_ = nav2::interfaces::create_publisher<std_msgs::msg::Bool>(
     shared_from_this(),
-    get_name() + std::string("/is_active"),
+    get_name() + std::string("/managed_nodes_activated"),
     nav2::qos::LatchedPublisherQoS(),
     callback_group_);
   is_active_pub_->on_activate();
