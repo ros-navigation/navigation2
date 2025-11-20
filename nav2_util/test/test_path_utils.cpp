@@ -50,9 +50,10 @@ void generateCirclePath(
   const double angle_step = (end_angle - start_angle) / (num_points - 1);
   for (int i = 0; i < num_points; ++i) {
     const double angle = start_angle + i * angle_step;
-    path.poses.push_back(createPoseStamped(
-      center_x + radius * std::cos(angle),
-      center_y + radius * std::sin(angle)));
+    path.poses.push_back(
+      createPoseStamped(
+        center_x + radius * std::cos(angle),
+        center_y + radius * std::sin(angle)));
   }
 }
 
@@ -64,9 +65,10 @@ void generateCircleTrajectory(
   const double angle_step = (end_angle - start_angle) / (num_points - 1);
   for (int i = 0; i < num_points; ++i) {
     const double angle = start_angle + i * angle_step;
-    path.push_back(createPose(
-      center_x + radius * std::cos(angle),
-      center_y + radius * std::sin(angle)));
+    path.push_back(
+      createPose(
+        center_x + radius * std::cos(angle),
+        center_y + radius * std::sin(angle)));
   }
 }
 class CloverleafPathTest : public ::testing::Test
@@ -263,7 +265,8 @@ TEST_F(CuttingCornerWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(std::abs(result.distance), expected_distances[i], 0.15);
@@ -280,7 +283,8 @@ TEST_F(RetracingPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(std::abs(result.distance), expected_distance, 1e-6);
@@ -296,7 +300,8 @@ TEST_F(ZigZagPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(std::abs(result.distance), 1.0);
@@ -312,7 +317,8 @@ TEST_F(HairpinTurnWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(std::abs(result.distance), 1.5);

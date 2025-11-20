@@ -168,7 +168,7 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
   SUCCEED();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

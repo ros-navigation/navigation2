@@ -193,7 +193,8 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   is_path_valid_service_ = create_service<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
-    std::bind(&PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add callback for dynamic parameters

@@ -85,7 +85,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_FALSE(planner->get_parameter("allow_partial_planning").as_bool());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -52,7 +52,7 @@ bool VelocityPolygon::getParameters(
     // Get velocity_polygons parameter
     std::vector<std::string> velocity_polygons =
       node->declare_or_get_parameter<std::vector<std::string>>(
-        polygon_name_ + ".velocity_polygons");
+      polygon_name_ + ".velocity_polygons");
 
     // holonomic param
     holonomic_ = node->declare_or_get_parameter(
@@ -63,7 +63,7 @@ bool VelocityPolygon::getParameters(
       std::vector<Point> poly;
       std::string poly_string =
         node->declare_or_get_parameter<std::string>(
-          polygon_name_ + "." + velocity_polygon_name + ".points");
+        polygon_name_ + "." + velocity_polygon_name + ".points");
 
       if (!getPolygonFromString(poly_string, poly)) {
         return false;

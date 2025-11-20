@@ -55,7 +55,7 @@ TEST(NavfnTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.use_final_approach_orientation").as_bool(), true);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 
