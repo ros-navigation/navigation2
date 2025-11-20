@@ -1,13 +1,28 @@
+// Copyright 2025 Kudan Ltd
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <gtest/gtest.h>
+
+#include <cstdio>
+#include <memory>
+#include <string>
+
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "../testing_helper.hpp"
 #include "tf2_ros/buffer.hpp"
-
-#include <cstdio>
-#include <memory>
-#include <string>
-#include <gtest/gtest.h>
 
 
 class RclCppFixture
@@ -60,7 +75,7 @@ public:
 class ObstacleLayerTest : public ::testing::Test
 {
 public:
-  ObstacleLayerTest(double resolution = 0.1)
+  explicit ObstacleLayerTest(double resolution = 0.1)
   : layers_("frame", false, false)
   {
     node_ = std::make_shared<TestLifecycleNode>("obstacle_cell_distance_test_node");
@@ -75,7 +90,8 @@ public:
     node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
     node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
 
-    layers_.resizeMap(20, 20, resolution, 0, 0); // 20x20 cells
+    // 20x20 cells with origin at (0, 0)
+    layers_.resizeMap(20, 20, resolution, 0, 0);
     tf2_ros::Buffer tf(node_->get_clock());
     addObstacleLayer(layers_, tf, node_, obstacle_layer_);
   }
