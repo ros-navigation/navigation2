@@ -58,6 +58,13 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+  init_pose_[0] = 0.0;
+  init_pose_[1] = 0.0;
+  init_pose_[2] = 0.0;
+  init_cov_[0] = 0.0;
+  init_cov_[1] = 0.0;
+  init_cov_[2] = 0.0;
+
 }
 
 AmclNode::~AmclNode()
@@ -72,12 +79,12 @@ AmclNode::on_configure(const rclcpp_lifecycle::State & /*state*/)
     rclcpp::CallbackGroupType::MutuallyExclusive, false);
   initParameters();
   initTransforms();
-  initOdometry();
   initParticleFilter();
   initLaserScan();
   initMessageFilters();
   initPubSub();
   initServices();
+  initOdometry();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
