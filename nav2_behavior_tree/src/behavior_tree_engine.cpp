@@ -67,7 +67,9 @@ BehaviorTreeEngine::run(
 
       result = tree->tickOnce();
 
-      onLoop();
+      if (result == BT::NodeStatus::RUNNING || result == BT::NodeStatus::IDLE) {
+        onLoop();
+      }
 
       if (!loopRate.sleep()) {
         RCLCPP_DEBUG_THROTTLE(
