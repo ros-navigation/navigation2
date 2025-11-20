@@ -64,7 +64,6 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
   init_cov_[0] = 0.0;
   init_cov_[1] = 0.0;
   init_cov_[2] = 0.0;
-
 }
 
 AmclNode::~AmclNode()
