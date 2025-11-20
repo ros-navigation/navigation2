@@ -59,6 +59,30 @@ add_library(${monitor_library_name} SHARED
   src/polygon_source.cpp
   src/range.cpp
   src/kinematics.cpp
+  src/costmap.cpp
+)
+
+target_include_directories(${monitor_library_name}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+target_link_libraries(${monitor_library_name} PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_costmap_2d::nav2_costmap_2d_core
+  ${nav2_msgs_TARGETS}
+  nav2_util::nav2_util_core
+  nav2_ros_common::nav2_ros_common
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${sensor_msgs_TARGETS}
+  tf2::tf2
+  tf2_ros::tf2_ros
+  ${visualization_msgs_TARGETS}
+  point_cloud_transport::point_cloud_transport
+)
+target_link_libraries(${monitor_library_name} PRIVATE
+  rclcpp_components::component
 )
 add_library(${detector_library_name} SHARED
   src/collision_detector_node.cpp
@@ -69,6 +93,7 @@ add_library(${detector_library_name} SHARED
   src/scan.cpp
   src/pointcloud.cpp
   src/polygon_source.cpp
+  src/costmap.cpp
   src/range.cpp
   src/kinematics.cpp
 )
@@ -129,6 +154,8 @@ install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
+  find_package(rosgraph_msgs REQUIRED)
   # the following line skips the linter which checks for copyrights
   set(ament_cmake_copyright_FOUND TRUE)
   set(ament_cmake_cpplint_FOUND TRUE)
@@ -142,6 +169,21 @@ endif()
 
 ament_export_include_directories(include)
 ament_export_libraries(${monitor_library_name} ${detector_library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(
+  geometry_msgs
+  nav2_costmap_2d
+  nav2_msgs
+  nav2_util
+  rosgraph_msgs
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  tf2
+  tf2_ros
+  nav2_ros_common
+  visualization_msgs
+  point_cloud_transport
+)
+ament_export_targets(export_${PROJECT_NAME})
 
 ament_package()
