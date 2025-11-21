@@ -57,7 +57,6 @@ bool validateMsg(const double & num)
 }
 
 const double MAX_COVARIANCE = 1e6;
-const double MIN_COVARIANCE = 1e-4;
 
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
@@ -69,8 +68,7 @@ bool validateMsg(const std::array<double, N> & msg)
   for (const auto & element : msg) {
     if (!validateMsg(element)) {return false;}
 
-    if (std::abs(element) > MAX_COVARIANCE || std::abs(element) < MIN_COVARIANCE) {
-      // Reject extreme values (security: prevent DoS attacks)
+    if (std::abs(element) > MAX_COVARIANCE) {
       return false;
     }
   }
