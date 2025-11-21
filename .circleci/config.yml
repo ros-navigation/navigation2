@@ -221,7 +221,7 @@ _commands:
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
                       --mixin << parameters.mixins >> \
-                      --cmake-args << parameters.cmake-args >>
+                      --cmake-args << parameters.cmake_args >>
               - ccache_stats:
                   workspace: << parameters.workspace >>
                   when: always
