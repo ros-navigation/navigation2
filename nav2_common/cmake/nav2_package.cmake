@@ -48,8 +48,6 @@ macro(nav2_package)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
   endif()
 
-  option(USE_ISOLATED_TESTS "Enable ros_isolated_test" OFF)
-
   # Defaults for Microsoft C++ compiler
   if(MSVC)
     # https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
@@ -64,6 +62,8 @@ macro(nav2_package)
 endmacro()
 
 # The ros_isolated functions only exist in Kilted and newer releases
+option(USE_ISOLATED_TESTS "Enable ros_isolated_test" OFF)
+
 function(nav2_add_test target)
   if(COMMAND ament_add_ros_isolated_test AND USE_ISOLATED_TESTS)
     ament_add_ros_isolated_test(${target} ${ARGN})
