@@ -161,7 +161,7 @@ protected:
 TEST_F(TestNode, testObstacleLayers) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
   layers.resizeMap(10, 10, 1, 0, 0);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
@@ -195,7 +195,7 @@ TEST_F(TestNode, testObstacleAndStaticLayers) {
     "pclayer_a.static.map_topic",
     rclcpp::ParameterValue(std::string("map")));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -239,7 +239,7 @@ TEST_F(TestNode, testDifferentInflationLayers) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -291,7 +291,7 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
     "pclayer_a.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -351,7 +351,7 @@ TEST_F(TestNode, testResetting) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -427,7 +427,7 @@ TEST_F(TestNode, testClearing) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -498,7 +498,7 @@ TEST_F(TestNode, testOverwriteCombinationMethods) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -564,7 +564,7 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
     "pclayer_b.inflation.inflation_radius",
     rclcpp::ParameterValue(1.0));
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, true);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, true);
 
   layers.resizeMap(10, 10, 1, 0, 0);
 
@@ -610,7 +610,7 @@ TEST_F(TestNode, testWithoutUnknownOverwriteCombinationMethods) {
 TEST_F(TestNode, testClearable) {
   tf2_ros::Buffer tf(node_->get_clock());
 
-  nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+  nav2_costmap_2d::LayeredCostmap layers("map", false, false);
 
   std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> pclayer_a = nullptr;
   addPluginContainerLayer(layers, tf, node_, pclayer_a, "pclayer_a");
