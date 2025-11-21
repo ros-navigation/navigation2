@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v41\
+              - "<< parameters.key >>-v40\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v41\
+              - "<< parameters.key >>-v40\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v41\
+            key: "<< parameters.key >>-v40\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -217,7 +217,8 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
-                      --mixin << parameters.mixins >>
+                      --mixin << parameters.mixins >> \
+                      --cmake-args << parameters.cmake-args >>
               - ccache_stats:
                   workspace: << parameters.workspace >>
                   when: always
@@ -519,6 +520,9 @@ _jobs:
       packages_select:
         type: string
         default: ""
+      cmake_args:
+        type: string
+        default: ""
   job_test: &job_test
     parameters:
       <<: *job_build_parameters
@@ -587,12 +591,15 @@ workflows:
     jobs:
       - core_build:
           <<: *core_build_parameters
+          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
       - algorithm_build:
           <<: *algorithm_build_parameters
+          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
           requires:
             - core_build
       - system_build:
           <<: *system_build_parameters
+          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
           requires:
             - algorithm_build
       - release_test:
