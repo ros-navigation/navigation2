@@ -135,7 +135,7 @@ _commands:
         build:
           default: true
           type: boolean
-        cmake-args:
+        cmake_args:
           default: ""
           type: string
       steps:
