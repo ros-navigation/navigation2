@@ -268,8 +268,8 @@ void KeepoutFilter::process(
         mask_frame, global_frame_, tf2::TimePointZero,
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
+      RCLCPP_ERROR_THROTTLE(
+        logger_, *(clock_), 2000,
         "KeepoutFilter: Failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
         global_frame_.c_str(), mask_frame.c_str(), ex.what());
