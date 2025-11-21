@@ -96,7 +96,7 @@ void VoxelLayer::onInitialize()
 
   if (publish_voxel_) {
     voxel_pub_ = node->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", nav2::qos::LatchedPublisherQoS());
+      "voxel_grid", nav2::qos::LatchedPublisherQoS(1));
     voxel_pub_->on_activate();
   }
 
