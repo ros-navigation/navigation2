@@ -594,15 +594,15 @@ workflows:
     jobs:
       - core_build:
           <<: *core_build_parameters
-          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
+          cmake_args: "-DUSE_ISOLATED_TESTS=ON"
       - algorithm_build:
           <<: *algorithm_build_parameters
-          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
+          cmake_args: "-DUSE_ISOLATED_TESTS=ON"
           requires:
             - core_build
       - system_build:
           <<: *system_build_parameters
-          cmake_args: "-DNAV2_USE_ISOLATED_TESTS=ON"
+          cmake_args: "-DUSE_ISOLATED_TESTS=ON"
           requires:
             - algorithm_build
       - release_test:
