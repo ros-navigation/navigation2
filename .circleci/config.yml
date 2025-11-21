@@ -135,6 +135,9 @@ _commands:
         build:
           default: true
           type: boolean
+        cmake-args:
+          default: ""
+          type: string
       steps:
         - store_artifacts:
             path: << parameters.workspace >>/lockfile.txt
