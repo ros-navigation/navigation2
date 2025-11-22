@@ -70,13 +70,10 @@ install(DIRECTORY bags/cm_moving_obstacle
 install(FILES collision_monitor_node_bag.yaml
   DESTINATION share/${PROJECT_NAME}/test)
 
-find_package(GTest REQUIRED)
-
-add_executable(collision_monitor_node_bag_gtest
+ament_add_gtest_executable(collision_monitor_node_bag_exec
   collision_monitor_node_bag.cpp
 )
-target_link_libraries(collision_monitor_node_bag_gtest
-  GTest::gtest_main
+target_link_libraries(collision_monitor_node_bag_exec
   ${monitor_library_name}
   rclcpp::rclcpp
   tf2_ros::tf2_ros
@@ -84,8 +81,6 @@ target_link_libraries(collision_monitor_node_bag_gtest
   ${nav2_msgs_TARGETS}
 )
 
-add_launch_test(collision_monitor_node_bag.launch.py
-  TIMEOUT 120
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  ENV TEST_EXECUTABLE=$<TARGET_FILE:collision_monitor_node_bag_gtest>
+nav2_add_pytest_test(test_collision_monitor_node_bag test_collision_monitor_node_bag.py
+  ENV TEST_EXECUTABLE=$<TARGET_FILE:collision_monitor_node_bag_exec>
 )
