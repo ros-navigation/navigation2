@@ -252,7 +252,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Set starting point, in A* bin search coordinates
   unsigned int mx_start, my_start, mx_goal, my_goal;
   _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
-    unsigned int start_bin =
+  unsigned int start_bin =
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation));
   _a_star->setStart(
     mx_start, my_start, start_bin);
