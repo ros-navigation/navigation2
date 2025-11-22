@@ -1,5 +1,5 @@
 # Test dynamic parameters
-ament_add_gtest(test_dynamic_parameters
+nav2_add_gtest(test_dynamic_parameters
   test_dynamic_parameters.cpp
 )
 target_link_libraries(test_dynamic_parameters
@@ -9,7 +9,7 @@ target_link_libraries(test_dynamic_parameters
   ${rcl_interfaces_TARGETS}
 )
 
-ament_add_gtest(test_plan_through_poses
+nav2_add_gtest(test_plan_through_poses
   test_plan_through_poses.cpp
 )
 target_link_libraries(test_plan_through_poses

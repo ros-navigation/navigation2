@@ -1,4 +1,4 @@
-ament_add_test(test_error_codes
+nav2_add_test(test_error_codes
     GENERATE_RESULT_FOR_RETURN_CODE_ZERO
     COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_error_codes_launch.py"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

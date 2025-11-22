@@ -36,6 +36,7 @@
   <test_depend>std_srvs</test_depend>
   <test_depend>test_msgs</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

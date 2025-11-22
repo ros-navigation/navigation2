@@ -22,8 +22,10 @@ from launch.actions import ExecuteProcess, SetEnvironmentVariable
 from launch_ros.actions import Node
 import launch_testing
 from launch_testing.actions import ReadyToTest
+import pytest
 
 
+@pytest.mark.launch_test
 def generate_test_description() -> tuple[LaunchDescription, dict[str, Any]]:
     # Where our package keeps test assets (bags + YAML)
     pkg_share = get_package_share_directory('nav2_collision_monitor')
@@ -104,17 +106,18 @@ def generate_test_description() -> tuple[LaunchDescription, dict[str, Any]]:
     return ld, {'cm_gtest': cm_gtest}
 
 
+@pytest.mark.launch_test
 class TestWaitForGTest(unittest.TestCase):
     # This part just waits until the gtest process finished (or times out)
     def test_gtest_completed(self, proc_info: Any, cm_gtest: Any) -> None:
-        # 120s is generous for slow CI
-        proc_info.assertWaitForShutdown(process=cm_gtest, timeout=120.0)
+        proc_info.assertWaitForShutdown(process=cm_gtest, timeout=40.0)
 
 
 # make the decorator explicitly untyped for mypy
 post_shutdown_test = cast(Any, launch_testing.post_shutdown_test)
 
 
+@pytest.mark.launch_test
 @post_shutdown_test()
 class TestGTestExitCode(unittest.TestCase):
     # And this part says: the gtest must have *passed*
