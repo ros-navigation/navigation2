@@ -146,6 +146,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (size_t i = 0; i != progress_checker_ids_.size(); i++) {
     progress_checker_ids_concat_ += progress_checker_ids_[i] + std::string(" ");
   }
+  if (progress_checker_ids_concat_.empty()) {
+    progress_checker_ids_concat_ = "(none)";
+  }
 
   RCLCPP_INFO(
     get_logger(),
@@ -388,6 +391,22 @@ bool ControllerServer::findProgressCheckerId(
   const std::string & c_name,
   std::string & current_progress_checker)
 {
+  if (progress_checkers_.size() == 0) {
+    if (c_name.empty()) {
+      RCLCPP_DEBUG(
+        get_logger(),
+        "No progress checker configured and none requested. Progress checking will be bypassed.");
+      current_progress_checker = "";
+      return true;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with progress_checker name %s in parameter"
+        " 'current_progress_checker', but no progress checkers are configured.",
+        c_name.c_str());
+      return false;
+    }
+  }
+
   if (progress_checkers_.find(c_name) == progress_checkers_.end()) {
     if (progress_checkers_.size() == 1 && c_name.empty()) {
       RCLCPP_WARN_ONCE(
@@ -447,7 +466,9 @@ void ControllerServer::computeControl()
     }
 
     setPlannerPath(goal->path);
-    progress_checkers_[current_progress_checker_]->reset();
+    if (!current_progress_checker_.empty()) {
+      progress_checkers_[current_progress_checker_]->reset();
+    }
 
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(controller_frequency_);
@@ -610,8 +631,10 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
-  if (!progress_checkers_[current_progress_checker_]->check(pose)) {
-    throw nav2_core::FailedToMakeProgress("Failed to make progress");
+  if (!current_progress_checker_.empty()) {
+    if (!progress_checkers_[current_progress_checker_]->check(pose)) {
+      throw nav2_core::FailedToMakeProgress("Failed to make progress");
+    }
   }
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
@@ -740,7 +763,9 @@ void ControllerServer::updateGlobalPath()
           get_logger(), "Change of progress checker %s requested, resetting it",
           goal->progress_checker_id.c_str());
         current_progress_checker_ = current_progress_checker;
-        progress_checkers_[current_progress_checker_]->reset();
+        if (!current_progress_checker_.empty()) {
+          progress_checkers_[current_progress_checker_]->reset();
+        }
       }
     } else {
       std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();
