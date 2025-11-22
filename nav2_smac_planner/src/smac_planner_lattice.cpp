@@ -250,17 +250,19 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  unsigned int mx, my;
-  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  _costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start);
+  unsigned int start_bin =
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation));
   _a_star->setStart(
-    mx, my,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation)));
+    mx_start, my_start, start_bin);
 
   // Set goal point, in A* bin search coordinates
-  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
+  _costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal);
+  unsigned int goal_bin =
+    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
   _a_star->setGoal(
-    mx, my,
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation)));
+    mx_goal, my_goal, goal_bin);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -273,6 +275,23 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal being on the same cell
+  if (std::floor(mx_start) == std::floor(mx_goal) &&
+    std::floor(my_start) == std::floor(my_goal) &&
+    start_bin == goal_bin)
+  {
+    pose.pose = start.pose;
+    pose.pose.orientation = goal.pose.orientation;
+    plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
+    return plan;
+  }
 
   // Compute plan
   NodeLattice::CoordinateVector path;
