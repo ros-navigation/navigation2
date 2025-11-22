@@ -25,6 +25,7 @@ class RoundRobinNodeTestFixture : public nav2_behavior_tree::BehaviorTreeTestFix
 public:
   void SetUp() override
   {
+    config_->input_ports["wrap_around"] = "true";
     bt_node_ = std::make_shared<nav2_behavior_tree::RoundRobinNode>(
       "round_robin", *config_);
     first_child_ = std::make_shared<nav2_behavior_tree::DummyNode>();
@@ -139,6 +140,38 @@ TEST_F(RoundRobinNodeTestFixture, test_skikpped)
   EXPECT_EQ(first_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(second_child_->status(), BT::NodeStatus::IDLE);
   EXPECT_EQ(third_child_->status(), BT::NodeStatus::IDLE);
+}
+
+TEST_F(RoundRobinNodeTestFixture, test_wrap_around_disabled)
+{
+  // Create a node with wrap_around disabled
+  BT::NodeConfiguration config_no_wrap;
+  config_no_wrap.blackboard = BT::Blackboard::create();
+  config_no_wrap.input_ports["wrap_around"] = "false";
+  auto bt_node_no_wrap = std::make_shared<nav2_behavior_tree::RoundRobinNode>(
+    "round_robin_no_wrap", config_no_wrap);
+  auto first_child_no_wrap = std::make_shared<nav2_behavior_tree::DummyNode>();
+  auto second_child_no_wrap = std::make_shared<nav2_behavior_tree::DummyNode>();
+  auto third_child_no_wrap = std::make_shared<nav2_behavior_tree::DummyNode>();
+  bt_node_no_wrap->addChild(first_child_no_wrap.get());
+  bt_node_no_wrap->addChild(second_child_no_wrap.get());
+  bt_node_no_wrap->addChild(third_child_no_wrap.get());
+
+  // Test scenario where all children fail - should return FAILURE without wrapping
+  first_child_no_wrap->changeStatus(BT::NodeStatus::FAILURE);
+  second_child_no_wrap->changeStatus(BT::NodeStatus::FAILURE);
+  third_child_no_wrap->changeStatus(BT::NodeStatus::FAILURE);
+  EXPECT_EQ(bt_node_no_wrap->executeTick(), BT::NodeStatus::FAILURE);
+
+  // Reset and test scenario where we reach the end skipped
+  bt_node_no_wrap->halt();
+  first_child_no_wrap->changeStatus(BT::NodeStatus::SKIPPED);
+  second_child_no_wrap->changeStatus(BT::NodeStatus::SKIPPED);
+  third_child_no_wrap->changeStatus(BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(bt_node_no_wrap->executeTick(), BT::NodeStatus::SKIPPED);
+  EXPECT_EQ(first_child_no_wrap->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(second_child_no_wrap->status(), BT::NodeStatus::IDLE);
+  EXPECT_EQ(third_child_no_wrap->status(), BT::NodeStatus::IDLE);
 }
 
 int main(int argc, char ** argv)
