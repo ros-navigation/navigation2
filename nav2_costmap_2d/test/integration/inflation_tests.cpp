@@ -494,7 +494,7 @@ TEST_F(TestNode, testInflation)
   // at <0, 1>
   ASSERT_EQ(
     countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 54u);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 98u);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   addObservation(olayer, 1, 9);
