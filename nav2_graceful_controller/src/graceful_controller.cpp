@@ -345,12 +345,12 @@ bool GracefulController::simulateTrajectory(
   }
 
   double distance = std::numeric_limits<double>::max();
-  double resolution_ = costmap_ros_->getCostmap()->getResolution();
-  double dt = (params_->v_linear_max > 0.0) ? resolution_ / params_->v_linear_max : 0.0;
+  double resolution = costmap_ros_->getCostmap()->getResolution();
+  double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
   // Set max iter to avoid infinite loop
   unsigned int max_iter = 3 *
-    std::hypot(motion_target.pose.position.x, motion_target.pose.position.y) / resolution_;
+    std::hypot(motion_target.pose.position.x, motion_target.pose.position.y) / resolution;
 
   // Generate path
   do{
@@ -397,7 +397,7 @@ bool GracefulController::simulateTrajectory(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(motion_target.pose, next_pose.pose);
-  }while(distance > resolution_ && trajectory.poses.size() < max_iter);
+  }while(distance > resolution && trajectory.poses.size() < max_iter);
 
   return true;
 }

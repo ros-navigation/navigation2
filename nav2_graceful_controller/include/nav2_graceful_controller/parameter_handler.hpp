@@ -21,8 +21,7 @@
 #include <algorithm>
 #include <mutex>
 
-#include "nav2_util/odometry_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
@@ -59,39 +58,18 @@ struct Parameters
  * @class nav2_graceful_controller::ParameterHandler
  * @brief Handles parameters and dynamic parameters for GracefulMotionController
  */
-class ParameterHandler
+class ParameterHandler : public nav2_util::ParameterHandler<Parameters>
 {
 public:
   /**
    * @brief Constructor for nav2_graceful_controller::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
     rclcpp::Logger & logger, const double costmap_size_x);
 
-  /**
-   * @brief Destructor for nav2_graceful_controller::ParameterHandler
-   */
-  ~ParameterHandler();
-
-  std::mutex & getMutex() {return mutex_;}
-
-  Parameters * getParams() {return &params_;}
-
-  /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  void activate();
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  void deactivate();
-
 protected:
-  nav2::LifecycleNode::WeakPtr node_;
-
   /**
    * @brief Validate incoming parameter updates before applying them.
    * This callback is triggered when one or more parameters are about to be updated.
@@ -101,7 +79,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter> parameters);
+    const std::vector<rclcpp::Parameter> & parameters) override;
 
   /**
    * @brief Apply parameter updates after validation
@@ -109,15 +87,9 @@ protected:
    * It updates the internal configuration of the node with the new parameter values.
    * @param parameters List of parameters that have been updated.
    */
-  void updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
-  // Dynamic parameters handler
-  std::mutex mutex_;
-  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
-  Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
 };
 
 }  // namespace nav2_graceful_controller
