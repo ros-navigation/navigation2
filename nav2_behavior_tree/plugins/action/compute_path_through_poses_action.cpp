@@ -41,6 +41,7 @@ void ComputePathThroughPosesAction::on_tick()
 BT::NodeStatus ComputePathThroughPosesAction::on_success()
 {
   setOutput("path", result_.result->path);
+  setOutput("last_reached_index", result_.result->last_reached_index);
   // Set empty error code, action was successful
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
@@ -51,6 +52,7 @@ BT::NodeStatus ComputePathThroughPosesAction::on_aborted()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+  setOutput("last_reached_index", ActionResult::ALL_GOALS);
   setOutput("error_code_id", result_.result->error_code);
   setOutput("error_msg", result_.result->error_msg);
   return BT::NodeStatus::FAILURE;
@@ -60,6 +62,7 @@ BT::NodeStatus ComputePathThroughPosesAction::on_cancelled()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+  setOutput("last_reached_index", ActionResult::ALL_GOALS);
   // Set empty error code, action was cancelled
   setOutput("error_code_id", ActionResult::NONE);
   setOutput("error_msg", "");
@@ -68,6 +71,7 @@ BT::NodeStatus ComputePathThroughPosesAction::on_cancelled()
 
 void ComputePathThroughPosesAction::on_timeout()
 {
+  setOutput("last_reached_index", ActionResult::ALL_GOALS);
   setOutput("error_code_id", ActionResult::TIMEOUT);
   setOutput("error_msg", "Behavior Tree action client timed out waiting.");
 }
@@ -76,6 +80,7 @@ void ComputePathThroughPosesAction::halt()
 {
   nav_msgs::msg::Path empty_path;
   setOutput("path", empty_path);
+  setOutput("last_reached_index", ActionResult::ALL_GOALS);
   // DO NOT reset "error_code_id" output port, we want to read it later
   // DO NOT reset "error_msg" output port, we want to read it later
   BtActionNode::halt();

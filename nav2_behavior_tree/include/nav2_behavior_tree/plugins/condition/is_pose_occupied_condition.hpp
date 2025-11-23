@@ -74,12 +74,12 @@ public:
       BT::InputPort<geometry_msgs::msg::PoseStamped>("pose", "Pose to check if occupied"),
       BT::InputPort<std::string>("service_name", "global_costmap/get_cost_global_costmap"),
       BT::InputPort<double>(
-          "cost_threshold", 254.0,
-          "Cost threshold for considering a pose occupied"),
+        "cost_threshold", 254.0,
+        "Cost threshold for considering a pose occupied"),
       BT::InputPort<bool>("use_footprint", true, "Whether to use footprint cost"),
       BT::InputPort<bool>(
-          "consider_unknown_as_obstacle", false,
-          "Whether to consider unknown cost as obstacle"),
+        "consider_unknown_as_obstacle", false,
+        "Whether to consider unknown cost as obstacle"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout"),
     };
   }

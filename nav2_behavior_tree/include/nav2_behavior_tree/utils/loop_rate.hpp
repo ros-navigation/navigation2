@@ -61,7 +61,7 @@ public:
     auto time_to_sleep = next_interval - now;
     std::chrono::nanoseconds time_to_sleep_ns(time_to_sleep.nanoseconds());
     // Sleep (can get interrupted by emitWakeUpSignal())
-    tree_->sleep(time_to_sleep_ns);
+    tree_->sleep(std::chrono::duration_cast<std::chrono::microseconds>(time_to_sleep_ns));
     return true;
   }
 

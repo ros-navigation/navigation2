@@ -412,6 +412,7 @@ protected:
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
   bool freespace_downsampling_ = false;
+  bool allow_parameter_qos_overrides_ = true;
 };
 
 }  // namespace nav2_amcl

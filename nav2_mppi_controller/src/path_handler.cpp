@@ -86,8 +86,9 @@ PathHandler::getGlobalPlanConsideringBoundsInCostmapFrame(
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_buffer_,
-        costmap_->getGlobalFrameID(), transform_tolerance_);
+    nav2_util::transformPoseInTargetFrame(
+      *global_plan_pose, costmap_plan_pose, *tf_buffer_,
+      costmap_->getGlobalFrameID(), transform_tolerance_);
 
     // Check if pose is inside the costmap
     if (!costmap_->getCostmap()->worldToMap(
@@ -111,7 +112,8 @@ geometry_msgs::msg::PoseStamped PathHandler::transformToGlobalPlanFrame(
   }
 
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_buffer_,
+  if (!nav2_util::transformPoseInTargetFrame(
+      pose, robot_pose, *tf_buffer_,
       global_plan_up_to_inversion_.header.frame_id, transform_tolerance_))
   {
     throw nav2_core::ControllerTFError(
@@ -179,7 +181,8 @@ geometry_msgs::msg::PoseStamped PathHandler::getTransformedGoal(
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }
   geometry_msgs::msg::PoseStamped transformed_goal;
-  if (!nav2_util::transformPoseInTargetFrame(goal, transformed_goal, *tf_buffer_,
+  if (!nav2_util::transformPoseInTargetFrame(
+      goal, transformed_goal, *tf_buffer_,
       costmap_->getGlobalFrameID(), transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform goal pose into costmap frame");

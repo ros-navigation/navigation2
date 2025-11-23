@@ -89,7 +89,7 @@ TEST(KinematicsTest, testProjectState)
   EXPECT_NEAR(vel.tw, M_PI / 4.0, EPSILON);  // should be the same
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

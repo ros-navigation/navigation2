@@ -109,12 +109,12 @@ void NoiseGenerator::generateNoisedControls()
 {
   auto & s = settings_;
   noises_vx_ = Eigen::ArrayXXf::NullaryExpr(
-    s.batch_size, s.time_steps, [&] () {return ndistribution_vx_(generator_);});
+    s.batch_size, s.time_steps, [&]() {return ndistribution_vx_(generator_);});
   noises_wz_ = Eigen::ArrayXXf::NullaryExpr(
-    s.batch_size, s.time_steps, [&] () {return ndistribution_wz_(generator_);});
-  if(is_holonomic_) {
+    s.batch_size, s.time_steps, [&]() {return ndistribution_wz_(generator_);});
+  if (is_holonomic_) {
     noises_vy_ = Eigen::ArrayXXf::NullaryExpr(
-      s.batch_size, s.time_steps, [&] () {return ndistribution_vy_(generator_);});
+      s.batch_size, s.time_steps, [&]() {return ndistribution_vy_(generator_);});
   }
 }
 

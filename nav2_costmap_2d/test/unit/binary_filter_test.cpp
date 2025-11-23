@@ -638,7 +638,8 @@ void TestNode::testOutOfMask()
   pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
-  verifyBinaryState(getSign(pose.position.x, pose.position.y, base, multiplier, flip_threshold),
+  verifyBinaryState(
+    getSign(pose.position.x, pose.position.y, base, multiplier, flip_threshold),
     binary_state);
 
   // Then go to out of mask bounds and ensure that binary state is set back to default
@@ -706,8 +707,10 @@ void TestNode::testResetFilter()
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
-  verifyBinaryState(getSign(pose.position.x, pose.position.y, base,
-    multiplier, flip_threshold), binary_state);
+  verifyBinaryState(
+    getSign(
+      pose.position.x, pose.position.y, base,
+      multiplier, flip_threshold), binary_state);
   binary_state_ = binary_state->data;
 
   // Reset binary filter and check its state was reset to default
