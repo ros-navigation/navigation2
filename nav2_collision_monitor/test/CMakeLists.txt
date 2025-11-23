@@ -82,5 +82,7 @@ target_link_libraries(collision_monitor_node_bag_exec
 )
 
 nav2_add_pytest_test(test_collision_monitor_node_bag test_collision_monitor_node_bag.py
+  TIMEOUT 120
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   ENV TEST_EXECUTABLE=$<TARGET_FILE:collision_monitor_node_bag_exec>
 )
