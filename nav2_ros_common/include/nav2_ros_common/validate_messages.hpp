@@ -68,7 +68,7 @@ bool validateMsg(const std::array<double, N> & msg)
   for (const auto & element : msg) {
     if (!validateMsg(element)) {return false;}
 
-    if (std::abs(element) > MAX_COVARIANCE) {
+    if (std::abs(element) > MAX_COVARIANCE && element < 0.0) {
       return false;
     }
   }
