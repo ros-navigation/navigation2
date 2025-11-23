@@ -61,7 +61,8 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_, global_plan_.header.frame_id,
+  if (!nav2_util::transformPoseInTargetFrame(
+      pose, robot_pose, *tf_, global_plan_.header.frame_id,
       transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -104,8 +105,9 @@ nav_msgs::msg::Path PathHandler::transformGlobalPlan(
       stamped_pose.header.frame_id = global_plan_.header.frame_id;
       stamped_pose.header.stamp = robot_pose.header.stamp;
       stamped_pose.pose = global_plan_pose.pose;
-      if (!nav2_util::transformPoseInTargetFrame(stamped_pose, transformed_pose, *tf_,
-        costmap_ros_->getBaseFrameID(), transform_tolerance_))
+      if (!nav2_util::transformPoseInTargetFrame(
+          stamped_pose, transformed_pose, *tf_,
+          costmap_ros_->getBaseFrameID(), transform_tolerance_))
       {
         throw nav2_core::ControllerTFError("Unable to transform plan pose into local frame");
       }

@@ -13,7 +13,7 @@ jobs:
       matrix:
           linter: [xmllint, cpplint, uncrustify, pep257, flake8, mypy]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Install typeshed for mypy
       if: matrix.linter == 'mypy'
@@ -30,7 +30,7 @@ jobs:
     name: pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
       - uses: pre-commit/action@v3.0.1
         env:

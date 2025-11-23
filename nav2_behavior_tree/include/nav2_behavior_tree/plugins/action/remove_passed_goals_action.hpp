@@ -56,16 +56,20 @@ public:
     BT::RegisterJsonDefinition<std::vector<nav2_msgs::msg::WaypointStatus>>();
 
     return {
-      BT::InputPort<nav_msgs::msg::Goals>("input_goals",
-          "Original goals to remove viapoints from"),
-      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
-          "Goals with passed viapoints removed"),
+      BT::InputPort<nav_msgs::msg::Goals>(
+        "input_goals",
+        "Original goals to remove viapoints from"),
+      BT::OutputPort<nav_msgs::msg::Goals>(
+        "output_goals",
+        "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
       BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
-      BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("input_waypoint_statuses",
-          "Original waypoint_statuses to mark waypoint status from"),
-      BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("output_waypoint_statuses",
-          "Waypoint_statuses with passed waypoints marked")
+      BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
+        "input_waypoint_statuses",
+        "Original waypoint_statuses to mark waypoint status from"),
+      BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
+        "output_waypoint_statuses",
+        "Waypoint_statuses with passed waypoints marked")
     };
   }
 
