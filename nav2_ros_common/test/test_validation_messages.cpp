@@ -343,7 +343,7 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   // Test below MIN value PoseWithCovariance message
   geometry_msgs::msg::PoseWithCovariance invalidate_msg4;
 
-  invalidate_msg4.covariance[0] = 1e-5;  // < MIN_COVARIANCE (1e-4)
+  invalidate_msg4.covariance[0] = -0.01;  // < MIN_COVARIANCE (0)
   for (size_t i = 1; i < invalidate_msg4.covariance.size(); ++i) {
     invalidate_msg4.covariance[i] = 0.01;  // Valid value
   }
