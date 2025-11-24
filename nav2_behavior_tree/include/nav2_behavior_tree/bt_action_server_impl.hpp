@@ -77,9 +77,10 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   };
 
   if (node->has_parameter("error_code_names")) {
-    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
-      " 'error_code_name_prefixes' and MUST be removed.\n"
-      " Please review migration guide and update your configuration.");
+    throw std::runtime_error(
+            "parameter 'error_code_names' has been replaced by "
+            " 'error_code_name_prefixes' and MUST be removed.\n"
+            " Please review migration guide and update your configuration.");
   }
 
   // Declare and get error code name prefixes parameter
@@ -100,8 +101,9 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
         << "Make sure these match your BT and there are not other sources of error codes you"
         << "reported to your application");
   } else {
-    RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
-      << error_code_name_prefixes_str);
+    RCLCPP_INFO_STREAM(
+      logger_, "Error_code parameters were set to:"
+        << error_code_name_prefixes_str);
   }
 }
 
@@ -123,7 +125,8 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
 
   auto new_arguments = node->get_node_options().arguments();
-  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", std::string("__node:=") +
+  nav2::replaceOrAddArgument(
+    new_arguments, "-r", "__node", std::string("__node:=") +
     std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node");
   auto options = node->get_node_options();
   options = options.arguments(new_arguments);
@@ -271,7 +274,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
           if (registered_ids.count(id)) {
-            RCLCPP_WARN(logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
+            RCLCPP_WARN(
+              logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
               entry.path().c_str(), id.c_str());
             continue;
           }
@@ -311,7 +315,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       register_all_bt_files();
     }
   } catch (const std::exception & e) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       "Exception registering behavior trees: " + std::string(e.what()));
     return false;
   }
@@ -327,10 +332,11 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->set<std::chrono::milliseconds>(
-          "wait_for_service_timeout", wait_for_service_timeout_);
+        "wait_for_service_timeout", wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       std::string("Exception when creating BT tree from ID: ") + e.what());
     return false;
   }
@@ -405,7 +411,8 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       action_server_->terminate_current(result);
-      RCLCPP_ERROR(logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+      RCLCPP_ERROR(
+        logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
         result->error_msg.c_str());
       break;
 
@@ -425,7 +432,8 @@ void BtActionServer<ActionT, NodeT>::setInternalError(
 {
   internal_error_code_ = error_code;
   internal_error_msg_ = error_msg;
-  RCLCPP_ERROR(logger_, "Setting internal error error_code:%d, error_msg:%s",
+  RCLCPP_ERROR(
+    logger_, "Setting internal error error_code:%d, error_msg:%s",
     internal_error_code_, internal_error_msg_.c_str());
 }
 

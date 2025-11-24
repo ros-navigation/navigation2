@@ -140,7 +140,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(amcl->get_parameter("min_particles").as_int(), 100);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

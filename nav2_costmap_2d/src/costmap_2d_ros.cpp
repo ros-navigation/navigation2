@@ -78,11 +78,13 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
-  nav2::replaceOrAddArgument(new_arguments, "-r", "__ns",
-      "__ns:=" + nav2::add_namespaces(parent_namespace, name));
+  nav2::replaceOrAddArgument(
+    new_arguments, "-r", "__ns",
+    "__ns:=" + nav2::add_namespaces(parent_namespace, name));
   nav2::replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
-  nav2::replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
-      "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
+  nav2::replaceOrAddArgument(
+    new_arguments, "-p", "use_sim_time",
+    "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
   return rclcpp::NodeOptions().arguments(new_arguments);
 }
 
@@ -186,11 +188,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     try {
-      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-          shared_from_this(), callback_group_);
+      plugin->initialize(
+        layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+        shared_from_this(), callback_group_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
-          plugin_names_[i].c_str(), e.what());
+      RCLCPP_ERROR(
+        get_logger(), "Failed to initialize costmap plugin %s! %s.",
+        plugin_names_[i].c_str(), e.what());
       return nav2::CallbackReturn::FAILURE;
     }
 
@@ -263,7 +267,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Service to get the cost at a point
   get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
     std::string("get_cost_") + get_name(),
-    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -876,7 +881,7 @@ void Costmap2DROS::getCostsCallback(
     } else {
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at point (%f, %f)",
-          pose_transformed.pose.position.x,
+        pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
       bool in_bounds = costmap->worldToMap(

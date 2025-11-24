@@ -118,7 +118,8 @@ bool PointCloud::getData(
   if (use_global_height_ && height_present) {
     height_field = "height";
   } else if (use_global_height_) {
-    RCLCPP_ERROR(logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud",
+    RCLCPP_ERROR(
+      logger_, "[%s]: 'use_global_height' parameter true but height field not in cloud",
       source_name_.c_str());
     return false;
   }
@@ -183,7 +184,7 @@ PointCloud::dynamicParametersCallback(
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(source_name_ + ".") != 0) {
+    if (param_name.find(source_name_ + ".") != 0) {
       continue;
     }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {

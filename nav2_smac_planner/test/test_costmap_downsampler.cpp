@@ -58,7 +58,7 @@ TEST(CostmapDownsampler, costmap_downsample_test)
   downsampler.resizeCostmap();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

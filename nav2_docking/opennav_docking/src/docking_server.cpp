@@ -72,8 +72,9 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   try {
     if (get_parameter("dock_backwards", dock_backwards)) {
       dock_backwards_ = dock_backwards;
-      RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
-      "Please use the dock_direction parameter in your dock plugin instead.");
+      RCLCPP_WARN(
+        get_logger(), "Parameter dock_backwards is deprecated. "
+        "Please use the dock_direction parameter in your dock plugin instead.");
     }
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
   }
@@ -445,7 +446,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToDetectDock(
-        "Failed initial dock detection: Timeout exceeded");
+              "Failed initial dock detection: Timeout exceeded");
     }
 
     if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||

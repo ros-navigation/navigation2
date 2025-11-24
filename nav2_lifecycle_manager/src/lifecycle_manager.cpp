@@ -304,7 +304,8 @@ LifecycleManager::changeStateForNode(const std::string & node_name, std::uint8_t
 {
   message(transition_label_map_[transition] + node_name);
 
-  if (!node_map_[node_name]->change_state(transition, std::chrono::milliseconds(-1),
+  if (!node_map_[node_name]->change_state(
+      transition, std::chrono::milliseconds(-1),
       service_timeout_) ||
     !(node_map_[node_name]->get_state(service_timeout_) == transition_state_map_[transition]))
   {
