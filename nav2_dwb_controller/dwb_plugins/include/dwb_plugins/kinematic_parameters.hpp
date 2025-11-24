@@ -107,10 +107,14 @@ public:
   ~KinematicsHandler();
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
-  inline KinematicParameters getKinematics() {
-    auto ptr = std::atomic_load(&kinematics_);
-    return *ptr;
-  }
+   inline KinematicParameters getKinematics() {
+      KinematicParameters* ptr = kinematics_.load();
+      // Check for nullptr before dereferencing
+      if (ptr != nullptr) {
+        return *ptr;
+      }
+      return KinematicParameters();
+    }
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

@@ -55,7 +55,10 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-
+  KinematicParameters* ptr = kinematics_.load();
+  if (ptr != nullptr) {
+    delete ptr;
+  }
 }
 
 void KinematicsHandler::initialize(
@@ -134,8 +137,11 @@ void
 KinematicsHandler::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  auto current_kinematics = std::atomic_load(&kinematics_);
-  KinematicParameters kinematics(*current_kinematics);
+  KinematicParameters* ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;  // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   for (auto & changed_parameter : event->changed_parameters) {
     const auto & type = changed_parameter.value.type;
@@ -179,10 +185,13 @@ KinematicsHandler::on_parameter_event_callback(
   update_kinematics(kinematics);
 }
 
-void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
- {
-   auto new_kinematics = std::make_shared<KinematicParameters>(kinematics);
-   std::atomic_store(&kinematics_, new_kinematics);
- }
+void update_kinematics(KinematicParameters kinematics) {
+  KinematicParameters* new_kinematics = new KinematicParameters(kinematics);
+  KinematicParameters* old_kinematics = kinematics_.exchange(new_kinematics);
+
+  if (old_kinematics != nullptr) {
+    delete old_kinematics;
+  }
+}
 
 }  // namespace dwb_plugins
