@@ -1,4 +1,4 @@
-ament_add_test(test_bt_navigator
+nav2_add_test(test_bt_navigator
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -12,7 +12,7 @@ ament_add_test(test_bt_navigator
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_bt_navigator_with_wrong_init_pose
+nav2_add_test(test_bt_navigator_with_wrong_init_pose
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_wrong_init_pose_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -26,7 +26,7 @@ ament_add_test(test_bt_navigator_with_wrong_init_pose
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_bt_navigator_with_dijkstra
+nav2_add_test(test_bt_navigator_with_dijkstra
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -40,7 +40,7 @@ ament_add_test(test_bt_navigator_with_dijkstra
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_bt_navigator_with_groot_monitoring
+nav2_add_test(test_bt_navigator_with_groot_monitoring
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -55,7 +55,7 @@ ament_add_test(test_bt_navigator_with_groot_monitoring
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_dynamic_obstacle
+nav2_add_test(test_dynamic_obstacle
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_with_obstacle_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -70,7 +70,7 @@ ament_add_test(test_dynamic_obstacle
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_nav_through_poses
+nav2_add_test(test_nav_through_poses
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_with_obstacle_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -85,7 +85,7 @@ ament_add_test(test_nav_through_poses
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-ament_add_test(test_nav_through_poses_error_msg
+nav2_add_test(test_nav_through_poses_error_msg
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_system_with_obstacle_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -100,7 +100,7 @@ ament_add_test(test_nav_through_poses_error_msg
   PLANNER=nav2_navfn_planner::NavfnPlanner
 )
 
-# ament_add_test(test_multi_robot
+# nav2_add_test(test_multi_robot
 # GENERATE_RESULT_FOR_RETURN_CODE_ZERO
 # COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_multi_robot_launch.py"
 # WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
