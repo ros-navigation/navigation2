@@ -119,7 +119,7 @@ public:
   using Ptr = std::shared_ptr<KinematicsHandler>;
 
 protected:
-  std::shared_ptr<KinematicParameters> kinematics_;
+  std::atomic<KinematicParameters *> kinematics_;
 
   // Subscription for parameter change
   rclcpp::AsyncParametersClient::SharedPtr parameters_client_;

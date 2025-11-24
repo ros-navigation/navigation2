@@ -33,7 +33,7 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.hpp"
-
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -50,7 +50,7 @@ namespace dwb_plugins
 
 KinematicsHandler::KinematicsHandler()
 {
-  kinematics_ = std::make_shared<KinematicParameters>();
+  kinematics_.store(new KinematicParameters);
 }
 
 KinematicsHandler::~KinematicsHandler()
@@ -185,7 +185,7 @@ KinematicsHandler::on_parameter_event_callback(
   update_kinematics(kinematics);
 }
 
-void update_kinematics(KinematicParameters kinematics) {
+void KinematicsHandler::update_kinematics(KinematicParameters kinematics) {
   KinematicParameters* new_kinematics = new KinematicParameters(kinematics);
   KinematicParameters* old_kinematics = kinematics_.exchange(new_kinematics);
 
