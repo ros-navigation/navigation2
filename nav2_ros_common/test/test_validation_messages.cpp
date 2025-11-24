@@ -320,6 +320,44 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   invalidate_msg2.pose.orientation.w = -0.32979028309372299;
 
   EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
+
+  // Test over MAX value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg3;
+
+  invalidate_msg3.covariance[0] = 2e9;  // > MAX_COVARIANCE (1e9)
+  for (size_t i = 1; i < invalidate_msg3.covariance.size(); ++i) {
+    invalidate_msg3.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg3.pose.position.x = 0.0;
+  invalidate_msg3.pose.position.y = 0.0;
+  invalidate_msg3.pose.position.z = 0.0;
+
+  invalidate_msg3.pose.orientation.x = 0.0;
+  invalidate_msg3.pose.orientation.y = 0.0;
+  invalidate_msg3.pose.orientation.z = 0.0;
+  invalidate_msg3.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg3));
+
+  // Test below MIN value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg4;
+
+  invalidate_msg4.covariance[0] = -0.01;  // < MIN_COVARIANCE (0)
+  for (size_t i = 1; i < invalidate_msg4.covariance.size(); ++i) {
+    invalidate_msg4.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg4.pose.position.x = 0.0;
+  invalidate_msg4.pose.position.y = 0.0;
+  invalidate_msg4.pose.position.z = 0.0;
+
+  invalidate_msg4.pose.orientation.x = 0.0;
+  invalidate_msg4.pose.orientation.y = 0.0;
+  invalidate_msg4.pose.orientation.z = 0.0;
+  invalidate_msg4.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg4));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {
