@@ -40,3 +40,6 @@ target_link_libraries(test_twist_subscriber ${library_name} rclcpp::rclcpp ${geo
 
 nav2_add_gtest(test_path_utils test_path_utils.cpp)
 target_link_libraries(test_path_utils ${library_name} rclcpp::rclcpp ${geometry_msgs_TARGETS})
+
+ament_add_gtest(test_parameter_handler test_parameter_handler.cpp)
+target_link_libraries(test_parameter_handler ${library_name} rclcpp::rclcpp)
