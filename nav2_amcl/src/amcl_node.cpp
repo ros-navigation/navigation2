@@ -1389,7 +1389,7 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS(2));
+    nav2::qos::LatchedSubscriptionQoS(3));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
