@@ -37,7 +37,7 @@
 
 #include <memory>
 #include <string>
-
+#include <stdexcept>
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
@@ -110,10 +110,11 @@ public:
    inline KinematicParameters getKinematics() {
       KinematicParameters* ptr = kinematics_.load();
       // Check for nullptr before dereferencing
-      if (ptr != nullptr) {
-        return *ptr;
+      if (ptr == nullptr) {
+        throw std::runtime_error(
+          "KinematicsHandler::getKinematics() called before kinematics_ is initialized");
       }
-      return KinematicParameters();
+      return *ptr;
     }
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
