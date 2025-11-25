@@ -56,7 +56,7 @@ TEST(ControllerStateTransitionTest, ControllerNotFail)
   path.header.frame_id = costmap_ros->getGlobalFrameID();
   pose.header.frame_id = costmap_ros->getGlobalFrameID();
 
-  controller->setPlan(path);
+  controller->setPlan(path, {});
 
   EXPECT_NO_THROW(controller->computeVelocityCommands(pose, velocity, {}));
 
