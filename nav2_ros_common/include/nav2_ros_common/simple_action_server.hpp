@@ -134,7 +134,8 @@ public:
       rcl_action_server_get_default_options(),  // Use consistent QoS settings
       callback_group_);
 
-    nav2::setIntrospectionMode(this->action_server_,
+    nav2::setIntrospectionMode(
+      this->action_server_,
       node_parameters_interface_, node_clock_interface_->get_clock());
 
     if (spin_thread_) {
@@ -601,8 +602,9 @@ protected:
     if constexpr (has_error_code<typename ActionT::Result>::value &&
       has_error_msg<typename ActionT::Result>::value)
     {
-      warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) +
-             ", error_msg:'" + result->error_msg + "'.");
+      warn_msg(
+        "Aborting handle. error_code:" + std::to_string(result->error_code) +
+        ", error_msg:'" + result->error_msg + "'.");
     } else if constexpr (has_error_code<typename ActionT::Result>::value) {
       warn_msg("Aborting handle. error_code:" + std::to_string(result->error_code) + ".");
     } else {

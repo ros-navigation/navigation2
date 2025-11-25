@@ -12,7 +12,7 @@ target_include_directories(test_localization_node
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
-ament_add_test(test_localization
+nav2_add_test(test_localization
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_localization_launch.py"
   TIMEOUT 180

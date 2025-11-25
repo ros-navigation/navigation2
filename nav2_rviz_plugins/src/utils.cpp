@@ -52,21 +52,30 @@ void pluginLoader(
   auto parameters = parameter_client->get_parameters({plugin_type});
   if (executor) {
     if (executor->spin_until_future_complete(parameters) != rclcpp::FutureReturnCode::SUCCESS) {
-      RCLCPP_ERROR(node->get_logger(),
-      "Failed to get parameter '%s' from server '%s'",
-      plugin_type.c_str(), server_name.c_str());
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Failed to get parameter '%s' from server '%s'",
+        plugin_type.c_str(), server_name.c_str());
       return;
     }
   } else {
     if (rclcpp::spin_until_future_complete(node, parameters) != rclcpp::FutureReturnCode::SUCCESS) {
-      RCLCPP_ERROR(node->get_logger(),
-      "Failed to get parameter '%s' from server '%s'",
-      plugin_type.c_str(), server_name.c_str());
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Failed to get parameter '%s' from server '%s'",
+        plugin_type.c_str(), server_name.c_str());
       return;
     }
   }
 
-  auto str_arr = parameters.get()[0].as_string_array();
+  auto result = parameters.get();
+  if (result.empty()) {
+    RCLCPP_ERROR(node->get_logger(),
+    "Parameter '%s' not found on server '%s'",
+    plugin_type.c_str(), server_name.c_str());
+    return;
+  }
+  auto str_arr = result[0].as_string_array();
   combo_box->addItem("Default");
   for (auto str : str_arr) {
     combo_box->addItem(QString::fromStdString(str));

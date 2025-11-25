@@ -60,7 +60,6 @@ This process is then repeated a number of times and returns a converged solution
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
  | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
  | publish_critics_stats      | bool   | Default false. Whether to publish statistics about each critic's performance. When enabled, publishes a `nav2_msgs::msg::CriticsStats` message containing critic names, whether they changed costs, and the sum of costs added by each critic. Useful for debugging and tuning critic behavior. |
-
  | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
 
 #### Trajectory Visualizer
