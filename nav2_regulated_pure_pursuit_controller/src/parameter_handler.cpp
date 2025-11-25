@@ -119,7 +119,7 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
       node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-      node, plugin_name_ + ".use_dynamic_window", rclcpp::ParameterValue(true));
+      node, plugin_name_ + ".use_dynamic_window", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
       node, plugin_name_ + ".velocity_feedback", rclcpp::ParameterValue(std::string("OPEN_LOOP")));
 
