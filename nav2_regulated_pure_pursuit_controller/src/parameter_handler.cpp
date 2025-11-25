@@ -39,11 +39,11 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(0.0));
+    node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(-0.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_vel", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".max_angular_vel", rclcpp::ParameterValue(2.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".min_angular_vel", rclcpp::ParameterValue(-1.0));
+    node, plugin_name_ + ".min_angular_vel", rclcpp::ParameterValue(-2.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
@@ -94,13 +94,13 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(0.5));
+    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(0.5));
+    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_decel", rclcpp::ParameterValue(1.0));
+    node, plugin_name_ + ".max_angular_decel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cancel_deceleration", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(

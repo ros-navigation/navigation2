@@ -74,12 +74,12 @@ A link to the paper and its citation will be provided once it becomes publicly a
 | Parameter | Description |
 |-----|----|
 | `max_linear_vel` | The maximum linear velocity to use. |
-| `min_linear_vel` | The minimum linear velocity used when `use_dynamic_window` is `true`. |
-| `max_angular_vel` | The maximum angular velocity to use. |
-| `min_angular_vel` | The minimum angular velocity used when `use_dynamic_window` is `true`.|
-| `max_linear_accel` | The maximum linear acceleration used when `use_dynamic_window` is `true`.|
-| `max_linear_decel` | The maximum linear deceleration used when `use_dynamic_window` is `true`. |
 | `max_angular_accel` | The maximum angular acceleration to use. |
+| `min_linear_vel` | The minimum linear velocity used when `use_dynamic_window` is `true`. |
+| `max_angular_vel` | The maximum angular velocity used when `use_dynamic_window` is `true`. |
+| `min_angular_vel` | The minimum angular velocity used when `use_dynamic_window` is `true`. |
+| `max_linear_accel` | The maximum linear acceleration used when `use_dynamic_window` is `true`. |
+| `max_linear_decel` | The maximum linear deceleration used when `use_dynamic_window` is `true`. |
 | `max_angular_decel` | The maximum angular deceleration used when `use_dynamic_window` is `true`. |
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point |
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances |
