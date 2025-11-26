@@ -118,3 +118,4 @@ private:
 };
 }  // namespace nav2_rviz_plugins
 #endif  // NAV2_RVIZ_PLUGINS__ROUTE_TOOL_HPP_
+

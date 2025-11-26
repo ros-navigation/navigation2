@@ -266,3 +266,4 @@ void RouteTool::load(const rviz_common::Config & config)
 
 #include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(nav2_rviz_plugins::RouteTool, rviz_common::Panel)
+

@@ -73,3 +73,4 @@ def generate_launch_description() -> LaunchDescription:
             start_lifecycle_manager_cmd,
         ]
     )
+
