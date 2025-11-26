@@ -61,6 +61,11 @@ public:
   void initialize();
 
   /**
+   * @brief Function to create ROS interfaces
+   */
+  void createROSInterfaces();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing node-specific ports
    */
@@ -72,7 +77,8 @@ public:
 
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("pose", "Pose to check if occupied"),
-      BT::InputPort<std::string>("service_name", "global_costmap/get_cost_global_costmap"),
+      BT::InputPort<std::string>("service_name", "global_costmap/get_cost_global_costmap",
+        "The service name to call GetCosts"),
       BT::InputPort<double>(
         "cost_threshold", 254.0,
         "Cost threshold for considering a pose occupied"),
