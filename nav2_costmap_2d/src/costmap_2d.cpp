@@ -350,11 +350,15 @@ bool Costmap2D::setConvexPolygonCost(
   convexFillCells(map_polygon, polygon_cells);
 
   // set the cost of those cells
+  bool cells_written = false;
   for (unsigned int i = 0; i < polygon_cells.size(); ++i) {
     unsigned int index = getIndex(polygon_cells[i].x, polygon_cells[i].y);
-    costmap_[index] = cost_value;
+     if (index < size_x_ * size_y_) {
+      costmap_[index] = cost_value;
+      cells_written = true;
+    }
   }
-  return true;
+    return cells_written;
 }
 
 void Costmap2D::polygonOutlineCells(
