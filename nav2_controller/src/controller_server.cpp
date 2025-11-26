@@ -517,6 +517,7 @@ void ControllerServer::computeControl()
           get_logger(),
           "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
           controller_frequency_, 1 / cycle_duration.seconds());
+        loop_rate.reset();
       }
     }
   } catch (nav2_core::InvalidController & e) {
