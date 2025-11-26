@@ -313,7 +313,7 @@ class BasicNavigator(Node):
 
     def driveOnHeading(self, dist=0.15, speed=0.025, time_allowance=10):
         self.debug("Waiting for 'DriveOnHeading' action server")
-        while not self.backup_client.wait_for_server(timeout_sec=1.0):
+        while not self.drive_on_heading_client.wait_for_server(timeout_sec=1.0):
             self.info("'DriveOnHeading' action server not available, waiting...")
         goal_msg = DriveOnHeading.Goal()
         goal_msg.target = Point(x=float(dist))
