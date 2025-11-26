@@ -214,7 +214,7 @@ void RouteServer::populateActionResult(
 template<typename GoalT>
 Route RouteServer::findRoute(
   const std::shared_ptr<const GoalT> goal,
-  ReroutingState & rerouting_info)
+  ReroutingState rerouting_info)
 {
   // Find the search boundaries
   auto [start_route, end_route] = goal_intent_extractor_->findStartandGoal(goal);
