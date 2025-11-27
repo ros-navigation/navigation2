@@ -36,8 +36,24 @@ ParameterHandler::ParameterHandler(
 {
   plugin_name_ = plugin_name;
 
+  // Declare max_linear_vel with backward compatibility
+  const std::string old_name = plugin_name_ + ".desired_linear_vel";
+  const std::string new_name = plugin_name_ + ".max_linear_vel";
+  node->declare_parameter<double>(old_name,
+      std::numeric_limits<double>::quiet_NaN());
+  double old_val = std::numeric_limits<double>::quiet_NaN();
+  if (node->get_parameter(old_name, old_val) &&
+    !std::isnan(old_val))
+  {
+    RCLCPP_WARN(
+      logger_,
+      "Parameter '%s' is deprecated. Use '%s' instead.",
+      old_name.c_str(), new_name.c_str());
+  }
+  double default_val = std::isnan(old_val) ? 0.5 : old_val;
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(0.5));
+    node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(default_val));
+
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(-0.5));
   declare_parameter_if_not_declared(
