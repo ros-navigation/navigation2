@@ -66,3 +66,9 @@ target_link_libraries(inflation_layer_extensibility_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
   ${PROJECT_NAME}::layers
 )
+
+nav2_add_gtest(predictive_inflation_layer_test test_predictive_inflation_layer.cpp)
+target_link_libraries(predictive_inflation_layer_test
+  nav2_costmap_2d_core
+  layers
+)
