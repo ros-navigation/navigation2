@@ -89,12 +89,16 @@ public:
    * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
    * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
    */
-  void computeDynamicWindow(
+  std::tuple<double, double, double, double> computeDynamicWindow(
     const geometry_msgs::msg::Twist & current_speed,
-    double & dynamic_window_max_linear_vel,
-    double & dynamic_window_min_linear_vel,
-    double & dynamic_window_max_angular_vel,
-    double & dynamic_window_min_angular_vel
+    const double & max_linear_vel,
+    const double & min_linear_vel,
+    const double & max_angular_vel,
+    const double & min_angular_vel,
+    const double & max_linear_accel,
+    const double & max_linear_decel,
+    const double & max_angular_accel,
+    const double & max_angular_decel
   );
 
   /**
@@ -103,10 +107,10 @@ public:
    * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
    * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
    */
-  void applyRegulationToDynamicWindow(
+  std::tuple<double, double> applyRegulationToDynamicWindow(
     const double & regulated_linear_vel,
-    double & dynamic_window_max_linear_vel,
-    double & dynamic_window_min_linear_vel);
+    const double & dynamic_window_max_linear_vel,
+    const double & dynamic_window_min_linear_vel);
 
   /**
    * @brief Compute the optimal velocity to follow the path within the dynamic window
@@ -119,15 +123,13 @@ public:
    * @param optimal_linear_vel   Optimal linear velocity to follow the path under velocity and acceleration constraints
    * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
    */
-  void computeOptimalVelocityWithinDynamicWindow(
+  std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
     const double & dynamic_window_max_linear_vel,
     const double & dynamic_window_min_linear_vel,
     const double & dynamic_window_max_angular_vel,
     const double & dynamic_window_min_angular_vel,
     const double & curvature,
-    const double & sign,
-    double & optimal_linear_vel,
-    double & optimal_angular_vel
+    const double & sign
   );
 
   /**
