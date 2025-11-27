@@ -33,10 +33,10 @@ namespace dynamic_window_pure_pursuit
 
 struct DynamicWindowBounds
 {
-  double dynamic_window_max_linear_vel;
-  double dynamic_window_min_linear_vel;
-  double dynamic_window_max_angular_vel;
-  double dynamic_window_min_angular_vel;
+  double max_linear_vel;
+  double min_linear_vel;
+  double max_angular_vel;
+  double min_angular_vel;
 };
 
 /**
@@ -47,7 +47,7 @@ struct DynamicWindowBounds
  * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
  * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
  */
-inline std::tuple<double, double, double, double> computeDynamicWindow(
+inline DynamicWindowBounds computeDynamicWindow(
   const geometry_msgs::msg::Twist & current_speed,
   const double & max_linear_vel,
   const double & min_linear_vel,
@@ -60,6 +60,7 @@ inline std::tuple<double, double, double, double> computeDynamicWindow(
   const double & dt
 )
 {
+  DynamicWindowBounds dynamic_window;
   constexpr double Eps = 1e-3;
 
   // function to compute dynamic window for a single dimension
@@ -90,19 +91,18 @@ inline std::tuple<double, double, double, double> computeDynamicWindow(
     };
 
   // linear velocity
-  auto [dynamic_window_max_linear_vel,
-    dynamic_window_min_linear_vel] = compute_window(current_speed.linear.x,
+  std::tie(dynamic_window.max_linear_vel,
+        dynamic_window.min_linear_vel) = compute_window(current_speed.linear.x,
                  max_linear_vel, min_linear_vel,
                  max_linear_accel, max_linear_decel);
 
   // angular velocity
-  auto [dynamic_window_max_angular_vel,
-    dynamic_window_min_angular_vel] = compute_window(current_speed.angular.z,
+  std::tie(dynamic_window.max_angular_vel,
+        dynamic_window.min_angular_vel) = compute_window(current_speed.angular.z,
                  max_angular_vel, min_angular_vel,
                  max_angular_accel, max_angular_decel);
 
-  return std::make_tuple(dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
-          dynamic_window_max_angular_vel, dynamic_window_min_angular_vel);
+  return dynamic_window;
 }
 
 /**
@@ -111,10 +111,9 @@ inline std::tuple<double, double, double, double> computeDynamicWindow(
  * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
  * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
  */
-inline std::tuple<double, double> applyRegulationToDynamicWindow(
+inline void applyRegulationToDynamicWindow(
   const double & regulated_linear_vel,
-  const double & dynamic_window_max_linear_vel,
-  const double & dynamic_window_min_linear_vel)
+  DynamicWindowBounds & dynamic_window)
 {
   double regulated_dynamic_window_max_linear_vel;
   double regulated_dynamic_window_min_linear_vel;
@@ -122,14 +121,14 @@ inline std::tuple<double, double> applyRegulationToDynamicWindow(
   // Extract the portion of the dynamic window that lies within the range [0, regulated_linear_vel]
   if (regulated_linear_vel >= 0.0) {
     regulated_dynamic_window_max_linear_vel = std::min(
-      dynamic_window_max_linear_vel, regulated_linear_vel);
+      dynamic_window.max_linear_vel, regulated_linear_vel);
     regulated_dynamic_window_min_linear_vel = std::max(
-      dynamic_window_min_linear_vel, 0.0);
+      dynamic_window.min_linear_vel, 0.0);
   } else {
     regulated_dynamic_window_max_linear_vel = std::min(
-      dynamic_window_max_linear_vel, 0.0);
+      dynamic_window.max_linear_vel, 0.0);
     regulated_dynamic_window_min_linear_vel = std::max(
-      dynamic_window_min_linear_vel, regulated_linear_vel);
+      dynamic_window.min_linear_vel, regulated_linear_vel);
   }
 
   if (regulated_dynamic_window_max_linear_vel < regulated_dynamic_window_min_linear_vel) {
@@ -145,9 +144,8 @@ inline std::tuple<double, double> applyRegulationToDynamicWindow(
     }
   }
 
-  return std::make_tuple(
-    regulated_dynamic_window_max_linear_vel,
-    regulated_dynamic_window_min_linear_vel);
+  dynamic_window.max_linear_vel = regulated_dynamic_window_max_linear_vel;
+  dynamic_window.min_linear_vel = regulated_dynamic_window_min_linear_vel;
 }
 
 
@@ -163,10 +161,7 @@ inline std::tuple<double, double> applyRegulationToDynamicWindow(
  * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
  */
 inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
-  const double & dynamic_window_max_linear_vel,
-  const double & dynamic_window_min_linear_vel,
-  const double & dynamic_window_max_angular_vel,
-  const double & dynamic_window_min_angular_vel,
+  const DynamicWindowBounds & dynamic_window,
   const double & curvature,
   const double & sign
 )
@@ -184,22 +179,22 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
     // linear velocity
     if (sign >= 0.0) {
       // If moving forward, select the max linear vel
-      optimal_linear_vel = dynamic_window_max_linear_vel;
+      optimal_linear_vel = dynamic_window.max_linear_vel;
     } else {
       // If moving backward, select the min linear vel
-      optimal_linear_vel = dynamic_window_min_linear_vel;
+      optimal_linear_vel = dynamic_window.min_linear_vel;
     }
 
     // angular velocity
     // If the line angular_vel = 0 intersects the dynamic window,angular_vel = 0.0
-    if (dynamic_window_min_angular_vel <= 0.0 && 0.0 <= dynamic_window_max_angular_vel) {
+    if (dynamic_window.min_angular_vel <= 0.0 && 0.0 <= dynamic_window.max_angular_vel) {
       optimal_angular_vel = 0.0;
     } else {
       // If not, select angular vel within dynamic window closest to 0
-      if (std::abs(dynamic_window_min_angular_vel) <= std::abs(dynamic_window_max_angular_vel)) {
-        optimal_angular_vel = dynamic_window_min_angular_vel;
+      if (std::abs(dynamic_window.min_angular_vel) <= std::abs(dynamic_window.max_angular_vel)) {
+        optimal_angular_vel = dynamic_window.min_angular_vel;
       } else {
-        optimal_angular_vel = dynamic_window_max_angular_vel;
+        optimal_angular_vel = dynamic_window.max_angular_vel;
       }
     }
     return std::make_tuple(optimal_linear_vel, optimal_angular_vel);
@@ -210,10 +205,10 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
 
   // List the four candidate intersection points
   std::pair<double, double> candidates[] = {
-    {dynamic_window_min_linear_vel, curvature * dynamic_window_min_linear_vel},
-    {dynamic_window_max_linear_vel, curvature * dynamic_window_max_linear_vel},
-    {dynamic_window_min_angular_vel / curvature, dynamic_window_min_angular_vel},
-    {dynamic_window_max_angular_vel / curvature, dynamic_window_max_angular_vel}
+    {dynamic_window.min_linear_vel, curvature * dynamic_window.min_linear_vel},
+    {dynamic_window.max_linear_vel, curvature * dynamic_window.max_linear_vel},
+    {dynamic_window.min_angular_vel / curvature, dynamic_window.min_angular_vel},
+    {dynamic_window.max_angular_vel / curvature, dynamic_window.max_angular_vel}
   };
 
   double best_linear_vel = -std::numeric_limits<double>::infinity() * sign;
@@ -221,10 +216,10 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
 
   for (auto [linear_vel, angular_vel] : candidates) {
     // Check whether the candidate lies within the dynamic window
-    if (linear_vel >= dynamic_window_min_linear_vel &&
-      linear_vel <= dynamic_window_max_linear_vel &&
-      angular_vel >= dynamic_window_min_angular_vel &&
-      angular_vel <= dynamic_window_max_angular_vel)
+    if (linear_vel >= dynamic_window.min_linear_vel &&
+      linear_vel <= dynamic_window.max_linear_vel &&
+      angular_vel >= dynamic_window.min_angular_vel &&
+      angular_vel <= dynamic_window.max_angular_vel)
     {
       // Select the candidate with the largest linear velocity (considering moving direction)
       if (linear_vel * sign > best_linear_vel * sign) {
@@ -247,10 +242,10 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
   // Because the dynamic window is a convex region,
   // the closest point must be one of its four corners.
   const std::array<std::array<double, 2>, 4> corners = {{
-    {dynamic_window_min_linear_vel, dynamic_window_min_angular_vel},
-    {dynamic_window_min_linear_vel, dynamic_window_max_angular_vel},
-    {dynamic_window_max_linear_vel, dynamic_window_min_angular_vel},
-    {dynamic_window_max_linear_vel, dynamic_window_max_angular_vel}
+    {dynamic_window.min_linear_vel, dynamic_window.min_angular_vel},
+    {dynamic_window.min_linear_vel, dynamic_window.max_angular_vel},
+    {dynamic_window.max_linear_vel, dynamic_window.min_angular_vel},
+    {dynamic_window.max_linear_vel, dynamic_window.max_angular_vel}
   }};
 
   // Compute the distance from a point (linear_vel, angular_vel)

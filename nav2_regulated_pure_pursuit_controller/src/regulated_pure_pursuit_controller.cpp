@@ -294,31 +294,23 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       const double & max_angular_decel = params_->max_angular_decel;
 
       // compute Dynamic Window
-      auto [dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
-        dynamic_window_max_angular_vel,
-        dynamic_window_min_angular_vel] = dynamic_window_pure_pursuit::computeDynamicWindow(
+      dynamic_window_pure_pursuit::DynamicWindowBounds dynamic_window =
+        dynamic_window_pure_pursuit::computeDynamicWindow(
         current_speed, max_linear_vel, min_linear_vel, max_angular_vel, min_angular_vel,
         max_linear_accel, max_linear_decel, max_angular_accel, max_angular_decel,
           control_duration_);
 
       // apply regulation to Dynamic Window
-      auto [regulated_dynamic_window_max_linear_vel,
-        regulated_dynamic_window_min_linear_vel] =
-        dynamic_window_pure_pursuit::applyRegulationToDynamicWindow(
+      dynamic_window_pure_pursuit::applyRegulationToDynamicWindow(
         regulated_linear_vel,
-        dynamic_window_max_linear_vel,
-        dynamic_window_min_linear_vel);
+        dynamic_window);
 
       // compute optimal velocity within Dynamic Window
       std::tie(linear_vel,
           angular_vel) = dynamic_window_pure_pursuit::computeOptimalVelocityWithinDynamicWindow(
-        regulated_dynamic_window_max_linear_vel,
-        regulated_dynamic_window_min_linear_vel,
-        dynamic_window_max_angular_vel,
-        dynamic_window_min_angular_vel,
+        dynamic_window,
         regulation_curvature,
-        x_vel_sign
-          );
+        x_vel_sign);
     }
   }
 
