@@ -145,8 +145,9 @@ public:
   void activate();
   void deactivate();
 
-  inline KinematicParameters getKinematics() {
-  KinematicParameters* ptr = kinematics_.load();
+  inline KinematicParameters getKinematics()
+  {
+  KinematicParameters * ptr = kinematics_.load();
   if (ptr == nullptr) {
     throw std::runtime_error("Can't call KinematicsHandler::getKinematics().");
   }
