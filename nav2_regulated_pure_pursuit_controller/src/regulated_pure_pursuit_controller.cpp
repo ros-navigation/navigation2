@@ -500,14 +500,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       // compute optimal path tracking velocity commands
       // considering velocity and acceleration constraints (DWPP)
       const double regulated_linear_vel = linear_vel;
-      geometry_msgs::msg::Twist current_speed;
-      if (params_->velocity_feedback == "CLOSED_LOOP") {
-        // using odom velocity as a current velocity (not recommended)
-        current_speed = speed;
-      } else {
-        // using last command velocity as a current velocity (recommended)
-        current_speed = last_command_velocity_;
-      }
+      // using last command velocity as a current velocity
+      const geometry_msgs::msg::Twist current_speed = last_command_velocity_;
       double dynamic_window_max_linear_vel, dynamic_window_min_linear_vel,
         dynamic_window_max_angular_vel, dynamic_window_min_angular_vel;
 

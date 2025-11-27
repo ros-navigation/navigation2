@@ -66,7 +66,6 @@ struct Parameters
   double transform_tolerance;
   bool stateful;
   bool use_dynamic_window;
-  std::string velocity_feedback;
 };
 
 /**

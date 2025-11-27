@@ -136,8 +136,6 @@ ParameterHandler::ParameterHandler(
       node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
       node, plugin_name_ + ".use_dynamic_window", rclcpp::ParameterValue(false));
-  declare_parameter_if_not_declared(
-      node, plugin_name_ + ".velocity_feedback", rclcpp::ParameterValue(std::string("OPEN_LOOP")));
 
   node->get_parameter(plugin_name_ + ".max_linear_vel", params_.max_linear_vel);
   params_.base_max_linear_vel = params_.max_linear_vel;
@@ -229,7 +227,6 @@ ParameterHandler::ParameterHandler(
     params_.use_collision_detection);
   node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
   node->get_parameter(plugin_name_ + ".use_dynamic_window", params_.use_dynamic_window);
-  node->get_parameter(plugin_name_ + ".velocity_feedback", params_.velocity_feedback);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
