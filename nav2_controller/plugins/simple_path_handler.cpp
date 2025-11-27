@@ -49,12 +49,12 @@ void SimplePathHandler::initialize(
     ".max_robot_pose_search_dist", getCostmapMaxExtent());
   prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
     2.0);
-  enforce_path_constraint_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_constraint",
-    false);
+  enforce_path_constraint_ = node->declare_or_get_parameter(plugin_name +
+    ".enforce_path_constraint", false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
     0.2);
-  inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_yaw_tolerance",
-    0.4);
+  inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
+    ".inversion_yaw_tolerance", 0.4);
   minimum_rotation_angle_ = node->declare_or_get_parameter(plugin_name + ".minimum_rotation_angle",
     0.785);
   if (max_robot_pose_search_dist_ < 0.0) {
@@ -222,7 +222,8 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
     if (isWithinInversionTolerances(global_pose)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + constraint_locale_);
       global_plan_up_to_constraint_ = global_plan_;
-      constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_, minimum_rotation_angle_);
+      constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
+          minimum_rotation_angle_);
     }
   }
 
