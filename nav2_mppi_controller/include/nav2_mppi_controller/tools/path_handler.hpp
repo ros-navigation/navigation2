@@ -129,9 +129,9 @@ protected:
   void prunePlan(nav_msgs::msg::Path & plan, const PathIterator end);
 
   /**
-    * @brief Check if the robot pose is within the set inversion tolerances
+    * @brief Check if the robot pose is within the set inversion or rotation tolerances
     * @param robot_pose Robot's current pose to check
-    * @return bool If the robot pose is within the set inversion tolerances
+    * @return bool If the robot pose is within the tolerances for the next path constraint
     */
   bool isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
 
@@ -148,8 +148,10 @@ protected:
   double prune_distance_{0};
   double transform_tolerance_{0};
   float inversion_xy_tolerance_{0.2};
-  float inversion_yaw_tolerance{0.4};
+  float inversion_yaw_tolerance_{0.4};
+  float minimum_rotation_angle_{0.785};
   bool enforce_path_inversion_{false};
+  bool enforce_path_rotation_{false};
   unsigned int inversion_locale_{0u};
 };
 }  // namespace mppi
