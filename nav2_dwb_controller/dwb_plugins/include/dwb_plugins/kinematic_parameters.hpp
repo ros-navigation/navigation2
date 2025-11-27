@@ -146,13 +146,12 @@ public:
   void deactivate();
 
   inline KinematicParameters getKinematics() {
-        KinematicParameters* ptr = kinematics_.load();
-        // Check for nullptr before dereferencing
-        if (ptr == nullptr) {
-          throw std::runtime_error("Can't call KinematicsHandler::getKinematics()!");
-        }
-        return *ptr;
-      }
+  KinematicParameters* ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    throw std::runtime_error("Can't call KinematicsHandler::getKinematics()!");
+  }
+  return *ptr;
+  }
 
   void setSpeedLimit(const double & speed_limit, const bool & percentage);
 
