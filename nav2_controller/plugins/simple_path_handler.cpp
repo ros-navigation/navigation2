@@ -49,20 +49,22 @@ void SimplePathHandler::initialize(
     ".max_robot_pose_search_dist", getCostmapMaxExtent());
   prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
     2.0);
-  enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_inversion",
+  enforce_path_constraint_ = node->declare_or_get_parameter(plugin_name + ".enforce_path_constraint",
     false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
     0.2);
-  inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
-    ".inversion_yaw_tolerance", 0.4);
+  inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_yaw_tolerance",
+    0.4);
+  minimum_rotation_angle_ = node->declare_or_get_parameter(plugin_name + ".minimum_rotation_angle",
+    0.785);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
       " every point on path for the closest value.");
     max_robot_pose_search_dist_ = std::numeric_limits<double>::max();
   }
-  if(enforce_path_inversion_) {
-    inversion_locale_ = 0u;
+  if (enforce_path_constraint_) {
+    constraint_locale_ = 0u;
   }
 
   // Add callback for dynamic parameters
@@ -87,7 +89,7 @@ bool SimplePathHandler::isWithinInversionTolerances(
   const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Keep full path if we are within tolerance of the inversion pose
-  const auto last_pose = global_plan_up_to_inversion_.poses.back();
+  const auto last_pose = global_plan_up_to_constraint_.poses.back();
   float distance = hypotf(
     robot_pose.pose.position.x - last_pose.pose.position.x,
     robot_pose.pose.position.y - last_pose.pose.position.y);
@@ -103,27 +105,27 @@ bool SimplePathHandler::isWithinInversionTolerances(
 void SimplePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
-  global_plan_up_to_inversion_ = global_plan_;
-  if(enforce_path_inversion_) {
-    inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+  global_plan_up_to_constraint_ = global_plan_;
+  if(enforce_path_constraint_) {
+    constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_);
   }
 }
 
 geometry_msgs::msg::PoseStamped SimplePathHandler::transformToGlobalPlanFrame(
   const geometry_msgs::msg::PoseStamped & pose)
 {
-  if (global_plan_up_to_inversion_.poses.empty()) {
+  if (global_plan_up_to_constraint_.poses.empty()) {
     throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
-  if (interpolate_curvature_after_goal_ && global_plan_up_to_inversion_.poses.size() == 1) {
+  if (interpolate_curvature_after_goal_ && global_plan_up_to_constraint_.poses.size() == 1) {
     throw nav2_core::InvalidPath("Received plan with length of one");
   }
 
   // let's get the pose of the robot in the frame of the plan
   geometry_msgs::msg::PoseStamped robot_pose;
   if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_,
-      global_plan_up_to_inversion_.header.frame_id,
+      global_plan_up_to_constraint_.header.frame_id,
       transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Unable to transform robot pose into global plan's frame");
@@ -138,7 +140,7 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    global_plan_up_to_inversion_.poses.begin(), global_plan_up_to_inversion_.poses.end(),
+    global_plan_up_to_constraint_.poses.begin(), global_plan_up_to_constraint_.poses.end(),
       max_robot_pose_search_dist_);
 
   // First find the closest pose on the path to the robot
@@ -146,7 +148,7 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
   // portion of the path
   auto closest_point =
     nav2_util::geometry_utils::min_by(
-    global_plan_up_to_inversion_.poses.begin(), closest_pose_upper_bound,
+    global_plan_up_to_constraint_.poses.begin(), closest_pose_upper_bound,
     [&global_pose](const geometry_msgs::msg::PoseStamped & ps) {
       return euclidean_distance(global_pose, ps);
     });
@@ -154,8 +156,8 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
   // Make sure we always have at least 2 points on the transformed plan and that we don't prune
   // the global plan below 2 points in order to have always enough point to interpolate the
   // end of path direction
-  if (global_plan_up_to_inversion_.poses.begin() != closest_pose_upper_bound &&
-    global_plan_up_to_inversion_.poses.size() > 1 &&
+  if (global_plan_up_to_constraint_.poses.begin() != closest_pose_upper_bound &&
+    global_plan_up_to_constraint_.poses.size() > 1 &&
     closest_point == std::prev(closest_pose_upper_bound))
   {
     closest_point = std::prev(std::prev(closest_pose_upper_bound));
@@ -163,7 +165,7 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
 
   auto pruned_plan_end =
     nav2_util::geometry_utils::first_after_integrated_distance(
-    closest_point, global_plan_up_to_inversion_.poses.end(), prune_distance_);
+    closest_point, global_plan_up_to_constraint_.poses.end(), prune_distance_);
 
   return {closest_point, pruned_plan_end};
 }
@@ -214,13 +216,13 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
 
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
-  prunePlan(global_plan_up_to_inversion_, closest_point);
+  prunePlan(global_plan_up_to_constraint_, closest_point);
 
-  if (enforce_path_inversion_ && inversion_locale_ != 0u) {
+  if (enforce_path_constraint_ && constraint_locale_ != 0u) {
     if (isWithinInversionTolerances(global_pose)) {
-      prunePlan(global_plan_, global_plan_.poses.begin() + inversion_locale_);
-      global_plan_up_to_inversion_ = global_plan_;
-      inversion_locale_ = nav2_util::removePosesAfterFirstInversion(global_plan_up_to_inversion_);
+      prunePlan(global_plan_, global_plan_.poses.begin() + constraint_locale_);
+      global_plan_up_to_constraint_ = global_plan_;
+      constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_, minimum_rotation_angle_);
     }
   }
 
@@ -269,10 +271,12 @@ SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         inversion_yaw_tolerance_ = parameter.as_double();
       } else if (param_name == "prune_distance") {
         prune_distance_ = parameter.as_double();
+      } else if (param_name == "minimum_rotation_angle") {
+        minimum_rotation_angle_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "enforce_path_inversion") {
-        enforce_path_inversion_ = parameter.as_bool();
+      if (param_name == "enforce_path_constraint") {
+        enforce_path_constraint_ = parameter.as_bool();
       }
     }
   }

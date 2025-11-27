@@ -472,11 +472,11 @@ TEST(UtilsTests, FindPathInversionTest)
     pose.pose.position.x = i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::findFirstPathInversion(path), 10u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 10u);
 
   // To short to process
   path.poses.erase(path.poses.begin(), path.poses.begin() + 7);
-  EXPECT_EQ(nav2_util::findFirstPathInversion(path), 3u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 3u);
 
   // Has inversion at index 10, so should return 11 for the first point afterwards
   // 0 1 2 3 4 5 6 7 8 9 10 **9** 8 7 6 5 4 3 2 1
@@ -491,7 +491,7 @@ TEST(UtilsTests, FindPathInversionTest)
     pose.pose.position.x = 10 - i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::findFirstPathInversion(path), 11u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 11u);
 
   // In place rotation
   path.poses.clear();
@@ -511,7 +511,7 @@ TEST(UtilsTests, FindPathInversionTest)
   path.poses.push_back(last_pose);
   last_pose.pose.position.x = 11.0;
   path.poses.push_back(last_pose);
-  EXPECT_EQ(nav2_util::findFirstPathInversion(path), 10u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 10u);
 }
 
 TEST(UtilsTests, RemovePosesAfterPathInversionTest)
@@ -523,11 +523,11 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
     pose.pose.position.x = i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::removePosesAfterFirstInversion(path), 0u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 0u);
 
   // try empty path
   path.poses.clear();
-  EXPECT_EQ(nav2_util::removePosesAfterFirstInversion(path), 0u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 0u);
 
   // cusping path
   for (unsigned int i = 0; i != 10; i++) {
@@ -540,7 +540,7 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
     pose.pose.position.x = 10 - i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::removePosesAfterFirstInversion(path), 11u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 11u);
   // Check to see if removed
   EXPECT_EQ(path.poses.size(), 11u);
   EXPECT_EQ(path.poses.back().pose.position.x, 10);

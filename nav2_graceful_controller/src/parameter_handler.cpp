@@ -29,7 +29,7 @@ using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
   const nav2::LifecycleNode::SharedPtr & node, std::string & plugin_name,
-  rclcpp::Logger & logger, const double costmap_size_x)
+  rclcpp::Logger & logger)
 : nav2_util::ParameterHandler<Parameters>(node, logger)
 {
   plugin_name_ = plugin_name;

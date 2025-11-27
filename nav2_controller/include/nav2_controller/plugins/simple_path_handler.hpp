@@ -107,11 +107,11 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
-  nav_msgs::msg::Path global_plan_up_to_inversion_;
-  unsigned int inversion_locale_{0u};
-  bool interpolate_curvature_after_goal_, enforce_path_inversion_;
+  nav_msgs::msg::Path global_plan_up_to_constraint_;
+  unsigned int constraint_locale_{0u};
+  bool interpolate_curvature_after_goal_, enforce_path_constraint_;
   double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_;
-  float inversion_xy_tolerance_, inversion_yaw_tolerance_;
+  float inversion_xy_tolerance_, inversion_yaw_tolerance_, minimum_rotation_angle_;
 
   /**
    * @brief Callback executed when a parameter change is detected

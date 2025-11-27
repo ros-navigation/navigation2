@@ -60,7 +60,7 @@ public:
 
   void setGlobalPlanUpToInversion(const nav_msgs::msg::Path & path)
   {
-    global_plan_up_to_inversion_ = path;
+    global_plan_up_to_constraint_ = path;
   }
 
   bool isWithinInversionTolerancesWrapper(const geometry_msgs::msg::PoseStamped & robot_pose)
@@ -70,7 +70,7 @@ public:
 
   nav_msgs::msg::Path & getInvertedPath()
   {
-    return global_plan_up_to_inversion_;
+    return global_plan_up_to_constraint_;
   }
 };
 
