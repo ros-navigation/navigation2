@@ -699,12 +699,7 @@ AmclNode::laserReceived(sensor_msgs::msg::LaserScan::ConstSharedPtr laser_scan)
   // If the robot has moved, update the filter
   if (lasers_update_[laser_index]) {
     updateFilter(laser_index, laser_scan, pose);
-    if(resample_interval_ == 0){
-        RCLCPP_WARN(
-          get_logger(), "You've set resample_interval to be zero,"
-          " this isn't allowed so it will be set to default value to 1.");
-        resample_interval_ = 1;
-    }
+
     // Resample the particles
     if (!(++resample_count_ % resample_interval_)) {
       pf_update_resample(pf_);

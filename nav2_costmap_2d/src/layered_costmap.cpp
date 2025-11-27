@@ -96,9 +96,7 @@ void LayeredCostmap::resizeMap(
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    if (*plugin) {
-      (*plugin)->matchSize();
-    }
+    (*plugin)->matchSize();
   }
 }
 
