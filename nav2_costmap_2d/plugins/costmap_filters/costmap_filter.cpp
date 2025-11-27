@@ -85,7 +85,8 @@ void CostmapFilter::onInitialize()
     // Costmap Filter enabling service
     enable_service_ = node->create_service<std_srvs::srv::SetBool>(
       name_ + "/toggle_filter",
-      std::bind(&CostmapFilter::enableCallback, this, std::placeholders::_1,
+      std::bind(
+        &CostmapFilter::enableCallback, this, std::placeholders::_1,
         std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
@@ -171,8 +172,8 @@ bool CostmapFilter::transformPose(
     try {
       tf_->transform(in, out, mask_frame, transform_tolerance_);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
+      RCLCPP_ERROR_THROTTLE(
+        logger_, *(clock_), 2000,
         "CostmapFilter: failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
         global_frame.c_str(), mask_frame.c_str(), ex.what());

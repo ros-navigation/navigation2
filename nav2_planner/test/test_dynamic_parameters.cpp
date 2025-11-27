@@ -62,26 +62,30 @@ TEST(WPTest, test_dynamic_parameters)
     planner->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("expected_planner_frequency", 100.0)});
+    {rclcpp::Parameter("expected_planner_frequency", 100.0),
+      rclcpp::Parameter("allow_partial_planning", true)});
 
   rclcpp::spin_until_future_complete(
     planner->get_node_base_interface(),
     results);
 
   EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), 100.0);
+  EXPECT_TRUE(planner->get_parameter("allow_partial_planning").as_bool());
 
   // test edge case for = 0
   results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("expected_planner_frequency", -1.0)});
+    {rclcpp::Parameter("expected_planner_frequency", -1.0),
+      rclcpp::Parameter("allow_partial_planning", false)});
 
   rclcpp::spin_until_future_complete(
     planner->get_node_base_interface(),
     results);
 
   EXPECT_EQ(planner->get_parameter("expected_planner_frequency").as_double(), -1.0);
+  EXPECT_FALSE(planner->get_parameter("allow_partial_planning").as_bool());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

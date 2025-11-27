@@ -48,9 +48,9 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
 
-   /**
-   * @brief Constructor: Initializes empty goal state. sets and coordinate lists.
-   */
+  /**
+  * @brief Constructor: Initializes empty goal state. sets and coordinate lists.
+  */
   GoalManager()
   : _goals_set(NodeSet()),
     _goals_state(GoalStateVector()),
@@ -134,7 +134,7 @@ public:
     const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
     const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
 
-    auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
+    auto getIndexFromPoint = [&size_x](const Coordinates & point) {
         unsigned int index = 0;
 
         const auto mx = static_cast<unsigned int>(point.x);
@@ -197,8 +197,9 @@ public:
   {
     // Make sure that there was a  goal clear before this was run
     if (!_goals_set.empty() || !_goals_coordinate.empty()) {
-      throw std::runtime_error("Goal set should be cleared before calling "
-        "removeinvalidgoals");
+      throw std::runtime_error(
+              "Goal set should be cleared before calling "
+              "removeinvalidgoals");
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||

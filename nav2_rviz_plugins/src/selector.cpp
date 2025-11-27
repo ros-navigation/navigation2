@@ -104,6 +104,9 @@ Selector::Selector(QWidget * parent)
 
 Selector::~Selector()
 {
+  if (load_plugins_thread_.joinable()) {
+    load_plugins_thread_.join();
+  }
 }
 
 // Publish the selected controller or planner

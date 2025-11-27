@@ -45,9 +45,9 @@ PathSearchResult distance_from_path(
 
   if (start_index >= path.poses.size()) {
     throw std::runtime_error(
-      "Invalid operation: requested start index (" + std::to_string(start_index) +
-      ") is greater than or equal to path size (" + std::to_string(path.poses.size()) +
-      "). Application is not properly managing state.");
+            "Invalid operation: requested start index (" + std::to_string(start_index) +
+            ") is greater than or equal to path size (" + std::to_string(path.poses.size()) +
+            "). Application is not properly managing state.");
   }
 
   double distance_traversed = 0.0;

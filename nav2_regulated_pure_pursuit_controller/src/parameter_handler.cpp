@@ -28,13 +28,12 @@ using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
-  nav2::LifecycleNode::SharedPtr node,
+  const nav2::LifecycleNode::SharedPtr & node,
   std::string & plugin_name, rclcpp::Logger & logger,
   const double costmap_size_x)
+: nav2_util::ParameterHandler<Parameters>(node, logger)
 {
-  node_ = node;
   plugin_name_ = plugin_name;
-  logger_ = logger;
 
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
@@ -100,7 +99,7 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
+    node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
   params_.base_desired_linear_vel = params_.desired_linear_vel;
@@ -184,42 +183,12 @@ ParameterHandler::ParameterHandler(
   }
 }
 
-void ParameterHandler::activate()
-{
-  auto node = node_.lock();
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-}
-
-void ParameterHandler::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
-}
-
-ParameterHandler::~ParameterHandler()
-{
-}
-
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -230,14 +199,14 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         parameter.as_double() <= 0.0)
       {
         RCLCPP_WARN(
-        logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
-        "it should be >0. Ignoring parameter update.");
+          logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
+          "it should be >0. Ignoring parameter update.");
         result.successful = false;
       } else if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
@@ -256,7 +225,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
 
 void
 ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 
@@ -304,10 +273,11 @@ ParameterHandler::updateParametersCallback(
         params_.cancel_deceleration = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotate_to_heading_min_angle") {
         params_.rotate_to_heading_min_angle = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".approach_velocity_scaling_dist") {
+        params_.approach_velocity_scaling_dist = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
-        params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
         params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_fixed_curvature_lookahead") {

@@ -29,6 +29,7 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>nav2_costmap_2d</test_depend>
   <test_depend>rclcpp_lifecycle</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

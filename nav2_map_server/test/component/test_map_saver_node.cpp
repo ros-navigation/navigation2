@@ -212,7 +212,7 @@ TEST_F(MapSaverTestFixture, SaveMapInvalidParameters)
   ASSERT_EQ(resp->result, false);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

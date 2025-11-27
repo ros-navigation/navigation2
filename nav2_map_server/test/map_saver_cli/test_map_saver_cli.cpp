@@ -18,6 +18,7 @@
 #include <memory>
 #include <utility>
 
+#include "nav2_ros_common/qos_profiles.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
@@ -34,7 +35,7 @@ TEST(MapSaverCLI, CLITest)
 
   auto publisher = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     "/map",
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    nav2::qos::LatchedPublisherQoS());
 
   auto msg = std::make_unique<nav_msgs::msg::OccupancyGrid>();
   msg->header.frame_id = "map";

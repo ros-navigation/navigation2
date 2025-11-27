@@ -73,7 +73,7 @@ TEST(ControllerServerTest, test_dynamic_parameters)
   EXPECT_EQ(params_->search_window, 10.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

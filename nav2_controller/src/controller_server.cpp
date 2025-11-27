@@ -101,6 +101,9 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
   for (size_t i = 0; i != params_->progress_checker_ids.size(); i++) {
     progress_checker_ids_concat_ += params_->progress_checker_ids[i] + std::string(" ");
   }
+  if (progress_checker_ids_concat_.empty()) {
+    progress_checker_ids_concat_ = "(none)";
+  }
 
   RCLCPP_INFO(
     get_logger(),
@@ -368,6 +371,22 @@ bool ControllerServer::findProgressCheckerId(
   const std::string & c_name,
   std::string & current_progress_checker)
 {
+  if (progress_checkers_.size() == 0) {
+    if (c_name.empty()) {
+      RCLCPP_DEBUG(
+        get_logger(),
+        "No progress checker configured and none requested. Progress checking will be bypassed.");
+      current_progress_checker = "";
+      return true;
+    } else {
+      RCLCPP_ERROR(
+        get_logger(), "FollowPath called with progress_checker name %s in parameter"
+        " 'current_progress_checker', but no progress checkers are configured.",
+        c_name.c_str());
+      return false;
+    }
+  }
+
   if (progress_checkers_.find(c_name) == progress_checkers_.end()) {
     if (progress_checkers_.size() == 1 && c_name.empty()) {
       RCLCPP_WARN_ONCE(
@@ -461,7 +480,9 @@ void ControllerServer::computeControl()
     }
 
     setPlannerPath(goal->path);
-    progress_checkers_[current_progress_checker_]->reset();
+    if (!current_progress_checker_.empty()) {
+      progress_checkers_[current_progress_checker_]->reset();
+    }
 
     last_valid_cmd_time_ = now();
     rclcpp::WallRate loop_rate(params_->controller_frequency);
@@ -510,6 +531,7 @@ void ControllerServer::computeControl()
           get_logger(),
           "Control loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz.",
           params_->controller_frequency, 1 / cycle_duration.seconds());
+        loop_rate.reset();
       }
     }
   } catch (nav2_core::InvalidController & e) {
@@ -625,8 +647,10 @@ void ControllerServer::computeAndPublishVelocity()
     throw nav2_core::ControllerTFError("Failed to obtain robot pose");
   }
 
-  if (!progress_checkers_[current_progress_checker_]->check(pose)) {
-    throw nav2_core::FailedToMakeProgress("Failed to make progress");
+  if (!current_progress_checker_.empty()) {
+    if (!progress_checkers_[current_progress_checker_]->check(pose)) {
+      throw nav2_core::FailedToMakeProgress("Failed to make progress");
+    }
   }
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
@@ -683,8 +707,8 @@ void ControllerServer::computeAndPublishVelocity()
   end_pose_.header.stamp = pose.header.stamp;
 
   if (!nav2_util::transformPoseInTargetFrame(
-        end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-        costmap_ros_->getGlobalFrameID(), transform_tolerance_))
+      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
   {
     throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
   }
@@ -696,8 +720,8 @@ void ControllerServer::computeAndPublishVelocity()
     // Transform robot pose to path frame for path tracking calculations
     geometry_msgs::msg::PoseStamped robot_pose_in_path_frame;
     if (!nav2_util::transformPoseInTargetFrame(
-      pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
-            current_path_.header.frame_id, transform_tolerance_))
+        pose, robot_pose_in_path_frame, *costmap_ros_->getTfBuffer(),
+        current_path_.header.frame_id, transform_tolerance_))
     {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
@@ -764,7 +788,9 @@ void ControllerServer::updateGlobalPath()
           get_logger(), "Change of progress checker %s requested, resetting it",
           goal->progress_checker_id.c_str());
         current_progress_checker_ = current_progress_checker;
-        progress_checkers_[current_progress_checker_]->reset();
+        if (!current_progress_checker_.empty()) {
+          progress_checkers_[current_progress_checker_]->reset();
+        }
       }
     } else {
       std::shared_ptr<Action::Result> result = std::make_shared<Action::Result>();

@@ -215,7 +215,7 @@ TEST(collision_footprint, test_point_and_line_cost)
   delete costmap_;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

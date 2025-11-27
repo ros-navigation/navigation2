@@ -175,7 +175,7 @@ public:
     const std::shared_ptr<nav2_costmap_2d::ObservationBuffer> & buffer);
 
   // for testing purposes
-  void addStaticObservation(nav2_costmap_2d::Observation & obs, bool marking, bool clearing);
+  void addStaticObservation(nav2_costmap_2d::Observation obs, bool marking, bool clearing);
   void clearStaticObservations(bool marking, bool clearing);
 
 protected:
@@ -185,7 +185,7 @@ protected:
    * @return True if all the observation buffers are current, false otherwise
    */
   bool getMarkingObservations(
-    std::vector<nav2_costmap_2d::Observation> & marking_observations) const;
+    std::vector<nav2_costmap_2d::Observation::ConstSharedPtr> & marking_observations) const;
 
   /**
    * @brief  Get the observations used to clear space
@@ -193,7 +193,7 @@ protected:
    * @return True if all the observation buffers are current, false otherwise
    */
   bool getClearingObservations(
-    std::vector<nav2_costmap_2d::Observation> & clearing_observations) const;
+    std::vector<nav2_costmap_2d::Observation::ConstSharedPtr> & clearing_observations) const;
 
   /**
    * @brief  Clear freespace based on one observation
@@ -256,12 +256,13 @@ protected:
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   // Used only for testing purposes
-  std::vector<nav2_costmap_2d::Observation> static_clearing_observations_;
-  std::vector<nav2_costmap_2d::Observation> static_marking_observations_;
+  std::vector<nav2_costmap_2d::Observation::ConstSharedPtr> static_clearing_observations_;
+  std::vector<nav2_costmap_2d::Observation::ConstSharedPtr> static_marking_observations_;
 
   bool rolling_window_;
   bool was_reset_;
   nav2_costmap_2d::CombinationMethod combination_method_;
+  bool allow_parameter_qos_overrides_;
 };
 
 }  // namespace nav2_costmap_2d

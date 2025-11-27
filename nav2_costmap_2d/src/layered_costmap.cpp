@@ -44,6 +44,8 @@
 #include <vector>
 #include <limits>
 
+#include <rclcpp/clock.hpp>
+
 #include "nav2_costmap_2d/footprint.hpp"
 
 
@@ -146,9 +148,11 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   }
 
   if (isOutofBounds(robot_x, robot_y)) {
-    RCLCPP_WARN(
+    rclcpp::Clock clock{RCL_ROS_TIME};
+    RCLCPP_WARN_THROTTLE(
       rclcpp::get_logger("nav2_costmap_2d"),
-      "Robot is out of bounds of the costmap!");
+      clock, 5000,
+      "Robot is out of bounds of the costmap");
   }
 
   if (plugins_.size() == 0 && filters_.size() == 0) {
