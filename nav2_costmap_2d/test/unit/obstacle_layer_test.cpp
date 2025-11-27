@@ -135,7 +135,7 @@ public:
  */
 TEST_F(ObstacleLayerTest, testPointWithinCellMaxRange)
 {
-  // Add observation: point at (0.5, 0.0)
+  // Add observation: point at (0.55, 0.0)
   // obstacle_max_range = 1.0m
   addObservation(obstacle_layer_, 0.55, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 100.0, 0.0, 1.0, 0.0);
@@ -153,7 +153,7 @@ TEST_F(ObstacleLayerTest, testPointWithinCellMaxRange)
  */
 TEST_F(ObstacleLayerTest, testPointBeyondCellMaxRange)
 {
-  // Add observation: point at (1.5, 0.0)
+  // Add observation: point at (1.55, 0.0)
   // obstacle_max_range = 1.0m
   addObservation(obstacle_layer_, 1.55, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 100.0, 0.0, 1.0, 0.0);
@@ -171,7 +171,7 @@ TEST_F(ObstacleLayerTest, testPointBeyondCellMaxRange)
  */
 TEST_F(ObstacleLayerTest, testPointWithinCellMinRange)
 {
-  // Add observation: point at (0.3, 0.0)
+  // Add observation: point at (0.35, 0.0)
   // obstacle_min_range = 0.5m, obstacle_max_range = 10.0m
   addObservation(obstacle_layer_, 0.35, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 100.0, 0.0, 10.0, 0.5);
@@ -189,15 +189,35 @@ TEST_F(ObstacleLayerTest, testPointWithinCellMinRange)
  */
 TEST_F(ObstacleLayerTest, testDiagonalDistanceWithinRange)
 {
-  // Add observation: point at (0.7, 0.7)
+  // Add observation: point at (0.701, 0.701)
   // obstacle_max_range = 1.0m
-  // Cell distance: max(|7-0|, |7-0|) = 7 cells < 10 cells, so should be marked
-  addObservation(obstacle_layer_, 0.75, 0.75, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 100.0, 0.0, 1.0, 0.0);
+  // obstacle range = sqrt(7^2 + 7^2) = 9.9 cells
+  addObservation(obstacle_layer_, 0.701, 0.701, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
+                 true, true, 100.0, 0.0, 1.0, 0.0);
+  update();
+  unsigned int mx, my;
+  obstacle_layer_->worldToMap(0.701, 0.701, mx, my);
+  unsigned char cost = obstacle_layer_->getCost(mx, my);
+
+  ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
+}
+
+/**
+ * Test that point beyond obstacle max range but in same cell as max range is
+ * marked as obstacle.
+ */
+TEST_F(ObstacleLayerTest, testPointBeyondRangeButInSameCellAsMaxRange) {
+  // Observation at (0.79, 0.0)
+  // obstacle_max_range = 0.72m
+  // obstacle range = 0.79m, > 0.72m but at same cell distance as max range so
+  // should be marked as obstacle, since it could be cleared by raytracing with
+  // the same max range.
+  addObservation(obstacle_layer_, 0.79, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
+                 true, true, 100.0, 0.0, 0.72, 0.0);
   update();
 
   unsigned int mx, my;
-  obstacle_layer_->worldToMap(0.75, 0.75, mx, my);
+  obstacle_layer_->worldToMap(0.79, 0.0, mx, my);
   unsigned char cost = obstacle_layer_->getCost(mx, my);
 
   ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -208,15 +228,16 @@ TEST_F(ObstacleLayerTest, testDiagonalDistanceWithinRange)
  */
 TEST_F(ObstacleLayerTest, testDiagonalDistanceBeyondRange)
 {
-  // Add observation: point at (1.2, 1.2)
-  // obstacle_max_range = 1.0m
-  // Cell distance: max(|12-0|, |12-0|) = 12 cells > 10 cells, so should NOT be marked
-  addObservation(obstacle_layer_, 1.25, 1.25, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 100.0, 0.0, 1.0, 0.0);
+  // Add observation: point at (1.0, 1.0)
+  // obstacle_max_range = 1.2m
+  // Distance: sqrt(10^2 + 10^2) = 14.14 cells, 14 cells > 12 cells, so should
+  // NOT be marked
+  addObservation(obstacle_layer_, 1.0, 1.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
+                 true, true, 100.0, 0.0, 1.2, 0.0);
   update();
 
   unsigned int mx, my;
-  obstacle_layer_->worldToMap(1.25, 1.25, mx, my);
+  obstacle_layer_->worldToMap(1.0, 1.0, mx, my);
   unsigned char cost = obstacle_layer_->getCost(mx, my);
 
   ASSERT_NE(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -232,7 +253,6 @@ TEST_F(ObstacleLayerTest, testPointAtCellMaxRangeBoundary)
   addObservation(obstacle_layer_, 1.0, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 100.0, 0.0, 1.0, 0.0);
   update();
-
   unsigned int mx, my;
   obstacle_layer_->worldToMap(1.0, 0.0, mx, my);
   unsigned char cost = obstacle_layer_->getCost(mx, my);
@@ -259,37 +279,18 @@ TEST_F(ObstacleLayerTest, testPointAtCellMinRangeBoundary)
 }
 
 /**
- * Test asymmetric distance: point with different delta_x and delta_y
- */
-TEST_F(ObstacleLayerTest, testAsymmetricDistance)
-{
-  // Add observation: point at (0.8, 0.3)
-  // obstacle_max_range = 1.0m
-  // Cell distance: max(|8-0|, |3-0|) = max(8, 3) = 8 cells < 10 cells, so should be marked
-  addObservation(obstacle_layer_, 0.85, 0.55, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 100.0, 0.0, 1.0, 0.0);
-  update();
-
-  unsigned int mx, my;
-  obstacle_layer_->worldToMap(0.85, 0.55, mx, my);
-  unsigned char cost = obstacle_layer_->getCost(mx, my);
-
-  ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
-}
-
-/**
  * Test with different resolution
  */
 TEST_F(ObstacleLayerFineResolutionTest, testDifferentResolution)
 {
-  // Add observation: point at (0.5, 0.0)
-  // obstacle_max_range = 0.5m = 10 cells at 0.05m resolution
-  addObservation(obstacle_layer_, 0.52, 0.32, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 100.0, 0.0, 0.5, 0.0);
+  // Add observation: point at (0.52, 0.28)
+  // Resolution: 0.05m/cell
+  // Cell index: (10, 5)
+  addObservation(obstacle_layer_, 0.52, 0.28, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
+                 true, true, 100.0, 0.0, 1.0, 0.0);
   update();
 
-  // x = 0.5 / 0.05 = 10; y = 0.3 / 0.05 = 6;
-  unsigned char cost = obstacle_layer_->getCost(10, 6);
+  unsigned char cost = obstacle_layer_->getCost(10, 5);
   ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
@@ -298,16 +299,15 @@ TEST_F(ObstacleLayerFineResolutionTest, testDifferentResolution)
  */
 TEST_F(ObstacleLayerTest, testOriginOffset)
 {
-  // Add observation: point at (5.5, 2.5) with origin at (5.0, 2.0)
+  // Add observation: point at (1.75, 1.85) with origin at (0.5, 1.5)
   // obstacle_max_range = 2.0m
   addObservation(obstacle_layer_, 1.75, 1.85, MAX_Z / 2, 0.5, 1.5, MAX_Z / 2,
-    true, true, 100.0, 0.0, 2.0, 0.0);
+                 true, true, 100.0, 0.0, 2.0, 0.0);
   update();
 
   unsigned int mx, my;
   obstacle_layer_->worldToMap(1.75, 1.85, mx, my);
   unsigned char cost = obstacle_layer_->getCost(mx, my);
-
   ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
 }
 
@@ -325,14 +325,13 @@ TEST_F(ObstacleLayerTest, testRaytraceDoesNotClearEndpointCell)
     obstacle_layer_->setCost(x, my_end, nav2_costmap_2d::LETHAL_OBSTACLE);
   }
 
-  // Add observation at (1.01, 0.0)
+  // Add observation at (1.05, 0.0)
   // This is beyond the obstacle_max_range of 0.5m so should not be marked.
   // raytrace_max_range = 2.0m
   // So raytrace should clear cells up to but NOT including the endpoint
   addObservation(obstacle_layer_, 1.05, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 2.0, 0.0, 0.5, 0.0);
   update();
-
   // The endpoint cell should still be LETHAL_OBSTACLE (not cleared)
   unsigned char cost_endpoint = obstacle_layer_->getCost(mx_end, my_end);
   ASSERT_EQ(cost_endpoint, nav2_costmap_2d::LETHAL_OBSTACLE);
@@ -345,7 +344,8 @@ TEST_F(ObstacleLayerTest, testRaytraceDoesNotClearEndpointCell)
 }
 
 /**
- * Test that raytracing clears cells along the path and the endpoint is marked as LETHAL_OBSTACLE
+ * Test that raytracing clears cells along the path and the endpoint is marked
+ * as obstacle.
  */
 TEST_F(ObstacleLayerTest, testRaytraceClearsPathAndMarksEndpoint)
 {
@@ -388,7 +388,7 @@ TEST_F(ObstacleLayerTest, testDiagonalRaytraceDoesNotClearEndpoint)
   obstacle_layer_->worldToMap(0.45, 0.45, mx_mid, my_mid);
   obstacle_layer_->setCost(mx_mid, my_mid, nav2_costmap_2d::LETHAL_OBSTACLE);
 
-  // Add observation at (0.7, 0.7)
+  // Add observation at (0.75, 0.75)
   addObservation(obstacle_layer_, 0.75, 0.75, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
     true, true, 2.0, 0.0, 100.0, 0.0);
   update();
@@ -400,6 +400,31 @@ TEST_F(ObstacleLayerTest, testDiagonalRaytraceDoesNotClearEndpoint)
   // The intermediate cell should be cleared
   unsigned char cost_mid = obstacle_layer_->getCost(mx_mid, my_mid);
   ASSERT_EQ(cost_mid, nav2_costmap_2d::FREE_SPACE);
+}
+
+/**
+ * Test diagonal clearing up to max range
+ */
+TEST_F(ObstacleLayerTest, testClearDiagonalDistance) {
+  // Mark all points as obstacles
+  for (unsigned int x = 0; x < obstacle_layer_->getSizeInCellsX(); x++) {
+    for (unsigned int y = 0; y < obstacle_layer_->getSizeInCellsY(); y++) {
+      obstacle_layer_->setCost(x, y, nav2_costmap_2d::LETHAL_OBSTACLE);
+    }
+  }
+  // Add observation at (1.55, 1.55) with max clearing range of 1.0m
+  // This should clear the diagonal distance up to range of 1.0m, cells (0, 0)
+  // to (7, 7)
+  addObservation(obstacle_layer_, 1.55, 1.55, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
+                 true, true, 1.0, 0.0, 100.0, 0.0);
+  update();
+
+  for (unsigned int i = 0; i < 8; i++) {
+    ASSERT_EQ(obstacle_layer_->getCost(i, i), nav2_costmap_2d::FREE_SPACE);
+  }
+  ASSERT_EQ(countValues(*obstacle_layer_, nav2_costmap_2d::FREE_SPACE), 8);
+  ASSERT_EQ(countValues(*obstacle_layer_, nav2_costmap_2d::LETHAL_OBSTACLE),
+            20 * 20 - 8);
 }
 
 /**
