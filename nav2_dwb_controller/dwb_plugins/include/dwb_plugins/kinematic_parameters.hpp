@@ -147,11 +147,11 @@ public:
 
   inline KinematicParameters getKinematics()
   {
-  KinematicParameters * ptr = kinematics_.load();
-  if (ptr == nullptr) {
+    KinematicParameters * ptr = kinematics_.load();
+    if (ptr == nullptr) {
     throw std::runtime_error("Can't call KinematicsHandler::getKinematics().");
-  }
-  return *ptr;
+    }
+    return *ptr;
   }
 
   void setSpeedLimit(const double & speed_limit, const bool & percentage);
