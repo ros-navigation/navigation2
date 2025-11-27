@@ -33,6 +33,7 @@
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
+#include "nav2_regulated_pure_pursuit_controller/dynamic_window_pure_pursuit_functions.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -80,57 +81,6 @@ public:
    * @brief Deactivate controller state machine
    */
   void deactivate() override;
-
-  /**
-   * @brief Compute the dynamic window (feasible velocity bounds) based on the current speed and the given velocity and acceleration constraints.
-   * @param current_speed  Current linear and angular velocity of the robot
-   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
-   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
-   * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
-   * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
-   */
-  std::tuple<double, double, double, double> computeDynamicWindow(
-    const geometry_msgs::msg::Twist & current_speed,
-    const double & max_linear_vel,
-    const double & min_linear_vel,
-    const double & max_angular_vel,
-    const double & min_angular_vel,
-    const double & max_linear_accel,
-    const double & max_linear_decel,
-    const double & max_angular_accel,
-    const double & max_angular_decel
-  );
-
-  /**
-   * @brief Apply regulated linear velocity to the dynamic window
-   * @param regulated_linear_vel   Regulated linear velocity
-   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
-   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
-   */
-  std::tuple<double, double> applyRegulationToDynamicWindow(
-    const double & regulated_linear_vel,
-    const double & dynamic_window_max_linear_vel,
-    const double & dynamic_window_min_linear_vel);
-
-  /**
-   * @brief Compute the optimal velocity to follow the path within the dynamic window
-   * @param dynamic_window_max_linear_vel  Computed upper bound of the linear velocity within the dynamic window
-   * @param dynamic_window_min_linear_vel  Computed lower bound of the linear velocity within the dynamic window
-   * @param dynamic_window_max_angular_vel Computed upper bound of the angular velocity within the dynamic window
-   * @param dynamic_window_min_angular_vel Computed lower bound of the angular velocity within the dynamic window
-   * @param curvature      Curvature of the path to follow
-   * @param sign           Velocity sign (forward or backward)
-   * @param optimal_linear_vel   Optimal linear velocity to follow the path under velocity and acceleration constraints
-   * @param optimal_angular_vel   Optimal angular velocity to follow the path under velocity and acceleration constraints
-   */
-  std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
-    const double & dynamic_window_max_linear_vel,
-    const double & dynamic_window_min_linear_vel,
-    const double & dynamic_window_max_angular_vel,
-    const double & dynamic_window_min_angular_vel,
-    const double & curvature,
-    const double & sign
-  );
 
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information

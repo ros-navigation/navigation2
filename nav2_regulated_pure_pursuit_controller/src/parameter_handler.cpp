@@ -39,9 +39,10 @@ ParameterHandler::ParameterHandler(
   // Declare max_linear_vel with backward compatibility
   const std::string old_name = plugin_name_ + ".desired_linear_vel";
   const std::string new_name = plugin_name_ + ".max_linear_vel";
-  node->declare_parameter<double>(old_name,
-      std::numeric_limits<double>::quiet_NaN());
-  double old_val = std::numeric_limits<double>::quiet_NaN();
+  const auto nan_val = std::numeric_limits<double>::quiet_NaN();
+  declare_parameter_if_not_declared(
+    node, old_name, rclcpp::ParameterValue(nan_val));
+  double old_val = nan_val;
   if (node->get_parameter(old_name, old_val) &&
     !std::isnan(old_val))
   {

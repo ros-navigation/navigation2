@@ -1,6 +1,7 @@
 # tests for regulated PP
 nav2_add_gtest(test_regulated_pp
   test_regulated_pp.cpp
+  test_dwpp_functions.cpp
   path_utils/path_utils.cpp
 )
 target_link_libraries(test_regulated_pp
