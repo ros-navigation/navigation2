@@ -176,7 +176,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
-  blackboard_->template set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>(
