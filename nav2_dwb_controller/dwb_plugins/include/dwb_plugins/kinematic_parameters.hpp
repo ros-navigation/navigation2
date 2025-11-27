@@ -147,10 +147,8 @@ public:
 
   inline KinematicParameters getKinematics() {
         KinematicParameters* ptr = kinematics_.load();
-        // Check for nullptr before dereferencing
         if (ptr == nullptr) {
-          throw std::runtime_error(
-            "KinematicsHandler::getKinematics() called before kinematics_ is initialized");
+          throw std::runtime_error("KinematicsHandler::getKinematics() called before kinematics_ is initialized");
         }
         return *ptr;
       }
