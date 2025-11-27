@@ -71,3 +71,9 @@ nav2_add_gtest(observation_buffer_test observation_buffer_test.cpp)
 target_link_libraries(observation_buffer_test
   nav2_costmap_2d_core
 )
+
+nav2_add_gtest(predictive_inflation_layer_test test_predictive_inflation_layer.cpp)
+target_link_libraries(predictive_inflation_layer_test
+  nav2_costmap_2d_core
+  layers
+)
