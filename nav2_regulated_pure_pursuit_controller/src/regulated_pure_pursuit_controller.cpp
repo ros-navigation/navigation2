@@ -306,8 +306,8 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
         dynamic_window);
 
       // compute optimal velocity within Dynamic Window
-      std::tie(linear_vel,
-          angular_vel) = dynamic_window_pure_pursuit::computeOptimalVelocityWithinDynamicWindow(
+      std::tie(linear_vel, angular_vel) =
+        dynamic_window_pure_pursuit::computeOptimalVelocityWithinDynamicWindow(
         dynamic_window,
         regulation_curvature,
         x_vel_sign);

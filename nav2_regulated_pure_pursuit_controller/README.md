@@ -107,7 +107,6 @@ A link to the paper and its citation will be provided once it becomes publicly a
 | `interpolate_curvature_after_goal` | Needs use_fixed_curvature_lookahead to be true. Interpolate a carrot after the goal dedicated to the curvature calculation (to avoid oscillations at the end of the path) |
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
 | `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
-| `velocity_feedback` | How the current velocity is obtained during dynamic window computation. "OPEN_LOOP" uses the last commanded velocity (recommended). "CLOSED_LOOP" uses odometry velocity (may hinder proper acceleration/deceleration) |
 
 Example fully-described XML with default parameter values:
 
@@ -168,7 +167,6 @@ controller_server:
       inflation_cost_scaling_factor: 3.0
       min_distance_to_obstacle: 0.0
       use_dynamic_window: false
-      velocity_feedback: "OPEN_LOOP"
 ```
 
 ## Topics
