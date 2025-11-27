@@ -103,8 +103,9 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
   // Set a valid path with a malformed file
   node->declare_parameter(
     "dock_database",
-    rclcpp::ParameterValue(ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_bad_conversion_file.yaml"));
+    rclcpp::ParameterValue(
+      ament_index_cpp::get_package_share_directory("opennav_docking") +
+      "/dock_files/test_dock_bad_conversion_file.yaml"));
 
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
@@ -203,7 +204,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
 
 }  // namespace opennav_docking
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

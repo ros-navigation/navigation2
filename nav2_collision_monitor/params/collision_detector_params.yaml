@@ -27,3 +27,9 @@ collision_detector:
       min_height: 0.1
       max_height: 0.5
       enabled: True
+    # costmap:
+    #   type: "costmap"
+    #   topic: "local_costmap/costmap"
+    #   cost_threshold: 254
+    #   treat_unknown_as_obstacle: True
+    #   enabled: True

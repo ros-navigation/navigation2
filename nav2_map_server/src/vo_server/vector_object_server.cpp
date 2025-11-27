@@ -145,9 +145,11 @@ bool VectorObjectServer::obtainParams()
   map_topic_ = nav2::declare_or_get_parameter(node, "map_topic", std::string{"vo_map"});
   global_frame_id_ = nav2::declare_or_get_parameter(node, "global_frame_id", std::string{"map"});
   resolution_ = nav2::declare_or_get_parameter(node, "resolution", 0.05);
-  default_value_ = nav2::declare_or_get_parameter(node, "default_value",
-      static_cast<int>(nav2_util::OCC_GRID_UNKNOWN));
-  overlay_type_ = static_cast<OverlayType>(nav2::declare_or_get_parameter(node, "overlay_type",
+  default_value_ = nav2::declare_or_get_parameter(
+    node, "default_value",
+    static_cast<int>(nav2_util::OCC_GRID_UNKNOWN));
+  overlay_type_ = static_cast<OverlayType>(nav2::declare_or_get_parameter(
+      node, "overlay_type",
       static_cast<int>(OverlayType::OVERLAY_SEQ)));
   update_frequency_ = nav2::declare_or_get_parameter(node, "update_frequency", 1.0);
   transform_tolerance_ = nav2::declare_or_get_parameter(node, "transform_tolerance", 0.1);
@@ -177,7 +179,8 @@ bool VectorObjectServer::obtainParams()
       }
       shapes_.push_back(circle);
     } else {
-      RCLCPP_ERROR(get_logger(),
+      RCLCPP_ERROR(
+        get_logger(),
         "Please specify the correct type for shape %s. Supported types are 'polygon' and 'circle'",
         shape_name.c_str());
       return false;

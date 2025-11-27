@@ -1,5 +1,5 @@
 # Test utils
-ament_add_gtest(test_utils
+nav2_add_gtest(test_utils
   test_utils.cpp
 )
 target_link_libraries(test_utils
@@ -18,7 +18,7 @@ target_include_directories(test_utils
 )
 
 # Test dock database
-ament_add_gtest(test_dock_database
+nav2_add_gtest(test_dock_database
   test_dock_database.cpp
 )
 target_link_libraries(test_dock_database
@@ -35,7 +35,7 @@ target_include_directories(test_dock_database
 )
 
 # Test navigator
-ament_add_gtest(test_navigator
+nav2_add_gtest(test_navigator
   test_navigator.cpp
 )
 target_link_libraries(test_navigator
@@ -55,7 +55,7 @@ target_include_directories(test_navigator
 )
 
 # Test Controller
-ament_add_gtest(test_controller
+nav2_add_gtest(test_controller
   test_controller.cpp
 )
 target_link_libraries(test_controller
@@ -72,7 +72,7 @@ target_include_directories(test_controller
 )
 
 # Test Simple Dock
-ament_add_gtest(test_simple_charging_dock
+nav2_add_gtest(test_simple_charging_dock
   test_simple_charging_dock.cpp
 )
 target_link_libraries(test_simple_charging_dock
@@ -90,7 +90,7 @@ target_include_directories(test_simple_charging_dock
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-ament_add_gtest(test_simple_non_charging_dock
+nav2_add_gtest(test_simple_non_charging_dock
   test_simple_non_charging_dock.cpp
 )
 target_link_libraries(test_simple_non_charging_dock
@@ -110,7 +110,7 @@ target_include_directories(test_simple_non_charging_dock
 )
 
 # Test Pose Filter (unit)
-ament_add_gtest(test_pose_filter
+nav2_add_gtest(test_pose_filter
   test_pose_filter.cpp
 )
 target_link_libraries(test_pose_filter
@@ -152,7 +152,7 @@ target_include_directories(test_dock
 ament_export_libraries(test_dock)
 
 # Test docking server (unit)
-ament_add_gtest(test_docking_server_unit
+nav2_add_gtest(test_docking_server_unit
   test_docking_server_unit.cpp
 )
 target_link_libraries(test_docking_server_unit
@@ -170,25 +170,25 @@ target_include_directories(test_docking_server_unit
 )
 
 # Test docking server (smoke)
-ament_add_pytest_test(test_docking_server_with_charging_dock test_docking_server.py
+nav2_add_pytest_test(test_docking_server_with_charging_dock test_docking_server.py
   ENV
   NON_CHARGING_DOCK=False
   BACKWARD=False
 )
 
-ament_add_pytest_test(test_docking_server_with_non_charging_dock test_docking_server.py
+nav2_add_pytest_test(test_docking_server_with_non_charging_dock test_docking_server.py
   ENV
   NON_CHARGING_DOCK=True
   BACKWARD=False
 )
 
-ament_add_pytest_test(test_docking_server_backward test_docking_server.py
+nav2_add_pytest_test(test_docking_server_backward test_docking_server.py
   ENV
   NON_CHARGING_DOCK=False
   BACKWARD=True
 )
 
-ament_add_pytest_test(test_docking_server_backward_blind test_docking_server.py
+nav2_add_pytest_test(test_docking_server_backward_blind test_docking_server.py
   ENV
   NON_CHARGING_DOCK=False
   BACKWARD_BLIND=True

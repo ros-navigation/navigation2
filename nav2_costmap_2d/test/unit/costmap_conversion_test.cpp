@@ -113,7 +113,7 @@ TEST_F(TestNode, convertOccGridToCostmap)
   verifyCostmap();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

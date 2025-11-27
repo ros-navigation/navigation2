@@ -15,7 +15,6 @@
 #ifndef NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
 #define NAV2_COSTMAP_2D__PLUGIN_CONTAINER_LAYER_HPP_
 
-#include <Eigen/Dense>
 #include <cmath>
 #include <memory>
 #include <string>

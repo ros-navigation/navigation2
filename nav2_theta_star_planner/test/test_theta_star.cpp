@@ -230,7 +230,7 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
     results);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -42,7 +42,7 @@ void GoalAngleCritic::score(CriticData & data)
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 
-  if(power_ > 1u) {
+  if (power_ > 1u) {
     data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
       rowwise().mean()) * weight_).pow(power_).eval();
   } else {

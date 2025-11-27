@@ -35,8 +35,9 @@ NavigateThroughPosesNavigator::configure(
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
   waypoint_statuses_blackboard_id_ =
-    node->declare_or_get_parameter(getName() + ".waypoint_statuses_blackboard_id",
-      std::string("waypoint_statuses"));
+    node->declare_or_get_parameter(
+    getName() + ".waypoint_statuses_blackboard_id",
+    std::string("waypoint_statuses"));
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -47,8 +48,8 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
 
   bt_action_server_->setGrootMonitoring(
-      enable_groot_monitoring,
-      groot_server_port);
+    enable_groot_monitoring,
+    groot_server_port);
 
   return true;
 }
@@ -73,7 +74,8 @@ bool
 NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
   if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
-    bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    bt_action_server_->setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       "Error loading BT: " + goal->behavior_tree + ". Navigation canceled.");
     return false;
   }
@@ -88,13 +90,15 @@ NavigateThroughPosesNavigator::goalCompleted(
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
-      RCLCPP_WARN(logger_,
+      RCLCPP_WARN(
+        logger_,
         "NavigateThroughPosesNavigator::goalCompleted, internal error %d:'%s'.",
         result->error_code,
         result->error_msg.c_str());
     }
   } else {
-    RCLCPP_WARN(logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
+    RCLCPP_WARN(
+      logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
       result->error_code,
       result->error_msg.c_str());
   }
@@ -240,7 +244,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+    bt_action_server_->setInternalError(
+      ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
@@ -252,7 +257,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
     {
-      bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+      bt_action_server_->setInternalError(
+        ActionT::Result::TF_ERROR,
         "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
         goal_pose.header.frame_id +
         "' to the global frame '" +
@@ -267,7 +273,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
       goals_array.goals.size(), goals_array.goals.back().pose.position.x,
-        goals_array.goals.back().pose.position.y);
+      goals_array.goals.back().pose.position.y);
   }
 
   // Reset state for new action feedback
@@ -276,17 +282,19 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
 
   // Update the goal pose on the blackboard
-  blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
-      std::move(goals_array));
+  blackboard->set<nav_msgs::msg::Goals>(
+    goals_blackboard_id_,
+    std::move(goals_array));
 
   // Reset the waypoint states vector in the blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());
-  for (size_t waypoint_index = 0 ; waypoint_index < goals_array.goals.size() ; ++waypoint_index) {
+  for (size_t waypoint_index = 0; waypoint_index < goals_array.goals.size(); ++waypoint_index) {
     waypoint_statuses[waypoint_index].waypoint_index = waypoint_index;
     waypoint_statuses[waypoint_index].waypoint_pose = goals_array.goals[waypoint_index];
   }
-  blackboard->set<decltype(waypoint_statuses)>(waypoint_statuses_blackboard_id_,
-      std::move(waypoint_statuses));
+  blackboard->set<decltype(waypoint_statuses)>(
+    waypoint_statuses_blackboard_id_,
+    std::move(waypoint_statuses));
 
   return true;
 }

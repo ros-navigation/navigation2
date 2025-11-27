@@ -34,7 +34,7 @@ class ServiceServer
 public:
   using RequestType = typename ServiceT::Request;
   using ResponseType = typename ServiceT::Response;
-  using CallbackType = std::function<void(const std::shared_ptr<rmw_request_id_t>,
+  using CallbackType = std::function<void (const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
   using SharedPtr = std::shared_ptr<ServiceServer<ServiceT>>;
   using UniquePtr = std::unique_ptr<ServiceServer<ServiceT>>;
@@ -58,7 +58,8 @@ public:
       rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group);
 
-    nav2::setIntrospectionMode(this->server_,
+    nav2::setIntrospectionMode(
+      this->server_,
       node->get_node_parameters_interface(), node->get_clock());
   }
 

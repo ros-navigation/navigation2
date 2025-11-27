@@ -273,7 +273,7 @@ typename nav2::ServiceServer<SrvT>::SharedPtr create_service(
 {
   using Request = typename SrvT::Request;
   using Response = typename SrvT::Response;
-  using CallbackFn = std::function<void(
+  using CallbackFn = std::function<void (
         const std::shared_ptr<rmw_request_id_t>,
         const std::shared_ptr<Request>,
         std::shared_ptr<Response>)>;
@@ -323,7 +323,8 @@ typename nav2::ActionClient<ActionT>::SharedPtr create_action_client(
   rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   auto client = rclcpp_action::create_client<ActionT>(node, action_name, callback_group);
-  nav2::setIntrospectionMode(client,
+  nav2::setIntrospectionMode(
+    client,
     node->get_node_parameters_interface(), node->get_clock());
   return client;
 }

@@ -1,4 +1,4 @@
-ament_add_gtest(test_constrained_smoother
+nav2_add_gtest(test_constrained_smoother
   test_constrained_smoother.cpp
 )
 target_link_libraries(test_constrained_smoother
@@ -12,7 +12,7 @@ target_link_libraries(test_constrained_smoother
   tf2_ros::tf2_ros
 )
 
-ament_add_gtest(test_smoother_cost_function
+nav2_add_gtest(test_smoother_cost_function
   test_smoother_cost_function.cpp
 )
 target_link_libraries(test_smoother_cost_function

@@ -411,7 +411,7 @@ TEST(NodeHybridTest, basic_get_closest_angular_bin_test)
   }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -93,12 +93,12 @@ public:
    */
   std::string extractBehaviorTreeID(const std::string & file_or_id);
 
-    /**
-   * @brief Function to create a BT from a BehaviorTree ID
-   * @param tree_id BehaviorTree ID
-   * @param blackboard Blackboard for BT
-   * @return BT::Tree Created behavior tree
-    */
+  /**
+ * @brief Function to create a BT from a BehaviorTree ID
+ * @param tree_id BehaviorTree ID
+ * @param blackboard Blackboard for BT
+ * @return BT::Tree Created behavior tree
+  */
   BT::Tree createTree(
     const std::string & tree_id,
     BT::Blackboard::Ptr blackboard);

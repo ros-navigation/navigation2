@@ -188,7 +188,7 @@ bool MapSaver::saveMapTopicToFile(
 
     rclcpp::QoS map_qos = nav2::qos::StandardTopicQoS();  // initialize to default
     if (map_subscribe_transient_local_) {
-      map_qos = nav2::qos::LatchedSubscriptionQoS();
+      map_qos = nav2::qos::LatchedSubscriptionQoS(3);
     }
 
     // Create new CallbackGroup for map_sub

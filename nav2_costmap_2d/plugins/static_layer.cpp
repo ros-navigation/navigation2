@@ -77,7 +77,7 @@ StaticLayer::onInitialize()
 
   rclcpp::QoS map_qos = nav2::qos::StandardTopicQoS();  // initialize to default
   if (map_subscribe_transient_local_) {
-    map_qos = nav2::qos::LatchedSubscriptionQoS();
+    map_qos = nav2::qos::LatchedSubscriptionQoS(3);
   }
 
   RCLCPP_INFO(
@@ -527,8 +527,9 @@ StaticLayer::dynamicParametersCallback(
         if (footprint_clearing_enabled_) {
           restore_cleared_footprint_ = parameter.as_bool();
         } else {
-          RCLCPP_WARN(logger_, "restore_cleared_footprint cannot be used "
-                      "when footprint_clearing_enabled is False. Rejecting parameter update.");
+          RCLCPP_WARN(
+            logger_, "restore_cleared_footprint cannot be used "
+            "when footprint_clearing_enabled is False. Rejecting parameter update.");
         }
       }
     }

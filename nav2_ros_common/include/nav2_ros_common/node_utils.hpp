@@ -26,6 +26,15 @@
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
 
+#ifdef __APPLE__
+  #include <pthread.h>
+  #include <mach/mach.h>
+  #include <mach/thread_policy.h>
+#else
+  #include <sched.h>
+  #include <errno.h>
+#endif
+
 using std::chrono::high_resolution_clock;
 using std::to_string;
 using std::string;
@@ -247,8 +256,9 @@ inline ParamType declare_or_get_parameter(
   }
 
   auto return_value = param_interface
-    ->declare_parameter(parameter_name, rclcpp::ParameterValue{default_value},
-      parameter_descriptor)
+    ->declare_parameter(
+    parameter_name, rclcpp::ParameterValue{default_value},
+    parameter_descriptor)
     .get<ParamType>();
 
   const bool no_param_override = param_interface->get_parameter_overrides().find(parameter_name) ==
@@ -256,8 +266,8 @@ inline ParamType declare_or_get_parameter(
   if (no_param_override) {
     if (warn_if_no_override) {
       RCLCPP_WARN_STREAM(
-            logger,
-            "Failed to get param " << parameter_name << " from overrides, using default value.");
+        logger,
+        "Failed to get param " << parameter_name << " from overrides, using default value.");
     }
     if (strict_param_loading) {
       std::string description = "Parameter " + parameter_name +
@@ -296,7 +306,8 @@ inline ParamType declare_or_get_parameter(
   declare_parameter_if_not_declared(node, "strict_param_loading", rclcpp::ParameterValue(false));
   bool strict_param_loading{false};
   node->get_parameter("strict_param_loading", strict_param_loading);
-  return declare_or_get_parameter(node->get_logger(), node->get_node_parameters_interface(),
+  return declare_or_get_parameter(
+    node->get_logger(), node->get_node_parameters_interface(),
     parameter_name, default_value, warn_if_no_override, strict_param_loading, parameter_descriptor);
 }
 
@@ -337,6 +348,32 @@ inline std::string get_plugin_type_param(
  */
 inline void setSoftRealTimePriority()
 {
+#ifdef __APPLE__
+  // macOS: Use Mach thread API to approximate real-time scheduling
+  thread_port_t thread = pthread_mach_thread_np(pthread_self());
+
+  thread_time_constraint_policy_data_t policy;
+  policy.period = 1000;       // in microseconds (1 kHz loop)
+  policy.computation = 800;   // expected compute time per period
+  policy.constraint = 1000;   // max latency
+  policy.preemptible = 1;     // allow preemption by higher-priority threads
+
+  kern_return_t result = thread_policy_set(
+    thread,
+    THREAD_TIME_CONSTRAINT_POLICY,
+    (thread_policy_t)&policy,
+    THREAD_TIME_CONSTRAINT_POLICY_COUNT
+  );
+
+  if (result != KERN_SUCCESS) {
+    std::string errmsg =
+      "Failed to set THREAD_TIME_CONSTRAINT_POLICY on macOS. "
+      "Thread remains at default priority. Mach Error Code: " +
+      std::to_string(result);
+    throw std::runtime_error(errmsg);
+  }
+#else
+  // Linux: True real-time scheduling (requires privileges)
   sched_param sch;
   sch.sched_priority = 49;
   if (sched_setscheduler(0, SCHED_FIFO, &sch) == -1) {
@@ -346,6 +383,7 @@ inline void setSoftRealTimePriority()
       "realtime prioritization! Error: ");
     throw std::runtime_error(errmsg + std::strerror(errno));
   }
+#endif
 }
 
 template<typename InterfaceT>
@@ -385,8 +423,9 @@ inline void replaceOrAddArgument(
   std::vector<std::string> & arguments, const std::string & option,
   const std::string & arg_name, const std::string & new_argument)
 {
-  auto argument = std::find_if(arguments.begin(), arguments.end(),
-      [arg_name](const std::string & value){return value.find(arg_name) != std::string::npos;});
+  auto argument = std::find_if(
+    arguments.begin(), arguments.end(),
+    [arg_name](const std::string & value) {return value.find(arg_name) != std::string::npos;});
   if (argument != arguments.end()) {
     *argument = new_argument;
   } else {

@@ -140,7 +140,7 @@ TEST(ModelsTest, TrajectoriesTest)
   EXPECT_EQ(trajectories.yaws.cols(), 40);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

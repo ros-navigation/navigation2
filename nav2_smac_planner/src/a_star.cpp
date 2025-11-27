@@ -350,7 +350,8 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_check_goals, fine_check_goals;
-  _goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals,
+  _goal_manager.prepareGoalsForAnalyticExpansion(
+    coarse_check_goals, fine_check_goals,
     _coarse_search_resolution);
 
   // 0) Add starting point to the open set

@@ -63,9 +63,9 @@ bool ArePosesNearCondition::arePosesNearby()
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
     if (!nav2_util::transformPoseInTargetFrame(
-      pose1, pose1, *tf_, global_frame_, transform_tolerance_) ||
+        pose1, pose1, *tf_, global_frame_, transform_tolerance_) ||
       !nav2_util::transformPoseInTargetFrame(
-      pose2, pose2, *tf_, global_frame_, transform_tolerance_))
+        pose2, pose2, *tf_, global_frame_, transform_tolerance_))
     {
       RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");
       return false;

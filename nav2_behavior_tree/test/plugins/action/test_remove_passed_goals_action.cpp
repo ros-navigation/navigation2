@@ -144,7 +144,8 @@ TEST_F(RemovePassedGoalsTestFixture, test_tick)
   EXPECT_EQ(output_poses.goals[1], poses.goals[3]);
 }
 
-TEST_F(RemovePassedGoalsTestFixture,
+TEST_F(
+  RemovePassedGoalsTestFixture,
   test_tick_remove_passed_goals_success_and_output_waypoint_statuses)
 {
   geometry_msgs::msg::Pose pose;
@@ -186,7 +187,7 @@ TEST_F(RemovePassedGoalsTestFixture,
 
   // create waypoint_statuses and set it on blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
-  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+  for (size_t i = 0; i < waypoint_statuses.size(); ++i) {
     waypoint_statuses[i].waypoint_pose = poses.goals[i];
     waypoint_statuses[i].waypoint_index = i;
   }
@@ -215,7 +216,8 @@ TEST_F(RemovePassedGoalsTestFixture,
   EXPECT_EQ(output_waypoint_statuses[3].waypoint_status, nav2_msgs::msg::WaypointStatus::PENDING);
 }
 
-TEST_F(RemovePassedGoalsTestFixture,
+TEST_F(
+  RemovePassedGoalsTestFixture,
   test_tick_remove_passed_goals_find_matching_waypoint_fail)
 {
   geometry_msgs::msg::Pose pose;
@@ -257,7 +259,7 @@ TEST_F(RemovePassedGoalsTestFixture,
 
   // create waypoint_statuses and set it on blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(poses.goals.size());
-  for (size_t i = 0 ; i < waypoint_statuses.size() ; ++i) {
+  for (size_t i = 0; i < waypoint_statuses.size(); ++i) {
     waypoint_statuses[i].waypoint_pose = poses.goals[i];
     waypoint_statuses[i].waypoint_index = i;
   }

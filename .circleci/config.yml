@@ -33,12 +33,12 @@ _commands:
         - restore_cache:
             name: Restore Cache << parameters.key >>
             keys:
-              - "<< parameters.key >>-v40\
+              - "<< parameters.key >>-v43\
                 -{{ arch }}\
                 -{{ .Branch }}\
                 -{{ .Environment.CIRCLE_PR_NUMBER }}\
                 -{{ checksum  \"<< parameters.workspace >>/lockfile.txt\" }}"
-              - "<< parameters.key >>-v40\
+              - "<< parameters.key >>-v43\
                 -{{ arch }}\
                 -main\
                 -<no value>\
@@ -58,7 +58,7 @@ _commands:
       steps:
         - save_cache:
             name: Save Cache << parameters.key >>
-            key: "<< parameters.key >>-v40\
+            key: "<< parameters.key >>-v43\
               -{{ arch }}\
               -{{ .Branch }}\
               -{{ .Environment.CIRCLE_PR_NUMBER }}\
@@ -124,6 +124,9 @@ _commands:
         mixins:
           type: string
         packages_skip_regex:
+          default: ""
+          type: string
+        packages_select:
           default: ""
           type: string
         restore:
@@ -192,6 +195,19 @@ _commands:
                             $BUILD_INVALID \
                         | xargs)
                     fi
+
+                    # If packages_select is specified, filter BUILD_PACKAGES
+                    if [ -n "<< parameters.packages_select >>" ]; then
+                      SELECTED_PACKAGES="<< parameters.packages_select >>"
+                      if [ -n "$BUILD_PACKAGES" ]; then
+                        # Keep only packages that are in both lists
+                        BUILD_PACKAGES=$(echo "$BUILD_PACKAGES" | tr ' ' '\n' | \
+                          grep -F -x -f <(echo "$SELECTED_PACKAGES" | tr ' ' '\n') | \
+                          xargs || echo "$SELECTED_PACKAGES")
+                      else
+                        BUILD_PACKAGES="$SELECTED_PACKAGES"
+                      fi
+                    fi
                     echo BUILD_PACKAGES: $BUILD_PACKAGES
 
                     colcon clean packages --yes \
@@ -201,7 +217,8 @@ _commands:
                     . << parameters.underlay >>/install/setup.sh
                     colcon build \
                       --packages-select ${BUILD_PACKAGES} \
-                      --mixin << parameters.mixins >>
+                      --mixin << parameters.mixins >> \
+                      --cmake-args -DUSE_ISOLATED_TESTS=ON
               - ccache_stats:
                   workspace: << parameters.workspace >>
                   when: always
@@ -389,6 +406,7 @@ _steps:
     setup_workspace:
       <<: *setup_workspace_overlay
       packages_skip_regex: << parameters.packages_skip_regex >>
+      packages_select: << parameters.packages_select >>
   restore_overlay_workspace: &restore_overlay_workspace
     setup_workspace:
       <<: *setup_workspace_overlay
@@ -439,6 +457,9 @@ commands:
     parameters:
       packages_skip_regex:
         type: string
+      packages_select:
+        type: string
+        default: ""
     steps:
       - *build_workspace_overlay
   restore_build:
@@ -496,6 +517,9 @@ _jobs:
       packages_skip_regex:
         type: string
         default: ""
+      packages_select:
+        type: string
+        default: ""
   job_test: &job_test
     parameters:
       <<: *job_build_parameters
@@ -510,7 +534,7 @@ _jobs:
       RMW_IMPLEMENTATION: << parameters.rmw >>
 
 jobs:
-  release_build: &release_build
+  core_build:
     <<: *job_build
     executor: release_exec
     steps:
@@ -518,13 +542,23 @@ jobs:
       - setup_dependencies
       - build_source:
           packages_skip_regex: << parameters.packages_skip_regex >>
-  system_build: &system_build
+          packages_select: << parameters.packages_select >>
+  algorithm_build:
     <<: *job_build
     executor: release_exec
     steps:
       - restore_build
       - build_source:
           packages_skip_regex: << parameters.packages_skip_regex >>
+          packages_select: << parameters.packages_select >>
+  system_build:
+    <<: *job_build
+    executor: release_exec
+    steps:
+      - restore_build
+      - build_source:
+          packages_skip_regex: << parameters.packages_skip_regex >>
+          packages_select: << parameters.packages_select >>
   release_test: &release_test
     <<: *job_test
     executor: release_exec
@@ -536,10 +570,15 @@ jobs:
       - report_coverage
 
 _parameters:
-  release_build_parameters: &release_build_parameters
-    packages_skip_regex: "'(nav2_system_tests|nav2_smac_planner|nav2_mppi_controller|nav2_route|nav2_rviz_plugins|nav2_rotation_shim_controller|nav2_waypoint_follower|nav2_smoother|opennav_docking|opennav_following|nav2_behaviors|nav2_bringup|navigation2)'"
-  system_build_parameters: &system_build_parameters
+  core_build_parameters: &core_build_parameters
     packages_skip_regex: ""
+    packages_select: "nav2_common nav2_voxel_grid nav_2d_msgs dwb_msgs nav2_msgs nav2_ros_common nav2_simple_commander nav2_loopback_sim nav2_util nav2_amcl nav2_behavior_tree nav2_lifecycle_manager nav2_map_server nav_2d_utils nav2_velocity_smoother nav2_costmap_2d costmap_queue nav2_core"
+  algorithm_build_parameters: &algorithm_build_parameters
+    packages_skip_regex: ""
+    packages_select: "nav2_collision_monitor dwb_core dwb_critics dwb_plugins nav2_dwb_controller nav2_controller nav2_bt_navigator nav2_constrained_smoother nav2_navfn_planner nav2_planner nav2_regulated_pure_pursuit_controller nav2_theta_star_planner nav2_graceful_controller"
+  system_build_parameters: &system_build_parameters
+    packages_skip_regex: "'(nav2_common|nav2_voxel_grid|nav_2d_msgs|dwb_msgs|nav2_msgs|nav2_ros_common|nav2_simple_commander|nav2_loopback_sim|nav2_util|nav2_amcl|nav2_behavior_tree|nav2_lifecycle_manager|nav2_map_server|nav_2d_utils|nav2_velocity_smoother|nav2_costmap_2d|costmap_queue|nav2_core|nav2_collision_monitor|dwb_core|dwb_critics|dwb_plugins|nav2_dwb_controller|nav2_controller|nav2_bt_navigator|nav2_constrained_smoother|nav2_navfn_planner|nav2_planner|nav2_regulated_pure_pursuit_controller|nav2_theta_star_planner|nav2_graceful_controller)'"
+    packages_select: ""
   release_test_parameters: &release_test_parameters
     packages_skip_regex: ""
 
@@ -547,12 +586,16 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - release_build:
-          <<: *release_build_parameters
+      - core_build:
+          <<: *core_build_parameters
+      - algorithm_build:
+          <<: *algorithm_build_parameters
+          requires:
+            - core_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - release_build
+            - algorithm_build
       - release_test:
           <<: *release_test_parameters
           requires:
@@ -560,12 +603,16 @@ workflows:
           cache_test: true
   nightly:
     jobs:
-      - release_build:
-          <<: *release_build_parameters
+      - core_build:
+          <<: *core_build_parameters
+      - algorithm_build:
+          <<: *algorithm_build_parameters
+          requires:
+            - core_build
       - system_build:
           <<: *system_build_parameters
           requires:
-            - release_build
+            - algorithm_build
       - release_test:
           requires:
             - system_build
@@ -576,6 +623,7 @@ workflows:
               rmw:
                 - rmw_cyclonedds_cpp
                 - rmw_fastrtps_cpp
+                - rmw_zenoh_cpp
     triggers:
       - schedule:
           cron: "0 13 * * *"

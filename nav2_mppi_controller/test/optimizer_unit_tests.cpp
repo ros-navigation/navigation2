@@ -730,32 +730,40 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   geometry_msgs::msg::Pose goal;
   path.poses.resize(17);
 
-  auto [cmd1, optimal_trajectory1] = optimizer_tester.evalControl(pose, robot_speed, path,
+  auto [cmd1, optimal_trajectory1] = optimizer_tester.evalControl(
+    pose, robot_speed, path,
     goal, nullptr);
 
-  EXPECT_LE(std::abs(cmd1.twist.linear.x),
+  EXPECT_LE(
+    std::abs(cmd1.twist.linear.x),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
-  EXPECT_LE(std::abs(cmd1.twist.angular.z),
+  EXPECT_LE(
+    std::abs(cmd1.twist.angular.z),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().az_max);
-  EXPECT_LE(std::abs(cmd1.twist.linear.y),
+  EXPECT_LE(
+    std::abs(cmd1.twist.linear.y),
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
 
-  auto [cmd2, optimal_trajectory2] = optimizer_tester.evalControl(pose, robot_speed, path,
+  auto [cmd2, optimal_trajectory2] = optimizer_tester.evalControl(
+    pose, robot_speed, path,
     goal, nullptr);
 
   const double vx_delta = std::abs(cmd2.twist.linear.x - cmd1.twist.linear.x);
   const double wz_delta = std::abs(cmd2.twist.angular.z - cmd1.twist.angular.z);
   const double vy_delta = std::abs(cmd2.twist.linear.y - cmd1.twist.linear.y);
 
-  EXPECT_LE(vx_delta,
+  EXPECT_LE(
+    vx_delta,
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ax_max);
-  EXPECT_LE(wz_delta,
+  EXPECT_LE(
+    wz_delta,
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().az_max);
-  EXPECT_LE(vy_delta,
+  EXPECT_LE(
+    vy_delta,
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

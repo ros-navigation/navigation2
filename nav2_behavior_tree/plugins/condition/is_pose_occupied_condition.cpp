@@ -24,24 +24,32 @@ IsPoseOccupiedCondition::IsPoseOccupiedCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  use_footprint_(true), consider_unknown_as_obstacle_(false), cost_threshold_(254),
-  service_name_("global_costmap/get_cost_global_costmap")
+  use_footprint_(true), consider_unknown_as_obstacle_(false), cost_threshold_(254)
 {
-  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+  initialize();
 }
 
 void IsPoseOccupiedCondition::initialize()
 {
-  getInput<std::string>("service_name", service_name_);
   getInput<double>("cost_threshold", cost_threshold_);
   getInput<bool>("use_footprint", use_footprint_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
-  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
-  client_ =
-    node_->create_client<nav2_msgs::srv::GetCosts>(
-    service_name_,
-    false /* Does not create and spin an internal executor*/);
+  getInputOrBlackboard("server_timeout", server_timeout_);
+  createROSInterfaces();
+}
+
+void IsPoseOccupiedCondition::createROSInterfaces()
+{
+  std::string service_new;
+  getInput<std::string>("service_name", service_new);
+  if (service_new != service_name_ || !client_) {
+    service_name_ = service_new;
+    node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+    client_ =
+      node_->create_client<nav2_msgs::srv::GetCosts>(
+      service_name_,
+      false /* Does not create and spin an internal executor*/);
+  }
 }
 
 BT::NodeStatus IsPoseOccupiedCondition::tick()
@@ -58,14 +66,14 @@ BT::NodeStatus IsPoseOccupiedCondition::tick()
 
   auto response = client_->invoke(request, server_timeout_);
 
-  if(!response->success) {
+  if (!response->success) {
     RCLCPP_ERROR(
       node_->get_logger(),
       "GetCosts service call failed");
     return BT::NodeStatus::FAILURE;
   }
 
-  if((response->costs[0] == 255 && !consider_unknown_as_obstacle_) ||
+  if ((response->costs[0] == 255 && !consider_unknown_as_obstacle_) ||
     response->costs[0] < cost_threshold_)
   {
     return BT::NodeStatus::FAILURE;

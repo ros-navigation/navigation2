@@ -404,10 +404,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -428,10 +428,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -447,7 +447,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
   unsigned int goal_orientation_bin_int =
     static_cast<unsigned int>(goal_orientation_bin);
-  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
+  _a_star->setGoal(
+    mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
     _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
@@ -625,7 +626,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0 && param_name != "resolution") {
+    if (param_name.find(_name + ".") != 0 && param_name != "resolution") {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
@@ -756,8 +757,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_angle_quantizations % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
             _logger,
-              "coarse iteration should be an increment of the "
-              "number of angular bins configured. Disabling course research!"
+            "coarse iteration should be an increment of the "
+            "number of angular bins configured. Disabling course research!"
           );
           _coarse_search_resolution = 1;
         }

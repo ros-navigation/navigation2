@@ -49,9 +49,9 @@ Controller::Controller(
   nav2::declare_parameter_if_not_declared(
     node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
   nav2::declare_parameter_if_not_declared(
-      node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
+    node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
   nav2::declare_parameter_if_not_declared(
-      node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
+    node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
   nav2::declare_parameter_if_not_declared(
     node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
   nav2::declare_parameter_if_not_declared(
@@ -99,7 +99,8 @@ Controller::Controller(
   }
 
   node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
-  node->get_parameter("controller.rotate_to_heading_max_angular_accel",
+  node->get_parameter(
+    "controller.rotate_to_heading_max_angular_accel",
     rotate_to_heading_max_angular_accel_);
 
   trajectory_pub_ =

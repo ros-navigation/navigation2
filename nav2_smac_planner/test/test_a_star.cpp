@@ -139,12 +139,16 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(expander.setAnalyticPath(nullptr, nullptr, analytic_expansion_nodes), nullptr);
   int dummy_int1 = 0;
   int dummy_int2 = 0;
-  EXPECT_EQ(expander.tryAnalyticExpansion(nullptr, {}, {}, {},
-  nullptr, dummy_int1, dummy_int2), nullptr);
+  EXPECT_EQ(
+    expander.tryAnalyticExpansion(
+      nullptr, {}, {}, {},
+      nullptr, dummy_int1, dummy_int2), nullptr);
 
   nav2_smac_planner::Node2D * start = nullptr;
-  EXPECT_EQ(expander.refineAnalyticPath(start, nullptr, nullptr,
-    analytic_expansion_nodes), std::numeric_limits<float>::max());
+  EXPECT_EQ(
+    expander.refineAnalyticPath(
+      start, nullptr, nullptr,
+      analytic_expansion_nodes), std::numeric_limits<float>::max());
   nav2_smac_planner::AnalyticExpansion<nav2_smac_planner::Node2D>::AnalyticExpansionNodes
     expected_nodes = expander.getAnalyticPath(nullptr, nullptr, nullptr, nullptr);
   EXPECT_EQ(expected_nodes.nodes.size(), 0);
@@ -490,7 +494,8 @@ TEST(AStarTest, test_goal_heading_mode)
     };
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
   EXPECT_EQ(a_star.getGoalManager().getGoalsState().size(), 2);
-  EXPECT_EQ(a_star.getGoalManager().getGoalsState().size(),
+  EXPECT_EQ(
+    a_star.getGoalManager().getGoalsState().size(),
     a_star.getGoalManager().getGoalsCoordinates().size());
 
 
@@ -498,7 +503,8 @@ TEST(AStarTest, test_goal_heading_mode)
   unsigned int coarse_search_resolution = 16;
   a_star.setCollisionChecker(checker.get());
   a_star.setStart(10u, 10u, 0u);
-  a_star.setGoal(80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
+  a_star.setGoal(
+    80u, 80u, 40u, nav2_smac_planner::GoalHeadingMode::ALL_DIRECTION,
     coarse_search_resolution);
   EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
 
@@ -508,14 +514,15 @@ TEST(AStarTest, test_goal_heading_mode)
   unsigned int num_valid_goals = 0;
   auto goals_state = a_star.getGoalManager().getGoalsState();
   for (unsigned int i = 0; i < goals_state.size(); i++) {
-    if(goals_state[i].is_valid) {
+    if (goals_state[i].is_valid) {
       num_valid_goals++;
     }
   }
   EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() == num_bins);
   EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() == num_valid_goals);
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker, expansions.get()));
-  EXPECT_TRUE(a_star.getGoalManager().getGoalsState().size() ==
+  EXPECT_TRUE(
+    a_star.getGoalManager().getGoalsState().size() ==
     a_star.getGoalManager().getGoalsCoordinates().size());
 
   // UNKNOWN goal heading mode
@@ -526,6 +533,8 @@ TEST(AStarTest, test_goal_heading_mode)
     a_star.setGoal(
       80u, 80u, 10u,
       nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
+  delete costmapA;
+  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_constants)
@@ -570,7 +579,7 @@ TEST(AStarTest, test_constants)
     nav2_smac_planner::fromStringToGH("NONE"), nav2_smac_planner::GoalHeadingMode::UNKNOWN);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -12,7 +12,7 @@ target_link_libraries(test_map_server_node
   ${library_name}
 )
 
-ament_add_test(test_map_server_node
+nav2_add_test(test_map_server_node
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_server_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -48,7 +48,7 @@ target_link_libraries(test_map_saver_publisher
   ${map_io_library_name}
 )
 
-ament_add_test(test_map_saver_node
+nav2_add_test(test_map_saver_node
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_map_saver_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

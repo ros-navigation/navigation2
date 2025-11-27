@@ -22,6 +22,7 @@ find_package(tf2_ros REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 pkg_search_module(UUID REQUIRED uuid)
 
@@ -62,6 +63,7 @@ target_link_libraries(${map_io_library_name} PRIVATE
   ${GRAPHICSMAGICKCPP_LIBRARIES}
   tf2::tf2
   yaml-cpp::yaml-cpp
+  Eigen3::Eigen
 )
 
 add_library(${library_name} SHARED
@@ -231,7 +233,7 @@ ament_export_libraries(
   ${map_io_library_name}
   ${vo_library_name}
 )
-ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle nav2_ros_common)
+ament_export_dependencies(nav_msgs nav2_msgs nav2_util rclcpp rclcpp_lifecycle nav2_ros_common Eigen3)
 ament_export_targets(${library_name})
 
 ament_package()

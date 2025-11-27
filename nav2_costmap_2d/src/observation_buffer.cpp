@@ -76,22 +76,18 @@ ObservationBuffer::ObservationBuffer(
   last_updated_ = node->now();
 }
 
-ObservationBuffer::~ObservationBuffer()
-{
-}
-
 void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 {
   geometry_msgs::msg::PointStamped global_origin;
-
-  // create a new observation on the list to be populated
-  observation_list_.push_front(Observation());
 
   // check whether the origin frame has been set explicitly
   // or whether we should get it from the cloud
   std::string origin_frame = sensor_frame_ == "" ? cloud.header.frame_id : sensor_frame_;
 
   try {
+    // create a new observation to  add to the list after being populated
+    auto observation = Observation::make_shared();
+
     // given these observations come from sensors...
     // we'll need to store the origin pt of the sensor
     geometry_msgs::msg::PointStamped local_origin;
@@ -101,14 +97,14 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     local_origin.point.y = 0;
     local_origin.point.z = 0;
     tf2_buffer_.transform(local_origin, global_origin, global_frame_, tf_tolerance_);
-    tf2::convert(global_origin.point, observation_list_.front().origin_);
+    tf2::convert(global_origin.point, observation->origin_);
 
     // make sure to pass on the raytrace/obstacle range
     // of the observation buffer to the observations
-    observation_list_.front().raytrace_max_range_ = raytrace_max_range_;
-    observation_list_.front().raytrace_min_range_ = raytrace_min_range_;
-    observation_list_.front().obstacle_max_range_ = obstacle_max_range_;
-    observation_list_.front().obstacle_min_range_ = obstacle_min_range_;
+    observation->raytrace_max_range_ = raytrace_max_range_;
+    observation->raytrace_min_range_ = raytrace_min_range_;
+    observation->obstacle_max_range_ = obstacle_max_range_;
+    observation->obstacle_min_range_ = obstacle_min_range_;
 
     sensor_msgs::msg::PointCloud2 global_frame_cloud;
 
@@ -118,7 +114,7 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 
     // now we need to remove observations from the cloud that are below
     // or above our height thresholds
-    sensor_msgs::msg::PointCloud2 & observation_cloud = *(observation_list_.front().cloud_);
+    sensor_msgs::msg::PointCloud2 & observation_cloud = observation->cloud_;
     observation_cloud.height = global_frame_cloud.height;
     observation_cloud.width = global_frame_cloud.width;
     observation_cloud.fields = global_frame_cloud.fields;
@@ -153,9 +149,10 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
     modifier.resize(point_count);
     observation_cloud.header.stamp = cloud.header.stamp;
     observation_cloud.header.frame_id = global_frame_cloud.header.frame_id;
+
+    observation_list_.push_front(std::move(observation));
   } catch (tf2::TransformException & ex) {
     // if an exception occurs, we need to remove the empty observation from the list
-    observation_list_.pop_front();
     RCLCPP_ERROR(
       logger_,
       "TF Exception that should never happen for sensor frame: %s, cloud frame: %s, %s",
@@ -171,40 +168,27 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
   purgeStaleObservations();
 }
 
-// returns a copy of the observations
-void ObservationBuffer::getObservations(std::vector<Observation> & observations)
+// appends the observations from the buffer to the passed vector
+void ObservationBuffer::getObservations(std::vector<Observation::ConstSharedPtr> & observations)
 {
   // first... let's make sure that we don't have any stale observations
   purgeStaleObservations();
 
-  // now we'll just copy the observations for the caller
-  std::list<Observation>::iterator obs_it;
-  for (obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it) {
-    observations.push_back(*obs_it);
-  }
+  // now we'll just copy the observation ptrs for the caller
+  observations.insert(observations.end(), observation_list_.cbegin(), observation_list_.cend());
 }
 
 void ObservationBuffer::purgeStaleObservations()
 {
   if (!observation_list_.empty()) {
-    std::list<Observation>::iterator obs_it = observation_list_.begin();
     // if we're keeping observations for no time... then we'll only keep one observation
     if (observation_keep_time_ == rclcpp::Duration(0.0s)) {
-      observation_list_.erase(++obs_it, observation_list_.end());
-      return;
-    }
-
-    // otherwise... we'll have to loop through the observations to see which ones are stale
-    for (obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it) {
-      Observation & obs = *obs_it;
-      // check if the observation is out of date... and if it is,
-      // remove it and those that follow from the list
-      if ((clock_->now() - obs.cloud_->header.stamp) >
-        observation_keep_time_)
-      {
-        observation_list_.erase(obs_it, observation_list_.end());
-        return;
-      }
+      observation_list_.erase(std::next(observation_list_.begin()), observation_list_.end());
+    } else {
+      // otherwise remove all observations that are older then the keep time
+      observation_list_.remove_if([now = clock_->now(), this](const auto observation){
+          return (now - observation->cloud_.header.stamp) > observation_keep_time_;
+      });
     }
   }
 }

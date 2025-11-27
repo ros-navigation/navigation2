@@ -377,6 +377,14 @@ bool CollisionMonitor::configureSources(
         ps->configure();
 
         sources_.push_back(ps);
+      } else if (source_type == "costmap") {
+        auto src = std::make_shared<CostmapSource>(
+          node, source_name, tf_buffer_, base_frame_id, odom_frame_id,
+          transform_tolerance, source_timeout, base_shift_correction);
+
+        src->configure();
+
+        sources_.push_back(src);
       } else {  // Error if something else
         RCLCPP_ERROR(
           get_logger(),

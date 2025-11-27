@@ -24,7 +24,6 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>nav2_ros_common</depend>
-  <depend>eigen3_cmake_module</depend>
   <depend>eigen</depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
@@ -32,6 +31,7 @@
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>rclcpp_action</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

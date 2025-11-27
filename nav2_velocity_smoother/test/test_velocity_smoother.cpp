@@ -697,7 +697,7 @@ TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
 }
 
 TEST(VelocitySmootherTest, testDifferentParamsSize) {
-   auto smoother =
+  auto smoother =
     std::make_shared<VelSmootherShim>();
 
   std::vector<double> max_vel{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
@@ -716,7 +716,7 @@ TEST(VelocitySmootherTest, testDifferentParamsSize) {
 }
 
 TEST(VelocitySmootherTest, testInvalidParamsSize) {
-   auto smoother =
+  auto smoother =
     std::make_shared<VelSmootherShim>();
 
   std::vector<double> bad_max_vel{0.5, 0.5, 0.5, 2.5};
@@ -816,7 +816,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   smoother.reset();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

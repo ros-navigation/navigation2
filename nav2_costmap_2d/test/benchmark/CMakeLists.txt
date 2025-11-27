@@ -1,0 +1,6 @@
+find_package(ament_cmake_google_benchmark REQUIRED)
+ament_add_google_benchmark(observation_buffer_benchmark observation_buffer_benchmark.cpp)
+target_link_libraries(observation_buffer_benchmark
+  nav2_costmap_2d_core
+  layers
+)

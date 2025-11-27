@@ -329,10 +329,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!_costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -344,10 +344,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!_costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -357,7 +357,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
   _a_star->setGoal(
     mx_goal, my_goal, goal_bin,
-      _goal_heading_mode, _coarse_search_resolution);
+    _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -546,7 +546,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0) {
+    if (param_name.find(_name + ".") != 0) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
@@ -638,8 +638,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
             _logger,
-              "coarse iteration should be an increment of the number<"
-              " of angular bins configured. Disabling course research!"
+            "coarse iteration should be an increment of the number<"
+            " of angular bins configured. Disabling course research!"
           );
           _coarse_search_resolution = 1;
         }

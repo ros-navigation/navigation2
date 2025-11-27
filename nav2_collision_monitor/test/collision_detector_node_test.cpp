@@ -33,6 +33,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 #include "tf2_ros/transform_broadcaster.hpp"
 
@@ -50,6 +52,7 @@ static const char SCAN_NAME[]{"Scan"};
 static const char POINTCLOUD_NAME[]{"PointCloud"};
 static const char RANGE_NAME[]{"Range"};
 static const char POLYGON_NAME[]{"Polygon"};
+static const char COSTMAP_NAME[]{"Costmap"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
@@ -71,7 +74,8 @@ enum SourceType
   SCAN = 1,
   POINTCLOUD = 2,
   RANGE = 3,
-  POLYGON_SOURCE = 4
+  POLYGON_SOURCE = 4,
+  COSTMAP = 5
 };
 
 class CollisionDetectorWrapper : public nav2_collision_monitor::CollisionDetector
@@ -143,6 +147,7 @@ public:
   void publishPointCloud(const double dist, const rclcpp::Time & stamp);
   void publishRange(const double dist, const rclcpp::Time & stamp);
   void publishPolygon(const double dist, const rclcpp::Time & stamp);
+  void publishCostmap(const double dist, const rclcpp::Time & stamp);
   bool waitData(
     const double expected_dist,
     const std::chrono::nanoseconds & timeout,
@@ -166,6 +171,8 @@ protected:
     range_pub_;
   nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
     polygon_source_pub_;
+  nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr
+    costmap_pub_;
 
   nav2::Subscription<nav2_msgs::msg::CollisionDetectorState>::SharedPtr state_sub_;
   nav2_msgs::msg::CollisionDetectorState::SharedPtr state_msg_;
@@ -194,6 +201,9 @@ Tester::Tester()
   polygon_source_pub_ = cd_->create_publisher<geometry_msgs::msg::PolygonInstanceStamped>(
     POLYGON_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   polygon_source_pub_->on_activate();
+  costmap_pub_ = cd_->create_publisher<nav2_msgs::msg::Costmap>(
+    COSTMAP_NAME, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  costmap_pub_->on_activate();
 
   state_sub_ = cd_->create_subscription<nav2_msgs::msg::CollisionDetectorState>(
     STATE_TOPIC,
@@ -213,6 +223,8 @@ Tester::~Tester()
   range_pub_.reset();
   polygon_source_pub_->on_deactivate();
   polygon_source_pub_.reset();
+  costmap_pub_->on_deactivate();
+  costmap_pub_.reset();
   collision_points_marker_sub_.reset();
 
   cd_.reset();
@@ -341,6 +353,14 @@ void Tester::addSource(
       source_name + ".sampling_distance", rclcpp::ParameterValue(0.1));
     cd_->declare_parameter(
       source_name + ".polygon_similarity_threshold", rclcpp::ParameterValue(2.0));
+  } else if (type == COSTMAP) {
+    cd_->declare_parameter(
+      source_name + ".type", rclcpp::ParameterValue("costmap"));
+
+    cd_->declare_parameter(
+      source_name + ".cost_threshold", rclcpp::ParameterValue(253));
+    cd_->declare_parameter(
+      source_name + ".treat_unknown_as_obstacle", rclcpp::ParameterValue(true));
   } else {  // type == SOURCE_UNKNOWN
     cd_->declare_parameter(
       source_name + ".type", rclcpp::ParameterValue("unknown"));
@@ -482,6 +502,42 @@ void Tester::publishPolygon(const double dist, const rclcpp::Time & stamp)
 
   polygon_source_pub_->publish(std::move(msg));
 }
+
+void Tester::publishCostmap(const double dist, const rclcpp::Time & stamp)
+{
+  std::unique_ptr<nav2_msgs::msg::Costmap> msg =
+    std::make_unique<nav2_msgs::msg::Costmap>();
+
+  // Costmap in odom frame (more typical for Nav2 costmaps)
+  msg->header.frame_id = ODOM_FRAME_ID;
+  msg->header.stamp = stamp;
+
+  // Metadata: 20x20 grid, 0.1 m resolution
+  msg->metadata.map_load_time = stamp;
+  msg->metadata.update_time = stamp;
+  msg->metadata.layer = "test_layer";
+  msg->metadata.resolution = 0.1;
+  msg->metadata.size_x = 20;
+  msg->metadata.size_y = 20;
+
+  // Choose origin so that cell (0,0) center is exactly at (0, dist)
+  msg->metadata.origin.position.x = -0.05;       // 0.05 = 0.5 * resolution
+  msg->metadata.origin.position.y = dist - 0.05;   // dist - 0.5 * resolution
+  msg->metadata.origin.position.z = 0.0;
+  msg->metadata.origin.orientation.w = 1.0;
+
+  // Initialize all cells as free
+  msg->data.assign(msg->metadata.size_x * msg->metadata.size_y, 0);
+
+  // Put one lethal obstacle at cell (0,0)
+  const int obstacle_x = 0;
+  const int obstacle_y = 0;
+  const int obstacle_idx = obstacle_y * msg->metadata.size_x + obstacle_x;
+  msg->data[obstacle_idx] = nav2_costmap_2d::LETHAL_OBSTACLE;
+
+  costmap_pub_->publish(std::move(msg));
+}
+
 
 bool Tester::waitData(
   const double expected_dist,
@@ -741,6 +797,35 @@ TEST_F(Tester, testPolygonSourceDetection)
   publishPolygon(2.5, curr_time);
 
   ASSERT_TRUE(waitData(std::hypot(2.5, 1.0), 500ms, curr_time));
+  ASSERT_TRUE(waitState(300ms));
+  ASSERT_NE(state_msg_->detections.size(), 0u);
+  ASSERT_EQ(state_msg_->detections[0], true);
+
+  // Stop Collision Detector node
+  cd_->stop();
+}
+
+TEST_F(Tester, testCostmapDetection)
+{
+  rclcpp::Time curr_time = cd_->now();
+
+  // Set Collision Detector parameters.
+  setCommonParameters();
+  // Create polygon
+  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addSource(COSTMAP_NAME, COSTMAP);
+  setVectors({"DetectionRegion"}, {COSTMAP_NAME});
+
+  // Start Collision Detector node
+  cd_->start();
+
+  // Share TF
+  sendTransforms(curr_time);
+
+  // Obstacle is in DetectionRegion
+  publishCostmap(1.5, curr_time);
+
+  ASSERT_TRUE(waitData(1.5, 500ms, curr_time));
   ASSERT_TRUE(waitState(300ms));
   ASSERT_NE(state_msg_->detections.size(), 0u);
   ASSERT_EQ(state_msg_->detections[0], true);

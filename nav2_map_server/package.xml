@@ -31,6 +31,7 @@
   <depend>lifecycle_msgs</depend>
   <depend>nav2_ros_common</depend>
   <depend>uuid</depend>
+  <depend>eigen</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -38,6 +39,7 @@
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>launch</test_depend>
   <test_depend>launch_testing</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

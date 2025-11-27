@@ -31,8 +31,8 @@ BT::NodeStatus PersistentSequenceNode::tick()
   int current_child_idx;
   if (!getInput("current_child_idx", current_child_idx)) {
     throw BT::RuntimeError(
-      "Missing required input [current_child_idx] in PersistentSequenceNode. "
-      "Set via <Script code=\"current_child_idx := 0\" />");
+            "Missing required input [current_child_idx] in PersistentSequenceNode. "
+            "Set via <Script code=\"current_child_idx := 0\" />");
   }
 
   setStatus(BT::NodeStatus::RUNNING);

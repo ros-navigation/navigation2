@@ -48,7 +48,7 @@ class SimpleChargingDockTestable : public opennav_docking::SimpleChargingDock
 public:
   using opennav_docking::SimpleChargingDock::SimpleChargingDock;
 
-   // Expose detector state for test verification
+  // Expose detector state for test verification
   bool isDetectorActive() const {return initial_pose_received_;}
 };
 
@@ -441,8 +441,9 @@ TEST(SimpleChargingDockTests, DetectorLifecycle)
 
   // Test with detector service configured
   node->declare_parameter("my_dock.use_external_detection_pose", rclcpp::ParameterValue(true));
-  node->declare_parameter("my_dock.detector_service_name",
-      rclcpp::ParameterValue("test_detector_service"));
+  node->declare_parameter(
+    "my_dock.detector_service_name",
+    rclcpp::ParameterValue("test_detector_service"));
   node->declare_parameter("my_dock.subscribe_toggle", rclcpp::ParameterValue(true));
 
   // Create a mock service to prevent timeout
@@ -644,7 +645,7 @@ TEST(SimpleChargingDockTests, SubscriptionPersistent)
 
 }  // namespace opennav_docking
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

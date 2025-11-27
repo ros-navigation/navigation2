@@ -105,7 +105,7 @@ TEST(SmacTest, test_smac_se2)
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("DUBIN")));
 
-    // invalid coarse search resolution
+  // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
@@ -269,7 +269,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

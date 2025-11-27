@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
@@ -127,9 +128,10 @@ void addObservation(
   p.y = oy;
   p.z = oz;
 
-  nav2_costmap_2d::Observation obs(p, cloud, obstacle_max_range, obstacle_min_range,
+  nav2_costmap_2d::Observation obs(std::move(p), std::move(cloud), obstacle_max_range,
+    obstacle_min_range,
     raytrace_max_range, raytrace_min_range);
-  olayer->addStaticObservation(obs, marking, clearing);
+  olayer->addStaticObservation(std::move(obs), marking, clearing);
 }
 
 void addInflationLayer(

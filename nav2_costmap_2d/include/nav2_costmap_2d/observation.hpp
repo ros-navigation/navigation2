@@ -32,52 +32,27 @@
 #ifndef NAV2_COSTMAP_2D__OBSERVATION_HPP_
 #define NAV2_COSTMAP_2D__OBSERVATION_HPP_
 
+#include <utility>
 #include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <rclcpp/macros.hpp>
 
 namespace nav2_costmap_2d
 {
 
 /**
  * @brief Stores an observation in terms of a point cloud and the origin of the source
- * @note Tried to make members and constructor arguments const but the compiler would not accept the default
- * assignment operator for vector insertion!
  */
 class Observation
 {
 public:
+  RCLCPP_SMART_PTR_DEFINITIONS(Observation)
+
   /**
    * @brief  Creates an empty observation
    */
-  Observation()
-  : cloud_(new sensor_msgs::msg::PointCloud2()), obstacle_max_range_(0.0), obstacle_min_range_(0.0),
-    raytrace_max_range_(0.0),
-    raytrace_min_range_(0.0)
-  {
-  }
-  /**
-   * @brief A destructor
-   */
-  virtual ~Observation()
-  {
-    delete cloud_;
-  }
+  Observation() = default;
 
-  /**
-   * @brief  Copy assignment operator
-   * @param obs The observation to copy
-   */
-  Observation & operator=(const Observation & obs)
-  {
-    origin_ = obs.origin_;
-    cloud_ = new sensor_msgs::msg::PointCloud2(*(obs.cloud_));
-    obstacle_max_range_ = obs.obstacle_max_range_;
-    obstacle_min_range_ = obs.obstacle_min_range_;
-    raytrace_max_range_ = obs.raytrace_max_range_;
-    raytrace_min_range_ = obs.raytrace_min_range_;
-
-    return *this;
-  }
 
   /**
    * @brief  Creates an observation from an origin point and a point cloud
@@ -89,25 +64,13 @@ public:
    * @param raytrace_min_range The range from which an observation should be able to clear via raytracing
    */
   Observation(
-    geometry_msgs::msg::Point & origin, const sensor_msgs::msg::PointCloud2 & cloud,
+    geometry_msgs::msg::Point origin, sensor_msgs::msg::PointCloud2 cloud,
     double obstacle_max_range, double obstacle_min_range, double raytrace_max_range,
     double raytrace_min_range)
-  : origin_(origin), cloud_(new sensor_msgs::msg::PointCloud2(cloud)),
+  : origin_(std::move(origin)), cloud_(std::move(cloud)),
     obstacle_max_range_(obstacle_max_range), obstacle_min_range_(obstacle_min_range),
     raytrace_max_range_(raytrace_max_range), raytrace_min_range_(
       raytrace_min_range)
-  {
-  }
-
-  /**
-   * @brief  Copy constructor
-   * @param obs The observation to copy
-   */
-  Observation(const Observation & obs)
-  : origin_(obs.origin_), cloud_(new sensor_msgs::msg::PointCloud2(*(obs.cloud_))),
-    obstacle_max_range_(obs.obstacle_max_range_), obstacle_min_range_(obs.obstacle_min_range_),
-    raytrace_max_range_(obs.raytrace_max_range_),
-    raytrace_min_range_(obs.raytrace_min_range_)
   {
   }
 
@@ -120,15 +83,17 @@ public:
   Observation(
     const sensor_msgs::msg::PointCloud2 & cloud, double obstacle_max_range,
     double obstacle_min_range)
-  : cloud_(new sensor_msgs::msg::PointCloud2(cloud)), obstacle_max_range_(obstacle_max_range),
-    obstacle_min_range_(obstacle_min_range),
-    raytrace_max_range_(0.0), raytrace_min_range_(0.0)
+  : cloud_(std::move(cloud)), obstacle_max_range_(obstacle_max_range),
+    obstacle_min_range_(obstacle_min_range)
   {
   }
 
-  geometry_msgs::msg::Point origin_;
-  sensor_msgs::msg::PointCloud2 * cloud_;
-  double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;
+  geometry_msgs::msg::Point origin_{};
+  sensor_msgs::msg::PointCloud2 cloud_{};
+  double obstacle_max_range_{0.};
+  double obstacle_min_range_{0.};
+  double raytrace_max_range_{0.};
+  double raytrace_min_range_{0.};
 };
 
 }  // namespace nav2_costmap_2d

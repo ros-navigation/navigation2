@@ -474,7 +474,7 @@ class BasicNavigator(Node):
             disable_collision_checks: bool = False) -> Optional[RunningTask]:
         self.clearTaskError()
         self.debug("Waiting for 'DriveOnHeading' action server")
-        while not self.backup_client.wait_for_server(timeout_sec=1.0):
+        while not self.drive_on_heading_client.wait_for_server(timeout_sec=1.0):
             self.info("'DriveOnHeading' action server not available, waiting...")
         goal_msg = DriveOnHeading.Goal()
         goal_msg.target = Point(x=float(dist))

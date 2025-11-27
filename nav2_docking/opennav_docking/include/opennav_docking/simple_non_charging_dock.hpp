@@ -57,14 +57,14 @@ public:
    */
   void cleanup() override;
 
-   /**
-    * @brief Method to active Behavior and any threads involved in execution.
-    */
+  /**
+   * @brief Method to active Behavior and any threads involved in execution.
+   */
   void activate() override;
 
-   /**
-    * @brief Method to deactivate Behavior and any threads involved in execution.
-    */
+  /**
+   * @brief Method to deactivate Behavior and any threads involved in execution.
+   */
   void deactivate() override;
 
   /**

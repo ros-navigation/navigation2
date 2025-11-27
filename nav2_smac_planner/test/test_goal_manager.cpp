@@ -183,8 +183,9 @@ TEST(GoalManagerTest, test_goal_manager)
 
   // expect throw if we try to call removeinvalidgoals twice
   // without clearing the goal manager first
-  EXPECT_THROW(goal_manager.removeInvalidGoals(
-    tolerance, checker.get(), allow_unknow),
+  EXPECT_THROW(
+    goal_manager.removeInvalidGoals(
+      tolerance, checker.get(), allow_unknow),
     std::runtime_error
   );
 
@@ -193,7 +194,7 @@ TEST(GoalManagerTest, test_goal_manager)
 }
 
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

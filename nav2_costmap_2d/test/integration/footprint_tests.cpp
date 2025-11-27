@@ -195,7 +195,7 @@ TEST_F(TestNode, footprint_from_same_level_param)
   EXPECT_EQ(0.0f, footprint[2].z);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -53,7 +53,7 @@ public:
     costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
       parent, topic_name_,
       std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS());
+      nav2::qos::LatchedSubscriptionQoS(3));
 
     costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
       parent, topic_name_ + "_updates",

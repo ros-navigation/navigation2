@@ -146,7 +146,7 @@ TEST(CriticManagerTests, CriticLoadingTest)
   EXPECT_EQ(critic_manager.getCriticNum(), 2u);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

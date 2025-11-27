@@ -1,4 +1,4 @@
-ament_add_test(test_keepout_filter
+nav2_add_test(test_keepout_filter
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_keepout_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -10,7 +10,7 @@ ament_add_test(test_keepout_filter
     ASTAR=False
 )
 
-ament_add_test(test_speed_filter_global
+nav2_add_test(test_speed_filter_global
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_speed_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -23,7 +23,7 @@ ament_add_test(test_speed_filter_global
     ASTAR=False
 )
 
-ament_add_test(test_speed_filter_local
+nav2_add_test(test_speed_filter_local
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test_speed_launch.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

@@ -51,8 +51,9 @@ void GoalAlignCritic::onInit()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  forward_point_distance_ = node->declare_or_get_parameter(dwb_plugin_name_ + "." + name_ +
-      ".forward_point_distance", 0.325);
+  forward_point_distance_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ +
+    ".forward_point_distance", 0.325);
 }
 
 bool GoalAlignCritic::prepare(
@@ -65,7 +66,8 @@ bool GoalAlignCritic::prepare(
   // path for the robot center. Choosing the final position after
   // turning towards goal orientation causes instability when the
   // robot needs to make a 180 degree turn at the end
-  double angle_to_goal = atan2(goal.position.y - pose.position.y,
+  double angle_to_goal = atan2(
+    goal.position.y - pose.position.y,
     goal.position.x - pose.position.x);
 
   nav_msgs::msg::Path target_poses = global_plan;

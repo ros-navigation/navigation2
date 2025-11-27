@@ -349,10 +349,10 @@ float AnalyticExpansion<NodeT>::refineAnalyticPath(
 
       float score = 0.0;
       float normalized_cost = 0.0;
-    // Analytic expansions are consistently spaced
+      // Analytic expansions are consistently spaced
       const float distance = hypotf(
-      expansion.nodes[1].proposed_coords.x - expansion.nodes[0].proposed_coords.x,
-      expansion.nodes[1].proposed_coords.y - expansion.nodes[0].proposed_coords.y);
+        expansion.nodes[1].proposed_coords.x - expansion.nodes[0].proposed_coords.x,
+        expansion.nodes[1].proposed_coords.y - expansion.nodes[0].proposed_coords.y);
       const float & weight = expansion.nodes[0].node->motion_table.cost_penalty;
       for (auto iter = expansion.nodes.begin(); iter != expansion.nodes.end(); ++iter) {
         normalized_cost = iter->node->getCost() / 252.0f;

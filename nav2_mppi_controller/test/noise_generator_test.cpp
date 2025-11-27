@@ -39,7 +39,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorLifecycle)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
 
   generator.initialize(settings, false, "test_name", &handler);
   generator.reset(settings, false);
@@ -52,7 +52,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMain)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(true));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;
@@ -141,7 +141,7 @@ TEST(NoiseGeneratorTest, NoiseGeneratorMainNoRegenerate)
   auto node = std::make_shared<nav2::LifecycleNode>("node");
   node->declare_parameter("test_name.regenerate_noises", rclcpp::ParameterValue(false));
   std::string name = "test";
-ParametersHandler handler(node, name);
+  ParametersHandler handler(node, name);
   NoiseGenerator generator;
   mppi::models::OptimizerSettings settings;
   settings.batch_size = 100;
@@ -204,7 +204,7 @@ ParametersHandler handler(node, name);
   generator.shutdown();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

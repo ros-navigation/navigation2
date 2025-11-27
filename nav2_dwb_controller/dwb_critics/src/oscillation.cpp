@@ -98,8 +98,9 @@ void OscillationCritic::onInit()
 
   clock_ = node->get_clock();
 
-  oscillation_reset_dist_ = node->declare_or_get_parameter(dwb_plugin_name_ + "." + name_ +
-      ".oscillation_reset_dist", 0.05);
+  oscillation_reset_dist_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ +
+    ".oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + "." + name_ + ".oscillation_reset_angle", 0.2);
@@ -185,7 +186,7 @@ bool OscillationCritic::resetAvailable()
     tf2::fromMsg(prev_stationary_pose_.orientation, prev_stationary_pose_q);
 
     double th_diff = angles::shortest_angular_distance(
-       tf2::getYaw(pose_q), tf2::getYaw(prev_stationary_pose_q));
+      tf2::getYaw(pose_q), tf2::getYaw(prev_stationary_pose_q));
 
     if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;

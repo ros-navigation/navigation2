@@ -132,7 +132,8 @@ void enqueue(
 
   map->cells[map_index].occ_dist = distance * map->scale;
 
-  Q.emplace(CellData{map, static_cast<unsigned int>(i), static_cast<unsigned int>(j),
+  Q.emplace(
+    CellData{map, static_cast<unsigned int>(i), static_cast<unsigned int>(j),
       static_cast<unsigned int>(src_i), static_cast<unsigned int>(src_j),
       map->cells[map_index].occ_dist});
 
@@ -179,27 +180,27 @@ void map_update_cspace(map_t * map, double max_occ_dist)
     CellData current_cell = Q.top();
     if (current_cell.i_ > 0) {
       enqueue(
-          map, current_cell.i_ - 1, current_cell.j_,
-          current_cell.src_i_, current_cell.src_j_,
-          Q, cdm, marked);
+        map, current_cell.i_ - 1, current_cell.j_,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
     }
     if (current_cell.j_ > 0) {
       enqueue(
-          map, current_cell.i_, current_cell.j_ - 1,
-          current_cell.src_i_, current_cell.src_j_,
-          Q, cdm, marked);
+        map, current_cell.i_, current_cell.j_ - 1,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.i_) < map->size_x - 1) {
       enqueue(
-          map, current_cell.i_ + 1, current_cell.j_,
-          current_cell.src_i_, current_cell.src_j_,
-          Q, cdm, marked);
+        map, current_cell.i_ + 1, current_cell.j_,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
     }
     if (static_cast<int>(current_cell.j_) < map->size_y - 1) {
       enqueue(
-          map, current_cell.i_, current_cell.j_ + 1,
-          current_cell.src_i_, current_cell.src_j_,
-          Q, cdm, marked);
+        map, current_cell.i_, current_cell.j_ + 1,
+        current_cell.src_i_, current_cell.src_j_,
+        Q, cdm, marked);
     }
 
     Q.pop();

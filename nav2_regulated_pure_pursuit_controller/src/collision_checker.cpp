@@ -94,8 +94,9 @@ bool CollisionChecker::isCollisionImminent(
   double simulation_distance_limit = carrot_dist;
   if (params_->min_distance_to_obstacle > 0.0) {
     max_allowed_time_to_collision_check = std::max(
-        params_->max_allowed_time_to_collision_up_to_carrot,
-        params_->min_distance_to_obstacle / std::max(std::abs(linear_vel),
+      params_->max_allowed_time_to_collision_up_to_carrot,
+      params_->min_distance_to_obstacle / std::max(
+        std::abs(linear_vel),
         params_->min_approach_linear_velocity)
     );
     if (params_->use_velocity_scaled_lookahead_dist) {

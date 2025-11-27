@@ -945,6 +945,7 @@ TEST_F(Tester, testPolygonSource)
   sendTransforms(curr_time);
 
   // 1. Obstacle is far away from robot
+  curr_time = cm_->now();
   publishPolygon(4.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -954,6 +955,7 @@ TEST_F(Tester, testPolygonSource)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
   // 2. Obstacle is in limit robot zone
+  curr_time = cm_->now();
   publishPolygon(3.0, curr_time);
   EXPECT_TRUE(waitData(std::hypot(1.0, 3.0), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -970,6 +972,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_EQ(action_state_->polygon_name, "Limit");
 
   // 3. Obstacle is in slowdown robot zone
+  curr_time = cm_->now();
   publishPolygon(1.5, curr_time);
   EXPECT_TRUE(waitData(std::hypot(1.0, 1.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -995,6 +998,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_EQ(action_state_->polygon_name, "Stop");
 
   // 5. Restoring back normal operation
+  curr_time = cm_->now();
   publishPolygon(4.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);

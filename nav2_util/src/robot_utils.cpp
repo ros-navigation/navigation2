@@ -50,7 +50,7 @@ bool transformPoseInTargetFrame(
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPoseInTargetFrame");
 
-  if(input_pose.header.frame_id == target_frame) {
+  if (input_pose.header.frame_id == target_frame) {
     transformed_pose = input_pose;
     return true;
   }

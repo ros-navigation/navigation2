@@ -64,7 +64,8 @@ public:
 
     return providedBasicPorts(
       {
-        BT::InputPort<nav_msgs::msg::Goals>("input_goals",
+        BT::InputPort<nav_msgs::msg::Goals>(
+          "input_goals",
           "Original goals to remove from"),
         BT::InputPort<double>(
           "cost_threshold", 254.0,
@@ -73,11 +74,14 @@ public:
         BT::InputPort<bool>(
           "consider_unknown_as_obstacle", false,
           "Whether to consider unknown cost as obstacle"),
-        BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
+        BT::OutputPort<nav_msgs::msg::Goals>(
+          "output_goals",
           "Goals with in-collision goals removed"),
-        BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("input_waypoint_statuses",
+        BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
+          "input_waypoint_statuses",
           "Original waypoint_statuses to mark waypoint status from"),
-        BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("output_waypoint_statuses",
+        BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>(
+          "output_waypoint_statuses",
           "Waypoint_statuses with in-collision waypoints marked")
       });
   }
