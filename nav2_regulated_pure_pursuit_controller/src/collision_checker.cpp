@@ -105,7 +105,7 @@ bool CollisionChecker::isCollisionImminent(
         // prevents the checker from looking "through" the goal
         // considering the safe distance until the path end
         const double effective_min_dist = std::min(params_->min_distance_to_obstacle,
-            dist_to_path_end);
+          dist_to_path_end);
         // the simulation distance should look at least as far as the effective safety distance
         base_simulation_dist = std::max(carrot_dist, effective_min_dist);
       } else {
