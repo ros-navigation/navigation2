@@ -96,6 +96,7 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
+    path_handler_plugins: ["path_handler"]
     use_realtime_priority: false
     speed_limit_topic: "speed_limit"
 
@@ -115,6 +116,14 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+      path_length_tolerance: 1.0
+    path_handler:
+      plugin: "nav2_controller::SimplePathHandler"
+      prune_distance: 2.0
+      enforce_path_inversion: False
+      inversion_xy_tolerance: 0.2
+      inversion_yaw_tolerance: 0.4
+      interpolate_curvature_after_goal: False
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
@@ -133,8 +142,6 @@ controller_server:
       vy_max: 0.5
       wz_max: 1.9
       iteration_count: 1
-      prune_distance: 1.7
-      transform_tolerance: 0.1
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"

@@ -17,33 +17,32 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_mppi_controller/tools/path_handler.hpp"
+#include "nav2_controller/plugins/simple_path_handler.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
-// Tests path handling
+using nav2_controller::PathIterator;
+using PathSegment = std::pair<PathIterator, PathIterator>;
 
-using namespace mppi;  // NOLINT
-
-class PathHandlerWrapper : public PathHandler
+class PathHandlerWrapper : public nav2_controller::SimplePathHandler
 {
 public:
   PathHandlerWrapper()
-  : PathHandler() {}
+  : SimplePathHandler() {}
 
   void pruneGlobalPlanWrapper(nav_msgs::msg::Path & path, const PathIterator end)
   {
     return prunePlan(path, end);
   }
 
-  double getMaxCostmapDistWrapper()
+  double getCostmapMaxExtentWrapper()
   {
-    return getMaxCostmapDist();
+    return getCostmapMaxExtent();
   }
 
-  std::pair<nav_msgs::msg::Path, PathIterator>
-  getGlobalPlanConsideringBoundsInCostmapFrameWrapper(const geometry_msgs::msg::PoseStamped & pose)
+  PathSegment
+  findPlanSegmentIteratorsWrapper(const geometry_msgs::msg::PoseStamped & pose)
   {
-    return getGlobalPlanConsideringBoundsInCostmapFrame(pose);
+    return findPlanSegmentIterators(pose);
   }
 
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrameWrapper(
@@ -51,10 +50,17 @@ public:
   {
     return transformToGlobalPlanFrame(pose);
   }
+  nav_msgs::msg::Path transformLocalPlanWrapper(
+    const geometry_msgs::msg::PoseStamped & pose,
+    const PathIterator & closest,
+    const PathIterator & end)
+  {
+    return transformLocalPlan(pose, closest, end);
+  }
 
   void setGlobalPlanUpToInversion(const nav_msgs::msg::Path & path)
   {
-    global_plan_up_to_inversion_ = path;
+    global_plan_up_to_constraint_ = path;
   }
 
   bool isWithinInversionTolerancesWrapper(const geometry_msgs::msg::PoseStamped & robot_pose)
@@ -64,7 +70,7 @@ public:
 
   nav_msgs::msg::Path & getInvertedPath()
   {
-    return global_plan_up_to_inversion_;
+    return global_plan_up_to_constraint_;
   }
 };
 
@@ -75,16 +81,21 @@ TEST(PathHandlerTests, GetAndPrunePath)
 
   path.header.frame_id = "fkframe";
   path.poses.resize(11);
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
 
-  handler.setPath(path);
-  auto & rtn_path = handler.getPath();
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+  handler.setPlan(path);
+  auto rtn_path = handler.getPlan();
   EXPECT_EQ(path.header.frame_id, rtn_path.header.frame_id);
   EXPECT_EQ(path.poses.size(), rtn_path.poses.size());
 
   PathIterator it = rtn_path.poses.begin() + 5;
   handler.pruneGlobalPlanWrapper(rtn_path, it);
-  auto rtn2_path = handler.getPath();
-  EXPECT_EQ(rtn2_path.poses.size(), 6u);
+  EXPECT_EQ(rtn_path.poses.size(), 6u);
 }
 
 TEST(PathHandlerTests, TestBounds)
@@ -97,14 +108,12 @@ TEST(PathHandlerTests, TestBounds)
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
   // Test initialization and getting costmap basic metadata
-  handler.initialize(node, "dummy", costmap_ros, costmap_ros->getTfBuffer(), &param_handler);
-  EXPECT_EQ(handler.getMaxCostmapDistWrapper(), 2.5);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
@@ -129,9 +138,9 @@ TEST(PathHandlerTests, TestBounds)
   robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 25.0;
 
-  handler.setPath(path);
-  auto [transformed_plan, closest] =
-    handler.getGlobalPlanConsideringBoundsInCostmapFrameWrapper(robot_pose);
+  handler.setPlan(path);
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentIteratorsWrapper(robot_pose);
+  auto transformed_plan = handler.transformLocalPlanWrapper(robot_pose, closest, pruned_plan_end);
   auto & path_inverted = handler.getInvertedPath();
   EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
   handler.pruneGlobalPlanWrapper(path_inverted, closest);
@@ -146,13 +155,11 @@ TEST(PathHandlerTests, TestTransforms)
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State state;
   costmap_ros->on_configure(state);
 
   // Test basic transformations and path handling
-  handler.initialize(node, "dummy", costmap_ros, costmap_ros->getTfBuffer(), &param_handler);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
 
   // Set tf between map odom and base_link
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
@@ -177,16 +184,15 @@ TEST(PathHandlerTests, TestTransforms)
   robot_pose.header.frame_id = "odom";
   robot_pose.pose.position.x = 2.5;
 
-
   EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
-  handler.setPath(path);
+  handler.setPlan(path);
   EXPECT_NO_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose));
 
-  auto [path_out, closest] =
-    handler.getGlobalPlanConsideringBoundsInCostmapFrameWrapper(robot_pose);
+  auto [closest_point, pruned_plan_end] = handler.findPlanSegmentIteratorsWrapper(robot_pose);
+  auto path_out = handler.transformLocalPlanWrapper(robot_pose, closest_point, pruned_plan_end);
 
   // Put it all together
-  auto final_path = handler.transformPath(robot_pose);
+  auto final_path = handler.transformGlobalPlan(robot_pose);
   EXPECT_EQ(final_path.poses.size(), path_out.poses.size());
 }
 
@@ -201,6 +207,13 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   path.poses.back().pose.orientation.w = 1;
 
   PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
   handler.setGlobalPlanUpToInversion(path);
 
   // Not near (0,0)
@@ -233,7 +246,42 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
 }
 
-int main(int argc, char ** argv)
+TEST(PathHandlerTests, TestDynamicParams)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(),
+    node->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically({
+    rclcpp::Parameter("dummy.max_robot_pose_search_dist", 100.0),
+    rclcpp::Parameter("dummy.inversion_xy_tolerance", 200.0),
+    rclcpp::Parameter("dummy.inversion_yaw_tolerance", 300.0),
+    rclcpp::Parameter("dummy.prune_distance", 400.0),
+    rclcpp::Parameter("dummy.enforce_path_inversion", true),
+    });
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("dummy.max_robot_pose_search_dist").as_double(), 100.0);
+  EXPECT_EQ(node->get_parameter("dummy.inversion_xy_tolerance").as_double(), 200.0);
+  EXPECT_EQ(node->get_parameter("dummy.inversion_yaw_tolerance").as_double(), 300.0);
+  EXPECT_EQ(node->get_parameter("dummy.prune_distance").as_double(), 400.0);
+  EXPECT_EQ(node->get_parameter("dummy.enforce_path_inversion").as_bool(), true);
+}
+
+int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 
