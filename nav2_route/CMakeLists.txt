@@ -122,7 +122,7 @@ ament_target_dependencies(graph_file_savers
 pluginlib_export_plugin_description_file(nav2_route plugins.xml)
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 install(TARGETS ${executable_name}
@@ -148,7 +148,7 @@ if(BUILD_TESTING)
   add_subdirectory(test)
 endif()
 
-ament_export_include_directories(include/)
+ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_dependencies(${dependencies})
 ament_export_libraries(${library_name} edge_scorers route_operations graph_file_loaders graph_file_savers)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
