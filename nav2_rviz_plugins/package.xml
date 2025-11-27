@@ -28,6 +28,7 @@
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>yaml_cpp_vendor</depend>
+  <depend>nav2_route</depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>

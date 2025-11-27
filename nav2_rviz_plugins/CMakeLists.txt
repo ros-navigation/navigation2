@@ -16,6 +16,7 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav2_route REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_msgs REQUIRED)
@@ -40,11 +41,14 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_common.hpp
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
+  include/nav2_rviz_plugins/route_tool.hpp
   include/nav2_rviz_plugins/selector.hpp
   include/nav2_rviz_plugins/utils.hpp
   include/nav2_rviz_plugins/particle_cloud_display/flat_weighted_arrows_array.hpp
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
 )
+
+qt_wrap_ui(route_tool_UIS_H resource/route_tool.ui)
 
 include_directories(
   include
@@ -57,15 +61,18 @@ add_library(${library_name} SHARED
   src/docking_panel.cpp
   src/goal_tool.cpp
   src/nav2_panel.cpp
+  src/route_tool.cpp
   src/selector.cpp
   src/utils.cpp
   src/particle_cloud_display/flat_weighted_arrows_array.cpp
   src/particle_cloud_display/particle_cloud_display.cpp
   ${nav2_rviz_plugins_headers_to_moc}
+  ${route_tool_UIS_H}
 )
 
 set(dependencies
   geometry_msgs
+  nav2_route
   nav2_util
   nav2_lifecycle_manager
   nav2_msgs
@@ -90,10 +97,12 @@ ament_target_dependencies(${library_name}
 target_include_directories(${library_name} PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
+  ${nav2_route_INCLUDE_DIRS}
 )
 
 target_link_libraries(${library_name}
   rviz_common::rviz_common
+  nav2_route::route_server_core
 )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
@@ -119,8 +128,12 @@ install(
 
 install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/icons"
+            "${CMAKE_CURRENT_SOURCE_DIR}/resource"
+            "${CMAKE_CURRENT_SOURCE_DIR}/rviz"
+            "${CMAKE_CURRENT_SOURCE_DIR}/launch"
   DESTINATION "share/${PROJECT_NAME}"
 )
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -136,6 +149,7 @@ ament_export_dependencies(
   map_msgs
   nav_msgs
   rclcpp
+  nav2_route
 )
 
 ament_package()
