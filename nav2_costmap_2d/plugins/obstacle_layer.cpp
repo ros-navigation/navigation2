@@ -527,8 +527,10 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
-    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
-    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
+    const unsigned int max_cells = cellDistance(obs.obstacle_max_range_);
+    const unsigned int min_cells = cellDistance(obs.obstacle_min_range_);
+    const uint64_t sq_obstacle_max_range = max_cells * max_cells;
+    const uint64_t sq_obstacle_min_range = min_cells * min_cells;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -549,19 +551,23 @@ ObstacleLayer::updateBounds(
         continue;
       }
 
-      // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist =
-        (px -
-        obs.origin_.x) * (px - obs.origin_.x) + (py - obs.origin_.y) * (py - obs.origin_.y) +
-        (pz - obs.origin_.z) * (pz - obs.origin_.z);
+      // compute the distance from the hitpoint to the pointcloud's origin
+      // Calculate the distance in cell space to match the ray trace algorithm
+      // used for clearing obstacles (see Costmap2D::raytraceLine).
+      unsigned int x0, y0, x1, y1;
+      worldToMap(obs.origin_.x, obs.origin_.y, x0, y0);
+      worldToMap(px, py, x1, y1);
+      const uint64_t sq_dist =
+        static_cast<int64_t>(x1 - x0) * static_cast<int64_t>(x1 - x0) +
+        static_cast<int64_t>(y1 - y0) * static_cast<int64_t>(y1 - y0);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_max_range) {
+      if (sq_dist > sq_obstacle_max_range) {
         RCLCPP_DEBUG(logger_, "The point is too far away");
         continue;
       }
 
-      // if the point is too close, do not conisder it
+      // if the point is too close, do not consider it
       if (sq_dist < sq_obstacle_min_range) {
         RCLCPP_DEBUG(logger_, "The point is too close");
         continue;
@@ -779,6 +785,15 @@ ObstacleLayer::raytraceFreespace(
 
     unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
     unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
+
+    int64_t dx = int64_t(x1) - int64_t(x0);
+    int64_t dy = int64_t(y1) - int64_t(y0);
+    double observation_dist = std::hypot(dx, dy);
+
+    cell_raytrace_max_range =
+      std::min(cell_raytrace_max_range,
+                static_cast<unsigned int>(observation_dist) - 1);
+
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
     nav2_util::raytraceLine(
