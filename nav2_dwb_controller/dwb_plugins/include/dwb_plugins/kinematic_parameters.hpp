@@ -107,15 +107,16 @@ public:
   ~KinematicsHandler();
   void initialize(const nav2_util::LifecycleNode::SharedPtr & nh, const std::string & plugin_name);
 
-   inline KinematicParameters getKinematics() {
-      KinematicParameters* ptr = kinematics_.load();
-      // Check for nullptr before dereferencing
-      if (ptr == nullptr) {
-        throw std::runtime_error(
-          "KinematicsHandler::getKinematics() called before kinematics_ is initialized");
-      }
-      return *ptr;
+  inline KinematicParameters getKinematics()
+  {
+    KinematicParameters * ptr = kinematics_.load();
+    // Check for nullptr before dereferencing
+    if (ptr == nullptr) {
+      throw std::runtime_error(
+              "KinematicsHandler::getKinematics() called before kinematics_ is initialized");
     }
+    return *ptr;
+  }
 
   using Ptr = std::shared_ptr<KinematicsHandler>;
 

@@ -55,7 +55,7 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-  KinematicParameters* ptr = kinematics_.load();
+  KinematicParameters * ptr = kinematics_.load();
   if (ptr != nullptr) {
     delete ptr;
   }
@@ -137,7 +137,7 @@ void
 KinematicsHandler::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  KinematicParameters* ptr = kinematics_.load();
+  KinematicParameters * ptr = kinematics_.load();
   if (ptr == nullptr) {
     return;  // Nothing to update
   }
@@ -185,9 +185,10 @@ KinematicsHandler::on_parameter_event_callback(
   update_kinematics(kinematics);
 }
 
-void KinematicsHandler::update_kinematics(KinematicParameters kinematics) {
-  KinematicParameters* new_kinematics = new KinematicParameters(kinematics);
-  KinematicParameters* old_kinematics = kinematics_.exchange(new_kinematics);
+void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
+{
+  KinematicParameters * new_kinematics = new KinematicParameters(kinematics);
+  KinematicParameters * old_kinematics = kinematics_.exchange(new_kinematics);
 
   if (old_kinematics != nullptr) {
     delete old_kinematics;
