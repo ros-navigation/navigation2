@@ -34,17 +34,18 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 
-  declare_parameter("stop_on_failure", true);
-  declare_parameter("loop_rate", 20);
+  // Use declare_or_get_parameter for all parameters
+  stop_on_failure_ = nav2::declare_or_get_parameter(this, "stop_on_failure", true);
+  loop_rate_ = nav2::declare_or_get_parameter(this, "loop_rate", 20);
+  global_frame_id_ = nav2::declare_or_get_parameter(
+    this, "global_frame_id", std::string("map"));
+  waypoint_task_executor_id_ = nav2::declare_or_get_parameter(
+    this, "waypoint_task_executor_plugin", std::string("wait_at_waypoint"));
 
-  declare_parameter("global_frame_id", "map");
-
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("waypoint_task_executor_plugin"),
-    rclcpp::ParameterValue(std::string("wait_at_waypoint")));
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("wait_at_waypoint.plugin"),
-    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
+  // Plugin type parameter
+  nav2::declare_or_get_parameter(
+    this, "wait_at_waypoint.plugin",
+    std::string("nav2_waypoint_follower::WaitAtWaypoint"));
 }
 
 WaypointFollower::~WaypointFollower()
@@ -58,10 +59,13 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
-  loop_rate_ = get_parameter("loop_rate").as_int();
-  waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
-  global_frame_id_ = get_parameter("global_frame_id").as_string();
+  // Parameters already declared in constructor, just get them
+  stop_on_failure_ = nav2::declare_or_get_parameter(node, "stop_on_failure", true);
+  loop_rate_ = nav2::declare_or_get_parameter(node, "loop_rate", 20);
+  waypoint_task_executor_id_ = nav2::declare_or_get_parameter(
+    node, "waypoint_task_executor_plugin", std::string("wait_at_waypoint"));
+  global_frame_id_ = nav2::declare_or_get_parameter(
+    node, "global_frame_id", std::string("map"));
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
