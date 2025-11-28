@@ -149,7 +149,7 @@ public:
   {
     KinematicParameters * ptr = kinematics_.load();
     if (ptr == nullptr) {
-    throw std::runtime_error("Can't call KinematicsHandler::getKinematics().");
+      throw std::runtime_error("Can't call KinematicsHandler::getKinematics().");
     }
     return *ptr;
   }
