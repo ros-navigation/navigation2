@@ -154,11 +154,11 @@ void KinematicsHandler::deactivate()
 void KinematicsHandler::setSpeedLimit(
   const double & speed_limit, const bool & percentage)
 {
-   KinematicParameters * ptr = kinematics_.load();
-   if (ptr == nullptr) {
-     return;  // Nothing to update
-   }
-   KinematicParameters kinematics(*ptr);
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
@@ -215,9 +215,9 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         param_name == plugin_name_ + ".acc_lim_theta"))
       {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >= 0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >= 0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (parameter.as_double() > 0.0 && // NOLINT
         (param_name == plugin_name_ + ".decel_lim_x" ||
@@ -225,9 +225,9 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         param_name == plugin_name_ + ".decel_lim_theta"))
       {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be <= 0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be <= 0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     }
@@ -239,11 +239,11 @@ void
 KinematicsHandler::updateParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-   KinematicParameters* ptr = kinematics_.load();
-   if (ptr == nullptr) {
-     return;  // Nothing to update
-   }
-   KinematicParameters kinematics(*ptr);
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
