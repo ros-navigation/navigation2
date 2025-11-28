@@ -33,7 +33,7 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.hpp"
-
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -55,7 +55,10 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-  delete kinematics_.load();
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr != nullptr) {
+    delete ptr;
+  }
 }
 
 void KinematicsHandler::initialize(
@@ -134,7 +137,11 @@ void
 KinematicsHandler::on_parameter_event_callback(
   const rcl_interfaces::msg::ParameterEvent::SharedPtr event)
 {
-  KinematicParameters kinematics(*kinematics_.load());
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;  // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   for (auto & changed_parameter : event->changed_parameters) {
     const auto & type = changed_parameter.value.type;
@@ -180,8 +187,12 @@ KinematicsHandler::on_parameter_event_callback(
 
 void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
 {
-  delete kinematics_.load();
-  kinematics_.store(new KinematicParameters(kinematics));
+  KinematicParameters * new_kinematics = new KinematicParameters(kinematics);
+  KinematicParameters * old_kinematics = kinematics_.exchange(new_kinematics);
+
+  if (old_kinematics != nullptr) {
+    delete old_kinematics;
+  }
 }
 
 }  // namespace dwb_plugins
