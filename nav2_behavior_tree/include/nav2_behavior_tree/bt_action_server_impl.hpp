@@ -176,10 +176,10 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
-  blackboard_->set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>(
+  blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
@@ -328,11 +328,13 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
-      blackboard->set("node", client_node_);
-      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
-      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
-      blackboard->set<std::chrono::milliseconds>(
-        "wait_for_service_timeout", wait_for_service_timeout_);
+      blackboard->template set("node", client_node_);
+      blackboard->template set<std::chrono::milliseconds>("server_timeout",
+          default_server_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->template set<std::chrono::milliseconds>(
+        "wait_for_service_timeout",
+        wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
     setInternalError(
@@ -498,9 +500,9 @@ void BtActionServer<ActionT, NodeT>::cleanErrorCodes()
   std::string name;
   for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
     name = error_code_name_prefix + "_error_code";
-    blackboard_->set<unsigned short>(name, 0);  //NOLINT
+    blackboard_->template set<unsigned short>(name, 0);  //NOLINT
     name = error_code_name_prefix + "_error_msg";
-    blackboard_->set<std::string>(name, "");
+    blackboard_->template set<std::string>(name, "");
   }
   resetInternalError();
 }
