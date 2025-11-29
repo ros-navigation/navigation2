@@ -13,7 +13,7 @@ set(TEST_NAMES
 )
 
 foreach(name IN LISTS TEST_NAMES)
-  ament_add_gtest(${name}
+  nav2_add_gtest(${name}
     ${name}.cpp
   )
   target_link_libraries(${name}
@@ -33,7 +33,7 @@ foreach(name IN LISTS TEST_NAMES)
 endforeach()
 
 # This is a special case requiring linking against the critics library
-ament_add_gtest(critics_tests critics_tests.cpp)
+nav2_add_gtest(critics_tests critics_tests.cpp)
 target_link_libraries(critics_tests
   mppi_controller
   mppi_critics

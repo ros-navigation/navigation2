@@ -1,5 +1,5 @@
 # map_io unit test
-ament_add_gtest(test_map_io test_map_io.cpp ${PROJECT_SOURCE_DIR}/test/test_constants.cpp)
+nav2_add_gtest(test_map_io test_map_io.cpp ${PROJECT_SOURCE_DIR}/test/test_constants.cpp)
 target_include_directories(test_map_io
   PRIVATE
   "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/test>")
@@ -10,7 +10,7 @@ target_link_libraries(test_map_io
 )
 
 # costmap_filter_info_server unit test
-ament_add_gtest(test_costmap_filter_info_server
+nav2_add_gtest(test_costmap_filter_info_server
   test_costmap_filter_info_server.cpp
 )
 target_link_libraries(test_costmap_filter_info_server
@@ -20,7 +20,7 @@ target_link_libraries(test_costmap_filter_info_server
 )
 
 # test_vector_object_shapes unit test
-ament_add_gtest(test_vector_object_shapes
+nav2_add_gtest(test_vector_object_shapes
   test_vector_object_shapes.cpp
 )
 
@@ -31,7 +31,7 @@ target_link_libraries(test_vector_object_shapes
 )
 
 # test_vector_object_server unit test
-ament_add_gtest(test_vector_object_server
+nav2_add_gtest(test_vector_object_server
   test_vector_object_server.cpp
 )
 

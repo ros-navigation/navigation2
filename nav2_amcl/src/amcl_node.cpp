@@ -58,6 +58,12 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+  init_pose_[0] = 0.0;
+  init_pose_[1] = 0.0;
+  init_pose_[2] = 0.0;
+  init_cov_[0] = 0.0;
+  init_cov_[1] = 0.0;
+  init_cov_[2] = 0.0;
 }
 
 AmclNode::~AmclNode()
@@ -995,11 +1001,11 @@ AmclNode::initParameters()
 }
 
 rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
@@ -1045,7 +1051,7 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
 
 void
 AmclNode::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -1217,7 +1223,7 @@ AmclNode::updateParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS());
+      nav2::qos::LatchedSubscriptionQoS(3));
   }
 }
 
@@ -1389,7 +1395,7 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS());
+    nav2::qos::LatchedSubscriptionQoS(3));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }

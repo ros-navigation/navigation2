@@ -152,7 +152,7 @@ void SpeedFilter::filterInfoCallback(
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_,
     std::bind(&SpeedFilter::maskCallback, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS());
+    nav2::qos::LatchedSubscriptionQoS(3));
 }
 
 void SpeedFilter::maskCallback(
