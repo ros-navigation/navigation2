@@ -140,10 +140,13 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
       geometry_msgs::msg::Pose pose_tolerance;
       geometry_msgs::msg::Twist vel_tolerance;
+      std::optional<geometry_msgs::msg::Pose> before_goal_pose = std::nullopt;
       goal_checker->getTolerances(pose_tolerance, vel_tolerance);
       position_goal_checker_->setXYGoalTolerance(pose_tolerance.position.x);
 
-      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, velocity)) {
+      if (position_goal_checker_->isGoalReached(pose.pose, sampled_pt_goal.pose, before_goal_pose,
+          velocity))
+      {
         double pose_yaw = tf2::getYaw(pose.pose.orientation);
         double goal_yaw = tf2::getYaw(sampled_pt_goal.pose.orientation);
 
