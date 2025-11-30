@@ -59,14 +59,6 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  // Parameters already declared in constructor, just get them
-  stop_on_failure_ = nav2::declare_or_get_parameter(node, "stop_on_failure", true);
-  loop_rate_ = nav2::declare_or_get_parameter(node, "loop_rate", 20);
-  waypoint_task_executor_id_ = nav2::declare_or_get_parameter(
-    node, "waypoint_task_executor_plugin", std::string("wait_at_waypoint"));
-  global_frame_id_ = nav2::declare_or_get_parameter(
-    node, "global_frame_id", std::string("map"));
-
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
