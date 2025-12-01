@@ -136,7 +136,7 @@ public:
     void simulateNullKinematics()
     {
       // Temporarily set kinematics_ to null to test null pointer handling
-      KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
       delete old_ptr;
     }
 
@@ -172,7 +172,7 @@ public:
     void simulateNullKinematics()
     {
       // Temporarily set kinematics_ to null to test null pointer handling
-      KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
       delete old_ptr;
     }
 
@@ -219,7 +219,7 @@ public:
     void simulateNullKinematics()
     {
       // Temporarily set kinematics_ to null
-      KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
       delete old_ptr;
     }
   };
