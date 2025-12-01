@@ -35,7 +35,7 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Creating");
 }
 
-}
+}  // namespace nav2_waypoint_follower
 
 WaypointFollower::~WaypointFollower()
 {
@@ -50,16 +50,16 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   stop_on_failure_ = nav2::declare_or_get_parameter<bool>(
     this, "stop_on_failure", true);
-  
+
   loop_rate_ = nav2::declare_or_get_parameter<int>(
     this, "loop_rate", 20);
-  
+
   global_frame_id_ = nav2::declare_or_get_parameter<std::string>(
     this, "global_frame_id", "map");
-  
+
   waypoint_task_executor_id_ = nav2::declare_or_get_parameter<std::string>(
     this, "waypoint_task_executor_plugin", "wait_at_waypoint");
-  
+
   nav2::declare_or_get_parameter<std::string>(
     this, "wait_at_waypoint.plugin", "nav2_waypoint_follower::WaitAtWaypoint");
 
@@ -524,8 +524,6 @@ WaypointFollower::convertGPSPosesToMapPoses(
     static_cast<int>(poses_in_map_frame_vector.size()), global_frame_id_.c_str());
   return poses_in_map_frame_vector;
 }
-
-}  // namespace nav2_waypoint_follower
 
 #include "rclcpp_components/register_node_macro.hpp"
 
