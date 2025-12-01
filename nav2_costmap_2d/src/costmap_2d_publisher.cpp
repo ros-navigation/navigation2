@@ -237,8 +237,8 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 void Costmap2DPublisher::publishCostmap()
 {
   if(!active_) {
-    return
-  };
+    return;
+  }
 
   float resolution = costmap_->getResolution();
   if (always_send_full_costmap_ || grid_resolution_ != resolution ||
