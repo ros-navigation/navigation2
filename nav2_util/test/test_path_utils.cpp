@@ -472,11 +472,11 @@ TEST(UtilsTests, FindPathInversionTest)
     pose.pose.position.x = i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 10u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, -1), 10u);
 
   // To short to process
   path.poses.erase(path.poses.begin(), path.poses.begin() + 7);
-  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 3u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, -1), 3u);
 
   // Has inversion at index 10, so should return 11 for the first point afterwards
   // 0 1 2 3 4 5 6 7 8 9 10 **9** 8 7 6 5 4 3 2 1
@@ -491,7 +491,7 @@ TEST(UtilsTests, FindPathInversionTest)
     pose.pose.position.x = 10 - i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 11u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, -1), 11u);
 
   // In place rotation
   path.poses.clear();
@@ -511,7 +511,65 @@ TEST(UtilsTests, FindPathInversionTest)
   path.poses.push_back(last_pose);
   last_pose.pose.position.x = 11.0;
   path.poses.push_back(last_pose);
-  EXPECT_EQ(nav2_util::findFirstPathConstraint(path), 10u);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 1.57), 10u);
+
+  // Rotation never exceeds threshold (total 0.25 rad)
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
+    path.poses.push_back(pose);
+  }
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x = 4.0;
+    q.setRPY(0, 0, i * 0.05);
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 0.5), path.poses.size());
+  // Multiple in-place rotations exceeding threshold after several steps
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
+    path.poses.push_back(pose);
+  }
+  // In-place rotation sequence: small rotation 3 times
+  for (unsigned int i = 0; i < 3; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x = 4.0; // No translation
+    q.setRPY(0, 0, (i + 1) * (M_PI / 6.0));
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 1.5), 7u);
+  // Now combine rotation and inversion
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
+    path.poses.push_back(pose);
+  }
+  // In place rotation
+  for (unsigned int i = 0; i < 2; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    q.setRPY(0, 0, (i + 1) * M_PI_4 / 2.0); // small steps: 22.5°, 45° (total 0.78rad accumulated)
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  // 0 1 2 3 4  5 6  7 8 9
+  // Inversion
+  for (unsigned int i = 0; i < 3; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x -= 1.0; // reversing direction
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 0.7), 6u);
+  // EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 2.0), 7u);
 }
 
 TEST(UtilsTests, RemovePosesAfterPathInversionTest)
@@ -523,11 +581,11 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
     pose.pose.position.x = i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 0u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, -1), 0u);
 
   // try empty path
   path.poses.clear();
-  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 0u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, -1), 0u);
 
   // cusping path
   for (unsigned int i = 0; i != 10; i++) {
@@ -540,7 +598,7 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
     pose.pose.position.x = 10 - i;
     path.poses.push_back(pose);
   }
-  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path), 11u);
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, -1), 11u);
   // Check to see if removed
   EXPECT_EQ(path.poses.size(), 11u);
   EXPECT_EQ(path.poses.back().pose.position.x, 10);

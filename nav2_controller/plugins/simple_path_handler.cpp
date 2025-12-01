@@ -56,7 +56,7 @@ void SimplePathHandler::initialize(
   inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
     ".inversion_yaw_tolerance", 0.4);
   minimum_rotation_angle_ = node->declare_or_get_parameter(plugin_name + ".minimum_rotation_angle",
-    0.785);
+    -1.0);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
@@ -107,7 +107,8 @@ void SimplePathHandler::setPlan(const nav_msgs::msg::Path & path)
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
   if(enforce_path_constraint_) {
-    constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_);
+    constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
+      minimum_rotation_angle_);
   }
 }
 
@@ -223,7 +224,7 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
       prunePlan(global_plan_, global_plan_.poses.begin() + constraint_locale_);
       global_plan_up_to_constraint_ = global_plan_;
       constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
-          minimum_rotation_angle_);
+        minimum_rotation_angle_);
     }
   }
 

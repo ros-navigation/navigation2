@@ -28,11 +28,10 @@ using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
 ParameterHandler::ParameterHandler(
-  nav2::LifecycleNode::SharedPtr node,
+  const nav2::LifecycleNode::SharedPtr & node,
   const rclcpp::Logger & logger)
+: nav2_util::ParameterHandler<Parameters>(node, logger)
 {
-  node_ = node;
-  logger_ = logger;
 
   params_.controller_frequency = node->declare_or_get_parameter("controller_frequency", 20.0);
   params_.min_x_velocity_threshold = node->declare_or_get_parameter("min_x_velocity_threshold",
@@ -151,42 +150,12 @@ ParameterHandler::ParameterHandler(
   }
 }
 
-void ParameterHandler::activate()
-{
-  auto node = node_.lock();
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
-
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-}
-
-void ParameterHandler::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
-}
-
-ParameterHandler::~ParameterHandler()
-{
-}
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     // If we are trying to change the parameter of a plugin we can just skip it at this point
@@ -206,9 +175,10 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
   }
   return result;
 }
+
 void
 ParameterHandler::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::mutex> lock_reinit(mutex_);
 

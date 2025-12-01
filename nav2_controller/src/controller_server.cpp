@@ -659,7 +659,9 @@ void ControllerServer::computeAndPublishVelocity()
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ = path_handlers_[current_path_handler_]->transformGlobalPlan(pose);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
-  transformed_plan_pub_->publish(std::move(path));
+  if (transformed_plan_pub_->get_subscription_count() > 0) {
+    transformed_plan_pub_->publish(std::move(path));
+  }
 
   geometry_msgs::msg::TwistStamped cmd_vel_2d;
 

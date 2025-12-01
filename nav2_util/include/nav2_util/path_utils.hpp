@@ -84,38 +84,48 @@ bool transformPathInTargetFrame(
  */
 inline unsigned int findFirstPathConstraint(
   nav_msgs::msg::Path & path,
-  float rotation_threshold = 0.0f)
+  float rotation_threshold)
 {
   // At least 3 poses for a possible inversion
   if (path.poses.size() < 3) {
     return path.poses.size();
   }
 
+  const bool check_rotation = rotation_threshold == -1 ? false : true;
   unsigned int rotation_idx = path.poses.size();
+  unsigned int inversion_idx = path.poses.size();
+  float prev_dx = 0.0f;
+  float prev_dy = 0.0f;
+  bool prev_valid = false;
 
   // Iterating through the path to determine the position of the path inversion or rotation
   for (unsigned int idx = 0; idx < path.poses.size() - 1; ++idx) {
-    // We have two vectors for the dot product OA and AB. Determining the vectors.
-    float oa_x = 0.0f;
-    float oa_y = 0.0f;
-    float ab_x = path.poses[idx + 1].pose.position.x -
+    float dx = path.poses[idx + 1].pose.position.x -
       path.poses[idx].pose.position.x;
-    float ab_y = path.poses[idx + 1].pose.position.y -
+    float dy = path.poses[idx + 1].pose.position.y -
       path.poses[idx].pose.position.y;
-    if (idx > 0) {
-      oa_x = path.poses[idx].pose.position.x -
-        path.poses[idx - 1].pose.position.x;
-      oa_y = path.poses[idx].pose.position.y -
-        path.poses[idx - 1].pose.position.y;
-      // Checking for the existence of cusp, in the path, using the dot product.
-      float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
-      if (dot_product < 0.0f) {
-        return idx + 1;
-      }
+    float trans = hypot(dx, dy);
+
+    if (rotation_idx <= idx + 1 && inversion_idx <= idx + 1) {
+      break;
     }
 
-    float translation = hypot(ab_x, ab_y);
-    if (translation < 1e-4) {
+    // Check inversion
+    if (trans > 1e-4) {
+      if (prev_valid) {
+        // Checking for the existence of cusp, in the path, using the dot product.
+        float dot_product = prev_dx * dx + prev_dy * dy;
+        if (dot_product < 0.0f) {
+          inversion_idx = std::min(inversion_idx, idx + 1);
+        }
+      }
+      prev_dx = dx;
+      prev_dy = dy;
+      prev_valid = true;
+    }
+
+    // Check in place rotation, we only loop when rotation idx is not updated
+    if (check_rotation && trans < 1e-4 && rotation_idx == path.poses.size()) {
       float accumulated_rotation = 0.0f;
       unsigned int end_idx = idx;
 
@@ -126,17 +136,16 @@ inline unsigned int findFirstPathConstraint(
         float next_yaw = tf2::getYaw(path.poses[end_idx + 1].pose.orientation);
         accumulated_rotation += fabs(angles::shortest_angular_distance(current_yaw, next_yaw));
         if (accumulated_rotation > rotation_threshold) {
-          // We found the constraint here, but there might be smaller index
-          rotation_idx = std::min(rotation_idx, end_idx + 1);
+          rotation_idx = end_idx + 1;
           break;
         }
         if (end_idx + 2 < path.poses.size()) {
-          float dx = path.poses[end_idx + 2].pose.position.x -
+          float ndx = path.poses[end_idx + 2].pose.position.x -
             path.poses[end_idx + 1].pose.position.x;
-          float dy = path.poses[end_idx + 2].pose.position.y -
+          float ndy = path.poses[end_idx + 2].pose.position.y -
             path.poses[end_idx + 1].pose.position.y;
           // Stop if translation resumes
-          if (hypot(dx, dy) > 1e-4) {
+          if (hypot(ndx, ndy) > 1e-4) {
             break;
           }
         } else {
@@ -148,22 +157,22 @@ inline unsigned int findFirstPathConstraint(
     }
   }
 
-  return rotation_idx;
+  return std::min(rotation_idx, inversion_idx);
 }
 
 /**
  * @brief Find and remove poses after the first constraint in the path
  * @param path to check for inversion or rotation
- * * @param rotation_threshold Minimum rotation angle to consider an in-place rotation
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation
  * @return The location of the inversion or rotation, return 0 if none exist
  */
 inline unsigned int removePosesAfterFirstConstraint(
   nav_msgs::msg::Path & path,
-  float rotation_threshold = 0.0f)
+  float rotation_threshold)
 {
   nav_msgs::msg::Path cropped_path = path;
   const unsigned int first_after_constraint = findFirstPathConstraint(cropped_path,
-      rotation_threshold);
+    rotation_threshold);
   if (first_after_constraint == path.poses.size()) {
     return 0u;
   }

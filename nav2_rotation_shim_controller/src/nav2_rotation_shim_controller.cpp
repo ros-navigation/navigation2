@@ -205,7 +205,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   // If at this point, use the primary controller to path track
   in_rotation_ = false;
   auto cmd_vel = primary_controller_->computeVelocityCommands(pose, velocity, goal_checker,
-      transformed_global_plan, global_goal);
+    transformed_global_plan, global_goal);
   last_angular_vel_ = cmd_vel.twist.angular.z;
   return cmd_vel;
 }
