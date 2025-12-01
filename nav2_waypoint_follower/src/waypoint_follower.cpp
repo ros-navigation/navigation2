@@ -33,19 +33,8 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
     "nav2_core::WaypointTaskExecutor")
 {
   RCLCPP_INFO(get_logger(), "Creating");
+}
 
-  // Use declare_or_get_parameter for all parameters
-  stop_on_failure_ = nav2::declare_or_get_parameter(this, "stop_on_failure", true);
-  loop_rate_ = nav2::declare_or_get_parameter(this, "loop_rate", 20);
-  global_frame_id_ = nav2::declare_or_get_parameter(
-    this, "global_frame_id", std::string("map"));
-  waypoint_task_executor_id_ = nav2::declare_or_get_parameter(
-    this, "waypoint_task_executor_plugin", std::string("wait_at_waypoint"));
-
-  // Plugin type parameter
-  nav2::declare_or_get_parameter(
-    this, "wait_at_waypoint.plugin",
-    std::string("nav2_waypoint_follower::WaitAtWaypoint"));
 }
 
 WaypointFollower::~WaypointFollower()
@@ -58,6 +47,21 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring");
 
   auto node = shared_from_this();
+
+  stop_on_failure_ = nav2::declare_or_get_parameter<bool>(
+    this, "stop_on_failure", true);
+  
+  loop_rate_ = nav2::declare_or_get_parameter<int>(
+    this, "loop_rate", 20);
+  
+  global_frame_id_ = nav2::declare_or_get_parameter<std::string>(
+    this, "global_frame_id", "map");
+  
+  waypoint_task_executor_id_ = nav2::declare_or_get_parameter<std::string>(
+    this, "waypoint_task_executor_plugin", "wait_at_waypoint");
+  
+  nav2::declare_or_get_parameter<std::string>(
+    this, "wait_at_waypoint.plugin", "nav2_waypoint_follower::WaitAtWaypoint");
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
