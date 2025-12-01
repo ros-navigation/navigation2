@@ -836,6 +836,8 @@ bool ControllerServer::isGoalReached()
 
   std::optional<geometry_msgs::msg::Pose> transformed_before_end_pose;
   if (before_end_pose_.has_value()) {
+    // Use the current robot pose's timestamp for the transformation
+    before_end_pose_.value().header.stamp = pose.header.stamp;
     geometry_msgs::msg::PoseStamped transformed_before_end_pose_stamped;
     if (nav2_util::transformPoseInTargetFrame(
           before_end_pose_.value(), transformed_before_end_pose_stamped,
