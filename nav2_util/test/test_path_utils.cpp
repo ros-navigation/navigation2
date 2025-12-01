@@ -518,7 +518,6 @@ TEST(UtilsTests, FindPathInversionTest)
   for (unsigned int i = 0; i < 5; i++) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
-    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
     path.poses.push_back(pose);
   }
   for (unsigned int i = 0; i < 5; i++) {
@@ -534,13 +533,12 @@ TEST(UtilsTests, FindPathInversionTest)
   for (unsigned int i = 0; i < 5; i++) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
-    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
     path.poses.push_back(pose);
   }
   // In-place rotation sequence: small rotation 3 times
   for (unsigned int i = 0; i < 3; i++) {
     geometry_msgs::msg::PoseStamped pose = path.poses.back();
-    pose.pose.position.x = 4.0; // No translation
+    pose.pose.position.x = 4.0;  // No translation
     q.setRPY(0, 0, (i + 1) * (M_PI / 6.0));
     pose.pose.orientation = tf2::toMsg(q);
     path.poses.push_back(pose);
@@ -551,13 +549,12 @@ TEST(UtilsTests, FindPathInversionTest)
   for (unsigned int i = 0; i < 5; i++) {
     geometry_msgs::msg::PoseStamped pose;
     pose.pose.position.x = i;
-    pose.pose.orientation = tf2::toMsg(tf2::Quaternion(0, 0, 0));
     path.poses.push_back(pose);
   }
   // In place rotation
   for (unsigned int i = 0; i < 2; i++) {
     geometry_msgs::msg::PoseStamped pose = path.poses.back();
-    q.setRPY(0, 0, (i + 1) * M_PI_4 / 2.0); // small steps: 22.5°, 45° (total 0.78rad accumulated)
+    q.setRPY(0, 0, (i + 1) * M_PI_4 / 2.0);  // small steps: 22.5°, 45° (total 0.78rad accumulated)
     pose.pose.orientation = tf2::toMsg(q);
     path.poses.push_back(pose);
   }
@@ -565,7 +562,7 @@ TEST(UtilsTests, FindPathInversionTest)
   // Inversion
   for (unsigned int i = 0; i < 3; i++) {
     geometry_msgs::msg::PoseStamped pose = path.poses.back();
-    pose.pose.position.x -= 1.0; // reversing direction
+    pose.pose.position.x -= 1.0;  // reversing direction
     path.poses.push_back(pose);
   }
   EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 0.7), 6u);
