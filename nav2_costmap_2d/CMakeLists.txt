@@ -130,6 +130,12 @@ target_link_libraries(nav2_costmap_2d_client PUBLIC
   nav2_ros_common::nav2_ros_common
 )
 
+# Create alias targets for find_package support
+add_library(nav2_costmap_2d::nav2_costmap_2d_core ALIAS nav2_costmap_2d_core)
+add_library(nav2_costmap_2d::layers ALIAS layers)
+add_library(nav2_costmap_2d::filters ALIAS filters)
+add_library(nav2_costmap_2d::nav2_costmap_2d_client ALIAS nav2_costmap_2d_client)
+
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
 target_link_libraries(nav2_costmap_2d_markers PRIVATE
   ${nav2_msgs_TARGETS}
