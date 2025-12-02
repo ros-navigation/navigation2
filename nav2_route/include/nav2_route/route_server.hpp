@@ -119,21 +119,6 @@ protected:
   void computeAndTrackRoute();
 
   /**
-   * @brief Compute a route to the goal.
-   *
-   * This method determines the start and goal nodes and uses the route planner
-   * to generate a path from the current start to the requested goal. This
-   * overload uses a default (empty) ReroutingState and performs a standard,
-   * non-rerouted route computation.
-   *
-   * @param goal The request goal information.
-   * @return A route from the selected start node to the goal.
-   */
-  template<typename GoalT>
-  Route findRoute(
-    const std::shared_ptr<const GoalT> goal);
-
-  /**
    * @brief Compute a route to the goal, incorporating rerouting information.
    *
    * This method combines finding the starting and ending nodes with the route
