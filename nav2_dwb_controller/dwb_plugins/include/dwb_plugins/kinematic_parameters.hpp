@@ -39,7 +39,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include <stdexcept>
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -145,7 +145,14 @@ public:
   void activate();
   void deactivate();
 
-  inline KinematicParameters getKinematics() {return *kinematics_.load();}
+  inline KinematicParameters getKinematics()
+  {
+    KinematicParameters * ptr = kinematics_.load();
+    if (ptr == nullptr) {
+      throw std::runtime_error("Can't call KinematicsHandler::getKinematics().");
+    }
+    return *ptr;
+  }
 
   void setSpeedLimit(const double & speed_limit, const bool & percentage);
 

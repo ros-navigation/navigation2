@@ -128,6 +128,114 @@ TEST(KinematicParameters, SetAllParameters) {
   EXPECT_EQ(kp.getAccX(), 56.78);
 }
 
+// Test null pointer handling in setSpeedLimit
+TEST(KinematicParameters, SetSpeedLimitNullPointerHandling) {
+  class TestableKinematicsHandler : public dwb_plugins::KinematicsHandler
+  {
+public:
+    void simulateNullKinematics()
+    {
+      // Temporarily set kinematics_ to null to test null pointer handling
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      delete old_ptr;
+    }
+
+    void restoreKinematics()
+    {
+      // Restore a valid kinematics pointer
+      kinematics_.store(new dwb_plugins::KinematicParameters);
+    }
+  };
+
+  std::string nodeName = "test_node_null";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  TestableKinematicsHandler kh;
+  kh.initialize(node, nodeName);
+  kh.activate();
+
+  // Simulate null pointer scenario
+  kh.simulateNullKinematics();
+
+  // This should not crash - it should handle the null pointer gracefully
+  EXPECT_NO_THROW(kh.setSpeedLimit(10.0, true));
+  EXPECT_NO_THROW(kh.setSpeedLimit(5.0, false));
+
+  // Restore for cleanup
+  kh.restoreKinematics();
+}
+
+// Test null pointer handling in updateParametersCallback
+TEST(KinematicParameters, UpdateParametersNullPointerHandling) {
+  class TestableKinematicsHandler : public dwb_plugins::KinematicsHandler
+  {
+public:
+    void simulateNullKinematics()
+    {
+      // Temporarily set kinematics_ to null to test null pointer handling
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      delete old_ptr;
+    }
+
+    void restoreKinematics()
+    {
+      // Restore a valid kinematics pointer
+      kinematics_.store(new dwb_plugins::KinematicParameters);
+    }
+
+    // Expose protected method for testing
+    void testUpdateParametersCallback(std::vector<rclcpp::Parameter> params)
+    {
+      updateParametersCallback(params);
+    }
+  };
+
+  std::string nodeName = "test_node_update_null";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  TestableKinematicsHandler kh;
+  kh.initialize(node, nodeName);
+  kh.activate();
+
+  // Simulate null pointer scenario
+  kh.simulateNullKinematics();
+
+  // Create test parameters
+  std::vector<rclcpp::Parameter> test_params = {
+    rclcpp::Parameter(nodeName + ".max_vel_x", 10.0),
+    rclcpp::Parameter(nodeName + ".max_vel_y", 20.0)
+  };
+
+  // This should not crash - it should handle the null pointer gracefully
+  EXPECT_NO_THROW(kh.testUpdateParametersCallback(test_params));
+
+  // Restore for cleanup
+  kh.restoreKinematics();
+}
+
+// Test getKinematics throws exception when pointer is null
+TEST(KinematicParameters, GetKinematicsNullPointerHandling) {
+  class TestableKinematicsHandler : public dwb_plugins::KinematicsHandler
+  {
+public:
+    void simulateNullKinematics()
+    {
+      // Temporarily set kinematics_ to null
+      dwb_plugins::KinematicParameters * old_ptr = kinematics_.exchange(nullptr);
+      delete old_ptr;
+    }
+  };
+
+  std::string nodeName = "test_node_get_null";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  TestableKinematicsHandler kh;
+  kh.initialize(node, nodeName);
+
+  // Simulate null pointer scenario
+  kh.simulateNullKinematics();
+
+  // getKinematics should throw when pointer is null
+  EXPECT_THROW(kh.getKinematics(), std::runtime_error);
+}
+
 
 int main(int argc, char ** argv)
 {
