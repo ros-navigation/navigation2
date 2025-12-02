@@ -841,7 +841,7 @@ bool ControllerServer::isGoalReached()
     geometry_msgs::msg::PoseStamped transformed_before_end_pose_stamped;
     if (nav2_util::transformPoseInTargetFrame(
           before_end_pose_.value(), transformed_before_end_pose_stamped,
-        *costmap_ros_->getTfBuffer(),
+          *costmap_ros_->getTfBuffer(),
           costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
     {
       transformed_before_end_pose = transformed_before_end_pose_stamped.pose;
