@@ -9,7 +9,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>nav2_common</build_depend>
-  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>qt6-base-dev</build_depend>
+  <build_depend>qt6-scxml-dev</build_depend>
 
   <depend>ament_index_cpp</depend>
   <depend>backward_ros</depend>
@@ -32,10 +33,11 @@
   <depend>yaml_cpp_vendor</depend>
   <depend>nav2_ros_common</depend>
 
-  <exec_depend>libqt5-core</exec_depend>
-  <exec_depend>libqt5-gui</exec_depend>
-  <exec_depend>libqt5-opengl</exec_depend>
-  <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>libqt6-core</exec_depend>
+  <exec_depend>libqt6gui6t64</exec_depend>
+  <exec_depend>libqt6statemachine6</exec_depend>
+  <exec_depend>libqt6widgets6t64</exec_depend>
+
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
