@@ -75,6 +75,18 @@ std::string time_to_string(size_t len)
   return output;
 }
 
+void declare_parameter_if_not_declared(
+  rclcpp::node_interfaces::NodeInterfaces<rclcpp::node_interfaces::NodeParametersInterface> node,
+  const std::string & parameter_name,
+  const rclcpp::ParameterValue & default_value,
+  const ParameterDescriptor & parameter_descriptor)
+{
+  if (!node.get_node_parameters_interface()->has_parameter(parameter_name)) {
+    node.get_node_parameters_interface()->declare_parameter(parameter_name, default_value,
+        parameter_descriptor);
+  }
+}
+
 std::string generate_internal_node_name(const std::string & prefix)
 {
   return sanitize_node_name(prefix) + "_" + time_to_string(8);
