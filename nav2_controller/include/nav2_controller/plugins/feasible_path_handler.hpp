@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_
-#define NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__FEASIBLE_PATH_HANDLER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__FEASIBLE_PATH_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -122,4 +122,4 @@ protected:
 };
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__FEASIBLE_PATH_HANDLER_HPP_
