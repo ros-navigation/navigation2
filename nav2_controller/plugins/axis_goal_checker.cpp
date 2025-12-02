@@ -21,7 +21,7 @@ namespace nav2_controller
 {
 
 AxisGoalChecker::AxisGoalChecker()
-: segment_axis_goal_tolerance_(0.25)
+: goal_tolerance_(0.25)
 {
 }
 
@@ -35,8 +35,8 @@ void AxisGoalChecker::initialize(
 
   nav2::declare_parameter_if_not_declared(
     node,
-    plugin_name + ".segment_axis_goal_tolerance", rclcpp::ParameterValue(0.25));
-  node->get_parameter(plugin_name + ".segment_axis_goal_tolerance", segment_axis_goal_tolerance_);
+    plugin_name + ".goal_tolerance", rclcpp::ParameterValue(0.25));
+  node->get_parameter(plugin_name + ".goal_tolerance", goal_tolerance_);
 
   nav2::declare_parameter_if_not_declared(
     node,
@@ -76,16 +76,16 @@ bool AxisGoalChecker::isGoalReached(
       cos(projection_angle);
 
     if (is_overshoot_valid_) {
-      return projected_distance_to_goal < segment_axis_goal_tolerance_;
+      return projected_distance_to_goal < goal_tolerance_;
     } else {
-      return fabs(projected_distance_to_goal) < segment_axis_goal_tolerance_;
+      return fabs(projected_distance_to_goal) < goal_tolerance_;
     }
   } else {
     // handle path with only 1 point, in that case reverting to single distance check
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    return fabs(distance_to_goal) < segment_axis_goal_tolerance_;
+    return fabs(distance_to_goal) < goal_tolerance_;
   }
 }
 
@@ -95,8 +95,8 @@ bool AxisGoalChecker::getTolerances(
 {
   double invalid_field = std::numeric_limits<double>::lowest();
 
-  pose_tolerance.position.x = segment_axis_goal_tolerance_;
-  pose_tolerance.position.y = segment_axis_goal_tolerance_;
+  pose_tolerance.position.x = goal_tolerance_;
+  pose_tolerance.position.y = goal_tolerance_;
   pose_tolerance.position.z = invalid_field;
   pose_tolerance.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
@@ -122,7 +122,7 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
 
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".segment_axis_goal_tolerance") {
-        segment_axis_goal_tolerance_ = parameter.as_double();
+        goal_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".is_overshoot_valid") {

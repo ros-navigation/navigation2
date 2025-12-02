@@ -41,7 +41,7 @@ public:
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
-  double segment_axis_goal_tolerance_;
+  double goal_tolerance_;
   bool is_overshoot_valid_;
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
