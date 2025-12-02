@@ -99,7 +99,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_custom_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="SimplePathHandler" topic_name="path_handler_selector_custom_topic_name"/>
+          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="FeasiblePathHandler" topic_name="path_handler_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -114,7 +114,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_custom_topic)
   std::string selected_path_handler_result;
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
 
-  EXPECT_EQ(selected_path_handler_result, "SimplePathHandler");
+  EXPECT_EQ(selected_path_handler_result, "FeasiblePathHandler");
 
   std_msgs::msg::String selected_path_handler_cmd;
 

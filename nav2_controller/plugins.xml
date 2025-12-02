@@ -24,8 +24,8 @@
         <description>Goal checker that only checks XY position and ignores orientation</description>
     </class>
   </library>
-  <library path="simple_path_handler">
-    <class type="nav2_controller::SimplePathHandler" base_class_type="nav2_core::PathHandler">
+  <library path="feasible_path_handler">
+    <class type="nav2_controller::FeasiblePathHandler" base_class_type="nav2_core::PathHandler">
       <description>Manages the global plan by clipping it to the local costmap and transforming it into the odom frame</description>
     </class>
   </library>

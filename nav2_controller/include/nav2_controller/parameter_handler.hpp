@@ -96,7 +96,7 @@ protected:
   const std::vector<std::string> default_controller_ids_{"FollowPath"};
   const std::vector<std::string> default_controller_types_{"dwb_core::DWBLocalPlanner"};
   const std::vector<std::string> default_path_handler_ids_{"path_handler"};
-  const std::vector<std::string> default_path_handler_types_{"nav2_controller::SimplePathHandler"};
+  const std::vector<std::string> default_path_handler_types_{"nav2_controller::FeasiblePathHandler"};
 };
 
 }  // namespace nav2_controller

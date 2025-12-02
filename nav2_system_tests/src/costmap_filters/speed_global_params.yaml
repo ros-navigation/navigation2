@@ -77,7 +77,7 @@ controller_server:
       path_length_tolerance: 1.0
       stateful: True
     path_handler:
-      plugin: "nav2_controller::SimplePathHandler"
+      plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: False
       inversion_xy_tolerance: 0.2

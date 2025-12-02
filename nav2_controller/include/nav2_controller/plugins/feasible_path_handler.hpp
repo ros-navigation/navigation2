@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PLUGINS__SIMPLE_PATH_HANDLER_HPP_
-#define NAV2_CONTROLLER__PLUGINS__SIMPLE_PATH_HANDLER_HPP_
+#ifndef NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_
+#define NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_
 
 #include <string>
 #include <vector>
@@ -29,13 +29,13 @@ namespace nav2_controller
 using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
 using PathSegment = std::pair<PathIterator, PathIterator>;
 /**
-* @class SimplePathHandler
+* @class FeasiblePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
 * segment, typically bounded by the local costmap size
 * and transforming the resulting path into the odom frame.
 */
 
-class SimplePathHandler : public nav2_core::PathHandler
+class FeasiblePathHandler : public nav2_core::PathHandler
 {
 public:
   void initialize(
@@ -122,4 +122,4 @@ protected:
 };
 }  // namespace nav2_controller
 
-#endif  // NAV2_CONTROLLER__PLUGINS__SIMPLE_PATH_HANDLER_HPP_
+#endif  // NAV2_CONTROLLER__PLUGINS__feasible_path_handler_HPP_

@@ -17,7 +17,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
-#include "nav2_controller/plugins/simple_path_handler.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_graceful_controller/ego_polar_coords.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
@@ -485,7 +485,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
@@ -566,7 +566,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
@@ -653,7 +653,7 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose
@@ -735,7 +735,7 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   auto controller = std::make_shared<GMControllerFixture>();
   controller->configure(node, "test", tf, costmap_ros);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
 
   // Create the robot pose

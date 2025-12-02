@@ -169,13 +169,13 @@ target_link_libraries(position_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
-add_library(simple_path_handler SHARED plugins/simple_path_handler.cpp)
-target_include_directories(simple_path_handler
+add_library(feasible_path_handler SHARED plugins/feasible_path_handler.cpp)
+target_include_directories(feasible_path_handler
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(simple_path_handler PUBLIC
+target_link_libraries(feasible_path_handler PUBLIC
   ${geometry_msgs_TARGETS}
   nav2_core::nav2_core
   nav2_ros_common::nav2_ros_common
@@ -184,7 +184,7 @@ target_link_libraries(simple_path_handler PUBLIC
   angles::angles
   ${rcl_interfaces_TARGETS}
 )
-target_link_libraries(simple_path_handler PRIVATE
+target_link_libraries(feasible_path_handler PRIVATE
   nav2_util::nav2_util_core
   pluginlib::pluginlib
 )
@@ -211,7 +211,7 @@ install(TARGETS
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
-  simple_path_handler
+  feasible_path_handler
   ${library_name}
   EXPORT ${library_name}
   ARCHIVE DESTINATION lib
@@ -233,7 +233,7 @@ ament_export_libraries(simple_progress_checker
   simple_goal_checker
   stopped_goal_checker
   position_goal_checker
-  simple_path_handler
+  feasible_path_handler
   ${library_name})
 ament_export_dependencies(
   geometry_msgs

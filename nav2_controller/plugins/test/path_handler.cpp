@@ -17,17 +17,17 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_controller/plugins/simple_path_handler.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
 using nav2_controller::PathIterator;
 using PathSegment = std::pair<PathIterator, PathIterator>;
 
-class PathHandlerWrapper : public nav2_controller::SimplePathHandler
+class PathHandlerWrapper : public nav2_controller::FeasiblePathHandler
 {
 public:
   PathHandlerWrapper()
-  : SimplePathHandler() {}
+  : FeasiblePathHandler() {}
 
   void pruneGlobalPlanWrapper(nav_msgs::msg::Path & path, const PathIterator end)
   {

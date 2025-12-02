@@ -23,7 +23,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
-#include "nav2_controller/plugins/simple_path_handler.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
@@ -254,7 +254,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
@@ -327,7 +327,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
@@ -408,7 +408,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
@@ -497,7 +497,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
-  nav2_controller::SimplePathHandler path_handler;
+  nav2_controller::FeasiblePathHandler path_handler;
   path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting

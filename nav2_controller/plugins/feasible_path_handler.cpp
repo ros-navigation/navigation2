@@ -17,7 +17,7 @@
 #include <memory>
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_controller/plugins/simple_path_handler.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_core/controller_exceptions.hpp"
@@ -30,7 +30,7 @@ namespace nav2_controller
 {
 using nav2_util::geometry_utils::euclidean_distance;
 
-void SimplePathHandler::initialize(
+void FeasiblePathHandler::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const rclcpp::Logger & logger,
   const std::string & plugin_name,
@@ -69,10 +69,10 @@ void SimplePathHandler::initialize(
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&SimplePathHandler::dynamicParametersCallback, this, _1));
+    std::bind(&FeasiblePathHandler::dynamicParametersCallback, this, _1));
 }
 
-double SimplePathHandler::getCostmapMaxExtent() const
+double FeasiblePathHandler::getCostmapMaxExtent() const
 {
   const double max_costmap_dim_meters = std::max(
     costmap_ros_->getCostmap()->getSizeInMetersX(),
@@ -80,12 +80,12 @@ double SimplePathHandler::getCostmapMaxExtent() const
   return max_costmap_dim_meters / 2.0;
 }
 
-void SimplePathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
+void FeasiblePathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
 {
   plan.poses.erase(plan.poses.begin(), end);
 }
 
-bool SimplePathHandler::isWithinInversionTolerances(
+bool FeasiblePathHandler::isWithinInversionTolerances(
   const geometry_msgs::msg::PoseStamped & robot_pose)
 {
   // Keep full path if we are within tolerance of the inversion pose
@@ -102,7 +102,7 @@ bool SimplePathHandler::isWithinInversionTolerances(
          fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
-void SimplePathHandler::setPlan(const nav_msgs::msg::Path & path)
+void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
@@ -112,7 +112,7 @@ void SimplePathHandler::setPlan(const nav_msgs::msg::Path & path)
   }
 }
 
-geometry_msgs::msg::PoseStamped SimplePathHandler::transformToGlobalPlanFrame(
+geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   if (global_plan_up_to_constraint_.poses.empty()) {
@@ -135,7 +135,7 @@ geometry_msgs::msg::PoseStamped SimplePathHandler::transformToGlobalPlanFrame(
   return robot_pose;
 }
 
-PathSegment SimplePathHandler::findPlanSegmentIterators(
+PathSegment FeasiblePathHandler::findPlanSegmentIterators(
   const geometry_msgs::msg::PoseStamped & global_pose)
 {
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
@@ -172,7 +172,7 @@ PathSegment SimplePathHandler::findPlanSegmentIterators(
 }
 
 
-nav_msgs::msg::Path SimplePathHandler::transformLocalPlan(
+nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   const geometry_msgs::msg::PoseStamped & global_pose,
   const PathIterator & closest_point,
   const PathIterator & pruned_plan_end)
@@ -208,7 +208,7 @@ nav_msgs::msg::Path SimplePathHandler::transformLocalPlan(
   return transformed_plan;
 }
 
-nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
+nav_msgs::msg::Path FeasiblePathHandler::transformGlobalPlan(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
@@ -235,7 +235,7 @@ nav_msgs::msg::Path SimplePathHandler::transformGlobalPlan(
   return transformed_plan;
 }
 
-geometry_msgs::msg::PoseStamped SimplePathHandler::getTransformedGoal(
+geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
   const builtin_interfaces::msg::Time & stamp)
 {
   auto goal = global_plan_.poses.back();
@@ -254,7 +254,7 @@ geometry_msgs::msg::PoseStamped SimplePathHandler::getTransformedGoal(
 }
 
 rcl_interfaces::msg::SetParametersResult
-SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+FeasiblePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   for (auto parameter : parameters) {
@@ -288,4 +288,4 @@ SimplePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
 
 }  // namespace nav2_controller
 
-PLUGINLIB_EXPORT_CLASS(nav2_controller::SimplePathHandler, nav2_core::PathHandler)
+PLUGINLIB_EXPORT_CLASS(nav2_controller::FeasiblePathHandler, nav2_core::PathHandler)

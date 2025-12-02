@@ -32,7 +32,6 @@ ParameterHandler::ParameterHandler(
   const rclcpp::Logger & logger)
 : nav2_util::ParameterHandler<Parameters>(node, logger)
 {
-
   params_.controller_frequency = node->declare_or_get_parameter("controller_frequency", 20.0);
   params_.min_x_velocity_threshold = node->declare_or_get_parameter("min_x_velocity_threshold",
     0.0001);
