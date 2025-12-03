@@ -119,8 +119,6 @@ void LayeredCostmap::resizeMap(
   {
     if (*plugin) {
       (*plugin)->matchSize();
-    } else {
-      return;
     }
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
