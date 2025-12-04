@@ -1,0 +1,40 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="NavigateWithRoutes">
+      
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="RPP" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+
+      <Sequence name="ComputeFullRoute">
+        
+        <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true" error_code_id="{compute_route_error_code}"/>
+
+        <Fallback name="FirstMileCheck">
+          <Sequence>
+             <GetCurrentPose current_pose="{current_pose}" global_frame="robot_map" robot_base_frame="robot_base_link"/>
+             <GetPoseFromPath path="{route_path}" index="0" pose="{route_start_pose}"/>
+             <ArePosesNear ref_pose="{current_pose}" target_pose="{route_start_pose}" tolerance="0.3"/>
+          </Sequence>
+          <Sequence>
+            <ComputePathToPose goal="{route_start_pose}" path="{first_mile_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}"/>
+            <ConcatenatePaths input_path1="{first_mile_path}" input_path2="{route_path}" output_path="{route_path}"/>
+          </Sequence>
+        </Fallback>
+
+        <Fallback name="LastMileCheck">
+           <Sequence>
+              <GetPoseFromPath path="{route_path}" index="-1" pose="{route_end_pose}"/>
+              <ArePosesNear ref_pose="{goal}" target_pose="{route_end_pose}" tolerance="0.1"/>
+           </Sequence>
+           <Sequence>
+              <ComputePathToPose start="{route_end_pose}" goal="{goal}" path="{last_mile_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}"/>
+              <ConcatenatePaths input_path1="{route_path}" input_path2="{last_mile_path}" output_path="{route_path}"/>
+           </Sequence>
+        </Fallback>
+      </Sequence>
+
+      <FollowPath path="{route_path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}"/>
+      
+    </Sequence>
+  </BehaviorTree>
+</root>
