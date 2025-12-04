@@ -90,7 +90,7 @@ BT::NodeStatus PathHandlerSelector::tick()
 }
 
 void
-PathHandlerSelector::callbackPathHandlerSelect(const std_msgs::msg::String::SharedPtr msg)
+PathHandlerSelector::callbackPathHandlerSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_path_handler_ = msg->data;
 }

@@ -533,7 +533,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -614,7 +616,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRegular) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -701,7 +705,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRegularBackwards) {
   // Set the goal checker
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
@@ -792,7 +798,9 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap_ros);
 
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(robot_pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);

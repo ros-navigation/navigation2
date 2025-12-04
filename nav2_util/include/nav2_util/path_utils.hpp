@@ -79,11 +79,13 @@ bool transformPathInTargetFrame(
 /**
  * @brief Find the iterator of the first pose at which there is an inversion or in place rotation on the path,
  * @param path to check for inversion or rotation
- * @param rotation_threshold Minimum rotation angle to consider an in-place rotation
+ * @param enforce_path_inversion Whether to enable check for inversion
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
  * @return the first point after the inversion or in place rotation found in the path
  */
 inline unsigned int findFirstPathConstraint(
   nav_msgs::msg::Path & path,
+  bool enforce_path_inversion,
   float rotation_threshold)
 {
   // At least 3 poses for a possible inversion
@@ -91,7 +93,7 @@ inline unsigned int findFirstPathConstraint(
     return path.poses.size();
   }
 
-  const bool check_rotation = rotation_threshold == -1 ? false : true;
+  const bool check_rotation = rotation_threshold == 0.0f ? false : true;
   unsigned int rotation_idx = path.poses.size();
   unsigned int inversion_idx = path.poses.size();
   float prev_dx = 0.0f;
@@ -111,7 +113,7 @@ inline unsigned int findFirstPathConstraint(
     }
 
     // Check inversion
-    if (trans > 1e-4) {
+    if (enforce_path_inversion && trans > 1e-4) {
       if (prev_valid) {
         // Checking for the existence of cusp, in the path, using the dot product.
         float dot_product = prev_dx * dx + prev_dy * dy;
@@ -124,7 +126,7 @@ inline unsigned int findFirstPathConstraint(
       prev_valid = true;
     }
 
-    // Check in place rotation, we only loop when rotation idx is not updated
+    // Check in place rotation
     if (check_rotation && trans < 1e-4 && rotation_idx == path.poses.size()) {
       float accumulated_rotation = 0.0f;
       unsigned int end_idx = idx;
@@ -163,16 +165,18 @@ inline unsigned int findFirstPathConstraint(
 /**
  * @brief Find and remove poses after the first constraint in the path
  * @param path to check for inversion or rotation
- * @param rotation_threshold Minimum rotation angle to consider an in-place rotation
+ * @param enforce_path_inversion Whether to enable check for inversion
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
  * @return The location of the inversion or rotation, return 0 if none exist
  */
 inline unsigned int removePosesAfterFirstConstraint(
   nav_msgs::msg::Path & path,
+  bool enforce_path_inversion,
   float rotation_threshold)
 {
   nav_msgs::msg::Path cropped_path = path;
   const unsigned int first_after_constraint = findFirstPathConstraint(cropped_path,
-    rotation_threshold);
+    enforce_path_inversion, rotation_threshold);
   if (first_after_constraint == path.poses.size()) {
     return 0u;
   }

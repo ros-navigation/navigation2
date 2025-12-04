@@ -79,9 +79,11 @@ controller_server:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: False
+      enforce_path_rotation: False
       inversion_xy_tolerance: 0.2
       inversion_yaw_tolerance: 0.4
-      interpolate_curvature_after_goal: False
+      minimum_rotation_angle: 0.785
+      reject_unit_path: False
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"

@@ -20,16 +20,13 @@
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
-using nav2_controller::PathIterator;
-using PathSegment = std::pair<PathIterator, PathIterator>;
-
 class PathHandlerWrapper : public nav2_controller::FeasiblePathHandler
 {
 public:
   PathHandlerWrapper()
   : FeasiblePathHandler() {}
 
-  void pruneGlobalPlanWrapper(nav_msgs::msg::Path & path, const PathIterator end)
+  void pruneGlobalPlanWrapper(nav_msgs::msg::Path & path, const nav2_core::PathIterator end)
   {
     return prunePlan(path, end);
   }
@@ -39,10 +36,10 @@ public:
     return getCostmapMaxExtent();
   }
 
-  PathSegment
-  findPlanSegmentIteratorsWrapper(const geometry_msgs::msg::PoseStamped & pose)
+  nav2_core::PathSegment
+  findPlanSegmentWrapper(const geometry_msgs::msg::PoseStamped & pose)
   {
-    return findPlanSegmentIterators(pose);
+    return findPlanSegment(pose);
   }
 
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrameWrapper(
@@ -51,11 +48,10 @@ public:
     return transformToGlobalPlanFrame(pose);
   }
   nav_msgs::msg::Path transformLocalPlanWrapper(
-    const geometry_msgs::msg::PoseStamped & pose,
-    const PathIterator & closest,
-    const PathIterator & end)
+    const nav2_core::PathIterator & closest,
+    const nav2_core::PathIterator & end)
   {
-    return transformLocalPlan(pose, closest, end);
+    return transformLocalPlan(closest, end);
   }
 
   void setGlobalPlanUpToInversion(const nav_msgs::msg::Path & path)
@@ -93,7 +89,7 @@ TEST(PathHandlerTests, GetAndPrunePath)
   EXPECT_EQ(path.header.frame_id, rtn_path.header.frame_id);
   EXPECT_EQ(path.poses.size(), rtn_path.poses.size());
 
-  PathIterator it = rtn_path.poses.begin() + 5;
+  nav2_core::PathIterator it = rtn_path.poses.begin() + 5;
   handler.pruneGlobalPlanWrapper(rtn_path, it);
   EXPECT_EQ(rtn_path.poses.size(), 6u);
 }
@@ -139,8 +135,8 @@ TEST(PathHandlerTests, TestBounds)
   robot_pose.pose.position.x = 25.0;
 
   handler.setPlan(path);
-  auto [closest, pruned_plan_end] = handler.findPlanSegmentIteratorsWrapper(robot_pose);
-  auto transformed_plan = handler.transformLocalPlanWrapper(robot_pose, closest, pruned_plan_end);
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+  auto transformed_plan = handler.transformLocalPlanWrapper(closest, pruned_plan_end);
   auto & path_inverted = handler.getInvertedPath();
   EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
   handler.pruneGlobalPlanWrapper(path_inverted, closest);
@@ -187,13 +183,6 @@ TEST(PathHandlerTests, TestTransforms)
   EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
   handler.setPlan(path);
   EXPECT_NO_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose));
-
-  auto [closest_point, pruned_plan_end] = handler.findPlanSegmentIteratorsWrapper(robot_pose);
-  auto path_out = handler.transformLocalPlanWrapper(robot_pose, closest_point, pruned_plan_end);
-
-  // Put it all together
-  auto final_path = handler.transformGlobalPlan(robot_pose);
-  EXPECT_EQ(final_path.poses.size(), path_out.poses.size());
 }
 
 TEST(PathHandlerTests, TestInversionToleranceChecks)

@@ -163,7 +163,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
     try {
-      auto sampled_pt = getSampledPathPt();
+      auto sampled_pt = getSampledPathPt(transformed_global_plan);
       double angular_distance_to_heading;
       if (params_->use_path_orientations) {
         angular_distance_to_heading = angles::shortest_angular_distance(
@@ -210,29 +210,31 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   return cmd_vel;
 }
 
-geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
+geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
+  nav_msgs::msg::Path & transformed_global_plan)
 {
-  if (current_path_.poses.size() < 2) {
+  if (transformed_global_plan.poses.size() < 2) {
     throw nav2_core::ControllerException(
             "Path is too short to find a valid sampled path point for rotation.");
   }
 
-  geometry_msgs::msg::Pose start = current_path_.poses.front().pose;
+  geometry_msgs::msg::Pose start = transformed_global_plan.poses.front().pose;
   double dx, dy;
 
   // Find the first point at least sampling distance away
-  for (unsigned int i = 1; i != current_path_.poses.size(); i++) {
-    dx = current_path_.poses[i].pose.position.x - start.position.x;
-    dy = current_path_.poses[i].pose.position.y - start.position.y;
+  for (unsigned int i = 1; i != transformed_global_plan.poses.size(); i++) {
+    dx = transformed_global_plan.poses[i].pose.position.x - start.position.x;
+    dy = transformed_global_plan.poses[i].pose.position.y - start.position.y;
     if (hypot(dx, dy) >= params_->forward_sampling_distance) {
-      current_path_.poses[i].header.frame_id = current_path_.header.frame_id;
-      current_path_.poses[i].header.stamp = clock_->now();  // Get current time transformation
-      return current_path_.poses[i];
+      transformed_global_plan.poses[i].header.frame_id = transformed_global_plan.header.frame_id;
+      // Get current time transformation
+      transformed_global_plan.poses[i].header.stamp = clock_->now();
+      return transformed_global_plan.poses[i];
     }
   }
 
-  auto goal = current_path_.poses.back();
-  goal.header.frame_id = current_path_.header.frame_id;
+  auto goal = transformed_global_plan.poses.back();
+  goal.header.frame_id = transformed_global_plan.header.frame_id;
   goal.header.stamp = clock_->now();
   return goal;
 }
@@ -321,19 +323,20 @@ void RotationShimController::isCollisionFree(
 
 bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
 {
-  // Return true if rotating or if the current path is empty
-  if (in_rotation_ || current_path_.poses.empty()) {
+  // Return true if rotating or if the goal pose is empty
+  if (in_rotation_ || last_goal_pose_ == geometry_msgs::msg::Pose()) {
     return true;
   }
 
-  // Check if the last pose of the current and new paths differ
-  return current_path_.poses.back().pose != path.poses.back().pose;
+  // Check if the last goal pose and the last pose of the new paths differ
+  bool changed = last_goal_pose_ != path.poses.back().pose;
+  last_goal_pose_ = path.poses.back().pose;
+  return changed;
 }
 
 void RotationShimController::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
 {
   path_updated_ = params_->rotate_to_heading_once ? isGoalChanged(raw_global_path) : true;
-  current_path_ = raw_global_path;
   primary_controller_->newPathReceived(raw_global_path);
   position_goal_checker_->reset();
 }

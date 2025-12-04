@@ -26,8 +26,6 @@
 
 namespace nav2_controller
 {
-using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
-using PathSegment = std::pair<PathIterator, PathIterator>;
 /**
 * @class FeasiblePathHandler
 * @brief This plugin manages the global plan by clipping it to the local
@@ -45,8 +43,11 @@ public:
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     std::shared_ptr<tf2_ros::Buffer> tf) override;
   void setPlan(const nav_msgs::msg::Path & path) override;
-  nav_msgs::msg::Path transformGlobalPlan(
+  nav2_core::PathSegment findPlanSegment(
     const geometry_msgs::msg::PoseStamped & pose) override;
+  nav_msgs::msg::Path transformLocalPlan(
+    const nav2_core::PathIterator & closest_point,
+    const nav2_core::PathIterator & pruned_plan_end) override;
   geometry_msgs::msg::PoseStamped getTransformedGoal(
     const builtin_interfaces::msg::Time & stamp) override;
   nav_msgs::msg::Path getPlan() {return global_plan_;}
@@ -59,26 +60,6 @@ protected:
     */
   geometry_msgs::msg::PoseStamped transformToGlobalPlanFrame(
     const geometry_msgs::msg::PoseStamped & pose);
-
-  /**
-    * @brief Finds the start and end iterators defining the segment of the global plan
-    * that should be used for local control.
-    * @param global_pose Robot's current pose in map frame
-    * @return PathSegment A pair of iterators representing the [start, end) range of the local plan segment.
-    */
-  PathSegment findPlanSegmentIterators(const geometry_msgs::msg::PoseStamped & global_pose);
-
-   /**
-    * @brief Transforms a predefined segment of the global plan into the odom frame.
-    * @param global_pose Robot's current pose
-    * @param closest_point Iterator to the starting pose of the path segment.
-    * @param pruned_plan_end Iterator to the ending pose of the path segment.
-    * @return nav_msgs::msg::Path The transformed local plan segment in the odom frame.
-    */
-  nav_msgs::msg::Path transformLocalPlan(
-    const geometry_msgs::msg::PoseStamped & global_pose,
-    const PathIterator & closest_point,
-    const PathIterator & pruned_plan_end);
 
   /**
    * Get the greatest extent of the costmap in meters from the center.
@@ -98,7 +79,7 @@ protected:
     * @param plan Plan to prune
     * @param end Final path iterator
     */
-  void prunePlan(nav_msgs::msg::Path & plan, const PathIterator end);
+  void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
@@ -108,8 +89,9 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
   nav_msgs::msg::Path global_plan_up_to_constraint_;
+  geometry_msgs::msg::PoseStamped global_pose_;
   unsigned int constraint_locale_{0u};
-  bool interpolate_curvature_after_goal_, enforce_path_constraint_;
+  bool reject_unit_path_, enforce_path_inversion_, enforce_path_rotation_;
   double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_;
   float inversion_xy_tolerance_, inversion_yaw_tolerance_, minimum_rotation_angle_;
 

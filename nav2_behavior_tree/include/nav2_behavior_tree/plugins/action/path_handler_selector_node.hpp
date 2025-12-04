@@ -91,7 +91,7 @@ private:
    *
    * @param msg the message with the id of the path_handler_selector
    */
-  void callbackPathHandlerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackPathHandlerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr path_handler_selector_sub_;
 

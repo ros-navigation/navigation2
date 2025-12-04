@@ -43,28 +43,33 @@ void FeasiblePathHandler::initialize(
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
-  interpolate_curvature_after_goal_ = node->declare_or_get_parameter(plugin_name +
-    ".interpolate_curvature_after_goal", false);
+  reject_unit_path_ = node->declare_or_get_parameter(plugin_name +
+    ".reject_unit_path", false);
   max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
     ".max_robot_pose_search_dist", getCostmapMaxExtent());
   prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
     2.0);
-  enforce_path_constraint_ = node->declare_or_get_parameter(plugin_name +
-    ".enforce_path_constraint", false);
+  enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name +
+    ".enforce_path_inversion", false);
+  enforce_path_rotation_ = node->declare_or_get_parameter(plugin_name +
+    ".enforce_path_rotation", false);
   inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
     0.2);
   inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
     ".inversion_yaw_tolerance", 0.4);
   minimum_rotation_angle_ = node->declare_or_get_parameter(plugin_name + ".minimum_rotation_angle",
-    -1.0);
+    0.785);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
       " every point on path for the closest value.");
     max_robot_pose_search_dist_ = std::numeric_limits<double>::max();
   }
-  if (enforce_path_constraint_) {
+  if (enforce_path_inversion_ || enforce_path_rotation_) {
     constraint_locale_ = 0u;
+  }
+  if (!enforce_path_rotation_) {
+    minimum_rotation_angle_ = 0.0f;
   }
 
   // Add callback for dynamic parameters
@@ -80,7 +85,7 @@ double FeasiblePathHandler::getCostmapMaxExtent() const
   return max_costmap_dim_meters / 2.0;
 }
 
-void FeasiblePathHandler::prunePlan(nav_msgs::msg::Path & plan, const PathIterator end)
+void FeasiblePathHandler::prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end)
 {
   plan.poses.erase(plan.poses.begin(), end);
 }
@@ -106,9 +111,9 @@ void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
-  if(enforce_path_constraint_) {
+  if(enforce_path_inversion_ || enforce_path_rotation_) {
     constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
-      minimum_rotation_angle_);
+      enforce_path_inversion_, minimum_rotation_angle_);
   }
 }
 
@@ -119,7 +124,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
     throw nav2_core::InvalidPath("Received plan with zero length");
   }
 
-  if (interpolate_curvature_after_goal_ && global_plan_up_to_constraint_.poses.size() == 1) {
+  if (reject_unit_path_ && global_plan_up_to_constraint_.poses.size() == 1) {
     throw nav2_core::InvalidPath("Received plan with length of one");
   }
 
@@ -135,9 +140,10 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
   return robot_pose;
 }
 
-PathSegment FeasiblePathHandler::findPlanSegmentIterators(
-  const geometry_msgs::msg::PoseStamped & global_pose)
+nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
+  const geometry_msgs::msg::PoseStamped & pose)
 {
+  global_pose_ = transformToGlobalPlanFrame(pose);
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
@@ -150,8 +156,8 @@ PathSegment FeasiblePathHandler::findPlanSegmentIterators(
   auto closest_point =
     nav2_util::geometry_utils::min_by(
     global_plan_up_to_constraint_.poses.begin(), closest_pose_upper_bound,
-    [&global_pose](const geometry_msgs::msg::PoseStamped & ps) {
-      return euclidean_distance(global_pose, ps);
+    [this](const geometry_msgs::msg::PoseStamped & ps) {
+      return euclidean_distance(global_pose_, ps);
     });
 
   // Make sure we always have at least 2 points on the transformed plan and that we don't prune
@@ -173,13 +179,12 @@ PathSegment FeasiblePathHandler::findPlanSegmentIterators(
 
 
 nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
-  const geometry_msgs::msg::PoseStamped & global_pose,
-  const PathIterator & closest_point,
-  const PathIterator & pruned_plan_end)
+  const nav2_core::PathIterator & closest_point,
+  const nav2_core::PathIterator & pruned_plan_end)
 {
   nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
-  transformed_plan.header.stamp = global_pose.header.stamp;
+  transformed_plan.header.stamp = global_pose_.header.stamp;
   unsigned int mx, my;
   // Find the furthest relevant pose on the path to consider within costmap
   // bounds
@@ -189,7 +194,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   {
     // Transform from global plan frame to costmap frame
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
-    global_plan_pose->header.stamp = global_pose.header.stamp;
+    global_plan_pose->header.stamp = global_pose_.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
     nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
         costmap_ros_->getGlobalFrameID(), transform_tolerance_);
@@ -205,26 +210,16 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     transformed_plan.poses.push_back(costmap_plan_pose);
   }
 
-  return transformed_plan;
-}
-
-nav_msgs::msg::Path FeasiblePathHandler::transformGlobalPlan(
-  const geometry_msgs::msg::PoseStamped & pose)
-{
-  geometry_msgs::msg::PoseStamped global_pose = transformToGlobalPlanFrame(pose);
-  auto [closest_point, pruned_plan_end] = findPlanSegmentIterators(global_pose);
-  auto transformed_plan = transformLocalPlan(global_pose, closest_point, pruned_plan_end);
-
   // Remove the portion of the global plan that we've already passed so we don't
   // process it on the next iteration (this is called path pruning)
   prunePlan(global_plan_up_to_constraint_, closest_point);
 
-  if (enforce_path_constraint_ && constraint_locale_ != 0u) {
-    if (isWithinInversionTolerances(global_pose)) {
+  if ((enforce_path_inversion_ || enforce_path_rotation_) && constraint_locale_ != 0u) {
+    if (isWithinInversionTolerances(global_pose_)) {
       prunePlan(global_plan_, global_plan_.poses.begin() + constraint_locale_);
       global_plan_up_to_constraint_ = global_plan_;
       constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
-        minimum_rotation_angle_);
+        enforce_path_inversion_, minimum_rotation_angle_);
     }
   }
 
@@ -277,8 +272,13 @@ FeasiblePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
         minimum_rotation_angle_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "enforce_path_constraint") {
-        enforce_path_constraint_ = parameter.as_bool();
+      if (param_name == "enforce_path_inversion") {
+        enforce_path_inversion_ = parameter.as_bool();
+      } else if (param_name == "enforce_path_rotation") {
+        enforce_path_rotation_ = parameter.as_bool();
+        if (!enforce_path_rotation_) {
+          minimum_rotation_angle_ = 0.0f;
+        }
       }
     }
   }

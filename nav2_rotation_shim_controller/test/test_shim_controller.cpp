@@ -40,19 +40,15 @@ public:
     return primary_controller_;
   }
 
-  nav_msgs::msg::Path getPath()
-  {
-    return current_path_;
-  }
-
   bool isPathUpdated()
   {
     return path_updated_;
   }
 
-  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper()
+  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
+    nav_msgs::msg::Path & transformed_global_plan)
   {
-    return getSampledPathPt();
+    return getSampledPathPt(transformed_global_plan);
   }
 
   bool isGoalChangedWrapper(const nav_msgs::msg::Path & path)
@@ -131,6 +127,8 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -144,23 +142,27 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   path.poses[3].pose.position.y = 10.0;
   EXPECT_EQ(controller->isPathUpdated(), false);
   controller->newPathReceived(path);
-  EXPECT_EQ(controller->getPath().header.frame_id, std::string("hi mate!"));
-  EXPECT_EQ(controller->getPath().poses.size(), 10u);
+  path_handler.setPlan(path);
   EXPECT_EQ(controller->isPathUpdated(), true);
 
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "base_link";
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   // Test getting a sampled point
-  auto pose = controller->getSampledPathPtWrapper();
+  auto pose = controller->getSampledPathPtWrapper(transformed_global_plan);
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
 
   nav_msgs::msg::Path path_invalid_leng;
   controller->newPathReceived(path_invalid_leng);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
+  EXPECT_THROW(controller->getSampledPathPtWrapper(transformed_global_plan), std::runtime_error);
 
   nav_msgs::msg::Path path_invalid_dists;
   path.poses.resize(10);
   controller->newPathReceived(path_invalid_dists);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
+  EXPECT_THROW(controller->getSampledPathPtWrapper(transformed_global_plan), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, rotationAndTransformTests)
@@ -283,7 +285,9 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   controller->newPathReceived(path);
   path_handler.setPlan(path);
   tf_broadcaster->sendTransform(transform);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto effort = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
@@ -362,7 +366,9 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   // Calculate first velocity command
   controller->newPathReceived(path);
   path_handler.setPlan(path);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
@@ -442,7 +448,9 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 
   controller->newPathReceived(path);
   path_handler.setPlan(path);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);
@@ -453,7 +461,8 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   path.poses[3].pose.orientation.w = 0.9238795;
   controller->newPathReceived(path);
   path_handler.setPlan(path);
-  transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  auto [segment_start, segment_end] = path_handler.findPlanSegment(pose);
+  transformed_global_plan = path_handler.transformLocalPlan(segment_start, segment_end);
   goal = path.poses.back();
   cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan,
     goal);
@@ -532,7 +541,9 @@ TEST(RotationShimControllerTest, accelerationTests) {
   // Test acceleration limits
   controller->newPathReceived(path);
   path_handler.setPlan(path);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformGlobalPlan(pose);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
   geometry_msgs::msg::PoseStamped goal = path.poses.back();
   auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
     transformed_global_plan, goal);

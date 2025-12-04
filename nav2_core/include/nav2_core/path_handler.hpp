@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <utility>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -25,6 +27,8 @@
 
 namespace nav2_core
 {
+using PathIterator = std::vector<geometry_msgs::msg::PoseStamped>::iterator;
+using PathSegment = std::pair<PathIterator, PathIterator>;
 
 /**
  * @class PathHandler
@@ -60,13 +64,25 @@ public:
   virtual void setPlan(const nav_msgs::msg::Path & path) = 0;
 
   /**
-   * @brief transform global plan to local applying constraints,
-   * then prune global plan
-   * @param pose pose to transform
-   * @return Path after pruned
+   * @brief Determines the portion of the global plan to be used for local control.
+   * This function locates the start and end iterators of the global plan segment
+   * that is relevant for controller computation based on the robot's current pose and local costmap.
+   * @param pose Robot pose in odom frame
+   * @return PathSegment A pair of iterators defining the start and end of the
+   *         selected plan segment.
    */
-  virtual nav_msgs::msg::Path transformGlobalPlan(
+  virtual PathSegment findPlanSegment(
     const geometry_msgs::msg::PoseStamped & pose) = 0;
+
+  /**
+    * @brief Transforms a predefined segment of the global plan into the odom frame.
+    * @param closest_point Iterator to the starting pose of the path segment.
+    * @param pruned_plan_end Iterator to the ending pose of the path segment.
+    * @return nav_msgs::msg::Path The transformed local plan segment in the odom frame.
+    */
+  virtual nav_msgs::msg::Path transformLocalPlan(
+    const PathIterator & closest_point,
+    const PathIterator & pruned_plan_end) = 0;
 
   /**
    * @brief Get the global goal pose transformed to the desired frame
