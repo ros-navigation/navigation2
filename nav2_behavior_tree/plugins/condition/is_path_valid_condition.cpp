@@ -31,13 +31,11 @@ IsPathValidCondition::IsPathValidCondition(
     node_->create_client<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
     false /* Does not create and spin an internal executor*/);
-
-  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
 }
 
 void IsPathValidCondition::initialize()
 {
-  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+  getInputOrBlackboard("server_timeout", server_timeout_);
   getInput<unsigned int>("max_cost", max_cost_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
 }
