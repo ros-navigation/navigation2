@@ -58,6 +58,7 @@ RUN apt-get update && \
       ros-$ROS_DISTRO-rmw-connextdds \
       ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
       ros-$ROS_DISTRO-rmw-zenoh-cpp \
+      ros-$ROS_DISTRO-ros-gz \
     && pip3 install --break-system-packages \
       fastcov \
       git+https://github.com/ruffsl/colcon-cache.git@a937541bfc496c7a267db7ee9d6cceca61e470ca \
