@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ namespace nav2_behavior_tree
 GetCurrentPoseAction::GetCurrentPoseAction(
   const std::string & xml_tag_name,
   const BT::NodeConfiguration & conf)
-: BT::SyncActionNode(xml_tag_name, conf),
+: BT::ActionNodeBase(xml_tag_name, conf),
   node_(nullptr),
   tf_(nullptr)
 {
@@ -37,6 +37,11 @@ GetCurrentPoseAction::GetCurrentPoseAction(
 
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
+}
+
+void GetCurrentPoseAction::halt()
+{
+  resetStatus();
 }
 
 BT::NodeStatus GetCurrentPoseAction::tick()

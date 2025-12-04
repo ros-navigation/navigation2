@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief Action Node to get the current robot pose from TF
  */
-class GetCurrentPoseAction : public BT::SyncActionNode
+class GetCurrentPoseAction : public BT::ActionNodeBase
 {
 public:
   /**
@@ -61,6 +61,11 @@ public:
    * @return BT::NodeStatus
    */
   BT::NodeStatus tick() override;
+
+  /**
+   * @brief The mandatory halt function for ActionNodeBase
+   */
+  void halt() override;
 
 private:
   rclcpp::Node::SharedPtr node_;
