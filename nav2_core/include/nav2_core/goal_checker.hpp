@@ -79,11 +79,13 @@ public:
    * @brief Check whether the goal should be considered reached
    * @param query_pose The pose to check
    * @param goal_pose The pose to check against
+   * @param before_goal_pose The pose on the path before the goal pose, if available
    * @param velocity The robot's current velocity
    * @return True if goal is reached
    */
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const std::optional<geometry_msgs::msg::Pose> & before_goal_pose,
     const geometry_msgs::msg::Twist & velocity) = 0;
 
   /**

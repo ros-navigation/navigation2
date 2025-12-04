@@ -61,6 +61,7 @@ public:
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const std::optional<geometry_msgs::msg::Pose> & before_goal_pose,
     const geometry_msgs::msg::Twist & velocity) override;
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,

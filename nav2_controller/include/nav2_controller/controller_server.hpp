@@ -280,6 +280,7 @@ protected:
 
   // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;
+  std::optional<geometry_msgs::msg::PoseStamped> before_end_pose_;
 
   geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
