@@ -442,9 +442,10 @@ TEST_F(ObstacleLayerTest, testRaytraceWithObservationCloseToOrigin)
     }
   }
 
-  // Add observation at (0.09, 0.0)
+  // Add observation at (0.09, 0.0), min obstacle range = 1.0m so it is not
+  // marked.
   addObservation(obstacle_layer_, 0.09, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 2.0, 0.0, 100.0, 0.0);
+                 true, true, 2.0, 0.0, 100.0, 1.0);
   update();
 
   // All points should still be LETHAL_OBSTACLE
