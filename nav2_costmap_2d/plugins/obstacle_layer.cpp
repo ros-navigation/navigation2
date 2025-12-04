@@ -527,10 +527,8 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
-    const unsigned int max_cells = cellDistance(obs.obstacle_max_range_);
-    const unsigned int min_cells = cellDistance(obs.obstacle_min_range_);
-    const unsigned int sq_obstacle_max_range = max_cells * max_cells;
-    const unsigned int sq_obstacle_min_range = min_cells * min_cells;
+    const unsigned int max_range_cells = cellDistance(obs.obstacle_max_range_);
+    const unsigned int min_range_cells = cellDistance(obs.obstacle_min_range_);
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -569,16 +567,17 @@ ObstacleLayer::updateBounds(
 
       const int dx = static_cast<int>(mx) - static_cast<int>(x0);
       const int dy = static_cast<int>(my) - static_cast<int>(y0);
-      const unsigned int sq_dist = dx * dx + dy * dy;
+      const unsigned int dist = static_cast<unsigned int>(
+        std::hypot(static_cast<double>(dx), static_cast<double>(dy)));
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist > sq_obstacle_max_range) {
+      if (dist > max_range_cells) {
         RCLCPP_DEBUG(logger_, "The point is too far away");
         continue;
       }
 
       // if the point is too close, do not consider it
-      if (sq_dist < sq_obstacle_min_range) {
+      if (dist < min_range_cells) {
         RCLCPP_DEBUG(logger_, "The point is too close");
         continue;
       }
