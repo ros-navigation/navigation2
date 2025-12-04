@@ -294,7 +294,7 @@ class BasicNavigator(Node):
 
     def goThroughPoses(self, poses: Goals, behavior_tree: str = '') -> Optional[RunningTask]:
         """Send a `NavThroughPoses` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'NavigateThroughPoses' action server")
         while not self.nav_through_poses_client.wait_for_server(timeout_sec=1.0):
             self.info("'NavigateThroughPoses' action server not available, waiting...")
@@ -321,7 +321,7 @@ class BasicNavigator(Node):
 
     def goToPose(self, pose: PoseStamped, behavior_tree: str = '') -> Optional[RunningTask]:
         """Send a `NavToPose` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'NavigateToPose' action server")
         while not self.nav_to_pose_client.wait_for_server(timeout_sec=1.0):
             self.info("'NavigateToPose' action server not available, waiting...")
@@ -360,7 +360,7 @@ class BasicNavigator(Node):
 
     def followWaypoints(self, poses: list[PoseStamped]) -> Optional[RunningTask]:
         """Send a `FollowWaypoints` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'FollowWaypoints' action server")
         while not self.follow_waypoints_client.wait_for_server(timeout_sec=1.0):
             self.info("'FollowWaypoints' action server not available, waiting...")
@@ -386,7 +386,7 @@ class BasicNavigator(Node):
 
     def followGpsWaypoints(self, gps_poses: list[GeoPose]) -> Optional[RunningTask]:
         """Send a `FollowGPSWaypoints` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'FollowWaypoints' action server")
         while not self.follow_gps_waypoints_client.wait_for_server(timeout_sec=1.0):
             self.info("'FollowWaypoints' action server not available, waiting...")
@@ -413,7 +413,7 @@ class BasicNavigator(Node):
     def spin(
             self, spin_dist: float = 1.57, time_allowance: int = 10,
             disable_collision_checks: bool = False) -> Optional[RunningTask]:
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'Spin' action server")
         while not self.spin_client.wait_for_server(timeout_sec=1.0):
             self.info("'Spin' action server not available, waiting...")
@@ -442,7 +442,7 @@ class BasicNavigator(Node):
             self, backup_dist: float = 0.15, backup_speed: float = 0.025,
             time_allowance: int = 10,
             disable_collision_checks: bool = False) -> Optional[RunningTask]:
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'Backup' action server")
         while not self.backup_client.wait_for_server(timeout_sec=1.0):
             self.info("'Backup' action server not available, waiting...")
@@ -472,7 +472,7 @@ class BasicNavigator(Node):
             self, dist: float = 0.15, speed: float = 0.025,
             time_allowance: int = 10,
             disable_collision_checks: bool = False) -> Optional[RunningTask]:
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'DriveOnHeading' action server")
         while not self.drive_on_heading_client.wait_for_server(timeout_sec=1.0):
             self.info("'DriveOnHeading' action server not available, waiting...")
@@ -500,7 +500,7 @@ class BasicNavigator(Node):
 
     def assistedTeleop(self, time_allowance: int = 30) -> Optional[RunningTask]:
 
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Wanting for 'assisted_teleop' action server")
 
         while not self.assisted_teleop_client.wait_for_server(timeout_sec=1.0):
@@ -526,7 +526,7 @@ class BasicNavigator(Node):
 
     def followPath(self, path: Path, controller_id: str = '',
                    goal_checker_id: str = '') -> Optional[RunningTask]:
-        self.clearTaskError()
+        self.clearPreviousState()
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
         while not self.follow_path_client.wait_for_server(timeout_sec=1.0):
@@ -555,7 +555,7 @@ class BasicNavigator(Node):
 
     def dockRobotByPose(self, dock_pose: PoseStamped,
                         dock_type: str = '', nav_to_dock: bool = True) -> Optional[RunningTask]:
-        self.clearTaskError()
+        self.clearPreviousState()
         """Send a `DockRobot` action request."""
         self.info("Waiting for 'DockRobot' action server")
         while not self.docking_client.wait_for_server(timeout_sec=1.0):
@@ -584,7 +584,7 @@ class BasicNavigator(Node):
 
     def dockRobotByID(self, dock_id: str, nav_to_dock: bool = True) -> Optional[RunningTask]:
         """Send a `DockRobot` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.info("Waiting for 'DockRobot' action server")
         while not self.docking_client.wait_for_server(timeout_sec=1.0):
             self.info('"DockRobot" action server not available, waiting...')
@@ -611,7 +611,7 @@ class BasicNavigator(Node):
 
     def undockRobot(self, dock_type: str = '') -> Optional[RunningTask]:
         """Send a `UndockRobot` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.info("Waiting for 'UndockRobot' action server")
         while not self.undocking_client.wait_for_server(timeout_sec=1.0):
             self.info('"UndockRobot" action server not available, waiting...')
@@ -636,7 +636,7 @@ class BasicNavigator(Node):
 
     def followObjectByTopic(self, topic: str, max_duration: int = 0) -> Optional[RunningTask]:
         """Send a `FollowObject` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.info("Waiting for 'FollowObject' action server")
         while not self.following_client.wait_for_server(timeout_sec=1.0):
             self.info('"FollowObject" action server not available, waiting...')
@@ -662,7 +662,7 @@ class BasicNavigator(Node):
 
     def followObjectByFrame(self, frame: str, max_duration: int = 0) -> Optional[RunningTask]:
         """Send a `FollowObject` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.info("Waiting for 'FollowObject' action server")
         while not self.following_client.wait_for_server(timeout_sec=1.0):
             self.info('"FollowObject" action server not available, waiting...')
@@ -705,7 +705,7 @@ class BasicNavigator(Node):
                 self.error('Cancel route task failed, goal handle is None')
                 self.setTaskError(0, 'Cancel route task failed, goal handle is None')
                 return
-        self.clearTaskError()
+        self.clearPreviousState()
         return
 
     def isTaskComplete(self, task: RunningTask = RunningTask.NONE) -> bool:
@@ -770,7 +770,8 @@ class BasicNavigator(Node):
         else:
             return TaskResult.UNKNOWN
 
-    def clearTaskError(self) -> None:
+    def clearPreviousState(self) -> None:
+        self.feedback = None
         self.last_action_error_code = 0
         self.last_action_error_msg = ''
 
@@ -834,7 +835,7 @@ class BasicNavigator(Node):
         self, start: PoseStamped, goal: PoseStamped,
             planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathToPose` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
@@ -896,7 +897,7 @@ class BasicNavigator(Node):
         self, start: PoseStamped, goals: list[PoseStamped],
             planner_id: str = '', use_start: bool = False) -> Optional[Path]:
         """Send a `ComputePathThroughPoses` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
@@ -964,7 +965,7 @@ class BasicNavigator(Node):
             goal: Union[int, PoseStamped],
             use_start: bool = False) -> Optional[list[Union[Path, Route]]]:
         """Send a `ComputeRoute` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         rtn = self._getRouteImpl(start, goal, use_start=False)
 
         if self.status != GoalStatus.STATUS_SUCCEEDED:
@@ -983,7 +984,7 @@ class BasicNavigator(Node):
         goal: Union[int, PoseStamped], use_start: bool = False
     ) -> Optional[RunningTask]:
         """Send a `ComputeAndTrackRoute` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         self.debug("Waiting for 'ComputeAndTrackRoute' action server")
         while not self.compute_and_track_route_client.wait_for_server(timeout_sec=1.0):
             self.info("'ComputeAndTrackRoute' action server not available, waiting...")
@@ -1062,7 +1063,7 @@ class BasicNavigator(Node):
         self, path: Path, smoother_id: str = '',
             max_duration: float = 2.0, check_for_collision: bool = False) -> Optional[Path]:
         """Send a `SmoothPath` action request."""
-        self.clearTaskError()
+        self.clearPreviousState()
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
