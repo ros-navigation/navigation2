@@ -21,16 +21,18 @@ ArePosesNearCondition::ArePosesNearCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  node_(nullptr),               
-  tf_(nullptr),                 
-  global_frame_("map"),         
-  transform_tolerance_(0.1),    
-  initialized_(false)           
+  node_(nullptr),
+  tf_(nullptr),
+  global_frame_("map"),
+  transform_tolerance_(0.1),
+  initialized_(false)
 {
   if (!config().blackboard->get("node", node_)) {
+    throw BT::RuntimeError("Node not found in blackboard.");
   }
-  
+
   if (!config().blackboard->get("tf_buffer", tf_)) {
+    throw BT::RuntimeError("tf_buffer not found in blackboard.");
   }
 
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -38,8 +40,7 @@ ArePosesNearCondition::ArePosesNearCondition(
 }
 
 void ArePosesNearCondition::initialize()
-{  
-  
+{
   if (!node_ || !tf_) {
     std::cerr << "[GetCurrentPose] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
   }
@@ -86,7 +87,7 @@ bool ArePosesNearCondition::arePosesNearby()
         pose2, pose2, *tf_, global_frame_, transform_tolerance_))
     {
       RCLCPP_WARN(node_->get_logger(),
-        "Unable to transform poses to frame %s for comparison", 
+        "Unable to transform poses to frame %s for comparison",
         global_frame_.c_str());
       return false;
     }

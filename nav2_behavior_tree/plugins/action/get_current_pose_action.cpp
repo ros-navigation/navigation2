@@ -21,13 +21,15 @@ GetCurrentPose::GetCurrentPose(
   const std::string & xml_tag_name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(xml_tag_name, conf),
-  node_(nullptr), 
-  tf_(nullptr)   
+  node_(nullptr),
+  tf_(nullptr)
 {
   if (!config().blackboard->get("node", node_)) {
+    throw BT::RuntimeError("Node not found in blackboard.");
   }
-  
+
   if (!config().blackboard->get("tf_buffer", tf_)) {
+    throw BT::RuntimeError("tf_buffer not found in blackboard.");
   }
 
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
@@ -35,7 +37,6 @@ GetCurrentPose::GetCurrentPose(
 
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
     node_, "robot_base_frame", this);
-
 }
 
 BT::NodeStatus GetCurrentPose::tick()
@@ -51,24 +52,23 @@ BT::NodeStatus GetCurrentPose::tick()
 
   try {
     geometry_msgs::msg::TransformStamped tf_msg;
-    
+
     tf_msg = tf_->lookupTransform(
-      global_frame_, 
-      robot_base_frame_, 
+      global_frame_,
+      robot_base_frame_,
       tf2::TimePointZero);
 
     current_pose.pose.position.x = tf_msg.transform.translation.x;
     current_pose.pose.position.y = tf_msg.transform.translation.y;
     current_pose.pose.position.z = tf_msg.transform.translation.z;
     current_pose.pose.orientation = tf_msg.transform.rotation;
-    
   } catch (const tf2::TransformException & ex) {
     RCLCPP_WARN(node_->get_logger(), "[GetCurrentPose] TF Error: %s", ex.what());
     return BT::NodeStatus::FAILURE;
   }
 
   setOutput("current_pose", current_pose);
-  
+
   return BT::NodeStatus::SUCCESS;
 }
 
