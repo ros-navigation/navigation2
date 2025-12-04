@@ -59,6 +59,9 @@ list(APPEND plugin_libs nav2_compute_path_to_pose_action_bt_node)
 add_library(nav2_compute_path_through_poses_action_bt_node SHARED plugins/action/compute_path_through_poses_action.cpp)
 list(APPEND plugin_libs nav2_compute_path_through_poses_action_bt_node)
 
+add_library(nav2_concatenate_paths_action_bt_node SHARED plugins/action/concatenate_paths_action.cpp)
+list(APPEND plugin_libs nav2_concatenate_paths_action_bt_node)
+
 add_library(nav2_controller_cancel_bt_node SHARED plugins/action/controller_cancel_node.cpp)
 list(APPEND plugin_libs nav2_controller_cancel_bt_node)
 
@@ -140,6 +143,9 @@ list(APPEND plugin_libs nav2_is_battery_low_condition_bt_node)
 add_library(nav2_are_error_codes_active_condition_bt_node SHARED plugins/condition/are_error_codes_present_condition.cpp)
 list(APPEND plugin_libs nav2_are_error_codes_active_condition_bt_node)
 
+add_library(nav2_are_poses_near_condition_bt_node SHARED plugins/condition/are_poses_near_condition.cpp)
+list(APPEND plugin_libs nav2_are_poses_near_condition_bt_node)
+
 add_library(nav2_would_a_controller_recovery_help_condition_bt_node SHARED plugins/condition/would_a_controller_recovery_help_condition.cpp)
 list(APPEND plugin_libs nav2_would_a_controller_recovery_help_condition_bt_node)
 
@@ -184,6 +190,9 @@ list(APPEND plugin_libs nav2_navigate_through_poses_action_bt_node)
 
 add_library(nav2_remove_passed_goals_action_bt_node SHARED plugins/action/remove_passed_goals_action.cpp)
 list(APPEND plugin_libs nav2_remove_passed_goals_action_bt_node)
+
+add_library(nav2_get_current_pose_action_bt_node SHARED plugins/action/get_current_pose_action.cpp)
+list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 
 add_library(nav2_get_pose_from_path_action_bt_node SHARED plugins/action/get_pose_from_path_action.cpp)
 list(APPEND plugin_libs nav2_get_pose_from_path_action_bt_node)
