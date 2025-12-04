@@ -17,6 +17,7 @@
 #include <set>
 #include <memory>
 #include <limits>
+#include <stdexcept>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 
 namespace nav2_bt_navigator
@@ -217,11 +218,9 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
     if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal())) {
-      RCLCPP_WARN(
-        logger_,
+      throw std::runtime_error(
         "Preemption request was rejected since the goal poses could not be "
-        "transformed. For now, continuing to track the last goal until completion.");
-      bt_action_server_->terminatePendingGoal();
+        "transformed.");
     }
   } else {
     RCLCPP_WARN(
