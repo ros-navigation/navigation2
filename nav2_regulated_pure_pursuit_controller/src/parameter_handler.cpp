@@ -1,4 +1,5 @@
 // Copyright (c) 2022 Samsung Research America
+// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,8 +36,31 @@ ParameterHandler::ParameterHandler(
 {
   plugin_name_ = plugin_name;
 
+  // Declare max_linear_vel with backward compatibility
+  const std::string old_name = plugin_name_ + ".desired_linear_vel";
+  const std::string new_name = plugin_name_ + ".max_linear_vel";
+  const auto nan_val = std::numeric_limits<double>::quiet_NaN();
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".desired_linear_vel", rclcpp::ParameterValue(0.5));
+    node, old_name, rclcpp::ParameterValue(nan_val));
+  double old_val = nan_val;
+  if (node->get_parameter(old_name, old_val) &&
+    !std::isnan(old_val))
+  {
+    RCLCPP_WARN(
+      logger_,
+      "Parameter '%s' is deprecated. Use '%s' instead.",
+      old_name.c_str(), new_name.c_str());
+  }
+  double default_val = std::isnan(old_val) ? 0.5 : old_val;
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(default_val));
+
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(-0.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_vel", rclcpp::ParameterValue(2.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".min_angular_vel", rclcpp::ParameterValue(-2.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".lookahead_dist", rclcpp::ParameterValue(0.6));
   declare_parameter_if_not_declared(
@@ -87,7 +111,13 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".rotate_to_heading_min_angle", rclcpp::ParameterValue(0.785));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
+  declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_decel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cancel_deceleration", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -104,10 +134,15 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
+      node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
+  declare_parameter_if_not_declared(
+      node, plugin_name_ + ".use_dynamic_window", rclcpp::ParameterValue(false));
 
-  node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
-  params_.base_desired_linear_vel = params_.desired_linear_vel;
+  node->get_parameter(plugin_name_ + ".max_linear_vel", params_.max_linear_vel);
+  params_.base_max_linear_vel = params_.max_linear_vel;
+  node->get_parameter(plugin_name_ + ".min_linear_vel", params_.min_linear_vel);
+  node->get_parameter(plugin_name_ + ".max_angular_vel", params_.max_angular_vel);
+  node->get_parameter(plugin_name_ + ".min_angular_vel", params_.min_angular_vel);
   node->get_parameter(plugin_name_ + ".lookahead_dist", params_.lookahead_dist);
   node->get_parameter(plugin_name_ + ".min_lookahead_dist", params_.min_lookahead_dist);
   node->get_parameter(plugin_name_ + ".max_lookahead_dist", params_.max_lookahead_dist);
@@ -162,7 +197,10 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(plugin_name_ + ".use_rotate_to_heading", params_.use_rotate_to_heading);
   node->get_parameter(
     plugin_name_ + ".rotate_to_heading_min_angle", params_.rotate_to_heading_min_angle);
+  node->get_parameter(plugin_name_ + ".max_linear_accel", params_.max_linear_accel);
+  node->get_parameter(plugin_name_ + ".max_linear_decel", params_.max_linear_decel);
   node->get_parameter(plugin_name_ + ".max_angular_accel", params_.max_angular_accel);
+  node->get_parameter(plugin_name_ + ".max_angular_decel", params_.max_angular_decel);
   node->get_parameter(plugin_name_ + ".use_cancel_deceleration", params_.use_cancel_deceleration);
   node->get_parameter(plugin_name_ + ".cancel_deceleration", params_.cancel_deceleration);
   node->get_parameter(plugin_name_ + ".allow_reversing", params_.allow_reversing);
@@ -189,6 +227,7 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
   node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
+  node->get_parameter(plugin_name_ + ".use_dynamic_window", params_.use_dynamic_window);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
@@ -252,9 +291,9 @@ ParameterHandler::updateParametersCallback(
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor") {
         params_.inflation_cost_scaling_factor = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".desired_linear_vel") {
-        params_.desired_linear_vel = parameter.as_double();
-        params_.base_desired_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_linear_vel") {
+        params_.max_linear_vel = parameter.as_double();
+        params_.base_max_linear_vel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".lookahead_dist") {
         params_.lookahead_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_lookahead_dist") {
