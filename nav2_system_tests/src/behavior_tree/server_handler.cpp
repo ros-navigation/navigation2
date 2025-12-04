@@ -47,6 +47,8 @@ ServerHandler::ServerHandler()
     node_, "drive_on_heading");
   ntp_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputePathThroughPoses>>(
     node_, "compute_path_through_poses");
+  compute_route_server = std::make_unique<DummyActionServer<nav2_msgs::action::ComputeRoute>>(
+  node_, "compute_route");
 }
 
 ServerHandler::~ServerHandler()
@@ -91,6 +93,7 @@ void ServerHandler::reset() const
   wait_server->reset();
   backup_server->reset();
   drive_on_heading_server->reset();
+  compute_route_server->reset();
 }
 
 void ServerHandler::spinThread()
