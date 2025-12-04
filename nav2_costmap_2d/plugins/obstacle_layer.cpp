@@ -562,7 +562,11 @@ ObstacleLayer::updateBounds(
       // Calculate the distance in cell space to match the ray trace algorithm
       // used for clearing obstacles (see Costmap2D::raytraceLine).
       unsigned int x0, y0;
-      worldToMap(obs.origin_.x, obs.origin_.y, x0, y0);
+      if (!worldToMap(obs.origin_.x, obs.origin_.y, x0, y0)) {
+        RCLCPP_DEBUG(logger_, "Sensor origin is out of map bounds");
+        continue;
+      }
+
       const int dx = static_cast<int>(mx) - static_cast<int>(x0);
       const int dy = static_cast<int>(my) - static_cast<int>(y0);
       const unsigned int sq_dist = dx * dx + dy * dy;
