@@ -66,6 +66,7 @@ target_link_libraries(nav2_costmap_2d_core PUBLIC
 
 add_library(layers SHARED
   plugins/inflation_layer.cpp
+  plugins/predictive_inflation_layer.cpp
   plugins/static_layer.cpp
   plugins/obstacle_layer.cpp
   src/observation_buffer.cpp
@@ -128,6 +129,12 @@ target_link_libraries(nav2_costmap_2d_client PUBLIC
   tf2::tf2
   nav2_ros_common::nav2_ros_common
 )
+
+# Create alias targets for find_package support
+add_library(nav2_costmap_2d::nav2_costmap_2d_core ALIAS nav2_costmap_2d_core)
+add_library(nav2_costmap_2d::layers ALIAS layers)
+add_library(nav2_costmap_2d::filters ALIAS filters)
+add_library(nav2_costmap_2d::nav2_costmap_2d_client ALIAS nav2_costmap_2d_client)
 
 add_executable(nav2_costmap_2d_markers src/costmap_2d_markers.cpp)
 target_link_libraries(nav2_costmap_2d_markers PRIVATE
