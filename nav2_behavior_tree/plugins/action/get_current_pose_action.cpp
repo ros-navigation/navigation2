@@ -29,6 +29,13 @@ GetCurrentPose::GetCurrentPose(
   
   if (!config().blackboard->get("tf_buffer", tf_)) {
   }
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "global_frame", this);
+
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "robot_base_frame", this);
+
 }
 
 BT::NodeStatus GetCurrentPose::tick()
@@ -38,26 +45,16 @@ BT::NodeStatus GetCurrentPose::tick()
     return BT::NodeStatus::FAILURE;
   }
 
-  std::string global_frame;
-  std::string robot_base_frame;
-  
-  if (!getInput("global_frame", global_frame)) {
-    global_frame = "map"; 
-  }
-  if (!getInput("robot_base_frame", robot_base_frame)) {
-    robot_base_frame = "base_link"; 
-  }
-
   geometry_msgs::msg::PoseStamped current_pose;
-  current_pose.header.frame_id = global_frame;
+  current_pose.header.frame_id = global_frame_;
   current_pose.header.stamp = node_->now();
 
   try {
     geometry_msgs::msg::TransformStamped tf_msg;
     
     tf_msg = tf_->lookupTransform(
-      global_frame, 
-      robot_base_frame, 
+      global_frame_, 
+      robot_base_frame_, 
       tf2::TimePointZero);
 
     current_pose.pose.position.x = tf_msg.transform.translation.x;

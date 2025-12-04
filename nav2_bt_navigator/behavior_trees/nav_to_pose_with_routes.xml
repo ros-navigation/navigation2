@@ -2,7 +2,7 @@
   <BehaviorTree ID="MainTree">
     <Sequence name="NavigateWithRoutes">
       
-      <ControllerSelector selected_controller="{selected_controller}" default_controller="RPP" topic_name="controller_selector"/>
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
       <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
 
       <Sequence name="ComputeFullRoute">
@@ -11,7 +11,7 @@
 
         <Fallback name="FirstMileCheck">
           <Sequence>
-             <GetCurrentPose current_pose="{current_pose}" global_frame="robot_map" robot_base_frame="robot_base_link"/>
+             <GetCurrentPose current_pose="{current_pose}"/>
              <GetPoseFromPath path="{route_path}" index="0" pose="{route_start_pose}"/>
              <ArePosesNear ref_pose="{current_pose}" target_pose="{route_start_pose}" tolerance="0.3"/>
           </Sequence>

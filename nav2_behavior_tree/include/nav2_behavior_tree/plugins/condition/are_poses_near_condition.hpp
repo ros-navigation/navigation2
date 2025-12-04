@@ -10,6 +10,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_util/node_utils.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -18,7 +19,7 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS when a specified goal
  * is reached and FAILURE otherwise
  */
-class ArePosesNear : public BT::ConditionNode
+class ArePosesNearCondition : public BT::ConditionNode
 {
 public:
   /**
@@ -26,16 +27,16 @@ public:
    * @param condition_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  ArePosesNear(
+  ArePosesNearCondition(
     const std::string & condition_name,
     const BT::NodeConfiguration & conf);
 
-  ArePosesNear() = delete;
+  ArePosesNearCondition() = delete;
 
   /**
    * @brief A destructor for nav2_behavior_tree::ArePosesNearCondition
    */
-  ~ArePosesNear() override = default;
+  ~ArePosesNearCondition() override = default;
 
   /**
    * @brief The main override required by a BT action

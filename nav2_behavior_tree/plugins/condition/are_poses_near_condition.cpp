@@ -27,26 +27,24 @@ ArePosesNearCondition::ArePosesNearCondition(
   transform_tolerance_(0.1),    
   initialized_(false)           
 {
+  if (!config().blackboard->get("node", node_)) {
+  }
+  
+  if (!config().blackboard->get("tf_buffer", tf_)) {
+  }
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "global_frame", this);
 }
 
 void ArePosesNearCondition::initialize()
 {  
-  if (!config().blackboard->get("node", node_)) {
-    throw std::runtime_error("Missing 'node' in blackboard");
-  }
-
-  if (!config().blackboard->get("tf_buffer", tf_)) {
-    throw std::runtime_error("Missing 'tf_buffer' in blackboard");
+  
+  if (!node_ || !tf_) {
+    std::cerr << "[GetCurrentPose] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
   }
 
   node_->get_parameter_or("transform_tolerance", transform_tolerance_, 0.1);
-
-  if (!getInput("global_frame", global_frame_)) {
-    if (!node_->get_parameter("global_frame", global_frame_)) {
-      RCLCPP_ERROR(node_->get_logger(), "Missing global_frame");
-      throw std::runtime_error("Missing global_frame parameter or port");
-    }
-  }
 
   initialized_ = true;
 }
