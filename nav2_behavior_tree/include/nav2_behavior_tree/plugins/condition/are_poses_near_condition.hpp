@@ -91,7 +91,6 @@ protected:
   // Internal variables
   std::string global_frame_;
   double transform_tolerance_;
-  bool initialized_;
 };
 
 }  // namespace nav2_behavior_tree

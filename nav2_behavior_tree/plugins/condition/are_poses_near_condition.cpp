@@ -24,8 +24,7 @@ ArePosesNearCondition::ArePosesNearCondition(
   node_(nullptr),
   tf_(nullptr),
   global_frame_("map"),
-  transform_tolerance_(0.1),
-  initialized_(false)
+  transform_tolerance_(0.1)
 {
   if (!config().blackboard->get("node", node_)) {
     throw BT::RuntimeError("Node not found in blackboard.");
@@ -46,13 +45,11 @@ void ArePosesNearCondition::initialize()
   }
 
   node_->get_parameter_or("transform_tolerance", transform_tolerance_, 0.1);
-
-  initialized_ = true;
 }
 
 BT::NodeStatus ArePosesNearCondition::tick()
 {
-  if (!initialized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 
