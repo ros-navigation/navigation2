@@ -17,7 +17,7 @@
 namespace nav2_behavior_tree
 {
 
-GetCurrentPose::GetCurrentPose(
+GetCurrentPoseAction::GetCurrentPoseAction(
   const std::string & xml_tag_name,
   const BT::NodeConfiguration & conf)
 : BT::SyncActionNode(xml_tag_name, conf),
@@ -39,10 +39,10 @@ GetCurrentPose::GetCurrentPose(
     node_, "robot_base_frame", this);
 }
 
-BT::NodeStatus GetCurrentPose::tick()
+BT::NodeStatus GetCurrentPoseAction::tick()
 {
   if (!node_ || !tf_) {
-    std::cerr << "[GetCurrentPose] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
+    std::cerr << "[GetCurrentPoseAction] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
     return BT::NodeStatus::FAILURE;
   }
 
@@ -63,7 +63,7 @@ BT::NodeStatus GetCurrentPose::tick()
     current_pose.pose.position.z = tf_msg.transform.translation.z;
     current_pose.pose.orientation = tf_msg.transform.rotation;
   } catch (const tf2::TransformException & ex) {
-    RCLCPP_WARN(node_->get_logger(), "[GetCurrentPose] TF Error: %s", ex.what());
+    RCLCPP_WARN(node_->get_logger(), "[GetCurrentPoseAction] TF Error: %s", ex.what());
     return BT::NodeStatus::FAILURE;
   }
 
@@ -77,5 +77,5 @@ BT::NodeStatus GetCurrentPose::tick()
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<nav2_behavior_tree::GetCurrentPose>("GetCurrentPose");
+  factory.registerNodeType<nav2_behavior_tree::GetCurrentPoseAction>("GetCurrentPose");
 }

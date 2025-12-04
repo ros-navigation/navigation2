@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief Action Node to get the current robot pose from TF
  */
-class GetCurrentPose : public BT::SyncActionNode
+class GetCurrentPoseAction : public BT::SyncActionNode
 {
 public:
   /**
@@ -39,7 +39,7 @@ public:
    * @param xml_tag_name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  GetCurrentPose(
+  GetCurrentPoseAction(
     const std::string & xml_tag_name,
     const BT::NodeConfiguration & conf);
 
