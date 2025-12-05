@@ -22,7 +22,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "behaviortree_cpp/decorator_node.h"
-
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace nav2_behavior_tree
