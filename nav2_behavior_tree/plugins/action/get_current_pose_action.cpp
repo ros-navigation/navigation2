@@ -31,11 +31,6 @@ GetCurrentPoseAction::GetCurrentPoseAction(
     node, "robot_base_frame", this);
 }
 
-void GetCurrentPoseAction::halt()
-{
-  resetStatus();
-}
-
 BT::NodeStatus GetCurrentPoseAction::tick()
 {
   setStatus(BT::NodeStatus::RUNNING);

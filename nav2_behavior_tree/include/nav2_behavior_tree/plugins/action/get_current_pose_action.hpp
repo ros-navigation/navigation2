@@ -58,21 +58,20 @@ public:
     };
   }
 
+private:
+   /**
+   * @brief The other (optional) override required by a BT action.
+   */
+  void halt() override {}
+
   /**
-   * @brief Main loop
-   * @return BT::NodeStatus
+   * @brief The main override required by a BT action
+   * @return BT::NodeStatus Status of tick execution
    */
   BT::NodeStatus tick() override;
 
-  /**
-   * @brief The mandatory halt function for ActionNodeBase
-   */
-  void halt() override;
-
-private:
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-
   std::string global_frame_, robot_base_frame_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
   double transform_tolerance_;
 };
 
