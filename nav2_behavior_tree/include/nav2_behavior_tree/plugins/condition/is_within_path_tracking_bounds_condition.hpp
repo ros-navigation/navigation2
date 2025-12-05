@@ -57,17 +57,21 @@ public:
     };
   }
 
-private:
-  rclcpp::Logger logger_{rclcpp::get_logger("is_within_path_tracking_bounds_node")};
+protected:
+  /**
+   * @brief Callback function for tracking feedback topic
+   * @param msg Shared pointer to nav2_msgs::msg::TrackingFeedback message
+   */
+  void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
+
+  rclcpp::Logger logger_{rclcpp::get_logger("IsWithinPathTrackingBoundsCondition")};
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  rclcpp::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
+  nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   double last_error_{0.0};
   double max_error_right_{1.5};
   double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
-
-  void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
 };
 
 }  // namespace nav2_behavior_tree
