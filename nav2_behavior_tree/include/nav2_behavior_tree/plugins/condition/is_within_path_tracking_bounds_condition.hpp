@@ -52,8 +52,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<double>("max_error_right", "Maximum allowed tracking error on the right side"),
-      BT::InputPort<double>("max_error_left", "Maximum allowed tracking error left side")
+      BT::InputPort<double>("max_error_left", "Maximum allowed tracking error left side"),
+      BT::InputPort<double>("max_error_right", "Maximum allowed tracking error on the right side")
     };
   }
 
