@@ -29,8 +29,13 @@ namespace nav2_behavior_tree
 {
 
 /**
- * @brief A BT::ConditionNode that subscribes to /tracking_feedback and returns SUCCESS
- * if the error is within the max_error input port, FAILURE otherwise
+ * @brief A BT::ConditionNode that subscribes to tracking_feedback and returns SUCCESS
+ * if the tracking error is within the specified bounds.
+ *
+ * This node uses two separate input ports, "max_error_left" and "max_error_right",
+ * to allow for asymmetric bounds on the allowed tracking error to the left and right
+ * of the path, respectively. The node returns SUCCESS if the error is within these
+ * bounds, and FAILURE otherwise.
  */
 class IsWithinPathTrackingBoundsCondition : public BT::ConditionNode
 {
@@ -72,6 +77,7 @@ protected:
   double max_error_right_{1.5};
   double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
+  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree
