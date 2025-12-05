@@ -313,13 +313,13 @@ void TrackingErrorLayer::activate()
 
   // Create subscriptions when layer is activated
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-    "plan",
+    "/plan",
     std::bind(&TrackingErrorLayer::pathCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
 
   tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
-    "tracking_feedback",
+    "/tracking_feedback",
     std::bind(&TrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
