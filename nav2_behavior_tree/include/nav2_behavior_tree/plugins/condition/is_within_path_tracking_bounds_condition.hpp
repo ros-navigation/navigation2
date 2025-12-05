@@ -68,7 +68,7 @@ protected:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
-  double last_error_{0.0};
+  double last_error_;
   double max_error_right_{1.5};
   double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
