@@ -71,3 +71,9 @@ nav2_add_gtest(observation_buffer_test observation_buffer_test.cpp)
 target_link_libraries(observation_buffer_test
   nav2_costmap_2d_core
 )
+
+nav2_add_gtest(obstacle_layer_test obstacle_layer_test.cpp)
+target_link_libraries(obstacle_layer_test
+  nav2_costmap_2d_core
+  layers
+)

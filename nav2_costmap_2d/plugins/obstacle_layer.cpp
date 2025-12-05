@@ -527,8 +527,8 @@ ObstacleLayer::updateBounds(
 
     const sensor_msgs::msg::PointCloud2 & cloud = obs.cloud_;
 
-    double sq_obstacle_max_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
-    double sq_obstacle_min_range = obs.obstacle_min_range_ * obs.obstacle_min_range_;
+    const unsigned int max_range_cells = cellDistance(obs.obstacle_max_range_);
+    const unsigned int min_range_cells = cellDistance(obs.obstacle_min_range_);
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -549,28 +549,36 @@ ObstacleLayer::updateBounds(
         continue;
       }
 
-      // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist =
-        (px -
-        obs.origin_.x) * (px - obs.origin_.x) + (py - obs.origin_.y) * (py - obs.origin_.y) +
-        (pz - obs.origin_.z) * (pz - obs.origin_.z);
-
-      // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_max_range) {
-        RCLCPP_DEBUG(logger_, "The point is too far away");
-        continue;
-      }
-
-      // if the point is too close, do not conisder it
-      if (sq_dist < sq_obstacle_min_range) {
-        RCLCPP_DEBUG(logger_, "The point is too close");
-        continue;
-      }
-
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my;
       if (!worldToMap(px, py, mx, my)) {
         RCLCPP_DEBUG(logger_, "Computing map coords failed");
+        continue;
+      }
+
+      // compute the distance from the hitpoint to the pointcloud's origin
+      // Calculate the distance in cell space to match the ray trace algorithm
+      // used for clearing obstacles (see Costmap2D::raytraceLine).
+      unsigned int x0, y0;
+      if (!worldToMap(obs.origin_.x, obs.origin_.y, x0, y0)) {
+        RCLCPP_DEBUG(logger_, "Sensor origin is out of map bounds");
+        continue;
+      }
+
+      const int dx = static_cast<int>(mx) - static_cast<int>(x0);
+      const int dy = static_cast<int>(my) - static_cast<int>(y0);
+      const unsigned int dist = static_cast<unsigned int>(
+        std::hypot(static_cast<double>(dx), static_cast<double>(dy)));
+
+      // if the point is far enough away... we won't consider it
+      if (dist > max_range_cells) {
+        RCLCPP_DEBUG(logger_, "The point is too far away");
+        continue;
+      }
+
+      // if the point is too close, do not consider it
+      if (dist < min_range_cells) {
+        RCLCPP_DEBUG(logger_, "The point is too close");
         continue;
       }
 
@@ -779,6 +787,22 @@ ObstacleLayer::raytraceFreespace(
 
     unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
     unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
+
+    const int dx = static_cast<int>(x1) - static_cast<int>(x0);
+    const int dy = static_cast<int>(y1) - static_cast<int>(y0);
+
+    unsigned int observation_dist = static_cast<unsigned int>(
+      std::hypot(static_cast<double>(dx), static_cast<double>(dy)));
+
+    if (observation_dist < 1) {
+      // If the observation is in the same cell as the origin, do not raytrace
+      continue;
+    }
+    // Reduce the observation distance by 1 cell so that the cell containing the
+    // observation is not cleared
+    cell_raytrace_max_range =
+      std::min(cell_raytrace_max_range, observation_dist - 1);
+
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
     nav2_util::raytraceLine(
