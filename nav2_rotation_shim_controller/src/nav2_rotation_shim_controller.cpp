@@ -126,6 +126,9 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   const nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::PoseStamped & global_goal)
 {
+  current_path_ = transformed_global_plan;
+  path_updated_ = params_->rotate_to_heading_once ? isGoalChanged(global_goal) : true;
+  current_goal_ = global_goal;
   // Rotate to goal heading when in goal xy tolerance
   if (params_->rotate_to_goal_heading) {
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
@@ -193,7 +196,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         path_updated_ = false;
       }
     } catch (const std::runtime_error & e) {
-      RCLCPP_DEBUG(
+      RCLCPP_INFO(
         logger_,
         "Rotation Shim Controller was unable to find a sampling point,"
         " a rotational collision was detected, or TF failed to transform"
@@ -320,22 +323,19 @@ void RotationShimController::isCollisionFree(
   }
 }
 
-bool RotationShimController::isGoalChanged(const nav_msgs::msg::Path & path)
+bool RotationShimController::isGoalChanged(const geometry_msgs::msg::PoseStamped & goal)
 {
   // Return true if rotating or if the goal pose is empty
-  if (in_rotation_ || last_goal_pose_ == geometry_msgs::msg::Pose()) {
+  if (in_rotation_ || current_goal_ == geometry_msgs::msg::PoseStamped()) {
     return true;
   }
 
-  // Check if the last goal pose and the last pose of the new paths differ
-  bool changed = last_goal_pose_ != path.poses.back().pose;
-  last_goal_pose_ = path.poses.back().pose;
-  return changed;
+  // Check if the last goal pose and the new goal pose differ
+  return current_goal_ != goal;
 }
 
 void RotationShimController::newPathReceived(const nav_msgs::msg::Path & raw_global_path)
 {
-  path_updated_ = params_->rotate_to_heading_once ? isGoalChanged(raw_global_path) : true;
   primary_controller_->newPathReceived(raw_global_path);
   position_goal_checker_->reset();
 }

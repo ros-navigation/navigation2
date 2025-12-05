@@ -83,7 +83,7 @@ protected:
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("ControllerServer")};
+  rclcpp::Logger logger_ {rclcpp::get_logger("FeasiblePathHandler")};
   std::string plugin_name_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;

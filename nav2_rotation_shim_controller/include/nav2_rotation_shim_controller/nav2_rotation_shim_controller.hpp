@@ -155,10 +155,10 @@ protected:
 
   /**
    * @brief Checks if the goal has changed based on the given path.
-   * @param path The path to compare with the current goal.
+   * @param goal The goal to compare with the last goal.
    * @return True if the goal has changed, false otherwise.
    */
-  bool isGoalChanged(const nav_msgs::msg::Path & path);
+  bool isGoalChanged(const geometry_msgs::msg::PoseStamped & goal);
 
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -173,7 +173,7 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  geometry_msgs::msg::Pose last_goal_pose_;
+  geometry_msgs::msg::PoseStamped current_goal_;
   Parameters * params_;
   bool in_rotation_;
   double last_angular_vel_ = std::numeric_limits<double>::max();
