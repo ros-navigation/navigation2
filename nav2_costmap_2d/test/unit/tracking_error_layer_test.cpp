@@ -387,8 +387,8 @@ int main(int argc, char ** argv)
 {
   if (rcutils_logging_set_logger_level("test_tracking_error_layer",
     RCUTILS_LOG_SEVERITY_ERROR) != RCUTILS_RET_OK)
-    {
-      std::cerr << "Failed to set logger level" << std::endl;
+  {
+    std::cerr << "Failed to set logger level" << std::endl;
   }
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);

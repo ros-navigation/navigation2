@@ -229,7 +229,7 @@ void TrackingErrorLayer::updateCosts(
   for (const auto & point : wall_points) {
     double wx = point[0];
     double wy = point[1];
-    
+
     unsigned int center_x, center_y;
     if (master_grid.worldToMap(wx, wy, center_x, center_y)) {
       // Create 3x3 block centered on the point
@@ -237,10 +237,11 @@ void TrackingErrorLayer::updateCosts(
         for (int dy = -1; dy <= 1; ++dy) {
           unsigned int map_x = center_x + dx;
           unsigned int map_y = center_y + dy;
-          
+
           // Check bounds before setting cost
-          if (map_x < master_grid.getSizeInCellsX() && 
-              map_y < master_grid.getSizeInCellsY()) {
+          if (map_x < master_grid.getSizeInCellsX() &&
+            map_y < master_grid.getSizeInCellsY())
+          {
             master_grid.setCost(map_x, map_y, nav2_costmap_2d::LETHAL_OBSTACLE);
           }
         }
