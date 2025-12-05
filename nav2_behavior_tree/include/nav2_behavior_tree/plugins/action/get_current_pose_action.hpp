@@ -52,8 +52,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<std::string>("global_frame", "map", "Global reference frame"),
-      BT::InputPort<std::string>("robot_base_frame", "base_link", "Robot base frame"),
+      BT::InputPort<std::string>("global_frame", "Global reference frame"),
+      BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>("current_pose", "Current pose output"),
     };
   }
