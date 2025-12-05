@@ -24,6 +24,7 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   last_error_(std::numeric_limits<double>::max())
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  logger_ = node->get_logger();
   callback_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
