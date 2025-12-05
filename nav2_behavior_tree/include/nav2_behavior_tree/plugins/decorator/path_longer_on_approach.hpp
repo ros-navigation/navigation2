@@ -23,6 +23,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 
 namespace nav2_behavior_tree
 {
