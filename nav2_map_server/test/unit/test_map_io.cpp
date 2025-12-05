@@ -117,7 +117,7 @@ TEST_F(MapIOTester, loadSaveValidPGM)
 {
   // 1. Load reference map file and verify obtained OccupancyGrid
   LoadParameters loadParameters;
-  fillLoadParameters(path(TEST_DIR) / path(g_valid_pgm_file), loadParameters);
+  fillLoadParameters(path(TEST_DIR) / path(g_valid_pgm_file).string(), loadParameters);
 
   nav_msgs::msg::OccupancyGrid map_msg;
   ASSERT_NO_THROW(loadMapFromFile(loadParameters, map_msg));
