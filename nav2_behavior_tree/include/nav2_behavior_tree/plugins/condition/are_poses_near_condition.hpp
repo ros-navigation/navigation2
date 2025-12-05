@@ -76,21 +76,18 @@ public:
   static BT::PortsList providedPorts()
   {
     return {
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("ref_pose", "Reference Pose"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("target_pose", "Target Pose to compare"),
-      BT::InputPort<double>("tolerance", 0.5, "Distance tolerance to return success"),
-      BT::InputPort<std::string>("global_frame", "Global frame ID for normalization (if needed)")
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("ref_pose", "Destination"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>("target_pose", "Destination"),
+      BT::InputPort<std::string>("global_frame", "Global frame"),
+      BT::InputPort<double>("tolerance", 0.5, "Tolerance")
     };
   }
 
 protected:
-  // Pointers to the Nav2 environment
   rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
-
-  // Internal variables
-  std::string global_frame_;
   double transform_tolerance_;
+  std::string global_frame_;
 };
 
 }  // namespace nav2_behavior_tree

@@ -33,6 +33,9 @@ inline BT::NodeStatus ConcatenatePaths::tick()
   getInput("input_path2", input_path2);
 
   if (input_path1.poses.empty() && input_path2.poses.empty()) {
+    RCLCPP_ERROR(
+    config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+    "No input paths provided to concatenate. Both paths are empty.");
     return BT::NodeStatus::FAILURE;
   }
 

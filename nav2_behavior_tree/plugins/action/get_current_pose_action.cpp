@@ -20,23 +20,15 @@ namespace nav2_behavior_tree
 GetCurrentPoseAction::GetCurrentPoseAction(
   const std::string & xml_tag_name,
   const BT::NodeConfiguration & conf)
-: BT::ActionNodeBase(xml_tag_name, conf),
-  node_(nullptr),
-  tf_(nullptr)
+: BT::ActionNodeBase(xml_tag_name, conf)
 {
-  if (!config().blackboard->get("node", node_)) {
-    throw BT::RuntimeError("Node not found in blackboard.");
-  }
-
-  if (!config().blackboard->get("tf_buffer", tf_)) {
-    throw BT::RuntimeError("tf_buffer not found in blackboard.");
-  }
-
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node->get_parameter("transform_tolerance", transform_tolerance_);
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
-    node_, "global_frame", this);
-
+    node, "global_frame", this);
   robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
-    node_, "robot_base_frame", this);
+    node, "robot_base_frame", this);
 }
 
 void GetCurrentPoseAction::halt()
@@ -46,34 +38,19 @@ void GetCurrentPoseAction::halt()
 
 BT::NodeStatus GetCurrentPoseAction::tick()
 {
-  if (!node_ || !tf_) {
-    std::cerr << "[GetCurrentPoseAction] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
-    return BT::NodeStatus::FAILURE;
-  }
-
+  setStatus(BT::NodeStatus::RUNNING);
   geometry_msgs::msg::PoseStamped current_pose;
-  current_pose.header.frame_id = global_frame_;
-  current_pose.header.stamp = node_->now();
 
-  try {
-    geometry_msgs::msg::TransformStamped tf_msg;
-
-    tf_msg = tf_->lookupTransform(
-      global_frame_,
-      robot_base_frame_,
-      tf2::TimePointZero);
-
-    current_pose.pose.position.x = tf_msg.transform.translation.x;
-    current_pose.pose.position.y = tf_msg.transform.translation.y;
-    current_pose.pose.position.z = tf_msg.transform.translation.z;
-    current_pose.pose.orientation = tf_msg.transform.rotation;
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_WARN(node_->get_logger(), "[GetCurrentPoseAction] TF Error: %s", ex.what());
+  if (!nav2_util::getCurrentPose(
+      current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_))
+  {
+    RCLCPP_WARN(
+      config().blackboard->get<rclcpp::Node::SharedPtr>("node")->get_logger(),
+      "Current robot pose is not available.");
     return BT::NodeStatus::FAILURE;
   }
 
   setOutput("current_pose", current_pose);
-
   return BT::NodeStatus::SUCCESS;
 }
 

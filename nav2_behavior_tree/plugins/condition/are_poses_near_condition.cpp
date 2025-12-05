@@ -20,31 +20,18 @@ namespace nav2_behavior_tree
 ArePosesNearCondition::ArePosesNearCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  node_(nullptr),
-  tf_(nullptr),
-  global_frame_("map"),
-  transform_tolerance_(0.1)
+: BT::ConditionNode(condition_name, conf)
 {
-  if (!config().blackboard->get("node", node_)) {
-    throw BT::RuntimeError("Node not found in blackboard.");
-  }
-
-  if (!config().blackboard->get("tf_buffer", tf_)) {
-    throw BT::RuntimeError("tf_buffer not found in blackboard.");
-  }
-
+  auto node = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
   global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
-    node_, "global_frame", this);
+    node, "global_frame", this);
 }
 
 void ArePosesNearCondition::initialize()
 {
-  if (!node_ || !tf_) {
-    std::cerr << "[GetCurrentPose] Missing 'node' or 'tf_buffer' in Blackboard." << std::endl;
-  }
-
-  node_->get_parameter_or("transform_tolerance", transform_tolerance_, 0.1);
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  tf_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
 BT::NodeStatus ArePosesNearCondition::tick()
@@ -63,19 +50,9 @@ bool ArePosesNearCondition::arePosesNearby()
 {
   geometry_msgs::msg::PoseStamped pose1, pose2;
   double tol;
-
-  if (!getInput("ref_pose", pose1)) {
-    RCLCPP_ERROR(node_->get_logger(), "Missing ref_pose");
-    return false;
-  }
-  if (!getInput("target_pose", pose2)) {
-    RCLCPP_ERROR(node_->get_logger(), "Missing target_pose");
-    return false;
-  }
-  if (!getInput("tolerance", tol)) {
-    RCLCPP_ERROR(node_->get_logger(), "Missing tolerance");
-    return false;
-  }
+  getInput("ref_pose", pose1);
+  getInput("target_pose", pose2);
+  getInput("tolerance", tol);
 
   if (pose1.header.frame_id != pose2.header.frame_id) {
     if (!nav2_util::transformPoseInTargetFrame(
@@ -83,16 +60,13 @@ bool ArePosesNearCondition::arePosesNearby()
       !nav2_util::transformPoseInTargetFrame(
         pose2, pose2, *tf_, global_frame_, transform_tolerance_))
     {
-      RCLCPP_WARN(node_->get_logger(),
-        "Unable to transform poses to frame %s for comparison",
-        global_frame_.c_str());
+      RCLCPP_ERROR(node_->get_logger(), "Failed to transform poses to the same frame");
       return false;
     }
   }
 
   double dx = pose1.pose.position.x - pose2.pose.position.x;
   double dy = pose1.pose.position.y - pose2.pose.position.y;
-
   return (dx * dx + dy * dy) <= (tol * tol);
 }
 

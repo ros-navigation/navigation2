@@ -24,6 +24,8 @@
 #include "behaviortree_cpp/action_node.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -68,11 +70,10 @@ public:
   void halt() override;
 
 private:
-  rclcpp::Node::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  std::string global_frame_;
-  std::string robot_base_frame_;
+  std::string global_frame_, robot_base_frame_;
+  double transform_tolerance_;
 };
 
 }  // namespace nav2_behavior_tree
