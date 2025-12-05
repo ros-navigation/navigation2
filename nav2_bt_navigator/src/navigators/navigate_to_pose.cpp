@@ -50,6 +50,19 @@ NavigateToPoseNavigator::configure(
     "goal_pose",
     rclcpp::SystemDefaultsQoS(),
     std::bind(&NavigateToPoseNavigator::onGoalPoseReceived, this, std::placeholders::_1));
+
+  if (!node->has_parameter(getName() + ".enable_groot_monitoring")) {
+    node->declare_parameter(getName() + ".enable_groot_monitoring", false);
+  }
+
+  if (!node->has_parameter(getName() + ".groot_server_port")) {
+    node->declare_parameter(getName() + ".groot_server_port", 1667);
+  }
+
+  bt_action_server_->setGrootMonitoring(
+      node->get_parameter(getName() + ".enable_groot_monitoring").as_bool(),
+      node->get_parameter(getName() + ".groot_server_port").as_int());
+
   return true;
 }
 

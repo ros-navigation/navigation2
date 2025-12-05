@@ -23,6 +23,8 @@
 #include "nav_msgs/msg/path.hpp"
 
 #include "behaviortree_cpp/action_node.h"
+#include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 #include "tf2_ros/buffer.h"
 
 namespace nav2_behavior_tree

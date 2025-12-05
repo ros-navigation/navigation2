@@ -217,8 +217,16 @@ bool BtActionServer<ActionT>::on_cleanup()
   current_bt_xml_filename_.clear();
   blackboard_.reset();
   bt_->haltAllActions(tree_);
+  bt_->resetGrootMonitor();
   bt_.reset();
   return true;
+}
+
+template<class ActionT>
+void BtActionServer<ActionT>::setGrootMonitoring(const bool enable, const unsigned server_port)
+{
+  enable_groot_monitoring_ = enable;
+  groot_server_port_ = server_port;
 }
 
 template<class ActionT>
@@ -232,6 +240,9 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     RCLCPP_DEBUG(logger_, "BT will not be reloaded as the given xml is already loaded");
     return true;
   }
+
+  // Reset any existing Groot2 monitoring
+  bt_->resetGrootMonitor();
 
   // Read the input BT XML from the specified file into a string
   std::ifstream xml_file(filename);
@@ -261,6 +272,14 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
   topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
 
   current_bt_xml_filename_ = filename;
+
+  if (enable_groot_monitoring_) {
+    bt_->addGrootMonitoring(&tree_, groot_server_port_);
+    RCLCPP_DEBUG(
+      logger_, "Enabling Groot2 monitoring for %s: %d",
+      action_name_.c_str(), groot_server_port_);
+  }
+
   return true;
 }
 
