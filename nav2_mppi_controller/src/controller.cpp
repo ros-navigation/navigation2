@@ -92,7 +92,7 @@ geometry_msgs::msg::TwistStamped MPPIController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & transformed_global_plan,
+  const nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::PoseStamped & global_goal)
 {
 #ifdef BENCHMARK_TESTING

@@ -123,7 +123,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & velocity,
   nav2_core::GoalChecker * goal_checker,
-  nav_msgs::msg::Path & transformed_global_plan,
+  const nav_msgs::msg::Path & transformed_global_plan,
   const geometry_msgs::msg::PoseStamped & global_goal)
 {
   // Rotate to goal heading when in goal xy tolerance
@@ -163,7 +163,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
     try {
-      auto sampled_pt = getSampledPathPt(transformed_global_plan);
+      auto sampled_pt = getSampledPathPt();
       double angular_distance_to_heading;
       if (params_->use_path_orientations) {
         angular_distance_to_heading = angles::shortest_angular_distance(
@@ -210,31 +210,30 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   return cmd_vel;
 }
 
-geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
-  nav_msgs::msg::Path & transformed_global_plan)
+geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
 {
-  if (transformed_global_plan.poses.size() < 2) {
+  if (current_path_.poses.size() < 2) {
     throw nav2_core::ControllerException(
             "Path is too short to find a valid sampled path point for rotation.");
   }
 
-  geometry_msgs::msg::Pose start = transformed_global_plan.poses.front().pose;
+  geometry_msgs::msg::Pose start = current_path_.poses.front().pose;
   double dx, dy;
 
   // Find the first point at least sampling distance away
-  for (unsigned int i = 1; i != transformed_global_plan.poses.size(); i++) {
-    dx = transformed_global_plan.poses[i].pose.position.x - start.position.x;
-    dy = transformed_global_plan.poses[i].pose.position.y - start.position.y;
+  for (unsigned int i = 1; i != current_path_.poses.size(); i++) {
+    dx = current_path_.poses[i].pose.position.x - start.position.x;
+    dy = current_path_.poses[i].pose.position.y - start.position.y;
     if (hypot(dx, dy) >= params_->forward_sampling_distance) {
-      transformed_global_plan.poses[i].header.frame_id = transformed_global_plan.header.frame_id;
+      current_path_.poses[i].header.frame_id = current_path_.header.frame_id;
       // Get current time transformation
-      transformed_global_plan.poses[i].header.stamp = clock_->now();
-      return transformed_global_plan.poses[i];
+      current_path_.poses[i].header.stamp = clock_->now();
+      return current_path_.poses[i];
     }
   }
 
-  auto goal = transformed_global_plan.poses.back();
-  goal.header.frame_id = transformed_global_plan.header.frame_id;
+  auto goal = current_path_.poses.back();
+  goal.header.frame_id = current_path_.header.frame_id;
   goal.header.stamp = clock_->now();
   return goal;
 }

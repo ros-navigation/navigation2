@@ -113,7 +113,7 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
-    nav_msgs::msg::Path & transformed_global_plan,
+    const nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
@@ -149,7 +149,7 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const nav_2d_msgs::msg::Twist2D & velocity,
     std::shared_ptr<dwb_msgs::msg::LocalPlanEvaluation> & results,
-    nav_msgs::msg::Path & transformed_global_plan,
+    const nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::PoseStamped & global_goal);
 
   /**

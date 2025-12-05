@@ -91,7 +91,7 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
     nav2_core::GoalChecker * /*goal_checker*/,
-    nav_msgs::msg::Path & transformed_global_plan,
+    const nav_msgs::msg::Path & transformed_global_plan,
     const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
@@ -121,7 +121,7 @@ protected:
    * May throw exception if a point at least that far away cannot be found
    * @return pt location of the output point
    */
-  geometry_msgs::msg::PoseStamped getSampledPathPt(nav_msgs::msg::Path & transformed_global_plan);
+  geometry_msgs::msg::PoseStamped getSampledPathPt();
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame
@@ -172,6 +172,7 @@ protected:
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
+  nav_msgs::msg::Path current_path_;
   geometry_msgs::msg::Pose last_goal_pose_;
   Parameters * params_;
   bool in_rotation_;

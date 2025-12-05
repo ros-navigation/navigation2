@@ -47,7 +47,7 @@ public:
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::ControllerException("Unknown Error");
@@ -62,7 +62,7 @@ class TFErrorController : public UnknownErrorController
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::ControllerTFError("TF error");
@@ -75,7 +75,7 @@ class FailedToMakeProgressErrorController : public UnknownErrorController
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::FailedToMakeProgress("Failed to make progress");
@@ -88,7 +88,7 @@ class PatienceExceededErrorController : public UnknownErrorController
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::PatienceExceeded("Patience exceeded");
@@ -101,7 +101,7 @@ class InvalidPathErrorController : public UnknownErrorController
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::InvalidPath("Invalid path");
@@ -114,7 +114,7 @@ class NoValidControlErrorController : public UnknownErrorController
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
-    nav_msgs::msg::Path &,
+    const nav_msgs::msg::Path &,
     const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::NoValidControl("No valid control");

@@ -45,10 +45,9 @@ public:
     return path_updated_;
   }
 
-  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
-    nav_msgs::msg::Path & transformed_global_plan)
+  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper()
   {
-    return getSampledPathPt(transformed_global_plan);
+    return getSampledPathPt();
   }
 
   bool isGoalChangedWrapper(const nav_msgs::msg::Path & path)
@@ -127,8 +126,6 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
-  nav2_controller::FeasiblePathHandler path_handler;
-  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -142,27 +139,21 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   path.poses[3].pose.position.y = 10.0;
   EXPECT_EQ(controller->isPathUpdated(), false);
   controller->newPathReceived(path);
-  path_handler.setPlan(path);
   EXPECT_EQ(controller->isPathUpdated(), true);
 
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = "base_link";
-  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
-  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
-    pruned_plan_end);
   // Test getting a sampled point
-  auto pose = controller->getSampledPathPtWrapper(transformed_global_plan);
+  auto pose = controller->getSampledPathPtWrapper();
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
 
   nav_msgs::msg::Path path_invalid_leng;
   controller->newPathReceived(path_invalid_leng);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(transformed_global_plan), std::runtime_error);
+  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 
   nav_msgs::msg::Path path_invalid_dists;
   path.poses.resize(10);
   controller->newPathReceived(path_invalid_dists);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(transformed_global_plan), std::runtime_error);
+  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, rotationAndTransformTests)
