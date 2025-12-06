@@ -676,8 +676,7 @@ void ControllerServer::computeAndPublishVelocity()
       twist,
       goal_checkers_[current_goal_checker_].get(),
       transformed_global_plan_,
-      goal
-      );
+      goal);
     last_valid_cmd_time_ = now();
     cmd_vel_2d.header.frame_id = costmap_ros_->getBaseFrameID();
     cmd_vel_2d.header.stamp = last_valid_cmd_time_;
