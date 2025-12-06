@@ -807,7 +807,7 @@ void ControllerServer::updateGlobalPath()
     }
     std::string current_path_handler;
     if (findPathHandlerId(goal->path_handler_id, current_path_handler)) {
-      if(current_path_handler_ != current_path_handler) {
+      if (current_path_handler_ != current_path_handler) {
         RCLCPP_INFO(
           get_logger(), "Change of path handler %s requested, resetting it",
           goal->path_handler_id.c_str());
