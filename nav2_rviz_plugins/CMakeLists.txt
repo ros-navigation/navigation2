@@ -17,7 +17,7 @@ find_package(rclcpp_action REQUIRED)
 set(CMAKE_FIND_DEBUG_MODE TRUE)
 
 find_package(Qt6 QUIET COMPONENTS Core Gui Widgets Concurrent)
-
+set(CMAKE_FIND_DEBUG_MODE FALSE)
 if(Qt6_FOUND)
   set(QT_VERSION_MAJOR 6)
   set(QT_VERSION ${Qt6Core_VERSION})
