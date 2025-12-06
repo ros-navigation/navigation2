@@ -14,6 +14,8 @@ find_package(nav2_route REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(rviz_common REQUIRED)
+
 # In Kilted and older distros, rviz with Qt6 is not supported
 if(TARGET Qt5::Core)
   set(QT_VERSION_MAJOR 5)
@@ -35,7 +37,7 @@ if(${QT_VERSION} VERSION_LESS 5.15.0)
       set("${out}" ${_uis_hdrs} PARENT_SCOPE)
   endfunction()
 endif()
-find_package(rviz_common REQUIRED)
+
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
