@@ -65,9 +65,7 @@ void FeasiblePathHandler::initialize(
       " every point on path for the closest value.");
     max_robot_pose_search_dist_ = std::numeric_limits<double>::max();
   }
-  if (enforce_path_inversion_ || enforce_path_rotation_) {
-    constraint_locale_ = 0u;
-  }
+  constraint_locale_ = 0u;
   if (!enforce_path_rotation_) {
     minimum_rotation_angle_ = 0.0f;
   }
