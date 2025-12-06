@@ -1117,6 +1117,15 @@ AmclNode::updateParametersCallback(
         reinit_pf = true;
       } else if (param_name == "save_pose_rate") {
         double save_pose_rate = parameter.as_double();
+        if (save_pose_rate <= 0.0) {
+          RCLCPP_WARN(
+            get_logger(),
+            "save_pose_rate must be positive, received: %f. Ignoring update.",
+            save_pose_rate);
+          result.successful = false;
+          result.reason = "save_pose_rate must be greater than 0.0";
+          return result;
+        }
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
