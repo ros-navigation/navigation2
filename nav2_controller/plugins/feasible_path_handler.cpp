@@ -104,7 +104,7 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
     tf2::getYaw(last_pose.pose.orientation));
 
   return distance <= inversion_xy_tolerance_ &&
-         fabs(angle_distance) <= inversion_yaw_tolerance_;
+    fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
