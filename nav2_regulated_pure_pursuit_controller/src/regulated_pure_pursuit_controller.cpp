@@ -185,7 +185,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
   {
     throw nav2_core::ControllerTFError(
-    "Unable to transform plan pose into local frame");
+      "Unable to transform plan pose into local frame");
   }
 
   // Find look ahead distance and point on path and publish
