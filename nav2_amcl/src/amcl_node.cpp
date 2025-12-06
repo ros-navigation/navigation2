@@ -1122,9 +1122,7 @@ AmclNode::updateParametersCallback(
             get_logger(),
             "save_pose_rate must be positive, received: %f. Ignoring update.",
             save_pose_rate);
-          result.successful = false;
-          result.reason = "save_pose_rate must be greater than 0.0";
-          return result;
+          continue;
         }
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
       } else if (param_name == "sigma_hit") {

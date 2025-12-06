@@ -503,16 +503,17 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "smoothing_frequency") {
-        smoothing_frequency_ = parameter.as_double();
-        if (smoothing_frequency_ <= 0.0) {
+        double smoothing_frequency = parameter.as_double();
+        if (smoothing_frequency <= 0.0) {
           RCLCPP_WARN(
             get_logger(),
             "smoothing_frequency must be positive, received: %f. Ignoring update.",
-            smoothing_frequency_);
+            smoothing_frequency);
           result.successful = false;
           result.reason = "smoothing_frequency must be greater than 0.0";
           return result;
         }
+        smoothing_frequency_ = smoothing_frequency;
         if (timer_) {
           timer_->cancel();
           timer_.reset();
