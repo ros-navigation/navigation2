@@ -93,7 +93,7 @@ inline unsigned int findFirstPathConstraint(
     return path.poses.size();
   }
 
-  const bool check_rotation = rotation_threshold == 0.0f ? false : true;
+  const bool check_rotation = fabs(rotation_threshold) < 1e-6f ? false : true;
   unsigned int rotation_idx = path.poses.size();
   unsigned int inversion_idx = path.poses.size();
   float prev_dx = 0.0f;
