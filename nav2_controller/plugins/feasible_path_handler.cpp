@@ -198,7 +198,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     global_plan_pose->header.stamp = global_pose_.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
     nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
-        costmap_ros_->getGlobalFrameID(), transform_tolerance_);
+      costmap_ros_->getGlobalFrameID(), transform_tolerance_);
 
     // Check if pose is inside the costmap
     if (!costmap_ros_->getCostmap()->worldToMap(
