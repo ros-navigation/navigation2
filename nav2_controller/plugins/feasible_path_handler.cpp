@@ -144,6 +144,7 @@ nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
   const geometry_msgs::msg::PoseStamped & pose)
 {
   global_pose_ = transformToGlobalPlanFrame(pose);
+
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
   auto closest_pose_upper_bound =
     nav2_util::geometry_utils::first_after_integrated_distance(
