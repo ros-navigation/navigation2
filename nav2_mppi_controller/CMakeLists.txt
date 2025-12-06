@@ -45,7 +45,6 @@ add_library(mppi_controller SHARED
   src/noise_generator.cpp
   src/optimizer.cpp
   src/parameters_handler.cpp
-  src/path_handler.cpp
   src/trajectory_visualizer.cpp
 )
 target_compile_options(mppi_controller PUBLIC -O3)
