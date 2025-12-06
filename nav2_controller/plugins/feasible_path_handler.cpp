@@ -111,7 +111,7 @@ void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
-  if(enforce_path_inversion_ || enforce_path_rotation_) {
+  if (enforce_path_inversion_ || enforce_path_rotation_) {
     constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
       enforce_path_inversion_, minimum_rotation_angle_);
   }
