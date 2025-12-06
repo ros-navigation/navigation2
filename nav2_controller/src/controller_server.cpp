@@ -143,7 +143,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
         get_logger(), "Created path handler : %s of type %s",
         params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
       path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
-          costmap_ros_->getTfBuffer());
+        costmap_ros_->getTfBuffer());
       path_handlers_.insert({params_->path_handler_ids[i], path_handler});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
