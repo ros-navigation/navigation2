@@ -25,28 +25,6 @@ find_package(nav2_ros_common REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-# In Kilted and older distros, rviz with Qt6 is not supported
-if(TARGET Qt5::Core)
-  set(QT_VERSION_MAJOR 5)
-  set(QT_VERSION ${Qt5Core_VERSION})
-  # In Qt5, state machine is part of core
-  find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
-elseif(TARGET Qt6::Core)
-  set(QT_VERSION_MAJOR 6)
-  set(QT_VERSION ${Qt6Core_VERSION})
-  find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets StateMachine Test Concurrent)
-endif()
-if(${QT_VERSION} VERSION_LESS 5.15.0)
-  function(qt_wrap_cpp out)
-    qt5_wrap_cpp(_sources ${ARGN})
-    set("${out}" ${_sources} PARENT_SCOPE)
-  endfunction()
-  function(qt_wrap_ui out)
-      qt5_wrap_ui(_uis_hdrs ${ARGN})
-      set("${out}" ${_uis_hdrs} PARENT_SCOPE)
-  endfunction()
-endif()
-
 set(QT_LIBRARIES
   Qt${QT_VERSION_MAJOR}::Core
   Qt${QT_VERSION_MAJOR}::Gui
