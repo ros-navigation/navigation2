@@ -191,7 +191,7 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
     "Controller Server has %s controllers available.", controller_ids_concat_.c_str());
 
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
-      params_->odom_topic);
+    params_->odom_topic);
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   transformed_plan_pub_ = create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   tracking_feedback_pub_ = create_publisher<nav2_msgs::msg::TrackingFeedback>("tracking_feedback");
