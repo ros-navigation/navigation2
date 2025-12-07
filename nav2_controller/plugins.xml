@@ -24,4 +24,9 @@
         <description>Goal checker that only checks XY position and ignores orientation</description>
     </class>
   </library>
+  <library path="symmetric_goal_checker">
+    <class type="nav2_controller::SymmetricGoalChecker" base_class_type="nav2_core::GoalChecker">
+        <description>Goal checker for symmetric robots that accepts either goal orientation or goal orientation + 180°</description>
+    </class>
+  </library>
 </class_libraries>
