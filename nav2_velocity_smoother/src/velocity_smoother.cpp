@@ -511,7 +511,7 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
             smoothing_frequency);
           result.successful = false;
           result.reason = "smoothing_frequency must be greater than 0.0";
-          return result;
+          break;
         }
         smoothing_frequency_ = smoothing_frequency;
         if (timer_) {
