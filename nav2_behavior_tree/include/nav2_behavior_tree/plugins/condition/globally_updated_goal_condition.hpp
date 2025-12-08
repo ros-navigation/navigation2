@@ -20,6 +20,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"

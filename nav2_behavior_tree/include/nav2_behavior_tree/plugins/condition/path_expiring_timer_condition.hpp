@@ -19,6 +19,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"

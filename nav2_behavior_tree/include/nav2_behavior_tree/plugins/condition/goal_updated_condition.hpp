@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "behaviortree_cpp/condition_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"

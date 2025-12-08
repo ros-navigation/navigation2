@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"

@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
