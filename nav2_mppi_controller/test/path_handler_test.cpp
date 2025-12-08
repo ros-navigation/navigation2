@@ -19,11 +19,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
-using namespace std::chrono_literals;
 
 // Tests path handling
 
 using namespace mppi;  // NOLINT
+using namespace std::chrono_literals;
 
 class PathHandlerWrapper : public PathHandler
 {
