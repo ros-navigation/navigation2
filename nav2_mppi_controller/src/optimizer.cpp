@@ -122,7 +122,8 @@ void Optimizer::getParams()
   s.constraints = s.base_constraints;
 
   setMotionModel(motion_model_name);
-  parameters_handler_->addPostCallback([this]() {reset();});
+  // Don't reset zone-based speed limits after params changes
+  parameters_handler_->addPostCallback([this]() { reset(false); });
 
   double controller_frequency;
   getParentParam(controller_frequency, "controller_frequency", 0.0, ParameterType::Static);
@@ -245,7 +246,7 @@ bool Optimizer::fallback(bool fail)
     return false;
   }
 
-  reset();
+  reset(false /*Don't reset zone-based speed limits after fallback*/);
 
   if (++counter > settings_.retry_attempt_limit) {
     counter = 0;
