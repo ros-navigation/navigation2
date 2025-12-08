@@ -5,7 +5,7 @@ repositories:
   #   version: 4.8.2
   ros2/rviz:
     type: git
-    url: https://github.com/mini-1235/rviz
+    url: https://github.com/mini-1235/rviz.git
     version: rolling
   # ros/angles:
   #   type: git
