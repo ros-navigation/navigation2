@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_costmap_2d/tracking_error_layer.hpp"
+#include "nav2_costmap_2d/tracking_bounds_layer.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::TrackingErrorLayer, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::TrackingBoundsLayer, nav2_costmap_2d::Layer)
 
 namespace nav2_costmap_2d
 {
 
-TrackingErrorLayer::TrackingErrorLayer() {}
-
-TrackingErrorLayer::~TrackingErrorLayer()
+TrackingBoundsLayer::~TrackingBoundsLayer()
 {
   auto node = node_.lock();
   if (dyn_params_handler_ && node) {
@@ -31,12 +29,18 @@ TrackingErrorLayer::~TrackingErrorLayer()
   dyn_params_handler_.reset();
 }
 
-void TrackingErrorLayer::onInitialize()
+void TrackingBoundsLayer::onInitialize()
 {
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
+
+  declareParameter("tracking_feedback_topic", rclcpp::ParameterValue("tracking_feedback"));
+  node->get_parameter(name_ + "." + "tracking_feedback_topic", tracking_feedback_topic_);
+
+  declareParameter("path_topic", rclcpp::ParameterValue("plan"));
+  node->get_parameter(name_ + "." + "path_topic", path_topic_);
 
   // Declare and get parameters
   declareParameter("look_ahead", rclcpp::ParameterValue(5.0));
@@ -62,24 +66,50 @@ void TrackingErrorLayer::onInitialize()
   }
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &TrackingErrorLayer::dynamicParametersCallback,
+      &TrackingBoundsLayer::dynamicParametersCallback,
       this, std::placeholders::_1));
 }
 
-void TrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+void TrackingBoundsLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
+  auto now = node_.lock()->now();
+  auto msg_time = rclcpp::Time(msg->header.stamp);
+  auto age = (now - msg_time).seconds();
+
+  if (age > 1.0) {
+    RCLCPP_WARN_THROTTLE(
+      node_.lock()->get_logger(),
+      *node_.lock()->get_clock(),
+      5000,
+      "Path is %.2f seconds old", age);
+    return;
+  }
   last_path_ = *msg;
 }
 
-void TrackingErrorLayer::trackingCallback(
+void TrackingBoundsLayer::trackingCallback(
   const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
+
+  // Check if timestamp is sufficiently current
+  auto now = node_.lock()->now();
+  auto msg_time = rclcpp::Time(msg->header.stamp);
+  auto age = (now - msg_time).seconds();
+
+  if (age > 1.0) {
+    RCLCPP_WARN_THROTTLE(
+      node_.lock()->get_logger(),
+      *node_.lock()->get_clock(),
+      5000,
+      "Tracking feedback is %.2f seconds old", age);
+    return;
+  }
+
   last_tracking_feedback_ = *msg;
 }
-
-void TrackingErrorLayer::updateBounds(
+void TrackingBoundsLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
@@ -92,7 +122,7 @@ void TrackingErrorLayer::updateBounds(
   *max_y = std::max(*max_y, robot_y + look_ahead_);
 }
 
-std::vector<std::vector<double>> TrackingErrorLayer::getWallPoints(
+std::vector<std::vector<double>> TrackingBoundsLayer::getWallPoints(
   const nav_msgs::msg::Path & segment)
 {
   std::vector<std::vector<double>> point_list;
@@ -157,7 +187,7 @@ std::vector<std::vector<double>> TrackingErrorLayer::getWallPoints(
 }
 
 
-nav_msgs::msg::Path TrackingErrorLayer::getPathSegment()
+nav_msgs::msg::Path TrackingBoundsLayer::getPathSegment()
 {
   std::lock_guard<std::mutex> path_lock(data_mutex_);
 
@@ -197,7 +227,7 @@ nav_msgs::msg::Path TrackingErrorLayer::getPathSegment()
   return segment;
 }
 
-void TrackingErrorLayer::updateCosts(
+void TrackingBoundsLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
@@ -250,7 +280,7 @@ void TrackingErrorLayer::updateCosts(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult TrackingErrorLayer::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult TrackingBoundsLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -304,7 +334,7 @@ rcl_interfaces::msg::SetParametersResult TrackingErrorLayer::dynamicParametersCa
   return result;
 }
 
-void TrackingErrorLayer::activate()
+void TrackingBoundsLayer::activate()
 {
   auto node = node_.lock();
   if (!node) {
@@ -312,15 +342,19 @@ void TrackingErrorLayer::activate()
   }
 
   // Create subscriptions when layer is activated
+  // Join topics with parent namespace for proper namespacing
+  std::string path_topic = joinWithParentNamespace(path_topic_);
+  std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
+
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-    "/plan",
-    std::bind(&TrackingErrorLayer::pathCallback, this, std::placeholders::_1),
+    path_topic,
+    std::bind(&TrackingBoundsLayer::pathCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
 
   tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
-    "/tracking_feedback",
-    std::bind(&TrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
+    tracking_feedback_topic,
+    std::bind(&TrackingBoundsLayer::trackingCallback, this, std::placeholders::_1),
     nav2::qos::StandardTopicQoS()
   );
 
@@ -328,7 +362,7 @@ void TrackingErrorLayer::activate()
   current_ = true;
 }
 
-void TrackingErrorLayer::deactivate()
+void TrackingBoundsLayer::deactivate()
 {
   // Destroy subscriptions when layer is deactivated
   path_sub_.reset();
@@ -337,16 +371,18 @@ void TrackingErrorLayer::deactivate()
   // Clear cached data
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    last_path_.poses.clear();
-    last_path_.header = std_msgs::msg::Header();
+    last_path_ = nav_msgs::msg::Path();
     last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   }
 
   enabled_ = false;
 }
 
-void TrackingErrorLayer::reset()
+void TrackingBoundsLayer::reset()
 {
+  std::lock_guard<std::mutex> lock(data_mutex_);
+  last_path_ = nav_msgs::msg::Path();
+  last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   current_ = true;
 }
 
