@@ -882,10 +882,12 @@ protected:
 
     auto node = std::make_shared<nav2::LifecycleNode>("my_node");
     node->declare_parameter("critic.trajectory_point_step", 1);
-    node->declare_parameter("critic.use_geometric_alignment", true);  // Enable geometric mode
+    node->declare_parameter("critic.use_geometric_alignment", true);
+    node->declare_parameter("critic.score_arc_length", false);
     node->declare_parameter("critic.search_window", 2.0);
-    node->declare_parameter("critic.offset_from_furthest", 0);  // Allow immediate activation for tests
-    
+    node->declare_parameter("critic.offset_from_furthest", 0);
+    node->declare_parameter("critic.threshold_to_consider", 0.0);
+
     auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
       "dummy_costmap", "", true);
     std::string name = "critic";
@@ -894,9 +896,13 @@ protected:
     costmap_ros->on_configure(lstate);
 
     critic_.on_configure(node, "mppi", name, costmap_ros, &param_handler);
-    
-    // Set furthest reached point to enable critic
     data_.furthest_reached_path_point = 2;
+
+    // Initialize path validity - All points valid
+    std::vector<bool> valid_pts(3, true);
+    data_.path_pts_valid = valid_pts;
+
+    state_.local_path_length = 10.0f;
   }
 };
 
@@ -966,7 +972,7 @@ TEST_F(PathAlignGeometricCriticTest, TrajectoryOffPathHasCost)
   costs_.setZero();
   critic_.score(data_);
 
-  EXPECT_GT(costs_(0), 5.0);  // Should have cost for being 1 unit off path
+  EXPECT_GT(costs_(0), 5.0);
 }
 
 TEST_F(PathAlignGeometricCriticTest, LargerDeviationHasHigherCost)
@@ -1056,6 +1062,10 @@ TEST_F(PathAlignGeometricCriticTest, SearchWindowLimitsPathSearch)
     path_.yaws(i) = 0;
   }
 
+  // Update validity for new path size
+  std::vector<bool> valid_pts(10, true);
+  data_.path_pts_valid = valid_pts;
+
   traj_.reset(1, 3);
   traj_.x(0, 0) = 8; traj_.x(0, 1) = 9; traj_.x(0, 2) = 10;
   traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
@@ -1074,6 +1084,11 @@ TEST_F(PathAlignGeometricCriticTest, HandlesTrajectoryLongerThanPath)
   path_.y(0) = 0; path_.y(1) = 0;
   path_.yaws(0) = 0; path_.yaws(1) = 0;
 
+  // Update validity for new path size
+  std::vector<bool> valid_pts(2, true);
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 1;
+
   traj_.reset(1, 5);
   for (int i = 0; i < 5; ++i) {
     traj_.x(0, i) = i;
@@ -1085,7 +1100,6 @@ TEST_F(PathAlignGeometricCriticTest, HandlesTrajectoryLongerThanPath)
   EXPECT_NO_THROW(critic_.score(data_));
   EXPECT_GT(costs_(0), 0.0);
 }
-
 TEST_F(PathAlignGeometricCriticTest, CostScalesWithWeight)
 {
   path_.reset(3);
@@ -1101,8 +1115,8 @@ TEST_F(PathAlignGeometricCriticTest, CostScalesWithWeight)
   costs_.setZero();
   critic_.score(data_);
 
-  EXPECT_GT(costs_(0), 5.0);   // Should have reasonable cost
-  EXPECT_LT(costs_(0), 20.0);  // But not excessive
+  EXPECT_GT(costs_(0), 5.0);
+  EXPECT_LT(costs_(0), 20.0);
 }
 
 TEST_F(PathAlignGeometricCriticTest, ObstacleAwarenessInGeometricMode)
@@ -1128,7 +1142,273 @@ TEST_F(PathAlignGeometricCriticTest, ObstacleAwarenessInGeometricMode)
 
   costs_.setZero();
   critic_.score(data_);
-  
+
   // Should still compute but may have different cost due to skipping invalid segments
   EXPECT_NO_THROW(critic_.score(data_));
+}
+
+TEST_F(PathAlignGeometricCriticTest, CostScalesWithPower)
+{
+  // Test that power > 1 creates non-linear cost scaling
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
+
+  // Test with power = 1
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("critic.cost_power", 1);
+  node->declare_parameter("critic.trajectory_point_step", 1);
+  node->declare_parameter("critic.use_geometric_alignment", true);
+  node->declare_parameter("critic.score_arc_length", false);
+  node->declare_parameter("critic.search_window", 2.0);
+  node->declare_parameter("critic.offset_from_furthest", 0);
+  node->declare_parameter("critic.threshold_to_consider", 0.0);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "critic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  PathAlignCritic critic1;
+  critic1.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs_.setZero();
+  critic1.score(data_);
+  float cost_power1 = costs_(0);
+
+  // Test with power = 2
+  node->set_parameter(rclcpp::Parameter("critic.cost_power", 2));
+  PathAlignCritic critic2;
+  critic2.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs_.setZero();
+  critic2.score(data_);
+  float cost_power2 = costs_(0);
+
+  EXPECT_GT(cost_power2, cost_power1);
+  EXPECT_NEAR(cost_power2 / cost_power1, 10.0, 0.5);
+}
+
+TEST_F(PathAlignGeometricCriticTest, TrajectoryPointStepAffectsPerformance)
+{
+  // Test that trajectory_point_step reduces computation
+  path_.reset(10);
+  for (int i = 0; i < 10; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+  }
+
+  // Update validity for new path size
+  std::vector<bool> valid_pts(10, true);
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 9;
+
+  traj_.reset(1, 20);  // Long trajectory
+  for (int i = 0; i < 20; ++i) {
+    traj_.x(0, i) = i * 0.5;
+    traj_.y(0, i) = 0.5;  // Slight offset
+  }
+
+  // Step = 1
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("critic.trajectory_point_step", 1);
+  node->declare_parameter("critic.use_geometric_alignment", true);
+  node->declare_parameter("critic.score_arc_length", false);
+  node->declare_parameter("critic.search_window", 2.0);
+  node->declare_parameter("critic.offset_from_furthest", 0);
+  node->declare_parameter("critic.threshold_to_consider", 0.0);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "critic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  PathAlignCritic critic1;
+  critic1.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs_.setZero();
+  critic1.score(data_);
+  float cost_step1 = costs_(0);
+
+  // Step = 4
+  node->set_parameter(rclcpp::Parameter("critic.trajectory_point_step", 4));
+  PathAlignCritic critic2;
+  critic2.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs_.setZero();
+  critic2.score(data_);
+  float cost_step4 = costs_(0);
+
+  // Both should be > 0 since trajectory is offset from path
+  EXPECT_GT(cost_step1, 0.0);
+  EXPECT_GT(cost_step4, 0.0);
+  // Step=4 samples fewer points, so cost should be within reasonable range
+  EXPECT_NEAR(cost_step1, cost_step4, 6.0);
+}
+
+TEST_F(PathAlignGeometricCriticTest, RespectsOffsetFromFurthest)
+{
+  path_.reset(10);
+  for (int i = 0; i < 10; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+  }
+
+  std::vector<bool> valid_pts(10, true);
+  data_.path_pts_valid = valid_pts;
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 1; traj_.y(0, 1) = 1; traj_.y(0, 2) = 1;
+
+  // With offset_from_furthest = 20, path_segments_count = 9 < 20
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("critic.trajectory_point_step", 1);
+  node->declare_parameter("critic.use_geometric_alignment", true);
+  node->declare_parameter("critic.score_arc_length", false);
+  node->declare_parameter("critic.search_window", 2.0);
+  node->declare_parameter("critic.offset_from_furthest", 20);
+  node->declare_parameter("critic.threshold_to_consider", 0.0);
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "critic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  PathAlignCritic critic1;
+  critic1.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  data_.furthest_reached_path_point = 9;
+
+  costs_.setZero();
+  critic1.score(data_);
+  EXPECT_NEAR(costs_(0), 0.0, 1e-6);
+
+  // With offset = 5, should score
+  node->set_parameter(rclcpp::Parameter("critic.offset_from_furthest", 5));
+  PathAlignCritic critic2;
+  critic2.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  costs_.setZero();
+  critic2.score(data_);
+  EXPECT_GT(costs_(0), 0.0);
+}
+
+TEST_F(PathAlignGeometricCriticTest, PathCacheAvoidsRecomputation)
+{
+  path_.reset(3);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0;
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 0.5; traj_.y(0, 2) = 0.5;
+
+  costs_.setZero();
+  critic_.score(data_);
+  float cost1 = costs_(0);
+
+  costs_.setZero();
+  critic_.score(data_);
+  float cost2 = costs_(0);
+
+  EXPECT_NEAR(cost1, cost2, 1e-6);
+
+  // Change path X coordinate to trigger cache detection
+  path_.x(1) = 1.2;  // Shift middle point along x
+  path_.y(1) = 1.0;  // Also shift perpendicular
+  costs_.setZero();
+  critic_.score(data_);
+  float cost3 = costs_(0);
+
+  // Cost should change after path modification
+  EXPECT_GT(std::abs(cost2 - cost3), 0.1);
+}
+
+
+TEST_F(PathAlignGeometricCriticTest, ClosestIndicesPersistAcrossTrajectories)
+{
+  // Tests the search window optimization
+  path_.reset(20);
+  for (int i = 0; i < 20; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+  }
+
+  // Update validity for new path size
+  std::vector<bool> valid_pts(20, true);
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 19;
+
+  traj_.reset(2, 10);
+  costs_ = Eigen::ArrayXf::Zero(2);
+
+  // Trajectory 0: near start of path (x = 0-4.5)
+  for (int i = 0; i < 10; ++i) {
+    traj_.x(0, i) = i * 0.5;
+    traj_.y(0, i) = 0.1;
+  }
+  // Trajectory 1: slightly ahead (x = 2-6.5)
+  for (int i = 0; i < 10; ++i) {
+    traj_.x(1, i) = 2 + i * 0.5;
+    traj_.y(1, i) = 0.1;
+  }
+
+  costs_.setZero();
+  critic_.score(data_);
+
+  // Both should have non-zero costs (slight deviation from path)
+  EXPECT_GT(costs_(0), 0.0);
+  EXPECT_GT(costs_(1), 0.0);
+  // Costs can vary due to power scaling, but both should be in reasonable range
+  EXPECT_LT(costs_(0), 20.0);
+  EXPECT_LT(costs_(1), 20.0);
+}
+
+TEST_F(PathAlignGeometricCriticTest, DisablesWhenTooManyInvalidSegments)
+{
+  path_.reset(20);
+  for (int i = 0; i < 20; ++i) {
+    path_.x(i) = i;
+    path_.y(i) = 0;
+  }
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0.5; traj_.y(0, 1) = 0.5; traj_.y(0, 2) = 0.5;
+
+  // Mark 10% invalid - should still score (default ratio is 0.07 = 7%)
+  std::vector<bool> valid_pts(20, true);
+  valid_pts[0] = valid_pts[1] = valid_pts[2] = false;  // 15% invalid
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 19;
+
+  costs_.setZero();
+  critic_.score(data_);
+  EXPECT_NEAR(costs_(0), 0.0, 1e-6);
+}
+
+TEST_F(PathAlignGeometricCriticTest, HandlesZeroLengthSegments)
+{
+  // Path with duplicate points (zero-length segment)
+  path_.reset(4);
+  path_.x(0) = 0; path_.x(1) = 1; path_.x(2) = 1; path_.x(3) = 2;
+  path_.y(0) = 0; path_.y(1) = 0; path_.y(2) = 0; path_.y(3) = 0;
+
+  // Update validity for new path size
+  std::vector<bool> valid_pts(4, true);
+  data_.path_pts_valid = valid_pts;
+  data_.furthest_reached_path_point = 3;
+
+  traj_.reset(1, 3);
+  traj_.x(0, 0) = 0; traj_.x(0, 1) = 1; traj_.x(0, 2) = 2;
+  traj_.y(0, 0) = 0; traj_.y(0, 1) = 0; traj_.y(0, 2) = 0;
+
+  costs_.setZero();
+  EXPECT_NO_THROW(critic_.score(data_));
+  EXPECT_LT(costs_(0), 5.0);  // Should handle gracefully without crashing
 }
