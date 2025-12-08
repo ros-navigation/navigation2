@@ -530,6 +530,12 @@ ObstacleLayer::updateBounds(
     const unsigned int max_range_cells = cellDistance(obs.obstacle_max_range_);
     const unsigned int min_range_cells = cellDistance(obs.obstacle_min_range_);
 
+    unsigned int x0, y0;
+    if (!worldToMap(obs.origin_.x, obs.origin_.y, x0, y0)) {
+      RCLCPP_DEBUG(logger_, "Sensor origin is out of map bounds");
+      continue;
+    }
+
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
@@ -559,12 +565,6 @@ ObstacleLayer::updateBounds(
       // compute the distance from the hitpoint to the pointcloud's origin
       // Calculate the distance in cell space to match the ray trace algorithm
       // used for clearing obstacles (see Costmap2D::raytraceLine).
-      unsigned int x0, y0;
-      if (!worldToMap(obs.origin_.x, obs.origin_.y, x0, y0)) {
-        RCLCPP_DEBUG(logger_, "Sensor origin is out of map bounds");
-        continue;
-      }
-
       const int dx = static_cast<int>(mx) - static_cast<int>(x0);
       const int dy = static_cast<int>(my) - static_cast<int>(y0);
       const unsigned int dist = static_cast<unsigned int>(
@@ -794,7 +794,7 @@ ObstacleLayer::raytraceFreespace(
     unsigned int observation_dist = static_cast<unsigned int>(
       std::hypot(static_cast<double>(dx), static_cast<double>(dy)));
 
-    if (observation_dist < 1) {
+    if (observation_dist == 0) {
       // If the observation is in the same cell as the origin, do not raytrace
       continue;
     }
