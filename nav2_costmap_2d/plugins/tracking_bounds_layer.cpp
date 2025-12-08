@@ -113,6 +113,7 @@ void TrackingBoundsLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }
@@ -177,6 +178,7 @@ std::vector<std::vector<double>> TrackingBoundsLayer::getWallPoints(
     double perp_x = -dy / norm;
     double perp_y = dx / norm;
 
+    // Multiply by 0.5 to get half the width, creating symmetric boundaries on both sides of the path
     double half_width = width_ * 0.5;
 
     point_list.push_back({px + perp_x * half_width, py + perp_y * half_width});
@@ -231,6 +233,7 @@ void TrackingBoundsLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
+  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }
