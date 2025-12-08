@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__TRACKING_ERROR_LAYER_HPP_
-#define NAV2_COSTMAP_2D__TRACKING_ERROR_LAYER_HPP_
+#ifndef NAV2_COSTMAP_2D__TRACKING_BOUNDS_LAYER_HPP_
+#define NAV2_COSTMAP_2D__TRACKING_BOUNDS_LAYER_HPP_
 
 #include <vector>
 #include <memory>
@@ -36,13 +36,12 @@
 
 namespace nav2_costmap_2d
 {
-
-class TrackingErrorLayer : public nav2_costmap_2d::Layer
+class TrackingBoundsLayer : public nav2_costmap_2d::Layer
 {
 public:
-  TrackingErrorLayer();
+  TrackingBoundsLayer() = default;
 
-  ~TrackingErrorLayer();
+  ~TrackingBoundsLayer();
   virtual void onInitialize();
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
@@ -78,8 +77,10 @@ private:
   double width_;
   double look_ahead_;
   bool enabled_;
+  std::string path_topic_;
+  std::string tracking_feedback_topic_;
 };
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__TRACKING_ERROR_LAYER_HPP_
+#endif  // NAV2_COSTMAP_2D__TRACKING_Bounds_LAYER_HPP_
