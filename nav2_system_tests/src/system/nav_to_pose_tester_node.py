@@ -40,6 +40,7 @@ from rclpy.qos import QoSDurabilityPolicy, QoSHistoryPolicy, QoSReliabilityPolic
 from rclpy.qos import QoSProfile
 import zmq
 
+
 class NavTester(Node):
 
     def __init__(self, initial_pose: Pose, goal_pose: Pose, namespace: str = ''):
