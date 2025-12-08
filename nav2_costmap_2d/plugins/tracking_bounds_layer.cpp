@@ -72,15 +72,20 @@ void TrackingBoundsLayer::onInitialize()
 
 void TrackingBoundsLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
+  auto node = node_.lock();
+  if (!node) {
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(data_mutex_);
-  auto now = node_.lock()->now();
+  auto now = node->now();
   auto msg_time = rclcpp::Time(msg->header.stamp);
   auto age = (now - msg_time).seconds();
 
   if (age > 1.0) {
     RCLCPP_WARN_THROTTLE(
-      node_.lock()->get_logger(),
-      *node_.lock()->get_clock(),
+      node->get_logger(),
+      *node->get_clock(),
       5000,
       "Path is %.2f seconds old", age);
     return;
@@ -91,17 +96,22 @@ void TrackingBoundsLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 void TrackingBoundsLayer::trackingCallback(
   const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
 {
+  auto node = node_.lock();
+  if (!node) {
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(data_mutex_);
 
   // Check if timestamp is sufficiently current
-  auto now = node_.lock()->now();
+  auto now = node->now();
   auto msg_time = rclcpp::Time(msg->header.stamp);
   auto age = (now - msg_time).seconds();
 
   if (age > 1.0) {
     RCLCPP_WARN_THROTTLE(
-      node_.lock()->get_logger(),
-      *node_.lock()->get_clock(),
+      node->get_logger(),
+      *node->get_clock(),
       5000,
       "Tracking feedback is %.2f seconds old", age);
     return;
@@ -109,11 +119,11 @@ void TrackingBoundsLayer::trackingCallback(
 
   last_tracking_feedback_ = *msg;
 }
+
 void TrackingBoundsLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (!enabled_) {
     return;
   }
@@ -188,11 +198,9 @@ std::vector<std::vector<double>> TrackingBoundsLayer::getWallPoints(
   return point_list;
 }
 
-
 nav_msgs::msg::Path TrackingBoundsLayer::getPathSegment()
 {
-  std::lock_guard<std::mutex> path_lock(data_mutex_);
-
+  // NOTE: Caller must hold data_mutex_ before calling this method
   nav_msgs::msg::Path segment;
   if (last_path_.poses.empty() ||
     last_tracking_feedback_.current_path_index >= last_path_.poses.size())
@@ -233,7 +241,7 @@ void TrackingBoundsLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+  std::lock_guard<std::mutex> data_lock(data_mutex_);
   if (!enabled_) {
     return;
   }
@@ -250,7 +258,7 @@ void TrackingBoundsLayer::updateCosts(
   for (const auto & pose : segment.poses) {
     geometry_msgs::msg::PoseStamped transformed_pose;
     if (nav2_util::transformPoseInTargetFrame(
-          pose, transformed_pose, *tf_, costmap_frame, 0.1))
+        pose, transformed_pose, *tf_, costmap_frame, 0.1))
     {
       transformed_segment.poses.push_back(transformed_pose);
     }
