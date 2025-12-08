@@ -19,6 +19,8 @@
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
+#include <vector>
+
 namespace mppi::critics
 {
 
@@ -56,12 +58,13 @@ protected:
   float threshold_to_consider_{0};
   float max_path_occupancy_ratio_{0};
   bool use_geometric_alignment_{false};
+  bool score_arc_length_{true};
   double search_window_{2.0};
   bool use_path_orientations_{false};
   unsigned int power_{0};
   float weight_{0};
 
-  //Caching variables
+  //  Caching variables
   size_t path_size_cache_{0};
   Eigen::ArrayXf path_x_cache_;
   Eigen::ArrayXf path_y_cache_;
