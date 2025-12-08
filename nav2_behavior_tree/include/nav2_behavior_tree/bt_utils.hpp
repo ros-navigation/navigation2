@@ -42,6 +42,13 @@ namespace BT
 template<>
 inline geometry_msgs::msg::Point convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Point>(new_key);
+  }
+
   // three real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 3) {
@@ -63,6 +70,13 @@ inline geometry_msgs::msg::Point convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::Quaternion>(new_key);
+  }
+
   // four real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 4) {
@@ -85,6 +99,13 @@ inline geometry_msgs::msg::Quaternion convertFromString(const StringView key)
 template<>
 inline geometry_msgs::msg::PoseStamped convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<geometry_msgs::msg::PoseStamped>(new_key);
+  }
+
   // 7 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if (parts.size() != 9) {
@@ -143,6 +164,13 @@ inline std::vector<geometry_msgs::msg::PoseStamped> convertFromString(const Stri
 template<>
 inline nav_msgs::msg::Path convertFromString(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<nav_msgs::msg::Path>(new_key);
+  }
+
   // 9 real numbers separated by semicolons
   auto parts = BT::splitString(key, ';');
   if ((parts.size() - 2) % 9 != 0) {
@@ -176,6 +204,12 @@ inline nav_msgs::msg::Path convertFromString(const StringView key)
 template<>
 inline std::chrono::milliseconds convertFromString<std::chrono::milliseconds>(const StringView key)
 {
+  // if string starts with "json:{", try to parse it as json
+  if (StartWith(key, "json:")) {
+    auto new_key = key;
+    new_key.remove_prefix(5);
+    return convertFromJSON<std::chrono::milliseconds>(new_key);
+  }
   return std::chrono::milliseconds(std::stoul(key.data()));
 }
 
