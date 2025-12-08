@@ -1021,6 +1021,15 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
           param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
+      if (parameter.as_double() <= 0.0 &&
+        (param_name != "save_pose_rate"))
+      {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (parameter.as_int() <= 0.0 && param_name == "resample_interval") {
         RCLCPP_WARN(
@@ -1117,13 +1126,6 @@ AmclNode::updateParametersCallback(
         reinit_pf = true;
       } else if (param_name == "save_pose_rate") {
         double save_pose_rate = parameter.as_double();
-        if (save_pose_rate <= 0.0) {
-          RCLCPP_WARN(
-            get_logger(),
-            "save_pose_rate must be positive, received: %f. Ignoring update.",
-            save_pose_rate);
-          continue;
-        }
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
