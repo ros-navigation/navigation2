@@ -121,6 +121,7 @@ public:
 
   /**
    * @brief Creates segment from current path. Length is decided by look_ahead parameter.
+   * @note Caller must hold data_mutex_ before calling this method.
    * @return The path segment as a nav_msgs::msg::Path.
    */
   nav_msgs::msg::Path getPathSegment();
@@ -146,12 +147,13 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
+  nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
+
 private:
   nav2::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   std::mutex data_mutex_;
   nav_msgs::msg::Path last_path_;
-  nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   size_t temp_step_;
