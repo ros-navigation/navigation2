@@ -830,4 +830,3 @@ TEST_F(JsonTest, test_path)
   ASSERT_EQ(path_test.poses[1].pose.position, path_test3.poses[1].pose.position);
   ASSERT_EQ(path_test.poses[1].pose.orientation, path_test3.poses[1].pose.orientation);
 }
-
