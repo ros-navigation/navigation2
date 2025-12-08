@@ -62,6 +62,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<std::chrono::milliseconds>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout")

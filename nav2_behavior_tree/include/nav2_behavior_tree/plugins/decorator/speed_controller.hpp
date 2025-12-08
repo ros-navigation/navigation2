@@ -55,6 +55,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return {
       BT::InputPort<double>("min_rate", 0.1, "Minimum rate"),
       BT::InputPort<double>("max_rate", 1.0, "Maximum rate"),

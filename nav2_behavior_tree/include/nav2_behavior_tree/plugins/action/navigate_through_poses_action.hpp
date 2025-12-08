@@ -72,6 +72,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+
     return providedBasicPorts(
       {
         BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(

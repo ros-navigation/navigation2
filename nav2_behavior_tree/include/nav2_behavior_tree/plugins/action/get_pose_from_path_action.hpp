@@ -39,6 +39,10 @@ public:
 
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to extract pose from"),
       BT::OutputPort<geometry_msgs::msg::PoseStamped>("pose", "Stamped Extracted Pose"),

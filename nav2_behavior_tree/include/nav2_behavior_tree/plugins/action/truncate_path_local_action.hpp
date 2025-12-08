@@ -51,6 +51,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+
     return {
       BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
       BT::OutputPort<nav_msgs::msg::Path>(

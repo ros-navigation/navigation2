@@ -56,6 +56,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return {
       BT::InputPort<double>("seconds", 1.0, "Seconds"),
       BT::InputPort<nav_msgs::msg::Path>("path")
