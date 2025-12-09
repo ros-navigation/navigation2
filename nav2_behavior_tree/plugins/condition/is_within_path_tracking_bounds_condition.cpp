@@ -20,8 +20,7 @@ namespace nav2_behavior_tree
 IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf),
-  last_error_(std::numeric_limits<double>::max())
+: BT::ConditionNode(condition_name, conf)
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node->get_logger();
@@ -34,7 +33,7 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
     "tracking_feedback",
     std::bind(&IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback, this,
       std::placeholders::_1),
-    rclcpp::SystemDefaultsQoS(),
+    nav2::qos::StandardTopicQoS(),
     callback_group_);
 
   bt_loop_duration_ =
@@ -47,14 +46,28 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
 void IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback(
   const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
 {
-  std::lock_guard<std::mutex> lock(mutex_);
-  last_error_ = msg->tracking_error;
+  double tracking_error = msg->tracking_error;
+
+  // Check if error is within bounds
+  if (tracking_error > 0.0) {  // Positive = left side
+    is_within_bounds_ = (tracking_error <= max_error_left_);
+  } else {  // Negative = right side
+    is_within_bounds_ = (std::abs(tracking_error) <= max_error_right_);
+  }
 }
 
 void IsWithinPathTrackingBoundsCondition::initialize()
 {
   getInput("max_error_left", max_error_left_);
   getInput("max_error_right", max_error_right_);
+  if (max_error_right_ < 0.0) {
+    RCLCPP_WARN(logger_, "max_error_right should be positive, using absolute value");
+    max_error_right_ = std::abs(max_error_right_);
+  }
+  if (max_error_left_ < 0.0) {
+    RCLCPP_WARN(logger_, "max_error_left should be positive, using absolute value");
+    max_error_left_ = std::abs(max_error_left_);
+  }
 }
 
 BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
@@ -62,53 +75,9 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
   if (!BT::isStatusActive(status())) {
     initialize();
   }
-
   callback_group_executor_.spin_all(bt_loop_duration_);
 
-  if (!getInput("max_error_left", max_error_left_)) {
-    RCLCPP_ERROR(logger_, "max_error_left parameter not provided");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  if (max_error_left_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_error_left should be positive, using absolute value");
-    max_error_left_ = std::abs(max_error_left_);
-  }
-
-  if (!getInput("max_error_right", max_error_right_)) {
-    RCLCPP_ERROR(logger_, "max_error_right parameter not provided");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  if (max_error_right_ < 0.0) {
-    RCLCPP_WARN(logger_, "max_error_right should be positive, using absolute value");
-    max_error_right_ = std::abs(max_error_right_);
-  }
-
-  double current_error;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    current_error = last_error_;
-  }
-
-  if (current_error == std::numeric_limits<double>::max()) {
-    RCLCPP_WARN(logger_, "No tracking feedback received yet.");
-    return BT::NodeStatus::FAILURE;
-  }
-
-  if (current_error > 0.0) {  // Positive = left side
-    if (current_error > max_error_left_) {
-      return BT::NodeStatus::FAILURE;
-    } else {
-      return BT::NodeStatus::SUCCESS;
-    }
-  } else {  // Negative = right side
-    if (std::abs(current_error) > max_error_right_) {
-      return BT::NodeStatus::FAILURE;
-    } else {
-      return BT::NodeStatus::SUCCESS;
-    }
-  }
+  return is_within_bounds_ ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
 }  // namespace nav2_behavior_tree

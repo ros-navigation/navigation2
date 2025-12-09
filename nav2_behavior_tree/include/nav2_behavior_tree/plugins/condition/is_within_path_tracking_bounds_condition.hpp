@@ -17,8 +17,6 @@
 
 #include <string>
 #include <memory>
-#include <mutex>
-#include <limits>
 
 #include "behaviortree_cpp/condition_node.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -73,11 +71,10 @@ protected:
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
-  double last_error_;
+  bool is_within_bounds_{false};
   double max_error_right_{1.5};
   double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
-  std::mutex mutex_;
 };
 
 }  // namespace nav2_behavior_tree
