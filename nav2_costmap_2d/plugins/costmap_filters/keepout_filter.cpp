@@ -176,6 +176,12 @@ void KeepoutFilter::updateBounds(
 
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
+  if (!filter_mask_) {
+    RCLCPP_WARN_ONCE(
+      logger_, "KeepoutFilter: Filter mask was not received");
+    return;
+  }
+
   // If new keepout zone received
   if (has_updated_data_) {
     double wx, wy;
