@@ -29,7 +29,6 @@
 #include "nav2_mppi_controller/critics/path_align_critic.hpp"
 #include "nav2_mppi_controller/critics/path_angle_critic.hpp"
 #include "nav2_mppi_controller/critics/path_follow_critic.hpp"
-#include "nav2_mppi_controller/critics/path_hug_critic.hpp"
 #include "nav2_mppi_controller/critics/prefer_forward_critic.hpp"
 #include "nav2_mppi_controller/critics/twirling_critic.hpp"
 #include "nav2_mppi_controller/critics/velocity_deadband_critic.hpp"
