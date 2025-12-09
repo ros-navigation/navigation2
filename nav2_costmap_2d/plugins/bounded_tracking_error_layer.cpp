@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nav2_costmap_2d/tracking_bounds_layer.hpp"
+#include "nav2_costmap_2d/bounded_tracking_error_layer.hpp"
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::TrackingBoundsLayer, nav2_costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::BoundedTrackingErrorLayer, nav2_costmap_2d::Layer)
 
 namespace nav2_costmap_2d
 {
 
-TrackingBoundsLayer::~TrackingBoundsLayer()
+BoundedTrackingErrorLayer::~BoundedTrackingErrorLayer()
 {
   auto node = node_.lock();
   if (dyn_params_handler_ && node) {
@@ -29,7 +29,7 @@ TrackingBoundsLayer::~TrackingBoundsLayer()
   dyn_params_handler_.reset();
 }
 
-void TrackingBoundsLayer::onInitialize()
+void BoundedTrackingErrorLayer::onInitialize()
 {
   auto node = node_.lock();
   if (!node) {
@@ -66,11 +66,11 @@ void TrackingBoundsLayer::onInitialize()
   }
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
-      &TrackingBoundsLayer::dynamicParametersCallback,
+      &BoundedTrackingErrorLayer::dynamicParametersCallback,
       this, std::placeholders::_1));
 }
 
-void TrackingBoundsLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
   auto node = node_.lock();
   if (!node) {
@@ -93,7 +93,7 @@ void TrackingBoundsLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
   last_path_ = *msg;
 }
 
-void TrackingBoundsLayer::trackingCallback(
+void BoundedTrackingErrorLayer::trackingCallback(
   const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
 {
   auto node = node_.lock();
@@ -120,7 +120,7 @@ void TrackingBoundsLayer::trackingCallback(
   last_tracking_feedback_ = *msg;
 }
 
-void TrackingBoundsLayer::updateBounds(
+void BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
@@ -133,7 +133,7 @@ void TrackingBoundsLayer::updateBounds(
   *max_y = std::max(*max_y, robot_y + look_ahead_);
 }
 
-std::vector<std::vector<double>> TrackingBoundsLayer::getWallPoints(
+std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
   const nav_msgs::msg::Path & segment)
 {
   std::vector<std::vector<double>> point_list;
@@ -198,7 +198,7 @@ std::vector<std::vector<double>> TrackingBoundsLayer::getWallPoints(
   return point_list;
 }
 
-nav_msgs::msg::Path TrackingBoundsLayer::getPathSegment()
+nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
 {
   // NOTE: Caller must hold data_mutex_ before calling this method
   nav_msgs::msg::Path segment;
@@ -237,7 +237,7 @@ nav_msgs::msg::Path TrackingBoundsLayer::getPathSegment()
   return segment;
 }
 
-void TrackingBoundsLayer::updateCosts(
+void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
@@ -270,7 +270,7 @@ void TrackingBoundsLayer::updateCosts(
   for (size_t i = 0; i < wall_points.size(); i += 2) {
     if (i + 2 < wall_points.size()) {
       unsigned int x0, y0, x1, y1;
-      
+
       // Line on left side of path
       if (master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0) &&
         master_grid.worldToMap(wall_points[i + 2][0], wall_points[i + 2][1], x1, y1))
@@ -302,7 +302,7 @@ void TrackingBoundsLayer::updateCosts(
   }
 }
 
-rcl_interfaces::msg::SetParametersResult TrackingBoundsLayer::dynamicParametersCallback(
+rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
@@ -356,7 +356,7 @@ rcl_interfaces::msg::SetParametersResult TrackingBoundsLayer::dynamicParametersC
   return result;
 }
 
-void TrackingBoundsLayer::activate()
+void BoundedTrackingErrorLayer::activate()
 {
   auto node = node_.lock();
   if (!node) {
@@ -370,19 +370,19 @@ void TrackingBoundsLayer::activate()
 
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     path_topic,
-    std::bind(&TrackingBoundsLayer::pathCallback, this, std::placeholders::_1)
+    std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1)
   );
 
   tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
     tracking_feedback_topic,
-    std::bind(&TrackingBoundsLayer::trackingCallback, this, std::placeholders::_1)
+    std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1)
   );
 
   enabled_ = true;
   current_ = true;
 }
 
-void TrackingBoundsLayer::deactivate()
+void BoundedTrackingErrorLayer::deactivate()
 {
   // Destroy subscriptions when layer is deactivated
   path_sub_.reset();
@@ -398,7 +398,7 @@ void TrackingBoundsLayer::deactivate()
   enabled_ = false;
 }
 
-void TrackingBoundsLayer::reset()
+void BoundedTrackingErrorLayer::reset()
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
   last_path_ = nav_msgs::msg::Path();
