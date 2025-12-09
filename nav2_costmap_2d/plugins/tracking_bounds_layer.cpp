@@ -266,24 +266,35 @@ void TrackingBoundsLayer::updateCosts(
 
   auto wall_points = getWallPoints(transformed_segment);
 
-  // Create 3x3 blocks around each wall point
-  for (const auto & point : wall_points) {
-    double wx = point[0];
-    double wy = point[1];
-
-    unsigned int center_x, center_y;
-    if (master_grid.worldToMap(wx, wy, center_x, center_y)) {
-      // Create 3x3 block centered on the point
-      for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
-          unsigned int map_x = center_x + dx;
-          unsigned int map_y = center_y + dy;
-
-          // Check bounds before setting cost
-          if (map_x < master_grid.getSizeInCellsX() &&
-            map_y < master_grid.getSizeInCellsY())
+  // Draw lines between consecutive wall points using Bresenham
+  for (size_t i = 0; i < wall_points.size(); i += 2) {
+    if (i + 2 < wall_points.size()) {
+      unsigned int x0, y0, x1, y1;
+      
+      // Line on left side of path
+      if (master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0) &&
+        master_grid.worldToMap(wall_points[i + 2][0], wall_points[i + 2][1], x1, y1))
+      {
+        auto cells = nav2_util::geometry_utils::bresenham(x0, y0, x1, y1);
+        for (const auto & cell : cells) {
+          if (cell[0] < master_grid.getSizeInCellsX() &&
+            cell[1] < master_grid.getSizeInCellsY())
           {
-            master_grid.setCost(map_x, map_y, nav2_costmap_2d::LETHAL_OBSTACLE);
+            master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+          }
+        }
+      }
+
+      // Line on right side of path
+      if (master_grid.worldToMap(wall_points[i + 1][0], wall_points[i + 1][1], x0, y0) &&
+        master_grid.worldToMap(wall_points[i + 3][0], wall_points[i + 3][1], x1, y1))
+      {
+        auto cells = nav2_util::geometry_utils::bresenham(x0, y0, x1, y1);
+        for (const auto & cell : cells) {
+          if (cell[0] < master_grid.getSizeInCellsX() &&
+            cell[1] < master_grid.getSizeInCellsY())
+          {
+            master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
           }
         }
       }
@@ -359,14 +370,12 @@ void TrackingBoundsLayer::activate()
 
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
     path_topic,
-    std::bind(&TrackingBoundsLayer::pathCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
+    std::bind(&TrackingBoundsLayer::pathCallback, this, std::placeholders::_1)
   );
 
   tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
     tracking_feedback_topic,
-    std::bind(&TrackingBoundsLayer::trackingCallback, this, std::placeholders::_1),
-    nav2::qos::StandardTopicQoS()
+    std::bind(&TrackingBoundsLayer::trackingCallback, this, std::placeholders::_1)
   );
 
   enabled_ = true;
