@@ -16,7 +16,7 @@
 #define NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 
 #include <memory>
-#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_subscription.hpp"
 
 namespace nav2
 {
@@ -27,7 +27,7 @@ namespace nav2
   * which may be further built up on in the future with custom APIs.
   */
 template<typename MessageT>
-using Subscription = rclcpp::Subscription<MessageT>;
+using Subscription = LifecycleSubscription<MessageT>;
 
 }  // namespace nav2
 
