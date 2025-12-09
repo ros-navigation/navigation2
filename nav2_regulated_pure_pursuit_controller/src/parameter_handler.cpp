@@ -278,6 +278,7 @@ ParameterHandler::updateParametersCallback(
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
+        params_.use_velocity_scaled_lookahead_dist = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_regulated_linear_velocity_scaling") {
         params_.use_regulated_linear_velocity_scaling = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".use_fixed_curvature_lookahead") {
