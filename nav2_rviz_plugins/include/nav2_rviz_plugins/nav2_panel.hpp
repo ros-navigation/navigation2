@@ -89,7 +89,6 @@ private Q_SLOTS:
   void loophandler();
   void initialStateHandler();
   void onSendNavToPose();
-  void onSendNavThroughPoses();
   void onAddNavThroughPose();
   void onRemoveNavThroughPose();
 
@@ -99,6 +98,8 @@ private:
   void timerEvent(QTimerEvent * event) override;
   bool isLoopValueValid(std::string & loop);
   void createNavThroughPoseTab(int index);
+  void syncNavThroughPosesTabsWithAccumulated();
+  void updateAccumulatedPosesFromTabs();
   geometry_msgs::msg::PoseStamped getPoseFromNavThroughTab(const NavThroughPoseTab & tab);
 
   int unique_id {0};
@@ -204,7 +205,6 @@ private:
   QTabWidget * nav_through_poses_tabs_{nullptr};
   QPushButton * add_pose_button_{nullptr};
   QPushButton * remove_pose_button_{nullptr};
-  QPushButton * send_nav_through_poses_button_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;

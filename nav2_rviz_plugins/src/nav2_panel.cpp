@@ -621,6 +621,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QWidget * nav_through_poses_tab = new QWidget;
   QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
   
+  QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
+  nav_through_poses_layout->addWidget(nav_through_info);
+  
   nav_through_poses_tabs_ = new QTabWidget;
   nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
   
@@ -633,21 +636,16 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(remove_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
   nav_through_buttons_layout->addWidget(remove_pose_button_);
   
-  send_nav_through_poses_button_ = new QPushButton("Send NavigateThroughPoses");
-  QObject::connect(send_nav_through_poses_button_, &QPushButton::clicked, this, &Nav2Panel::onSendNavThroughPoses);
-  
   nav_through_poses_layout->addLayout(nav_through_buttons_layout);
-  nav_through_poses_layout->addWidget(send_nav_through_poses_button_);
   
   nav_through_poses_tab->setLayout(nav_through_poses_layout);
   tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
-  
-  // Create initial pose tab for NavigateThroughPoses
-  createNavThroughPoseTab(0);
-  
+    
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, false);
   tools_tab_widget_->setTabEnabled(2, false);
+  
+  tools_tab_widget_->setCurrentIndex(0);
   
   main_layout->addWidget(tools_tab_widget_);
   main_layout->setContentsMargins(10, 10, 10, 10);
@@ -1067,6 +1065,7 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
     if (state_machine_.configuration().contains(accumulating_)) {
       waypoint_status_indicator_->clear();
       acummulated_poses_.goals.push_back(pose);
+      syncNavThroughPosesTabsWithAccumulated();  // Sync tabs with new pose
     } else {
       acummulated_poses_ = nav_msgs::msg::Goals();
       updateWpNavigationMarkers();
@@ -1206,6 +1205,7 @@ Nav2Panel::onAccumulatedWp()
 void
 Nav2Panel::onAccumulatedNTP()
 {
+  updateAccumulatedPosesFromTabs();
   std::cout << "Start navigate through poses" << std::endl;
   startNavThroughPoses(acummulated_poses_);
 }
@@ -1221,6 +1221,7 @@ Nav2Panel::onAccumulating()
   loop_counter_stop_ = true;
   goal_index_ = 0;
   updateWpNavigationMarkers();
+  syncNavThroughPosesTabsWithAccumulated();
   
   tools_tab_widget_->setTabEnabled(0, true);
   tools_tab_widget_->setTabEnabled(1, true);
@@ -1485,6 +1486,14 @@ Nav2Panel::updateWpNavigationMarkers()
 
   auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
+  visualization_msgs::msg::Marker clear_all_marker;
+  clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+  marker_array->markers.push_back(clear_all_marker);
+  
+  wp_navigation_markers_pub_->publish(std::move(marker_array));
+  
+  marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+
   for (size_t i = 0; i < acummulated_poses_.goals.size(); i++) {
     // Draw a green arrow at the waypoint pose
     visualization_msgs::msg::Marker arrow_marker;
@@ -1541,12 +1550,6 @@ Nav2Panel::updateWpNavigationMarkers()
     marker_text.frame_locked = false;
     marker_text.text = "wp_" + std::to_string(i + 1);
     marker_array->markers.push_back(marker_text);
-  }
-
-  if (marker_array->markers.empty()) {
-    visualization_msgs::msg::Marker clear_all_marker;
-    clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
-    marker_array->markers.push_back(clear_all_marker);
   }
 
   wp_navigation_markers_pub_->publish(std::move(marker_array));
@@ -1640,66 +1643,11 @@ Nav2Panel::onSendNavToPose()
 }
 
 void
-Nav2Panel::onSendNavThroughPoses()
-{
-  if (nav_through_pose_tabs_.empty()) {
-    RCLCPP_WARN(client_node_->get_logger(), "No poses configured");
-    return;
-  }
-  
-  nav_msgs::msg::Goals goals;
-  
-  for (const auto & tab : nav_through_pose_tabs_) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.header.frame_id = tab.frame_id_edit->text().toStdString();
-    pose.header.stamp = client_node_->now();
-    pose.pose.position.x = tab.pos_x_spin->value();
-    pose.pose.position.y = tab.pos_y_spin->value();
-    pose.pose.position.z = 0.0;
-    pose.pose.orientation = orientationAroundZAxis(tab.yaw_spin->value());
-    goals.goals.push_back(pose);
-  }
-  
-  auto is_action_server_ready =
-    nav_through_poses_action_client_->wait_for_action_server(std::chrono::seconds(5));
-  if (!is_action_server_ready) {
-    RCLCPP_ERROR(
-      client_node_->get_logger(), "navigate_through_poses action server is not available.");
-    return;
-  }
-
-  nav_through_poses_goal_.poses = goals;
-  nav_through_poses_goal_.behavior_tree = behavior_tree_file_->text().toStdString();
-
-  auto send_goal_options =
-    nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
-  send_goal_options.result_callback = [this](auto) {
-      nav_through_poses_goal_handle_.reset();
-    };
-
-  auto future_goal_handle =
-    nav_through_poses_action_client_->async_send_goal(nav_through_poses_goal_, send_goal_options);
-  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
-    return;
-  }
-
-  nav_through_poses_goal_handle_ = future_goal_handle.get();
-  if (!nav_through_poses_goal_handle_) {
-    RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
-    return;
-  }
-
-  timer_.start(200, this);
-}
-
-void
 Nav2Panel::onAddNavThroughPose()
 {
   int index = nav_through_pose_tabs_.size();
   createNavThroughPoseTab(index);
+  updateAccumulatedPosesFromTabs();
 }
 
 void
@@ -1710,6 +1658,12 @@ Nav2Panel::onRemoveNavThroughPose()
     if (index >= 0 && index < static_cast<int>(nav_through_pose_tabs_.size())) {
       nav_through_poses_tabs_->removeTab(index);
       nav_through_pose_tabs_.erase(nav_through_pose_tabs_.begin() + index);
+      
+      for (int i = 0; i < nav_through_poses_tabs_->count(); ++i) {
+        nav_through_poses_tabs_->setTabText(i, QString("Pose %1").arg(i + 1));
+      }
+      
+      updateAccumulatedPosesFromTabs();
     }
   }
 }
@@ -1724,6 +1678,9 @@ Nav2Panel::createNavThroughPoseTab(int index)
   
   layout->addWidget(new QLabel("Frame ID:"), 0, 0);
   tab.frame_id_edit = new QLineEdit("map");
+  QObject::connect(
+    tab.frame_id_edit, &QLineEdit::textChanged, this,
+    &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.frame_id_edit, 0, 1);
   
   layout->addWidget(new QLabel("Position X:"), 1, 0);
@@ -1731,6 +1688,9 @@ Nav2Panel::createNavThroughPoseTab(int index)
   tab.pos_x_spin->setRange(-1000.0, 1000.0);
   tab.pos_x_spin->setDecimals(3);
   tab.pos_x_spin->setSingleStep(0.1);
+  QObject::connect(
+    tab.pos_x_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+    &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.pos_x_spin, 1, 1);
   
   layout->addWidget(new QLabel("Position Y:"), 2, 0);
@@ -1738,6 +1698,9 @@ Nav2Panel::createNavThroughPoseTab(int index)
   tab.pos_y_spin->setRange(-1000.0, 1000.0);
   tab.pos_y_spin->setDecimals(3);
   tab.pos_y_spin->setSingleStep(0.1);
+  QObject::connect(
+    tab.pos_y_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+    &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.pos_y_spin, 2, 1);
   
   layout->addWidget(new QLabel("Yaw (radians):"), 3, 0);
@@ -1745,12 +1708,74 @@ Nav2Panel::createNavThroughPoseTab(int index)
   tab.yaw_spin->setRange(-M_PI, M_PI);
   tab.yaw_spin->setDecimals(4);
   tab.yaw_spin->setSingleStep(0.01);
+  QObject::connect(
+    tab.yaw_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+    &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.yaw_spin, 3, 1);
   
   tab_widget->setLayout(layout);
   
   nav_through_poses_tabs_->addTab(tab_widget, QString("Pose %1").arg(index + 1));
   nav_through_pose_tabs_.push_back(tab);
+}
+
+void
+Nav2Panel::syncNavThroughPosesTabsWithAccumulated()
+{
+  while (nav_through_poses_tabs_->count() > 0) {
+    nav_through_poses_tabs_->removeTab(0);
+  }
+  nav_through_pose_tabs_.clear();
+  
+  for (size_t i = 0; i < acummulated_poses_.goals.size(); ++i) {
+    createNavThroughPoseTab(i);
+    
+    const auto & pose = acummulated_poses_.goals[i];
+    
+    nav_through_pose_tabs_[i].frame_id_edit->blockSignals(true);
+    nav_through_pose_tabs_[i].pos_x_spin->blockSignals(true);
+    nav_through_pose_tabs_[i].pos_y_spin->blockSignals(true);
+    nav_through_pose_tabs_[i].yaw_spin->blockSignals(true);
+    
+    nav_through_pose_tabs_[i].frame_id_edit->setText(
+      QString::fromStdString(pose.header.frame_id));
+    nav_through_pose_tabs_[i].pos_x_spin->setValue(pose.pose.position.x);
+    nav_through_pose_tabs_[i].pos_y_spin->setValue(pose.pose.position.y);
+    
+    tf2::Quaternion q(
+      pose.pose.orientation.x,
+      pose.pose.orientation.y,
+      pose.pose.orientation.z,
+      pose.pose.orientation.w);
+    tf2::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    nav_through_pose_tabs_[i].yaw_spin->setValue(yaw);
+    
+    nav_through_pose_tabs_[i].frame_id_edit->blockSignals(false);
+    nav_through_pose_tabs_[i].pos_x_spin->blockSignals(false);
+    nav_through_pose_tabs_[i].pos_y_spin->blockSignals(false);
+    nav_through_pose_tabs_[i].yaw_spin->blockSignals(false);
+  }
+}
+
+void
+Nav2Panel::updateAccumulatedPosesFromTabs()
+{
+  acummulated_poses_.goals.clear();
+  
+  for (const auto & tab : nav_through_pose_tabs_) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = tab.frame_id_edit->text().toStdString();
+    pose.header.stamp = client_node_->now();
+    pose.pose.position.x = tab.pos_x_spin->value();
+    pose.pose.position.y = tab.pos_y_spin->value();
+    pose.pose.position.z = 0.0;
+    pose.pose.orientation = orientationAroundZAxis(tab.yaw_spin->value());
+    acummulated_poses_.goals.push_back(pose);
+  }
+  
+  updateWpNavigationMarkers();
 }
 
 }  // namespace nav2_rviz_plugins
