@@ -66,6 +66,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nr_of_loops_ = new QLineEdit;
   store_initial_pose_checkbox_ = new QCheckBox("Store initial_pose");
 
+  // Create behavior tree XML input
+  behavior_tree_file_ = new QLineEdit;
+  behavior_tree_file_->setPlaceholderText("Leave empty for default behavior tree");
+
   // Create the state machine used to present the proper control button states in the UI
 
   const char * startup_msg = "Configure and activate all nav2 lifecycle nodes";
@@ -369,6 +373,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QObject::connect(reset_, SIGNAL(exited()), this, SLOT(onShutdown()));
   QObject::connect(paused_, SIGNAL(entered()), this, SLOT(onPause()));
   QObject::connect(resumed_, SIGNAL(exited()), this, SLOT(onResume()));
+  QObject::connect(idle_, SIGNAL(entered()), this, SLOT(onIdle()));
   QObject::connect(accumulating_, SIGNAL(entered()), this, SLOT(onAccumulating()));
   QObject::connect(accumulated_wp_, SIGNAL(entered()), this, SLOT(onAccumulatedWp()));
   QObject::connect(resumed_wp_, SIGNAL(entered()), this, SLOT(onResumedWp()));
@@ -523,9 +528,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QHBoxLayout * side_layout = new QHBoxLayout;
   QVBoxLayout * status_layout = new QVBoxLayout;
   QHBoxLayout * logo_layout = new QHBoxLayout;
-  QVBoxLayout * group_box_layout = new QVBoxLayout;
 
-  QGroupBox * groupBox = new QGroupBox(tr("Tools for WP-Following"));
   imgDisplayLabel_ = new QLabel("");
   imgDisplayLabel_->setPixmap(
     rviz_common::loadPixmap("package://nav2_rviz_plugins/icons/classes/nav2_logo_small.png"));
@@ -542,9 +545,24 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   main_layout->addLayout(side_layout);
   main_layout->addWidget(navigation_feedback_indicator_);
   main_layout->addWidget(waypoint_status_indicator_);
+  
+  // Behavior Tree XML file selection
+  QHBoxLayout * bt_layout = new QHBoxLayout;
+  QLabel * bt_label = new QLabel("Behavior Tree XML:");
+  bt_layout->addWidget(bt_label);
+  bt_layout->addWidget(behavior_tree_file_);
+  main_layout->addLayout(bt_layout);
+  
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
+
+  // Tab widget for tools
+  tools_tab_widget_ = new QTabWidget;
+  
+  // Tab 1: WP-Following tools
+  QWidget * wp_tab = new QWidget;
+  QVBoxLayout * wp_tab_layout = new QVBoxLayout;
 
   QHBoxLayout * group_box_l1_layout = new QHBoxLayout;
   QHBoxLayout * group_box_l2_layout = new QHBoxLayout;
@@ -557,12 +575,81 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   group_box_l2_layout->addWidget(nr_of_loops_);
   group_box_l2_layout->addWidget(store_initial_pose_checkbox_);
 
-  group_box_layout->addLayout(group_box_l1_layout);
-  group_box_layout->addLayout(group_box_l2_layout);
-
-  groupBox->setLayout(group_box_layout);
-
-  main_layout->addWidget(groupBox);
+  wp_tab_layout->addLayout(group_box_l1_layout);
+  wp_tab_layout->addLayout(group_box_l2_layout);
+  wp_tab->setLayout(wp_tab_layout);
+  
+  tools_tab_widget_->addTab(wp_tab, "WP-Following");
+  
+  // Tab 2: NavigateToPose
+  QWidget * nav_to_pose_tab = new QWidget;
+  QGridLayout * nav_to_pose_layout = new QGridLayout;
+  
+  nav_to_pose_layout->addWidget(new QLabel("Frame ID:"), 0, 0);
+  nav_to_pose_frame_id_ = new QLineEdit("map");
+  nav_to_pose_layout->addWidget(nav_to_pose_frame_id_, 0, 1);
+  
+  nav_to_pose_layout->addWidget(new QLabel("Position X:"), 1, 0);
+  nav_to_pose_x_ = new QDoubleSpinBox;
+  nav_to_pose_x_->setRange(-1000.0, 1000.0);
+  nav_to_pose_x_->setDecimals(3);
+  nav_to_pose_x_->setSingleStep(0.1);
+  nav_to_pose_layout->addWidget(nav_to_pose_x_, 1, 1);
+  
+  nav_to_pose_layout->addWidget(new QLabel("Position Y:"), 2, 0);
+  nav_to_pose_y_ = new QDoubleSpinBox;
+  nav_to_pose_y_->setRange(-1000.0, 1000.0);
+  nav_to_pose_y_->setDecimals(3);
+  nav_to_pose_y_->setSingleStep(0.1);
+  nav_to_pose_layout->addWidget(nav_to_pose_y_, 2, 1);
+  
+  nav_to_pose_layout->addWidget(new QLabel("Yaw (radians):"), 3, 0);
+  nav_to_pose_yaw_ = new QDoubleSpinBox;
+  nav_to_pose_yaw_->setRange(-M_PI, M_PI);
+  nav_to_pose_yaw_->setDecimals(4);
+  nav_to_pose_yaw_->setSingleStep(0.01);
+  nav_to_pose_layout->addWidget(nav_to_pose_yaw_, 3, 1);
+  
+  send_nav_to_pose_button_ = new QPushButton("Send NavigateToPose");
+  QObject::connect(send_nav_to_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onSendNavToPose);
+  nav_to_pose_layout->addWidget(send_nav_to_pose_button_, 4, 0, 1, 2);
+  
+  nav_to_pose_tab->setLayout(nav_to_pose_layout);
+  tools_tab_widget_->addTab(nav_to_pose_tab, "NavigateToPose");
+  
+  // Tab 3: NavigateThroughPoses
+  QWidget * nav_through_poses_tab = new QWidget;
+  QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
+  
+  nav_through_poses_tabs_ = new QTabWidget;
+  nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
+  
+  QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
+  add_pose_button_ = new QPushButton("Add Pose");
+  QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
+  nav_through_buttons_layout->addWidget(add_pose_button_);
+  
+  remove_pose_button_ = new QPushButton("Remove Pose");
+  QObject::connect(remove_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
+  nav_through_buttons_layout->addWidget(remove_pose_button_);
+  
+  send_nav_through_poses_button_ = new QPushButton("Send NavigateThroughPoses");
+  QObject::connect(send_nav_through_poses_button_, &QPushButton::clicked, this, &Nav2Panel::onSendNavThroughPoses);
+  
+  nav_through_poses_layout->addLayout(nav_through_buttons_layout);
+  nav_through_poses_layout->addWidget(send_nav_through_poses_button_);
+  
+  nav_through_poses_tab->setLayout(nav_through_poses_layout);
+  tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
+  
+  // Create initial pose tab for NavigateThroughPoses
+  createNavThroughPoseTab(0);
+  
+  tools_tab_widget_->setTabEnabled(0, false);
+  tools_tab_widget_->setTabEnabled(1, false);
+  tools_tab_widget_->setTabEnabled(2, false);
+  
+  main_layout->addWidget(tools_tab_widget_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
 
@@ -898,6 +985,14 @@ Nav2Panel::onResume()
 }
 
 void
+Nav2Panel::onIdle()
+{
+  tools_tab_widget_->setTabEnabled(0, false);
+  tools_tab_widget_->setTabEnabled(1, false);
+  tools_tab_widget_->setTabEnabled(2, false);
+}
+
+void
 Nav2Panel::onStartup()
 {
   QFuture<bool> futureNav =
@@ -1126,6 +1221,10 @@ Nav2Panel::onAccumulating()
   loop_counter_stop_ = true;
   goal_index_ = 0;
   updateWpNavigationMarkers();
+  
+  tools_tab_widget_->setTabEnabled(0, true);
+  tools_tab_widget_->setTabEnabled(1, true);
+  tools_tab_widget_->setTabEnabled(2, true);
 }
 
 void
@@ -1491,6 +1590,167 @@ Nav2Panel::toString(double val, int precision)
   out.precision(precision);
   out << std::fixed << val;
   return out.str();
+}
+
+void
+Nav2Panel::onSendNavToPose()
+{
+  auto pose = geometry_msgs::msg::PoseStamped();
+  pose.header.frame_id = nav_to_pose_frame_id_->text().toStdString();
+  pose.header.stamp = client_node_->now();
+  pose.pose.position.x = nav_to_pose_x_->value();
+  pose.pose.position.y = nav_to_pose_y_->value();
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation = orientationAroundZAxis(nav_to_pose_yaw_->value());
+  
+  auto is_action_server_ready =
+    navigation_action_client_->wait_for_action_server(std::chrono::seconds(5));
+  if (!is_action_server_ready) {
+    RCLCPP_ERROR(
+      client_node_->get_logger(),
+      "navigate_to_pose action server is not available.");
+    return;
+  }
+
+  navigation_goal_.pose = pose;
+  navigation_goal_.behavior_tree = behavior_tree_file_->text().toStdString();
+
+  auto send_goal_options =
+    nav2::ActionClient<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
+  send_goal_options.result_callback = [this](auto) {
+      navigation_goal_handle_.reset();
+    };
+
+  auto future_goal_handle =
+    navigation_action_client_->async_send_goal(navigation_goal_, send_goal_options);
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
+    return;
+  }
+
+  navigation_goal_handle_ = future_goal_handle.get();
+  if (!navigation_goal_handle_) {
+    RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
+    return;
+  }
+
+  timer_.start(200, this);
+}
+
+void
+Nav2Panel::onSendNavThroughPoses()
+{
+  if (nav_through_pose_tabs_.empty()) {
+    RCLCPP_WARN(client_node_->get_logger(), "No poses configured");
+    return;
+  }
+  
+  nav_msgs::msg::Goals goals;
+  
+  for (const auto & tab : nav_through_pose_tabs_) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = tab.frame_id_edit->text().toStdString();
+    pose.header.stamp = client_node_->now();
+    pose.pose.position.x = tab.pos_x_spin->value();
+    pose.pose.position.y = tab.pos_y_spin->value();
+    pose.pose.position.z = 0.0;
+    pose.pose.orientation = orientationAroundZAxis(tab.yaw_spin->value());
+    goals.goals.push_back(pose);
+  }
+  
+  auto is_action_server_ready =
+    nav_through_poses_action_client_->wait_for_action_server(std::chrono::seconds(5));
+  if (!is_action_server_ready) {
+    RCLCPP_ERROR(
+      client_node_->get_logger(), "navigate_through_poses action server is not available.");
+    return;
+  }
+
+  nav_through_poses_goal_.poses = goals;
+  nav_through_poses_goal_.behavior_tree = behavior_tree_file_->text().toStdString();
+
+  auto send_goal_options =
+    nav2::ActionClient<nav2_msgs::action::NavigateThroughPoses>::SendGoalOptions();
+  send_goal_options.result_callback = [this](auto) {
+      nav_through_poses_goal_handle_.reset();
+    };
+
+  auto future_goal_handle =
+    nav_through_poses_action_client_->async_send_goal(nav_through_poses_goal_, send_goal_options);
+  if (executor_->spin_until_future_complete(future_goal_handle, server_timeout_) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(client_node_->get_logger(), "Send goal call failed");
+    return;
+  }
+
+  nav_through_poses_goal_handle_ = future_goal_handle.get();
+  if (!nav_through_poses_goal_handle_) {
+    RCLCPP_ERROR(client_node_->get_logger(), "Goal was rejected by server");
+    return;
+  }
+
+  timer_.start(200, this);
+}
+
+void
+Nav2Panel::onAddNavThroughPose()
+{
+  int index = nav_through_pose_tabs_.size();
+  createNavThroughPoseTab(index);
+}
+
+void
+Nav2Panel::onRemoveNavThroughPose()
+{
+  if (!nav_through_pose_tabs_.empty()) {
+    int index = nav_through_poses_tabs_->currentIndex();
+    if (index >= 0 && index < static_cast<int>(nav_through_pose_tabs_.size())) {
+      nav_through_poses_tabs_->removeTab(index);
+      nav_through_pose_tabs_.erase(nav_through_pose_tabs_.begin() + index);
+    }
+  }
+}
+
+void
+Nav2Panel::createNavThroughPoseTab(int index)
+{
+  QWidget * tab_widget = new QWidget;
+  QGridLayout * layout = new QGridLayout;
+  
+  NavThroughPoseTab tab;
+  
+  layout->addWidget(new QLabel("Frame ID:"), 0, 0);
+  tab.frame_id_edit = new QLineEdit("map");
+  layout->addWidget(tab.frame_id_edit, 0, 1);
+  
+  layout->addWidget(new QLabel("Position X:"), 1, 0);
+  tab.pos_x_spin = new QDoubleSpinBox;
+  tab.pos_x_spin->setRange(-1000.0, 1000.0);
+  tab.pos_x_spin->setDecimals(3);
+  tab.pos_x_spin->setSingleStep(0.1);
+  layout->addWidget(tab.pos_x_spin, 1, 1);
+  
+  layout->addWidget(new QLabel("Position Y:"), 2, 0);
+  tab.pos_y_spin = new QDoubleSpinBox;
+  tab.pos_y_spin->setRange(-1000.0, 1000.0);
+  tab.pos_y_spin->setDecimals(3);
+  tab.pos_y_spin->setSingleStep(0.1);
+  layout->addWidget(tab.pos_y_spin, 2, 1);
+  
+  layout->addWidget(new QLabel("Yaw (radians):"), 3, 0);
+  tab.yaw_spin = new QDoubleSpinBox;
+  tab.yaw_spin->setRange(-M_PI, M_PI);
+  tab.yaw_spin->setDecimals(4);
+  tab.yaw_spin->setSingleStep(0.01);
+  layout->addWidget(tab.yaw_spin, 3, 1);
+  
+  tab_widget->setLayout(layout);
+  
+  nav_through_poses_tabs_->addTab(tab_widget, QString("Pose %1").arg(index + 1));
+  nav_through_pose_tabs_.push_back(tab);
 }
 
 }  // namespace nav2_rviz_plugins

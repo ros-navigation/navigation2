@@ -46,6 +46,14 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
+struct NavThroughPoseTab {
+  QWidget * widget;
+  QLineEdit * frame_id_edit;
+  QDoubleSpinBox * pos_x_spin;
+  QDoubleSpinBox * pos_y_spin;
+  QDoubleSpinBox * yaw_spin;
+};
+
 class InitialThread;
 
 /// Panel to interface to the nav2 stack
@@ -70,6 +78,7 @@ private Q_SLOTS:
   void onCancel();
   void onPause();
   void onResume();
+  void onIdle();
   void onResumedWp();
   void onAccumulatedWp();
   void onAccumulatedNTP();
@@ -79,12 +88,18 @@ private Q_SLOTS:
   void handleGoalLoader();
   void loophandler();
   void initialStateHandler();
+  void onSendNavToPose();
+  void onSendNavThroughPoses();
+  void onAddNavThroughPose();
+  void onRemoveNavThroughPose();
 
 private:
   void loadLogFiles();
   void onCancelButtonPressed();
   void timerEvent(QTimerEvent * event) override;
   bool isLoopValueValid(std::string & loop);
+  void createNavThroughPoseTab(int index);
+  geometry_msgs::msg::PoseStamped getPoseFromNavThroughTab(const NavThroughPoseTab & tab);
 
   int unique_id {0};
   int goal_index_ = 0;
@@ -172,6 +187,25 @@ private:
 
   QLineEdit * nr_of_loops_{nullptr};
 
+  // Behavior tree XML file selection
+  QLineEdit * behavior_tree_file_{nullptr};
+
+  // Tab widget for tools
+  QTabWidget * tools_tab_widget_{nullptr};
+
+  // NavigateToPose manual input widgets
+  QLineEdit * nav_to_pose_frame_id_{nullptr};
+  QDoubleSpinBox * nav_to_pose_x_{nullptr};
+  QDoubleSpinBox * nav_to_pose_y_{nullptr};
+  QDoubleSpinBox * nav_to_pose_yaw_{nullptr};
+  QPushButton * send_nav_to_pose_button_{nullptr};
+
+  // NavigateThroughPoses manual input widgets
+  QTabWidget * nav_through_poses_tabs_{nullptr};
+  QPushButton * add_pose_button_{nullptr};
+  QPushButton * remove_pose_button_{nullptr};
+  QPushButton * send_nav_through_poses_button_{nullptr};
+
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
 
@@ -200,6 +234,9 @@ private:
 
   nav_msgs::msg::Goals acummulated_poses_;
   nav_msgs::msg::Goals store_poses_;
+
+  // Storage for NavigateThroughPoses manual tabs
+  std::vector<NavThroughPoseTab> nav_through_pose_tabs_;
 
   // Publish the visual markers with the waypoints
   void updateWpNavigationMarkers();
