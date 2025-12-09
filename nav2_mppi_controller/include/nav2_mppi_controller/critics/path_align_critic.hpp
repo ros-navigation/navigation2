@@ -11,19 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
+
+#include <vector>
 
 #include "nav2_mppi_controller/critic_function.hpp"
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
-#include <vector>
-
 namespace mppi::critics
 {
-
 /**
  * @class mppi::critics::ConstraintCritic
  * @brief Critic objective function for aligning to the path. Note:
@@ -47,11 +45,38 @@ public:
   void score(CriticData & data) override;
 
 protected:
+  /**
+   * @brief Score trajectories using arc-length matching
+   */
   void scoreArcLength(CriticData & data, std::vector<bool> & path_pts_valid);
+
+  /**
+   * @brief Score trajectories using geometric distance to path segments
+   */
   void scoreGeometric(CriticData & data, std::vector<bool> & path_pts_valid);
+
+  /**
+   * @brief Update cached path data when path changes
+   */
   void updatePathCache(const models::Path & path, size_t path_segments_count);
+
+  /**
+   * @brief Compute minimum distance from point to any path segment
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param closest_seg_idx In/out: hint for search, updated to closest segment
+   * @return Distance to closest segment
+   */
   float computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx);
 
+  /**
+   * @brief Compute squared distance from point to a specific path segment
+   * @param px Point x coordinate
+   * @param py Point y coordinate
+   * @param seg_idx Segment index
+   * @return Squared distance to segment
+   */
+  float distSqToSegment(float px, float py, Eigen::Index seg_idx);
 
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
@@ -64,7 +89,7 @@ protected:
   unsigned int power_{0};
   float weight_{0};
 
-  //  Caching variables
+  // Caching variables
   size_t path_size_cache_{0};
   Eigen::ArrayXf path_x_cache_;
   Eigen::ArrayXf path_y_cache_;

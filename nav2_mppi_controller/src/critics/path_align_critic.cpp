@@ -93,12 +93,6 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
   Eigen::ArrayXf cost(batch_size);
   cost.setZero();
 
-  // Use cached cumulative distances instead of recomputing
-  std::vector<float> path_integrated_distances(path_segments_count);
-  for (size_t i = 0; i < path_segments_count; ++i) {
-    path_integrated_distances[i] = cumulative_distances_(i);
-  }
-
   // Build path poses for orientation matching
   std::vector<utils::Pose2D> path(path_segments_count);
   for (unsigned int i = 0; i < path_segments_count; ++i) {
@@ -112,7 +106,6 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
   unsigned int path_pt = 0u;
   float traj_integrated_distance = 0.0f;
 
-  // Use same striding approach as geometric mode for consistency
   const Eigen::Index traj_length = data.trajectories.x.cols();
   const int effective_stride = std::max(1, std::min(trajectory_point_step_,
     static_cast<int>(traj_length)));
@@ -138,7 +131,8 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
       dy = curr_y - prev_y;
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
 
-      path_pt = utils::findClosestPathPt(path_integrated_distances,
+      path_pt = utils::findClosestPathPt(
+        cumulative_distances_.data(), path_segments_count,
         traj_integrated_distance, path_pt);
 
       if (path_pts_valid[path_pt]) {
@@ -205,19 +199,18 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
       Eigen::Index closest_seg = closest_indices_(traj_idx);
       float min_dist = computeMinDistanceToPath(px, py, closest_seg);
 
-      // Check if segment is within bounds and valid (no obstacle)
       if (closest_seg < static_cast<Eigen::Index>(path_segments_count) &&
         path_pts_valid[closest_seg])
-        {
+      {
         cost_array(traj_idx) += min_dist;
         valid_sample_count(traj_idx)++;
-        }
+      }
 
       closest_indices_(traj_idx) = closest_seg;
     }
   }
 
-  // Normalize by actual valid sample count, not total samples
+  // Normalize by actual valid sample count
   for (Eigen::Index i = 0; i < batch_size; ++i) {
     if (valid_sample_count(i) > 0) {
       cost_array(i) /= static_cast<float>(valid_sample_count(i));
@@ -282,54 +275,55 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     cumulative_distances_(i + 1) = cumulative_distances_(i) + segment_lengths_(i);
   }
 }
+
+float PathAlignCritic::distSqToSegment(float px, float py, Eigen::Index seg_idx)
+{
+  const float dx = px - path_x_cache_(seg_idx);
+  const float dy = py - path_y_cache_(seg_idx);
+  const float dot = dx * segment_dx_(seg_idx) + dy * segment_dy_(seg_idx);
+  const float t = std::clamp(dot / segment_len_sq_(seg_idx), 0.0f, 1.0f);
+  const float proj_x = path_x_cache_(seg_idx) + t * segment_dx_(seg_idx);
+  const float proj_y = path_y_cache_(seg_idx) + t * segment_dy_(seg_idx);
+  return (px - proj_x) * (px - proj_x) + (py - proj_y) * (py - proj_y);
+}
+
 float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx)
 {
-  const Eigen::Index path_size = path_size_cache_;
-  if (path_size < 2) {return std::numeric_limits<float>::max();}
+  static constexpr float MIN_SEGMENT_LENGTH_SQ = 1e-6f;
+
+  const Eigen::Index num_segments = static_cast<Eigen::Index>(path_size_cache_) - 1;
+  if (num_segments < 1) {return std::numeric_limits<float>::max();}
+
+  // Clamp hint index to valid range
+  closest_seg_idx = std::clamp(closest_seg_idx, Eigen::Index(0), num_segments - 1);
+
+  // Use cumulative distances to find search range
+  const float hint_distance = cumulative_distances_(closest_seg_idx);
+  const float start_distance = std::max(0.0f, hint_distance - static_cast<float>(search_window_));
+  const float end_distance = hint_distance + static_cast<float>(search_window_);
+
+  // Find start segment using cumulative distances
+  Eigen::Index start_idx = 0;
+  for (Eigen::Index i = 0; i < num_segments; ++i) {
+    if (cumulative_distances_(i + 1) >= start_distance) {
+      start_idx = i;
+      break;
+    }
+  }
 
   float min_dist_sq = std::numeric_limits<float>::max();
+  Eigen::Index best_seg = closest_seg_idx;
 
-  Eigen::Index start_idx = std::max(0L, closest_seg_idx - 2);
-  double distance_traversed = 0.0;
-  Eigen::Index best_seg = start_idx;
+  // Single forward loop through search window
+  for (Eigen::Index seg_idx = start_idx; seg_idx < num_segments; ++seg_idx) {
+    if (cumulative_distances_(seg_idx) > end_distance) {break;}
+    if (segment_len_sq_(seg_idx) < MIN_SEGMENT_LENGTH_SQ) {continue;}
 
-  // Search window optimization
-  for (Eigen::Index seg_idx = start_idx; seg_idx < path_size - 1; ++seg_idx) {
-    if (distance_traversed > search_window_) {break;}
-    if (segment_len_sq_(seg_idx) < 1e-6) {continue;}
-
-    const float dx_to_start = px - path_x_cache_(seg_idx);
-    const float dy_to_start = py - path_y_cache_(seg_idx);
-    const float dot = dx_to_start * segment_dx_(seg_idx) + dy_to_start * segment_dy_(seg_idx);
-    const float t = std::clamp(dot / segment_len_sq_(seg_idx), 0.0f, 1.0f);
-    const float proj_x = path_x_cache_(seg_idx) + t * segment_dx_(seg_idx);
-    const float proj_y = path_y_cache_(seg_idx) + t * segment_dy_(seg_idx);
-    const float dist_sq = (px - proj_x) * (px - proj_x) + (py - proj_y) * (py - proj_y);
+    const float dist_sq = distSqToSegment(px, py, seg_idx);
 
     if (dist_sq < min_dist_sq) {
       min_dist_sq = dist_sq;
       best_seg = seg_idx;
-    }
-    distance_traversed += segment_lengths_(seg_idx);
-  }
-
-  // Fallback: full search if window failed
-  if (min_dist_sq == std::numeric_limits<float>::max()) {
-    for (Eigen::Index seg_idx = 0; seg_idx < path_size - 1; ++seg_idx) {
-      if (segment_len_sq_(seg_idx) < 1e-6) {continue;}
-
-      const float dx_to_start = px - path_x_cache_(seg_idx);
-      const float dy_to_start = py - path_y_cache_(seg_idx);
-      const float dot = dx_to_start * segment_dx_(seg_idx) + dy_to_start * segment_dy_(seg_idx);
-      const float t = std::clamp(dot / segment_len_sq_(seg_idx), 0.0f, 1.0f);
-      const float proj_x = path_x_cache_(seg_idx) + t * segment_dx_(seg_idx);
-      const float proj_y = path_y_cache_(seg_idx) + t * segment_dy_(seg_idx);
-      const float dist_sq = (px - proj_x) * (px - proj_x) + (py - proj_y) * (py - proj_y);
-
-      if (dist_sq < min_dist_sq) {
-        min_dist_sq = dist_sq;
-        best_seg = seg_idx;
-      }
     }
   }
 
