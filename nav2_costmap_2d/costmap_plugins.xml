@@ -3,6 +3,9 @@
     <class type="nav2_costmap_2d::InflationLayer"  base_class_type="nav2_costmap_2d::Layer">
       <description>Inflates obstacles to speed collision checking and to make robot prefer to stay away from obstacles.</description>
     </class>
+    <class type="nav2_costmap_2d::PredictiveInflationLayer" base_class_type="nav2_costmap_2d::Layer">
+      <description>Predictive Inflation Layer that adjusts costs based on robot speed and direction.</description>
+    </class>
     <class type="nav2_costmap_2d::ObstacleLayer"   base_class_type="nav2_costmap_2d::Layer">
       <description>Listens to laser scan and point cloud messages and marks and clears grid cells.</description>
     </class>
