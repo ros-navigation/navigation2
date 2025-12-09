@@ -42,4 +42,10 @@
     <description>A tool used to create route graphs.</description>
   </class>
 
+  <class name="nav2_rviz_plugins/NavigateToPose"
+         type="nav2_rviz_plugins::NavigateToPosePanel"
+         base_class_type="rviz_common::Panel">
+    <description>A panel for sending NavigateToPose action goals with custom parameters.</description>
+  </class>
+
 </library>
