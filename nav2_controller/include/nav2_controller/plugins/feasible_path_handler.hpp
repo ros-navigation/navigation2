@@ -36,20 +36,60 @@ namespace nav2_controller
 class FeasiblePathHandler : public nav2_core::PathHandler
 {
 public:
+  /**
+   * @brief Initialize parameters
+   * @param parent Lifecycle node pointer
+   * @param logger Node logging interface
+   * @param plugin_name Name of the plugin
+   * @param costmap_ros Costmap2DROS object
+   * @param tf Shared ptr of TF2 buffer
+   */
   void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const rclcpp::Logger & logger,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     std::shared_ptr<tf2_ros::Buffer> tf) override;
+
+  /**
+   * @brief Set new reference plan
+   * @param Path Path to use
+   */
   void setPlan(const nav_msgs::msg::Path & path) override;
+
+  /**
+   * @brief Determines the portion of the global plan to be used for local control.
+   * This function locates the start and end iterators of the global plan segment
+   * that is relevant for controller computation based on the robot's current pose and local costmap.
+   * @param pose Robot pose in odom frame
+   * @return PathSegment A pair of iterators defining the start and end of the
+   *         selected plan segment.
+   */
   nav2_core::PathSegment findPlanSegment(
     const geometry_msgs::msg::PoseStamped & pose) override;
+
+  /**
+    * @brief Transforms a predefined segment of the global plan into the costmap global frame.
+    * @param closest_point Iterator to the starting pose of the path segment.
+    * @param pruned_plan_end Iterator to the ending pose of the path segment.
+    * @return nav_msgs::msg::Path The transformed local plan segment in the costmap global frame.
+    */
   nav_msgs::msg::Path transformLocalPlan(
     const nav2_core::PathIterator & closest_point,
     const nav2_core::PathIterator & pruned_plan_end) override;
+
+  /**
+   * @brief Get the global goal pose transformed to the costmap global frame
+   * @param stamp Time to get the goal pose at
+   * @return Transformed goal pose
+   */
   geometry_msgs::msg::PoseStamped getTransformedGoal(
     const builtin_interfaces::msg::Time & stamp) override;
+
+  /**
+   * @brief Gets the global plan
+   * @return The global plan
+   */
   nav_msgs::msg::Path getPlan() {return global_plan_;}
 
 protected:

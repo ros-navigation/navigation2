@@ -196,7 +196,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
         path_updated_ = false;
       }
     } catch (const std::runtime_error & e) {
-      RCLCPP_INFO(
+      RCLCPP_DEBUG(
         logger_,
         "Rotation Shim Controller was unable to find a sampling point,"
         " a rotational collision was detected, or TF failed to transform"

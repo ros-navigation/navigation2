@@ -174,6 +174,7 @@ inline unsigned int removePosesAfterFirstConstraint(
   bool enforce_path_inversion,
   float rotation_threshold)
 {
+  auto start = std::chrono::system_clock::now();
   nav_msgs::msg::Path cropped_path = path;
   const unsigned int first_after_constraint = findFirstPathConstraint(cropped_path,
     enforce_path_inversion, rotation_threshold);
@@ -184,6 +185,10 @@ inline unsigned int removePosesAfterFirstConstraint(
   cropped_path.poses.erase(
     cropped_path.poses.begin() + first_after_constraint, cropped_path.poses.end());
   path = cropped_path;
+  auto end = std::chrono::system_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  // RCLCPP_INFO(logger_, "Control loop execution time: %ld [ms]", duration);
+  std::cout << "Control loop execution time:" << duration << std::endl;
   return first_after_constraint;
 }
 

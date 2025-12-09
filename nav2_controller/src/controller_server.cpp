@@ -731,6 +731,8 @@ void ControllerServer::computeAndPublishVelocity()
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame");
     }
 
+
+    //
     const auto path_search_result = nav2_util::distance_from_path(
       current_path_, robot_pose_in_path_frame.pose, start_index_, params_->search_window);
 

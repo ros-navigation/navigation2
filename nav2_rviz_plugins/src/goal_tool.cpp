@@ -44,6 +44,7 @@ void GoalTool::onInitialize()
 void
 GoalTool::onPoseSet(double x, double y, double theta)
 {
+  std::cout << "x" << x << " y" << y << " theta" << theta << std::endl;
   // Set goal pose on global object GoalUpdater to update nav2 Panel
   GoalUpdater.setGoal(x, y, theta, context_->getFixedFrame());
 }

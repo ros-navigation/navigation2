@@ -61,7 +61,7 @@ controller_server:
     speed_limit_topic: "/speed_limit"
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
-    path_handler_plugins: ["path_handler"]
+    path_handler_plugins: ["PathHandler"]
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
@@ -76,7 +76,7 @@ controller_server:
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
       stateful: True
-    path_handler:
+    PathHandler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: False

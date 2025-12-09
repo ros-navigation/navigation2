@@ -677,6 +677,8 @@ void Nav2Panel::loophandler()
 void Nav2Panel::handleGoalLoader()
 {
   acummulated_poses_ = nav_msgs::msg::Goals();
+  // Clean old markers
+  updateWpNavigationMarkers();
 
   std::cout << "Loading Waypoints!" << std::endl;
 
@@ -691,7 +693,6 @@ void Nav2Panel::handleGoalLoader()
     available_waypoints = YAML::LoadFile(file.toStdString());
   } catch (const std::exception & ex) {
     std::cout << ex.what() << ", please select a valid file" << std::endl;
-    updateWpNavigationMarkers();
     return;
   }
 
@@ -720,10 +721,18 @@ geometry_msgs::msg::PoseStamped Nav2Panel::convert_to_msg(
   msg.pose.position.y = pose[1];
   msg.pose.position.z = pose[2];
 
-  msg.pose.orientation.w = orientation[0];
-  msg.pose.orientation.x = orientation[1];
-  msg.pose.orientation.y = orientation[2];
-  msg.pose.orientation.z = orientation[3];
+  if (orientation.size() == 3) {
+    // RPY format: [roll, pitch, yaw]
+    tf2::Quaternion q;
+    q.setRPY(orientation[0], orientation[1], orientation[2]);
+    msg.pose.orientation = tf2::toMsg(q);
+  } else if (orientation.size() == 4) {
+    // Quaternion format: [w, x, y, z]
+    msg.pose.orientation.w = orientation[0];
+    msg.pose.orientation.x = orientation[1];
+    msg.pose.orientation.y = orientation[2];
+    msg.pose.orientation.z = orientation[3];
+  }
 
   return msg;
 }

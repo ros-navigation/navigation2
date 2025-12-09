@@ -43,22 +43,22 @@ void FeasiblePathHandler::initialize(
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
-  reject_unit_path_ = node->declare_or_get_parameter(plugin_name +
-    ".reject_unit_path", false);
-  max_robot_pose_search_dist_ = node->declare_or_get_parameter(plugin_name +
-    ".max_robot_pose_search_dist", getCostmapMaxExtent());
-  prune_distance_ = node->declare_or_get_parameter(plugin_name + ".prune_distance",
-    2.0);
-  enforce_path_inversion_ = node->declare_or_get_parameter(plugin_name +
-    ".enforce_path_inversion", false);
-  enforce_path_rotation_ = node->declare_or_get_parameter(plugin_name +
-    ".enforce_path_rotation", false);
-  inversion_xy_tolerance_ = node->declare_or_get_parameter(plugin_name + ".inversion_xy_tolerance",
-    0.2);
-  inversion_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name +
-    ".inversion_yaw_tolerance", 0.4);
-  minimum_rotation_angle_ = node->declare_or_get_parameter(plugin_name + ".minimum_rotation_angle",
-    0.785);
+  reject_unit_path_ = node->declare_or_get_parameter(
+    plugin_name + ".reject_unit_path", false);
+  max_robot_pose_search_dist_ = node->declare_or_get_parameter(
+    plugin_name + ".max_robot_pose_search_dist", getCostmapMaxExtent());
+  prune_distance_ = node->declare_or_get_parameter(
+    plugin_name + ".prune_distance", 2.0);
+  enforce_path_inversion_ = node->declare_or_get_parameter(
+    plugin_name + ".enforce_path_inversion", false);
+  enforce_path_rotation_ = node->declare_or_get_parameter(
+    plugin_name + ".enforce_path_rotation", false);
+  inversion_xy_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".inversion_xy_tolerance", 0.2);
+  inversion_yaw_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".inversion_yaw_tolerance", 0.4);
+  minimum_rotation_angle_ = node->declare_or_get_parameter(
+    plugin_name + ".minimum_rotation_angle", 0.785);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
@@ -102,7 +102,7 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
     tf2::getYaw(last_pose.pose.orientation));
 
   return distance <= inversion_xy_tolerance_ &&
-    fabs(angle_distance) <= inversion_yaw_tolerance_;
+         fabs(angle_distance) <= inversion_yaw_tolerance_;
 }
 
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)

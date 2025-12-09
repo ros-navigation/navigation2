@@ -47,8 +47,12 @@ public:
   virtual ~PathHandler() {}
 
   /**
-   * @brief Initialize any parameters from the NodeHandle
-   * @param parent Node pointer for grabbing parameters
+   * @brief Initialize parameters
+   * @param parent Lifecycle node pointer
+   * @param logger Node logging interface
+   * @param plugin_name Name of the plugin
+   * @param costmap_ros Costmap2DROS object
+   * @param tf Shared ptr of TF2 buffer
    */
   virtual void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
@@ -75,17 +79,17 @@ public:
     const geometry_msgs::msg::PoseStamped & pose) = 0;
 
   /**
-    * @brief Transforms a predefined segment of the global plan into the odom frame.
+    * @brief Transforms a predefined segment of the global plan into the costmap global frame.
     * @param closest_point Iterator to the starting pose of the path segment.
     * @param pruned_plan_end Iterator to the ending pose of the path segment.
-    * @return nav_msgs::msg::Path The transformed local plan segment in the odom frame.
+    * @return nav_msgs::msg::Path The transformed local plan segment in the costmap global frame.
     */
   virtual nav_msgs::msg::Path transformLocalPlan(
     const PathIterator & closest_point,
     const PathIterator & pruned_plan_end) = 0;
 
   /**
-   * @brief Get the global goal pose transformed to the desired frame
+   * @brief Get the global goal pose transformed to the costmap global frame
    * @param stamp Time to get the goal pose at
    * @return Transformed goal pose
    */

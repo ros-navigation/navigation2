@@ -96,7 +96,7 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
-    path_handler_plugins: ["path_handler"]
+    path_handler_plugins: ["PathHandler"]
     use_realtime_priority: false
     speed_limit_topic: "speed_limit"
 
@@ -117,7 +117,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
-    path_handler:
+    PathHandler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: False
