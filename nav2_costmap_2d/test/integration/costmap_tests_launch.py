@@ -18,8 +18,9 @@ import os
 import sys
 
 from launch import LaunchDescription, LaunchService
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler, TimerAction, Shutdown
-from launch.event_handlers import OnProcessStart  
+from launch.actions import (ExecuteProcess, IncludeLaunchDescription, RegisterEventHandler,
+                            Shutdown, TimerAction)
+from launch.event_handlers import OnProcessStart
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import launch_ros.actions
 from launch_testing.legacy import LaunchTestService
@@ -80,12 +81,6 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     )
     if os.getenv('STATIC_ODOM_TO_BASE_LINK') == 'true':
         ld.add_action(odom_to_base_link)
-
-    test1_action = ExecuteProcess(
-        cmd=[testExecutable],
-        name='costmap_tests',
-        output='screen'
-    )
 
     ld.add_action(
         RegisterEventHandler(
