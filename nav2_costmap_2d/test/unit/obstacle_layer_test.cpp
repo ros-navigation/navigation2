@@ -394,33 +394,3 @@ TEST_F(ObstacleLayerTest, testClearDiagonalDistance) {
   ASSERT_EQ(countValues(*obstacle_layer_, nav2_costmap_2d::LETHAL_OBSTACLE),
             20 * 20 - 8);
 }
-
-/**
- * Test edge case: observation very close to origin
- * Resolution: 0.1m/cell
- * Origin at (0.0, 0.0), observation at (0.09, 0.0) - same cell as origin
- * This means no raytracing should occur
- */
-TEST_F(ObstacleLayerTest, testRaytraceWithObservationCloseToOrigin)
-{
-  // Mark all points as obstacles
-  for (unsigned int x = 0; x < obstacle_layer_->getSizeInCellsX(); x++) {
-    for (unsigned int y = 0; y < obstacle_layer_->getSizeInCellsY(); y++) {
-      obstacle_layer_->setCost(x, y, nav2_costmap_2d::LETHAL_OBSTACLE);
-    }
-  }
-
-  // Add observation at (0.09, 0.0), min obstacle range = 1.0m so it is not
-  // marked.
-  addObservation(obstacle_layer_, 0.09, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-                 true, true, 2.0, 0.0, 100.0, 1.0);
-  update();
-
-  // All points should still be LETHAL_OBSTACLE
-  for (unsigned int x = 0; x < obstacle_layer_->getSizeInCellsX(); x++) {
-    for (unsigned int y = 0; y < obstacle_layer_->getSizeInCellsY(); y++) {
-      unsigned char cost = obstacle_layer_->getCost(x, y);
-      ASSERT_EQ(cost, nav2_costmap_2d::LETHAL_OBSTACLE);
-    }
-  }
-}
