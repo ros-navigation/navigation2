@@ -62,7 +62,9 @@ private Q_SLOTS:
 private:
   void setupUI();
   geometry_msgs::msg::PoseStamped getCurrentPose();
-  void onActionResult(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult & result);
+  void onActionResult(
+    const rclcpp_action::ClientGoalHandle
+    <nav2_msgs::action::NavigateToPose>::WrappedResult & result);
 
   std::string current_action_name_;
   bool goal_active_;

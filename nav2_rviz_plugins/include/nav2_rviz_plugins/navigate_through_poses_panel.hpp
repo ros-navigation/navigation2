@@ -44,7 +44,8 @@
 namespace nav2_rviz_plugins
 {
 
-struct PoseTab {
+struct PoseTab
+{
   QWidget * widget;
   QLineEdit * frame_id_edit;
   QDoubleSpinBox * pos_x_spin;
@@ -76,7 +77,9 @@ private Q_SLOTS:
 private:
   void setupUI();
   nav_msgs::msg::Goals getCurrentPoses();
-  void onActionResult(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>::WrappedResult & result);
+  void onActionResult(
+    const rclcpp_action::ClientGoalHandle
+    <nav2_msgs::action::NavigateThroughPoses>::WrappedResult & result);
   void createPoseTab(int index);
   geometry_msgs::msg::PoseStamped getPoseFromTab(const PoseTab & tab);
 
