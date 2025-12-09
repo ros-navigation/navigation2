@@ -581,7 +581,31 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   
   tools_tab_widget_->addTab(wp_tab, "WP-Following");
   
-  // Tab 2: NavigateToPose
+  // Tab 2: NavigateThroughPoses
+  QWidget * nav_through_poses_tab = new QWidget;
+  QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
+  
+  QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
+  nav_through_poses_layout->addWidget(nav_through_info);
+  
+  nav_through_poses_tabs_ = new QTabWidget;
+  nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
+  
+  QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
+  add_pose_button_ = new QPushButton("Add Pose");
+  QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
+  nav_through_buttons_layout->addWidget(add_pose_button_);
+  
+  remove_pose_button_ = new QPushButton("Remove Pose");
+  QObject::connect(remove_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
+  nav_through_buttons_layout->addWidget(remove_pose_button_);
+  
+  nav_through_poses_layout->addLayout(nav_through_buttons_layout);
+  
+  nav_through_poses_tab->setLayout(nav_through_poses_layout);
+  tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
+  
+  // Tab 3: NavigateToPose manual input
   QWidget * nav_to_pose_tab = new QWidget;
   QGridLayout * nav_to_pose_layout = new QGridLayout;
   
@@ -616,36 +640,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   
   nav_to_pose_tab->setLayout(nav_to_pose_layout);
   tools_tab_widget_->addTab(nav_to_pose_tab, "NavigateToPose");
-  
-  // Tab 3: NavigateThroughPoses
-  QWidget * nav_through_poses_tab = new QWidget;
-  QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
-  
-  QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
-  nav_through_poses_layout->addWidget(nav_through_info);
-  
-  nav_through_poses_tabs_ = new QTabWidget;
-  nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
-  
-  QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
-  add_pose_button_ = new QPushButton("Add Pose");
-  QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
-  nav_through_buttons_layout->addWidget(add_pose_button_);
-  
-  remove_pose_button_ = new QPushButton("Remove Pose");
-  QObject::connect(remove_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
-  nav_through_buttons_layout->addWidget(remove_pose_button_);
-  
-  nav_through_poses_layout->addLayout(nav_through_buttons_layout);
-  
-  nav_through_poses_tab->setLayout(nav_through_poses_layout);
-  tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
     
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, false);
   tools_tab_widget_->setTabEnabled(2, false);
   
-  tools_tab_widget_->setCurrentIndex(0);
+  tools_tab_widget_->setCurrentIndex(2);
   
   main_layout->addWidget(tools_tab_widget_);
   main_layout->setContentsMargins(10, 10, 10, 10);
@@ -987,7 +987,7 @@ Nav2Panel::onIdle()
 {
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, false);
-  tools_tab_widget_->setTabEnabled(2, false);
+  tools_tab_widget_->setTabEnabled(2, true);
 }
 
 void
@@ -1225,7 +1225,7 @@ Nav2Panel::onAccumulating()
   
   tools_tab_widget_->setTabEnabled(0, true);
   tools_tab_widget_->setTabEnabled(1, true);
-  tools_tab_widget_->setTabEnabled(2, true);
+  tools_tab_widget_->setTabEnabled(2, false);
 }
 
 void
