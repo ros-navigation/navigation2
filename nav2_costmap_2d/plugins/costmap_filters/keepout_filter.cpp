@@ -177,8 +177,9 @@ void KeepoutFilter::updateBounds(
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
   if (!filter_mask_) {
-    RCLCPP_WARN_ONCE(
-      logger_, "KeepoutFilter: Filter mask was not received");
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 2000,
+      "KeepoutFilter: Filter mask was not received");
     return;
   }
 
