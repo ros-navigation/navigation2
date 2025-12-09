@@ -307,9 +307,9 @@ inline double cross_product_2d(
 
 /**
  * @brief Get all cells along a line using Bresenham's algorithm
- * 
+ *
  * See: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
- * 
+ *
  * @param x0 Start x coordinate in map cells
  * @param y0 Start y coordinate in map cells
  * @param x1 End x coordinate in map cells
