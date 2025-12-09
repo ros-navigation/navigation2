@@ -68,6 +68,7 @@ set(nav2_rviz_plugins_headers_to_moc
   include/nav2_rviz_plugins/goal_tool.hpp
   include/nav2_rviz_plugins/nav2_panel.hpp
   include/nav2_rviz_plugins/navigate_to_pose_panel.hpp
+  include/nav2_rviz_plugins/navigate_through_poses_panel.hpp
   include/nav2_rviz_plugins/route_tool.hpp
   include/nav2_rviz_plugins/selector.hpp
   include/nav2_rviz_plugins/particle_cloud_display/particle_cloud_display.hpp
@@ -93,6 +94,7 @@ add_library(${library_name} SHARED
   src/goal_tool.cpp
   src/nav2_panel.cpp
   src/navigate_to_pose_panel.cpp
+  src/navigate_through_poses_panel.cpp
   src/route_tool.cpp
   src/selector.cpp
   src/utils.cpp

@@ -48,4 +48,10 @@
     <description>A panel for sending NavigateToPose action goals with custom parameters.</description>
   </class>
 
+  <class name="nav2_rviz_plugins/NavigateThroughPoses"
+         type="nav2_rviz_plugins::NavigateThroughPosesPanel"
+         base_class_type="rviz_common::Panel">
+    <description>A panel for sending NavigateThroughPoses action goals with multiple poses and custom parameters.</description>
+  </class>
+
 </library>
