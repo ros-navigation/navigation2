@@ -72,8 +72,8 @@ target_link_libraries(observation_buffer_test
   nav2_costmap_2d_core
 )
 
-ament_add_gtest(tracking_bounds_layer_test tracking_bounds_layer_test.cpp)
-target_link_libraries(tracking_bounds_layer_test
+ament_add_gtest(bounded_tracking_error_layer_test bounded_tracking_error_layer_test.cpp)
+target_link_libraries(bounded_tracking_error_layer_test
   nav2_costmap_2d_core
   layers
 )

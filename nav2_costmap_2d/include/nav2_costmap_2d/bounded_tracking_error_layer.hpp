@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__TRACKING_BOUNDS_LAYER_HPP_
-#define NAV2_COSTMAP_2D__TRACKING_BOUNDS_LAYER_HPP_
+#ifndef NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
+#define NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
 
 #include <vector>
 #include <memory>
@@ -38,7 +38,7 @@
 namespace nav2_costmap_2d
 {
 /**
- * @class nav2_costmap_2d::TrackingBoundsLayer
+ * @class nav2_costmap_2d::BoundedTrackingErrorLayer
  * @brief A costmap layer that creates a dynamic corridor (tracking bounds) around the planned path
  *        using tracking feedback, to restrict navigation to a safe region.
  *
@@ -47,18 +47,18 @@ namespace nav2_costmap_2d
  * using look-ahead and step parameters to determine the segment of the path to use. The layer can be
  * enabled or disabled at runtime.
  */
-class TrackingBoundsLayer : public nav2_costmap_2d::Layer
+class BoundedTrackingErrorLayer : public nav2_costmap_2d::Layer
 {
 public:
   /**
-   * @brief Default constructor for TrackingBoundsLayer.
+   * @brief Default constructor for BoundedTrackingErrorLayer.
    */
-  TrackingBoundsLayer() = default;
+  BoundedTrackingErrorLayer() = default;
 
   /**
-   * @brief Destructor for TrackingBoundsLayer.
+   * @brief Destructor for BoundedTrackingErrorLayer.
    */
-  ~TrackingBoundsLayer();
+  ~BoundedTrackingErrorLayer();
 
   /**
    * @brief Initializes the layer, setting up subscriptions and parameters.
@@ -167,4 +167,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__TRACKING_BOUNDS_LAYER_HPP_
+#endif  // NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
