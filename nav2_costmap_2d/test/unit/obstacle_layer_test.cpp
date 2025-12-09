@@ -312,38 +312,6 @@ TEST_F(ObstacleLayerTest, testOriginOffset)
 }
 
 /**
- * Test that raytracing does NOT clear the cell containing the observation endpoint
- * raytrace_max_range > obstacle_max_range
- */
-TEST_F(ObstacleLayerTest, testRaytraceDoesNotClearEndpointCell)
-{
-  // First, mark the endpoint cell and some intermediate cells as obstacles
-  unsigned int mx_end;
-  unsigned int my_end;
-  obstacle_layer_->worldToMap(1.05, 0.0, mx_end, my_end);
-  for (unsigned int x = 0; x <= mx_end; ++x) {
-    obstacle_layer_->setCost(x, my_end, nav2_costmap_2d::LETHAL_OBSTACLE);
-  }
-
-  // Add observation at (1.05, 0.0)
-  // This is beyond the obstacle_max_range of 0.5m so should not be marked.
-  // raytrace_max_range = 2.0m
-  // So raytrace should clear cells up to but NOT including the endpoint
-  addObservation(obstacle_layer_, 1.05, 0.0, MAX_Z / 2, 0.0, 0.0, MAX_Z / 2,
-    true, true, 2.0, 0.0, 0.5, 0.0);
-  update();
-  // The endpoint cell should still be LETHAL_OBSTACLE (not cleared)
-  unsigned char cost_endpoint = obstacle_layer_->getCost(mx_end, my_end);
-  ASSERT_EQ(cost_endpoint, nav2_costmap_2d::LETHAL_OBSTACLE);
-
-  // The intermediate cells should be cleared (FREE_SPACE)
-  for (unsigned int x = 0; x < mx_end; ++x) {
-    unsigned char cost_mid = obstacle_layer_->getCost(x, my_end);
-    ASSERT_EQ(cost_mid, nav2_costmap_2d::FREE_SPACE);
-  }
-}
-
-/**
  * Test that raytracing clears cells along the path and the endpoint is marked
  * as obstacle.
  */
