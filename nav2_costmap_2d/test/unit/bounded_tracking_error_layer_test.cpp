@@ -21,7 +21,7 @@
 #include <cmath>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_costmap_2d/tracking_bounds_layer.hpp"
+#include "nav2_costmap_2d/bounded_tracking_error_layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -33,20 +33,20 @@ static constexpr double TEST_CORRIDOR_WIDTH = 2.0;
 static constexpr int TEST_PATH_POINTS = 50;
 static constexpr double TEST_PATH_LENGTH = 5.0;
 
-class TrackingBoundsLayerWrapper : public nav2_costmap_2d::TrackingBoundsLayer
+class BoundedTrackingErrorLayerWrapper : public nav2_costmap_2d::BoundedTrackingErrorLayer
 {
 public:
-  using TrackingBoundsLayer::last_tracking_feedback_;
-  using TrackingBoundsLayer::pathCallback;
-  using TrackingBoundsLayer::trackingCallback;
-  using TrackingBoundsLayer::getPathSegment;
-  using TrackingBoundsLayer::getWallPoints;
+  using BoundedTrackingErrorLayer::last_tracking_feedback_;
+  using BoundedTrackingErrorLayer::pathCallback;
+  using BoundedTrackingErrorLayer::trackingCallback;
+  using BoundedTrackingErrorLayer::getPathSegment;
+  using BoundedTrackingErrorLayer::getWallPoints;
 };
 
-class TrackingBoundsLayerTestFixture : public ::testing::Test
+class BoundedTrackingErrorLayerTestFixture : public ::testing::Test
 {
 public:
-  TrackingBoundsLayerTestFixture()
+  BoundedTrackingErrorLayerTestFixture()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("test_tracking_error_layer");
     node_->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
@@ -59,7 +59,7 @@ public:
     layered_costmap_ = std::make_shared<nav2_costmap_2d::LayeredCostmap>("map", false, false);
     layered_costmap_->resizeMap(100, 100, 0.05, -2.5, -2.5);
 
-    layer_ = std::make_shared<TrackingBoundsLayerWrapper>();
+    layer_ = std::make_shared<BoundedTrackingErrorLayerWrapper>();
     layer_->initialize(layered_costmap_.get(), "test_layer", nullptr, node_, nullptr);
     layer_->last_tracking_feedback_.current_path_index = static_cast<uint32_t>(-1);
   }
@@ -83,7 +83,7 @@ protected:
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   std::shared_ptr<nav2_costmap_2d::LayeredCostmap> layered_costmap_;
-  std::shared_ptr<TrackingBoundsLayerWrapper> layer_;
+  std::shared_ptr<BoundedTrackingErrorLayerWrapper> layer_;
 
   nav_msgs::msg::Path createStraightPath(
     double start_x = 0.0, double start_y = 0.0,
@@ -156,7 +156,7 @@ protected:
 };
 
 // Basic initialization and lifecycle tests
-TEST_F(TrackingBoundsLayerTestFixture, test_initialization_and_parameters)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_initialization_and_parameters)
 {
   EXPECT_TRUE(layer_ != nullptr);
   EXPECT_FALSE(layer_->isClearable());
@@ -165,14 +165,14 @@ TEST_F(TrackingBoundsLayerTestFixture, test_initialization_and_parameters)
 }
 
 // Empty data handling tests
-TEST_F(TrackingBoundsLayerTestFixture, test_empty_data_handling)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_empty_data_handling)
 {
   nav2_costmap_2d::Costmap2D master_grid(100, 100, 0.05, -2.5, -2.5);
   EXPECT_NO_THROW(layer_->updateCosts(master_grid, 0, 0, 100, 100));
   EXPECT_FALSE(hasObstacles(master_grid));
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_no_data)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_no_data)
 {
   // Test segment extraction with no path
   auto segment_no_path = layer_->getPathSegment();
@@ -186,7 +186,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_no_data)
 }
 
 // Path segment extraction tests
-TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_extraction)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_extraction)
 {
   auto path = createStraightPath();
   auto tracking_error = createTrackingFeedback(10);
@@ -200,7 +200,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_extraction)
   EXPECT_GE(segment.poses[0].pose.position.x, tracking_error.robot_pose.pose.position.x);
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_bounds)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_bounds)
 {
   auto path = createStraightPath(0.0, 0.0, 5.0, 50);  // 50 points, 5m long
   auto tracking_error = createTrackingFeedback(25);
@@ -223,7 +223,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_bounds)
   EXPECT_GE(last_x, robot_x);
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_edge_cases)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_edge_cases)
 {
   auto path = createStraightPath(0.0, 0.0, 5.0, 50);
 
@@ -248,7 +248,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_edge_cases)
   EXPECT_FALSE(segment_last.poses.empty());
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_length_consistency)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_length_consistency)
 {
   auto path = createStraightPath(0.0, 0.0, 10.0, 100);
 
@@ -271,7 +271,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_path_segment_length_consistency)
   }
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_invalid_path_index)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_invalid_path_index)
 {
   auto path = createStraightPath();
   auto tracking_error = createTrackingFeedback(1000);  // Invalid index
@@ -282,7 +282,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_invalid_path_index)
 }
 
 // Wall points generation tests
-TEST_F(TrackingBoundsLayerTestFixture, test_wall_points_straight_path)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_wall_points_straight_path)
 {
   auto path = createStraightPath();
   auto wall_points = layer_->getWallPoints(path);
@@ -302,7 +302,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_wall_points_straight_path)
   }
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_wall_points_curved_path)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_wall_points_curved_path)
 {
   auto curved_path = createCurvedPath();
   auto wall_points = layer_->getWallPoints(curved_path);
@@ -316,7 +316,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_wall_points_curved_path)
   }
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_single_point_path)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_single_point_path)
 {
   nav_msgs::msg::Path single_point_path;
   single_point_path.header.frame_id = "map";
@@ -333,7 +333,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_single_point_path)
   EXPECT_TRUE(wall_points.empty());
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_update_costs_same_frame)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_update_costs_same_frame)
 {
   auto path = createStraightPath();
   auto tracking_error = createTrackingFeedback(5);
@@ -344,7 +344,7 @@ TEST_F(TrackingBoundsLayerTestFixture, test_update_costs_same_frame)
   EXPECT_NO_THROW(layer_->updateCosts(master_grid, 0, 0, 100, 100));
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_obstacles_created_in_corridor)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_obstacles_created_in_corridor)
 {
   auto path = createStraightPath();
   auto tracking_error = createTrackingFeedback(5);
@@ -359,14 +359,14 @@ TEST_F(TrackingBoundsLayerTestFixture, test_obstacles_created_in_corridor)
 }
 
 // Edge cases and robustness tests
-TEST_F(TrackingBoundsLayerTestFixture, test_step_size_edge_cases)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_step_size_edge_cases)
 {
   auto path = createStraightPath(0.0, 0.0, 1.0, 10);
   auto wall_points = layer_->getWallPoints(path);
   EXPECT_TRUE(wall_points.size() <= path.poses.size() * 2);
 }
 
-TEST_F(TrackingBoundsLayerTestFixture, test_malformed_data)
+TEST_F(BoundedTrackingErrorLayerTestFixture, test_malformed_data)
 {
   // Test with NaN coordinates
   nav_msgs::msg::Path nan_path;
