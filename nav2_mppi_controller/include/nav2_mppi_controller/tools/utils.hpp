@@ -537,6 +537,32 @@ inline unsigned int findClosestPathPt(
   return size - 1;
 }
 
+/**
+ * @brief Find closest path point along integrated distances
+ * @param vec Pointer to cumulative distance array
+ * @param size Size of the array
+ * @param dist Distance to look for
+ * @param init Starting index to search from
+ * @return Index of closest path point
+ */
+inline unsigned int findClosestPathPt(
+  const float * vec, size_t size, float dist, unsigned int init = 0u)
+{
+  float distim1 = init != 0u ? vec[init] : 0.0f;
+  float disti = 0.0f;
+  for (unsigned int i = init + 1; i < size; i++) {
+    disti = vec[i];
+    if (disti > dist) {
+      if (i > 0 && dist - distim1 < disti - dist) {
+        return i - 1;
+      }
+      return i;
+    }
+    distim1 = disti;
+  }
+  return static_cast<unsigned int>(size - 1);
+}
+
 // A struct to hold pose data in floating point resolution
 struct Pose2D
 {
