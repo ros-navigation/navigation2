@@ -32,9 +32,13 @@ public:
 
 protected:
   void execute(
-    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Wait>>)
+    const typename std::shared_ptr<rclcpp_action::ServerGoalHandle<nav2_msgs::action::Wait>>
+    goal_handle)
   override
-  {}
+  {
+    auto result = std::make_shared<nav2_msgs::action::Wait::Result>();
+    goal_handle->succeed(result);
+  }
 };
 
 class WaitActionTestFixture : public ::testing::Test

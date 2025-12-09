@@ -23,6 +23,7 @@
 // Tests path handling
 
 using namespace mppi;  // NOLINT
+using namespace std::chrono_literals;
 
 class PathHandlerWrapper : public PathHandler
 {
@@ -116,6 +117,7 @@ TEST(PathHandlerTests, TestBounds)
   t.header.frame_id = "map";
   t.child_frame_id = "odom";
   tf_broadcaster_->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
 
   // Test getting the global plans within a bounds window
   nav_msgs::msg::Path path;
@@ -164,6 +166,7 @@ TEST(PathHandlerTests, TestTransforms)
   t.header.frame_id = "map";
   t.child_frame_id = "odom";
   tf_broadcaster_->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
 
   nav_msgs::msg::Path path;
   path.header.frame_id = "map";
