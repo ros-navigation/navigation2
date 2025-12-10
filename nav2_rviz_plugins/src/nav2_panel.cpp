@@ -560,53 +560,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // Tab widget for tools
   tools_tab_widget_ = new QTabWidget;
 
-  // Tab 1: WP-Following tools
-  QWidget * wp_tab = new QWidget;
-  QVBoxLayout * wp_tab_layout = new QVBoxLayout;
-
-  QHBoxLayout * group_box_l1_layout = new QHBoxLayout;
-  QHBoxLayout * group_box_l2_layout = new QHBoxLayout;
-
-  group_box_l1_layout->addWidget(save_waypoints_button_);
-  group_box_l1_layout->addWidget(load_waypoints_button_);
-  group_box_l1_layout->addWidget(pause_waypoint_button_);
-
-  group_box_l2_layout->addWidget(number_of_loops_);
-  group_box_l2_layout->addWidget(nr_of_loops_);
-  group_box_l2_layout->addWidget(store_initial_pose_checkbox_);
-
-  wp_tab_layout->addLayout(group_box_l1_layout);
-  wp_tab_layout->addLayout(group_box_l2_layout);
-  wp_tab->setLayout(wp_tab_layout);
-
-  tools_tab_widget_->addTab(wp_tab, "WP-Following");
-
-  // Tab 2: NavigateThroughPoses
-  QWidget * nav_through_poses_tab = new QWidget;
-  QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
-
-  QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
-  nav_through_poses_layout->addWidget(nav_through_info);
-
-  nav_through_poses_tabs_ = new QTabWidget;
-  nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
-
-  QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
-  add_pose_button_ = new QPushButton("Add Pose");
-  QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
-  nav_through_buttons_layout->addWidget(add_pose_button_);
-
-  remove_pose_button_ = new QPushButton("Remove Pose");
-  QObject::connect(remove_pose_button_,
-    &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
-  nav_through_buttons_layout->addWidget(remove_pose_button_);
-
-  nav_through_poses_layout->addLayout(nav_through_buttons_layout);
-
-  nav_through_poses_tab->setLayout(nav_through_poses_layout);
-  tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
-
-  // Tab 3: NavigateToPose manual input
+  // Tab 1: NavigateToPose
   QWidget * nav_to_pose_tab = new QWidget;
   QGridLayout * nav_to_pose_layout = new QGridLayout;
 
@@ -643,11 +597,57 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nav_to_pose_tab->setLayout(nav_to_pose_layout);
   tools_tab_widget_->addTab(nav_to_pose_tab, "NavigateToPose");
 
+  // Tab 2: NavigateThroughPoses
+  QWidget * nav_through_poses_tab = new QWidget;
+  QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
+
+  QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
+  nav_through_poses_layout->addWidget(nav_through_info);
+
+  nav_through_poses_tabs_ = new QTabWidget;
+  nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
+
+  QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
+  add_pose_button_ = new QPushButton("Add Pose");
+  QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
+  nav_through_buttons_layout->addWidget(add_pose_button_);
+
+  remove_pose_button_ = new QPushButton("Remove Pose");
+  QObject::connect(remove_pose_button_,
+    &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
+  nav_through_buttons_layout->addWidget(remove_pose_button_);
+
+  nav_through_poses_layout->addLayout(nav_through_buttons_layout);
+
+  nav_through_poses_tab->setLayout(nav_through_poses_layout);
+  tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
+
+  // Tab 3: WP-Following tools
+  QWidget * wp_tab = new QWidget;
+  QVBoxLayout * wp_tab_layout = new QVBoxLayout;
+
+  QHBoxLayout * group_box_l1_layout = new QHBoxLayout;
+  QHBoxLayout * group_box_l2_layout = new QHBoxLayout;
+
+  group_box_l1_layout->addWidget(save_waypoints_button_);
+  group_box_l1_layout->addWidget(load_waypoints_button_);
+  group_box_l1_layout->addWidget(pause_waypoint_button_);
+
+  group_box_l2_layout->addWidget(number_of_loops_);
+  group_box_l2_layout->addWidget(nr_of_loops_);
+  group_box_l2_layout->addWidget(store_initial_pose_checkbox_);
+
+  wp_tab_layout->addLayout(group_box_l1_layout);
+  wp_tab_layout->addLayout(group_box_l2_layout);
+  wp_tab->setLayout(wp_tab_layout);
+
+  tools_tab_widget_->addTab(wp_tab, "WP-Following");
+
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, false);
   tools_tab_widget_->setTabEnabled(2, false);
 
-  tools_tab_widget_->setCurrentIndex(2);
+  tools_tab_widget_->setCurrentIndex(0);
 
   main_layout->addWidget(tools_tab_widget_);
   main_layout->setContentsMargins(10, 10, 10, 10);
@@ -987,9 +987,10 @@ Nav2Panel::onResume()
 void
 Nav2Panel::onIdle()
 {
-  tools_tab_widget_->setTabEnabled(0, false);
+  tools_tab_widget_->setTabEnabled(0, true);
   tools_tab_widget_->setTabEnabled(1, false);
-  tools_tab_widget_->setTabEnabled(2, true);
+  tools_tab_widget_->setTabEnabled(2, false);
+  tools_tab_widget_->setCurrentIndex(0);
 }
 
 void
@@ -1224,13 +1225,12 @@ Nav2Panel::onAccumulating()
   goal_index_ = 0;
   updateWpNavigationMarkers();
   syncNavThroughPosesTabsWithAccumulated();
-
-  tools_tab_widget_->setTabEnabled(0, true);
+  
+  tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, true);
-  tools_tab_widget_->setTabEnabled(2, false);
-}
-
-void
+  tools_tab_widget_->setTabEnabled(2, true);
+  tools_tab_widget_->setCurrentIndex(1);
+}void
 Nav2Panel::timerEvent(QTimerEvent * event)
 {
   if (state_machine_.configuration().contains(accumulated_wp_)) {
