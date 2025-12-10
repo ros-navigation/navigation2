@@ -545,21 +545,21 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   main_layout->addLayout(side_layout);
   main_layout->addWidget(navigation_feedback_indicator_);
   main_layout->addWidget(waypoint_status_indicator_);
-  
+
   // Behavior Tree XML file selection
   QHBoxLayout * bt_layout = new QHBoxLayout;
   QLabel * bt_label = new QLabel("Behavior Tree XML:");
   bt_layout->addWidget(bt_label);
   bt_layout->addWidget(behavior_tree_file_);
   main_layout->addLayout(bt_layout);
-  
+
   main_layout->addWidget(pause_resume_button_);
   main_layout->addWidget(start_reset_button_);
   main_layout->addWidget(navigation_mode_button_);
 
   // Tab widget for tools
   tools_tab_widget_ = new QTabWidget;
-  
+
   // Tab 1: WP-Following tools
   QWidget * wp_tab = new QWidget;
   QVBoxLayout * wp_tab_layout = new QVBoxLayout;
@@ -578,75 +578,77 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   wp_tab_layout->addLayout(group_box_l1_layout);
   wp_tab_layout->addLayout(group_box_l2_layout);
   wp_tab->setLayout(wp_tab_layout);
-  
+
   tools_tab_widget_->addTab(wp_tab, "WP-Following");
-  
+
   // Tab 2: NavigateThroughPoses
   QWidget * nav_through_poses_tab = new QWidget;
   QVBoxLayout * nav_through_poses_layout = new QVBoxLayout;
-  
+
   QLabel * nav_through_info = new QLabel("Accumulated poses (click & drag or manual):");
   nav_through_poses_layout->addWidget(nav_through_info);
-  
+
   nav_through_poses_tabs_ = new QTabWidget;
   nav_through_poses_layout->addWidget(nav_through_poses_tabs_);
-  
+
   QHBoxLayout * nav_through_buttons_layout = new QHBoxLayout;
   add_pose_button_ = new QPushButton("Add Pose");
   QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
   nav_through_buttons_layout->addWidget(add_pose_button_);
-  
+
   remove_pose_button_ = new QPushButton("Remove Pose");
-  QObject::connect(remove_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
+  QObject::connect(remove_pose_button_,
+    &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
   nav_through_buttons_layout->addWidget(remove_pose_button_);
-  
+
   nav_through_poses_layout->addLayout(nav_through_buttons_layout);
-  
+
   nav_through_poses_tab->setLayout(nav_through_poses_layout);
   tools_tab_widget_->addTab(nav_through_poses_tab, "NavigateThroughPoses");
-  
+
   // Tab 3: NavigateToPose manual input
   QWidget * nav_to_pose_tab = new QWidget;
   QGridLayout * nav_to_pose_layout = new QGridLayout;
-  
+
   nav_to_pose_layout->addWidget(new QLabel("Frame ID:"), 0, 0);
   nav_to_pose_frame_id_ = new QLineEdit("map");
   nav_to_pose_layout->addWidget(nav_to_pose_frame_id_, 0, 1);
-  
+
   nav_to_pose_layout->addWidget(new QLabel("Position X:"), 1, 0);
   nav_to_pose_x_ = new QDoubleSpinBox;
   nav_to_pose_x_->setRange(-1000.0, 1000.0);
   nav_to_pose_x_->setDecimals(3);
   nav_to_pose_x_->setSingleStep(0.1);
   nav_to_pose_layout->addWidget(nav_to_pose_x_, 1, 1);
-  
+
   nav_to_pose_layout->addWidget(new QLabel("Position Y:"), 2, 0);
   nav_to_pose_y_ = new QDoubleSpinBox;
   nav_to_pose_y_->setRange(-1000.0, 1000.0);
   nav_to_pose_y_->setDecimals(3);
   nav_to_pose_y_->setSingleStep(0.1);
   nav_to_pose_layout->addWidget(nav_to_pose_y_, 2, 1);
-  
+
   nav_to_pose_layout->addWidget(new QLabel("Yaw (radians):"), 3, 0);
   nav_to_pose_yaw_ = new QDoubleSpinBox;
   nav_to_pose_yaw_->setRange(-M_PI, M_PI);
   nav_to_pose_yaw_->setDecimals(4);
   nav_to_pose_yaw_->setSingleStep(0.01);
   nav_to_pose_layout->addWidget(nav_to_pose_yaw_, 3, 1);
-  
+
   send_nav_to_pose_button_ = new QPushButton("Send NavigateToPose");
-  QObject::connect(send_nav_to_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onSendNavToPose);
+  QObject::connect(send_nav_to_pose_button_,
+    &QPushButton::clicked, this, &Nav2Panel::onSendNavToPose);
   nav_to_pose_layout->addWidget(send_nav_to_pose_button_, 4, 0, 1, 2);
-  
+
   nav_to_pose_tab->setLayout(nav_to_pose_layout);
   tools_tab_widget_->addTab(nav_to_pose_tab, "NavigateToPose");
-    
+
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, false);
   tools_tab_widget_->setTabEnabled(2, false);
-  
+
   tools_tab_widget_->setCurrentIndex(2);
-  
+
   main_layout->addWidget(tools_tab_widget_);
   main_layout->setContentsMargins(10, 10, 10, 10);
   setLayout(main_layout);
@@ -1222,7 +1224,7 @@ Nav2Panel::onAccumulating()
   goal_index_ = 0;
   updateWpNavigationMarkers();
   syncNavThroughPosesTabsWithAccumulated();
-  
+
   tools_tab_widget_->setTabEnabled(0, true);
   tools_tab_widget_->setTabEnabled(1, true);
   tools_tab_widget_->setTabEnabled(2, false);
@@ -1489,9 +1491,9 @@ Nav2Panel::updateWpNavigationMarkers()
   visualization_msgs::msg::Marker clear_all_marker;
   clear_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
   marker_array->markers.push_back(clear_all_marker);
-  
+
   wp_navigation_markers_pub_->publish(std::move(marker_array));
-  
+
   marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
   for (size_t i = 0; i < acummulated_poses_.goals.size(); i++) {
@@ -1605,7 +1607,7 @@ Nav2Panel::onSendNavToPose()
   pose.pose.position.y = nav_to_pose_y_->value();
   pose.pose.position.z = 0.0;
   pose.pose.orientation = orientationAroundZAxis(nav_to_pose_yaw_->value());
-  
+
   auto is_action_server_ready =
     navigation_action_client_->wait_for_action_server(std::chrono::seconds(5));
   if (!is_action_server_ready) {
@@ -1658,11 +1660,11 @@ Nav2Panel::onRemoveNavThroughPose()
     if (index >= 0 && index < static_cast<int>(nav_through_pose_tabs_.size())) {
       nav_through_poses_tabs_->removeTab(index);
       nav_through_pose_tabs_.erase(nav_through_pose_tabs_.begin() + index);
-      
+
       for (int i = 0; i < nav_through_poses_tabs_->count(); ++i) {
         nav_through_poses_tabs_->setTabText(i, QString("Pose %1").arg(i + 1));
       }
-      
+
       updateAccumulatedPosesFromTabs();
     }
   }
@@ -1673,16 +1675,16 @@ Nav2Panel::createNavThroughPoseTab(int index)
 {
   QWidget * tab_widget = new QWidget;
   QGridLayout * layout = new QGridLayout;
-  
+
   NavThroughPoseTab tab;
-  
+
   layout->addWidget(new QLabel("Frame ID:"), 0, 0);
   tab.frame_id_edit = new QLineEdit("map");
   QObject::connect(
     tab.frame_id_edit, &QLineEdit::textChanged, this,
     &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.frame_id_edit, 0, 1);
-  
+
   layout->addWidget(new QLabel("Position X:"), 1, 0);
   tab.pos_x_spin = new QDoubleSpinBox;
   tab.pos_x_spin->setRange(-1000.0, 1000.0);
@@ -1692,7 +1694,7 @@ Nav2Panel::createNavThroughPoseTab(int index)
     tab.pos_x_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
     &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.pos_x_spin, 1, 1);
-  
+
   layout->addWidget(new QLabel("Position Y:"), 2, 0);
   tab.pos_y_spin = new QDoubleSpinBox;
   tab.pos_y_spin->setRange(-1000.0, 1000.0);
@@ -1702,7 +1704,7 @@ Nav2Panel::createNavThroughPoseTab(int index)
     tab.pos_y_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
     &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.pos_y_spin, 2, 1);
-  
+
   layout->addWidget(new QLabel("Yaw (radians):"), 3, 0);
   tab.yaw_spin = new QDoubleSpinBox;
   tab.yaw_spin->setRange(-M_PI, M_PI);
@@ -1712,9 +1714,9 @@ Nav2Panel::createNavThroughPoseTab(int index)
     tab.yaw_spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
     &Nav2Panel::updateAccumulatedPosesFromTabs);
   layout->addWidget(tab.yaw_spin, 3, 1);
-  
+
   tab_widget->setLayout(layout);
-  
+
   nav_through_poses_tabs_->addTab(tab_widget, QString("Pose %1").arg(index + 1));
   nav_through_pose_tabs_.push_back(tab);
 }
@@ -1726,22 +1728,22 @@ Nav2Panel::syncNavThroughPosesTabsWithAccumulated()
     nav_through_poses_tabs_->removeTab(0);
   }
   nav_through_pose_tabs_.clear();
-  
+
   for (size_t i = 0; i < acummulated_poses_.goals.size(); ++i) {
     createNavThroughPoseTab(i);
-    
+
     const auto & pose = acummulated_poses_.goals[i];
-    
+
     nav_through_pose_tabs_[i].frame_id_edit->blockSignals(true);
     nav_through_pose_tabs_[i].pos_x_spin->blockSignals(true);
     nav_through_pose_tabs_[i].pos_y_spin->blockSignals(true);
     nav_through_pose_tabs_[i].yaw_spin->blockSignals(true);
-    
+
     nav_through_pose_tabs_[i].frame_id_edit->setText(
       QString::fromStdString(pose.header.frame_id));
     nav_through_pose_tabs_[i].pos_x_spin->setValue(pose.pose.position.x);
     nav_through_pose_tabs_[i].pos_y_spin->setValue(pose.pose.position.y);
-    
+
     tf2::Quaternion q(
       pose.pose.orientation.x,
       pose.pose.orientation.y,
@@ -1751,7 +1753,7 @@ Nav2Panel::syncNavThroughPosesTabsWithAccumulated()
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
     nav_through_pose_tabs_[i].yaw_spin->setValue(yaw);
-    
+
     nav_through_pose_tabs_[i].frame_id_edit->blockSignals(false);
     nav_through_pose_tabs_[i].pos_x_spin->blockSignals(false);
     nav_through_pose_tabs_[i].pos_y_spin->blockSignals(false);
@@ -1763,7 +1765,7 @@ void
 Nav2Panel::updateAccumulatedPosesFromTabs()
 {
   acummulated_poses_.goals.clear();
-  
+
   for (const auto & tab : nav_through_pose_tabs_) {
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = tab.frame_id_edit->text().toStdString();
@@ -1774,7 +1776,7 @@ Nav2Panel::updateAccumulatedPosesFromTabs()
     pose.pose.orientation = orientationAroundZAxis(tab.yaw_spin->value());
     acummulated_poses_.goals.push_back(pose);
   }
-  
+
   updateWpNavigationMarkers();
 }
 

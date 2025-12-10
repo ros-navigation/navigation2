@@ -46,7 +46,8 @@ class QPushButton;
 namespace nav2_rviz_plugins
 {
 
-struct NavThroughPoseTab {
+struct NavThroughPoseTab
+{
   QWidget * widget;
   QLineEdit * frame_id_edit;
   QDoubleSpinBox * pos_x_spin;
