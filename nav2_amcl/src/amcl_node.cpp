@@ -1020,8 +1020,7 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
           "it should be >=0. Ignoring parameter update.",
           param_name.c_str(), parameter.as_double());
         result.successful = false;
-      }
-      if (parameter.as_double() == 0.0 && param_name == "save_pose_rate") {
+      } else if (parameter.as_double() == 0.0 && param_name == "save_pose_rate") {
         RCLCPP_WARN(
           get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
           "it should be >0. Ignoring parameter update.",
