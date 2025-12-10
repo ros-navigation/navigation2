@@ -1226,6 +1226,11 @@ Nav2Panel::onAccumulating()
   updateWpNavigationMarkers();
   syncNavThroughPosesTabsWithAccumulated();
 
+  nav_to_pose_frame_id_->setText("map");
+  nav_to_pose_x_->setValue(0.0);
+  nav_to_pose_y_->setValue(0.0);
+  nav_to_pose_yaw_->setValue(0.0);
+
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, true);
   tools_tab_widget_->setTabEnabled(2, true);
