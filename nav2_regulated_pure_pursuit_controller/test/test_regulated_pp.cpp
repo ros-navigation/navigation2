@@ -26,6 +26,8 @@
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
@@ -46,6 +48,7 @@ public:
   void setVelocityScaledLookAhead() {params_->use_velocity_scaled_lookahead_dist = true;}
   void setCostRegulationScaling() {params_->use_cost_regulated_linear_velocity_scaling = true;}
   void resetVelocityRegulationScaling() {params_->use_regulated_linear_velocity_scaling = false;}
+  void setUseDynamicWindow() {params_->use_dynamic_window = true;}
 
   double getLookAheadDistanceWrapper(const geometry_msgs::msg::Twist & twist)
   {
@@ -520,6 +523,66 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results4);
+}
+
+TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+
+  // Enable DWPP so computeVelocityCommands executes the dynamic window branch.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_dynamic_window", rclcpp::ParameterValue(false));
+  node->set_parameter(rclcpp::Parameter(name + ".use_dynamic_window", true));
+
+  // Disable collision detection to simplify test.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_collision_detection", rclcpp::ParameterValue(true));
+  node->set_parameter(rclcpp::Parameter(name + ".use_collision_detection", false));
+
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+
+  auto stamp = node->get_clock()->now();
+
+  // Simple straight path ahead of the robot in map frame.
+  geometry_msgs::msg::PoseStamped start_pose;
+  start_pose.header.frame_id = "map";
+  start_pose.header.stamp = stamp;
+  start_pose.pose.orientation.w = 1.0;
+  auto plan = path_utils::generate_path(
+    start_pose, 0.1,
+    {std::make_unique<path_utils::Straight>(2.0)});
+  ctrl->setPlan(plan);
+
+  // Provide transform into base frame so the controller can compute commands.
+  geometry_msgs::msg::TransformStamped map_to_base;
+  map_to_base.header.stamp = stamp;
+  map_to_base.header.frame_id = "map";
+  map_to_base.child_frame_id = "base_link";
+  map_to_base.transform.rotation.w = 1.0;
+  tf->setTransform(map_to_base, "dwpp-controller-test");
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "base_link";
+  robot_pose.header.stamp = stamp;
+  robot_pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist current_speed;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap);
+
+  auto cmd_vel = ctrl->computeVelocityCommands(robot_pose, current_speed, &checker);
+
+  EXPECT_EQ(cmd_vel.twist.linear.x, 0.125);
+  EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
+
+  ctrl->deactivate();
+  ctrl->cleanup();
 }
 
 class TransformGlobalPlanTest : public ::testing::Test
