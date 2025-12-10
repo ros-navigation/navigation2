@@ -49,6 +49,7 @@ void PathAlignCritic::initialize()
 
 void PathAlignCritic::score(CriticData & data)
 {
+  // Skip scoring if disabled or path too short
   if (!enabled_ || data.state.local_path_length < threshold_to_consider_) {
     return;
   }
@@ -65,19 +66,21 @@ void PathAlignCritic::score(CriticData & data)
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   std::vector<bool> & path_pts_valid = *data.path_pts_valid;
 
+  // Check if too many path points are in collision/invalid
   float invalid_ctr = 0.0f;
   for (size_t i = 0; i < path_segments_count; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
     if (invalid_ctr / static_cast<float>(path_segments_count) > max_path_occupancy_ratio_ &&
       invalid_ctr > 2.0f)
     {
-      return;
+      return;  // Too many obstacles on path, don't score
     }
   }
 
-  // Update path cache (shared by both modes)
+  // Cache path segment geometry for efficient distance calculations
   updatePathCache(data.path, path_segments_count);
 
+  // Apply selected scoring mode(s)
   if (use_geometric_alignment_) {
     scoreGeometric(data, path_pts_valid);
   }
@@ -111,15 +114,18 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
     static_cast<int>(traj_length)));
   const int num_sample_points = (traj_length + effective_stride - 1) / effective_stride;
 
+  // Score each trajectory in the batch
   for (size_t t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
     num_samples = 0u;
     traj_integrated_distance = 0.0f;
     path_pt = 0u;
 
+    // Start from first trajectory point (close to current pose, one time step ahead)
     float prev_x = data.trajectories.x(t, 0);
     float prev_y = data.trajectories.y(t, 0);
 
+    // Sample trajectory points at regular intervals
     for (int sample_idx = 1; sample_idx < num_sample_points; ++sample_idx) {
       const Eigen::Index traj_col = sample_idx * effective_stride;
       if (traj_col >= traj_length) {break;}
@@ -127,14 +133,17 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
       const float curr_x = data.trajectories.x(t, traj_col);
       const float curr_y = data.trajectories.y(t, traj_col);
 
+      // Accumulate distance traveled along trajectory
       dx = curr_x - prev_x;
       dy = curr_y - prev_y;
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
 
+      // Find corresponding path point at same arc length distance
       path_pt = utils::findClosestPathPt(
         cumulative_distances_.data(), path_segments_count,
         traj_integrated_distance, path_pt);
 
+      // Calculate distance from trajectory point to corresponding path point
       if (path_pts_valid[path_pt]) {
         const auto & pose = path[path_pt];
         dx = pose.x - curr_x;
@@ -152,9 +161,11 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
       prev_y = curr_y;
     }
 
+    // Average distance across all sampled points
     cost(t) = (num_samples > 0u) ? summed_path_dist / static_cast<float>(num_samples) : 0.0f;
   }
 
+  // Apply weight and power, then add to total costs
   if (power_ > 1u) {
     data.costs += (cost * weight_).pow(power_);
   } else {
@@ -175,10 +186,30 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
   Eigen::ArrayXi valid_sample_count(batch_size);
   valid_sample_count.setZero();
 
+  // Store closest segment index per trajectory for search efficiency
   if (closest_indices_.size() != batch_size) {
     closest_indices_.resize(batch_size);
     closest_indices_.setZero();
   }
+
+  // Reset hints to robot's current position on path to avoid stale hints from previous cycle
+  const float robot_x = data.state.pose.pose.position.x;
+  const float robot_y = data.state.pose.pose.position.y;
+  const size_t path_segments_count = *data.furthest_reached_path_point;
+  const Eigen::Index num_segments = static_cast<Eigen::Index>(path_size_cache_) - 1;
+  
+  Eigen::Index current_closest_seg = 0;
+  float min_dist_sq = std::numeric_limits<float>::max();
+  
+  for (Eigen::Index i = 0; i < num_segments && i < static_cast<Eigen::Index>(path_segments_count); ++i) {
+    const float dist_sq = distSqToSegment(robot_x, robot_y, i);
+    if (dist_sq < min_dist_sq) {
+      min_dist_sq = dist_sq;
+      current_closest_seg = i;
+    }
+  }
+  
+  closest_indices_.setConstant(current_closest_seg);
 
   const int effective_stride = std::max(1, std::min(trajectory_point_step_,
      static_cast<int>(traj_length)));
@@ -186,19 +217,21 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
 
   if (num_samples == 0) {return;}
 
-  const size_t path_segments_count = *data.furthest_reached_path_point;
-
+  // Sample each trajectory at regular intervals
   for (int sample_idx = 0; sample_idx < num_samples; ++sample_idx) {
     const Eigen::Index traj_col = sample_idx * effective_stride;
     if (traj_col >= traj_length) {break;}
 
+    // For each trajectory in the batch
     for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
       const float px = traj_x(traj_idx, traj_col);
       const float py = traj_y(traj_idx, traj_col);
 
+      // Use previous closest segment as hint for efficient search
       Eigen::Index closest_seg = closest_indices_(traj_idx);
       float min_dist = computeMinDistanceToPath(px, py, closest_seg);
 
+      // Only accumulate cost if the closest segment is valid
       if (closest_seg < static_cast<Eigen::Index>(path_segments_count) &&
         path_pts_valid[closest_seg])
       {
@@ -206,24 +239,25 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
         valid_sample_count(traj_idx)++;
       }
 
+      // Update hint for next sample
       closest_indices_(traj_idx) = closest_seg;
     }
   }
 
-  // Normalize by actual valid sample count
+  // Normalize by actual valid sample count to get average distance
   for (Eigen::Index i = 0; i < batch_size; ++i) {
     if (valid_sample_count(i) > 0) {
       cost_array(i) /= static_cast<float>(valid_sample_count(i));
     }
   }
 
+  // Apply weight and power, then add to total costs
   if (power_ > 1u) {
     data.costs += (cost_array * weight_).pow(power_);
   } else {
     data.costs += cost_array * weight_;
   }
 }
-
 void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_segments_count)
 {
   // Handle empty path
@@ -235,7 +269,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
   // path_segments_count is the number of segments, so number of points is segments + 1
   const size_t path_points_count = path_segments_count + 1;
 
-  // Only update if path changed
+  // Only update if path changed (check size and content)
   const Eigen::Index path_points_idx = static_cast<Eigen::Index>(path_points_count);
   if (path_points_idx == static_cast<Eigen::Index>(path_size_cache_) &&
     path_x_cache_.size() == path_points_idx &&
@@ -251,6 +285,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     path_y_cache_.resize(path_points_idx);
   }
 
+  // Cache path points
   path_x_cache_.head(path_points_idx) = path.x.head(path_points_idx);
   path_y_cache_.head(path_points_idx) = path.y.head(path_points_idx);
 
@@ -266,6 +301,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     segment_len_sq_.resize(num_segments);
   }
 
+  // Precompute segment geometry for efficient distance calculations
   cumulative_distances_(0) = 0.0;
   for (Eigen::Index i = 0; i < num_segments; ++i) {
     segment_dx_(i) = path.x(i + 1) - path.x(i);
@@ -278,12 +314,19 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
 
 float PathAlignCritic::distSqToSegment(float px, float py, Eigen::Index seg_idx)
 {
+  // Vector from segment start to point
   const float dx = px - path_x_cache_(seg_idx);
   const float dy = py - path_y_cache_(seg_idx);
+  
+  // Project point onto segment (clamped to [0,1] to stay within segment)
   const float dot = dx * segment_dx_(seg_idx) + dy * segment_dy_(seg_idx);
   const float t = std::clamp(dot / segment_len_sq_(seg_idx), 0.0f, 1.0f);
+  
+  // Find closest point on segment
   const float proj_x = path_x_cache_(seg_idx) + t * segment_dx_(seg_idx);
   const float proj_y = path_y_cache_(seg_idx) + t * segment_dy_(seg_idx);
+  
+  // Return squared distance from point to closest point on segment
   return (px - proj_x) * (px - proj_x) + (py - proj_y) * (py - proj_y);
 }
 
@@ -297,12 +340,12 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
   // Clamp hint index to valid range
   closest_seg_idx = std::clamp(closest_seg_idx, Eigen::Index(0), num_segments - 1);
 
-  // Use cumulative distances to find search range
+  // Define search window around hint using cumulative distances along path
   const float hint_distance = cumulative_distances_(closest_seg_idx);
   const float start_distance = std::max(0.0f, hint_distance - static_cast<float>(search_window_));
   const float end_distance = hint_distance + static_cast<float>(search_window_);
 
-  // Find start segment using cumulative distances
+  // Find start segment for search window
   Eigen::Index start_idx = 0;
   for (Eigen::Index i = 0; i < num_segments; ++i) {
     if (cumulative_distances_(i + 1) >= start_distance) {
@@ -314,10 +357,10 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
   float min_dist_sq = std::numeric_limits<float>::max();
   Eigen::Index best_seg = closest_seg_idx;
 
-  // Single forward loop through search window
+  // Search only within window for efficiency (O(window_size) instead of O(path_length))
   for (Eigen::Index seg_idx = start_idx; seg_idx < num_segments; ++seg_idx) {
     if (cumulative_distances_(seg_idx) > end_distance) {break;}
-    if (segment_len_sq_(seg_idx) < MIN_SEGMENT_LENGTH_SQ) {continue;}
+    if (segment_len_sq_(seg_idx) < MIN_SEGMENT_LENGTH_SQ) {continue;}  // Skip degenerate segments
 
     const float dist_sq = distSqToSegment(px, py, seg_idx);
 
@@ -327,6 +370,7 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
     }
   }
 
+  // Update hint for next call
   closest_seg_idx = best_seg;
   return std::sqrt(min_dist_sq);
 }
