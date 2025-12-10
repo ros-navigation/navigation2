@@ -1225,12 +1225,13 @@ Nav2Panel::onAccumulating()
   goal_index_ = 0;
   updateWpNavigationMarkers();
   syncNavThroughPosesTabsWithAccumulated();
-  
+
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, true);
   tools_tab_widget_->setTabEnabled(2, true);
   tools_tab_widget_->setCurrentIndex(1);
-}void
+}
+void
 Nav2Panel::timerEvent(QTimerEvent * event)
 {
   if (state_machine_.configuration().contains(accumulated_wp_)) {
