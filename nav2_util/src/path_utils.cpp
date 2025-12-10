@@ -97,6 +97,7 @@ bool transformPathInTargetFrame(
 
   transformed_path.header.frame_id = target_frame;
   transformed_path.header.stamp = input_path.header.stamp;
+  transformed_path.poses.reserve(input_path.poses.size());
 
   for (const auto & input_pose : input_path.poses) {
     geometry_msgs::msg::PoseStamped source_pose, transformed_pose;
@@ -136,7 +137,6 @@ unsigned int findFirstPathConstraint(
   unsigned int inversion_idx = path.poses.size();
   float prev_dx = 0.0f;
   float prev_dy = 0.0f;
-  bool prev_valid = false;
 
   // Iterating through the path to determine the position of the path inversion or rotation
   for (unsigned int idx = 0; idx < path.poses.size() - 1; ++idx) {
@@ -146,13 +146,14 @@ unsigned int findFirstPathConstraint(
       path.poses[idx].pose.position.y;
     float trans = hypot(dx, dy);
 
+    // No smaller index can exist beyond this point, terminate early
     if (rotation_idx <= idx + 1 && inversion_idx <= idx + 1) {
       break;
     }
 
     // Check inversion
     if (enforce_path_inversion && trans > 1e-4) {
-      if (prev_valid) {
+      if (idx >= 1) {
         // Checking for the existence of cusp, in the path, using the dot product.
         float dot_product = prev_dx * dx + prev_dy * dy;
         if (dot_product < 0.0f) {
@@ -161,7 +162,6 @@ unsigned int findFirstPathConstraint(
       }
       prev_dx = dx;
       prev_dy = dy;
-      prev_valid = true;
     }
 
     // Check in place rotation
