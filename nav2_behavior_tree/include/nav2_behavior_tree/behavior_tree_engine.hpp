@@ -22,6 +22,7 @@
 
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
+#include "behaviortree_cpp/loggers/groot2_publisher.h"
 #include "behaviortree_cpp/xml_parsing.h"
 
 #include "rclcpp/rclcpp.hpp"
@@ -86,6 +87,18 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
+   * @brief Add Groot2 monitor to publish BT status changes
+   * @param tree BT to monitor
+   * @param server_port Groot2 Server port, first of the pair (server_port, publisher_port)
+   */
+  void addGrootMonitoring(BT::Tree * tree, uint16_t server_port);
+
+  /**
+   * @brief Reset groot monitor
+   */
+  void resetGrootMonitor();
+
+  /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param tree Tree to halt
    */
@@ -97,6 +110,9 @@ protected:
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;
+
+  // Groot2 monitor
+  std::unique_ptr<BT::Groot2Publisher> groot_monitor_;
 };
 
 }  // namespace nav2_behavior_tree

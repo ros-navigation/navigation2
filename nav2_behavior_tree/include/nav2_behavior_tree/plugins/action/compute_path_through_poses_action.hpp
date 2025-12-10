@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
@@ -73,6 +74,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+
     return providedBasicPorts(
       {
         BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(

@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
@@ -71,6 +72,9 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+
     return providedBasicPorts(
       {
         BT::InputPort<nav_msgs::msg::Path>("unsmoothed_path", "Path to be smoothed"),

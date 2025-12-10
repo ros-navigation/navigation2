@@ -20,9 +20,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include "behaviortree_cpp/json_export.h"
 #include "behaviortree_cpp/condition_node.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
+#include "nav2_behavior_tree/json_utils.hpp"
 
 
 namespace nav2_behavior_tree
@@ -58,6 +60,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
+    // Register JSON definitions for the types used in the ports
+    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    BT::RegisterJsonDefinition<std::vector<geometry_msgs::msg::PoseStamped>>();
+
     return {
       BT::InputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "goals", "Vector of navigation goals"),
