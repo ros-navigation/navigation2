@@ -21,10 +21,11 @@
 #include <vector>
 #include <deque>
 
-#include "behaviortree_cpp/decorator_node.h"
-#include "behaviortree_cpp/json_export.h"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_util/odometry_utils.hpp"
+
+#include "behaviortree_cpp/decorator_node.h"
+#include "behaviortree_cpp/json_export.h"
 #include "nav2_behavior_tree/bt_utils.hpp"
 #include "nav2_behavior_tree/json_utils.hpp"
 
