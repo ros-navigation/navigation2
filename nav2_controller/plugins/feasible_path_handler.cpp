@@ -202,7 +202,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     if (!costmap_ros_->getCostmap()->worldToMap(
         costmap_plan_pose.pose.position.x, costmap_plan_pose.pose.position.y, mx, my))
     {
-      return transformed_plan;
+      break;
     }
 
     // Filling the transformed plan to return with the transformed pose
