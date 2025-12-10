@@ -48,7 +48,6 @@ public:
   void setVelocityScaledLookAhead() {params_->use_velocity_scaled_lookahead_dist = true;}
   void setCostRegulationScaling() {params_->use_cost_regulated_linear_velocity_scaling = true;}
   void resetVelocityRegulationScaling() {params_->use_regulated_linear_velocity_scaling = false;}
-  void setUseDynamicWindow() {params_->use_dynamic_window = true;}
 
   double getLookAheadDistanceWrapper(const geometry_msgs::msg::Twist & twist)
   {
