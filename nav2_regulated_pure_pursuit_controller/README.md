@@ -133,13 +133,13 @@ controller_server:
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       max_linear_vel: 0.5
-      min_linear_vel: 0.0
-      max_angular_vel: 1.0
-      min_angular_vel: -1.0
-      max_linear_accel: 0.5
-      max_linear_decel: 0.5
-      max_angular_accel: 1.0
-      max_angular_decel: 1.0
+      min_linear_vel: -0.5
+      max_angular_vel: 2.5
+      min_angular_vel: -2.5
+      max_linear_accel: 2.5
+      max_linear_decel: 2.5
+      max_angular_accel: 3.2
+      max_angular_decel: 3.2
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -148,7 +148,7 @@ controller_server:
       transform_tolerance: 0.1
       use_velocity_scaled_lookahead_dist: false
       min_approach_linear_velocity: 0.05
-      approach_velocity_scaling_dist: 0.6
+      approach_velocity_scaling_dist: 1.0
       use_collision_detection: true
       max_allowed_time_to_collision_up_to_carrot: 1.0
       use_regulated_linear_velocity_scaling: true
@@ -156,16 +156,14 @@ controller_server:
       regulated_linear_scaling_min_radius: 0.9
       regulated_linear_scaling_min_speed: 0.25
       use_fixed_curvature_lookahead: false
-      curvature_lookahead_dist: 0.6
+      curvature_lookahead_dist: 1.0
       use_rotate_to_heading: true
-      allow_reversing: false
       rotate_to_heading_min_angle: 0.785
       max_robot_pose_search_dist: 10.0
       interpolate_curvature_after_goal: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
-      min_distance_to_obstacle: 0.0
       use_dynamic_window: false
 ```
 
