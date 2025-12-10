@@ -1272,6 +1272,8 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
       } else {
         state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+        acummulated_poses_ = nav_msgs::msg::Goals();
+        updateWpNavigationMarkers();
         timer_.stop();
       }
     }
@@ -1293,6 +1295,10 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
       } else {
         state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+        nav_to_pose_frame_id_->setText("map");
+        nav_to_pose_x_->setValue(0.0);
+        nav_to_pose_y_->setValue(0.0);
+        nav_to_pose_yaw_->setValue(0.0);
         timer_.stop();
       }
     }
