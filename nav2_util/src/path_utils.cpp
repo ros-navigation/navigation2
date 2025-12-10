@@ -90,7 +90,7 @@ bool transformPathInTargetFrame(
 {
   static rclcpp::Logger logger = rclcpp::get_logger("transformPathInTargetFrame");
 
-  if(input_path.header.frame_id == target_frame) {
+  if (input_path.header.frame_id == target_frame) {
     transformed_path = input_path;
     return true;
   }
