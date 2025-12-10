@@ -1370,9 +1370,18 @@ Nav2Panel::startNavThroughPoses(nav_msgs::msg::Goals poses)
   }
 
   nav_through_poses_goal_.poses = poses;
-  RCLCPP_INFO(
-    client_node_->get_logger(),
-    "NavigateThroughPoses will be called using the BT Navigator's default behavior tree.");
+  nav_through_poses_goal_.behavior_tree = behavior_tree_file_->text().toStdString();
+
+  if (nav_through_poses_goal_.behavior_tree.empty()) {
+    RCLCPP_INFO(
+      client_node_->get_logger(),
+      "NavigateThroughPoses will be called using the BT Navigator's default behavior tree.");
+  } else {
+    RCLCPP_INFO(
+      client_node_->get_logger(),
+      "NavigateThroughPoses will be called using behavior tree: %s",
+      nav_through_poses_goal_.behavior_tree.c_str());
+  }
 
   RCLCPP_DEBUG(
     client_node_->get_logger(), "Sending a path of %zu waypoints:",
@@ -1424,10 +1433,18 @@ Nav2Panel::startNavigation(geometry_msgs::msg::PoseStamped pose)
 
   // Send the goal pose
   navigation_goal_.pose = pose;
+  navigation_goal_.behavior_tree = behavior_tree_file_->text().toStdString();
 
-  RCLCPP_INFO(
-    client_node_->get_logger(),
-    "NavigateToPose will be called using the BT Navigator's default behavior tree.");
+  if (navigation_goal_.behavior_tree.empty()) {
+    RCLCPP_INFO(
+      client_node_->get_logger(),
+      "NavigateToPose will be called using the BT Navigator's default behavior tree.");
+  } else {
+    RCLCPP_INFO(
+      client_node_->get_logger(),
+      "NavigateToPose will be called using behavior tree: %s",
+      navigation_goal_.behavior_tree.c_str());
+  }
 
   // Enable result awareness by providing an empty lambda function
   auto send_goal_options =
