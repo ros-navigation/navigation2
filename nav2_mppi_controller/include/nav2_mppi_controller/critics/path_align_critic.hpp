@@ -72,13 +72,45 @@ protected:
   float computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx);
 
   /**
-   * @brief Compute squared distance from point to a specific path segment
-   * @param px Point x coordinate
-   * @param py Point y coordinate
-   * @param seg_idx Segment index
-   * @return Squared distance to segment
+   * @brief Compute squared distance from a point to a line segment
+   *
+   * Projects the point onto the segment (clamped to segment bounds) and returns
+   * the squared distance. Uses precomputed segment geometry for efficiency.
+   *
+   * @param px X-coordinate of the query point
+   * @param py Y-coordinate of the query point
+   * @param seg_idx Index of the path segment
+   * @return Squared distance from point to segment
+   *
+   * @note Returns squared distance to avoid sqrt() computation
+   * @note Handles degenerate (zero-length) segments
    */
-  float distSqToSegment(float px, float py, Eigen::Index seg_idx);
+  inline float distSqToSegment(float px, float py, Eigen::Index seg_idx)
+  {
+    const float x1 = path_x_cache_(seg_idx);
+    const float y1 = path_y_cache_(seg_idx);
+    const float dx = segment_dx_(seg_idx);
+    const float dy = segment_dy_(seg_idx);
+    const float inv_len_sq = segment_inv_len_sq_(seg_idx);
+
+    if (inv_len_sq < 1e-6f) {
+      // Degenerate segment, return distance to point
+      const float dpx = px - x1;
+      const float dpy = py - y1;
+      return dpx * dpx + dpy * dpy;
+    }
+
+    // Project point onto segment, clamped to [0,1]
+    const float t = std::max(0.0f, std::min(1.0f, ((px - x1) * dx + (py - y1) * dy) * inv_len_sq));
+
+    const float closest_x = x1 + t * dx;
+    const float closest_y = y1 + t * dy;
+
+    const float dist_x = px - closest_x;
+    const float dist_y = py - closest_y;
+
+    return dist_x * dist_x + dist_y * dist_y;
+  }
 
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
@@ -100,6 +132,7 @@ protected:
   Eigen::ArrayXf segment_dx_;
   Eigen::ArrayXf segment_dy_;
   Eigen::ArrayXf segment_len_sq_;
+  Eigen::ArrayXf segment_inv_len_sq_;
   Eigen::ArrayXf segment_lengths_;
   Eigen::ArrayXf cumulative_distances_;
   Eigen::Array<Eigen::Index, Eigen::Dynamic, 1> closest_indices_;
