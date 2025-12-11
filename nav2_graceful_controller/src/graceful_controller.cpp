@@ -213,8 +213,18 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
       if (params_->prefer_final_rotation) {
         // Avoid unstability and big sweeping turns at the end of paths by
         // ignoring final heading
-        double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-        target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+        double target_yaw = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+        double path_yaw = std::atan2(
+          transformed_plan.poses.back().pose.position.y -
+            transformed_plan.poses[i - 1].pose.position.y,
+          transformed_plan.poses.back().pose.position.x -
+            transformed_plan.poses[i - 1].pose.position.x);
+        if (std::fabs(angles::shortest_angular_distance(path_yaw, target_yaw)) >
+          params_->final_rotation_tolerance)
+        {
+          double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
+          target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+        }
       }
     } else if (dist_to_target < params_->min_lookahead) {
       // Make sure target is far enough away to avoid instability
