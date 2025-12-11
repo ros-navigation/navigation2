@@ -62,7 +62,7 @@ target_link_libraries(lifecycle_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
 )
 
-nav2_add_gtest(obstacle_layer_test obstacle_layer_test.cpp)
+ament_add_gtest(obstacle_layer_test obstacle_layer_test.cpp)
 target_link_libraries(obstacle_layer_test
   ${PROJECT_NAME}::nav2_costmap_2d_core
   layers
