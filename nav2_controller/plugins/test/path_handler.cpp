@@ -72,7 +72,7 @@ public:
   }
 
   geometry_msgs::msg::PoseStamped getTransformedGoalWrapper(
-    const builtin_interfaces::msg::Time & stamp) 
+    const builtin_interfaces::msg::Time & stamp)
   {
     return getTransformedGoal(stamp);
   }
