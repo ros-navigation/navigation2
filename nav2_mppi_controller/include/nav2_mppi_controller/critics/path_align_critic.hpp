@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
 
@@ -22,8 +23,9 @@
 
 namespace mppi::critics
 {
+
 /**
- * @class mppi::critics::ConstraintCritic
+ * @class mppi::critics::PathAlignCritic
  * @brief Critic objective function for aligning to the path. Note:
  * High settings of this will follow the path more precisely, but also makes it
  * difficult (or impossible) to deviate in the presence of dynamic obstacles.
@@ -86,6 +88,8 @@ protected:
   bool score_arc_length_{true};
   double search_window_{2.0};
   bool use_path_orientations_{false};
+  float lookahead_distance_{5.0};
+
   unsigned int power_{0};
   float weight_{0};
 
