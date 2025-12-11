@@ -249,6 +249,9 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      const bool allow_negative =
+        param_name == plugin_name_ + ".min_linear_vel" ||
+        param_name == plugin_name_ + ".min_angular_vel";
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" &&
         parameter.as_double() <= 0.0)
       {
@@ -256,7 +259,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
           logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
           "it should be >0. Ignoring parameter update.");
         result.successful = false;
-      } else if (parameter.as_double() < 0.0) {
+      } else if (parameter.as_double() < 0.0 && !allow_negative) {
         RCLCPP_WARN(
           logger_, "The value of parameter '%s' is incorrectly set to %f, "
           "it should be >=0. Ignoring parameter update.",
@@ -294,6 +297,20 @@ ParameterHandler::updateParametersCallback(
       } else if (param_name == plugin_name_ + ".max_linear_vel") {
         params_.max_linear_vel = parameter.as_double();
         params_.base_max_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_angular_accel") {
+        params_.max_angular_accel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_linear_vel") {
+        params_.min_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_angular_vel") {
+        params_.max_angular_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".min_angular_vel") {
+        params_.min_angular_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_linear_accel") {
+        params_.max_linear_accel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_linear_decel") {
+        params_.max_linear_decel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_angular_decel") {
+        params_.max_angular_decel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".lookahead_dist") {
         params_.lookahead_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".max_lookahead_dist") {
@@ -320,8 +337,6 @@ ParameterHandler::updateParametersCallback(
         params_.regulated_linear_scaling_min_radius = parameter.as_double();
       } else if (param_name == plugin_name_ + ".regulated_linear_scaling_min_speed") {
         params_.regulated_linear_scaling_min_speed = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".max_angular_accel") {
-        params_.max_angular_accel = parameter.as_double();
       } else if (param_name == plugin_name_ + ".cancel_deceleration") {
         params_.cancel_deceleration = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotate_to_heading_min_angle") {
@@ -354,6 +369,8 @@ ParameterHandler::updateParametersCallback(
         params_.allow_reversing = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".interpolate_curvature_after_goal") {
         params_.interpolate_curvature_after_goal = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_dynamic_window") {
+        params_.use_dynamic_window = parameter.as_bool();
       }
     }
   }

@@ -442,6 +442,13 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.max_linear_vel", 1.0),
+      rclcpp::Parameter("test.min_linear_vel", -1.0),
+      rclcpp::Parameter("test.max_angular_vel", 2.0),
+      rclcpp::Parameter("test.min_angular_vel", -2.0),
+      rclcpp::Parameter("test.max_linear_accel", 2.0),
+      rclcpp::Parameter("test.max_linear_decel", 2.0),
+      rclcpp::Parameter("test.max_angular_accel", 3.0),
+      rclcpp::Parameter("test.max_angular_decel", 3.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
@@ -455,7 +462,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
       rclcpp::Parameter("test.transform_tolerance", 30.0),
-      rclcpp::Parameter("test.max_angular_accel", 3.0),
       rclcpp::Parameter("test.rotate_to_heading_min_angle", 0.7),
       rclcpp::Parameter("test.regulated_linear_scaling_min_speed", 4.0),
       rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
@@ -464,13 +470,21 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false),
-      rclcpp::Parameter("test.stateful", false)});
+      rclcpp::Parameter("test.stateful", false),
+      rclcpp::Parameter("test.use_dynamic_window", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
 
   EXPECT_EQ(node->get_parameter("test.max_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.min_linear_vel").as_double(), -1.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_vel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.min_angular_vel").as_double(), -2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_decel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
@@ -486,7 +500,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
   EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 30.0);
-  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_min_angle").as_double(), 0.7);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_speed").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.use_velocity_scaled_lookahead_dist").as_bool(), false);
@@ -498,6 +511,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_dynamic_window").as_bool(), true);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(
