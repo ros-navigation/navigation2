@@ -550,29 +550,28 @@ inline unsigned int findClosestPathPtBinary(
 {
   if (size == 0) {return 0u;}
   if (size == 1) {return 0u;}
-  
+
   // Use binary search since cumulative_distances is monotonically increasing
   // std::lower_bound returns iterator to first element >= dist
   const float * begin = vec;
   const float * end = vec + size;
   const float * it = std::lower_bound(begin, end, dist);
-  
-  // Handle edge cases
+
   if (it == end) {
     // dist is beyond last element, return last index
     return static_cast<unsigned int>(size - 1);
   }
-  
+
   if (it == begin) {
     // dist is before or at first element
     return 0u;
   }
-  
+
   // Check which neighbor is closer: the element found or the one before it
   const unsigned int idx = static_cast<unsigned int>(it - begin);
   const float dist_curr = *it;
   const float dist_prev = *(it - 1);
-  
+
   if (dist - dist_prev < dist_curr - dist) {
     return idx - 1;
   }
