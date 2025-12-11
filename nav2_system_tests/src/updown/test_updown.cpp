@@ -26,7 +26,8 @@ using namespace std::chrono_literals;
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  RCLCPP_INFO(rclcpp::get_logger("test_updown"), "Initializing test");
+  rclcpp::Logger logger = rclcpp::get_logger("test_updown");
+  RCLCPP_INFO(logger, "Initializing test");
   auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
   nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation", node);
   nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization", node);
@@ -44,7 +45,7 @@ int main(int argc, char ** argv)
 
   // Wait for a couple secs to make sure the nodes have processed all discovery
   // info before starting
-  RCLCPP_INFO(rclcpp::get_logger("test_updown"), "Waiting for nodes to be active");
+  RCLCPP_INFO(logger, "Waiting for nodes to be active");
   std::this_thread::sleep_for(2s);
 
   // The system should now be active
@@ -60,17 +61,14 @@ int main(int argc, char ** argv)
       break;
     }
     
-    RCLCPP_WARN(
-      rclcpp::get_logger("test_updown"), 
-      "Not all nodes are active. Repeat status request.");
-
+    RCLCPP_WARN(logger, "Not all nodes are active. Repeat status request.");
     std::this_thread::sleep_for(2s);
     retries_number--;
   }
 
   if (!test_passed) {
     // the system isn't active
-    RCLCPP_ERROR(rclcpp::get_logger("test_updown"), "System startup failed");
+    RCLCPP_ERROR(logger, "System startup failed");
   }
 
   // Shut down the nav2 system, bringing it to the FINALIZED state
@@ -81,11 +79,11 @@ int main(int argc, char ** argv)
 
   if (test_passed) {
     RCLCPP_INFO(
-      rclcpp::get_logger("test_updown"),
+      logger,
       "****************************************************  TEST PASSED!");
   } else {
     RCLCPP_INFO(
-      rclcpp::get_logger("test_updown"),
+      logger,
       "****************************************************  TEST FAILED!");
   }
   rclcpp::shutdown();
