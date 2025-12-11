@@ -27,6 +27,7 @@ set(dependencies_pkgs
   geometry_msgs
   visualization_msgs
   nav_msgs
+  nav2_msgs
   nav2_core
   nav2_costmap_2d
   nav2_util
@@ -82,7 +83,6 @@ add_library(mppi_critics SHARED
   src/critics/cost_critic.cpp
   src/critics/goal_critic.cpp
   src/critics/goal_angle_critic.cpp
-  src/critics/symmetric_goal_angle_critic.cpp
   src/critics/path_align_critic.cpp
   src/critics/path_align_legacy_critic.cpp
   src/critics/path_follow_critic.cpp
