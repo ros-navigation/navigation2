@@ -278,38 +278,24 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
       // compute optimal path tracking velocity commands
       // considering velocity and acceleration constraints (DWPP)
       const double regulated_linear_vel = linear_vel;
-
       // using last command velocity as a current velocity
       const geometry_msgs::msg::Twist current_speed = last_command_velocity_;
 
-      const double & max_linear_vel = params_->max_linear_vel;
-      const double & min_linear_vel = params_->min_linear_vel;
-      const double & max_angular_vel = params_->max_angular_vel;
-      const double & min_angular_vel = params_->min_angular_vel;
-
-      const double & max_linear_accel = params_->max_linear_accel;
-      const double & max_linear_decel = params_->max_linear_decel;
-      const double & max_angular_accel = params_->max_angular_accel;
-      const double & max_angular_decel = params_->max_angular_decel;
-
-      // compute Dynamic Window
-      dynamic_window_pure_pursuit::DynamicWindowBounds dynamic_window =
-        dynamic_window_pure_pursuit::computeDynamicWindow(
-          current_speed, max_linear_vel, min_linear_vel, max_angular_vel, min_angular_vel,
-          max_linear_accel, max_linear_decel, max_angular_accel, max_angular_decel,
-          control_duration_);
-
-      // apply regulation to Dynamic Window
-      dynamic_window_pure_pursuit::applyRegulationToDynamicWindow(
-        regulated_linear_vel,
-        dynamic_window);
-
-      // compute optimal velocity within Dynamic Window
       std::tie(linear_vel, angular_vel) =
-        dynamic_window_pure_pursuit::computeOptimalVelocityWithinDynamicWindow(
-        dynamic_window,
+        dynamic_window_pure_pursuit::computeDynamicWindowVelocities(
+        current_speed,
+        params_->max_linear_vel,
+        params_->min_linear_vel,
+        params_->max_angular_vel,
+        params_->min_angular_vel,
+        params_->max_linear_accel,
+        params_->max_linear_decel,
+        params_->max_angular_accel,
+        params_->max_angular_decel,
+        regulated_linear_vel,
         regulation_curvature,
-        x_vel_sign);
+        x_vel_sign,
+        control_duration_);
     }
   }
 
