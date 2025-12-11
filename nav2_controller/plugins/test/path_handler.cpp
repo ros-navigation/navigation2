@@ -70,6 +70,12 @@ public:
   {
     return global_plan_up_to_constraint_;
   }
+
+  geometry_msgs::msg::PoseStamped getTransformedGoalWrapper(
+    const builtin_interfaces::msg::Time & stamp) 
+  {
+    return getTransformedGoal(stamp);
+  }
 };
 
 TEST(PathHandlerTests, GetAndPrunePath)
@@ -143,6 +149,61 @@ TEST(PathHandlerTests, TestBounds)
   auto & path_inverted = handler.getInvertedPath();
   EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
   EXPECT_EQ(path_inverted.poses.size(), 75u);
+}
+
+TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
+  node->declare_parameter("dummy.enforce_path_inversion", true);
+  node->declare_parameter("dummy.enforce_path_rotation", true);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  auto results = costmap_ros->set_parameters_atomically(
+    {rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("robot_base_frame", "base_link")});
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+
+  // Test initialization and getting costmap basic metadata
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+  EXPECT_EQ(handler.getCostmapMaxExtentWrapper(), 2.475);
+
+  // Set tf between map odom and base_link
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_ =
+    std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+  tf_broadcaster_->sendTransform(t);
+  t.header.frame_id = "map";
+  t.child_frame_id = "odom";
+  tf_broadcaster_->sendTransform(t);
+  std::this_thread::sleep_for(10ms);
+
+  // Test getting the global plans within a bounds window
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  path.poses.resize(100);
+  for (unsigned int i = 0; i != 30; i++) {
+    path.poses[i].pose.position.x = i;
+    path.poses[i].header.frame_id = "map";
+  }
+  for (unsigned int i = 0; i != 70; i++) {
+    path.poses[i].pose.position.x = 70 - i;
+    path.poses[i].header.frame_id = "map";
+  }
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+  robot_pose.pose.position.x = 25.0;
+
+  handler.setPlan(path);
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+  EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
+  auto & path_inverted = handler.getInvertedPath();
+  EXPECT_EQ(closest - path_inverted.poses.begin(), 45);
+  EXPECT_EQ(path_inverted.poses.size(), 55u);
 }
 
 TEST(PathHandlerTests, TestTransforms)
@@ -237,6 +298,28 @@ TEST(PathHandlerTests, TestInversionToleranceChecks)
   EXPECT_TRUE(handler.isWithinInversionTolerancesWrapper(robot_pose));
 }
 
+TEST(PathHandlerTests, TestTransformedGoal)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+  builtin_interfaces::msg::Time stamp;
+  nav_msgs::msg::Path path;
+  path.poses.resize(11);
+  handler.setPlan(path);
+  EXPECT_THROW(handler.getTransformedGoal(stamp), std::runtime_error);
+  for (unsigned int i = 0; i != path.poses.size(); i++) {
+    path.poses[i].pose.position.x = i;
+    path.poses[i].header.frame_id = "map";
+  }
+  EXPECT_THROW(handler.getTransformedGoal(stamp), std::runtime_error);
+}
+
 TEST(PathHandlerTests, TestDynamicParams)
 {
   PathHandlerWrapper handler;
@@ -258,7 +341,9 @@ TEST(PathHandlerTests, TestDynamicParams)
     rclcpp::Parameter("dummy.inversion_xy_tolerance", 200.0),
     rclcpp::Parameter("dummy.inversion_yaw_tolerance", 300.0),
     rclcpp::Parameter("dummy.prune_distance", 400.0),
+    rclcpp::Parameter("dummy.minimum_rotation_angle", 500.0),
     rclcpp::Parameter("dummy.enforce_path_inversion", true),
+    rclcpp::Parameter("dummy.enforce_path_rotation", true),
     });
 
   rclcpp::spin_until_future_complete(
@@ -269,7 +354,9 @@ TEST(PathHandlerTests, TestDynamicParams)
   EXPECT_EQ(node->get_parameter("dummy.inversion_xy_tolerance").as_double(), 200.0);
   EXPECT_EQ(node->get_parameter("dummy.inversion_yaw_tolerance").as_double(), 300.0);
   EXPECT_EQ(node->get_parameter("dummy.prune_distance").as_double(), 400.0);
+  EXPECT_EQ(node->get_parameter("dummy.minimum_rotation_angle").as_double(), 500.0);
   EXPECT_EQ(node->get_parameter("dummy.enforce_path_inversion").as_bool(), true);
+  EXPECT_EQ(node->get_parameter("dummy.enforce_path_rotation").as_bool(), true);
 }
 
 int main(int argc, char **argv)
