@@ -139,12 +139,10 @@ TEST(PathHandlerTests, TestBounds)
 
   handler.setPlan(path);
   auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
-  auto transformed_plan = handler.transformLocalPlanWrapper(closest, pruned_plan_end);
+  EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
   auto & path_inverted = handler.getInvertedPath();
   EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
-  handler.pruneGlobalPlanWrapper(path_inverted, closest);
-  auto & path_pruned = handler.getInvertedPath();
-  EXPECT_EQ(path_pruned.poses.size(), 75u);
+  EXPECT_EQ(path_inverted.poses.size(), 75u);
 }
 
 TEST(PathHandlerTests, TestTransforms)
