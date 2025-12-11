@@ -29,9 +29,9 @@ void PathAlignCritic::initialize()
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
   getParam(use_geometric_alignment_, "use_geometric_alignment", false);
-  getParam(search_window_, "search_window", 2.0);
+  getParam(search_window_, "search_window", 0.5);
   getParam(score_arc_length_, "score_arc_length", true);
-  getParam(lookahead_distance_, "lookahead_distance", 5.0f);
+  getParam(lookahead_distance_, "lookahead_distance", 1.0f);
 
   if (!score_arc_length_ && !use_geometric_alignment_) {
     RCLCPP_WARN(logger_,
@@ -110,63 +110,65 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
   unsigned int path_pt = 0u;
   float traj_integrated_distance = 0.0f;
 
-  const Eigen::Index traj_length = data.trajectories.x.cols();
-  const int effective_stride = std::max(1, std::min(trajectory_point_step_,
-    static_cast<int>(traj_length)));
-  const int num_sample_points = (traj_length + effective_stride - 1) / effective_stride;
+  int strided_traj_rows = data.trajectories.x.rows();
+  int strided_traj_cols = floor((data.trajectories.x.cols() - 1) / trajectory_point_step_) + 1;
+  int outer_stride = strided_traj_rows * trajectory_point_step_;
+  // Get strided trajectory information
+  const auto T_x = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.x.data(),
+    strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_y = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.y.data(),
+    strided_traj_rows, strided_traj_cols, Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto T_yaw = Eigen::Map<const Eigen::ArrayXXf, 0,
+      Eigen::Stride<-1, -1>>(
+    data.trajectories.yaws.data(), strided_traj_rows, strided_traj_cols,
+    Eigen::Stride<-1, -1>(outer_stride, 1));
+  const auto traj_sampled_size = T_x.cols();
 
-  // Score each trajectory in the batch
   for (size_t t = 0; t < batch_size; ++t) {
     summed_path_dist = 0.0f;
     num_samples = 0u;
     traj_integrated_distance = 0.0f;
     path_pt = 0u;
-
-    // Start from first trajectory point (close to current pose, one time step ahead)
-    float prev_x = data.trajectories.x(t, 0);
-    float prev_y = data.trajectories.y(t, 0);
-
-    // Sample trajectory points at regular intervals
-    for (int sample_idx = 1; sample_idx < num_sample_points; ++sample_idx) {
-      const Eigen::Index traj_col = sample_idx * effective_stride;
-      if (traj_col >= traj_length) {break;}
-
-      const float curr_x = data.trajectories.x(t, traj_col);
-      const float curr_y = data.trajectories.y(t, traj_col);
-
-      // Accumulate distance traveled along trajectory
-      dx = curr_x - prev_x;
-      dy = curr_y - prev_y;
+    float Tx_m1 = T_x(t, 0);
+    float Ty_m1 = T_y(t, 0);
+    for (int p = 1; p < traj_sampled_size; p++) {
+      const float Tx = T_x(t, p);
+      const float Ty = T_y(t, p);
+      dx = Tx - Tx_m1;
+      dy = Ty - Ty_m1;
+      Tx_m1 = Tx;
+      Ty_m1 = Ty;
       traj_integrated_distance += sqrtf(dx * dx + dy * dy);
-
-      // Find corresponding path point at same arc length distance
       path_pt = utils::findClosestPathPtBinary(
         cumulative_distances_.data(), path_segments_count,
         traj_integrated_distance);
 
-      // Calculate distance from trajectory point to corresponding path point
+      // The nearest path point to align to needs to be not in collision, else
+      // let the obstacle critic take over in this region due to dynamic obstacles
       if (path_pts_valid[path_pt]) {
         const auto & pose = path[path_pt];
-        dx = pose.x - curr_x;
-        dy = pose.y - curr_y;
+        dx = pose.x - Tx;
+        dy = pose.y - Ty;
         num_samples++;
         if (use_path_orientations_) {
-          dyaw = angles::shortest_angular_distance(pose.theta, data.trajectories.yaws(t, traj_col));
+          dyaw = angles::shortest_angular_distance(pose.theta, T_yaw(t, p));
           summed_path_dist += sqrtf(dx * dx + dy * dy + dyaw * dyaw);
         } else {
           summed_path_dist += sqrtf(dx * dx + dy * dy);
         }
       }
-
-      prev_x = curr_x;
-      prev_y = curr_y;
     }
-
-    // Average distance across all sampled points
-    cost(t) = (num_samples > 0u) ? summed_path_dist / static_cast<float>(num_samples) : 0.0f;
+    if (num_samples > 0u) {
+      cost(t) = summed_path_dist / static_cast<float>(num_samples);
+    } else {
+      cost(t) = 0.0f;
+    }
   }
 
-  // Apply weight and power, then add to total costs
   if (power_ > 1u) {
     data.costs += (cost * weight_).pow(power_);
   } else {
@@ -200,19 +202,22 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
   const float robot_y = data.state.pose.pose.position.y;
   const size_t path_segments_count = *data.furthest_reached_path_point;
   const Eigen::Index num_segments = static_cast<Eigen::Index>(path_size_cache_) - 1;
-  
+
   Eigen::Index current_closest_seg = 0;
   float min_dist_sq = std::numeric_limits<float>::max();
-  
+
   // Find initial hint by locating robot position on path
-  for (Eigen::Index i = 0; i < num_segments && i < static_cast<Eigen::Index>(path_segments_count); ++i) {
+  for (Eigen::Index i = 0;
+    i < num_segments && i < static_cast<Eigen::Index>(path_segments_count);
+    ++i)
+  {
     const float dist_sq = distSqToSegment(robot_x, robot_y, i);
     if (dist_sq < min_dist_sq) {
       min_dist_sq = dist_sq;
       current_closest_seg = i;
     }
   }
-  
+
   closest_indices_.setConstant(current_closest_seg);
 
   const int effective_stride = std::max(1, std::min(trajectory_point_step_,
@@ -221,13 +226,13 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
   // Score each trajectory in the batch
   for (Eigen::Index traj_idx = 0; traj_idx < batch_size; ++traj_idx) {
     float accumulated_distance = 0.0f;
-    
+
     // Start from first trajectory point
     float prev_x = traj_x(traj_idx, 0);
     float prev_y = traj_y(traj_idx, 0);
-    
+
     int sample_idx = 0;
-    
+
     // Sample trajectory points at regular intervals
     while (true) {
       const Eigen::Index traj_col = sample_idx * effective_stride;
@@ -241,7 +246,7 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
         const float dx = px - prev_x;
         const float dy = py - prev_y;
         accumulated_distance += std::sqrt(dx * dx + dy * dy);
-        
+
         // Stop scoring beyond lookahead distance
         if (accumulated_distance > lookahead_distance_) {break;}
       }
@@ -257,10 +262,8 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
         cost_array(traj_idx) += min_dist;
         valid_sample_count(traj_idx)++;
       }
-
       // Update hint for next sample
       closest_indices_(traj_idx) = closest_seg;
-      
       prev_x = px;
       prev_y = py;
       sample_idx++;
@@ -295,7 +298,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
   const size_t path_points_count = path_segments_count + 1;
 
   // Only update cache if path changed
-  // TODO: Optimize path change detection. Current element-wise comparison is expensive.
+  // TODO(@silanus23): Optimize path change detection. Current element-wise comparison is expensive.
   // Possible approaches:
   //   1. Add hash field to models::Path (cleanest, needs controller-level change)
   //   2. Compute local hash here (self-contained, small overhead)
@@ -331,6 +334,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     segment_dx_.resize(num_segments);
     segment_dy_.resize(num_segments);
     segment_len_sq_.resize(num_segments);
+    segment_inv_len_sq_.resize(num_segments);
   }
 
   // Precompute segment geometry for efficient distance calculations
@@ -341,45 +345,13 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     segment_len_sq_(i) = segment_dx_(i) * segment_dx_(i) + segment_dy_(i) * segment_dy_(i);
     segment_lengths_(i) = std::sqrt(segment_len_sq_(i));
     cumulative_distances_(i + 1) = cumulative_distances_(i) + segment_lengths_(i);
+    segment_inv_len_sq_(i) = (segment_len_sq_(i) > 1e-6f) ? (1.0f / segment_len_sq_(i)) : 0.0f;
   }
 }
-// TODO: Even I have tried other ways and spend effort maybe there can still be
-// room for improvement here
-float PathAlignCritic::distSqToSegment(float px, float py, Eigen::Index seg_idx)
-{
-  const float x1 = path_x_cache_(seg_idx);
-  const float y1 = path_y_cache_(seg_idx);
-  const float x2 = path_x_cache_(seg_idx + 1);
-  const float y2 = path_y_cache_(seg_idx + 1);
-  
-  const float dx = x2 - x1;
-  const float dy = y2 - y1;
-  const float len_sq = dx * dx + dy * dy;
-  
-  if (len_sq < 1e-6f) {
-    // Degenerate segment, return distance to point
-    const float dpx = px - x1;
-    const float dpy = py - y1;
-    return dpx * dpx + dpy * dpy;
-  }
-  
-  // Project point onto line, clamped to segment
-  const float t = std::max(0.0f, std::min(1.0f, ((px - x1) * dx + (py - y1) * dy) / len_sq));
-  
-  const float closest_x = x1 + t * dx;
-  const float closest_y = y1 + t * dy;
-  
-  const float dist_x = px - closest_x;
-  const float dist_y = py - closest_y;
-  
-  return dist_x * dist_x + dist_y * dist_y;
-}
 
-
+// TODO(@silanus23): Not sure if this should be in util too
 float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx)
 {
-  static constexpr float MIN_SEGMENT_LENGTH_SQ = 1e-6f;
-
   const Eigen::Index num_segments = static_cast<Eigen::Index>(path_size_cache_) - 1;
   if (num_segments < 1) {return std::numeric_limits<float>::max();}
 
@@ -401,10 +373,10 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
   float min_dist_sq = std::numeric_limits<float>::max();
   Eigen::Index best_seg = closest_seg_idx;
 
-  // Search only within window for efficiency (O(window_size) instead of O(path_length))
+  // Search only within window for efficiency
   for (Eigen::Index seg_idx = start_idx; seg_idx < num_segments; ++seg_idx) {
     if (cumulative_distances_(seg_idx) > end_distance) {break;}
-    if (segment_len_sq_(seg_idx) < MIN_SEGMENT_LENGTH_SQ) {continue;}  // Skip degenerate segments
+    if (segment_len_sq_(seg_idx) < 1e-6f) {continue;}  // Skip degenerate segments
 
     const float dist_sq = distSqToSegment(px, py, seg_idx);
 
