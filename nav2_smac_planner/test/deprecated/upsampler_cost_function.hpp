@@ -104,7 +104,7 @@ public:
     Eigen::Vector2d xi;
     Eigen::Vector2d xi_p1;
     Eigen::Vector2d xi_m1;
-    uint x_index, y_index;
+    unsigned int x_index, y_index;
     cost[0] = 0.0;
     double cost_raw = 0.0;
     double grad_x_raw = 0.0;
