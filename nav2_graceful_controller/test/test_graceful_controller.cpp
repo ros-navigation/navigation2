@@ -539,6 +539,9 @@ TEST(GracefulControllerTest, computeVelocityCommandRotate) {
   geometry_msgs::msg::PoseStamped goal;
   auto cmd_vel = controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
     transformed_global_plan, goal);
+  transformed_global_plan.header.frame_id = "fake_frame";
+  EXPECT_THROW(controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
+    transformed_global_plan, goal), std::runtime_error);
 
   // Check results: the robot should rotate in place.
   // So, linear velocity should be zero and angular velocity should be a positive value below 0.5.

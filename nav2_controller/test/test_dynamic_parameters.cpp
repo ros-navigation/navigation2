@@ -23,6 +23,50 @@
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+TEST(ControllerServerTest, GoalCheckerPluginTypeException)
+{
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_goal_checker"};
+  node->declare_parameter("goal_checker_plugins", invalid_ids);
+  node->declare_parameter("invalid_goal_checker.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_controller::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
+
+TEST(ControllerServerTest, ProgressCheckerPluginTypeException)
+{
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_progress_checker"};
+  node->declare_parameter("progress_checker_plugins", invalid_ids);
+  node->declare_parameter("invalid_progress_checker.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_controller::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
+
+TEST(ControllerServerTest, ControllerPluginTypeException)
+{
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_controller"};
+  node->declare_parameter("controller_plugins", invalid_ids);
+  node->declare_parameter("invalid_controller.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_controller::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
+
+TEST(ControllerServerTest, PathHandlerTypeException)
+{
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_path_handler"};
+  node->declare_parameter("path_handler_plugins", invalid_ids);
+  node->declare_parameter("invalid_path_handler.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_controller::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
+
 TEST(ControllerServerTest, test_dynamic_parameters)
 {
   std::string nodeName = "test_node";
