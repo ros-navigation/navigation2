@@ -31,8 +31,10 @@ int main(int argc, char ** argv)
   auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
   nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation", node);
   nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization", node);
-  nav2_lifecycle_manager::LifecycleManagerClient client_keepout_zone("lifecycle_manager_keepout_zone", node);
-  nav2_lifecycle_manager::LifecycleManagerClient client_speed_zone("lifecycle_manager_speed_zone", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_keepout_zone(
+    "lifecycle_manager_keepout_zone", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_speed_zone(
+    "lifecycle_manager_speed_zone", node);
 
   // Wait for a few seconds to let all of the nodes come up
   std::this_thread::sleep_for(5s);
@@ -55,12 +57,12 @@ int main(int argc, char ** argv)
     if (client_nav.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
       client_loc.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
       client_keepout_zone.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE &&
-      client_speed_zone.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE) 
+      client_speed_zone.is_active() == nav2_lifecycle_manager::SystemStatus::ACTIVE)
     {
       test_passed = true;
       break;
     }
-    
+
     RCLCPP_WARN(logger, "Not all nodes are active. Repeat status request.");
     std::this_thread::sleep_for(2s);
     retries_number--;
