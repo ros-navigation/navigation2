@@ -30,6 +30,8 @@ int main(int argc, char ** argv)
   auto node = std::make_shared<rclcpp::Node>("lifecycle_manager_service_client");
   nav2_lifecycle_manager::LifecycleManagerClient client_nav("lifecycle_manager_navigation", node);
   nav2_lifecycle_manager::LifecycleManagerClient client_loc("lifecycle_manager_localization", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_keepout_zone("lifecycle_manager_keepout_zone", node);
+  nav2_lifecycle_manager::LifecycleManagerClient client_speed_zone("lifecycle_manager_speed_zone", node);
   bool test_passed = true;
 
   // Wait for a few seconds to let all of the nodes come up
@@ -38,6 +40,8 @@ int main(int argc, char ** argv)
   // Start the nav2 system, bringing it to the ACTIVE state
   client_nav.startup();
   client_loc.startup();
+  client_keepout_zone.startup();
+  client_speed_zone.startup();
 
   // Wait for a couple secs to make sure the nodes have processed all discovery
   // info before starting
@@ -48,6 +52,8 @@ int main(int argc, char ** argv)
   int retries = 0;
   while ((client_nav.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
     (client_loc.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
+    (client_keepout_zone.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
+    (client_speed_zone.is_active() != nav2_lifecycle_manager::SystemStatus::ACTIVE) &&
     (retries < 10))
   {
     std::this_thread::sleep_for(2s);
@@ -62,6 +68,8 @@ int main(int argc, char ** argv)
   // Shut down the nav2 system, bringing it to the FINALIZED state
   client_nav.shutdown();
   client_loc.shutdown();
+  client_keepout_zone.shutdown();
+  client_speed_zone.shutdown();
 
   if (test_passed) {
     RCLCPP_INFO(
