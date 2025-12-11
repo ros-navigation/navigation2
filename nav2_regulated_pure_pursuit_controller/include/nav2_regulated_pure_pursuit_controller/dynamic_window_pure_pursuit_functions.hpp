@@ -40,7 +40,8 @@ struct DynamicWindowBounds
 };
 
 /**
- * @brief Compute the dynamic window (feasible velocity bounds) based on the current speed and the given velocity and acceleration constraints.
+ * @brief Compute the dynamic window (feasible velocity bounds) based on
+ *        the current speed and the given velocity and acceleration constraints.
  * @param current_speed     Current linear and angular velocity of the robot
  * @param max_linear_vel    Maximum allowable linear velocity
  * @param min_linear_vel    Minimum allowable linear velocity
@@ -90,7 +91,7 @@ inline DynamicWindowBounds computeDynamicWindow(
         candidate_min_vel = current_vel - max_accel * dt;
       }
 
-    // clip to max/min velocity limits
+      // clip to max/min velocity limits
       double dynamic_window_max_vel = std::min(candidate_max_vel, max_vel);
       double dynamic_window_min_vel = std::max(candidate_min_vel, min_vel);
       return std::make_tuple(dynamic_window_max_vel, dynamic_window_min_vel);
