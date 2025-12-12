@@ -185,25 +185,26 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
   // Test getting the global plans within a bounds window
   nav_msgs::msg::Path path;
   path.header.frame_id = "map";
-  path.poses.resize(100);
-  for (unsigned int i = 0; i != 30; i++) {
-    path.poses[i].pose.position.x = i;
-    path.poses[i].header.frame_id = "map";
+  for (unsigned int i = 0; i != 50; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
   }
-  for (unsigned int i = 0; i != 70; i++) {
-    path.poses[i].pose.position.x = 70 - i;
-    path.poses[i].header.frame_id = "map";
+  for (unsigned int i = 0; i != 50; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 50 - i;
+    path.poses.push_back(pose);
   }
   geometry_msgs::msg::PoseStamped robot_pose;
   robot_pose.header.frame_id = "odom";
-  robot_pose.pose.position.x = 25.0;
+  robot_pose.pose.position.x = 50.0;
 
   handler.setPlan(path);
   auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
   EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
   auto & path_inverted = handler.getInvertedPath();
-  EXPECT_EQ(closest - path_inverted.poses.begin(), 45);
-  EXPECT_EQ(path_inverted.poses.size(), 55u);
+  EXPECT_EQ(closest - path_inverted.poses.begin(), 49);
+  EXPECT_EQ(path_inverted.poses.size(), 49u);
 }
 
 TEST(PathHandlerTests, TestTransforms)
@@ -211,6 +212,7 @@ TEST(PathHandlerTests, TestTransforms)
   PathHandlerWrapper handler;
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
+  node->declare_parameter("dummy.reject_unit_path", rclcpp::ParameterValue(true));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
   rclcpp_lifecycle::State state;
@@ -246,6 +248,9 @@ TEST(PathHandlerTests, TestTransforms)
   EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
   handler.setPlan(path);
   EXPECT_NO_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose));
+  path.poses.resize(1);
+  handler.setPlan(path);
+  EXPECT_THROW(handler.transformToGlobalPlanFrameWrapper(robot_pose), std::runtime_error);
 }
 
 TEST(PathHandlerTests, TestInversionToleranceChecks)

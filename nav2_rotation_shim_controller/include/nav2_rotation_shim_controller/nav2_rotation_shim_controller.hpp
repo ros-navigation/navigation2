@@ -121,7 +121,8 @@ protected:
    * May throw exception if a point at least that far away cannot be found
    * @return pt location of the output point
    */
-  geometry_msgs::msg::PoseStamped getSampledPathPt();
+  geometry_msgs::msg::PoseStamped getSampledPathPt(
+    const geometry_msgs::msg::PoseStamped & global_goal);
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame

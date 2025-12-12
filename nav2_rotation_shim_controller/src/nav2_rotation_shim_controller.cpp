@@ -166,7 +166,7 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
 
     std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
     try {
-      auto sampled_pt = getSampledPathPt();
+      auto sampled_pt = getSampledPathPt(global_goal);
       double angular_distance_to_heading;
       if (params_->use_path_orientations) {
         angular_distance_to_heading = angles::shortest_angular_distance(
@@ -213,7 +213,8 @@ geometry_msgs::msg::TwistStamped RotationShimController::computeVelocityCommands
   return cmd_vel;
 }
 
-geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
+geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
+  const geometry_msgs::msg::PoseStamped & global_goal)
 {
   if (current_path_.poses.size() < 2) {
     throw nav2_core::ControllerException(
@@ -238,6 +239,10 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt()
   auto goal = current_path_.poses.back();
   goal.header.frame_id = current_path_.header.frame_id;
   goal.header.stamp = clock_->now();
+  double gx = global_goal.pose.position.x - goal.pose.position.x;
+  double gy = global_goal.pose.position.y - goal.pose.position.y;
+  RCLCPP_WARN(logger_,
+    "The last pose of the local plan is %.2f m away from the global goal", hypot(gx, gy));
   return goal;
 }
 

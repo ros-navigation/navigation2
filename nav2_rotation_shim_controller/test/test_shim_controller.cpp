@@ -45,9 +45,10 @@ public:
     return path_updated_;
   }
 
-  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper()
+  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
+    const geometry_msgs::msg::PoseStamped & global_goal)
   {
-    return getSampledPathPt();
+    return getSampledPathPt(global_goal);
   }
 
   geometry_msgs::msg::Pose transformPoseToBaseFrameWrapper(geometry_msgs::msg::PoseStamped pt)
@@ -144,7 +145,8 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   EXPECT_EQ(controller->isPathUpdated(), true);
 
   // Test getting a sampled point
-  auto pose = controller->getSampledPathPtWrapper();
+  geometry_msgs::msg::PoseStamped global_goal;
+  auto pose = controller->getSampledPathPtWrapper(global_goal);
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
 }

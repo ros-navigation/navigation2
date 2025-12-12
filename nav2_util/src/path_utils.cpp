@@ -147,7 +147,7 @@ unsigned int findFirstPathConstraint(
     float trans = hypot(dx, dy);
 
     // No smaller index can exist beyond this point, terminate early
-    if (rotation_idx <= idx + 1 && inversion_idx <= idx + 1) {
+    if (rotation_idx <= idx + 1) {
       break;
     }
 
@@ -157,7 +157,8 @@ unsigned int findFirstPathConstraint(
         // Checking for the existence of cusp, in the path, using the dot product.
         float dot_product = prev_dx * dx + prev_dy * dy;
         if (dot_product < 0.0f) {
-          inversion_idx = std::min(inversion_idx, idx + 1);
+          inversion_idx = idx + 1;
+          break;
         }
       }
       prev_dx = dx;

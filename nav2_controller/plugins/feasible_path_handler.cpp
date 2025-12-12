@@ -259,21 +259,21 @@ FeasiblePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == "max_robot_pose_search_dist") {
+      if (param_name == plugin_name_ + ".max_robot_pose_search_dist") {
         max_robot_pose_search_dist_ = parameter.as_double();
-      } else if (param_name == "inversion_xy_tolerance") {
+      } else if (param_name == plugin_name_ + ".inversion_xy_tolerance") {
         inversion_xy_tolerance_ = parameter.as_double();
-      } else if (param_name == "inversion_yaw_tolerance") {
+      } else if (param_name == plugin_name_ + ".inversion_yaw_tolerance") {
         inversion_yaw_tolerance_ = parameter.as_double();
-      } else if (param_name == "prune_distance") {
+      } else if (param_name == plugin_name_ + ".prune_distance") {
         prune_distance_ = parameter.as_double();
-      } else if (param_name == "minimum_rotation_angle") {
+      } else if (param_name == plugin_name_ + ".minimum_rotation_angle") {
         minimum_rotation_angle_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == "enforce_path_inversion") {
+      if (param_name == plugin_name_ + ".enforce_path_inversion") {
         enforce_path_inversion_ = parameter.as_bool();
-      } else if (param_name == "enforce_path_rotation") {
+      } else if (param_name == plugin_name_ + ".enforce_path_rotation") {
         enforce_path_rotation_ = parameter.as_bool();
         if (!enforce_path_rotation_) {
           minimum_rotation_angle_ = 0.0f;

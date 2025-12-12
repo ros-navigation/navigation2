@@ -26,6 +26,8 @@
 #include "nav2_behavior_tree/utils/test_action_server.hpp"
 #include "nav2_behavior_tree/plugins/action/follow_path_action.hpp"
 
+using namespace std::chrono_literals;
+
 class FollowPathActionServer : public TestActionServer<nav2_msgs::action::FollowPath>
 {
 public:
@@ -159,6 +161,163 @@ TEST_F(FollowPathActionTestFixture, test_tick)
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, -2.5);
+}
+
+TEST(FollowPathAction, testProgressCheckerIdUpdate)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto factory = std::make_shared<BT::BehaviorTreeFactory>();
+
+  auto config = new BT::NodeConfiguration();
+  config->blackboard = BT::Blackboard::create();
+  config->blackboard->set("node", node);
+  config->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
+
+  BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & conf) {
+      return std::make_unique<nav2_behavior_tree::FollowPathAction>(name, "follow_path", conf);
+    };
+
+  factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
+
+  // Create tree with progress_checker_id input
+  std::string xml_txt =
+    R"(  
+    <root BTCPP_format="4">  
+      <BehaviorTree ID="MainTree">  
+        <FollowPath path="{path}" controller_id="FollowPath" progress_checker_id="{progress_checker_id}"/>  
+      </BehaviorTree>  
+    </root>)";
+
+  auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
+
+  // Set initial progress_checker_id on blackboard
+  config->blackboard->set("progress_checker_id", std::string("initial_checker"));
+  tree->rootNode()->executeTick();
+
+  // Change progress_checker_id on blackboard
+  config->blackboard->set("progress_checker_id", std::string("new_progress_checker"));
+  auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+  auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  follow_path_node->on_wait_for_result(feedback);
+}
+
+TEST(FollowPathAction, testGoalCheckerIdUpdate)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto factory = std::make_shared<BT::BehaviorTreeFactory>();
+
+  auto config = new BT::NodeConfiguration();
+  config->blackboard = BT::Blackboard::create();
+  config->blackboard->set("node", node);
+  config->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
+
+  BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & conf) {
+      return std::make_unique<nav2_behavior_tree::FollowPathAction>(name, "follow_path", conf);
+    };
+
+  factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
+
+  std::string xml_txt =
+    R"(  
+    <root BTCPP_format="4">  
+      <BehaviorTree ID="MainTree">  
+        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="{goal_checker_id}" progress_checker_id="{progress_checker_id}"/>  
+      </BehaviorTree>  
+    </root>)";
+
+  auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
+
+  // Set initial goal_checker_id on blackboard
+  config->blackboard->set("goal_checker_id", std::string("initial_goal_checker"));
+  tree->rootNode()->executeTick();
+
+  // Change goal_checker_id on blackboard
+  config->blackboard->set("goal_checker_id", std::string("new_goal_checker"));
+  auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+  auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  follow_path_node->on_wait_for_result(feedback);
+}
+
+TEST(FollowPathAction, testControllerIdUpdate)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto factory = std::make_shared<BT::BehaviorTreeFactory>();
+
+  auto config = new BT::NodeConfiguration();
+  config->blackboard = BT::Blackboard::create();
+  config->blackboard->set("node", node);
+  config->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
+
+  BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & conf) {
+      return std::make_unique<nav2_behavior_tree::FollowPathAction>(name, "follow_path", conf);
+    };
+
+  factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
+
+  std::string xml_txt =
+    R"(  
+    <root BTCPP_format="4">  
+      <BehaviorTree ID="MainTree">  
+        <FollowPath path="{path}" controller_id="{controller_id}" goal_checker_id="FollowPath" progress_checker_id="{progress_checker_id}"/>  
+      </BehaviorTree>  
+    </root>)";
+
+  auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
+
+  // Set initial controller_id on blackboard
+  config->blackboard->set("controller_id", std::string("initial_controller"));
+  tree->rootNode()->executeTick();
+
+  // Change controller_id on blackboard
+  config->blackboard->set("controller_id", std::string("new_controller"));
+  auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+  auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  follow_path_node->on_wait_for_result(feedback);
+}
+
+TEST(FollowPathAction, testPathHandlerUpdate)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test_node");
+  auto factory = std::make_shared<BT::BehaviorTreeFactory>();
+
+  auto config = new BT::NodeConfiguration();
+  config->blackboard = BT::Blackboard::create();
+  config->blackboard->set("node", node);
+  config->blackboard->set<std::chrono::milliseconds>("server_timeout", 20ms);
+  config->blackboard->set<std::chrono::milliseconds>("bt_loop_duration", 10ms);
+  config->blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout", 1000ms);
+
+  BT::NodeBuilder builder = [](const std::string & name, const BT::NodeConfiguration & conf) {
+      return std::make_unique<nav2_behavior_tree::FollowPathAction>(name, "follow_path", conf);
+    };
+
+  factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
+
+  std::string xml_txt =
+    R"(  
+    <root BTCPP_format="4">  
+      <BehaviorTree ID="MainTree">  
+        <FollowPath path="{path}" path_handler_id="{path_handler_id}" />  
+      </BehaviorTree>  
+    </root>)";
+
+  auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
+
+  // Set initial path_handler_id on blackboard
+  config->blackboard->set("path_handler_id", std::string("initial_path_handler"));
+  tree->rootNode()->executeTick();
+
+  // Change path_handler_id on blackboard
+  config->blackboard->set("path_handler_id", std::string("new_path_handler"));
+  auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+  auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  follow_path_node->on_wait_for_result(feedback);
 }
 
 int main(int argc, char ** argv)
