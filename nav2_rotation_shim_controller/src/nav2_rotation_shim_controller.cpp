@@ -241,8 +241,11 @@ geometry_msgs::msg::PoseStamped RotationShimController::getSampledPathPt(
   goal.header.stamp = clock_->now();
   double gx = global_goal.pose.position.x - goal.pose.position.x;
   double gy = global_goal.pose.position.y - goal.pose.position.y;
-  RCLCPP_WARN(logger_,
+  double distance = hypot(gx, gy);
+  if (distance > 1e-4){
+    RCLCPP_WARN(logger_,
     "The last pose of the local plan is %.2f m away from the global goal", hypot(gx, gy));
+  }
   return goal;
 }
 
