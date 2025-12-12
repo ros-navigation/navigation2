@@ -104,6 +104,9 @@ ParameterHandler::ParameterHandler(
     node, plugin_name_ + ".use_collision_detection",
     rclcpp::ParameterValue(true));
   declare_parameter_if_not_declared(
+    node, plugin_name_ + ".use_path_aware_obstacle_distance",
+    rclcpp::ParameterValue(false));
+  declare_parameter_if_not_declared(
     node, plugin_name_ + ".stateful", rclcpp::ParameterValue(true));
 
   node->get_parameter(plugin_name_ + ".desired_linear_vel", params_.desired_linear_vel);
@@ -188,6 +191,30 @@ ParameterHandler::ParameterHandler(
   node->get_parameter(
     plugin_name_ + ".use_collision_detection",
     params_.use_collision_detection);
+  if (params_.use_collision_detection &&
+    params_.min_distance_to_obstacle > params_.max_lookahead_dist)
+  {
+    RCLCPP_WARN(
+      logger_,
+      "min_distance_to_obstacle (%.02f) is greater than max_lookahead_dist (%.02f). "
+      "The collision check distance will be capped by max_lookahead_dist.",
+      params_.min_distance_to_obstacle, params_.max_lookahead_dist);
+  }
+  node->get_parameter(
+    plugin_name_ + ".use_path_aware_obstacle_distance",
+    params_.use_path_aware_obstacle_distance);
+  if (params_.use_path_aware_obstacle_distance && params_.min_distance_to_obstacle <= 0.0) {
+    RCLCPP_WARN(
+      logger_,
+      "For 'use_path_aware_obstacle_distance' to be enabled, 'min_distance_to_obstacle' "
+    "must be set to a positive value, but it is not. The path-aware logic will be ignored.");
+  }
+  if (params_.use_path_aware_obstacle_distance && params_.use_velocity_scaled_lookahead_dist) {
+    RCLCPP_WARN(
+      logger_,
+      "For 'use_path_aware_obstacle_distance' to be enabled, 'use_velocity_scaled_lookahead_dist' "
+    "must also be true. The path-aware logic will be ignored.");
+  }
   node->get_parameter(plugin_name_ + ".stateful", params_.stateful);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
@@ -315,6 +342,8 @@ ParameterHandler::updateParametersCallback(
         params_.allow_reversing = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".interpolate_curvature_after_goal") {
         params_.interpolate_curvature_after_goal = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".use_path_aware_obstacle_distance") {
+        params_.use_path_aware_obstacle_distance = parameter.as_bool();
       }
     }
   }
