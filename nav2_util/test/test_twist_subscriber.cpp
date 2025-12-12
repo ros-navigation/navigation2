@@ -32,7 +32,7 @@ TEST(TwistSubscriber, Unstamped)
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
-    sub_node, "cmd_vel", 1,
+    *sub_node, "cmd_vel", 1,
     [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
     [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;}
   );
@@ -69,7 +69,7 @@ TEST(TwistSubscriber, Stamped)
 
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
-    sub_node, "cmd_vel", 1,
+    *sub_node, "cmd_vel", 1,
     [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
     [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;}
   );
