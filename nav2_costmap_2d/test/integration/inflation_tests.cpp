@@ -462,7 +462,7 @@ TEST_F(TestNode, testInflation)
   layers.updateMap(0, 0, 0);
   // printMap(*costmap);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20u);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 78u);
 
   /*/ Iterate over all id's and verify they are obstacles
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
@@ -480,7 +480,7 @@ TEST_F(TestNode, testInflation)
   // It and its 2 neighbors makes 3 obstacles
   ASSERT_EQ(
     countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 51u);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 98u);
 
   // @todo Rewrite
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
