@@ -558,7 +558,6 @@ TEST(UtilsTests, FindPathInversionTest)
     pose.pose.orientation = tf2::toMsg(q);
     path.poses.push_back(pose);
   }
-  // 0 1 2 3 4  5 6  7 8 9
   // Inversion
   for (unsigned int i = 0; i < 3; i++) {
     geometry_msgs::msg::PoseStamped pose = path.poses.back();
@@ -566,7 +565,6 @@ TEST(UtilsTests, FindPathInversionTest)
     path.poses.push_back(pose);
   }
   EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.7), 6u);
-  // EXPECT_EQ(nav2_util::findFirstPathConstraint(path, 2.0), 7u);
 }
 
 TEST(UtilsTests, RemovePosesAfterPathInversionTest)
