@@ -53,8 +53,16 @@ void BoundedTrackingErrorLayer::onInitialize()
   declareParameter("corridor_width", rclcpp::ParameterValue(2.0));
   node->get_parameter(name_ + "." + "corridor_width", width_);
 
+  declareParameter("wall_thickness", rclcpp::ParameterValue(1));
+  node->get_parameter(name_ + "." + "wall_thickness", wall_thickness_);
+
   declareParameter("enabled", rclcpp::ParameterValue(true));
   node->get_parameter(name_ + "." + "enabled", enabled_);
+
+  if (wall_thickness_ <= 0) {
+    throw std::runtime_error{"wall_thickness must be greater than zero"};
+  }
+
   if (look_ahead_ <= 0.0) {
     throw std::runtime_error{"look_ahead must be positive"};
   }
@@ -275,12 +283,33 @@ void BoundedTrackingErrorLayer::updateCosts(
       if (master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0) &&
         master_grid.worldToMap(wall_points[i + 2][0], wall_points[i + 2][1], x1, y1))
       {
-        auto cells = nav2_util::geometry_utils::bresenham(x0, y0, x1, y1);
-        for (const auto & cell : cells) {
-          if (cell[0] < master_grid.getSizeInCellsX() &&
-            cell[1] < master_grid.getSizeInCellsY())
-          {
-            master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+        // Calculate perpendicular direction
+        int dx = static_cast<int>(x1) - static_cast<int>(x0);
+        int dy = static_cast<int>(y1) - static_cast<int>(y0);
+        double norm = std::hypot(dx, dy);
+        
+        if (norm > 1e-6) {
+          double perp_x = -dy / norm;
+          double perp_y = dx / norm;
+          
+          // Draw parallel lines for thickness
+          for (int t = 0; t < wall_thickness_; ++t) {
+            int offset_x = static_cast<int>(std::round(perp_x * t));
+            int offset_y = static_cast<int>(std::round(perp_y * t));
+            
+            unsigned int thick_x0 = x0 + offset_x;
+            unsigned int thick_y0 = y0 + offset_y;
+            unsigned int thick_x1 = x1 + offset_x;
+            unsigned int thick_y1 = y1 + offset_y;
+            
+            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
+            for (const auto & cell : cells) {
+              if (cell[0] < master_grid.getSizeInCellsX() && 
+                  cell[1] < master_grid.getSizeInCellsY())
+              {
+                master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+              }
+            }
           }
         }
       }
@@ -289,18 +318,40 @@ void BoundedTrackingErrorLayer::updateCosts(
       if (master_grid.worldToMap(wall_points[i + 1][0], wall_points[i + 1][1], x0, y0) &&
         master_grid.worldToMap(wall_points[i + 3][0], wall_points[i + 3][1], x1, y1))
       {
-        auto cells = nav2_util::geometry_utils::bresenham(x0, y0, x1, y1);
-        for (const auto & cell : cells) {
-          if (cell[0] < master_grid.getSizeInCellsX() &&
-            cell[1] < master_grid.getSizeInCellsY())
-          {
-            master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+        // Calculate perpendicular direction
+        int dx = static_cast<int>(x1) - static_cast<int>(x0);
+        int dy = static_cast<int>(y1) - static_cast<int>(y0);
+        double norm = std::hypot(dx, dy);
+        
+        if (norm > 1e-6) {
+          double perp_x = -dy / norm;
+          double perp_y = dx / norm;
+          
+          // Draw parallel lines for thickness
+          for (int t = 0; t < wall_thickness_; ++t) {
+            int offset_x = static_cast<int>(std::round(perp_x * t));
+            int offset_y = static_cast<int>(std::round(perp_y * t));
+            
+            unsigned int thick_x0 = x0 + offset_x;
+            unsigned int thick_y0 = y0 + offset_y;
+            unsigned int thick_x1 = x1 + offset_x;
+            unsigned int thick_y1 = y1 + offset_y;
+            
+            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
+            for (const auto & cell : cells) {
+              if (cell[0] < master_grid.getSizeInCellsX() && 
+                  cell[1] < master_grid.getSizeInCellsY())
+              {
+                master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+              }
+            }
           }
         }
       }
     }
   }
 }
+
 
 rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
@@ -349,6 +400,14 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
         }
         step_ = new_value;
         temp_step_ = static_cast<size_t>(step_);
+      } else if (param_name == name_ + "." + "wall_thickness") {
+        int new_value = parameter.as_int();
+        if (new_value <= 0) {
+          result.successful = false;
+          result.reason = "wall_thickness must be greater than zero";
+          return result;
+        }
+        wall_thickness_ = new_value;
       }
     }
   }
