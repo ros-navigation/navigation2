@@ -190,6 +190,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(nr_of_loops_, "enabled", false);
 
   idle_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+  idle_->assignProperty(add_pose_button_, "enabled", false);
+  idle_->assignProperty(remove_pose_button_, "enabled", false);
 
   // State entered when navigate_to_pose action is not active
   accumulating_ = new QState();
@@ -218,6 +220,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(nr_of_loops_, "text", QString::fromStdString(loop_no_));
   accumulating_->assignProperty(nr_of_loops_, "enabled", true);
   accumulating_->assignProperty(store_initial_pose_checkbox_, "enabled", true);
+  accumulating_->assignProperty(add_pose_button_, "enabled", true);
+  accumulating_->assignProperty(remove_pose_button_, "enabled", true);
 
   accumulated_wp_ = new QState();
   accumulated_wp_->setObjectName("accumulated_wp");
@@ -244,6 +248,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   accumulated_wp_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_wp_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+  accumulated_wp_->assignProperty(add_pose_button_, "enabled", false);
+  accumulated_wp_->assignProperty(remove_pose_button_, "enabled", false);
 
   accumulated_nav_through_poses_ = new QState();
   accumulated_nav_through_poses_->setObjectName("accumulated_nav_through_poses");
@@ -284,6 +290,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     QString::fromStdString(loop_no_));
   accumulated_nav_through_poses_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(add_pose_button_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(remove_pose_button_, "enabled", false);
 
   // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
@@ -605,7 +613,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   QWidget * nav_wp_tab = new QWidget;
   QVBoxLayout * nav_wp_layout = new QVBoxLayout;
 
-  QLabel * poses_info = new QLabel("Accumulated poses (click & drag, manual, or load):");
+  QLabel * poses_info = new QLabel("Accumulated poses:");
   nav_wp_layout->addWidget(poses_info);
 
   nav_through_poses_tabs_ = new QTabWidget;
@@ -613,10 +621,12 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   QHBoxLayout * pose_buttons_layout = new QHBoxLayout;
   add_pose_button_ = new QPushButton("Add Pose");
+  add_pose_button_->setEnabled(false);
   QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
   pose_buttons_layout->addWidget(add_pose_button_);
 
   remove_pose_button_ = new QPushButton("Remove Pose");
+  remove_pose_button_->setEnabled(false);
   QObject::connect(remove_pose_button_,
     &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
   pose_buttons_layout->addWidget(remove_pose_button_);
@@ -1149,6 +1159,9 @@ Nav2Panel::onAccumulatedWp()
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
 
+  add_pose_button_->setEnabled(false);
+  remove_pose_button_->setEnabled(false);
+
   /** Making sure that the pose array does not get updated
    *  between the process**/
   if (store_poses_.goals.empty()) {
@@ -1209,6 +1222,10 @@ void
 Nav2Panel::onAccumulatedNTP()
 {
   updateAccumulatedPosesFromTabs();
+  
+  add_pose_button_->setEnabled(false);
+  remove_pose_button_->setEnabled(false);
+  
   std::cout << "Start navigate through poses" << std::endl;
   startNavThroughPoses(acummulated_poses_);
 }
@@ -1234,6 +1251,9 @@ Nav2Panel::onAccumulating()
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, true);
   tools_tab_widget_->setCurrentIndex(1);
+
+  add_pose_button_->setEnabled(true);
+  remove_pose_button_->setEnabled(true);
 }
 void
 Nav2Panel::timerEvent(QTimerEvent * event)
@@ -1256,6 +1276,8 @@ Nav2Panel::timerEvent(QTimerEvent * event)
         state_machine_.postEvent(new ROSActionQEvent(QActionState::ACTIVE));
       } else {
         state_machine_.postEvent(new ROSActionQEvent(QActionState::INACTIVE));
+        acummulated_poses_ = nav_msgs::msg::Goals();
+        updateWpNavigationMarkers();
         timer_.stop();
       }
     }
