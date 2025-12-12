@@ -183,11 +183,11 @@ TEST(FollowPathAction, testProgressCheckerIdUpdate)
 
   // Create tree with progress_checker_id input
   std::string xml_txt =
-    R"(  
-    <root BTCPP_format="4">  
-      <BehaviorTree ID="MainTree">  
-        <FollowPath path="{path}" controller_id="FollowPath" progress_checker_id="{progress_checker_id}"/>  
-      </BehaviorTree>  
+    R"(
+    <root BTCPP_format="4">
+      <BehaviorTree ID="MainTree">
+        <FollowPath path="{path}" controller_id="FollowPath" progress_checker_id="{progress_checker_id}"/>
+      </BehaviorTree>
     </root>)";
 
   auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
@@ -222,11 +222,11 @@ TEST(FollowPathAction, testGoalCheckerIdUpdate)
   factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
 
   std::string xml_txt =
-    R"(  
-    <root BTCPP_format="4">  
-      <BehaviorTree ID="MainTree">  
-        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="{goal_checker_id}" progress_checker_id="{progress_checker_id}"/>  
-      </BehaviorTree>  
+    R"(
+    <root BTCPP_format="4">
+      <BehaviorTree ID="MainTree">
+        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="{goal_checker_id}" progress_checker_id="{progress_checker_id}"/>
+      </BehaviorTree>
     </root>)";
 
   auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
@@ -261,11 +261,11 @@ TEST(FollowPathAction, testControllerIdUpdate)
   factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
 
   std::string xml_txt =
-    R"(  
-    <root BTCPP_format="4">  
-      <BehaviorTree ID="MainTree">  
-        <FollowPath path="{path}" controller_id="{controller_id}" goal_checker_id="FollowPath" progress_checker_id="{progress_checker_id}"/>  
-      </BehaviorTree>  
+    R"(
+    <root BTCPP_format="4">
+      <BehaviorTree ID="MainTree">
+        <FollowPath path="{path}" controller_id="{controller_id}" goal_checker_id="FollowPath" progress_checker_id="{progress_checker_id}"/>
+      </BehaviorTree>
     </root>)";
 
   auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
@@ -300,11 +300,11 @@ TEST(FollowPathAction, testPathHandlerUpdate)
   factory->registerBuilder<nav2_behavior_tree::FollowPathAction>("FollowPath", builder);
 
   std::string xml_txt =
-    R"(  
-    <root BTCPP_format="4">  
-      <BehaviorTree ID="MainTree">  
-        <FollowPath path="{path}" path_handler_id="{path_handler_id}" />  
-      </BehaviorTree>  
+    R"(
+    <root BTCPP_format="4">
+      <BehaviorTree ID="MainTree">
+        <FollowPath path="{path}" path_handler_id="{path_handler_id}" />
+      </BehaviorTree>
     </root>)";
 
   auto tree = std::make_shared<BT::Tree>(factory->createTreeFromText(xml_txt, config->blackboard));
