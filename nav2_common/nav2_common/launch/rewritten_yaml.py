@@ -115,7 +115,7 @@ class RewrittenYaml(launch.Substitution):
             root_key = launch.utilities.perform_substitutions(context, self.__root_key)
             if root_key:
                 data = {root_key: data}
-        yaml.dump(data, rewritten_yaml)
+        yaml.dump(data, rewritten_yaml, sort_keys=False)
         rewritten_yaml.close()
         return rewritten_yaml.name
 
