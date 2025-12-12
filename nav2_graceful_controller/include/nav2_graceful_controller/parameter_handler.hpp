@@ -52,6 +52,7 @@ struct Parameters
   bool allow_backward;
   double in_place_collision_resolution;
   bool use_collision_detection;
+  double final_rotation_tolerance;
 };
 
 /**
