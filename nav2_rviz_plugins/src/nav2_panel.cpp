@@ -1222,10 +1222,10 @@ void
 Nav2Panel::onAccumulatedNTP()
 {
   updateAccumulatedPosesFromTabs();
-  
+
   add_pose_button_->setEnabled(false);
   remove_pose_button_->setEnabled(false);
-  
+
   std::cout << "Start navigate through poses" << std::endl;
   startNavThroughPoses(acummulated_poses_);
 }
