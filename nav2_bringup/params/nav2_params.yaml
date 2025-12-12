@@ -246,7 +246,7 @@ local_costmap:
       robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer", "bounded_tracking_error_layer"]
       filters: ["keepout_filter"]
-      tracking_bounds_layer:
+      bounded_tracking_error_layer:
         plugin: "nav2_costmap_2d::BoundedTrackingErrorLayer"
         enabled: True
         look_ahead: 5.0
@@ -254,6 +254,7 @@ local_costmap:
         corridor_width: 2.0
         tracking_feedback_topic: "tracking_feedback"
         path_topic: "plan"
+        wall_thickness: 2
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: KEEPOUT_ZONE_ENABLED
