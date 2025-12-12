@@ -72,6 +72,12 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".use_collision_detection", true);
   params_.final_rotation_tolerance = node->declare_or_get_parameter(
     plugin_name_ + ".final_rotation_tolerance", 3.1416);
+  params_.footprint_scaling_linear_vel = node->declare_or_get_parameter(
+    plugin_name_ + ".footprint_scaling_linear_vel", 0.5);
+  params_.footprint_scaling_factor = node->declare_or_get_parameter(
+    plugin_name_ + ".footprint_scaling_factor", 0.0);
+  params_.footprint_scaling_step = node->declare_or_get_parameter(
+    plugin_name_ + ".footprint_scaling_step", 0.1);
   if (params_.initial_rotation && params_.allow_backward) {
     RCLCPP_WARN(
       logger_, "Initial rotation and allow backward parameters are both true, "
@@ -164,6 +170,12 @@ ParameterHandler::updateParametersCallback(
         params_.in_place_collision_resolution = parameter.as_double();
       } else if (param_name == plugin_name_ + ".final_rotation_tolerance") {
         params_.final_rotation_tolerance = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".footprint_scaling_linear_vel") {
+        params_.footprint_scaling_linear_vel = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".footprint_scaling_factor") {
+        params_.footprint_scaling_factor = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".footprint_scaling_step") {
+        params_.footprint_scaling_step = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".initial_rotation") {

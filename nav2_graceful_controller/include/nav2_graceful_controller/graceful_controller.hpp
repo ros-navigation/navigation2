@@ -161,9 +161,12 @@ protected:
    * @param x The x coordinate of the robot in global frame
    * @param y The y coordinate of the robot in global frame
    * @param theta The orientation of the robot in global frame
+   * @param inflation_scale Scaling factor for the robot footprint
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y, const double & theta);
+  bool inCollision(
+    const double & x, const double & y, const double & theta,
+    double inflation_scale = 1.0);
 
   /**
    * @brief Compute the distance to each pose in a path

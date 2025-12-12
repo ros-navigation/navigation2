@@ -51,6 +51,9 @@ struct Parameters
   double in_place_collision_resolution;
   bool use_collision_detection;
   double final_rotation_tolerance;
+  double footprint_scaling_linear_vel;
+  double footprint_scaling_factor;
+  double footprint_scaling_step;
 };
 
 /**
