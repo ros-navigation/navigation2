@@ -457,7 +457,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->addTransition(idleAccumulatedWpTransition);
 
   ROSActionQTransition * accumulatedWpTransition = new ROSActionQTransition(QActionState::ACTIVE);
-  accumulatedWpTransition->setTargetState(accumulating_);
+  accumulatedWpTransition->setTargetState(idle_);
   accumulated_wp_->addTransition(accumulatedWpTransition);
 
   ROSActionQTransition * idleAccumulatedNTPTransition =
