@@ -163,6 +163,7 @@ private:
   bool enabled_;
   std::string path_topic_;
   std::string tracking_feedback_topic_;
+  int wall_thickness_; 
 };
 
 }  // namespace nav2_costmap_2d
