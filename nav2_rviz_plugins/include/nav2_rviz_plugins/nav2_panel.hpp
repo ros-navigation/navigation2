@@ -99,7 +99,7 @@ private:
   void timerEvent(QTimerEvent * event) override;
   bool isLoopValueValid(std::string & loop);
   void createNavThroughPoseTab(int index);
-  void syncNavThroughPosesTabsWithAccumulated();
+  void syncTabsWithAccumulatedPoses();
   void updateAccumulatedPosesFromTabs();
   geometry_msgs::msg::PoseStamped getPoseFromNavThroughTab(const NavThroughPoseTab & tab);
 
