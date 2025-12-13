@@ -24,6 +24,7 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
   callback_group_ = node->create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
     false);
@@ -39,21 +40,7 @@ IsWithinPathTrackingBoundsCondition::IsWithinPathTrackingBoundsCondition(
   bt_loop_duration_ =
     config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
 
-  RCLCPP_INFO(logger_, "Initialized IsWithinPathTrackingBoundsCondition BT node");
   initialize();
-}
-
-void IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback(
-  const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
-{
-  double tracking_error = msg->tracking_error;
-
-  // Check if error is within bounds
-  if (tracking_error > 0.0) {  // Positive = left side
-    is_within_bounds_ = (tracking_error <= max_error_left_);
-  } else {  // Negative = right side
-    is_within_bounds_ = (std::abs(tracking_error) <= max_error_right_);
-  }
 }
 
 void IsWithinPathTrackingBoundsCondition::initialize()
@@ -70,16 +57,35 @@ void IsWithinPathTrackingBoundsCondition::initialize()
   }
 }
 
+void IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback(
+  const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
+{
+  double tracking_error = msg->tracking_error;
+  // Check if error is within bounds
+  if (tracking_error >= 0.0) {  // Positive or zero = left side (or on path)
+    is_within_bounds_ = (tracking_error <= max_error_left_);
+  } else {  // Negative = right side
+    is_within_bounds_ = (std::abs(tracking_error) <= max_error_right_);
+  }
+}
+
 BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
   }
   callback_group_executor_.spin_all(bt_loop_duration_);
-
-  return is_within_bounds_ ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
+  if (!is_within_bounds_) {
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *clock_,
+      1000,  // 1000ms = 1 second throttle
+      "Robot is out of path tracking bounds!"
+    );
+    return BT::NodeStatus::FAILURE;
+  }
+  return BT::NodeStatus::SUCCESS;
 }
-
 }  // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp/bt_factory.h"

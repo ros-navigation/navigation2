@@ -298,6 +298,51 @@ TEST_F(IsWithinPathTrackingBoundsConditionTestFixture, test_negative_max_error_r
   EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
 }
 
+TEST_F(IsWithinPathTrackingBoundsConditionTestFixture, test_transition_sequence)
+{
+  // Test transitioning in and out of bounds
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <IsWithinPathTrackingBounds max_error_left="1.0" max_error_right="1.0"/>
+        </BehaviorTree>
+      </root>)";
+
+  auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
+
+  publishAndSpin(0.5);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+  publishAndSpin(1.5);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+  publishAndSpin(0.5);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+  publishAndSpin(-1.5);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+  publishAndSpin(0.0);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+}
+
+TEST_F(IsWithinPathTrackingBoundsConditionTestFixture, test_zero_bounds)
+{
+  // Test with zero tolerance (perfect following required)
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <IsWithinPathTrackingBounds max_error_left="0.0" max_error_right="0.0"/>
+        </BehaviorTree>
+      </root>)";
+
+  auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
+
+  publishAndSpin(0.0);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
+  publishAndSpin(0.001);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+  publishAndSpin(-0.001);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+}
 
 int main(int argc, char ** argv)
 {
