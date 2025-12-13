@@ -33,19 +33,9 @@ WaypointFollower::WaypointFollower(const rclcpp::NodeOptions & options)
     "nav2_core::WaypointTaskExecutor")
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  declare_parameter("stop_on_failure", true);
-  declare_parameter("loop_rate", 20);
-
-  declare_parameter("global_frame_id", "map");
-
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("waypoint_task_executor_plugin"),
-    rclcpp::ParameterValue(std::string("wait_at_waypoint")));
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("wait_at_waypoint.plugin"),
-    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
 }
+
+}  // namespace nav2_waypoint_follower
 
 WaypointFollower::~WaypointFollower()
 {
@@ -58,10 +48,20 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  stop_on_failure_ = get_parameter("stop_on_failure").as_bool();
-  loop_rate_ = get_parameter("loop_rate").as_int();
-  waypoint_task_executor_id_ = get_parameter("waypoint_task_executor_plugin").as_string();
-  global_frame_id_ = get_parameter("global_frame_id").as_string();
+  stop_on_failure_ = nav2::declare_or_get_parameter<bool>(
+    this, "stop_on_failure", true);
+
+  loop_rate_ = nav2::declare_or_get_parameter<int>(
+    this, "loop_rate", 20);
+
+  global_frame_id_ = nav2::declare_or_get_parameter<std::string>(
+    this, "global_frame_id", "map");
+
+  waypoint_task_executor_id_ = nav2::declare_or_get_parameter<std::string>(
+    this, "waypoint_task_executor_plugin", "wait_at_waypoint");
+
+  nav2::declare_or_get_parameter<std::string>(
+    this, "wait_at_waypoint.plugin", "nav2_waypoint_follower::WaitAtWaypoint");
 
   callback_group_ = create_callback_group(
     rclcpp::CallbackGroupType::MutuallyExclusive,
@@ -524,8 +524,6 @@ WaypointFollower::convertGPSPosesToMapPoses(
     static_cast<int>(poses_in_map_frame_vector.size()), global_frame_id_.c_str());
   return poses_in_map_frame_vector;
 }
-
-}  // namespace nav2_waypoint_follower
 
 #include "rclcpp_components/register_node_macro.hpp"
 
