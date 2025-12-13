@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <vector>
+#include <utility>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -302,6 +303,57 @@ inline double cross_product_2d(
   const double robot_vec_y = p.y - a.y;
 
   return (path_vec_x * robot_vec_y) - (path_vec_y * robot_vec_x);
+}
+
+/**
+ * @brief Get all cells along a line using Bresenham's algorithm
+ *
+ * See: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+ *
+ * @param x0 Start x coordinate in map cells
+ * @param y0 Start y coordinate in map cells
+ * @param x1 End x coordinate in map cells
+ * @param y1 End y coordinate in map cells
+ * @return Vector of cell coordinates [x, y] along the line
+ */
+inline std::vector<std::array<unsigned int, 2>> bresenham(
+  unsigned int x0, unsigned int y0,
+  unsigned int x1, unsigned int y1)
+{
+  std::vector<std::array<unsigned int, 2>> cells;
+
+  int dx = std::abs(static_cast<int>(x1) - static_cast<int>(x0));
+  int dy = std::abs(static_cast<int>(y1) - static_cast<int>(y0));
+
+  int sx = (x0 < x1) ? 1 : -1;
+  int sy = (y0 < y1) ? 1 : -1;
+
+  int err = dx - dy;
+
+  int x = static_cast<int>(x0);
+  int y = static_cast<int>(y0);
+
+  while (true) {
+    cells.push_back({static_cast<unsigned int>(x), static_cast<unsigned int>(y)});
+
+    if (x == static_cast<int>(x1) && y == static_cast<int>(y1)) {
+      break;
+    }
+
+    int e2 = 2 * err;
+
+    if (e2 > -dy) {
+      err -= dy;
+      x += sx;
+    }
+
+    if (e2 < dx) {
+      err += dx;
+      y += sy;
+    }
+  }
+
+  return cells;
 }
 
 }  // namespace geometry_utils
