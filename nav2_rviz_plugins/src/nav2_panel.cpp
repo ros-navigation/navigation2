@@ -59,6 +59,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   save_waypoints_button_ = new QPushButton;
   load_waypoints_button_ = new QPushButton;
   pause_waypoint_button_ = new QPushButton;
+  start_nav_to_pose_button_ = new QPushButton;
   navigation_status_indicator_ = new QLabel;
   localization_status_indicator_ = new QLabel;
   navigation_goal_status_indicator_ = new QLabel;
@@ -116,6 +117,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
   pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
+
+  pre_initial_->assignProperty(start_nav_to_pose_button_, "text", "Start NavigateToPose");
 
   pre_initial_->assignProperty(
     navigation_mode_button_, "text",
@@ -196,6 +199,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(nr_of_loops_, "enabled", false);
 
   idle_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
+  idle_->assignProperty(start_nav_to_pose_button_, "enabled", true);
 
   // State entered when navigate_to_pose action is not active
   accumulating_ = new QState();
@@ -313,6 +317,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "text", "Waypoint Following / NavigateThroughPoses Mode");
   running_->assignProperty(navigation_mode_button_, "enabled", false);
 
+  running_->assignProperty(start_nav_to_pose_button_, "enabled", false);
+
   running_->assignProperty(add_pose_button_, "enabled", false);
   running_->assignProperty(remove_pose_button_, "enabled", false);
 
@@ -339,6 +345,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
 
   paused_->assignProperty(navigation_mode_button_, "text", "");
   paused_->assignProperty(navigation_mode_button_, "enabled", false);
+
+  paused_->assignProperty(start_nav_to_pose_button_, "enabled", false);
 
   paused_->assignProperty(add_pose_button_, "enabled", false);
   paused_->assignProperty(remove_pose_button_, "enabled", false);
@@ -602,10 +610,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nav_to_pose_yaw_->setSingleStep(0.01);
   nav_to_pose_layout->addWidget(nav_to_pose_yaw_, 3, 1);
 
-  send_nav_to_pose_button_ = new QPushButton("Start NavigateToPose");
-  QObject::connect(send_nav_to_pose_button_,
+  QObject::connect(start_nav_to_pose_button_,
     &QPushButton::clicked, this, &Nav2Panel::onSendNavToPose);
-  nav_to_pose_layout->addWidget(send_nav_to_pose_button_, 4, 0, 1, 2);
+  nav_to_pose_layout->addWidget(start_nav_to_pose_button_, 4, 0, 1, 2);
 
   nav_to_pose_tab->setLayout(nav_to_pose_layout);
   tools_tab_widget_->addTab(nav_to_pose_tab, "NavigateToPose");

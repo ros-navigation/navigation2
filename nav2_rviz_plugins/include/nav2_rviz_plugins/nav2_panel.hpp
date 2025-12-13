@@ -181,6 +181,7 @@ private:
   QPushButton * save_waypoints_button_{nullptr};
   QPushButton * load_waypoints_button_{nullptr};
   QPushButton * pause_waypoint_button_{nullptr};
+  QPushButton * start_nav_to_pose_button_{nullptr};
 
   QLabel * navigation_status_indicator_{nullptr};
   QLabel * localization_status_indicator_{nullptr};
@@ -202,7 +203,6 @@ private:
   QDoubleSpinBox * nav_to_pose_x_{nullptr};
   QDoubleSpinBox * nav_to_pose_y_{nullptr};
   QDoubleSpinBox * nav_to_pose_yaw_{nullptr};
-  QPushButton * send_nav_to_pose_button_{nullptr};
 
   // NavigateThroughPoses manual input widgets
   QTabWidget * nav_through_poses_tabs_{nullptr};
