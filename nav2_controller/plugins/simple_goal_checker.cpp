@@ -87,6 +87,7 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const std::optional<geometry_msgs::msg::Pose> &,
   const geometry_msgs::msg::Twist &)
 {
   if (check_xy_) {

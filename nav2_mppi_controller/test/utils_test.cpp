@@ -41,6 +41,7 @@ public:
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & /*query_pose*/,
     const geometry_msgs::msg::Pose & /*goal_pose*/,
+    const std::optional<geometry_msgs::msg::Pose> & /*before_goal_pose*/,
     const geometry_msgs::msg::Twist & /*velocity*/) {return false;}
 
   virtual bool getTolerances(

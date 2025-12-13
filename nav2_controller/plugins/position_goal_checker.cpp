@@ -58,6 +58,7 @@ void PositionGoalChecker::reset()
 
 bool PositionGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+  const std::optional<geometry_msgs::msg::Pose> &,
   const geometry_msgs::msg::Twist &)
 {
   // If stateful and position was already reached, maintain state
