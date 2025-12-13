@@ -54,6 +54,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   start_reset_button_ = new QPushButton;
   pause_resume_button_ = new QPushButton;
   navigation_mode_button_ = new QPushButton;
+  add_pose_button_ = new QPushButton;
+  remove_pose_button_ = new QPushButton;
   save_waypoints_button_ = new QPushButton;
   load_waypoints_button_ = new QPushButton;
   pause_waypoint_button_ = new QPushButton;
@@ -115,9 +117,18 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pre_initial_->assignProperty(pause_resume_button_, "text", "Pause");
   pre_initial_->assignProperty(pause_resume_button_, "enabled", false);
 
+  pre_initial_->assignProperty(
+    navigation_mode_button_, "text",
+    "Waypoint Following / NavigateThroughPoses Mode");
+  pre_initial_->assignProperty(navigation_mode_button_, "enabled", false);
+
+  pre_initial_->assignProperty(add_pose_button_, "text", "Add Pose");
+  pre_initial_->assignProperty(add_pose_button_, "enabled", false);
+  pre_initial_->assignProperty(remove_pose_button_, "text", "Remove Pose");
+  pre_initial_->assignProperty(remove_pose_button_, "enabled", false);
+
   pre_initial_->assignProperty(save_waypoints_button_, "text", "Save");
   pre_initial_->assignProperty(save_waypoints_button_, "enabled", false);
-
   pre_initial_->assignProperty(load_waypoints_button_, "text", "Load");
   pre_initial_->assignProperty(load_waypoints_button_, "enabled", false);
 
@@ -128,11 +139,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   pre_initial_->assignProperty(nr_of_loops_, "enabled", false);
 
   pre_initial_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
-
-  pre_initial_->assignProperty(
-    navigation_mode_button_, "text",
-    "Waypoint Following / NavigateThroughPoses Mode");
-  pre_initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
   initial_ = new QState();
   initial_->setObjectName("initial");
@@ -147,10 +153,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
     "Waypoint Following / NavigateThroughPoses Mode");
   initial_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  initial_->assignProperty(save_waypoints_button_, "text", "Save");
-  initial_->assignProperty(save_waypoints_button_, "enabled", false);
+  initial_->assignProperty(add_pose_button_, "enabled", false);
+  initial_->assignProperty(remove_pose_button_, "enabled", false);
 
-  initial_->assignProperty(load_waypoints_button_, "text", "Load");
+  initial_->assignProperty(save_waypoints_button_, "enabled", false);
   initial_->assignProperty(load_waypoints_button_, "enabled", false);
 
   initial_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
@@ -177,10 +183,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(navigation_mode_button_, "enabled", true);
   idle_->assignProperty(navigation_mode_button_, "toolTip", single_goal_msg);
 
-  idle_->assignProperty(save_waypoints_button_, "text", "Save");
-  idle_->assignProperty(save_waypoints_button_, "enabled", false);
+  idle_->assignProperty(add_pose_button_, "enabled", false);
+  idle_->assignProperty(remove_pose_button_, "enabled", false);
 
-  idle_->assignProperty(load_waypoints_button_, "text", "Load");
+  idle_->assignProperty(save_waypoints_button_, "enabled", false);
   idle_->assignProperty(load_waypoints_button_, "enabled", false);
 
   idle_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
@@ -190,8 +196,6 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   idle_->assignProperty(nr_of_loops_, "enabled", false);
 
   idle_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
-  idle_->assignProperty(add_pose_button_, "enabled", false);
-  idle_->assignProperty(remove_pose_button_, "enabled", false);
 
   // State entered when navigate_to_pose action is not active
   accumulating_ = new QState();
@@ -208,10 +212,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(navigation_mode_button_, "enabled", true);
   accumulating_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
 
-  accumulating_->assignProperty(save_waypoints_button_, "text", "Save");
-  accumulating_->assignProperty(save_waypoints_button_, "enabled", true);
+  accumulating_->assignProperty(add_pose_button_, "enabled", true);
+  accumulating_->assignProperty(remove_pose_button_, "enabled", true);
 
-  accumulating_->assignProperty(load_waypoints_button_, "text", "Load");
+  accumulating_->assignProperty(save_waypoints_button_, "enabled", true);
   accumulating_->assignProperty(load_waypoints_button_, "enabled", true);
 
   accumulating_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
@@ -220,9 +224,8 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulating_->assignProperty(nr_of_loops_, "text", QString::fromStdString(loop_no_));
   accumulating_->assignProperty(nr_of_loops_, "enabled", true);
   accumulating_->assignProperty(store_initial_pose_checkbox_, "enabled", true);
-  accumulating_->assignProperty(add_pose_button_, "enabled", true);
-  accumulating_->assignProperty(remove_pose_button_, "enabled", true);
 
+  // State entered when navigating using waypoint following
   accumulated_wp_ = new QState();
   accumulated_wp_->setObjectName("accumulated_wp");
   accumulated_wp_->assignProperty(start_reset_button_, "text", "Cancel");
@@ -237,29 +240,41 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_wp_->assignProperty(navigation_mode_button_, "enabled", false);
   accumulated_wp_->assignProperty(navigation_mode_button_, "toolTip", waypoint_goal_msg);
 
-  accumulated_wp_->assignProperty(save_waypoints_button_, "text", "Save");
-  accumulated_wp_->assignProperty(save_waypoints_button_, "enabled", false);
+  accumulated_wp_->assignProperty(add_pose_button_, "enabled", false);
+  accumulated_wp_->assignProperty(remove_pose_button_, "enabled", false);
 
-  accumulated_wp_->assignProperty(load_waypoints_button_, "text", "Load");
+  accumulated_wp_->assignProperty(save_waypoints_button_, "enabled", false);
   accumulated_wp_->assignProperty(load_waypoints_button_, "enabled", false);
 
   accumulated_wp_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
   accumulated_wp_->assignProperty(pause_waypoint_button_, "enabled", true);
 
+  accumulated_wp_->assignProperty(nr_of_loops_, "text", QString::fromStdString(loop_no_));
   accumulated_wp_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_wp_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
-  accumulated_wp_->assignProperty(add_pose_button_, "enabled", false);
-  accumulated_wp_->assignProperty(remove_pose_button_, "enabled", false);
 
+  // State entered when navigating using NavigateThroughPoses
   accumulated_nav_through_poses_ = new QState();
   accumulated_nav_through_poses_->setObjectName("accumulated_nav_through_poses");
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "text", "Cancel");
   accumulated_nav_through_poses_->assignProperty(start_reset_button_, "toolTip", cancel_msg);
 
-  accumulated_nav_through_poses_->assignProperty(save_waypoints_button_, "text", "Save");
-  accumulated_nav_through_poses_->assignProperty(save_waypoints_button_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(pause_resume_button_,
+    "text", "Start NavigateThroughPoses");
+  accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "toolTip", nft_goal_msg);
 
-  accumulated_nav_through_poses_->assignProperty(load_waypoints_button_, "text", "Load");
+  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_,
+    "text", "Start Waypoint Following");
+  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_,
+    "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_,
+    "toolTip", waypoint_goal_msg);
+
+  accumulated_nav_through_poses_->assignProperty(add_pose_button_, "enabled", false);
+  accumulated_nav_through_poses_->assignProperty(remove_pose_button_, "enabled", false);
+
+  accumulated_nav_through_poses_->assignProperty(save_waypoints_button_, "enabled", false);
   accumulated_nav_through_poses_->assignProperty(load_waypoints_button_, "enabled", false);
 
   accumulated_nav_through_poses_->assignProperty(pause_waypoint_button_,
@@ -272,26 +287,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
 
   accumulated_nav_through_poses_->assignProperty(
-    pause_resume_button_, "text",
-    "Start NavigateThroughPoses");
-  accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "enabled", false);
-  accumulated_nav_through_poses_->assignProperty(pause_resume_button_, "toolTip", nft_goal_msg);
-
-  accumulated_nav_through_poses_->assignProperty(
-    navigation_mode_button_, "text",
-    "Start Waypoint Following");
-  accumulated_nav_through_poses_->assignProperty(navigation_mode_button_, "enabled", false);
-  accumulated_nav_through_poses_->assignProperty(
-    navigation_mode_button_, "toolTip",
-    waypoint_goal_msg);
-
-  accumulated_nav_through_poses_->assignProperty(
     nr_of_loops_, "text",
     QString::fromStdString(loop_no_));
   accumulated_nav_through_poses_->assignProperty(nr_of_loops_, "enabled", false);
   accumulated_nav_through_poses_->assignProperty(store_initial_pose_checkbox_, "enabled", false);
-  accumulated_nav_through_poses_->assignProperty(add_pose_button_, "enabled", false);
-  accumulated_nav_through_poses_->assignProperty(remove_pose_button_, "enabled", false);
 
   // State entered to cancel the navigate_to_pose action
   canceled_ = new QState();
@@ -300,6 +299,7 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   // State entered to reset the nav2 lifecycle nodes
   reset_ = new QState();
   reset_->setObjectName("reset");
+
   // State entered while the navigate_to_pose action is active
   running_ = new QState();
   running_->setObjectName("running");
@@ -309,13 +309,14 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   running_->assignProperty(pause_resume_button_, "text", "Pause");
   running_->assignProperty(pause_resume_button_, "enabled", false);
 
-  running_->assignProperty(navigation_mode_button_, "text", "Waypoint mode");
+  running_->assignProperty(navigation_mode_button_,
+    "text", "Waypoint Following / NavigateThroughPoses Mode");
   running_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  running_->assignProperty(save_waypoints_button_, "text", "Save");
-  running_->assignProperty(save_waypoints_button_, "enabled", false);
+  running_->assignProperty(add_pose_button_, "enabled", false);
+  running_->assignProperty(remove_pose_button_, "enabled", false);
 
-  running_->assignProperty(load_waypoints_button_, "text", "Load");
+  running_->assignProperty(save_waypoints_button_, "enabled", false);
   running_->assignProperty(load_waypoints_button_, "enabled", false);
 
   running_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
@@ -339,10 +340,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   paused_->assignProperty(navigation_mode_button_, "text", "");
   paused_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  paused_->assignProperty(save_waypoints_button_, "text", "Save");
-  paused_->assignProperty(save_waypoints_button_, "enabled", false);
+  paused_->assignProperty(add_pose_button_, "enabled", false);
+  paused_->assignProperty(remove_pose_button_, "enabled", false);
 
-  paused_->assignProperty(load_waypoints_button_, "text", "Load");
+  paused_->assignProperty(save_waypoints_button_, "enabled", false);
   paused_->assignProperty(load_waypoints_button_, "enabled", false);
 
   paused_->assignProperty(pause_waypoint_button_, "text", "Pause Waypoint Following");
@@ -368,10 +369,10 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   resumed_wp_->assignProperty(navigation_mode_button_, "text", "Start Waypoint Following");
   resumed_wp_->assignProperty(navigation_mode_button_, "enabled", false);
 
-  resumed_wp_->assignProperty(save_waypoints_button_, "text", "Save");
-  resumed_wp_->assignProperty(save_waypoints_button_, "enabled", true);
+  resumed_wp_->assignProperty(add_pose_button_, "enabled", false);
+  resumed_wp_->assignProperty(remove_pose_button_, "enabled", false);
 
-  resumed_wp_->assignProperty(load_waypoints_button_, "text", "Load");
+  resumed_wp_->assignProperty(save_waypoints_button_, "enabled", true);
   resumed_wp_->assignProperty(load_waypoints_button_, "enabled", false);
 
   resumed_wp_->assignProperty(pause_waypoint_button_, "text", "Resume WaypointFollowing");
@@ -620,13 +621,9 @@ Nav2Panel::Nav2Panel(QWidget * parent)
   nav_wp_layout->addWidget(nav_through_poses_tabs_);
 
   QHBoxLayout * pose_buttons_layout = new QHBoxLayout;
-  add_pose_button_ = new QPushButton("Add Pose");
-  add_pose_button_->setEnabled(false);
   QObject::connect(add_pose_button_, &QPushButton::clicked, this, &Nav2Panel::onAddNavThroughPose);
   pose_buttons_layout->addWidget(add_pose_button_);
 
-  remove_pose_button_ = new QPushButton("Remove Pose");
-  remove_pose_button_->setEnabled(false);
   QObject::connect(remove_pose_button_,
     &QPushButton::clicked, this, &Nav2Panel::onRemoveNavThroughPose);
   pose_buttons_layout->addWidget(remove_pose_button_);
@@ -1159,9 +1156,6 @@ Nav2Panel::onAccumulatedWp()
   navigation_mode_button_->setEnabled(false);
   pause_resume_button_->setEnabled(false);
 
-  add_pose_button_->setEnabled(false);
-  remove_pose_button_->setEnabled(false);
-
   /** Making sure that the pose array does not get updated
    *  between the process**/
   if (store_poses_.goals.empty()) {
@@ -1223,9 +1217,6 @@ Nav2Panel::onAccumulatedNTP()
 {
   updateAccumulatedPosesFromTabs();
 
-  add_pose_button_->setEnabled(false);
-  remove_pose_button_->setEnabled(false);
-
   std::cout << "Start navigate through poses" << std::endl;
   startNavThroughPoses(acummulated_poses_);
 }
@@ -1251,9 +1242,6 @@ Nav2Panel::onAccumulating()
   tools_tab_widget_->setTabEnabled(0, false);
   tools_tab_widget_->setTabEnabled(1, true);
   tools_tab_widget_->setCurrentIndex(1);
-
-  add_pose_button_->setEnabled(true);
-  remove_pose_button_->setEnabled(true);
 }
 void
 Nav2Panel::timerEvent(QTimerEvent * event)

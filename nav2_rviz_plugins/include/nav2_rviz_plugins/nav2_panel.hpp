@@ -176,6 +176,8 @@ private:
   QPushButton * start_reset_button_{nullptr};
   QPushButton * pause_resume_button_{nullptr};
   QPushButton * navigation_mode_button_{nullptr};
+  QPushButton * add_pose_button_{nullptr};
+  QPushButton * remove_pose_button_{nullptr};
   QPushButton * save_waypoints_button_{nullptr};
   QPushButton * load_waypoints_button_{nullptr};
   QPushButton * pause_waypoint_button_{nullptr};
@@ -204,8 +206,6 @@ private:
 
   // NavigateThroughPoses manual input widgets
   QTabWidget * nav_through_poses_tabs_{nullptr};
-  QPushButton * add_pose_button_{nullptr};
-  QPushButton * remove_pose_button_{nullptr};
 
   QStateMachine state_machine_;
   InitialThread * initial_thread_;
