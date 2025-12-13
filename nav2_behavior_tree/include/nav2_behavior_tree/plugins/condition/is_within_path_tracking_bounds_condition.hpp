@@ -67,14 +67,16 @@ protected:
    */
   void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
 
-  rclcpp::Logger logger_{rclcpp::get_logger("IsWithinPathTrackingBoundsCondition")};
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_{rclcpp::get_logger("IsWithinPathTrackingBoundsCondition")};
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
-  bool is_within_bounds_{false};
-  double max_error_right_{1.5};
-  double max_error_left_{1.5};
   std::chrono::milliseconds bt_loop_duration_;
+
+  bool is_within_bounds_{false};
+  double max_error_right_;
+  double max_error_left_{1.5};
 };
 
 }  // namespace nav2_behavior_tree
