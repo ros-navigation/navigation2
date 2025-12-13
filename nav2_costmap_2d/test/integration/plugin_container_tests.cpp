@@ -82,6 +82,7 @@ public:
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
     node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    node_->declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
     node_->declare_parameter(
       "unknown_cost_value",
       rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
@@ -273,7 +274,7 @@ TEST_F(TestNode, testDifferentInflationLayers) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 4);
 }
 
 TEST_F(TestNode, testDifferentInflationLayers2) {
@@ -325,7 +326,7 @@ TEST_F(TestNode, testDifferentInflationLayers2) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28);
 }
 
 TEST_F(TestNode, testResetting) {
@@ -465,7 +466,7 @@ TEST_F(TestNode, testClearing) {
   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 21);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 77);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 29);
   ASSERT_EQ(olayer_b->getCost(9, 9), nav2_costmap_2d::LETHAL_OBSTACLE);
 
   pclayer_a->clearArea(-1, -1, 10, 10, false);

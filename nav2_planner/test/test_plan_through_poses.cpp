@@ -170,6 +170,7 @@ void Tester::setParameters()
 
   costmap->declare_parameter("static_layer.plugin", rclcpp::ParameterValue(COSTMAP_LAYER_NAME));
   costmap->declare_parameter("static_layer.lethal_cost_threshold", rclcpp::ParameterValue(100));
+  costmap->declare_parameter("static_layer.inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
   costmap->declare_parameter(
     "static_layer.map_subscribe_transient_local", rclcpp::ParameterValue(true));
 

@@ -181,6 +181,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
   node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  node_->declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
   node_->declare_parameter(
     "unknown_cost_value",
     rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
@@ -462,7 +463,7 @@ TEST_F(TestNode, testInflation)
   layers.updateMap(0, 0, 0);
   // printMap(*costmap);
   ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE), 20u);
-  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 78u);
+  ASSERT_EQ(countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 28u);
 
   /*/ Iterate over all id's and verify they are obstacles
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
@@ -480,7 +481,7 @@ TEST_F(TestNode, testInflation)
   // It and its 2 neighbors makes 3 obstacles
   ASSERT_EQ(
     countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 98u);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 51u);
 
   // @todo Rewrite
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
@@ -494,7 +495,7 @@ TEST_F(TestNode, testInflation)
   // at <0, 1>
   ASSERT_EQ(
     countValues(*costmap, nav2_costmap_2d::LETHAL_OBSTACLE) +
-    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 98u);
+    countValues(*costmap, nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE), 54u);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   addObservation(olayer, 1, 9);
