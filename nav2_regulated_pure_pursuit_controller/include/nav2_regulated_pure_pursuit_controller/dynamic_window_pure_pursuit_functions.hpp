@@ -40,7 +40,8 @@ struct DynamicWindowBounds
 };
 
 /**
- * @brief Compute the dynamic window (feasible velocity bounds) based on the current speed and the given velocity and acceleration constraints.
+ * @brief Compute the dynamic window (feasible velocity bounds) based on
+ *        the current speed and the given velocity and acceleration constraints.
  * @param current_speed     Current linear and angular velocity of the robot
  * @param max_linear_vel    Maximum allowable linear velocity
  * @param min_linear_vel    Minimum allowable linear velocity
@@ -90,7 +91,7 @@ inline DynamicWindowBounds computeDynamicWindow(
         candidate_min_vel = current_vel - max_accel * dt;
       }
 
-    // clip to max/min velocity limits
+      // clip to max/min velocity limits
       double dynamic_window_max_vel = std::min(candidate_max_vel, max_vel);
       double dynamic_window_min_vel = std::max(candidate_min_vel, min_vel);
       return std::make_tuple(dynamic_window_max_vel, dynamic_window_min_vel);
@@ -278,6 +279,55 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
 
   return std::make_tuple(optimal_linear_vel, optimal_angular_vel);
 }
+
+/**
+ * @brief Compute velocity commands using Dynamic Window Pure Pursuit method
+ * @param current_speed         Current linear and angular velocity of the robot
+ * @param max_linear_vel        Maximum allowable linear velocity
+ * @param min_linear_vel        Minimum allowable linear velocity
+ * @param max_angular_vel       Maximum allowable angular velocity
+ * @param min_angular_vel       Minimum allowable angular velocity
+ * @param max_linear_accel      Maximum allowable linear acceleration
+ * @param max_linear_decel      Maximum allowable linear deceleration
+ * @param max_angular_accel     Maximum allowable angular acceleration
+ * @param max_angular_decel     Maximum allowable angular deceleration
+ * @param regulated_linear_vel  Regulated linear velocity
+ * @param curvature             Curvature of the path to follow
+ * @param sign                  Velocity sign (forward or backward)
+ * @param dt                    Control duration
+ * @return                      Optimal linear and angular velocity
+ */
+inline std::tuple<double, double> computeDynamicWindowVelocities(
+  const geometry_msgs::msg::Twist & current_speed,
+  const double & max_linear_vel,
+  const double & min_linear_vel,
+  const double & max_angular_vel,
+  const double & min_angular_vel,
+  const double & max_linear_accel,
+  const double & max_linear_decel,
+  const double & max_angular_accel,
+  const double & max_angular_decel,
+  const double & regulated_linear_vel,
+  const double & curvature,
+  const double & sign,
+  const double & dt
+)
+{
+  // compute Dynamic Window
+  DynamicWindowBounds dynamic_window = computeDynamicWindow(
+    current_speed, max_linear_vel, min_linear_vel, max_angular_vel, min_angular_vel,
+    max_linear_accel, max_linear_decel, max_angular_accel, max_angular_decel, dt);
+
+  // apply regulation to Dynamic Window
+  applyRegulationToDynamicWindow(regulated_linear_vel, dynamic_window);
+
+  // compute optimal velocity within Dynamic Window
+  auto [linear_vel, angular_vel] = computeOptimalVelocityWithinDynamicWindow(
+    dynamic_window, curvature, sign);
+
+  return std::make_tuple(linear_vel, angular_vel);
+}
+
 
 }  // namespace dynamic_window_pure_pursuit
 

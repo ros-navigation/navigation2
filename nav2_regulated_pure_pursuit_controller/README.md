@@ -65,15 +65,14 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 
 This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](https://www.linkedin.com/in/fumiya-ohnishi-23b124202).
 Unlike the standard Pure Pursuit, DWPP enables the consideration of velocity and acceleration constraints when computing velocity commands.
-An overview of the algorithm can be found here: [DWPP Algorithm](https://github.com/Decwest/nav2_dynamic_window_pure_pursuit_controller/blob/main/algorithm.md).
-
-A link to the paper and its citation will be provided once it becomes publicly available.
+An overview of the algorithm can be found here: [DWPP Algorithm*](https://github.com/Decwest/nav2_dynamic_window_pure_pursuit_controller/blob/main/algorithm.md).
+*Fumiya Ohnishi, Masaki Takahashi, "Dynamic Window Pure Pursuit for Robot Path Tracking Considering Velocity and Acceleration Constraints", Proceedings of the 19th International Conference on Intelligent Autonomous Systems (IAS-19), Genoa, Italy, 2025.
 
 ## Configuration
 
 | Parameter | Description |
 |-----|----|
-| `max_linear_vel` | The maximum linear velocity to use. |
+| `max_linear_vel` | The maximum linear velocity to use. Previously `desired_linear_vel` |
 | `max_angular_accel` | The maximum angular acceleration to use. |
 | `min_linear_vel` | The minimum linear velocity used when `use_dynamic_window` is `true`. |
 | `max_angular_vel` | The maximum angular velocity used when `use_dynamic_window` is `true`. |
@@ -190,4 +189,4 @@ The choice of lookahead distances are highly dependent on robot size, responsive
 
 When `use_dynamic_window` is set to True, the velocity, acceleration, and deceleration limits are enforced during the velocity command computation.
 Note that the velocity smoother clips the velocity commands output by this controller based on its own velocity and acceleration constraints before publishing cmd_vel.
-Therefore, the velocity smoother’s `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` parameters must be consistent with this controller’s corresponding velocity, acceleration, and deceleration settings.
+Therefore, the velocity smoother’s `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` parameters must be consistent or greater than this controller’s corresponding velocity, acceleration, and deceleration settings.
