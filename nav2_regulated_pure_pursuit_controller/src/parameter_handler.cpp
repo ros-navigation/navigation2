@@ -39,21 +39,21 @@ ParameterHandler::ParameterHandler(
   // Declare max_linear_vel with backward compatibility
   const std::string old_name = plugin_name_ + ".desired_linear_vel";
   const std::string new_name = plugin_name_ + ".max_linear_vel";
-  const auto nan_val = std::numeric_limits<double>::quiet_NaN();
-  declare_parameter_if_not_declared(
-    node, old_name, rclcpp::ParameterValue(nan_val));
-  double old_val = nan_val;
-  if (node->get_parameter(old_name, old_val) &&
-    !std::isnan(old_val))
-  {
+  double default_max_linear_vel = 0.5;
+  declare_parameter_if_not_declared(node, old_name, rclcpp::ParameterType::PARAMETER_DOUBLE);
+  try {
+    auto desired_linear_vel = node->get_parameter(old_name).as_double();
+    // Then its set, log the warning
+    default_max_linear_vel = desired_linear_vel;
     RCLCPP_WARN(
       logger_,
       "Parameter '%s' is deprecated. Use '%s' instead.",
       old_name.c_str(), new_name.c_str());
+  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+    // Then its not set, just pass
   }
-  double default_val = std::isnan(old_val) ? 0.5 : old_val;
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_vel", rclcpp::ParameterValue(default_val));
+    node, new_name, rclcpp::ParameterValue(default_max_linear_vel));
 
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".min_linear_vel", rclcpp::ParameterValue(-0.5));
