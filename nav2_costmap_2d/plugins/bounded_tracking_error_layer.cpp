@@ -287,25 +287,26 @@ void BoundedTrackingErrorLayer::updateCosts(
         int dx = static_cast<int>(x1) - static_cast<int>(x0);
         int dy = static_cast<int>(y1) - static_cast<int>(y0);
         double norm = std::hypot(dx, dy);
-        
+
         if (norm > 1e-6) {
           double perp_x = -dy / norm;
           double perp_y = dx / norm;
-          
+
           // Draw parallel lines for thickness
           for (int t = 0; t < wall_thickness_; ++t) {
             int offset_x = static_cast<int>(std::round(perp_x * t));
             int offset_y = static_cast<int>(std::round(perp_y * t));
-            
+
             unsigned int thick_x0 = x0 + offset_x;
             unsigned int thick_y0 = y0 + offset_y;
             unsigned int thick_x1 = x1 + offset_x;
             unsigned int thick_y1 = y1 + offset_y;
-            
-            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
+
+            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1,
+              thick_y1);
             for (const auto & cell : cells) {
-              if (cell[0] < master_grid.getSizeInCellsX() && 
-                  cell[1] < master_grid.getSizeInCellsY())
+              if (cell[0] < master_grid.getSizeInCellsX() &&
+                cell[1] < master_grid.getSizeInCellsY())
               {
                 master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
               }
@@ -322,25 +323,26 @@ void BoundedTrackingErrorLayer::updateCosts(
         int dx = static_cast<int>(x1) - static_cast<int>(x0);
         int dy = static_cast<int>(y1) - static_cast<int>(y0);
         double norm = std::hypot(dx, dy);
-        
+
         if (norm > 1e-6) {
           double perp_x = -dy / norm;
           double perp_y = dx / norm;
-          
+
           // Draw parallel lines for thickness
           for (int t = 0; t < wall_thickness_; ++t) {
             int offset_x = static_cast<int>(std::round(perp_x * t));
             int offset_y = static_cast<int>(std::round(perp_y * t));
-            
+
             unsigned int thick_x0 = x0 + offset_x;
             unsigned int thick_y0 = y0 + offset_y;
             unsigned int thick_x1 = x1 + offset_x;
             unsigned int thick_y1 = y1 + offset_y;
-            
-            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
+
+            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1,
+              thick_y1);
             for (const auto & cell : cells) {
-              if (cell[0] < master_grid.getSizeInCellsX() && 
-                  cell[1] < master_grid.getSizeInCellsY())
+              if (cell[0] < master_grid.getSizeInCellsX() &&
+                cell[1] < master_grid.getSizeInCellsY())
               {
                 master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
               }
