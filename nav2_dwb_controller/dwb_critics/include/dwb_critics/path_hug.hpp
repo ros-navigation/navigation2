@@ -16,12 +16,12 @@
 #define DWB_CRITICS__PATH_HUG_HPP_
 
 #include <string>
+
 #include "dwb_core/trajectory_critic.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace dwb_critics
 {
-
 /**
  * @class PathHugCritic
  * @brief Critic that penalizes trajectories based on their distance from the global path
@@ -52,8 +52,6 @@ public:
 
   double scoreTrajectory(const dwb_msgs::msg::Trajectory2D & traj) override;
 
-  double getScale() const override;
-
 protected:
   /**
    * @brief Find closest path segment using bidirectional search window
@@ -65,7 +63,7 @@ protected:
    * @param path Global path to search
    * @param pose Current pose to find closest segment for
    * @param hint_index Starting index for search (typically previous closest segment)
-   * @param search_window Size of bidirectional search window in path indices
+   * @param search_window Size of bidirectional search window in meters
    * @return SegmentSearchResult containing closest segment index and distance
    */
   SegmentSearchResult findClosestSegmentWithLookback(
@@ -75,7 +73,6 @@ protected:
     double search_window) const;
 
   nav_msgs::msg::Path global_path_;
-  double scale_;
   double search_window_;
 };
 
