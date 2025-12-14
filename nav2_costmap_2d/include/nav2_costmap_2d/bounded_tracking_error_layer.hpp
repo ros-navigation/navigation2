@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
-#define NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
+#ifndef NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
+#define NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 
 #include <vector>
 #include <memory>
@@ -168,4 +168,4 @@ private:
 
 }  // namespace nav2_costmap_2d
 
-#endif  // NAV2_COSTMAP_2D__TRACKING_BOUNDS_ERROR_LAYER_HPP_
+#endif  // NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
