@@ -1,5 +1,6 @@
 // Copyright (c) 2020 Shrijit Singh
 // Copyright (c) 2020 Samsung Research America
+// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -231,7 +232,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     x_vel_sign = carrot_pose.pose.position.x >= 0.0 ? 1.0 : -1.0;
   }
 
-  linear_vel = params_->desired_linear_vel;
+  linear_vel = params_->max_linear_vel;
 
   // Make sure we're in compliance with basic constraints
   // For shouldRotateToPath, using x_vel_sign in order to support allow_reversing
@@ -271,7 +272,31 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     }
 
     // Apply curvature to angular velocity after constraining linear velocity
-    angular_vel = linear_vel * regulation_curvature;
+    if (!params_->use_dynamic_window) {
+      angular_vel = linear_vel * regulation_curvature;
+    } else {
+      // compute optimal path tracking velocity commands
+      // considering velocity and acceleration constraints (DWPP)
+      const double regulated_linear_vel = linear_vel;
+      // using last command velocity as a current velocity
+      const geometry_msgs::msg::Twist current_speed = last_command_velocity_;
+
+      std::tie(linear_vel, angular_vel) =
+        dynamic_window_pure_pursuit::computeDynamicWindowVelocities(
+        current_speed,
+        params_->max_linear_vel,
+        params_->min_linear_vel,
+        params_->max_angular_vel,
+        params_->min_angular_vel,
+        params_->max_linear_accel,
+        params_->max_linear_decel,
+        params_->max_angular_accel,
+        params_->max_angular_decel,
+        regulated_linear_vel,
+        regulation_curvature,
+        x_vel_sign,
+        control_duration_);
+    }
   }
 
   // Collision checking on this velocity heading
@@ -292,6 +317,10 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   cmd_vel.header = pose.header;
   cmd_vel.twist.linear.x = linear_vel;
   cmd_vel.twist.angular.z = angular_vel;
+
+  // For dynamic window scaling in open-loop speed control
+  last_command_velocity_ = cmd_vel.twist;
+
   return cmd_vel;
 }
 
@@ -388,7 +417,7 @@ void RegulatedPurePursuitController::applyConstraints(
     params_->approach_velocity_scaling_dist);
 
   // Limit linear velocities to be valid
-  linear_vel = std::clamp(fabs(linear_vel), 0.0, params_->desired_linear_vel);
+  linear_vel = std::clamp(fabs(linear_vel), 0.0, params_->max_linear_vel);
   linear_vel = sign * linear_vel;
 }
 
@@ -406,14 +435,14 @@ void RegulatedPurePursuitController::setSpeedLimit(
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
-    params_->desired_linear_vel = params_->base_desired_linear_vel;
+    params_->max_linear_vel = params_->base_max_linear_vel;
   } else {
     if (percentage) {
       // Speed limit is expressed in % from maximum speed of robot
-      params_->desired_linear_vel = params_->base_desired_linear_vel * speed_limit / 100.0;
+      params_->max_linear_vel = params_->base_max_linear_vel * speed_limit / 100.0;
     } else {
       // Speed limit is expressed in absolute value
-      params_->desired_linear_vel = speed_limit;
+      params_->max_linear_vel = speed_limit;
     }
   }
 }

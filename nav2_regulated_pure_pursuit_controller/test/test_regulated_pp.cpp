@@ -26,6 +26,8 @@
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
@@ -35,7 +37,7 @@ public:
 
   nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
 
-  double getSpeed() {return params_->desired_linear_vel;}
+  double getSpeed() {return params_->max_linear_vel;}
 
   std::unique_ptr<geometry_msgs::msg::PointStamped> createCarrotMsgWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose)
@@ -439,7 +441,14 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.desired_linear_vel", 1.0),
+    {rclcpp::Parameter("test.max_linear_vel", 1.0),
+      rclcpp::Parameter("test.min_linear_vel", -1.0),
+      rclcpp::Parameter("test.max_angular_vel", 2.0),
+      rclcpp::Parameter("test.min_angular_vel", -2.0),
+      rclcpp::Parameter("test.max_linear_accel", 2.0),
+      rclcpp::Parameter("test.max_linear_decel", 2.0),
+      rclcpp::Parameter("test.max_angular_accel", 3.0),
+      rclcpp::Parameter("test.max_angular_decel", 3.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
@@ -453,7 +462,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
       rclcpp::Parameter("test.transform_tolerance", 30.0),
-      rclcpp::Parameter("test.max_angular_accel", 3.0),
       rclcpp::Parameter("test.rotate_to_heading_min_angle", 0.7),
       rclcpp::Parameter("test.regulated_linear_scaling_min_speed", 4.0),
       rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
@@ -462,13 +470,21 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false),
-      rclcpp::Parameter("test.stateful", false)});
+      rclcpp::Parameter("test.stateful", false),
+      rclcpp::Parameter("test.use_dynamic_window", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(node->get_parameter("test.desired_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.min_linear_vel").as_double(), -1.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_vel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.min_angular_vel").as_double(), -2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_decel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
@@ -484,7 +500,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
   EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 30.0);
-  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_min_angle").as_double(), 0.7);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_speed").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.use_velocity_scaled_lookahead_dist").as_bool(), false);
@@ -496,6 +511,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_dynamic_window").as_bool(), true);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(
@@ -520,6 +536,66 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results4);
+}
+
+TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+
+  // Enable DWPP so computeVelocityCommands executes the dynamic window branch.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_dynamic_window", rclcpp::ParameterValue(false));
+  node->set_parameter(rclcpp::Parameter(name + ".use_dynamic_window", true));
+
+  // Disable collision detection to simplify test.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_collision_detection", rclcpp::ParameterValue(true));
+  node->set_parameter(rclcpp::Parameter(name + ".use_collision_detection", false));
+
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+
+  auto stamp = node->get_clock()->now();
+
+  // Simple straight path ahead of the robot in map frame.
+  geometry_msgs::msg::PoseStamped start_pose;
+  start_pose.header.frame_id = "map";
+  start_pose.header.stamp = stamp;
+  start_pose.pose.orientation.w = 1.0;
+  auto plan = path_utils::generate_path(
+    start_pose, 0.1,
+    {std::make_unique<path_utils::Straight>(2.0)});
+  ctrl->setPlan(plan);
+
+  // Provide transform into base frame so the controller can compute commands.
+  geometry_msgs::msg::TransformStamped map_to_base;
+  map_to_base.header.stamp = stamp;
+  map_to_base.header.frame_id = "map";
+  map_to_base.child_frame_id = "base_link";
+  map_to_base.transform.rotation.w = 1.0;
+  tf->setTransform(map_to_base, "dwpp-controller-test");
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "base_link";
+  robot_pose.header.stamp = stamp;
+  robot_pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist current_speed;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap);
+
+  auto cmd_vel = ctrl->computeVelocityCommands(robot_pose, current_speed, &checker);
+
+  EXPECT_EQ(cmd_vel.twist.linear.x, 0.125);
+  EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
+
+  ctrl->deactivate();
+  ctrl->cleanup();
 }
 
 class TransformGlobalPlanTest : public ::testing::Test
