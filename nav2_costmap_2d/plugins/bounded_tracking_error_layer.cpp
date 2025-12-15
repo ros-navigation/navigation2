@@ -48,16 +48,18 @@ void BoundedTrackingErrorLayer::onInitialize()
 
   declareParameter("step", rclcpp::ParameterValue(5));
   node->get_parameter(name_ + "." + "step", step_);
-  temp_step_ = static_cast<size_t>(step_);
+  step_size_ = static_cast<size_t>(step_);
 
   declareParameter("corridor_width", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name_ + "." + "corridor_width", width_);
+  node->get_parameter(name_ + "." + "corridor_width", corridor_width_);
 
   declareParameter("wall_thickness", rclcpp::ParameterValue(1));
   node->get_parameter(name_ + "." + "wall_thickness", wall_thickness_);
 
   declareParameter("enabled", rclcpp::ParameterValue(true));
-  node->get_parameter(name_ + "." + "enabled", enabled_);
+  bool enabled_param;
+  node->get_parameter(name_ + "." + "enabled", enabled_param);
+  enabled_.store(enabled_param);
 
   if (wall_thickness_ <= 0) {
     throw std::runtime_error{"wall_thickness must be greater than zero"};
@@ -66,10 +68,10 @@ void BoundedTrackingErrorLayer::onInitialize()
   if (look_ahead_ <= 0.0) {
     throw std::runtime_error{"look_ahead must be positive"};
   }
-  if (width_ <= 0.0) {
+  if (corridor_width_ <= 0.0) {
     throw std::runtime_error{"corridor_width must be positive"};
   }
-  if (temp_step_ == 0) {
+  if (step_size_ == 0) {
     throw std::runtime_error{"step must be greater than zero"};
   }
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -99,6 +101,7 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
     return;
   }
   last_path_ = *msg;
+  last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
 }
 
 void BoundedTrackingErrorLayer::trackingCallback(
@@ -132,7 +135,7 @@ void BoundedTrackingErrorLayer::updateBounds(
   double robot_x, double robot_y, double /*robot_yaw*/,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
-  if (!enabled_) {
+  if (!enabled_.load()) {
     return;
   }
   *min_x = std::min(*min_x, robot_x - look_ahead_);
@@ -147,17 +150,17 @@ std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
   std::vector<std::vector<double>> point_list;
 
   // Early return checks
-  if (segment.poses.empty() || temp_step_ == 0) {
+  if (segment.poses.empty() || step_size_ == 0) {
     return point_list;
   }
 
   // Reserve space for better performance (estimate 2 points per step)
-  size_t estimated_points = (segment.poses.size() / temp_step_) * 2;
+  size_t estimated_points = (segment.poses.size() / step_size_) * 2;
   point_list.reserve(estimated_points);
 
   // Process path points with step size
   for (size_t current_index = 0; current_index < segment.poses.size();
-    current_index += temp_step_)
+    current_index += step_size_)
   {
     const auto & current_pose = segment.poses[current_index];
     double px = current_pose.pose.position.x;
@@ -166,9 +169,9 @@ std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
     // Calculate direction vector to next point
     double dx = 0.0, dy = 0.0;
 
-    if (current_index + temp_step_ < segment.poses.size()) {
+    if (current_index + step_size_ < segment.poses.size()) {
       // Use next point at step distance
-      const auto & next_pose = segment.poses[current_index + temp_step_];
+      const auto & next_pose = segment.poses[current_index + step_size_];
       dx = next_pose.pose.position.x - px;
       dy = next_pose.pose.position.y - py;
     } else if (current_index + 1 < segment.poses.size()) {
@@ -197,7 +200,7 @@ std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
     double perp_y = dx / norm;
 
     // Multiply by 0.5 to get half the width, creating symmetric boundaries on both sides of the path
-    double half_width = width_ * 0.5;
+    double half_width = corridor_width_ * 0.5;
 
     point_list.push_back({px + perp_x * half_width, py + perp_y * half_width});
     point_list.push_back({px - perp_x * half_width, py - perp_y * half_width});
@@ -245,34 +248,125 @@ nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
   return segment;
 }
 
+void BoundedTrackingErrorLayer::drawWallLine(
+  nav2_costmap_2d::Costmap2D & master_grid,
+  unsigned int x0, unsigned int y0,
+  unsigned int x1, unsigned int y1,
+  unsigned int map_size_x, unsigned int map_size_y)
+{
+  // Calculate perpendicular direction for wall thickness
+  int dx = static_cast<int>(x1) - static_cast<int>(x0);
+  int dy = static_cast<int>(y1) - static_cast<int>(y0);
+  double norm = std::hypot(dx, dy);
+
+  if (norm < 1e-6) {
+    return;
+  }
+
+  double perp_x = -dy / norm;
+  double perp_y = dx / norm;
+
+  // Draw parallel lines for thickness
+  for (int t = 0; t < wall_thickness_; ++t) {
+    int offset_x = static_cast<int>(std::round(perp_x * t));
+    int offset_y = static_cast<int>(std::round(perp_y * t));
+
+    // Use signed arithmetic to avoid unsigned underflow
+    int thick_x0_signed = static_cast<int>(x0) + offset_x;
+    int thick_y0_signed = static_cast<int>(y0) + offset_y;
+    int thick_x1_signed = static_cast<int>(x1) + offset_x;
+    int thick_y1_signed = static_cast<int>(y1) + offset_y;
+
+    // Skip if any coordinate is negative (would underflow as unsigned)
+    if (thick_x0_signed < 0 || thick_y0_signed < 0 ||
+      thick_x1_signed < 0 || thick_y1_signed < 0)
+    {
+      continue;
+    }
+
+    unsigned int thick_x0 = static_cast<unsigned int>(thick_x0_signed);
+    unsigned int thick_y0 = static_cast<unsigned int>(thick_y0_signed);
+    unsigned int thick_x1 = static_cast<unsigned int>(thick_x1_signed);
+    unsigned int thick_y1 = static_cast<unsigned int>(thick_y1_signed);
+
+    // Skip if coordinates are outside map bounds
+    if (thick_x0 >= map_size_x || thick_y0 >= map_size_y ||
+      thick_x1 >= map_size_x || thick_y1 >= map_size_y)
+    {
+      continue;
+    }
+
+    auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
+    for (const auto & cell : cells) {
+      if (cell[0] < map_size_x && cell[1] < map_size_y) {
+        master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
+      }
+    }
+  }
+}
+
 void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
 {
-  std::lock_guard<std::mutex> data_lock(data_mutex_);
-  if (!enabled_) {
+  if (!enabled_.load()) {
     return;
   }
 
-  nav_msgs::msg::Path segment = getPathSegment();
+  auto node = node_.lock();
+
+  // Quickly copy the data we need under lock, then release
+  nav_msgs::msg::Path segment;
+  {
+    std::lock_guard<std::mutex> data_lock(data_mutex_);
+    segment = getPathSegment();
+  }
+
   if (segment.poses.size() < 2) {
+    if (node) {
+      RCLCPP_DEBUG_THROTTLE(
+        node->get_logger(),
+        *node->get_clock(),
+        5000,
+        "Path segment too small (%zu poses), skipping wall generation",
+        segment.poses.size());
+    }
     return;
   }
 
   std::string costmap_frame = layered_costmap_->getGlobalFrameID();
   nav_msgs::msg::Path transformed_segment;
   transformed_segment.header.frame_id = costmap_frame;
+  transformed_segment.poses.reserve(segment.poses.size());
 
-  for (const auto & pose : segment.poses) {
+  // Use longer timeout for first pose to wait for TF, no wait for rest
+  for (size_t i = 0; i < segment.poses.size(); ++i) {
+    const auto & pose = segment.poses[i];
     geometry_msgs::msg::PoseStamped transformed_pose;
+    double timeout = (i == 0) ? 0.1 : 0.0;
     if (nav2_util::transformPoseInTargetFrame(
-        pose, transformed_pose, *tf_, costmap_frame, 0.1))
+        pose, transformed_pose, *tf_, costmap_frame, timeout))
     {
       transformed_segment.poses.push_back(transformed_pose);
+    } else {
+      if (node) {
+        RCLCPP_WARN_THROTTLE(
+          node->get_logger(),
+          *node->get_clock(),
+          5000,
+          "Failed to transform pose %zu to %s, skipping wall generation",
+          i,
+          costmap_frame.c_str());
+      }
+      return;
     }
   }
 
   auto wall_points = getWallPoints(transformed_segment);
+
+  // Get map dimensions for bounds checking
+  unsigned int map_size_x = master_grid.getSizeInCellsX();
+  unsigned int map_size_y = master_grid.getSizeInCellsY();
 
   // Draw lines between consecutive wall points using Bresenham
   for (size_t i = 0; i < wall_points.size(); i += 2) {
@@ -283,72 +377,14 @@ void BoundedTrackingErrorLayer::updateCosts(
       if (master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0) &&
         master_grid.worldToMap(wall_points[i + 2][0], wall_points[i + 2][1], x1, y1))
       {
-        // Calculate perpendicular direction
-        int dx = static_cast<int>(x1) - static_cast<int>(x0);
-        int dy = static_cast<int>(y1) - static_cast<int>(y0);
-        double norm = std::hypot(dx, dy);
-
-        if (norm > 1e-6) {
-          double perp_x = -dy / norm;
-          double perp_y = dx / norm;
-
-          // Draw parallel lines for thickness
-          for (int t = 0; t < wall_thickness_; ++t) {
-            int offset_x = static_cast<int>(std::round(perp_x * t));
-            int offset_y = static_cast<int>(std::round(perp_y * t));
-
-            unsigned int thick_x0 = x0 + offset_x;
-            unsigned int thick_y0 = y0 + offset_y;
-            unsigned int thick_x1 = x1 + offset_x;
-            unsigned int thick_y1 = y1 + offset_y;
-
-            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1,
-              thick_y1);
-            for (const auto & cell : cells) {
-              if (cell[0] < master_grid.getSizeInCellsX() &&
-                cell[1] < master_grid.getSizeInCellsY())
-              {
-                master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
-              }
-            }
-          }
-        }
+        drawWallLine(master_grid, x0, y0, x1, y1, map_size_x, map_size_y);
       }
 
       // Line on right side of path
       if (master_grid.worldToMap(wall_points[i + 1][0], wall_points[i + 1][1], x0, y0) &&
         master_grid.worldToMap(wall_points[i + 3][0], wall_points[i + 3][1], x1, y1))
       {
-        // Calculate perpendicular direction
-        int dx = static_cast<int>(x1) - static_cast<int>(x0);
-        int dy = static_cast<int>(y1) - static_cast<int>(y0);
-        double norm = std::hypot(dx, dy);
-
-        if (norm > 1e-6) {
-          double perp_x = -dy / norm;
-          double perp_y = dx / norm;
-
-          // Draw parallel lines for thickness
-          for (int t = 0; t < wall_thickness_; ++t) {
-            int offset_x = static_cast<int>(std::round(perp_x * t));
-            int offset_y = static_cast<int>(std::round(perp_y * t));
-
-            unsigned int thick_x0 = x0 + offset_x;
-            unsigned int thick_y0 = y0 + offset_y;
-            unsigned int thick_x1 = x1 + offset_x;
-            unsigned int thick_y1 = y1 + offset_y;
-
-            auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1,
-              thick_y1);
-            for (const auto & cell : cells) {
-              if (cell[0] < master_grid.getSizeInCellsX() &&
-                cell[1] < master_grid.getSizeInCellsY())
-              {
-                master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
-              }
-            }
-          }
-        }
+        drawWallLine(master_grid, x0, y0, x1, y1, map_size_x, map_size_y);
       }
     }
   }
@@ -358,6 +394,7 @@ void BoundedTrackingErrorLayer::updateCosts(
 rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParametersCallback(
   std::vector<rclcpp::Parameter> parameters)
 {
+  std::lock_guard<std::mutex> guard(data_mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
 
@@ -386,11 +423,11 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
           result.reason = "corridor_width must be positive";
           return result;
         }
-        width_ = new_value;
+        corridor_width_ = new_value;
       }
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled") {
-        enabled_ = parameter.as_bool();
+        enabled_.store(parameter.as_bool());
       }
     } else if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "step") {
@@ -401,7 +438,7 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
           return result;
         }
         step_ = new_value;
-        temp_step_ = static_cast<size_t>(step_);
+        step_size_ = static_cast<size_t>(step_);
       } else if (param_name == name_ + "." + "wall_thickness") {
         int new_value = parameter.as_int();
         if (new_value <= 0) {
@@ -439,7 +476,7 @@ void BoundedTrackingErrorLayer::activate()
     std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1)
   );
 
-  enabled_ = true;
+  enabled_.store(true);
   current_ = true;
 }
 
@@ -456,14 +493,13 @@ void BoundedTrackingErrorLayer::deactivate()
     last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   }
 
-  enabled_ = false;
+  enabled_.store(false);
 }
 
 void BoundedTrackingErrorLayer::reset()
 {
   std::lock_guard<std::mutex> lock(data_mutex_);
   last_path_ = nav_msgs::msg::Path();
-  last_tracking_feedback_ = nav2_msgs::msg::TrackingFeedback();
   current_ = true;
 }
 

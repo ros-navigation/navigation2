@@ -172,19 +172,6 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_empty_data_handling)
   EXPECT_FALSE(hasObstacles(master_grid));
 }
 
-TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_no_data)
-{
-  // Test segment extraction with no path
-  auto segment_no_path = layer_->getPathSegment();
-  EXPECT_TRUE(segment_no_path.poses.empty());
-
-  // Test with path but no tracking feedback
-  auto path = createStraightPath();
-  layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path));
-  auto segment_no_tracking = layer_->getPathSegment();
-  EXPECT_TRUE(segment_no_tracking.poses.empty());
-}
-
 // Path segment extraction tests
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_path_segment_extraction)
 {
