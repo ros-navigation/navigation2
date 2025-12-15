@@ -76,7 +76,7 @@ protected:
 
   bool is_within_bounds_{false};
   double max_error_right_;
-  double max_error_left_{1.5};
+  double max_error_left_;
 };
 
 }  // namespace nav2_behavior_tree
