@@ -15,6 +15,7 @@
 #ifndef NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 #define NAV2_COSTMAP_2D__BOUNDED_TRACKING_ERROR_LAYER_HPP_
 
+#include <atomic>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -25,7 +26,6 @@
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
-#include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -147,6 +147,22 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
+  /**
+   * @brief Draws a wall line on the costmap using Bresenham's algorithm with thickness.
+   * @param master_grid Reference to the costmap to draw on.
+   * @param x0 Start x coordinate in map cells.
+   * @param y0 Start y coordinate in map cells.
+   * @param x1 End x coordinate in map cells.
+   * @param y1 End y coordinate in map cells.
+   * @param map_size_x Width of the map in cells.
+   * @param map_size_y Height of the map in cells.
+   */
+  void drawWallLine(
+    nav2_costmap_2d::Costmap2D & master_grid,
+    unsigned int x0, unsigned int y0,
+    unsigned int x1, unsigned int y1,
+    unsigned int map_size_x, unsigned int map_size_y);
+
   nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
 
 private:
@@ -156,11 +172,11 @@ private:
   nav_msgs::msg::Path last_path_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
-  size_t temp_step_;
+  size_t step_size_;
   int step_;
-  double width_;
+  double corridor_width_;
   double look_ahead_;
-  bool enabled_;
+  std::atomic<bool> enabled_;
   std::string path_topic_;
   std::string tracking_feedback_topic_;
   int wall_thickness_;
