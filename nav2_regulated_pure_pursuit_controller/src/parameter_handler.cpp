@@ -263,13 +263,15 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       if (param_name == plugin_name_ + ".use_path_aware_obstacle_distance") {
         if (params_.min_distance_to_obstacle <= 0.0 && parameter.as_bool()) {
           RCLCPP_WARN(
-            logger_, "For 'use_path_aware_obstacle_distance' to be enabled, 'min_distance_to_obstacle' "
+            logger_,
+              "For 'use_path_aware_obstacle_distance' to be enabled, 'min_distance_to_obstacle' "
     "must be set to a positive value, but it is not. Rejecting parameter update.");
           result.successful = false;
         } else if (!params_.use_velocity_scaled_lookahead_dist && parameter.as_bool()) {
           RCLCPP_WARN(
-            logger_, "For 'use_path_aware_obstacle_distance' to be enabled, 'use_velocity_scaled_lookahead_dist' "
-    "must also be true. Rejecting parameter update.");
+            logger_,
+              "For 'use_path_aware_obstacle_distance' to be enabled,"
+    " 'use_velocity_scaled_lookahead_dist' must also be true. Rejecting parameter update.");
           result.successful = false;
         }
       }

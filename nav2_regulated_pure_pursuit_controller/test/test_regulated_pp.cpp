@@ -524,12 +524,20 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     results4);
 
   auto results5 = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", true),
-      rclcpp::Parameter("test.use_path_aware_obstacle_distance", true)});
+    {rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results5);
+
+  EXPECT_EQ(node->get_parameter("test.use_velocity_scaled_lookahead_dist").as_bool(), true);
+
+  auto results6 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.use_path_aware_obstacle_distance", true)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results6);
 
   EXPECT_EQ(node->get_parameter("test.use_path_aware_obstacle_distance").as_bool(), true);
 }
