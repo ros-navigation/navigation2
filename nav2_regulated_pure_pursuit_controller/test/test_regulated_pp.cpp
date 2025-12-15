@@ -462,6 +462,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false),
+      rclcpp::Parameter("test.use_path_aware_obstacle_distance", false),
       rclcpp::Parameter("test.stateful", false)});
 
   rclcpp::spin_until_future_complete(
@@ -495,6 +496,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       "test.use_cost_regulated_linear_velocity_scaling").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_path_aware_obstacle_distance").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
 
   // Should fail
@@ -520,8 +522,17 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results4);
-}
 
+  auto results5 = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", true),
+      rclcpp::Parameter("test.use_path_aware_obstacle_distance", true)});
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results5);
+
+  EXPECT_EQ(node->get_parameter("test.use_path_aware_obstacle_distance").as_bool(), true);
+}
 class TransformGlobalPlanTest : public ::testing::Test
 {
 protected:
