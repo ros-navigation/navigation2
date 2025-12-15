@@ -59,7 +59,7 @@ public:
     const std::string & node_name,
     const std::string & ns,
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : rclcpp_lifecycle::LifecycleNode(node_name, ns, options, getEnableLifecycleServices(options))
+  : rclcpp_lifecycle::LifecycleNode(node_name, ns, rclcpp::NodeOptions(options).use_intra_process_comms(true), getEnableLifecycleServices(options))
   {
     // server side never times out from lifecycle manager
     this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
