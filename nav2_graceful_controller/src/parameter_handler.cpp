@@ -71,7 +71,7 @@ ParameterHandler::ParameterHandler(
   params_.use_collision_detection = node->declare_or_get_parameter(
     plugin_name_ + ".use_collision_detection", true);
   params_.final_rotation_tolerance = node->declare_or_get_parameter(
-    plugin_name_ + ".final_rotation_tolerance", 3.1416);
+    plugin_name_ + ".final_rotation_tolerance", 0.0);
   params_.footprint_scaling_linear_vel = node->declare_or_get_parameter(
     plugin_name_ + ".footprint_scaling_linear_vel", 0.5);
   params_.footprint_scaling_factor = node->declare_or_get_parameter(
