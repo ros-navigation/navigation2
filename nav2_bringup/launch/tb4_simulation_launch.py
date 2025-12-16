@@ -239,6 +239,7 @@ def generate_launch_description() -> LaunchDescription:
             'use_respawn': use_respawn,
             'use_keepout_zones': use_keepout_zones,
             'use_speed_zones': use_speed_zones,
+            'container_name': 'nav2_container',
         }.items(),
     )
 
