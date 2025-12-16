@@ -57,6 +57,12 @@ void CostmapLayer::matchSize()
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   Costmap2D * master = layered_costmap_->getCostmap();
+  if (!master) {
+    RCLCPP_WARN(
+      rclcpp::get_logger("nav2_costmap_2d"),
+      "Cannot match size for layer, master costmap is not initialized yet.");
+    return;
+  }
   resizeMap(
     master->getSizeInCellsX(), master->getSizeInCellsY(), master->getResolution(),
     master->getOriginX(), master->getOriginY());

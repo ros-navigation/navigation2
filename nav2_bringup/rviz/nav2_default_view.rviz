@@ -424,7 +424,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: local_plan
+            Value: transformed_global_plan
           Value: true
         - Class: rviz_default_plugins/MarkerArray
           Enabled: false

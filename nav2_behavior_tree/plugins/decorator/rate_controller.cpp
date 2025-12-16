@@ -39,9 +39,6 @@ BT::NodeStatus RateController::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-  }
-
-  if (!BT::isStatusActive(status())) {
     // Reset the starting point since we're starting a new iteration of
     // the rate controller (moving from IDLE to RUNNING)
     start_ = std::chrono::high_resolution_clock::now();

@@ -27,8 +27,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowPath
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
@@ -96,6 +95,7 @@ public:
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::InputPort<std::string>("progress_checker_id", ""),
+        BT::InputPort<std::string>("path_handler_id", ""),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
         BT::OutputPort<std::string>(

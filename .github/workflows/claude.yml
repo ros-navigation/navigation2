@@ -23,6 +23,7 @@ jobs:
         github.actor == 'tonynajjar' ||
         github.actor == 'ruffsl' ||
         github.actor == 'doisyg' ||
+        github.actor == 'mini-1235' ||
         github.actor == 'padhupradheep'
       )
 

@@ -35,8 +35,7 @@ using namespace std::chrono_literals;  // NOLINT
 /**
  * @brief Abstract class representing a service based BT node
  * @tparam ServiceT Type of service
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 template<class ServiceT>
 class BtServiceNode : public BT::ActionNodeBase

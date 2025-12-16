@@ -24,8 +24,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtServiceNode class that wraps nav2_msgs::srv::Toggle
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class ToggleCollisionMonitorService : public BtServiceNode<nav2_msgs::srv::Toggle>
 {

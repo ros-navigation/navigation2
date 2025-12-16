@@ -119,18 +119,26 @@ protected:
   void computeAndTrackRoute();
 
   /**
-   * @brief Abstract method combining finding the starting/ending nodes and the route planner
-   * to find the Node locations of interest and route to the goal
-   * @param goal The request goal information
-   * @param blocked_ids The IDs of blocked graphs / edges
-   * @param updated_start_id The nodeID of an updated starting point when tracking
-   * a route that corresponds to the next point to route to from to continue progress
-   * @return A route of the request
+   * @brief Compute a route to the goal, incorporating rerouting information.
+   *
+   * This method combines finding the starting and ending nodes with the route
+   * planner to determine the relevant node locations and compute the route.
+   * The provided ReroutingState can specify:
+   *   - an updated starting node ID when tracking a previous route,
+   *   - an overridden starting pose for rerouting,
+   *   - optional constraints such as blocked elements to avoid (if provided).
+   *
+   * This allows progress to continue smoothly when re-planning or recovering
+   * from partial execution of a previous route.
+   *
+   * @param goal The request goal information.
+   * @param rerouting_info State describing updated start and rerouting context.
+   * @return A route from the selected start node to the goal.
    */
   template<typename GoalT>
   Route findRoute(
     const std::shared_ptr<const GoalT> goal,
-    ReroutingState & rerouting_info = ReroutingState());
+    ReroutingState & rerouting_info);
 
   /**
    * @brief Main processing called by both action server callbacks to centralize

@@ -129,7 +129,7 @@ public:
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  bool isClearable() {return false;}
+  bool isClearable() final {return false;}
 
   /** CostmapFilter API **/
   /**
