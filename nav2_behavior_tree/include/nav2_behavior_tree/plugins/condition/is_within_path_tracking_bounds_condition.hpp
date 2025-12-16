@@ -74,7 +74,7 @@ protected:
   nav2::Subscription<nav2_msgs::msg::TrackingFeedback>::SharedPtr tracking_feedback_sub_;
   std::chrono::milliseconds bt_loop_duration_;
 
-  bool is_within_bounds_{false};
+  bool is_within_bounds_{true};
   double max_error_right_;
   double max_error_left_;
 };

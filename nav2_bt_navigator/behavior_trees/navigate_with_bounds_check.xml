@@ -9,7 +9,6 @@
       <RateController hz="3.0">
         <Fallback>
           <IsWithinPathTrackingBounds max_error_left="0.05" max_error_right="0.05"/>
-          <AlwaysSuccess/>
         </Fallback>
       </RateController>
       <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
