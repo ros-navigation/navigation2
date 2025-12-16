@@ -122,8 +122,7 @@ void Optimizer::getParams()
   s.constraints = s.base_constraints;
 
   setMotionModel(motion_model_name);
-  // Don't reset zone-based speed limits after params changes
-  parameters_handler_->addPostCallback([this]() {reset(false);});
+  parameters_handler_->addPostCallback([this]() {reset();});
 
   double controller_frequency;
   getParentParam(controller_frequency, "controller_frequency", 0.0, ParameterType::Static);
