@@ -57,7 +57,6 @@ void checkMacro(
   gc.reset();
 
   geometry_msgs::msg::Pose pose0, pose1;
-  std::optional<geometry_msgs::msg::Pose> before_goal_pose = std::nullopt;
   pose0.position.x = x0;
   pose0.position.y = y0;
   pose0.position.z = 0.0;
@@ -287,7 +286,6 @@ TEST(StoppedGoalChecker, is_reached)
   gc.initialize(x, "test2", costmap);
   pgc.initialize(x, "test3", costmap);
   geometry_msgs::msg::Pose goal_pose;
-  std::optional<geometry_msgs::msg::Pose> before_goal_pose = std::nullopt;
   geometry_msgs::msg::Twist velocity;
   geometry_msgs::msg::Pose current_pose;
 

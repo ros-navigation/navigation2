@@ -80,7 +80,6 @@ public:
    * @brief Check whether the goal should be considered reached
    * @param query_pose The pose to check
    * @param goal_pose The pose to check against
-   * @param before_goal_pose The pose on the path before the goal pose, if available
    * @param velocity The robot's current velocity
    * @param transformed_global_plan The global plan after being processed by the path handler
    * @return True if goal is reached

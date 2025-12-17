@@ -630,12 +630,6 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
   end_pose_ = path.poses.back();
   end_pose_.header.frame_id = path.header.frame_id;
   goal_checkers_[current_goal_checker_]->reset();
-  // Save the pose before the end pose for use in goal checking, but only if we have more than
-  // one pose in the path
-  before_end_pose_.reset();
-  if (path.poses.size() > 1) {
-    before_end_pose_ = path.poses[path.poses.size() - 2];
-  }
 
   RCLCPP_DEBUG(
     get_logger(), "Path end point is (%.2f, %.2f)",
@@ -881,21 +875,6 @@ bool ControllerServer::isGoalReached()
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  std::optional<geometry_msgs::msg::Pose> transformed_before_end_pose;
-  if (before_end_pose_.has_value()) {
-    // Use the current robot pose's timestamp for the transformation
-    before_end_pose_.value().header.stamp = pose.header.stamp;
-    geometry_msgs::msg::PoseStamped transformed_before_end_pose_stamped;
-    if (nav2_util::transformPoseInTargetFrame(
-          before_end_pose_.value(), transformed_before_end_pose_stamped,
-          *costmap_ros_->getTfBuffer(),
-          costmap_ros_->getGlobalFrameID(), costmap_ros_->getTransformTolerance()))
-    {
-      transformed_before_end_pose = transformed_before_end_pose_stamped.pose;
-    } else {
-      throw nav2_core::ControllerTFError("Failed to transform before end pose to global frame");
-    }
-  }
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose_.pose,
     velocity, transformed_global_plan_);
