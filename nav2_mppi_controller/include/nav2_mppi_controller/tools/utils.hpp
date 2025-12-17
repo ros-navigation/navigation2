@@ -293,26 +293,27 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const auto traj_x = data.trajectories.x.col(traj_cols - 1);
   const auto traj_y = data.trajectories.y.col(traj_cols - 1);
 
-  const auto dx = (data.path.x.transpose()).replicate(traj_x.rows(), 1).colwise() - traj_x;
-  const auto dy = (data.path.y.transpose()).replicate(traj_y.rows(), 1).colwise() - traj_y;
-
-  const auto dists = dx * dx + dy * dy;
-
   int max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t n_rows = dists.rows();
-  size_t n_cols = dists.cols();
+  size_t n_rows = traj_x.rows();
+  size_t n_cols = data.path.x.size();
   for (size_t i = 0; i != n_rows; i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = max_id_by_trajectories; j != n_cols; j++) {
-      const float cur_dist = dists(i, j);
+    for (size_t j = 0; j != n_cols; j++) {
+      const float dx = data.path.x(j) - traj_x(i);
+      const float dy = data.path.y(j) - traj_y(i);
+      const float cur_dist = dx * dx + dy * dy;
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
         min_id_by_path = j;
       }
     }
     max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
+    // Early exit if we've already reached the end of the path
+    if (max_id_by_trajectories == static_cast<int>(n_cols) - 1) {
+      break;
+    }
   }
   return max_id_by_trajectories;
 }
