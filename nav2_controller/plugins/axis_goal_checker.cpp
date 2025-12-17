@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <tf2/utils.h>
-
 #include <memory>
 #include <string>
 #include <limits>
