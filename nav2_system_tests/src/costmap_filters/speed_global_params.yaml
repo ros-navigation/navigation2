@@ -59,17 +59,17 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     speed_limit_topic: "/speed_limit"
-    progress_checker_plugins: ["progress_checker"]
-    goal_checker_plugins: ["goal_checker"]
+    progress_checker_plugins: ["ProgressChecker"]
+    goal_checker_plugins: ["GoalChecker"]
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
-    progress_checker:
+    ProgressChecker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5
       movement_time_allowance: 10.0
     # Goal checker parameters
-    goal_checker:
+    GoalChecker:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
@@ -246,8 +246,8 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    waypoint_task_executor_plugin: "waypoint_task_executor"
-    waypoint_task_executor:
+    waypoint_task_executor_plugin: "WaypointTaskExecutor"
+    WaypointTaskExecutor:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
       waypoint_pause_duration: 0
@@ -311,8 +311,8 @@ docking_server:
     dock_prestaging_tolerance: 0.5
 
     # Types of docks
-    dock_plugins: ["simple_charging_dock"]
-    simple_charging_dock:
+    dock_plugins: ["SimpleChargingDock"]
+    SimpleChargingDock:
       plugin: "opennav_docking::SimpleChargingDock"
       docking_threshold: 0.05
       staging_x_offset: -0.7
@@ -333,6 +333,6 @@ docking_server:
     # The following example illustrates configuring dock instances.
     # docks: ['home_dock']  # Input your docks here
     # home_dock:
-    #   type: 'simple_charging_dock'
+    #   type: 'SimpleChargingDock'
     #   frame: map
     #   pose: [0.0, 0.0, 0.0]

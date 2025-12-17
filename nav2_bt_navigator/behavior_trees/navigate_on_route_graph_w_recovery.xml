@@ -52,7 +52,7 @@
                   </ReactiveSequence>
 
                   <!-- Smooth the completed route -->
-                  <SmoothPath unsmoothed_path="{route_path}" smoothed_path="{path}" smoother_id="route_smoother" error_code_id="{smoother_error_code}" error_msg="{smoother_error_msg}"/>
+                  <SmoothPath unsmoothed_path="{route_path}" smoothed_path="{path}" smoother_id="RouteSmoother" error_code_id="{smoother_error_code}" error_msg="{smoother_error_msg}"/>
                 </Sequence>
               </Fallback>
             </RateController>

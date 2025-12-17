@@ -362,7 +362,7 @@ class TestDockingServer(unittest.TestCase):
         self.is_charging = False
         self.undock_action_client.wait_for_server(timeout_sec=5.0)
         goal = UndockRobot.Goal()
-        goal.dock_type = 'test_dock_plugin'
+        goal.dock_type = 'TestDockPlugin'
         future = self.undock_action_client.send_goal_async(goal)
         rclpy.spin_until_future_complete(self.node, future)
         self.goal_handle = future.result()
