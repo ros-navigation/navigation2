@@ -38,12 +38,12 @@ controller_server:
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
-    progress_checker:
+    ProgressChecker:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.5
       movement_time_allowance: 10.0
     # Goal checker parameters
-    #precise_goal_checker:
+    #PreciseGoalChecker:
     #  plugin: "nav2_controller::SimpleGoalChecker"
     #  xy_goal_tolerance: 0.25
     #  yaw_goal_tolerance: 0.25
@@ -271,8 +271,8 @@ planner_server:
 
 smoother_server:
   ros__parameters:
-    smoother_plugins: ["simple_smoother"]
-    simple_smoother:
+    smoother_plugins: ["SimpleSmoother"]
+    SimpleSmoother:
       plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
       max_its: 1000
@@ -310,8 +310,8 @@ waypoint_follower:
   ros__parameters:
     loop_rate: 20
     stop_on_failure: false
-    waypoint_task_executor_plugin: "wait_at_waypoint"
-    wait_at_waypoint:
+    waypoint_task_executor_plugin: "WaitAtWaypoint"
+    WaitAtWaypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: true
       waypoint_pause_duration: 200
@@ -375,8 +375,8 @@ docking_server:
     dock_prestaging_tolerance: 0.5
 
     # Types of docks
-    dock_plugins: ["simple_charging_dock"]
-    simple_charging_dock:
+    dock_plugins: ["SimpleChargingDock"]
+    SimpleChargingDock:
       plugin: "opennav_docking::SimpleChargingDock"
       docking_threshold: 0.05
       staging_x_offset: -0.7
@@ -396,7 +396,7 @@ docking_server:
     # Dock instances
     docks: ["home_dock"] # Input your docks here
     home_dock:
-      type: "simple_charging_dock"
+      type: "SimpleChargingDock"
       frame: map
       pose: [0.0, 0.0, 0.0]
 

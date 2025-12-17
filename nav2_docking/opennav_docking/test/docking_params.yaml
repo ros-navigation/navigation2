@@ -4,8 +4,8 @@ docking_server:
     controller:
       use_collision_detection: false
       transform_tolerance: 0.5
-    dock_plugins: [test_dock_plugin]
-    test_dock_plugin:
+    dock_plugins: [TestDockPlugin]
+    TestDockPlugin:
       plugin: opennav_docking::SimpleChargingDock
       use_battery_status: true
       dock_direction: forward
@@ -13,7 +13,7 @@ docking_server:
       staging_yaw_offset: 0.0
     docks: [test_dock]
     test_dock:
-      type: test_dock_plugin
+      type: TestDockPlugin
       frame: odom
       pose: [10.0, 0.0, 0.0]
       tolerance: 0.5

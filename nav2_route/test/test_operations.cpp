@@ -49,7 +49,7 @@ TEST(OperationsManagerTest, test_failed_plugins)
 {
   // This plugin does not exist
   auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
-  node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
+  node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"Hi"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
 }
@@ -72,12 +72,12 @@ TEST(OperationsManagerTest, test_find_operations)
 
   // Try again with some operations in the node and edge (2x-ed)
   Operation op, op2;
-  op.type = "test";
+  op.type = "Test";
   op.trigger = OperationTrigger::ON_ENTER;
   enter.operations.push_back(op);
   op.trigger = OperationTrigger::NODE;
   node2.operations.push_back(op);
-  op2.type = "test2";
+  op2.type = "Test2";
   op2.trigger = OperationTrigger::ON_EXIT;
   exit2.operations.push_back(op2);
   EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 3u);
@@ -96,7 +96,7 @@ TEST(OperationsManagerTest, test_find_operations_failure2)
 {
   // This plugin does not exist
   auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
-  node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"hi"}));
+  node->declare_parameter("operations", rclcpp::ParameterValue(std::vector<std::string>{"Hi"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EXPECT_THROW(OperationsManager manager(node, costmap_subscriber), std::runtime_error);
 }
@@ -253,7 +253,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
 
   // Setup some test operations
   Operation op, op2, op3;
-  op.type = "test";
+  op.type = "Test";
   op.trigger = OperationTrigger::NODE;
 
   op2.type = "OpenDoor";
@@ -425,7 +425,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
 
   // Setup some test operations
   Operation op, op2;
-  op.type = "test";
+  op.type = "Test";
   op2.type = "TriggerEvent";
   op.trigger = OperationTrigger::NODE;
   op2.trigger = OperationTrigger::NODE;
