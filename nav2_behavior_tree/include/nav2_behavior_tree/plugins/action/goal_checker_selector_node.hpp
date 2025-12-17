@@ -32,7 +32,7 @@ namespace nav2_behavior_tree
 /**
  * @brief The GoalCheckerSelector behavior is used to switch the goal checker
  * of the controller server. It subscribes to a topic "goal_checker_selector"
- * to get the decision about what goal_checker must be used. It is usually used before of
+ * to get the decision about what goal checker must be used. It is usually used before of
  * the FollowPath. The selected_goal_checker output port is passed to goal_checker_id
  * input port of the FollowPath
  * @note It will re-initialize when halted.
@@ -59,16 +59,16 @@ public:
     return {
       BT::InputPort<std::string>(
         "default_goal_checker",
-        "the default goal_checker to use if there is not any external topic message received."),
+        "the default goal checker to use if there is not any external topic message received."),
 
       BT::InputPort<std::string>(
         "topic_name",
         "goal_checker_selector",
-        "the input topic name to select the goal_checker"),
+        "the input topic name to select the goal checker"),
 
       BT::OutputPort<std::string>(
         "selected_goal_checker",
-        "Selected goal_checker by subscription")
+        "Selected goal checker by subscription")
     };
   }
 

@@ -56,13 +56,13 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
 
     navigator._waitForNodeToActivate('controller_server')
     follow_path = {
-        'unknown': FollowPath.Result().UNKNOWN,
-        'invalid_controller': FollowPath.Result().INVALID_CONTROLLER,
-        'tf_error': FollowPath.Result().TF_ERROR,
-        'invalid_path': FollowPath.Result().INVALID_PATH,
-        'patience_exceeded': FollowPath.Result().PATIENCE_EXCEEDED,
-        'failed_to_make_progress': FollowPath.Result().FAILED_TO_MAKE_PROGRESS,
-        'no_valid_control': FollowPath.Result().NO_VALID_CONTROL,
+        'Unknown': FollowPath.Result().UNKNOWN,
+        'InvalidController': FollowPath.Result().INVALID_CONTROLLER,
+        'TFError': FollowPath.Result().TF_ERROR,
+        'InvalidPath': FollowPath.Result().INVALID_PATH,
+        'PatienceExceeded': FollowPath.Result().PATIENCE_EXCEEDED,
+        'FailedToMakeProgress': FollowPath.Result().FAILED_TO_MAKE_PROGRESS,
+        'NoValidControl': FollowPath.Result().NO_VALID_CONTROL,
     }
 
     for controller, error_code in follow_path.items():
@@ -94,15 +94,15 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
 
     navigator._waitForNodeToActivate('planner_server')
     compute_path_to_pose = {
-        'unknown': ComputePathToPose.Result().UNKNOWN,
-        'invalid_planner': ComputePathToPose.Result().INVALID_PLANNER,
-        'tf_error': ComputePathToPose.Result().TF_ERROR,
-        'start_outside_map': ComputePathToPose.Result().START_OUTSIDE_MAP,
-        'goal_outside_map': ComputePathToPose.Result().GOAL_OUTSIDE_MAP,
-        'start_occupied': ComputePathToPose.Result().START_OCCUPIED,
-        'goal_occupied': ComputePathToPose.Result().GOAL_OCCUPIED,
-        'timeout': ComputePathToPose.Result().TIMEOUT,
-        'no_valid_path': ComputePathToPose.Result().NO_VALID_PATH,
+        'Unknown': ComputePathToPose.Result().UNKNOWN,
+        'InvalidPlanner': ComputePathToPose.Result().INVALID_PLANNER,
+        'TFError': ComputePathToPose.Result().TF_ERROR,
+        'StartOutsideMap': ComputePathToPose.Result().START_OUTSIDE_MAP,
+        'GoalOutsideMap': ComputePathToPose.Result().GOAL_OUTSIDE_MAP,
+        'StartOccupied': ComputePathToPose.Result().START_OCCUPIED,
+        'GoalOccupied': ComputePathToPose.Result().GOAL_OCCUPIED,
+        'Timeout': ComputePathToPose.Result().TIMEOUT,
+        'NoValidPath': ComputePathToPose.Result().NO_VALID_PATH,
     }
 
     for planner, error_code in compute_path_to_pose.items():
@@ -120,7 +120,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
 
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
-    result = navigator._getPathImpl(initial_pose, goal_pose, 'cancelled')
+    result = navigator._getPathImpl(initial_pose, goal_pose, 'Cancelled')
     assert (
         navigator.getResult() == TaskResult.CANCELED
     ), 'Compute path to pose cancel failed'
@@ -130,16 +130,16 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     goal_poses = [goal_pose, goal_pose1]
 
     compute_path_through_poses = {
-        'unknown': ComputePathThroughPoses.Result().UNKNOWN,
-        'invalid_planner': ComputePathThroughPoses.Result().INVALID_PLANNER,
-        'tf_error': ComputePathThroughPoses.Result().TF_ERROR,
-        'start_outside_map': ComputePathThroughPoses.Result().START_OUTSIDE_MAP,
-        'goal_outside_map': ComputePathThroughPoses.Result().GOAL_OUTSIDE_MAP,
-        'start_occupied': ComputePathThroughPoses.Result().START_OCCUPIED,
-        'goal_occupied': ComputePathThroughPoses.Result().GOAL_OCCUPIED,
-        'timeout': ComputePathThroughPoses.Result().TIMEOUT,
-        'no_valid_path': ComputePathThroughPoses.Result().NO_VALID_PATH,
-        'no_viapoints_given': ComputePathThroughPoses.Result().NO_VIAPOINTS_GIVEN,
+        'Unknown': ComputePathThroughPoses.Result().UNKNOWN,
+        'InvalidPlanner': ComputePathThroughPoses.Result().INVALID_PLANNER,
+        'TFError': ComputePathThroughPoses.Result().TF_ERROR,
+        'StartOutsideMap': ComputePathThroughPoses.Result().START_OUTSIDE_MAP,
+        'GoalOutsideMap': ComputePathThroughPoses.Result().GOAL_OUTSIDE_MAP,
+        'StartOccupied': ComputePathThroughPoses.Result().START_OCCUPIED,
+        'GoalOccupied': ComputePathThroughPoses.Result().GOAL_OCCUPIED,
+        'Timeout': ComputePathThroughPoses.Result().TIMEOUT,
+        'NoValidPath': ComputePathThroughPoses.Result().NO_VALID_PATH,
+        'NoViapointsGiven': ComputePathThroughPoses.Result().NO_VIAPOINTS_GIVEN,
     }
 
     for planner, error_code in compute_path_through_poses.items():
@@ -152,7 +152,7 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
         ), 'Compute path through pose error_msg is empty'
     # Check compute path to pose cancel
     threading.Thread(target=cancel_task).start()
-    result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'cancelled')
+    result = navigator._getPathThroughPosesImpl(initial_pose, goal_poses, 'Cancelled')
     assert (
         navigator.getResult() == TaskResult.CANCELED
     ), 'Compute path through poses cancel failed'
@@ -176,12 +176,12 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
 
     navigator._waitForNodeToActivate('smoother_server')
     smoother_errors = {
-        'invalid_smoother': SmoothPath.Result().INVALID_SMOOTHER,
-        'unknown': SmoothPath.Result().UNKNOWN,
-        'timeout': SmoothPath.Result().TIMEOUT,
-        'smoothed_path_in_collision': SmoothPath.Result().SMOOTHED_PATH_IN_COLLISION,
-        'failed_to_smooth_path': SmoothPath.Result().FAILED_TO_SMOOTH_PATH,
-        'invalid_path': SmoothPath.Result().INVALID_PATH,
+        'InvalidSmoother': SmoothPath.Result().INVALID_SMOOTHER,
+        'Unknown': SmoothPath.Result().UNKNOWN,
+        'Timeout': SmoothPath.Result().TIMEOUT,
+        'SmoothedPathInCollision': SmoothPath.Result().SMOOTHED_PATH_IN_COLLISION,
+        'FailedToSmoothPath': SmoothPath.Result().FAILED_TO_SMOOTH_PATH,
+        'InvalidPath': SmoothPath.Result().INVALID_PATH,
     }
 
     for smoother, error_code in smoother_errors.items():

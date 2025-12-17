@@ -335,7 +335,7 @@ void ObstacleLayer::onInitialize()
       if (inf_is_valid) {
         RCLCPP_WARN(
           logger_,
-          "obstacle_layer: inf_is_valid option is not applicable to PointCloud observations.");
+          "ObstacleLayer: inf_is_valid option is not applicable to PointCloud observations.");
       }
 
       auto filter = std::make_shared<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>(
