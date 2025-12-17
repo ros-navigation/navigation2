@@ -66,9 +66,15 @@ void AxisGoalChecker::reset()
 
 bool AxisGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const std::optional<geometry_msgs::msg::Pose> & before_goal_pose,
-  const geometry_msgs::msg::Twist &)
+  const geometry_msgs::msg::Twist &,
+  const nav_msgs::msg::Path & transformed_global_plan)
 {
+  // Extract before_goal_pose from the path (second to last pose)
+  std::optional<geometry_msgs::msg::Pose> before_goal_pose;
+  if (transformed_global_plan.poses.size() >= 2) {
+    before_goal_pose = transformed_global_plan.poses[transformed_global_plan.poses.size() - 2].pose;
+  }
+
   if (before_goal_pose.has_value()) {
     // end of path direction
     double end_of_path_yaw = atan2(
