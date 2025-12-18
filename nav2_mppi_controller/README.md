@@ -89,7 +89,7 @@ This process is then repeated a number of times and returns a converged solution
  | cost_weight                      | double | Default 3.0. Weight to apply to critic term.                                                                |
  | cost_power                       | int    | Default 1. Power order to apply to term.                                                                    |
  | threshold_to_consider            | double | Default 0.5. Minimal distance between robot and goal above which angle goal cost considered.               |
- | symmetric_yaw_tolerance          | bool   | Default false. Enable for symmetric robots - allows goal approach from either forward or backward (goal ± 180°) without penalty. See [Symmetric Yaw Tolerance Guide](./symmetric_goal_critic_README.md) for details. |
+ | symmetric_yaw_tolerance          | bool   | Default false. Enable for symmetric robots - allows goal approach from either forward or backward (goal ± 180°) without penalty. See [Tuning Guide](https://docs.nav2.org/tuning/index.html) for details. |
 
 #### Goal Critic
  | Parameter            | Type   | Definition                                                                                                  |
