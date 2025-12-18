@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
+#include "angles/angles.h"
 
 namespace mppi::critics
 {
@@ -24,12 +25,14 @@ void GoalAngleCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.0f);
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
+  getParam(symmetric_yaw_tolerance_, "symmetric_yaw_tolerance", false);
 
   RCLCPP_INFO(
     logger_,
-    "GoalAngleCritic instantiated with %d power, %f weight, and %f "
-    "angular threshold.",
-    power_, weight_, threshold_to_consider_);
+    "GoalAngleCritic instantiated with %d power, %f weight, %f "
+    "angular threshold, and symmetric_yaw_tolerance %s.",
+    power_, weight_, threshold_to_consider_,
+    symmetric_yaw_tolerance_ ? "enabled" : "disabled");
 }
 
 void GoalAngleCritic::score(CriticData & data)
@@ -42,12 +45,30 @@ void GoalAngleCritic::score(CriticData & data)
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 
-  if (power_ > 1u) {
-    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_).pow(power_).eval();
+  if (symmetric_yaw_tolerance_) {
+    // For symmetric robots: use minimum distance to either goal orientation or goal + 180°
+    const double goal_yaw_flipped = angles::normalize_angle(goal_yaw + M_PI);
+
+    auto distance_to_goal = utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs();
+    auto distance_to_flipped = utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw_flipped).abs();
+
+    // Use the minimum distance
+    auto min_distance = distance_to_goal.cwiseMin(distance_to_flipped);
+
+    if (power_ > 1u) {
+      data.costs += (min_distance.rowwise().mean() * weight_).pow(power_).eval();
+    } else {
+      data.costs += (min_distance.rowwise().mean() * weight_).eval();
+    }
   } else {
-    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_).eval();
+    // Standard behavior: only consider the specified goal orientation
+    if (power_ > 1u) {
+      data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+        rowwise().mean()) * weight_).pow(power_).eval();
+    } else {
+      data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+        rowwise().mean()) * weight_).eval();
+    }
   }
 }
 
