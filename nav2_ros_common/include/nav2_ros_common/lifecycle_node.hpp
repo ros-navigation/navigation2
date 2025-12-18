@@ -140,6 +140,38 @@ public:
   }
 
   /**
+   * @brief Declare a parameter with a default value if it was not already declared.
+   * Wrapper around nav2::declare_or_get_parameter.
+   * @param parameter_name Name of the parameter
+   * @param default_value Default value of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   */
+  inline void declare_parameter_if_not_declared(
+    const std::string & parameter_name,
+    const rclcpp::ParameterValue & default_value,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    nav2::declare_parameter_if_not_declared(
+      this, parameter_name, default_value, parameter_descriptor);
+  }
+
+  /**
+   * @brief Declare a parameter with a given type(not value) if it was not already declared.
+   * Wrapper around nav2::declare_parameter_if_not_declared for type based declaration.
+   * @param parameter_name Name of the parameter
+   * @param parameter_type Type of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   */
+  inline void declare_parameter_if_not_declared(
+    const std::string & parameter_name,
+    const rclcpp::ParameterType & param_type,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    nav2::declare_parameter_if_not_declared(
+      this, parameter_name, param_type, parameter_descriptor);
+  }
+
+  /**
    * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
    * @param topic_name Name of topic
    * @param callback Callback function to handle incoming messages
