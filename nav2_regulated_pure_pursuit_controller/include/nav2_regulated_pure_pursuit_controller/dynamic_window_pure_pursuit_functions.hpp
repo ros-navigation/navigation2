@@ -98,16 +98,14 @@ inline DynamicWindowBounds computeDynamicWindow(
     };
 
   // linear velocity
-  std::tie(dynamic_window.max_linear_vel,
-        dynamic_window.min_linear_vel) = compute_window(current_speed.linear.x,
-                 max_linear_vel, min_linear_vel,
-                 max_linear_accel, max_linear_decel);
+  std::tie(dynamic_window.max_linear_vel, dynamic_window.min_linear_vel) =
+    compute_window(current_speed.linear.x, max_linear_vel, min_linear_vel,
+    max_linear_accel, max_linear_decel);
 
   // angular velocity
-  std::tie(dynamic_window.max_angular_vel,
-        dynamic_window.min_angular_vel) = compute_window(current_speed.angular.z,
-                 max_angular_vel, min_angular_vel,
-                 max_angular_accel, max_angular_decel);
+  std::tie(dynamic_window.max_angular_vel, dynamic_window.min_angular_vel) =
+    compute_window(current_speed.angular.z, max_angular_vel, min_angular_vel,
+    max_angular_accel, max_angular_decel);
 
   return dynamic_window;
 }
