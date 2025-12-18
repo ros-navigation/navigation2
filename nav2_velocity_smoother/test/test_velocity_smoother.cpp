@@ -809,13 +809,13 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
-  // Test zero smoothing_frequency_ rejection
+  // Test zero smoothing_frequency rejection
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("smoothing_frequency_", 0.0)});
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
-  // Test negative smoothing_frequency_ rejection
+  // Test negative smoothing_frequency rejection
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("smoothing_frequency_", -1.0)});
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
