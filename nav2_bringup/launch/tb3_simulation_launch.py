@@ -198,6 +198,7 @@ def generate_launch_description() -> LaunchDescription:
             'use_respawn': use_respawn,
             'use_keepout_zones': 'False',
             'use_speed_zones': 'False',
+            'container_name': 'nav2_container',
         }.items(),
     )
     # The SDF file for the world is a xacro file because we wanted to
