@@ -297,7 +297,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   data1.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data1);
   float cost_forward_without_symmetric = costs(0);
-  EXPECT_GT(cost_forward_without_symmetric, 0.1);  // Should have significant cost
+  EXPECT_GT(cost_forward_without_symmetric, 9.4);  // Should have significant cost
 
   // Test 2: Trajectory at PI rad (backward) with symmetric disabled
   // Should have zero/low cost since backward matches goal orientation PI
@@ -307,7 +307,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   data2.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data2);
   float cost_backward_without_symmetric = costs(0);
-  EXPECT_LT(cost_backward_without_symmetric, 0.01);  // Should be nearly zero
+  EXPECT_LT(cost_backward_without_symmetric, 0.0001);  // Should be nearly zero
 
   // Test 3: Trajectory at 0 rad (forward) with symmetric ENABLED
   // Should have LOWER cost than Test 1 because with symmetric enabled,
@@ -318,7 +318,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   data3.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic_symmetric.score(data3);
   float cost_forward_with_symmetric = costs(0);
-  EXPECT_LT(cost_forward_with_symmetric, 0.01);  // Should be nearly zero
+  EXPECT_LT(cost_forward_with_symmetric, 0.0001);  // Should be nearly zero
   EXPECT_LT(cost_forward_with_symmetric, cost_forward_without_symmetric);  // Should be lower than without symmetric
 }
 
