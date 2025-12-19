@@ -84,8 +84,6 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
 
   // check traversal cost computation
-  // simulated first node, should return neutral cost
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
   // now with straight motion, cost is 0, so will be neutral as well
   // but now reduced by retrospective penalty (10%)
   testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
