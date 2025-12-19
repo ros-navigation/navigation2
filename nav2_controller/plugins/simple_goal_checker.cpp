@@ -73,7 +73,8 @@ void SimpleGoalChecker::initialize(
   xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
   stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
-  symmetric_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name + ".symmetric_yaw_tolerance", false);
+  symmetric_yaw_tolerance_ = node->declare_or_get_parameter(plugin_name + 
+                                      ".symmetric_yaw_tolerance", false);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
 
