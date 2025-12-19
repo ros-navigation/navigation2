@@ -179,14 +179,23 @@ void
 ParameterHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
-
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
+
+    // If we are trying to change the parameter of a plugin we can just skip it at this point
+    // as they handle parameter changes themselves and don't need to lock the mutex
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
+
+    if (!mutex_.try_lock()) {
+      RCLCPP_WARN(
+        logger_,
+        "Unable to dynamically change Parameters while the controller is currently running");
+      return;
+    }
+
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "min_x_velocity_threshold") {
         params_.min_x_velocity_threshold = parameter.as_double();
@@ -200,6 +209,7 @@ ParameterHandler::updateParametersCallback(
         params_.search_window = parameter.as_double();
       }
     }
+    mutex_.unlock();
   }
 }
 
