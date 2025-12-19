@@ -322,7 +322,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   // Should have high cost since it's not aligned with goal at PI
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
   costs = Eigen::ArrayXf::Zero(1000);
-  CriticData data1 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, 
+  CriticData data1 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
                       nullptr, std::nullopt, std::nullopt};
   data1.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data1);
@@ -333,7 +333,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   // Should have zero/low cost since backward matches goal orientation PI
   generated_trajectories.yaws = Eigen::ArrayXXf::Constant(1000, 30, 3.14159f);
   costs = Eigen::ArrayXf::Zero(1000);
-  CriticData data2 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, 
+  CriticData data2 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
                       nullptr, std::nullopt, std::nullopt};
   data2.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data2);
@@ -345,14 +345,14 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   // 0 rad is aligned with goal + PI (backward), which equals goal orientation
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
   costs = Eigen::ArrayXf::Zero(1000);
-  CriticData data3 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr, 
+  CriticData data3 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
                       nullptr, std::nullopt, std::nullopt};
   data3.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic_symmetric.score(data3);
   float cost_forward_with_symmetric = costs(0);
   EXPECT_LT(cost_forward_with_symmetric, 0.0001);  // Should be nearly zero
   // Should be lower than without symmetric
-  EXPECT_LT(cost_forward_with_symmetric, cost_forward_without_symmetric);  
+  EXPECT_LT(cost_forward_with_symmetric, cost_forward_without_symmetric);
 }
 
 TEST(CriticTests, GoalCritic)
