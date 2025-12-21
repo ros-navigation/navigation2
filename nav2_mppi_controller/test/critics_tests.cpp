@@ -323,7 +323,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
   costs = Eigen::ArrayXf::Zero(1000);
   CriticData data1 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
-                      nullptr, std::nullopt, std::nullopt};
+    nullptr, std::nullopt, std::nullopt};
   data1.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data1);
   float cost_forward_without_symmetric = costs(0);
@@ -334,7 +334,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   generated_trajectories.yaws = Eigen::ArrayXXf::Constant(1000, 30, 3.14159f);
   costs = Eigen::ArrayXf::Zero(1000);
   CriticData data2 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
-                      nullptr, std::nullopt, std::nullopt};
+    nullptr, std::nullopt, std::nullopt};
   data2.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic.score(data2);
   float cost_backward_without_symmetric = costs(0);
@@ -346,7 +346,7 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
   costs = Eigen::ArrayXf::Zero(1000);
   CriticData data3 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
-                      nullptr, std::nullopt, std::nullopt};
+    nullptr, std::nullopt, std::nullopt};
   data3.motion_model = std::make_shared<DiffDriveMotionModel>();
   critic_symmetric.score(data3);
   float cost_forward_with_symmetric = costs(0);
