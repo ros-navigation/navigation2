@@ -301,7 +301,8 @@ bool SimpleNonChargingDock::isDocked()
   return d < docking_threshold_;
 }
 
-void SimpleNonChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::ConstSharedPtr & state)
+void SimpleNonChargingDock::jointStateCallback(
+  const sensor_msgs::msg::JointState::ConstSharedPtr & state)
 {
   double velocity = 0.0;
   double effort = 0.0;

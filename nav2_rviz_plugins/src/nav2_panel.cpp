@@ -923,7 +923,8 @@ Nav2Panel::onInitialize()
     node->create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
     "navigate_through_poses/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr & msg) {
+    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
+    msg) {
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel(msg->feedback));
     });
 

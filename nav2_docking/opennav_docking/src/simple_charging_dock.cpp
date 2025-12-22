@@ -335,7 +335,8 @@ bool SimpleChargingDock::hasStoppedCharging()
   return !isCharging();
 }
 
-void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::ConstSharedPtr & state)
+void SimpleChargingDock::jointStateCallback(
+  const sensor_msgs::msg::JointState::ConstSharedPtr & state)
 {
   double velocity = 0.0;
   double effort = 0.0;

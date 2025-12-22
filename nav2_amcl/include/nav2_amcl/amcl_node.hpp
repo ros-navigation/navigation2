@@ -211,7 +211,8 @@ protected:
   /*
    * @brief Handle with an initial pose estimate is received
    */
-  void initialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
+  void initialPoseReceived(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
   /*
    * @brief Handle when a laser scan is received
    */

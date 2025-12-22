@@ -71,7 +71,8 @@ BT::NodeStatus IsBatteryChargingCondition::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-void IsBatteryChargingCondition::batteryCallback(const sensor_msgs::msg::BatteryState::ConstSharedPtr & msg)
+void IsBatteryChargingCondition::batteryCallback(
+  const sensor_msgs::msg::BatteryState::ConstSharedPtr & msg)
 {
   is_battery_charging_ =
     (msg->power_supply_status == sensor_msgs::msg::BatteryState::POWER_SUPPLY_STATUS_CHARGING);

@@ -248,7 +248,7 @@ void VelocitySmoother::inputCommandStampedCallback(
 }
 
 void VelocitySmoother::inputCommandCallback(
-  const geometry_msgs::msg::Twist::ConstSharedPtr &msg)
+  const geometry_msgs::msg::Twist::ConstSharedPtr & msg)
 {
   auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
   twist_stamped->twist = *msg;
