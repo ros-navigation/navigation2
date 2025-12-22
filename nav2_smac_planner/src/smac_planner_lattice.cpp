@@ -382,7 +382,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -404,17 +405,17 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   {
     if (_debug_visualizations) {
       auto now = _clock->now();
-      geometry_msgs::msg::PoseArray msg;
+      auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
       geometry_msgs::msg::Pose msg_pose;
-      msg.header.stamp = now;
-      msg.header.frame_id = _global_frame;
+      msg->header.stamp = now;
+      msg->header.frame_id = _global_frame;
       for (auto & e : *expansions) {
         msg_pose.position.x = std::get<0>(e);
         msg_pose.position.y = std::get<1>(e);
         msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-        msg.poses.push_back(msg_pose);
+        msg->poses.push_back(msg_pose);
       }
-      _expansions_publisher->publish(msg);
+      _expansions_publisher->publish(std::move(msg));
     }
 
     // Note: If the start is blocked only one iteration will occur before failure
@@ -451,23 +452,24 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   if (_debug_visualizations) {
     auto now = _clock->now();
     // Publish expansions for debug
-    geometry_msgs::msg::PoseArray msg;
+    auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
     geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = now;
-    msg.header.frame_id = _global_frame;
+    msg->header.stamp = now;
+    msg->header.frame_id = _global_frame;
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
       msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-      msg.poses.push_back(msg_pose);
+      msg->poses.push_back(msg_pose);
     }
-    _expansions_publisher->publish(msg);
+    _expansions_publisher->publish(std::move(msg));
 
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
       // Clear all markers first

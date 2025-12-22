@@ -90,7 +90,7 @@ BT::NodeStatus ProgressCheckerSelector::tick()
 }
 
 void
-ProgressCheckerSelector::callbackProgressCheckerSelect(const std_msgs::msg::String::SharedPtr msg)
+ProgressCheckerSelector::callbackProgressCheckerSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_progress_checker_ = msg->data;
 }

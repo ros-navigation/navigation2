@@ -294,7 +294,7 @@ private:
     * @brief Callback for speed limiting messages
     * @param msg Shared pointer to nav2_msgs::msg::SpeedLimit
     */
-  void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg);
+  void speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg);
 };
 
 }  // namespace nav2_controller

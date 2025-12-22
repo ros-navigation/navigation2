@@ -77,7 +77,7 @@ BT::NodeStatus IsBatteryLowCondition::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-void IsBatteryLowCondition::batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)
+void IsBatteryLowCondition::batteryCallback(const sensor_msgs::msg::BatteryState::ConstSharedPtr & msg)
 {
   if (is_voltage_) {
     is_battery_low_ = msg->voltage <= min_battery_;

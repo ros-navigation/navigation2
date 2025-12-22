@@ -137,7 +137,7 @@ protected:
    * @brief Get new map from ROS topic to localize in
    * @param msg Map message
    */
-  void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
   /*
    * @brief Handle a new map message
    * @param msg Map message
@@ -211,7 +211,7 @@ protected:
   /*
    * @brief Handle with an initial pose estimate is received
    */
-  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initialPoseReceived(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
   /*
    * @brief Handle when a laser scan is received
    */

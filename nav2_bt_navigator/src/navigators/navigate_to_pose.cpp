@@ -263,7 +263,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 }
 
 void
-NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose)
+NavigateToPoseNavigator::onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose)
 {
   ActionT::Goal goal;
   goal.pose = *pose;

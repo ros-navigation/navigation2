@@ -103,7 +103,7 @@ void BinaryFilter::initializeFilter(
 }
 
 void BinaryFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -148,7 +148,7 @@ void BinaryFilter::filterInfoCallback(
 }
 
 void BinaryFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 

@@ -196,7 +196,7 @@ CollisionMonitor::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
   return nav2::CallbackReturn::SUCCESS;
 }
 
-void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg)
+void CollisionMonitor::cmdVelInCallbackStamped(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg)
 {
   // If message contains NaN or Inf, ignore
   if (!nav2_util::validateTwist(msg->twist)) {
@@ -207,7 +207,7 @@ void CollisionMonitor::cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped:
   process({msg->twist.linear.x, msg->twist.linear.y, msg->twist.angular.z}, msg->header);
 }
 
-void CollisionMonitor::cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg)
+void CollisionMonitor::cmdVelInCallbackUnstamped(const geometry_msgs::msg::Twist::ConstSharedPtr & msg)
 {
   auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
   twist_stamped->twist = *msg;

@@ -226,11 +226,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the publishers and subscribers
   if (subscribe_to_stamped_footprint_) {
     footprint_stamped_sub_ = create_subscription<geometry_msgs::msg::PolygonStamped>(
-      "footprint", [this](const geometry_msgs::msg::PolygonStamped::SharedPtr footprint)
+      "footprint", [this](const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & footprint)
       {setRobotFootprintPolygon(footprint->polygon);});
   } else {
     footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
-      "footprint", [this](const geometry_msgs::msg::Polygon::SharedPtr footprint)
+      "footprint", [this](const geometry_msgs::msg::Polygon::ConstSharedPtr & footprint)
       {setRobotFootprintPolygon(*footprint);});
   }
 

@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the smoother_selector
    */
-  void callbackSmootherSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackSmootherSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr smoother_selector_sub_;
 

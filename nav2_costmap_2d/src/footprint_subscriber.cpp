@@ -73,7 +73,7 @@ FootprintSubscriber::getFootprintInRobotFrame(
 }
 
 void
-FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg)
+FootprintSubscriber::footprint_callback(const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg)
 {
   std::atomic_store(&footprint_, msg);
   if (!footprint_received_) {
