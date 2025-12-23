@@ -80,10 +80,10 @@ inline DynamicWindowBounds computeDynamicWindow(
       if (current_vel > Eps) {
       // if the current velocity is positive, acceleration means an increase in speed
         candidate_max_vel = current_vel + max_accel * dt;
-        candidate_min_vel = current_vel - max_decel * dt;
+        candidate_min_vel = current_vel + max_decel * dt;
       } else if (current_vel < -Eps) {
       // if the current velocity is negative, acceleration means a decrease in speed
-        candidate_max_vel = current_vel + max_decel * dt;
+        candidate_max_vel = current_vel - max_decel * dt;
         candidate_min_vel = current_vel - max_accel * dt;
       } else {
       // if the current velocity is zero, allow acceleration in both directions.

@@ -25,9 +25,9 @@ TEST(DynamicWindowPurePursuitTest, computeDynamicWindow)
   double max_angular_vel = 1.0;
   double min_angular_vel = -1.0;
   double max_linear_accel = 0.5;
-  double max_linear_decel = 1.0;
+  double max_linear_decel = -1.0;
   double max_angular_accel = 1.0;
-  double max_angular_decel = 2.0;
+  double max_angular_decel = -2.0;
   double control_duration = 1.0 / 20.0;
 
   DynamicWindowBounds dynamic_window;

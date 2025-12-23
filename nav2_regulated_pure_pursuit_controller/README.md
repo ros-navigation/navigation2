@@ -136,9 +136,9 @@ controller_server:
       max_angular_vel: 2.5
       min_angular_vel: -2.5
       max_linear_accel: 2.5
-      max_linear_decel: 2.5
+      max_linear_decel: -2.5
       max_angular_accel: 3.2
-      max_angular_decel: 3.2
+      max_angular_decel: -3.2
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9

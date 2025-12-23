@@ -446,9 +446,9 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.max_angular_vel", 2.0),
       rclcpp::Parameter("test.min_angular_vel", -2.0),
       rclcpp::Parameter("test.max_linear_accel", 2.0),
-      rclcpp::Parameter("test.max_linear_decel", 2.0),
+      rclcpp::Parameter("test.max_linear_decel", -2.0),
       rclcpp::Parameter("test.max_angular_accel", 3.0),
-      rclcpp::Parameter("test.max_angular_decel", 3.0),
+      rclcpp::Parameter("test.max_angular_decel", -3.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
@@ -482,9 +482,9 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.max_angular_vel").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.min_angular_vel").as_double(), -2.0);
   EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 2.0);
-  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), -2.0);
   EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
-  EXPECT_EQ(node->get_parameter("test.max_angular_decel").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_decel").as_double(), -3.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);

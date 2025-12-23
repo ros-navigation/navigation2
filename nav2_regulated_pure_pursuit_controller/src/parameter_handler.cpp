@@ -113,11 +113,11 @@ ParameterHandler::ParameterHandler(
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_linear_accel", rclcpp::ParameterValue(2.5));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(2.5));
+    node, plugin_name_ + ".max_linear_decel", rclcpp::ParameterValue(-2.5));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".max_angular_accel", rclcpp::ParameterValue(3.2));
   declare_parameter_if_not_declared(
-    node, plugin_name_ + ".max_angular_decel", rclcpp::ParameterValue(3.2));
+    node, plugin_name_ + ".max_angular_decel", rclcpp::ParameterValue(-3.2));
   declare_parameter_if_not_declared(
     node, plugin_name_ + ".use_cancel_deceleration", rclcpp::ParameterValue(false));
   declare_parameter_if_not_declared(
@@ -251,7 +251,9 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       const bool allow_negative =
         param_name == plugin_name_ + ".min_linear_vel" ||
-        param_name == plugin_name_ + ".min_angular_vel";
+        param_name == plugin_name_ + ".min_angular_vel" ||
+        param_name == plugin_name_ + ".max_linear_decel" ||
+        param_name == plugin_name_ + ".max_angular_decel";
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" &&
         parameter.as_double() <= 0.0)
       {
