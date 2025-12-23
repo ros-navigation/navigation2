@@ -43,7 +43,8 @@ public:
   template<typename NodeT>
   CostmapSubscriber(
     const NodeT & parent,
-    const std::string & topic_name)
+    const std::string & topic_name,
+    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   : topic_name_(topic_name)
   {
     logger_ = parent->get_logger();
@@ -53,7 +54,7 @@ public:
     costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
       parent, topic_name_,
       std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS(3));
+      nav2::qos::LatchedSubscriptionQoS(3), callback_group);
 
     costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
       parent, topic_name_ + "_updates",
