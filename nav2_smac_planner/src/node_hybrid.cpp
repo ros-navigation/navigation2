@@ -36,7 +36,6 @@ namespace nav2_smac_planner
 
 // defining static member for all instance to share
 LookupTable NodeHybrid::obstacle_heuristic_lookup_table;
-float NodeHybrid::travel_distance_cost = sqrtf(2.0f);
 HybridMotionTable NodeHybrid::motion_table;
 float NodeHybrid::size_lookup = 25;
 LookupTable NodeHybrid::dist_heuristic_lookup_table;
@@ -474,8 +473,6 @@ void NodeHybrid::initMotionModel(
               " Dubin (Ackermann forward only),"
               " Reeds-Shepp (Ackermann forward and back).");
   }
-
-  travel_distance_cost = motion_table.projections[0]._x;
 }
 
 inline float distanceHeuristic2D(
