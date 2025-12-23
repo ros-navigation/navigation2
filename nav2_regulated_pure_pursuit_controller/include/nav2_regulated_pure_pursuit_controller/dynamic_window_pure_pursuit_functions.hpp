@@ -119,39 +119,23 @@ inline void applyRegulationToDynamicWindow(
   const double & regulated_linear_vel,
   DynamicWindowBounds & dynamic_window)
 {
-  double regulated_dynamic_window_max_linear_vel;
-  double regulated_dynamic_window_min_linear_vel;
+  // Create regulated bounds [0, v_reg] or [v_reg, 0]
+  double v_reg_min = std::min(0.0, regulated_linear_vel);
+  double v_reg_max = std::max(0.0, regulated_linear_vel);
 
-  // Extract the portion of the dynamic window that lies within the range [0, regulated_linear_vel]
-  if (regulated_linear_vel >= 0.0) {
-    regulated_dynamic_window_max_linear_vel = std::min(
-      dynamic_window.max_linear_vel, regulated_linear_vel);
-    regulated_dynamic_window_min_linear_vel = std::max(
-      dynamic_window.min_linear_vel, 0.0);
-  } else {
-    regulated_dynamic_window_max_linear_vel = std::min(
-      dynamic_window.max_linear_vel, 0.0);
-    regulated_dynamic_window_min_linear_vel = std::max(
-      dynamic_window.min_linear_vel, regulated_linear_vel);
-  }
+  // Intersect the dynamic window with the regulated bounds
+  dynamic_window.min_linear_vel = std::max(dynamic_window.min_linear_vel, v_reg_min);
+  dynamic_window.max_linear_vel = std::min(dynamic_window.max_linear_vel, v_reg_max);
 
-  if (regulated_dynamic_window_max_linear_vel < regulated_dynamic_window_min_linear_vel) {
-    // No valid portion of the dynamic window remains after applying the regulation
-    if (regulated_dynamic_window_min_linear_vel > 0.0) {
-      // If the dynamic window is entirely in the positive range,
-      // collapse both bounds to dynamic_window_min_linear_vel
-      regulated_dynamic_window_max_linear_vel = regulated_dynamic_window_min_linear_vel;
+  // If min > max, collapse to the nearest boundary
+  if (dynamic_window.min_linear_vel > dynamic_window.max_linear_vel) {
+    if (dynamic_window.min_linear_vel > v_reg_max) {
+      dynamic_window.max_linear_vel = dynamic_window.min_linear_vel;
     } else {
-      // If the dynamic window is entirely in the negative range,
-      // collapse both bounds to dynamic_window_max_linear_vel
-      regulated_dynamic_window_min_linear_vel = regulated_dynamic_window_max_linear_vel;
+      dynamic_window.min_linear_vel = dynamic_window.max_linear_vel;
     }
   }
-
-  dynamic_window.max_linear_vel = regulated_dynamic_window_max_linear_vel;
-  dynamic_window.min_linear_vel = regulated_dynamic_window_min_linear_vel;
 }
-
 
 /**
  * @brief                Compute the optimal velocity to follow the path within the dynamic window
