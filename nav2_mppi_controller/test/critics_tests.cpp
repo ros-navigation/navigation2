@@ -355,6 +355,92 @@ TEST(CriticTests, GoalAngleCriticSymmetricYawTolerance)
   EXPECT_LT(cost_forward_with_symmetric, cost_forward_without_symmetric);
 }
 
+TEST(CriticTests, GoalAngleCriticSymmetricYawTolerancePow)
+{
+  // Standard preamble
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap");
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  // Set parameters for critic with symmetric disabled
+  node->declare_parameter("critic_sym_disabled.cost_power", 2);
+  node->declare_parameter("critic_sym_disabled.cost_weight", 3.0);
+  node->declare_parameter("critic_sym_disabled.threshold_to_consider", 0.5);
+  node->declare_parameter("critic_sym_disabled.symmetric_yaw_tolerance", false);
+
+  // Set parameters for critic with symmetric enabled
+  node->declare_parameter("critic_sym_enabled.cost_power", 2);
+  node->declare_parameter("critic_sym_enabled.cost_weight", 3.0);
+  node->declare_parameter("critic_sym_enabled.threshold_to_consider", 0.5);
+  node->declare_parameter("critic_sym_enabled.symmetric_yaw_tolerance", true);
+
+  models::State state;
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+
+  // Setup goal angle critic with symmetric_yaw_tolerance disabled (default)
+  GoalAngleCritic critic;
+  critic.on_configure(node, "mppi", "critic_sym_disabled", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic_sym_disabled");
+
+  // Setup goal angle critic with symmetric_yaw_tolerance enabled
+  GoalAngleCritic critic_symmetric;
+  critic_symmetric.on_configure(node, "mppi", "critic_sym_enabled", costmap_ros, &param_handler);
+  EXPECT_EQ(critic_symmetric.getName(), "critic_sym_enabled");
+
+  // Setup state and path: robot at origin, goal at (10, 0) with yaw of PI
+  state.pose.pose.position.x = 9.7;  // Within threshold_to_consider (0.5) of goal at 10.0
+  path.reset(10);
+  path.x(9) = 10.0;
+  path.y(9) = 0.0;
+  path.yaws(9) = 3.14159;  // Goal at PI
+
+  // Test 1: Trajectory at 0 rad (forward) with symmetric disabled
+  // Should have high cost since it's not aligned with goal at PI
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
+  costs = Eigen::ArrayXf::Zero(1000);
+  CriticData data1 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
+    nullptr, std::nullopt, std::nullopt};
+  data1.motion_model = std::make_shared<DiffDriveMotionModel>();
+  critic.score(data1);
+  float cost_forward_without_symmetric = costs(0);
+  EXPECT_GT(cost_forward_without_symmetric, 88.8);  // Should have significant cost
+
+  // Test 2: Trajectory at PI rad (backward) with symmetric disabled
+  // Should have zero/low cost since backward matches goal orientation PI
+  generated_trajectories.yaws = Eigen::ArrayXXf::Constant(1000, 30, 3.14159f);
+  costs = Eigen::ArrayXf::Zero(1000);
+  CriticData data2 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
+    nullptr, std::nullopt, std::nullopt};
+  data2.motion_model = std::make_shared<DiffDriveMotionModel>();
+  critic.score(data2);
+  float cost_backward_without_symmetric = costs(0);
+  EXPECT_LT(cost_backward_without_symmetric, 0.0001);  // Should be nearly zero
+
+  // Test 3: Trajectory at 0 rad (forward) with symmetric ENABLED
+  // Should have LOWER cost than Test 1 because with symmetric enabled,
+  // 0 rad is aligned with goal + PI (backward), which equals goal orientation
+  generated_trajectories.yaws = Eigen::ArrayXXf::Zero(1000, 30);
+  costs = Eigen::ArrayXf::Zero(1000);
+  CriticData data3 = {state, generated_trajectories, path, goal, costs, model_dt, false, nullptr,
+    nullptr, std::nullopt, std::nullopt};
+  data3.motion_model = std::make_shared<DiffDriveMotionModel>();
+  critic_symmetric.score(data3);
+  float cost_forward_with_symmetric = costs(0);
+  EXPECT_LT(cost_forward_with_symmetric, 1e-10);  // Should be nearly zero
+  // Should be lower than without symmetric
+  EXPECT_LT(cost_forward_with_symmetric, cost_forward_without_symmetric);
+}
+
 TEST(CriticTests, GoalCritic)
 {
   // Standard preamble
