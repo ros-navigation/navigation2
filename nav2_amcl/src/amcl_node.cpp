@@ -1231,9 +1231,6 @@ AmclNode::updateParametersCallback(
 void
 AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
-  // RCLCPP_INFO(get_logger(), "[Subscriber: %s] Subscriber message data address: %p",
-  //           map_topic_.c_str(),
-  //           (void*)msg->data.data());
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (!nav2::validateMsg(*msg)) {
     RCLCPP_ERROR(get_logger(), "Received map message is malformed. Rejecting.");
