@@ -45,7 +45,7 @@ void GoalAngleCritic::score(CriticData & data)
 
   double goal_yaw = tf2::getYaw(goal.orientation);
   auto min_distance = ((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-        rowwise().mean()).eval();
+    rowwise().mean()).eval();
   if (symmetric_yaw_tolerance_) {
     // For symmetric robots: use minimum distance to either goal orientation or goal + 180°
     const double goal_yaw_flipped = angles::normalize_angle(goal_yaw + M_PI);
@@ -57,7 +57,7 @@ void GoalAngleCritic::score(CriticData & data)
 
     // Use the minimum distance
     min_distance = distance_to_goal.cwiseMin(distance_to_flipped).rowwise().mean().eval();
-  } 
+  }
   if (power_ > 1u) {
     data.costs += (min_distance * weight_).pow(power_).eval();
   } else {
