@@ -44,7 +44,8 @@ void GoalAngleCritic::score(CriticData & data)
   geometry_msgs::msg::Pose goal = utils::getLastPathPose(data.path);
 
   double goal_yaw = tf2::getYaw(goal.orientation);
-
+  auto min_distance = ((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
+        rowwise().mean()).eval();
   if (symmetric_yaw_tolerance_) {
     // For symmetric robots: use minimum distance to either goal orientation or goal + 180°
     const double goal_yaw_flipped = angles::normalize_angle(goal_yaw + M_PI);
@@ -55,24 +56,15 @@ void GoalAngleCritic::score(CriticData & data)
                                                              goal_yaw_flipped).abs();
 
     // Use the minimum distance
-    auto min_distance = distance_to_goal.cwiseMin(distance_to_flipped);
-
-    if (power_ > 1u) {
-      data.costs += (min_distance.rowwise().mean() * weight_).pow(power_).eval();
-    } else {
-      data.costs += (min_distance.rowwise().mean() * weight_).eval();
-    }
+    min_distance = distance_to_goal.cwiseMin(distance_to_flipped).rowwise().mean().eval();
+  } 
+  if (power_ > 1u) {
+    data.costs += (min_distance * weight_).pow(power_).eval();
   } else {
-    // Standard behavior: only consider the specified goal orientation
-    if (power_ > 1u) {
-      data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-        rowwise().mean()) * weight_).pow(power_).eval();
-    } else {
-      data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-        rowwise().mean()) * weight_).eval();
-    }
+    data.costs += (min_distance * weight_).eval();
   }
 }
+
 
 }  // namespace mppi::critics
 
