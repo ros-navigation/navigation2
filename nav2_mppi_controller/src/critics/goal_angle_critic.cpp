@@ -50,13 +50,11 @@ void GoalAngleCritic::score(CriticData & data)
     // For symmetric robots: use minimum distance to either goal orientation or goal + 180°
     const double goal_yaw_flipped = angles::normalize_angle(goal_yaw + M_PI);
 
-    auto distance_to_goal = utils::shortest_angular_distance(data.trajectories.yaws,
-                                                             goal_yaw).abs();
     auto distance_to_flipped = utils::shortest_angular_distance(data.trajectories.yaws,
                                                              goal_yaw_flipped).abs();
 
     // Use the minimum distance
-    min_distance = distance_to_goal.cwiseMin(distance_to_flipped).rowwise().mean().eval();
+    min_distance = min_distance.cwiseMin(distance_to_flipped).rowwise().mean().eval();
   }
   if (power_ > 1u) {
     data.costs += (min_distance * weight_).pow(power_).eval();
@@ -64,7 +62,6 @@ void GoalAngleCritic::score(CriticData & data)
     data.costs += (min_distance * weight_).eval();
   }
 }
-
 
 }  // namespace mppi::critics
 
