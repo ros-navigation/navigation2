@@ -56,7 +56,7 @@ IsStuckCondition::~IsStuckCondition()
   callback_group_executor_thread.join();
 }
 
-void IsStuckCondition::onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg)
+void IsStuckCondition::onOdomReceived(const nav_msgs::msg::Odometry::ConstSharedPtr & msg)
 {
   RCLCPP_INFO_ONCE(node_->get_logger(), "Got odometry");
 

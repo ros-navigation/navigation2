@@ -92,7 +92,7 @@ BT::NodeStatus SmootherSelector::tick()
 }
 
 void
-SmootherSelector::callbackSmootherSelect(const std_msgs::msg::String::SharedPtr msg)
+SmootherSelector::callbackSmootherSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_smoother_ = msg->data;
 }

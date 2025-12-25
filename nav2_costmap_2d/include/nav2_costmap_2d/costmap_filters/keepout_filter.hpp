@@ -104,16 +104,16 @@ private:
   /**
    * @brief Callback for the filter information
    */
-  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
+  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg);
   /**
    * @brief Callback for the filter mask
    */
-  void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void maskCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
 
   nav2::Subscription<nav2_msgs::msg::CostmapFilterInfo>::SharedPtr filter_info_sub_;
   nav2::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_sub_;
 
-  nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
 
   std::string global_frame_;  // Frame of current layer (master_grid)
 

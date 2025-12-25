@@ -87,14 +87,14 @@ public:
     return nav2::CallbackReturn::SUCCESS;
   }
 
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
   {
     polygon_received_ = msg;
   }
 
 private:
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr polygon_received_;
 };  // TestNode
 
 class VelocityPolygonWrapper : public nav2_collision_monitor::VelocityPolygon

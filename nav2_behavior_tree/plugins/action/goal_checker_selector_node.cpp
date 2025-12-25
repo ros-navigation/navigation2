@@ -91,7 +91,7 @@ BT::NodeStatus GoalCheckerSelector::tick()
 }
 
 void
-GoalCheckerSelector::callbackGoalCheckerSelect(const std_msgs::msg::String::SharedPtr msg)
+GoalCheckerSelector::callbackGoalCheckerSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_goal_checker_ = msg->data;
 }

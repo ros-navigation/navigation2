@@ -97,7 +97,7 @@ void SpeedFilter::initializeFilter(
 }
 
 void SpeedFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -156,7 +156,7 @@ void SpeedFilter::filterInfoCallback(
 }
 
 void SpeedFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 

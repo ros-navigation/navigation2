@@ -113,13 +113,13 @@ public:
   }
 
   void speedLimitCallback(
-    const nav2_msgs::msg::SpeedLimit::SharedPtr msg)
+    const nav2_msgs::msg::SpeedLimit::ConstSharedPtr msg)
   {
     msg_ = msg;
     speed_limit_updated_ = true;
   }
 
-  nav2_msgs::msg::SpeedLimit::SharedPtr getSpeedLimit()
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr getSpeedLimit()
   {
     return msg_;
   }
@@ -136,7 +136,7 @@ public:
 
 private:
   nav2::Subscription<nav2_msgs::msg::SpeedLimit>::SharedPtr subscriber_;
-  nav2_msgs::msg::SpeedLimit::SharedPtr msg_;
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr msg_;
   bool speed_limit_updated_;
 };  // SpeedLimitSubscriber
 
@@ -235,9 +235,9 @@ private:
   void verifySpeedLimit(
     uint8_t type, double base, double multiplier,
     unsigned int x, unsigned int y,
-    nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit);
-  nav2_msgs::msg::SpeedLimit::SharedPtr getSpeedLimit();
-  nav2_msgs::msg::SpeedLimit::SharedPtr waitSpeedLimit();
+    nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit);
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr getSpeedLimit();
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr waitSpeedLimit();
 
   const unsigned int width_ = 10;
   const unsigned int height_ = 11;
@@ -307,14 +307,14 @@ void TestNode::rePublishMask()
   waitSome(100ms);
 }
 
-nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::getSpeedLimit()
+nav2_msgs::msg::SpeedLimit::ConstSharedPtr TestNode::getSpeedLimit()
 {
   std::this_thread::sleep_for(100ms);
   speed_limit_subscriber_executor_.spin_some();
   return speed_limit_subscriber_->getSpeedLimit();
 }
 
-nav2_msgs::msg::SpeedLimit::SharedPtr TestNode::waitSpeedLimit()
+nav2_msgs::msg::SpeedLimit::ConstSharedPtr TestNode::waitSpeedLimit()
 {
   const std::chrono::nanoseconds timeout = 500ms;
 
@@ -418,7 +418,7 @@ void TestNode::publishTransform()
 void TestNode::verifySpeedLimit(
   uint8_t type, double base, double multiplier,
   unsigned int x, unsigned int y,
-  nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit)
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit)
 {
   int8_t cost = mask_->makeData(x, y);
   // expected_limit is being calculated by using float32 base and multiplier
@@ -453,7 +453,7 @@ void TestNode::testFullMask(
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;
 
   // data = 0
   pose.position.x = 1 - tr_x;
@@ -507,7 +507,7 @@ void TestNode::testSimpleMask(
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;
 
   // data = 0
   pose.position.x = 1 - tr_x;
@@ -566,7 +566,7 @@ void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  nav2_msgs::msg::SpeedLimit::SharedPtr old_speed_limit, speed_limit;
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr old_speed_limit, speed_limit;
 
   // data = <some_middle_value>
   pose.position.x = width_ / 2 - 1;
@@ -598,7 +598,7 @@ void TestNode::testIncorrectLimits(uint8_t type, double base, double multiplier)
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  nav2_msgs::msg::SpeedLimit::SharedPtr speed_limit;
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit;
 
   std::vector<std::tuple<unsigned int, unsigned int>> points;
 

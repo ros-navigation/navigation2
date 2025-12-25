@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the controller_selector
    */
-  void callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackControllerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
 

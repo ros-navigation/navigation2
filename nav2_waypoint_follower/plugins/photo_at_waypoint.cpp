@@ -135,14 +135,14 @@ bool PhotoAtWaypoint::processAtWaypoint(
   return true;
 }
 
-void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
+void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   std::lock_guard<std::mutex> guard(global_mutex_);
   curr_frame_msg_ = msg;
 }
 
 void PhotoAtWaypoint::deepCopyMsg2Mat(
-  const sensor_msgs::msg::Image::SharedPtr & msg,
+  const sensor_msgs::msg::Image::ConstSharedPtr & msg,
   cv::Mat & mat)
 {
   cv_bridge::CvImageConstPtr cv_bridge_ptr = cv_bridge::toCvShare(msg, msg->encoding);

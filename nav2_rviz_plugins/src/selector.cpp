@@ -114,10 +114,10 @@ void Selector::setSelection(
     return;
   }
 
-  std_msgs::msg::String msg;
-  msg.data = combo_box->currentText().toStdString();
+  auto msg = std::make_unique<std_msgs::msg::String>();
+  msg->data = combo_box->currentText().toStdString();
 
-  publisher->publish(msg);
+  publisher->publish(std::move(msg));
 }
 
 // Call setSelection() for controller

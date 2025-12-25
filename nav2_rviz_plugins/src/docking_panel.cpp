@@ -280,7 +280,7 @@ void DockingPanel::onInitialize()
   docking_feedback_sub_ = node->create_subscription<Dock::Impl::FeedbackMessage>(
     "dock_robot/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const Dock::Impl::FeedbackMessage::SharedPtr msg) {
+    [this](const Dock::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       docking_feedback_indicator_->setText(getDockFeedbackLabel(msg->feedback));
     });
 
@@ -288,7 +288,7 @@ void DockingPanel::onInitialize()
   docking_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "dock_robot/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       // Reset values when action is completed
@@ -300,7 +300,7 @@ void DockingPanel::onInitialize()
   undocking_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "undock_robot/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
     });

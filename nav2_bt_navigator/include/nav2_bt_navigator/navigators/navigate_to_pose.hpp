@@ -66,7 +66,7 @@ public:
    * from rviz
    * @param pose Pose received via atopic
    */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose);
 
   /**
    * @brief Get action name for this navigator

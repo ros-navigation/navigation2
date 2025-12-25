@@ -91,7 +91,7 @@ BT::NodeStatus ControllerSelector::tick()
 }
 
 void
-ControllerSelector::callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg)
+ControllerSelector::callbackControllerSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_controller_ = msg->data;
 }
