@@ -125,6 +125,11 @@ bool PointCloud::getData(
 
     tf2::Vector3 p_v3_b = tf_transform * p_v3_s;
 
+    // Still need to transfer height from "z" field if not using global height
+    if (!use_global_height_) {
+      data_height = p_v3_b.z();
+    }
+
     // Refill data array
     if (data_height >= min_height_ && data_height <= max_height_) {
       data.push_back({p_v3_b.x(), p_v3_b.y()});
