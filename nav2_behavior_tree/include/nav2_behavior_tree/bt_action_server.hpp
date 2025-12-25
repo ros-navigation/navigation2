@@ -21,6 +21,10 @@
 #include <string>
 #include <vector>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_behavior_tree/ros_topic_logger.hpp"
@@ -304,6 +308,10 @@ protected:
   // internal error tracking (IOW not behaviorTree blackboard errors)
   uint16_t internal_error_code_;
   std::string internal_error_msg_;
+
+  // To keep track of the execution number
+  boost::uuids::random_generator uuid_generator_;
+  std::string run_id_;
 };
 
 }  // namespace nav2_behavior_tree
