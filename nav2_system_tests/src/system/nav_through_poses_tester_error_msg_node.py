@@ -273,8 +273,8 @@ def run_all_tests(robot_tester: NavTester) -> bool:
     robot_tester.wait_for_node_active('amcl')
     robot_tester.wait_for_initial_pose()
     robot_tester.wait_for_node_active('bt_navigator')
-    robot_tester.setGoalChecker('general_goal_checker')
-    robot_tester.setProgressChecker('progress_checker')
+    robot_tester.setGoalChecker('GeneralGoalChecker')
+    robot_tester.setProgressChecker('ProgressChecker')
 
     result = True
     if result:
@@ -302,32 +302,32 @@ def run_all_tests(robot_tester: NavTester) -> bool:
 
     if result:
         robot_tester.info_msg('Test for unknown goal checker')
-        robot_tester.setGoalChecker('junk_goal_checker')
+        robot_tester.setGoalChecker('JunkGoalChecker')
         result = robot_tester.runNavigateAction(
             goal_pose=reasonable_pose,
             behavior_tree='',
             expected_error_code=100,
-            expected_error_msg=('Failed to find goal checker name: junk_goal_checker'))
-        robot_tester.setGoalChecker('general_goal_checker')
+            expected_error_msg=('Failed to find goal checker name: JunkGoalChecker'))
+        robot_tester.setGoalChecker('GeneralGoalChecker')
 
     if result:
         robot_tester.info_msg('Test for unknown progress checker')
-        robot_tester.setProgressChecker('junk_progress_checker')
+        robot_tester.setProgressChecker('JunkProgressChecker')
         result = robot_tester.runNavigateAction(
             goal_pose=reasonable_pose,
             behavior_tree='',
             expected_error_code=100,
-            expected_error_msg=('Failed to find progress checker name: junk_progress_checker'))
-        robot_tester.setProgressChecker('progress_checker')
+            expected_error_msg=('Failed to find progress checker name: JunkProgressChecker'))
+        robot_tester.setProgressChecker('ProgressChecker')
 
     if result:
         robot_tester.info_msg('Test for impossible to achieve progress parameters')
         robot_tester.setControllerParam(
-            'progress_checker.movement_time_allowance',
+            'ProgressChecker.movement_time_allowance',
             Parameter.Type.DOUBLE,
             0.1)
         robot_tester.setControllerParam(
-            'progress_checker.required_movement_radius',
+            'ProgressChecker.required_movement_radius',
             Parameter.Type.DOUBLE,
             10.0)
         # Limit controller to generate very slow velocities
