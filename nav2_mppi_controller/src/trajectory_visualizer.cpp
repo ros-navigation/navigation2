@@ -65,6 +65,12 @@ void TrajectoryVisualizer::add(
   const std::string & marker_namespace,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
+  if ((optimal_path_pub_->get_subscription_count() == 0) &&
+    (trajectories_publisher_->get_subscription_count() == 0))
+  {
+    return;
+  }
+
   auto & size = trajectory.shape()[0];
   if (!size) {
     return;
@@ -105,6 +111,10 @@ void TrajectoryVisualizer::add(
 void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories, const std::string & marker_namespace)
 {
+  if (trajectories_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
   auto & shape = trajectories.x.shape();
   const float shape_1 = static_cast<float>(shape[1]);
   points_->markers.reserve(floor(shape[0] / trajectory_step_) * floor(shape[1] * time_step_));
