@@ -50,6 +50,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_goal_checker_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_smoother_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_progress_checker_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_path_handler_;
 
   bool plugins_loaded_ = false;
   bool server_failed_ = false;
@@ -68,12 +69,14 @@ private:
   QComboBox * goal_checker_;
   QComboBox * smoother_;
   QComboBox * progress_checker_;
+  QComboBox * path_handler_;
 
   void setController();
   void setPlanner();
   void setGoalChecker();
   void setSmoother();
   void setProgressChecker();
+  void setPathHandler();
 
   /*
     * @brief Set the selection from the combo box
