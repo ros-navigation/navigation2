@@ -46,7 +46,7 @@ public:
   /**
    * @brief Initialization process of layer on startup
    */
-  virtual void onInitialize();
+  virtual void onInitialize() override;
   /**
    * @brief Update the bounds of the master costmap by this layer's update
    *dimensions
@@ -65,7 +65,7 @@ public:
     double * min_x,
     double * min_y,
     double * max_x,
-    double * max_y);
+    double * max_y) override;
   /**
    * @brief Update the costs in the master costmap in the window
    * @param master_grid The master costmap grid to update
@@ -79,26 +79,26 @@ public:
     int min_i,
     int min_j,
     int max_i,
-    int max_j);
-  virtual void onFootprintChanged();
+    int max_j) override;
+  virtual void onFootprintChanged() override;
   /** @brief Update the footprint to match size of the parent costmap. */
-  virtual void matchSize();
+  virtual void matchSize() override;
   /**
    * @brief Deactivate the layer
    */
-  virtual void deactivate();
+  virtual void deactivate() override;
   /**
    * @brief Activate the layer
    */
-  virtual void activate();
+  virtual void activate() override;
   /**
    * @brief Reset this costmap
    */
-  virtual void reset();
+  virtual void reset() override;
   /**
    * @brief If clearing operations should be processed on this layer or not
    */
-  virtual bool isClearable();
+  virtual bool isClearable() override;
   /**
    * @brief Clear an area in the constituent costmaps with the given dimension
    * if invert, then clear everything except these dimensions
