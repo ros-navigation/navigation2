@@ -40,7 +40,7 @@ public:
    */
   ParameterHandler(
     const nav2::LifecycleNode::SharedPtr & node,
-    rclcpp::Logger & logger)
+    const rclcpp::Logger & logger)
   : node_(node), logger_(logger) {}
 
   /**

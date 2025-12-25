@@ -18,7 +18,6 @@
 #include <string>
 #include <memory>
 
-#include "nav2_mppi_controller/tools/path_handler.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
 #include "nav2_mppi_controller/tools/trajectory_visualizer.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
@@ -81,17 +80,21 @@ public:
     * @param robot_pose Robot pose
     * @param robot_speed Robot speed
     * @param goal_checker Pointer to the goal checker for awareness if completed task
+    * @param transformed_global_plan The global plan after being processed by the path handler
+    * @param global_goal The last pose of the global plan
     */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
-    nav2_core::GoalChecker * goal_checker) override;
+    nav2_core::GoalChecker * goal_checker,
+    const nav_msgs::msg::Path & transformed_global_plan,
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
-    * @brief Set new reference path to track
-    * @param path Path to track
+    * @brief Receives a new plan from the Planner Server
+    * @param raw_global_path The global plan from the Planner Server
     */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
     * @brief Set new speed limit from callback
@@ -103,12 +106,10 @@ public:
 protected:
   /**
     * @brief Visualize trajectories
-    * @param transformed_plan Transformed input plan
     * @param cmd_stamp Command stamp
     * @param optimal_trajectory Optimal trajectory, if already computed
     */
   void visualize(
-    nav_msgs::msg::Path transformed_plan,
     const builtin_interfaces::msg::Time & cmd_stamp,
     const Eigen::ArrayXXf & optimal_trajectory);
 
@@ -121,7 +122,6 @@ protected:
 
   std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
-  PathHandler path_handler_;
   TrajectoryVisualizer trajectory_visualizer_;
 
   bool visualize_;
