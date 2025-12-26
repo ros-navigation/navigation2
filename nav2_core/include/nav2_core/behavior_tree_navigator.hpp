@@ -15,11 +15,13 @@
 #ifndef NAV2_CORE__BEHAVIOR_TREE_NAVIGATOR_HPP_
 #define NAV2_CORE__BEHAVIOR_TREE_NAVIGATOR_HPP_
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
 #include <mutex>
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "nav2_util/odometry_utils.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -201,10 +203,13 @@ public:
     // get the default behavior tree for this navigator
     std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
 
+    std::filesystem::path file_path;
+    ament_index_cpp::get_package_share_directory("nav2_bt_navigator", file_path);
+    file_path /= "behavior_trees";
+
     auto search_directories = node->declare_or_get_parameter(
       "bt_search_directories",
-      std::vector<std::string>{ament_index_cpp::get_package_share_directory(
-          "nav2_bt_navigator") + "/behavior_trees"}
+      std::vector<std::string>{file_path.string()}
     );
 
     // Create the Behavior Tree Action Server for this navigator
