@@ -123,7 +123,8 @@ public:
   }
 
   /**
-   * @brief  Publishes the visualization data over ROS
+   * @brief Publishes the visualization data over ROS
+   * @note Only publishes if active
    */
   void publishCostmap();
 
