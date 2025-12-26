@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -319,19 +320,20 @@ TEST(GeoJsonGraphFileSaver, simple_graph)
 
 TEST(GeoJsonGraphFileSaver, sample_graph)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/graphs/sample_graph.geojson";
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "sample_graph.geojson";
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
   GeoJsonGraphFileLoader graph_file_loader;
-  graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string());
   GeoJsonGraphFileSaver graph_file_saver;
-  bool result = graph_file_saver.saveGraphToFile(graph, file_path);
+  bool result = graph_file_saver.saveGraphToFile(graph, file_path.string());
   EXPECT_TRUE(result);
   Graph graph2;
   GraphToIDMap graph_to_id_map2;
-  graph_file_loader.loadGraphFromFile(graph2, graph_to_id_map2, file_path);
+  graph_file_loader.loadGraphFromFile(graph2, graph_to_id_map2, file_path.string());
 
   Metadata region;
   region = graph2[0].metadata.getValue("region", region);

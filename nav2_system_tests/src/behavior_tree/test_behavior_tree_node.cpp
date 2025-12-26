@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <streambuf>
@@ -254,9 +255,9 @@ std::shared_ptr<BehaviorTreeHandler> BehaviorTreeTestFixture::bt_handler = nullp
 TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
 {
   // Get the BT root directory
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
 
   ASSERT_TRUE(std::filesystem::exists(root_dir));
   ASSERT_TRUE(std::filesystem::is_directory(root_dir));
@@ -670,9 +671,9 @@ TEST_F(BehaviorTreeTestFixture, TestSkipFilesWithMissingID) {
 TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};
@@ -721,9 +722,9 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};
@@ -781,9 +782,9 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};
@@ -844,9 +845,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};
@@ -946,9 +947,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};
@@ -1018,9 +1019,9 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
-  const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
+  const auto root_dir = pkg_share_dir / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
   std::vector<std::string> search_directories = {root_dir.string()};

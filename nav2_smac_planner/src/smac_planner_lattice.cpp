@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <string>
 #include <memory>
 #include <vector>
@@ -83,10 +84,12 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".smooth_path", smooth_path);
 
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", filepath);
+  filepath = filepath /"sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" /
+    "ackermann" / "output.json";
   nav2::declare_parameter_if_not_declared(
-    node, name + ".lattice_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
-      "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json"));
+    node, name + ".lattice_filepath", rclcpp::ParameterValue(filepath.string()));
   node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2::declare_parameter_if_not_declared(
     node, name + ".cache_obstacle_heuristic", rclcpp::ParameterValue(false));

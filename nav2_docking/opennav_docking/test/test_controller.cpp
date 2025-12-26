@@ -22,7 +22,6 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2_ros/buffer.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 // Testing the controller at high level; the nav2_graceful_controller
 // Where the control law derives has over 98% test coverage

@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -163,12 +164,13 @@ TEST(RouteServerTest, test_lifecycle)
 
 TEST(RouteServerTest, test_set_srv)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
-  std::string real_filepath = pkg_share_dir + "/graphs/aws_graph.geojson";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_route", pkg_share_dir);
+  std::filesystem::path real_filepath = pkg_share_dir / "graphs" / "aws_graph.geojson";
 
   rclcpp::NodeOptions options;
   auto server = std::make_shared<RouteServerWrapper>(options);
-  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_filepath));
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_filepath.string()));
   auto node_thread = std::make_unique<nav2::NodeThread>(server);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
 
@@ -182,13 +184,15 @@ TEST(RouteServerTest, test_set_srv)
   EXPECT_FALSE(resp->success);
 
   auto req2 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
-  req2->graph_filepath = real_filepath;
+  req2->graph_filepath = real_filepath.string();
   auto resp2 = srv_client.invoke(req2, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp2->success);
 
   auto req3 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
-  req3->graph_filepath = ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/test/test_graphs/invalid.json";
+  std::filesystem::path invalid_filepath;
+  ament_index_cpp::get_package_share_directory("nav2_route", invalid_filepath);
+  invalid_filepath = invalid_filepath / "test" /" test_graphs" / "invalid.json";
+  req3->graph_filepath = invalid_filepath.string();
   auto resp3 = srv_client.invoke(req3, std::chrono::nanoseconds(1000000000));
   EXPECT_FALSE(resp3->success);
 
@@ -278,12 +282,14 @@ TEST(RouteServerTest, test_request_valid)
 
 TEST(RouteServerTest, test_complete_action_api)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
-  std::string real_file = pkg_share_dir + "/graphs/aws_graph.geojson";
+  std::filesystem::path pkg_share_dir;
+
+  ament_index_cpp::get_package_share_directory("nav2_route", pkg_share_dir);
+  std::filesystem::path real_file = pkg_share_dir / "graphs" / "aws_graph.geojson";
 
   rclcpp::NodeOptions options;
   auto server = std::make_shared<RouteServerWrapper>(options);
-  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file.string()));
   auto node_thread = std::make_unique<nav2::NodeThread>(server);
   server->startup();
 
@@ -353,12 +359,13 @@ TEST(RouteServerTest, test_complete_action_api)
 
 TEST(RouteServerTest, test_error_codes)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_route");
-  std::string real_file = pkg_share_dir + "/test/test_graphs/error_codes.geojson";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_route", pkg_share_dir);
+  std::filesystem::path real_file = pkg_share_dir / "test" / "test_graphs" / "error_codes.geojson";
 
   rclcpp::NodeOptions options;
   auto server = std::make_shared<RouteServerWrapper>(options);
-  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file));
+  server->declare_parameter("graph_filepath", rclcpp::ParameterValue(real_file.string()));
   auto node_thread = std::make_unique<nav2::NodeThread>(server);
   server->startup();
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -38,10 +39,11 @@ TEST(GraphLoader, test_invalid_plugin)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   // Set dummy parameter
   std::string default_plugin = "nav2_route::Dummy";
@@ -57,10 +59,11 @@ TEST(GraphLoader, test_api)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   GraphLoader graph_loader(node, tf, frame);
 
@@ -82,22 +85,21 @@ TEST(GraphLoader, test_transformation_api)
   auto tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
 
   std::string frame = "map";
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
 
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   GraphLoader graph_loader(node, tf, frame);
 
   // Test with a file that now works
   Graph graph;
   GraphToIDMap graph_to_id_map;
-  std::string filepath;
-  filepath =
-    ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/graphs/aws_graph.geojson";
-  EXPECT_TRUE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
+  EXPECT_TRUE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string()));
 
   // Test with another frame, should transform
   geometry_msgs::msg::TransformStamped transform;
@@ -135,10 +137,12 @@ TEST(GraphLoader, test_transformation_api2)
 
   std::string frame = "map";
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "test" / "test_graphs" / "no_frame.json";
+
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/test/test_graphs/no_frame.json"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   GraphLoader graph_loader(node, tf, frame);
 
@@ -146,7 +150,7 @@ TEST(GraphLoader, test_transformation_api2)
   Graph graph;
   GraphToIDMap graph_to_id_map;
   EXPECT_FALSE(graph_loader.loadGraphFromParameter(graph, graph_to_id_map));
-  std::string filepath = ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/test/test_graphs/no_frame.json";
-  EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "test" / "test_graphs" / "no_frame.json";
+  EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string()));
 }

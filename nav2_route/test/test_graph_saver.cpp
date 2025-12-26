@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <fstream>
@@ -40,10 +41,12 @@ TEST(GraphSaver, test_invalid_plugin)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
+
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   // Set dummy parameter
   std::string default_plugin = "nav2_route::Dummy";
@@ -59,10 +62,12 @@ TEST(GraphSaver, test_empty_filename)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("nav2_route", filepath);
+  filepath = filepath / "graphs" / "aws_graph.geojson";
+
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(filepath.string()));
 
   GraphLoader graph_loader(node, tf, frame);
   GraphSaver graph_saver(node, tf, frame);
@@ -80,10 +85,12 @@ TEST(GraphSaver, test_api)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   std::string frame = "map";
 
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("nav2_route", filepath);
+  filepath = filepath / "graphs" / "aws_graph.geojson";
+
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(filepath.string()));
 
   GraphLoader graph_loader(node, tf, frame);
   GraphSaver graph_saver(node, tf, frame);
@@ -119,21 +126,21 @@ TEST(GraphSaver, test_transformation_api)
 
   std::string frame = "map";
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
+
   nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
-      "/graphs/aws_graph.geojson"));
+    node, "graph_filepath", rclcpp::ParameterValue(file_path.string()));
 
   GraphLoader graph_loader(node, tf, frame);
 
   // Test with a file that now works
   Graph graph;
   GraphToIDMap graph_to_id_map;
-  std::string filepath;
-  filepath =
-    ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/graphs/aws_graph.geojson";
-  graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath);
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "aws_graph.geojson";
+  graph_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string());
 
   // Test with another frame, should transform
   geometry_msgs::msg::TransformStamped transform;
@@ -148,11 +155,11 @@ TEST(GraphSaver, test_transformation_api)
   executor.spin_all(std::chrono::milliseconds(50));
 
   GraphSaver graph_saver(node, tf, frame);
-  std::string file_path = "test.geojson";
+  file_path = "test.geojson";
   graph[0].coords.frame_id = "map_test";
   EXPECT_EQ(graph[0].coords.frame_id, "map_test");
   double or_coord = graph[0].coords.x;
-  EXPECT_TRUE(graph_saver.saveGraphToFile(graph, file_path));
+  EXPECT_TRUE(graph_saver.saveGraphToFile(graph, file_path.string()));
   EXPECT_EQ(graph[0].coords.frame_id, "map");
   EXPECT_NE(graph[0].coords.x, or_coord);
   std::filesystem::remove(file_path);
@@ -161,7 +168,7 @@ TEST(GraphSaver, test_transformation_api)
   graph[0].coords.frame_id = "map_test2";
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   or_coord = graph[0].coords.x;
-  EXPECT_FALSE(graph_saver.saveGraphToFile(graph, file_path));
+  EXPECT_FALSE(graph_saver.saveGraphToFile(graph, file_path.string()));
   EXPECT_EQ(graph[0].coords.frame_id, "map_test2");
   EXPECT_EQ(graph[0].coords.x, or_coord);
 }

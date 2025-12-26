@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -28,12 +29,13 @@ using json = nlohmann::json;
 
 TEST(NodeLatticeTest, parser_test)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
-  std::ifstream myJsonFile(filePath);
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
+  std::ifstream myJsonFile(filePath.string());
 
   ASSERT_TRUE(myJsonFile.is_open());
 
@@ -86,11 +88,12 @@ TEST(NodeLatticeTest, parser_test)
 
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -100,7 +103,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
   info.cost_penalty = 1;
   info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 1;
-  info.lattice_filepath = filePath;
+  info.lattice_filepath = filePath.string();
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
@@ -132,11 +135,12 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -146,7 +150,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
   info.cost_penalty = 1;
   info.retrospective_penalty = 0.0;
   info.analytic_expansion_ratio = 1;
-  info.lattice_filepath = filePath;
+  info.lattice_filepath = filePath.string();
   info.cache_obstacle_heuristic = true;
 
   unsigned int x = 100;
@@ -171,11 +175,12 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 TEST(NodeLatticeTest, test_node_lattice)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -185,7 +190,7 @@ TEST(NodeLatticeTest, test_node_lattice)
   info.cost_penalty = 1;
   info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 1;
-  info.lattice_filepath = filePath;
+  info.lattice_filepath = filePath.string();
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
@@ -255,11 +260,12 @@ TEST(NodeLatticeTest, test_node_lattice)
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 1.1;
@@ -269,7 +275,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
   info.cost_penalty = 1;
   info.analytic_expansion_ratio = 1;
   info.retrospective_penalty = 0.0;
-  info.lattice_filepath = filePath;
+  info.lattice_filepath = filePath.string();
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 
@@ -313,11 +319,12 @@ TEST(NodeLatticeTest, test_get_neighbors)
 TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
-  std::string filePath =
-    pkg_share_dir +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_share_dir);
+  std::filesystem::path filePath =
+    pkg_share_dir /
+    "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" / "ackermann" /
+    "output.json";
 
   nav2_smac_planner::SearchInfo info;
   info.minimum_turning_radius = 0.5;
@@ -327,7 +334,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   info.cost_penalty = 1;
   info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 1;
-  info.lattice_filepath = filePath;
+  info.lattice_filepath = filePath.string();
   info.cache_obstacle_heuristic = true;
   info.allow_reverse_expansion = true;
 

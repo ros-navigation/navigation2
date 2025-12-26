@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <filesystem>
 #include <vector>
 #include <string>
 #include <memory>
@@ -62,13 +63,13 @@ NavigateToPoseNavigator::getDefaultBTFilepath(
   nav2::LifecycleNode::WeakPtr parent_node)
 {
   auto node = parent_node.lock();
-  std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory("nav2_bt_navigator", pkg_share_dir);
 
   auto default_bt_xml_filename = node->declare_or_get_parameter(
     "default_nav_to_pose_bt_xml",
-    pkg_share_dir +
-    "/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml");
+    (pkg_share_dir /
+    "behavior_trees " / "navigate_to_pose_w_replanning_and_recovery.xml").string());
 
   return default_bt_xml_filename;
 }

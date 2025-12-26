@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <math.h>
 #include <memory>
 #include <string>
@@ -304,10 +305,11 @@ TEST(AStarTest, test_a_star_lattice)
   info.reverse_penalty = 2.0;
   info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 3.5;
-  info.lattice_filepath =
-    ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
-    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
-    "/output.json";
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", filepath);
+  filepath = filepath / "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" /
+    "ackermann" / "output.json";
+  info.lattice_filepath = filepath.string();
   info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05
   info.analytic_expansion_max_length = 20.0;  // in grid coordinates
   unsigned int size_theta = 16;

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -348,13 +349,14 @@ TEST(GeoJsonGraphFileLoader, simple_graph)
 
 TEST(GeoJsonGraphFileLoader, sample_graph)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/graphs/sample_graph.geojson";
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "graphs" / "sample_graph.geojson";
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
   GeoJsonGraphFileLoader graph_file_loader;
-  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path);
+  bool result = graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string());
   EXPECT_TRUE(result);
 
   Metadata region;
@@ -379,10 +381,11 @@ TEST(GeoJsonGraphFileLoader, sample_graph)
 
 TEST(GeoJsonGraphFileLoader, invalid_file)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
-    "/test/test_graphs/invalid.json";
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("nav2_route", file_path);
+  file_path = file_path / "test" / "test_graphs" / "invalid.json";
   GeoJsonGraphFileLoader graph_file_loader;
   Graph graph;
   GraphToIDMap graph_to_id_map;
-  EXPECT_FALSE(graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path));
+  EXPECT_FALSE(graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path.string()));
 }

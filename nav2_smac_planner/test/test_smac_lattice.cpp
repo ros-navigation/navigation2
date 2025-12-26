@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <filesystem>
 #include <math.h>
 #include <memory>
 #include <string>
@@ -216,12 +217,15 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   // of heading, test output includes number of heading 15
   parameters.clear();
 
+  std::filesystem::path pkg_dir;
+  ament_index_cpp::get_package_share_directory("nav2_smac_planner", pkg_dir);
+  std::filesystem::path filepath = pkg_dir / "sample_primitives" / "test" / "output.json";
+
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
   parameters.push_back(
     rclcpp::Parameter(
       "test.lattice_filepath",
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
-      "/sample_primitives/test/output.json"));
+      filepath.string()));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
 
