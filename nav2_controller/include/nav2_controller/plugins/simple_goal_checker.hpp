@@ -74,6 +74,7 @@ public:
 protected:
   double xy_goal_tolerance_, yaw_goal_tolerance_;
   bool stateful_, check_xy_;
+  bool symmetric_yaw_tolerance_;
   // Cached squared xy_goal_tolerance_
   double xy_goal_tolerance_sq_;
   // Dynamic parameters handler
