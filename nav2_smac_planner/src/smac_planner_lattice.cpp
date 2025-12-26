@@ -86,7 +86,7 @@ void SmacPlannerLattice::configure(
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   std::filesystem::path filepath;
   ament_index_cpp::get_package_share_directory("nav2_smac_planner", filepath);
-  filepath = filepath /"sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" /
+  filepath = filepath / "sample_primitives" / "5cm_resolution" / "0.5m_turning_radius" /
     "ackermann" / "output.json";
   nav2::declare_parameter_if_not_declared(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(filepath.string()));

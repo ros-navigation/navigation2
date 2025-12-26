@@ -191,7 +191,7 @@ TEST(RouteServerTest, test_set_srv)
   auto req3 = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
   std::filesystem::path invalid_filepath;
   ament_index_cpp::get_package_share_directory("nav2_route", invalid_filepath);
-  invalid_filepath = invalid_filepath / "test" /" test_graphs" / "invalid.json";
+  invalid_filepath = invalid_filepath / "test" / "test_graphs" / "invalid.json";
   req3->graph_filepath = invalid_filepath.string();
   auto resp3 = srv_client.invoke(req3, std::chrono::nanoseconds(1000000000));
   EXPECT_FALSE(resp3->success);
