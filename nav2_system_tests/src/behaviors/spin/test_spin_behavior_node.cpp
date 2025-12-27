@@ -37,40 +37,27 @@ std::string testNameGenerator(const testing::TestParamInfo<std::tuple<float, flo
 class SpinBehaviorTestFixture
   : public ::testing::TestWithParam<std::tuple<float, float>>
 {
-public:
-  static void SetUpTestCase()
-  {
-    spin_recovery_tester = new SpinBehaviorTester();
-    if (!spin_recovery_tester->isActive()) {
-      spin_recovery_tester->activate();
-    }
-  }
-
-  static void TearDownTestCase()
-  {
-    delete spin_recovery_tester;
-    spin_recovery_tester = nullptr;
-  }
-
 protected:
-  static SpinBehaviorTester * spin_recovery_tester;
-};
+  void SetUp() override
+  {
+    spin_recovery_tester = std::make_unique<SpinBehaviorTester>();
+    spin_recovery_tester->activate();
+  }
 
-SpinBehaviorTester * SpinBehaviorTestFixture::spin_recovery_tester = nullptr;
+  void TearDown() override
+  {
+    spin_recovery_tester.reset();
+  }
+
+  std::unique_ptr<SpinBehaviorTester> spin_recovery_tester;
+};
 
 TEST_P(SpinBehaviorTestFixture, testSpinRecovery)
 {
   float target_yaw = std::get<0>(GetParam());
   float tolerance = std::get<1>(GetParam());
 
-  bool success = false;
-  int num_tries = 3;
-  for (int i = 0; i != num_tries; i++) {
-    success = success || spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance);
-    if (success) {
-      break;
-    }
-  }
+  bool success = spin_recovery_tester->defaultSpinBehaviorTest(target_yaw, tolerance);
   if (std::getenv("MAKE_FAKE_COSTMAP") != NULL && abs(target_yaw) > M_PI_2f32) {
     // if this variable is set, make a fake costmap
     // in the fake spin test, we expect a collision for angles > M_PI_2
