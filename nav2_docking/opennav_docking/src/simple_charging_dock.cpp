@@ -236,7 +236,10 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   // Validate that external pose is new enough
   auto timeout = rclcpp::Duration::from_seconds(external_detection_timeout_);
   if (node_->now() - detected.header.stamp > timeout) {
-    RCLCPP_WARN(node_->get_logger(), "Lost detection or did not detect: timeout exceeded");
+    RCLCPP_WARN(
+      node_->get_logger(), "Lost detection or did not detect: "
+      "timeout exceeded (is %2.2f seconds old)",
+      static_cast<float>((node_->now() - detected.header.stamp).seconds()));
     return false;
   }
 
@@ -249,12 +252,19 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
           pose.header.frame_id, detected.header.frame_id,
           detected.header.stamp, rclcpp::Duration::from_seconds(0.2)))
       {
-        RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
+        RCLCPP_WARN(
+          node_->get_logger(), "Failed to transform detected dock pose: "
+          "cannot transform %s to %s (at time %2.2f s)",
+          detected.header.frame_id.c_str(),
+          pose.header.frame_id.c_str(),
+          static_cast<float>(
+            detected.header.stamp.sec + detected.header.stamp.nanosec * 1e-9
+        ));
         return false;
       }
       tf2_buffer_->transform(detected, detected, pose.header.frame_id);
     } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
+      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose: %s", ex.what());
       return false;
     }
   }
