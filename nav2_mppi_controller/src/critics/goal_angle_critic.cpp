@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
+#include "angles/angles.h"
 
 namespace mppi::critics
 {
@@ -23,14 +24,15 @@ void GoalAngleCritic::initialize()
 
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.0);
-
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5);
+  getParam(symmetric_yaw_tolerance_, "symmetric_yaw_tolerance", false);
 
   RCLCPP_INFO(
     logger_,
-    "GoalAngleCritic instantiated with %d power, %f weight, and %f "
-    "angular threshold.",
-    power_, weight_, threshold_to_consider_);
+    "GoalAngleCritic instantiated with %d power, %f weight, %f "
+    "angular threshold, and symmetric_yaw_tolerance %s.",
+    power_, weight_, threshold_to_consider_,
+    symmetric_yaw_tolerance_ ? "enabled" : "disabled");
 }
 
 void GoalAngleCritic::score(CriticData & data)
@@ -44,9 +46,23 @@ void GoalAngleCritic::score(CriticData & data)
   const auto goal_idx = data.path.x.shape(0) - 1;
   const float goal_yaw = data.path.yaws(goal_idx);
 
-  data.costs += xt::pow(
-    xt::mean(xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
-    weight_, power_);
+  if (symmetric_yaw_tolerance_) {
+    // For symmetric robots: use minimum distance to either goal orientation or goal + 180°
+    const float goal_yaw_flipped = angles::normalize_angle(goal_yaw + M_PI);
+
+    auto distance_to_goal = xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw));
+    auto distance_to_flipped = xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw_flipped));
+
+    // Use the minimum distance
+    auto min_distance = xt::minimum(distance_to_goal, distance_to_flipped);
+
+    data.costs += xt::pow(xt::mean(min_distance, {1}) * weight_, power_);
+  } else {
+    // Standard behavior: only consider the specified goal orientation
+    data.costs += xt::pow(
+      xt::mean(xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
+      weight_, power_);
+  }
 }
 
 }  // namespace mppi::critics
