@@ -45,6 +45,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   declare_parameter("service_timeout", 5.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
+  declare_parameter("bond_heartbeat_period", 0.25);
 
   registerRclPreshutdownCallback();
 
@@ -65,6 +66,8 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   bond_respawn_max_duration_ = rclcpp::Duration::from_seconds(respawn_timeout_s);
 
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
+
+  get_parameter("bond_heartbeat_period", bond_heartbeat_period_);
 
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
 
@@ -280,7 +283,7 @@ LifecycleManager::createBondConnection(const std::string & node_name)
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
-    bond_map_[node_name]->setHeartbeatPeriod(0.10);
+    bond_map_[node_name]->setHeartbeatPeriod(bond_heartbeat_period_);
     bond_map_[node_name]->start();
     if (
       !bond_map_[node_name]->waitUntilFormed(
