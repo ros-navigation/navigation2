@@ -15,19 +15,87 @@
 #ifndef NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 #define NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 
+#include <functional>
 #include <memory>
-#include "nav2_ros_common/lifecycle_subscription.hpp"
+#include <string>
+
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/subscription.hpp"
+#include "rclcpp_lifecycle/managed_entity.hpp"
 
 namespace nav2
 {
 
-/**
-  * @brief A ROS 2 subscription for Nav2
-  * This is a convenience type alias to simplify the use of subscriptions in Nav2
-  * which may be further built up on in the future with custom APIs.
-  */
-template<typename MessageT>
-using Subscription = LifecycleSubscription<MessageT>;
+template<typename MessageT, typename Alloc = std::allocator<void>>
+class Subscription : public rclcpp_lifecycle::SimpleManagedEntity
+{
+public:
+  using SharedPtr = std::shared_ptr<Subscription<MessageT, Alloc>>;
+  using CallbackType = std::function<void(std::shared_ptr<MessageT>)>;
+
+  explicit Subscription(
+    typename rclcpp::Subscription<MessageT, Alloc>::SharedPtr subscription,
+    const std::string topic_name)
+  : subscription_(subscription),
+    topic_name_(topic_name),
+    should_log_(true),
+    logger_(rclcpp::get_logger("nav2_subscription"))
+  {
+  }
+
+  virtual ~Subscription() = default;
+
+  typename rclcpp::Subscription<MessageT, Alloc>::SharedPtr get_subscription() const
+  {
+    return subscription_;
+  }
+
+  void set_subscription(typename rclcpp::Subscription<MessageT, Alloc>::SharedPtr subscription)
+  {
+    subscription_ = subscription;
+  }
+
+  const std::string & get_topic_name() const
+  {
+    return topic_name_;
+  }
+
+  void on_activate() override
+  {
+    SimpleManagedEntity::on_activate();
+    should_log_ = true;
+  }
+
+  bool should_process_message()
+  {
+    if (!this->is_activated()) {
+      log_subscription_not_enabled();
+      return false;
+    }
+    return true;
+  }
+
+private:
+  void log_subscription_not_enabled()
+  {
+    if (!should_log_) {
+      return;
+    }
+    // Log the Message
+    RCLCPP_WARN(
+      logger_,
+      "Trying to process message on subscription '%s', but  subscription  not activated",
+      topic_name_.c_str());
+
+    // We stop logging until the flag gets enabled again
+    should_log_ = false;
+  }
+
+  typename rclcpp::Subscription<MessageT, Alloc>::SharedPtr subscription_;
+  std::string topic_name_;
+  bool should_log_ = true;
+  rclcpp::Logger logger_;
+};
 
 }  // namespace nav2
 

@@ -27,7 +27,7 @@
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/managed_entity.hpp"  // ADDED: For lifecycle management
+#include "rclcpp_lifecycle/managed_entity.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
@@ -146,11 +146,9 @@ public:
    * @param callback Callback function to handle incoming messages
    * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
    * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created nav2::Subscription
+   * @return A shared pointer to the created nav2::LifecycleSubscription
    */
-  template<
-    typename MessageT,
-    typename CallbackT>
+  template<typename MessageT, typename CallbackT>
   typename nav2::Subscription<MessageT>::SharedPtr
   create_subscription(
     const std::string & topic_name,
@@ -159,19 +157,13 @@ public:
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
     auto sub = nav2::interfaces::create_subscription<MessageT>(
-      shared_from_this(), topic_name,
-      std::forward<CallbackT>(callback), qos, callback_group);
-    
-    // ADDED: Add to managed entities
-    this->add_managed_entity(sub);
+      shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
 
-    // ADDED: Automatically activate the subscription if the node is already active
     if (get_current_state().id() ==
       lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     {
       sub->on_activate();
     }
-
     return sub;
   }
 
@@ -394,7 +386,7 @@ public:
 
   /**
    * @brief Activate all managed interfaces in the correct order
-   * Order: Publishers -> Service Clients -> Action Clients -> 
+   * Order: Publishers -> Service Clients -> Action Clients ->
    *        Subscriptions -> Service Servers -> Action Servers
    */
   void activateInterfaces()
@@ -480,7 +472,7 @@ protected:
   std::shared_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
-  
+
   // ADDED: Vector to store all managed entities (publishers, subscriptions, etc.)
   std::vector<std::shared_ptr<rclcpp_lifecycle::ManagedEntityInterface>> managed_entities_;
 

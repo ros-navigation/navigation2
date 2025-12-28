@@ -55,6 +55,15 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 ament_export_include_directories(include/${PROJECT_NAME})
+add_executable(test_lifecycle_sub test/test_lifecycle_sub.cpp)
+ament_target_dependencies(test_lifecycle_sub 
+  rclcpp 
+  std_msgs 
+  lifecycle_msgs
+  rclcpp_lifecycle
+)
+target_link_libraries(test_lifecycle_sub ${PROJECT_NAME})
+install(TARGETS test_lifecycle_sub DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
