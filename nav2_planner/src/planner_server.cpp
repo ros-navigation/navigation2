@@ -526,7 +526,7 @@ void PlannerServer::computePlanThroughPoses()
     action_server_poses_->terminate_current(result);
   } catch (nav2_core::PlannerCancelled &) {
     result->error_msg = "Goal was canceled. Canceling planning action.";
-    RCLCPP_INFO(get_logger(), result->error_msg.c_str());
+    RCLCPP_INFO(get_logger(), "%s", result->error_msg.c_str());
     action_server_poses_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(curr_start, curr_goal, goal->planner_id, ex, result->error_msg);
@@ -628,7 +628,7 @@ PlannerServer::computePlan()
     action_server_pose_->terminate_current(result);
   } catch (nav2_core::PlannerCancelled &) {
     result->error_msg = "Goal was canceled. Canceling planning action.";
-    RCLCPP_INFO(get_logger(), result->error_msg.c_str());
+    RCLCPP_INFO(get_logger(), "%s", result->error_msg.c_str());
     action_server_pose_->terminate_all();
   } catch (std::exception & ex) {
     exceptionWarning(start, goal->goal, goal->planner_id, ex, result->error_msg);
@@ -810,7 +810,7 @@ void PlannerServer::exceptionWarning(
      << ": \"" << ex.what() << "\"";
 
   error_msg = ss.str();
-  RCLCPP_WARN(get_logger(), error_msg.c_str());
+  RCLCPP_WARN(get_logger(), "%s", error_msg.c_str());
 }
 
 }  // namespace nav2_planner

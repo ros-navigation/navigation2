@@ -48,10 +48,12 @@ add_library(${map_io_library_name} SHARED
   src/map_mode.cpp
   src/map_io.cpp)
 target_include_directories(${map_io_library_name}
+  SYSTEM
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 target_include_directories(${map_io_library_name}
+  SYSTEM
   PRIVATE
   ${GRAPHICSMAGICKCPP_INCLUDE_DIRS})
 target_link_libraries(${map_io_library_name} PUBLIC

@@ -245,7 +245,7 @@ bool Optimizer::fallback(bool fail)
     return false;
   }
 
-  reset();
+  reset(false /*Don't reset zone-based speed limits after fallback*/);
 
   if (++counter > settings_.retry_attempt_limit) {
     counter = 0;
@@ -584,6 +584,7 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
+  motion_model_->initialize(settings_.constraints, settings_.model_dt);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()
