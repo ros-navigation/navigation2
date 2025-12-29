@@ -28,9 +28,8 @@ void TimeMarker::configure(
 {
   RCLCPP_INFO(node->get_logger(), "Configuring Adjust speed limit operation.");
   name_ = name;
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".time_tag", rclcpp::ParameterValue("abs_time_taken"));
-  time_tag_ = node->get_parameter(getName() + ".time_tag").as_string();
+  time_tag_ = nav2::declare_or_get_parameter<std::string>(
+    node, getName() + ".time_tag", std::string("abs_time_taken"));
   clock_ = node->get_clock();
   edge_start_time_ = rclcpp::Time(0.0);
 }
