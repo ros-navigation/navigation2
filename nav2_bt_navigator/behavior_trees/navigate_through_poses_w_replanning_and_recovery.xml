@@ -7,8 +7,8 @@
   <BehaviorTree ID="NavigateThroughPosesWReplanningAndRecovery">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="progress_checker" topic_name="progress_checker_selector"/>
-        <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="general_goal_checker" topic_name="goal_checker_selector"/>
+        <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="ProgressChecker" topic_name="progress_checker_selector"/>
+        <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="GeneralGoalChecker" topic_name="goal_checker_selector"/>
         <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
         <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
         <RateController hz="0.333">
