@@ -14,7 +14,6 @@
 
 #include "nav2_route/route_server.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -58,24 +57,18 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  declare_parameter_if_not_declared(
-    node, "route_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter_if_not_declared(
-    node, "base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter_if_not_declared(
-    node, "max_planning_time", rclcpp::ParameterValue(2.0));
-
-  route_frame_ = node->get_parameter("route_frame").as_string();
-  base_frame_ = node->get_parameter("base_frame").as_string();
-  max_planning_time_ = node->get_parameter("max_planning_time").as_double();
+  route_frame_ = this->declare_or_get_parameter<std::string>(
+    "route_frame", "map");
+  base_frame_ = this->declare_or_get_parameter<std::string>(
+    "base_frame", "base_link");
+  max_planning_time_ = this->declare_or_get_parameter(
+    "max_planning_time", 2.0);
 
   // Create costmap subscriber
-  nav2::declare_parameter_if_not_declared(
-    node, "costmap_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-  std::string costmap_topic = node->get_parameter("costmap_topic").as_string();
+  std::string costmap_topic = this->declare_or_get_parameter<std::string>(
+    "costmap_topic", "global_costmap/costmap_raw");
   costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
-
+  
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
