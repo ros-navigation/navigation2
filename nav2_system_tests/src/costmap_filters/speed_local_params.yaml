@@ -61,6 +61,7 @@ controller_server:
     speed_limit_topic: "/speed_limit"
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["goal_checker"]
+    path_handler_plugins: ["PathHandler"]
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
@@ -73,7 +74,17 @@ controller_server:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+      path_length_tolerance: 1.0
       stateful: True
+    PathHandler:
+      plugin: "nav2_controller::FeasiblePathHandler"
+      prune_distance: 2.0
+      enforce_path_inversion: False
+      enforce_path_rotation: False
+      inversion_xy_tolerance: 0.2
+      inversion_yaw_tolerance: 0.4
+      minimum_rotation_angle: 0.785
+      reject_unit_path: False
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -100,7 +111,6 @@ controller_server:
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True
