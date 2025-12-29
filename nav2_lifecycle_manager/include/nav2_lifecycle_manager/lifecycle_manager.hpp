@@ -267,6 +267,7 @@ protected:
   rclcpp::TimerBase::SharedPtr bond_respawn_timer_;
   std::chrono::milliseconds bond_timeout_;
   std::chrono::milliseconds service_timeout_;
+  double bond_heartbeat_period_;
 
   // A map of all nodes to check bond connection
   std::map<std::string, std::shared_ptr<bond::Bond>> bond_map_;
