@@ -107,9 +107,8 @@ protected:
     logger_ = node->get_logger();
     node_ = node;
 
-    nav2::declare_parameter_if_not_declared(
-      node, getName() + ".service_name", rclcpp::ParameterValue(""));
-    main_srv_name_ = node->get_parameter(getName() + ".service_name").as_string();
+    main_srv_name_ = nav2::declare_or_get_parameter<std::string>(
+      node, getName() + ".service_name", std::string(""));
 
     configureEvent(node, name);
 

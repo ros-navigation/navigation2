@@ -30,14 +30,12 @@ void PenaltyScorer::configure(
   name_ = name;
 
   // Find the tag at high the speed limit information is stored
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".penalty_tag", rclcpp::ParameterValue("penalty"));
-  penalty_tag_ = node->get_parameter(getName() + ".penalty_tag").as_string();
+  penalty_tag_ = nav2::declare_or_get_parameter<std::string>(
+    node, getName() + ".penalty_tag", std::string("penalty"));
 
   // Find the proportional weight to apply, if multiple cost functions
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".weight", rclcpp::ParameterValue(1.0));
-  weight_ = static_cast<float>(node->get_parameter(getName() + ".weight").as_double());
+  weight_ = static_cast<float>(
+    nav2::declare_or_get_parameter<double>(node, getName() + ".weight", 1.0));
 }
 
 bool PenaltyScorer::score(

@@ -33,9 +33,8 @@ void CollisionMonitor::configure(
   last_check_time_ = clock_->now();
 
   std::string server_costmap_topic = node->get_parameter("costmap_topic").as_string();
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".costmap_topic", rclcpp::ParameterValue("local_costmap/costmap_raw"));
-  std::string costmap_topic = node->get_parameter(getName() + ".costmap_topic").as_string();
+  std::string costmap_topic = nav2::declare_or_get_parameter<std::string>(
+    node, getName() + ".costmap_topic", std::string("local_costmap/costmap_raw"));
   if (costmap_topic != server_costmap_topic) {
     RCLCPP_INFO(
       node->get_logger(),
@@ -48,29 +47,21 @@ void CollisionMonitor::configure(
     topic_ = server_costmap_topic;
   }
 
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".rate", rclcpp::ParameterValue(1.0));
-  double checking_rate = node->get_parameter(getName() + ".rate").as_double();
+  double checking_rate = nav2::declare_or_get_parameter<double>(node, getName() + ".rate", 1.0);
   checking_duration_ = rclcpp::Duration::from_seconds(1.0 / checking_rate);
 
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".reroute_on_collision", rclcpp::ParameterValue(true));
-  reroute_on_collision_ = node->get_parameter(getName() + ".reroute_on_collision").as_bool();
+  reroute_on_collision_ = nav2::declare_or_get_parameter<bool>(
+    node, getName() + ".reroute_on_collision", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".max_cost", rclcpp::ParameterValue(253.0));
-  max_cost_ = static_cast<float>(node->get_parameter(getName() + ".max_cost").as_double());
+  max_cost_ = static_cast<float>(
+    nav2::declare_or_get_parameter<double>(node, getName() + ".max_cost", 253.0));
 
   // Resolution to check the costmap over (1=every cell, 2=every other cell, etc.)
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".check_resolution", rclcpp::ParameterValue(1));
   check_resolution_ = static_cast<unsigned int>(
-    node->get_parameter(getName() + ".check_resolution").as_int());
+    nav2::declare_or_get_parameter<int>(node, getName() + ".check_resolution", 1));
 
-  nav2::declare_parameter_if_not_declared(
-    node, getName() + ".max_collision_dist", rclcpp::ParameterValue(5.0));
   max_collision_dist_ = static_cast<float>(
-    node->get_parameter(getName() + ".max_collision_dist").as_double());
+    nav2::declare_or_get_parameter<double>(node, getName() + ".max_collision_dist", 5.0));
   if (max_collision_dist_ <= 0.0) {
     RCLCPP_INFO(
       logger_, "Max collision distance to evaluate is zero or negative, checking the full route.");
