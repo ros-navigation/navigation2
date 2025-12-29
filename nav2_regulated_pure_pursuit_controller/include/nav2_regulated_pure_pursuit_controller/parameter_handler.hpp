@@ -60,6 +60,7 @@ struct Parameters
   double max_robot_pose_search_dist;
   bool interpolate_curvature_after_goal;
   bool use_collision_detection;
+  bool use_path_aware_obstacle_distance;
   double transform_tolerance;
   bool stateful;
 };

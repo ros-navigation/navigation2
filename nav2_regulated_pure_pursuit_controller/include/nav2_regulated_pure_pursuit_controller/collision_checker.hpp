@@ -62,12 +62,13 @@ public:
    * @param linear_vel linear velocity to forward project
    * @param angular_vel angular velocity to forward project
    * @param carrot_dist Distance to the carrot for PP
+   * @param dist_to_path_end Distance used to regulate min_distance_to_obstacle
    * @return Whether collision is imminent
    */
   bool isCollisionImminent(
     const geometry_msgs::msg::PoseStamped &,
     const double &, const double &,
-    const double &);
+    const double &, const double &);
 
   /**
    * @brief checks for collision at projected pose
