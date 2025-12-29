@@ -20,6 +20,8 @@
 #include <string>
 #include <memory>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
@@ -117,6 +119,28 @@ public:
    * @return Optimal control sequence
    */
   const models::ControlSequence & getOptimalControlSequence();
+
+  /**
+   * @brief Get the costs for trajectories for visualization
+   * @return Costs array
+   */
+  const Eigen::ArrayXf & getCosts() const
+  {
+    return costs_;
+  }
+
+  /**
+   * @brief Get the per-critic costs for trajectories for visualization
+   * @return Vector of (critic_name, costs) pairs
+   */
+  const std::vector<std::pair<std::string, Eigen::ArrayXf>> & getCriticCosts() const
+  {
+    if (critics_data_.individual_critics_cost) {
+      return *critics_data_.individual_critics_cost;
+    }
+    static const std::vector<std::pair<std::string, Eigen::ArrayXf>> empty;
+    return empty;
+  }
 
   /**
    * @brief Set the maximum speed based on the speed limits callback
@@ -284,7 +308,7 @@ protected:
 
   CriticData critics_data_ = {
     state_, generated_trajectories_, path_, goal_,
-    costs_, settings_.model_dt, false, nullptr, nullptr,
+    costs_, std::nullopt, settings_.model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references
 
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};

@@ -41,6 +41,7 @@ void PathAngleCritic::initialize()
   getParam(
     max_angle_to_furthest_,
     "max_angle_to_furthest", 0.785398f);
+  getParam(visualize_furthest_point_, "visualize_furthest_point", false);
 
   int mode = 0;
   getParam(mode, "mode", mode);
@@ -51,6 +52,15 @@ void PathAngleCritic::initialize()
       logger_,
       "Path angle mode set to no directional preference, but controller's settings "
       "don't allow for reversing! Setting mode to forward preference.");
+  }
+
+  if (visualize_furthest_point_) {
+    auto node = parent_.lock();
+    if (node) {
+      furthest_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+      "PathAngleCritic/furthest_reached_path_point", 1);
+      furthest_point_pub_->on_activate();
+    }
   }
 
   RCLCPP_INFO(
@@ -74,6 +84,20 @@ void PathAngleCritic::score(CriticData & data)
   const float goal_y = data.path.y(offsetted_idx);
   const float goal_yaw = data.path.yaws(offsetted_idx);
   const geometry_msgs::msg::Pose & pose = data.state.pose.pose;
+
+  // Visualize target pose if enabled
+  if (visualize_furthest_point_ && furthest_point_pub_->get_subscription_count() > 0) {
+    auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
+    furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
+    furthest_point->header.stamp = clock_->now();
+    furthest_point->pose.position.x = goal_x;
+    furthest_point->pose.position.y = goal_y;
+    furthest_point->pose.position.z = 0.0;
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, goal_yaw);
+    furthest_point->pose.orientation = tf2::toMsg(quat);
+    furthest_point_pub_->publish(std::move(furthest_point));
+  }
 
   switch (mode_) {
     case PathAngleMode::FORWARD_PREFERENCE:
