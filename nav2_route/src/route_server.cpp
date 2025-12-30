@@ -110,9 +110,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
-  auto msg = std::make_unique<visualization_msgs::msg::MarkerArray>(utils::toMsg(graph_,
-    route_frame_, this->now()));
-  graph_vis_publisher_->publish(std::move(msg));
+  graph_vis_publisher_->publish(utils::toMsg(graph_,route_frame_, this->now()));
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -374,9 +372,7 @@ void RouteServer::setRouteGraph(
   try {
     if (graph_loader_->loadGraphFromFile(graph_, id_to_graph_map_, request->graph_filepath)) {
       goal_intent_extractor_->setGraph(graph_, &id_to_graph_map_);
-      auto msg = std::make_unique<visualization_msgs::msg::MarkerArray>(utils::toMsg(graph_,
-        route_frame_, this->now()));
-      graph_vis_publisher_->publish(std::move(msg));
+      graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
       response->success = true;
       return;
     }

@@ -250,9 +250,7 @@ void RouteTool::on_edit_node_button_toggled(void)
 
 void RouteTool::update_route_graph(void)
 {
-  auto msg = std::make_unique<visualization_msgs::msg::MarkerArray>(nav2_route::utils::toMsg(graph_,
-    "map", node_->now()));
-  graph_vis_publisher_->publish(std::move(msg));
+  graph_vis_publisher_->publish(nav2_route::utils::toMsg(graph_, "map", node_->now()));
 }
 
 void RouteTool::save(rviz_common::Config config) const
