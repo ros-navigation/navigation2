@@ -474,7 +474,6 @@ public:
   Coordinates pose;
 
   // Constants required across all nodes but don't want to allocate more than once
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float travel_distance_cost;
   NAV2_SMAC_PLANNER_COMMON_EXPORT static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable obstacle_heuristic_lookup_table;

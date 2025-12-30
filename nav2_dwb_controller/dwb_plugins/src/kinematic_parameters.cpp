@@ -33,7 +33,7 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.hpp"
-
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -55,7 +55,10 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-  delete kinematics_.load();
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr != nullptr) {
+    delete ptr;
+  }
 }
 
 void KinematicsHandler::initialize(
@@ -151,7 +154,11 @@ void KinematicsHandler::deactivate()
 void KinematicsHandler::setSpeedLimit(
   const double & speed_limit, const bool & percentage)
 {
-  KinematicParameters kinematics(*kinematics_.load());
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
@@ -232,7 +239,11 @@ void
 KinematicsHandler::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  KinematicParameters kinematics(*kinematics_.load());
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -284,8 +295,11 @@ KinematicsHandler::updateParametersCallback(const std::vector<rclcpp::Parameter>
 
 void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
 {
-  delete kinematics_.load();
-  kinematics_.store(new KinematicParameters(kinematics));
+  KinematicParameters * new_kinematics = new KinematicParameters(kinematics);
+  KinematicParameters * old_kinematics = kinematics_.exchange(new_kinematics);
+  if (old_kinematics != nullptr) {
+    delete old_kinematics;
+  }
 }
 
 }  // namespace dwb_plugins

@@ -24,4 +24,9 @@
         <description>Goal checker that only checks XY position and ignores orientation</description>
     </class>
   </library>
+  <library path="feasible_path_handler">
+    <class type="nav2_controller::FeasiblePathHandler" base_class_type="nav2_core::PathHandler">
+      <description>Prunes the global plan around the robot and transforms the remaining portion into the odom frame for local control</description>
+    </class>
+  </library>
 </class_libraries>

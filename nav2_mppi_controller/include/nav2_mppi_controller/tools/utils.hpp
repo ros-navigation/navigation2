@@ -293,26 +293,27 @@ inline size_t findPathFurthestReachedPoint(const CriticData & data)
   const auto traj_x = data.trajectories.x.col(traj_cols - 1);
   const auto traj_y = data.trajectories.y.col(traj_cols - 1);
 
-  const auto dx = (data.path.x.transpose()).replicate(traj_x.rows(), 1).colwise() - traj_x;
-  const auto dy = (data.path.y.transpose()).replicate(traj_y.rows(), 1).colwise() - traj_y;
-
-  const auto dists = dx * dx + dy * dy;
-
   int max_id_by_trajectories = 0, min_id_by_path = 0;
   float min_distance_by_path = std::numeric_limits<float>::max();
-  size_t n_rows = dists.rows();
-  size_t n_cols = dists.cols();
+  size_t n_rows = traj_x.rows();
+  size_t n_cols = data.path.x.size();
   for (size_t i = 0; i != n_rows; i++) {
     min_id_by_path = 0;
     min_distance_by_path = std::numeric_limits<float>::max();
-    for (size_t j = max_id_by_trajectories; j != n_cols; j++) {
-      const float cur_dist = dists(i, j);
+    for (size_t j = 0; j != n_cols; j++) {
+      const float dx = data.path.x(j) - traj_x(i);
+      const float dy = data.path.y(j) - traj_y(i);
+      const float cur_dist = dx * dx + dy * dy;
       if (cur_dist < min_distance_by_path) {
         min_distance_by_path = cur_dist;
         min_id_by_path = j;
       }
     }
     max_id_by_trajectories = std::max(max_id_by_trajectories, min_id_by_path);
+    // Early exit if we've already reached the end of the path
+    if (max_id_by_trajectories == static_cast<int>(n_cols) - 1) {
+      break;
+    }
   }
   return max_id_by_trajectories;
 }
@@ -509,59 +510,6 @@ inline void savitskyGolayFilter(
     control_sequence.vx(offset),
     control_sequence.vy(offset),
     control_sequence.wz(offset)};
-}
-
-/**
- * @brief Find the iterator of the first pose at which there is an inversion on the path,
- * @param path to check for inversion
- * @return the first point after the inversion found in the path
- */
-inline unsigned int findFirstPathInversion(nav_msgs::msg::Path & path)
-{
-  // At least 3 poses for a possible inversion
-  if (path.poses.size() < 3) {
-    return path.poses.size();
-  }
-
-  // Iterating through the path to determine the position of the path inversion
-  for (unsigned int idx = 1; idx < path.poses.size() - 1; ++idx) {
-    // We have two vectors for the dot product OA and AB. Determining the vectors.
-    float oa_x = path.poses[idx].pose.position.x -
-      path.poses[idx - 1].pose.position.x;
-    float oa_y = path.poses[idx].pose.position.y -
-      path.poses[idx - 1].pose.position.y;
-    float ab_x = path.poses[idx + 1].pose.position.x -
-      path.poses[idx].pose.position.x;
-    float ab_y = path.poses[idx + 1].pose.position.y -
-      path.poses[idx].pose.position.y;
-
-    // Checking for the existence of cusp, in the path, using the dot product.
-    float dot_product = (oa_x * ab_x) + (oa_y * ab_y);
-    if (dot_product < 0.0f) {
-      return idx + 1;
-    }
-  }
-
-  return path.poses.size();
-}
-
-/**
- * @brief Find and remove poses after the first inversion in the path
- * @param path to check for inversion
- * @return The location of the inversion, return 0 if none exist
- */
-inline unsigned int removePosesAfterFirstInversion(nav_msgs::msg::Path & path)
-{
-  nav_msgs::msg::Path cropped_path = path;
-  const unsigned int first_after_inversion = findFirstPathInversion(cropped_path);
-  if (first_after_inversion == path.poses.size()) {
-    return 0u;
-  }
-
-  cropped_path.poses.erase(
-    cropped_path.poses.begin() + first_after_inversion, cropped_path.poses.end());
-  path = cropped_path;
-  return first_after_inversion;
 }
 
 /**

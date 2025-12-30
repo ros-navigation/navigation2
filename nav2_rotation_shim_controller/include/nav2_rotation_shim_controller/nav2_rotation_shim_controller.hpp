@@ -83,18 +83,22 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @param global_goal The last pose of the global plan
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * /*goal_checker*/) override;
+    nav2_core::GoalChecker * /*goal_checker*/,
+    const nav_msgs::msg::Path & transformed_global_plan,
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
-   * @brief nav2_core setPlan - Sets the global plan
-   * @param path The global plan
+   * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server
+   * @param raw_global_path The global plan from the Planner Server
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -117,14 +121,8 @@ protected:
    * May throw exception if a point at least that far away cannot be found
    * @return pt location of the output point
    */
-  geometry_msgs::msg::PoseStamped getSampledPathPt();
-
-  /**
-   * @brief Find the goal point in path
-   * May throw exception if the path is empty
-   * @return pt location of the output point
-   */
-  geometry_msgs::msg::PoseStamped getSampledPathGoal();
+  geometry_msgs::msg::PoseStamped getSampledPathPt(
+    const geometry_msgs::msg::PoseStamped & global_goal);
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame
@@ -158,10 +156,10 @@ protected:
 
   /**
    * @brief Checks if the goal has changed based on the given path.
-   * @param path The path to compare with the current goal.
+   * @param goal The goal to compare with the last goal.
    * @return True if the goal has changed, false otherwise.
    */
-  bool isGoalChanged(const nav_msgs::msg::Path & path);
+  bool isGoalChanged(const geometry_msgs::msg::PoseStamped & goal);
 
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -176,6 +174,7 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
+  geometry_msgs::msg::PoseStamped current_goal_;
   Parameters * params_;
   bool in_rotation_;
   double last_angular_vel_ = std::numeric_limits<double>::max();
