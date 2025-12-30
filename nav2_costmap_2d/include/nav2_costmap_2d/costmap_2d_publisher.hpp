@@ -124,18 +124,9 @@ public:
 
   /**
    * @brief Publishes the visualization data over ROS
-   * @note Only publishes if active
+   * @note Only publishes when the associated layer is enabled
    */
   void publishCostmap();
-
-  /**
-   * @brief Check if the publisher is active
-   * @return True if the frequency for the publisher is non-zero, false otherwise
-   */
-  bool active()
-  {
-    return active_;
-  }
 
 private:
   /** @brief Prepare grid_ message for publication. */
@@ -167,7 +158,6 @@ private:
   unsigned int x0_, xn_, y0_, yn_;
   double saved_origin_x_;
   double saved_origin_y_;
-  bool active_;
   bool always_send_full_costmap_;
   double map_vis_z_;
 

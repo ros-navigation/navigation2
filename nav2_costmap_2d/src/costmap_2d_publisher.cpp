@@ -59,7 +59,6 @@ Costmap2DPublisher::Costmap2DPublisher(
 : costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
-  active_(false),
   always_send_full_costmap_(always_send_full_costmap),
   map_vis_z_(map_vis_z)
 {
@@ -236,8 +235,11 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 
 void Costmap2DPublisher::publishCostmap()
 {
-  if(!active_) {
-    return;
+  {
+    auto const costmap_layer = dynamic_cast<CostmapLayer*>(costmap_);
+    if (costmap_layer != nullptr && !costmap_layer->isEnabled()) {
+      return;
+    }
   }
 
   float resolution = costmap_->getResolution();
