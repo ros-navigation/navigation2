@@ -47,8 +47,6 @@ ParameterHandler::ParameterHandler(
     node->declare_or_get_parameter(plugin_name_ + ".lookahead_time", 1.5);
   params_.rotate_to_heading_angular_vel = node->declare_or_get_parameter(
     plugin_name_ + ".rotate_to_heading_angular_vel", 1.8);
-  params_.transform_tolerance = node->declare_or_get_parameter(
-    plugin_name_ + ".transform_tolerance", 0.1);
   params_.use_velocity_scaled_lookahead_dist = node->declare_or_get_parameter(
     plugin_name_ + ".use_velocity_scaled_lookahead_dist", false);
   params_.min_approach_linear_velocity = node->declare_or_get_parameter(
@@ -97,14 +95,6 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".cancel_deceleration", 3.2);
   params_.allow_reversing =
     node->declare_or_get_parameter(plugin_name_ + ".allow_reversing", false);
-  params_.max_robot_pose_search_dist = node->declare_or_get_parameter(
-    plugin_name_ + ".max_robot_pose_search_dist", costmap_size_x / 2.0);
-  if (params_.max_robot_pose_search_dist < 0.0) {
-    RCLCPP_WARN(
-      logger_, "Max robot search distance is negative, setting to max to search"
-      " every point on path for the closest value.");
-    params_.max_robot_pose_search_dist = std::numeric_limits<double>::max();
-  }
 
   params_.interpolate_curvature_after_goal = node->declare_or_get_parameter(
     plugin_name_ + ".interpolate_curvature_after_goal", false);
@@ -166,6 +156,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
   }
   return result;
 }
+
 void
 ParameterHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
@@ -216,10 +207,6 @@ ParameterHandler::updateParametersCallback(
         params_.cancel_deceleration = parameter.as_double();
       } else if (param_name == plugin_name_ + ".rotate_to_heading_min_angle") {
         params_.rotate_to_heading_min_angle = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".transform_tolerance") {
-        params_.transform_tolerance = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".max_robot_pose_search_dist") {
-        params_.max_robot_pose_search_dist = parameter.as_double();
       } else if (param_name == plugin_name_ + ".approach_velocity_scaling_dist") {
         params_.approach_velocity_scaling_dist = parameter.as_double();
       }

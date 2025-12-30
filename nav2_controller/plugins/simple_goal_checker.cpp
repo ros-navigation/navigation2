@@ -55,6 +55,7 @@ namespace nav2_controller
 SimpleGoalChecker::SimpleGoalChecker()
 : xy_goal_tolerance_(0.25),
   yaw_goal_tolerance_(0.25),
+  path_length_tolerance_(1.0),
   stateful_(true),
   check_xy_(true),
   xy_goal_tolerance_sq_(0.0625)
@@ -71,6 +72,8 @@ void SimpleGoalChecker::initialize(
 
   xy_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".xy_goal_tolerance", 0.25);
   yaw_goal_tolerance_ = node->declare_or_get_parameter(plugin_name + ".yaw_goal_tolerance", 0.25);
+  path_length_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".path_length_tolerance", 1.0);
   stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
@@ -87,8 +90,14 @@ void SimpleGoalChecker::reset()
 
 bool SimpleGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-  const geometry_msgs::msg::Twist &)
+  const geometry_msgs::msg::Twist &, const nav_msgs::msg::Path & transformed_global_plan)
 {
+  // If the local plan length is longer than the tolerance, we skip the check
+  if (nav2_util::geometry_utils::calculate_path_length(transformed_global_plan) >
+    path_length_tolerance_)
+  {
+    return false;
+  }
   if (check_xy_) {
     double dx = query_pose.position.x - goal_pose.position.x,
       dy = query_pose.position.y - goal_pose.position.y;
@@ -146,6 +155,8 @@ SimpleGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
       } else if (param_name == plugin_name_ + ".yaw_goal_tolerance") {
         yaw_goal_tolerance_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".stateful") {

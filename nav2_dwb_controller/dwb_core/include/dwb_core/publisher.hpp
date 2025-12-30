@@ -59,12 +59,10 @@ namespace dwb_core
  * @brief Consolidation of all the publishing logic for the DWB Local Planner.
  *
  * Right now, it can publish
- *   1) The Global Plan (as passed in using setPath)
- *   2) The Local Plan (after it is calculated)
- *   3) The Transformed Global Plan (since it may be different than the global)
- *   4) The Full LocalPlanEvaluation
- *   5) Markers representing the different trajectories evaluated
- *   6) The CostGrid (in the form of a complex PointCloud2)
+ *   1) The Local Plan (after it is calculated)
+ *   2) The Full LocalPlanEvaluation
+ *   3) Markers representing the different trajectories evaluated
+ *   4) The CostGrid (in the form of a complex PointCloud2)
  */
 class DWBPublisher
 {
@@ -94,8 +92,6 @@ public:
   void publishCostGrid(
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const std::vector<TrajectoryCritic::Ptr> critics);
-  void publishGlobalPlan(const nav_msgs::msg::Path plan);
-  void publishTransformedPlan(const nav_msgs::msg::Path plan);
   void publishLocalPlan(const nav_msgs::msg::Path plan);
 
 protected:
@@ -108,8 +104,6 @@ protected:
 
   // Flags for turning on/off publishing specific components
   bool publish_evaluation_;
-  bool publish_global_plan_;
-  bool publish_transformed_;
   bool publish_local_plan_;
   bool publish_trajectories_;
   bool publish_cost_grid_pc_;
@@ -120,8 +114,6 @@ protected:
 
   // Publisher Objects
   std::shared_ptr<Publisher<dwb_msgs::msg::LocalPlanEvaluation>> eval_pub_;
-  std::shared_ptr<Publisher<nav_msgs::msg::Path>> global_pub_;
-  std::shared_ptr<Publisher<nav_msgs::msg::Path>> transformed_pub_;
   std::shared_ptr<Publisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<Publisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
   std::shared_ptr<Publisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
