@@ -66,13 +66,14 @@ public:
   void reset() override;
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
-    const geometry_msgs::msg::Twist & velocity) override;
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) override;
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
-  double xy_goal_tolerance_, yaw_goal_tolerance_;
+  double xy_goal_tolerance_, yaw_goal_tolerance_, path_length_tolerance_;
   bool stateful_, check_xy_;
   // Cached squared xy_goal_tolerance_
   double xy_goal_tolerance_sq_;

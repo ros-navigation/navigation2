@@ -138,6 +138,16 @@ TEST(WPTest, test_dynamic_parameters)
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("min_particles", 2000)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
   EXPECT_EQ(amcl->get_parameter("min_particles").as_int(), 100);
+
+  // Test zero save_pose_rate rejection
+  results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", 0.0)});
+  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
+
+  // Test negative save_pose_rate rejection
+  results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", -1.0)});
+  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
 }
 
 int main(int argc, char ** argv)

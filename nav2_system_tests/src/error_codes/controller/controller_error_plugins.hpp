@@ -41,12 +41,14 @@ public:
 
   void deactivate() {}
 
-  void setPlan(const nav_msgs::msg::Path &) {}
+  void newPathReceived(const nav_msgs::msg::Path &) {}
 
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::ControllerException("Unknown Error");
   }
@@ -59,7 +61,9 @@ class TFErrorController : public UnknownErrorController
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::ControllerTFError("TF error");
   }
@@ -70,7 +74,9 @@ class FailedToMakeProgressErrorController : public UnknownErrorController
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::FailedToMakeProgress("Failed to make progress");
   }
@@ -81,7 +87,9 @@ class PatienceExceededErrorController : public UnknownErrorController
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::PatienceExceeded("Patience exceeded");
   }
@@ -92,7 +100,9 @@ class InvalidPathErrorController : public UnknownErrorController
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::InvalidPath("Invalid path");
   }
@@ -103,7 +113,9 @@ class NoValidControlErrorController : public UnknownErrorController
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
-    nav2_core::GoalChecker *)
+    nav2_core::GoalChecker *,
+    const nav_msgs::msg::Path &,
+    const geometry_msgs::msg::PoseStamped &)
   {
     throw nav2_core::NoValidControl("No valid control");
   }

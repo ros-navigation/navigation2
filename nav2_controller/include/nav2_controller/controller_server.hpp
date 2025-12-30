@@ -25,6 +25,7 @@
 #include "nav2_core/controller.hpp"
 #include "nav2_core/progress_checker.hpp"
 #include "nav2_core/goal_checker.hpp"
+#include "nav2_core/path_handler.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
@@ -37,6 +38,7 @@
 #include "nav2_util/twist_publisher.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "nav2_controller/parameter_handler.hpp"
 
 namespace nav2_controller
 {
@@ -53,6 +55,7 @@ public:
   using ControllerMap = std::unordered_map<std::string, nav2_core::Controller::Ptr>;
   using GoalCheckerMap = std::unordered_map<std::string, nav2_core::GoalChecker::Ptr>;
   using ProgressCheckerMap = std::unordered_map<std::string, nav2_core::ProgressChecker::Ptr>;
+  using PathHandlerMap = std::unordered_map<std::string, nav2_core::PathHandler::Ptr>;
 
   /**
    * @brief Constructor for nav2_controller::ControllerServer
@@ -155,6 +158,15 @@ protected:
   bool findProgressCheckerId(const std::string & c_name, std::string & name);
 
   /**
+   * @brief Find the valid path handler ID name for the specified parameter
+   *
+   * @param c_name The path handler name
+   * @param name Reference to the name to use for path handling if any valid available
+   * @return bool Whether it found a valid path handler to use
+   */
+  bool findPathHandlerId(const std::string & c_name, std::string & name);
+
+  /**
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
@@ -212,22 +224,14 @@ protected:
   geometry_msgs::msg::Twist getThresholdedTwist(const geometry_msgs::msg::Twist & twist)
   {
     geometry_msgs::msg::Twist twist_thresh;
-    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x, min_x_velocity_threshold_);
-    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y, min_y_velocity_threshold_);
-    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z, min_theta_velocity_threshold_);
+    twist_thresh.linear.x = getThresholdedVelocity(twist.linear.x,
+      params_->min_x_velocity_threshold);
+    twist_thresh.linear.y = getThresholdedVelocity(twist.linear.y,
+      params_->min_y_velocity_threshold);
+    twist_thresh.angular.z = getThresholdedVelocity(twist.angular.z,
+      params_->min_theta_velocity_threshold);
     return twist_thresh;
   }
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dynamic_params_lock_;
 
   // The controller needs a costmap node
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
@@ -242,45 +246,25 @@ protected:
   // Progress Checker Plugin
   pluginlib::ClassLoader<nav2_core::ProgressChecker> progress_checker_loader_;
   ProgressCheckerMap progress_checkers_;
-  std::vector<std::string> default_progress_checker_ids_;
-  std::vector<std::string> default_progress_checker_types_;
-  std::vector<std::string> progress_checker_ids_;
-  std::vector<std::string> progress_checker_types_;
   std::string progress_checker_ids_concat_, current_progress_checker_;
 
   // Goal Checker Plugin
   pluginlib::ClassLoader<nav2_core::GoalChecker> goal_checker_loader_;
   GoalCheckerMap goal_checkers_;
-  std::vector<std::string> default_goal_checker_ids_;
-  std::vector<std::string> default_goal_checker_types_;
-  std::vector<std::string> goal_checker_ids_;
-  std::vector<std::string> goal_checker_types_;
   std::string goal_checker_ids_concat_, current_goal_checker_;
 
   // Controller Plugins
   pluginlib::ClassLoader<nav2_core::Controller> lp_loader_;
   ControllerMap controllers_;
-  std::vector<std::string> default_ids_;
-  std::vector<std::string> default_types_;
-  std::vector<std::string> controller_ids_;
-  std::vector<std::string> controller_types_;
   std::string controller_ids_concat_, current_controller_;
 
-  double controller_frequency_;
-  double min_x_velocity_threshold_;
-  double min_y_velocity_threshold_;
-  double min_theta_velocity_threshold_;
-  double search_window_;
+  // Path Handler Plugins
+  pluginlib::ClassLoader<nav2_core::PathHandler> path_handler_loader_;
+  PathHandlerMap path_handlers_;
+  std::string path_handler_ids_concat_, current_path_handler_;
+
   size_t start_index_;
-
-  double failure_tolerance_;
-  bool use_realtime_priority_;
-  bool publish_zero_velocity_;
-  rclcpp::Duration costmap_update_timeout_;
-
-  // Whether we've published the single controller warning yet
   geometry_msgs::msg::PoseStamped end_pose_;
-
   geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
   // Last time the controller generated a valid command
@@ -288,6 +272,11 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
+  nav_msgs::msg::Path transformed_global_plan_;
+  std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
+  Parameters * params_;
+  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr transformed_plan_pub_;
+  double transform_tolerance_;
 
 private:
   /**

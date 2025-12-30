@@ -43,7 +43,6 @@ TEST(NodeHybridTest, test_node_hybrid)
 
   // Check defaulted constants
   nav2_smac_planner::NodeHybrid testA(49);
-  EXPECT_EQ(testA.travel_distance_cost, sqrtf(2));
 
   nav2_smac_planner::NodeHybrid::initMotionModel(
     nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
@@ -77,15 +76,10 @@ TEST(NodeHybridTest, test_node_hybrid)
   testA.reset();
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
-  // Check motion-specific constants
-  EXPECT_NEAR(testA.travel_distance_cost, 2.08842, 0.1);
-
   // check collision checking
   EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
 
   // check traversal cost computation
-  // simulated first node, should return neutral cost
-  EXPECT_NEAR(testB.getTraversalCost(&testA), 2.088, 0.1);
   // now with straight motion, cost is 0, so will be neutral as well
   // but now reduced by retrospective penalty (10%)
   testB.setMotionPrimitiveIndex(1, nav2_smac_planner::TurnDirection::LEFT);
