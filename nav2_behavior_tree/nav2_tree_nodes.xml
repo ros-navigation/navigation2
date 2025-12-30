@@ -64,6 +64,11 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="CancelFollowObject">
+      <input_port name="server_name">Server name to cancel the follow object behavior</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Action>
+
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
@@ -177,6 +182,17 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
       <output_port name="error_msg">Follow Path error message</output_port>
+    </Action>
+
+    <Action ID="FollowObject">
+      <input_port name="pose_topic">Topic to publish the pose of the object to follow</input_port>
+      <input_port name="tracked_frame">Target frame to follow (Optional, used if pose_topic is not set)</input_port>
+      <input_port name="max_duration">The maximum duration to follow the object (Optional)</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="server_name">Action server name</input_port>
+      <output_port name="total_elapsed_time">Total elapsed time</output_port>
+      <output_port name="error_msg">Error message</output_port>
+      <output_port name="error_code_id">Error code</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
@@ -314,6 +330,23 @@
       <input_port name="input_path1">Input Path 1 to cancatenate</input_port>
       <input_port name="input_path2">Input Path 2 to cancatenate</input_port>
       <output_port name="output_path">Paths concatenated</output_port>
+    </Action>
+
+    <Action ID="AppendGoalPoseToGoals">
+      <input_port name="input_goals">Input goals vector to append to</input_port>
+      <input_port name="goal_pose">Goal pose to append to the goals vector</input_port>
+      <output_port name="output_goals">Output goals vector appended to</output_port>
+    </Action>
+
+    <Action ID="ExtractRouteNodesAsGoals">
+      <input_port name="route">Route to convert its nodes into Goals</input_port>
+      <output_port name="goals">Goals comparing the route's nodes</output_port>
+    </Action>
+
+    <Action ID="GetNextFewGoals">
+      <input_port name="num_goals">How many of the goals to take from the input goals</input_port>
+      <input_port name="input_goals">Input goals list</input_port>
+      <output_port name="output_goals">The output pruned goals list</output_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->
