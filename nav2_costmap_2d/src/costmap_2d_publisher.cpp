@@ -37,6 +37,7 @@
  *         David V. Lu!!
  *********************************************************************/
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 
 #include <string>
 #include <memory>
