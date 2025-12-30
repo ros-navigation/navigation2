@@ -64,11 +64,6 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="CancelFollowObject">
-      <input_port name="server_name">Server name to cancel the follow object behavior</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-    </Action>
-
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
@@ -182,17 +177,6 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <output_port name="error_code_id">Follow Path error code</output_port>
       <output_port name="error_msg">Follow Path error message</output_port>
-    </Action>
-
-    <Action ID="FollowObject">
-      <input_port name="pose_topic">Topic to publish the pose of the object to follow</input_port>
-      <input_port name="tracked_frame">Target frame to follow (Optional, used if pose_topic is not set)</input_port>
-      <input_port name="max_duration">The maximum duration to follow the object (Optional)</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <input_port name="server_name">Action server name</input_port>
-      <output_port name="total_elapsed_time">Total elapsed time</output_port>
-      <output_port name="error_msg">Error message</output_port>
-      <output_port name="error_code_id">Error code</output_port>
     </Action>
 
     <Action ID="NavigateToPose">
