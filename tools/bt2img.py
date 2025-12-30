@@ -17,7 +17,9 @@
 # for instructions
 
 import argparse
+import os
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import graphviz  # pip3 install graphviz
 
@@ -42,6 +44,7 @@ control_nodes = [
     'RoundRobin',
     'Control',
 ]
+
 action_nodes = [
     'AlwaysFailure',
     'AlwaysSuccess',
@@ -76,9 +79,108 @@ subtree_nodes = [
 ]
 
 
+def resolve_ros_package_path(ros_pkg: str, path: str) -> str:
+    """Resolve a ROS package path to an actual filesystem path.
+    
+    For example, if you have:
+    <include ros_pkg="nav2_bt_navigator" path="behavior_trees/navigate_to_pose.xml"/>
+    
+    This function returns the actual filesystem path.
+    """
+    try:
+        from ament_index_python.packages import get_package_share_directory
+        pkg_share_dir = get_package_share_directory(ros_pkg)
+        return os.path.join(pkg_share_dir, path)
+    except (ImportError, Exception):
+        pass
+    
+    # Fallback: try common ROS installation paths
+    common_paths = [
+        Path.home() / 'ros2_ws' / 'install' / ros_pkg / 'share' / ros_pkg,
+        Path('/opt/ros') / os.environ.get('ROS_DISTRO', 'jazzy') / 'share' / ros_pkg,
+        Path('/usr/share') / ros_pkg,
+    ]
+    
+    for base_path in common_paths:
+        full_path = base_path / path
+        if full_path.exists():
+            return str(full_path)
+    
+    return None
+
+
+def load_includes(xml_element: ET.Element, base_dir: str, processed_files: set = None) -> ET.Element:
+    """Recursively load and merge included XML files into the tree.
+    
+    For example:
+    <include ros_pkg="nav2_bt_navigator" path="behavior_trees/navigate_to_pose.xml"/>
+    
+    This function:
+    1. Finds all <include> tags
+    2. Loads those XML files
+    3. Copies <BehaviorTree> elements from them into our XML
+    4. Removes the <include> tag
+    """
+    if processed_files is None:
+        processed_files = set()
+    
+    # Get all <include> elements
+    includes = [elem for elem in xml_element if elem.tag == 'include']
+    
+    for include in includes:
+        ros_pkg = include.get('ros_pkg')
+        path = include.get('path')
+        
+        # Resolve the path
+        if ros_pkg and path:
+            include_path = resolve_ros_package_path(ros_pkg, path)
+        else:
+            include_path = os.path.join(base_dir, path) if path else None
+        
+        if include_path:
+            include_path = os.path.abspath(include_path)
+            
+            # Check if we already processed this file (prevent infinite loops)
+            if include_path in processed_files:
+                print(f'Warning: Circular include detected for {include_path}, skipping')
+                if include in xml_element:
+                    xml_element.remove(include)
+                continue
+            
+            processed_files.add(include_path)
+        
+        # Load file if it exists
+        if include_path and os.path.exists(include_path):
+            try:
+                included_tree = ET.parse(include_path)
+                included_root = included_tree.getroot()
+                # Recursively load includes in this file first
+                included_base_dir = os.path.dirname(include_path)
+                load_includes(included_root, included_base_dir, processed_files)
+                # Copy all <BehaviorTree> elements from this file
+                for behavior_tree in included_root.findall('BehaviorTree'):
+                    xml_element.append(behavior_tree)
+            except Exception as e:
+                print(f'Warning: Could not load included file {include_path}: {e}')
+        else:
+            if path:
+                print(f'Warning: Could not resolve included file {ros_pkg}/{path}')
+        
+        # Remove the <include> element
+        if include in xml_element:
+            xml_element.remove(include)
+    
+    return xml_element
+
+
 def main() -> None:
     args = parse_command_line()
     xml_tree = ET.parse(args.behavior_tree)
+    root = xml_tree.getroot()
+    # Process includes before parsing the tree structure
+    base_dir = os.path.dirname(os.path.abspath(args.behavior_tree))
+    load_includes(root, base_dir, set())
+    
     root_tree_name = find_root_tree_name(xml_tree)
     behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
     dot = convert2dot(behavior_tree, xml_tree)
@@ -172,12 +274,30 @@ def add_sub_tree(
     parent_node: ET.Element,
     xml_tree: ET.ElementTree,
 ) -> None:
-    root_tree_name = parent_node.get('ID')
-    if root_tree_name is None:
+    subtree_id = parent_node.get('ID')
+    if subtree_id is None:
         raise RuntimeError('SubTree node has no ID attribute')
-    dot.node(parent_dot_name, root_tree_name, shape='box')
-    behavior_tree = find_behavior_tree(xml_tree, root_tree_name)
-    convert_subtree(dot, behavior_tree, parent_dot_name, xml_tree)
+    
+    # Create a unique dot node for this SubTree element
+    subtree_dot_name = str(hash(parent_node))
+    dot.node(
+        subtree_dot_name,
+        f'SubTree: {subtree_id}',
+        color=node_color('SubTree'),
+        style='filled',
+        shape='box'
+    )
+    dot.edge(parent_dot_name, subtree_dot_name)
+    
+    # Try to expand it if present, otherwise leave it as a leaf
+    try:
+        behavior_tree = find_behavior_tree(xml_tree, subtree_id)
+    except RuntimeError:
+        # Not found in this XML file (likely in an <include>)
+        return
+    
+    # Recurse into the referenced tree
+    convert_subtree(dot, behavior_tree, subtree_dot_name, xml_tree)
 
 
 def add_nodes(
