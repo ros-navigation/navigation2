@@ -15,6 +15,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <memory>
 #include "std_msgs/msg/color_rgba.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
