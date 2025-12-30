@@ -110,7 +110,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_->activate();
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
-  graph_vis_publisher_->publish(utils::toMsg(graph_,route_frame_, this->now()));
+  graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
