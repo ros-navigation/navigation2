@@ -33,8 +33,7 @@ namespace nav2_lifecycle_manager
 {
 
 LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
-: Node("lifecycle_manager", rclcpp::NodeOptions(options).use_intra_process_comms(true)),
-  diagnostics_updater_(this)
+: Node("lifecycle_manager", options), diagnostics_updater_(this)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 

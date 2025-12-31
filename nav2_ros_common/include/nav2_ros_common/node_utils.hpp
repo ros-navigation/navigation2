@@ -148,7 +148,6 @@ inline rclcpp::Node::SharedPtr generate_internal_node(const std::string & prefix
     rclcpp::NodeOptions()
     .start_parameter_services(false)
     .start_parameter_event_publisher(false)
-    .use_intra_process_comms(true)
     .arguments({"--ros-args", "-r", "__node:=" + generate_internal_node_name(prefix), "--"});
   return rclcpp::Node::make_shared("_", options);
 }

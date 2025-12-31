@@ -85,7 +85,7 @@ rclcpp::NodeOptions getChildNodeOptions(
   nav2::replaceOrAddArgument(
     new_arguments, "-p", "use_sim_time",
     "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
-  return rclcpp::NodeOptions().use_intra_process_comms(true).arguments(new_arguments);
+  return rclcpp::NodeOptions(parent_options).arguments(new_arguments);
 }
 
 Costmap2DROS::Costmap2DROS(
