@@ -118,8 +118,8 @@ void Optimizer::getParams()
               result.reason += "\n";
             }
             result.reason += "Rejected dynamic update to '" + param_name +
-              "': speed limit is active (constraints != base_constraints). " +
-              "Clear the speed limit first.";
+            "': speed limit is active (constraints != base_constraints). " +
+            "Clear the speed limit first.";
             RCLCPP_WARN(
               logger_,
               "Rejected dynamic parameter update to '%s': a speed limit is currently active. "
