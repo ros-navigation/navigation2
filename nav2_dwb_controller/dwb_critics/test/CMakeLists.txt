@@ -33,3 +33,10 @@ target_link_libraries(twirling_tests
   dwb_core::dwb_core
   rclcpp::rclcpp
 )
+
+ament_add_gtest(path_hug_tests path_hug_test.cpp)
+target_link_libraries(path_hug_tests
+  dwb_critics
+  dwb_core::dwb_core
+  rclcpp::rclcpp
+)
