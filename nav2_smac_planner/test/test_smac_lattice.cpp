@@ -66,11 +66,32 @@ TEST(SmacTest, test_smac_lattice)
 {
   nav2::LifecycleNode::SharedPtr nodeLattice =
     std::make_shared<nav2::LifecycleNode>("SmacLatticeTest");
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(nodeLattice->get_node_base_interface());
   nodeLattice->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
     std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
   costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  geometry_msgs::msg::PoseArray::ConstSharedPtr received_expansions;
+  nav_msgs::msg::Path::ConstSharedPtr received_unsmoothed_plan;
+  bool expansions_received = false;
+  bool unsmoothed_plan_received = false;
+
+  auto expansions_sub = nodeLattice->create_subscription<geometry_msgs::msg::PoseArray>(
+    "expansions",
+    [&](const geometry_msgs::msg::PoseArray::ConstSharedPtr msg) {
+      received_expansions = msg;
+      expansions_received = true;
+    });
+
+  auto unsmoothed_plan_sub = nodeLattice->create_subscription<nav_msgs::msg::Path>(
+    "unsmoothed_plan",
+    [&](const nav_msgs::msg::Path::ConstSharedPtr msg) {
+      unsmoothed_plan_received = true;
+      received_unsmoothed_plan = msg;
+    });
 
   auto dummy_cancel_checker = []() {
       return false;
@@ -123,6 +144,25 @@ TEST(SmacTest, test_smac_lattice)
     planner->createPlan(start, goal, dummy_cancel_checker);
   } catch (...) {
   }
+
+  executor.spin_all(std::chrono::milliseconds(50));
+  EXPECT_EQ(expansions_received, true);
+  EXPECT_FALSE(received_expansions->poses.empty());
+  EXPECT_EQ(received_expansions->header.frame_id, "map");
+  for (const auto & pose : received_expansions->poses) {
+    EXPECT_FALSE(std::isnan(pose.position.x));
+    EXPECT_FALSE(std::isnan(pose.position.y));
+    EXPECT_FALSE(std::isnan(pose.orientation.w));
+  }
+  EXPECT_EQ(unsmoothed_plan_received, true);
+  EXPECT_FALSE(received_unsmoothed_plan->poses.empty());
+  EXPECT_EQ(received_unsmoothed_plan->header.frame_id, "map");
+  for (const auto & pose_stamped : received_unsmoothed_plan->poses) {
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.position.x));
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.position.y));
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.orientation.w));
+  }
+
 
   // corner case where the start and goal are on the same cell
   goal.pose.position.x = 0.01;
