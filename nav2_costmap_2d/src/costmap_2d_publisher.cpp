@@ -236,11 +236,9 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 
 void Costmap2DPublisher::publishCostmap()
 {
-  {
-    auto const costmap_layer = dynamic_cast<CostmapLayer *>(costmap_);
-    if (costmap_layer != nullptr && !costmap_layer->isEnabled()) {
-      return;
-    }
+  auto const costmap_layer = dynamic_cast<CostmapLayer *>(costmap_);
+  if (costmap_layer != nullptr && !costmap_layer->isEnabled()) {
+    return;
   }
 
   float resolution = costmap_->getResolution();
