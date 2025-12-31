@@ -86,20 +86,60 @@ void Optimizer::getParams()
   getParam(s.iteration_count, "iteration_count", 1);
   getParam(s.temperature, "temperature", 0.3f);
   getParam(s.gamma, "gamma", 0.015f);
-  getParam(s.base_constraints.vx_max, "vx_max", 0.5f);
-  getParam(s.base_constraints.vx_min, "vx_min", -0.35f);
-  getParam(s.base_constraints.vy, "vy_max", 0.5f);
-  getParam(s.base_constraints.wz, "wz_max", 1.9f);
-  getParam(s.base_constraints.ax_max, "ax_max", 3.0f);
-  getParam(s.base_constraints.ax_min, "ax_min", -3.0f);
-  getParam(s.base_constraints.ay_max, "ay_max", 3.0f);
-  getParam(s.base_constraints.ay_min, "ay_min", -3.0f);
-  getParam(s.base_constraints.az_max, "az_max", 3.5f);
+  // Kinematic constraint parameters use ParameterType::Static to prevent default dynamic updates.
+  // Custom callbacks below guard against updates when a speed limit is active.
+  getParam(s.base_constraints.vx_max, "vx_max", 0.5f, ParameterType::Static);
+  getParam(s.base_constraints.vx_min, "vx_min", -0.35f, ParameterType::Static);
+  getParam(s.base_constraints.vy, "vy_max", 0.5f, ParameterType::Static);
+  getParam(s.base_constraints.wz, "wz_max", 1.9f, ParameterType::Static);
+  getParam(s.base_constraints.ax_max, "ax_max", 3.0f, ParameterType::Static);
+  getParam(s.base_constraints.ax_min, "ax_min", -3.0f, ParameterType::Static);
+  getParam(s.base_constraints.ay_max, "ay_max", 3.0f, ParameterType::Static);
+  getParam(s.base_constraints.ay_min, "ay_min", -3.0f, ParameterType::Static);
+  getParam(s.base_constraints.az_max, "az_max", 3.5f, ParameterType::Static);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
+
+  // Register guarded dynamic callbacks for kinematic parameters.
+  // These allow updates only when no speed limit is active (constraints == base_constraints).
+  auto registerKinematicParam = [this](float & setting, const std::string & param_name) {
+      parameters_handler_->addParamCallback(
+        name_ + "." + param_name,
+        [this, &setting, param_name](
+          const rclcpp::Parameter & param,
+          rcl_interfaces::msg::SetParametersResult & result) {
+          // Guard: reject update if speed limit is active to avoid resetting constraints
+          if (isSpeedLimitActive()) {
+            result.successful = false;
+            if (!result.reason.empty()) {
+              result.reason += "\n";
+            }
+            result.reason += "Rejected dynamic update to '" + param_name +
+              "': speed limit is active (constraints != base_constraints). " +
+              "Clear the speed limit first.";
+            RCLCPP_WARN(
+              logger_,
+              "Rejected dynamic parameter update to '%s': a speed limit is currently active. "
+              "Kinematic parameters cannot be changed while speed limit modifies constraints.",
+              param_name.c_str());
+            return;
+          }
+          setting = static_cast<float>(param.as_double());
+        });
+    };
+
+  registerKinematicParam(s.base_constraints.vx_max, "vx_max");
+  registerKinematicParam(s.base_constraints.vx_min, "vx_min");
+  registerKinematicParam(s.base_constraints.vy, "vy_max");
+  registerKinematicParam(s.base_constraints.wz, "wz_max");
+  registerKinematicParam(s.base_constraints.ax_max, "ax_max");
+  registerKinematicParam(s.base_constraints.ax_min, "ax_min");
+  registerKinematicParam(s.base_constraints.ay_max, "ay_max");
+  registerKinematicParam(s.base_constraints.ay_min, "ay_min");
+  registerKinematicParam(s.base_constraints.az_max, "az_max");
 
   s.base_constraints.ax_max = fabs(s.base_constraints.ax_max);
   if (s.base_constraints.ax_min > 0.0) {
@@ -182,6 +222,18 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
 bool Optimizer::isHolonomic() const
 {
   return motion_model_->isHolonomic();
+}
+
+bool Optimizer::isSpeedLimitActive() const
+{
+  // Speed limit is active when current constraints differ from base constraints.
+  // This occurs when setSpeedLimit() has modified the velocity/acceleration limits.
+  const auto & base = settings_.base_constraints;
+  const auto & curr = settings_.constraints;
+  return base.vx_max != curr.vx_max ||
+         base.vx_min != curr.vx_min ||
+         base.vy != curr.vy ||
+         base.wz != curr.wz;
 }
 
 std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalControl(
