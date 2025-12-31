@@ -316,6 +316,23 @@
       <output_port name="output_path">Paths concatenated</output_port>
     </Action>
 
+    <Action ID="AppendGoalPoseToGoals">
+      <input_port name="input_goals">Input goals vector to append to</input_port>
+      <input_port name="goal_pose">Goal pose to append to the goals vector</input_port>
+      <output_port name="output_goals">Output goals vector appended to</output_port>
+    </Action>
+
+    <Action ID="ExtractRouteNodesAsGoals">
+      <input_port name="route">Route to convert its nodes into Goals</input_port>
+      <output_port name="goals">Goals comparing the route's nodes</output_port>
+    </Action>
+
+    <Action ID="GetNextFewGoals">
+      <input_port name="num_goals">How many of the goals to take from the input goals</input_port>
+      <input_port name="input_goals">Input goals list</input_port>
+      <output_port name="output_goals">The output pruned goals list</output_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
       <input_port name="goal">Destination</input_port>
