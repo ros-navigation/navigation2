@@ -442,7 +442,8 @@ float NodeHybrid::getHeuristicCost(
 {
   // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic =
-    getObstacleHeuristic(node_coords, goals_coords[0], motion_table.cost_penalty);
+    getObstacleHeuristic(node_coords, goals_coords[0], motion_table.cost_penalty,
+      motion_table.use_quadratic_cost_penalty, motion_table.downsample_obstacle_heuristic);
   float distance_heuristic = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < goals_coords.size(); i++) {
     distance_heuristic = std::min(
@@ -487,7 +488,8 @@ inline float distanceHeuristic2D(
 void NodeHybrid::resetObstacleHeuristic(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
   const unsigned int & start_x, const unsigned int & start_y,
-  const unsigned int & goal_x, const unsigned int & goal_y)
+  const unsigned int & goal_x, const unsigned int & goal_y,
+  const bool downsample_obstacle_heuristic)
 {
   // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
   // the planner considerably to search through 75% less cells with no detectable
@@ -499,7 +501,7 @@ void NodeHybrid::resetObstacleHeuristic(
   // Clear lookup table
   unsigned int size = 0u;
   unsigned int size_x = 0u;
-  if (motion_table.downsample_obstacle_heuristic) {
+  if (downsample_obstacle_heuristic) {
     size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
     size = size_x *
       ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
@@ -526,7 +528,7 @@ void NodeHybrid::resetObstacleHeuristic(
 
   // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
   unsigned int goal_index;
-  if (motion_table.downsample_obstacle_heuristic) {
+  if (downsample_obstacle_heuristic) {
     goal_index = floor(goal_y / 2.0f) * size_x + floor(goal_x / 2.0f);
   } else {
     goal_index = floor(goal_y) * size_x + floor(goal_x);
@@ -543,13 +545,15 @@ void NodeHybrid::resetObstacleHeuristic(
 float NodeHybrid::getObstacleHeuristic(
   const Coordinates & node_coords,
   const Coordinates &,
-  const float & cost_penalty)
+  const float & cost_penalty,
+  const bool use_quadratic_cost_penalty,
+  const bool downsample_obstacle_heuristic)
 {
   // If already expanded, return the cost
   auto costmap = costmap_ros->getCostmap();
   unsigned int size_x = 0u;
   unsigned int size_y = 0u;
-  if (motion_table.downsample_obstacle_heuristic) {
+  if (downsample_obstacle_heuristic) {
     size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
     size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
   } else {
@@ -559,8 +563,7 @@ float NodeHybrid::getObstacleHeuristic(
 
   // Divided by 2 due to downsampled costmap.
   unsigned int start_y, start_x;
-  const bool & downsample_H = motion_table.downsample_obstacle_heuristic;
-  if (downsample_H) {
+  if (downsample_obstacle_heuristic) {
     start_y = floor(node_coords.y / 2.0f);
     start_x = floor(node_coords.x / 2.0f);
   } else {
@@ -572,7 +575,7 @@ float NodeHybrid::getObstacleHeuristic(
   const float & requested_node_cost = obstacle_heuristic_lookup_table[start_index];
   if (requested_node_cost > 0.0f) {
     // costs are doubled due to downsampling
-    return downsample_H ? 2.0f * requested_node_cost : requested_node_cost;
+    return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
   }
 
   // If not, expand until it is included. This dynamic programming ensures that
@@ -623,7 +626,7 @@ float NodeHybrid::getObstacleHeuristic(
 
       // if neighbor path is better and non-lethal, set new cost and add to queue
       if (new_idx < size_x * size_y) {
-        if (downsample_H) {
+        if (downsample_obstacle_heuristic) {
           // Get costmap values as if downsampled
           unsigned int y_offset = (new_idx / size_x) * 2;
           unsigned int x_offset = (new_idx - ((new_idx / size_x) * size_x)) * 2;
@@ -664,7 +667,7 @@ float NodeHybrid::getObstacleHeuristic(
 
         existing_cost = obstacle_heuristic_lookup_table[new_idx];
         if (existing_cost <= 0.0f) {
-          if (motion_table.use_quadratic_cost_penalty) {
+          if (use_quadratic_cost_penalty) {
             travel_cost =
               (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 63504.0f));  // 252^2
           } else {
@@ -710,7 +713,7 @@ float NodeHybrid::getObstacleHeuristic(
 
   // return requested_node_cost which has been updated by the search
   // costs are doubled due to downsampling
-  return downsample_H ? 2.0f * requested_node_cost : requested_node_cost;
+  return downsample_obstacle_heuristic ? 2.0f * requested_node_cost : requested_node_cost;
 }
 
 float NodeHybrid::getDistanceHeuristic(
