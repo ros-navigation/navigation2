@@ -123,7 +123,7 @@ public:
     typename T::Request::SharedPtr request,
     const std::chrono::nanoseconds & timeout);
 
-  void mapCallback(nav_msgs::msg::OccupancyGrid::SharedPtr map);
+  void mapCallback(nav_msgs::msg::OccupancyGrid::ConstSharedPtr map);
   bool waitMap(const std::chrono::nanoseconds & timeout);
   void verifyMap(bool is_circle, double poly_x_end = 1.0, double circle_cx = 3.0);
 
@@ -146,7 +146,7 @@ protected:
   // Output map subscriber
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr vo_map_sub_;
   // Output map published by VectorObjectServer
-  nav_msgs::msg::OccupancyGrid::SharedPtr map_;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_;
 
   // Vector Object server node
   std::shared_ptr<VOServerWrapper> vo_server_;
@@ -414,7 +414,7 @@ typename T::Response::SharedPtr Tester::sendRequest(
   return nullptr;
 }
 
-void Tester::mapCallback(nav_msgs::msg::OccupancyGrid::SharedPtr map)
+void Tester::mapCallback(nav_msgs::msg::OccupancyGrid::ConstSharedPtr map)
 {
   map_ = map;
 }

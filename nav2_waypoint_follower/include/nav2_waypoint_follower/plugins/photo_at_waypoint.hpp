@@ -75,7 +75,7 @@ public:
    *
    * @param msg
    */
-  void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
   /**
    * @brief given a shared pointer to sensor::msg::Image type, make a deep copy to inputted cv Mat
@@ -83,7 +83,7 @@ public:
    * @param msg
    * @param mat
    */
-  static void deepCopyMsg2Mat(const sensor_msgs::msg::Image::SharedPtr & msg, cv::Mat & mat);
+  static void deepCopyMsg2Mat(const sensor_msgs::msg::Image::ConstSharedPtr & msg, cv::Mat & mat);
 
 protected:
   // to ensure safety when accessing global var curr_frame_
@@ -97,7 +97,7 @@ protected:
   // whether plugin is enabled
   bool is_enabled_;
   // current frame;
-  sensor_msgs::msg::Image::SharedPtr curr_frame_msg_;
+  sensor_msgs::msg::Image::ConstSharedPtr curr_frame_msg_;
   // global logger
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_waypoint_follower")};
   // ros subscriber to get camera image

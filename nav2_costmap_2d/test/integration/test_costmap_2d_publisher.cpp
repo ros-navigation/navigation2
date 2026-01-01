@@ -100,10 +100,10 @@ public:
     executor_thread_.reset();
   }
 
-  std::promise<nav2_msgs::msg::Costmap::SharedPtr> layer_promise_;
+  std::promise<nav2_msgs::msg::Costmap::ConstSharedPtr> layer_promise_;
 
 protected:
-  void layerCallback(const nav2_msgs::msg::Costmap::SharedPtr layer)
+  void layerCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr layer)
   {
     if (!callback_hit_ && (layer->data.size() == 100)) {
       layer_promise_.set_value(layer);

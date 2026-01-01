@@ -87,7 +87,7 @@ protected:
    * @brief Callback function to preempt assisted teleop
    * @param msg empty message
    */
-  void preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr msg);
+  void preemptTeleopCallback(const std_msgs::msg::Empty::ConstSharedPtr & msg);
 
   AssistedTeleopAction::Feedback::SharedPtr feedback_;
 

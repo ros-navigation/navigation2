@@ -898,7 +898,7 @@ Nav2Panel::onInitialize()
     node->create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
+    [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       if (stoi(nr_of_loops_->displayText().toStdString()) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
           loop_count_++;
@@ -923,7 +923,8 @@ Nav2Panel::onInitialize()
     node->create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
     "navigate_through_poses/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::SharedPtr msg) {
+    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
+    msg) {
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel(msg->feedback));
     });
 
@@ -931,7 +932,7 @@ Nav2Panel::onInitialize()
   navigation_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "navigate_to_pose/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       // Clearing all the stored values once reaching the final goal
@@ -950,7 +951,7 @@ Nav2Panel::onInitialize()
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "navigate_through_poses/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {

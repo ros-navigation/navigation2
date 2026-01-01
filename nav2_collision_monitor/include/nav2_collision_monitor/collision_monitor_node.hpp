@@ -103,8 +103,8 @@ protected:
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
-  void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg);
-  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg);
+  void cmdVelInCallbackStamped(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
+  void cmdVelInCallbackUnstamped(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
   /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.

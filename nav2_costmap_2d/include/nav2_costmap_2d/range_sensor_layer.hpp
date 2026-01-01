@@ -125,7 +125,7 @@ public:
   /**
    * @brief Handle an incoming Range message to populate into costmap
    */
-  void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::SharedPtr range_message);
+  void bufferIncomingRangeMsg(const sensor_msgs::msg::Range::ConstSharedPtr & range_message);
 
 protected:
   /**

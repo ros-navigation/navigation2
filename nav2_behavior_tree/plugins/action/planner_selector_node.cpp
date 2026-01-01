@@ -91,7 +91,7 @@ BT::NodeStatus PlannerSelector::tick()
 }
 
 void
-PlannerSelector::callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg)
+PlannerSelector::callbackPlannerSelect(const std_msgs::msg::String::ConstSharedPtr & msg)
 {
   last_selected_planner_ = msg->data;
 }

@@ -66,9 +66,9 @@ public:
 private:
   void sendInitialPose();
 
-  void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
+  void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr);
 
-  void filteredVelCallback(geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void filteredVelCallback(geometry_msgs::msg::TwistStamped::ConstSharedPtr msg);
 
   unsigned int counter_;
   bool is_active_;

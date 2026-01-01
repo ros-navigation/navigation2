@@ -42,6 +42,7 @@ def generate_launch_description() -> LaunchDescription:
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfigAsBool('autostart')
     use_composition = LaunchConfigAsBool('use_composition')
+    use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
     container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
@@ -138,6 +139,12 @@ def generate_launch_description() -> LaunchDescription:
         description='Whether to use composed bringup',
     )
 
+    declare_use_intra_process_comms_cmd = DeclareLaunchArgument(
+        'use_intra_process_comms',
+        default_value='False',
+        description='Whether to use intra process communications',
+    )
+
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name',
         default_value='nav2_container',
@@ -193,6 +200,7 @@ def generate_launch_description() -> LaunchDescription:
                     'autostart': autostart,
                     'params_file': params_file,
                     'use_composition': use_composition,
+                    'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
                 }.items(),
@@ -209,6 +217,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_sim_time': use_sim_time,
                     'params_file': params_file,
                     'use_composition': use_composition,
+                    'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
                 }.items(),
@@ -225,6 +234,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_sim_time': use_sim_time,
                     'params_file': params_file,
                     'use_composition': use_composition,
+                    'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'container_name': container_name,
                 }.items(),
@@ -241,6 +251,7 @@ def generate_launch_description() -> LaunchDescription:
                     'graph': graph_filepath,
                     'params_file': params_file,
                     'use_composition': use_composition,
+                    'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
                     'use_keepout_zones': use_keepout_zones,
                     'use_speed_zones': use_speed_zones,
@@ -267,6 +278,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_intra_process_comms_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)

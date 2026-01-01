@@ -15,6 +15,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <memory>
 #include "std_msgs/msg/color_rgba.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
@@ -55,10 +56,10 @@ inline geometry_msgs::msg::PoseStamped toMsg(const float x, const float y)
  * @param now Current time to use
  * @return MarkerArray of the graph
  */
-inline visualization_msgs::msg::MarkerArray toMsg(
+inline visualization_msgs::msg::MarkerArray::UniquePtr toMsg(
   const nav2_route::Graph & graph, const std::string & frame, const rclcpp::Time & now)
 {
-  visualization_msgs::msg::MarkerArray msg;
+  auto msg = std::make_unique<visualization_msgs::msg::MarkerArray>();
 
   visualization_msgs::msg::Marker nodes_marker;
   nodes_marker.header.frame_id = frame;
@@ -125,7 +126,7 @@ inline visualization_msgs::msg::MarkerArray toMsg(
     node_id_marker.pose.position.x = node.coords.x + 0.07;
     node_id_marker.pose.position.y = node.coords.y;
     node_id_marker.text = std::to_string(node.nodeid);
-    msg.markers.push_back(node_id_marker);
+    msg->markers.push_back(node_id_marker);
 
     for (const auto & neighbor : node.neighbors) {
       edge_start.x = node.coords.x;
@@ -151,12 +152,12 @@ inline visualization_msgs::msg::MarkerArray toMsg(
       edge_id_marker.pose.position.y =
         node.coords.y + ((neighbor.end->coords.y - node.coords.y) / 2.0) + y_offset;
       edge_id_marker.text = std::to_string(neighbor.edgeid);
-      msg.markers.push_back(edge_id_marker);
+      msg->markers.push_back(edge_id_marker);
     }
   }
 
-  msg.markers.push_back(edges_marker);
-  msg.markers.push_back(nodes_marker);
+  msg->markers.push_back(edges_marker);
+  msg->markers.push_back(nodes_marker);
   return msg;
 }
 

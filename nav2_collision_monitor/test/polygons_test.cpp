@@ -157,12 +157,12 @@ public:
     footprint_pub_->publish(std::move(msg));
   }
 
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
   {
     polygon_received_ = msg;
   }
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr getPolygonReceived()
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr getPolygonReceived()
   {
     return polygon_received_;
   }
@@ -174,7 +174,7 @@ private:
     footprint_pub_;
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr polygon_received_;
 };  // TestNode
 
 class PolygonWrapper : public nav2_collision_monitor::Polygon
@@ -256,7 +256,7 @@ protected:
     const std::chrono::nanoseconds & timeout,
     std::vector<nav2_collision_monitor::Point> & poly);
 
-  geometry_msgs::msg::PolygonStamped::SharedPtr waitPolygonReceived(
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr waitPolygonReceived(
     const std::chrono::nanoseconds & timeout);
 
   // Wait until circle polygon radius will be received
@@ -436,7 +436,7 @@ void Tester::sendTransforms(double shift)
   tf_broadcaster->sendTransform(transform);
 }
 
-geometry_msgs::msg::PolygonStamped::SharedPtr Tester::waitPolygonReceived(
+geometry_msgs::msg::PolygonStamped::ConstSharedPtr Tester::waitPolygonReceived(
   const std::chrono::nanoseconds & timeout)
 {
   rclcpp::Time start_time = test_node_->now();
@@ -928,7 +928,7 @@ TEST_F(Tester, testPolygonPublish)
 {
   createPolygon("stop", true);
   polygon_->publish();
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received = waitPolygonReceived(500ms);
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr polygon_received = waitPolygonReceived(500ms);
 
   ASSERT_NE(polygon_received, nullptr);
   ASSERT_EQ(polygon_received->polygon.points.size(), 4u);

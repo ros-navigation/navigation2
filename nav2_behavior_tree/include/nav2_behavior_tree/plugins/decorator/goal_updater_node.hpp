@@ -91,13 +91,13 @@ private:
    * @brief Callback function for goal update topic
    * @param msg Shared pointer to geometry_msgs::msg::PoseStamped message
    */
-  void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  void callback_updated_goal(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & msg);
 
   /**
    * @brief Callback function for goals update topic
    * @param msg Shared pointer to nav_msgs::msg::Goals message
    */
-  void callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg);
+  void callback_updated_goals(const nav_msgs::msg::Goals::ConstSharedPtr & msg);
 
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   nav2::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;

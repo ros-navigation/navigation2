@@ -144,14 +144,14 @@ inline BT::NodeStatus GoalUpdater::tick()
 }
 
 void
-GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+GoalUpdater::callback_updated_goal(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & msg)
 {
   last_goal_received_ = *msg;
   last_goal_received_set_ = true;
 }
 
 void
-GoalUpdater::callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg)
+GoalUpdater::callback_updated_goals(const nav_msgs::msg::Goals::ConstSharedPtr & msg)
 {
   last_goals_received_ = *msg;
   last_goals_received_set_ = true;
