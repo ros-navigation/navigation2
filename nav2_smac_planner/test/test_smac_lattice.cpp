@@ -171,6 +171,19 @@ TEST(SmacTest, test_smac_lattice)
   nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
 
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    nodeLattice->get_node_base_interface(), nodeLattice->get_node_topics_interface(),
+    nodeLattice->get_node_graph_interface(),
+    nodeLattice->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_iterations", 1),
+      rclcpp::Parameter("test.analytic_expansion_max_length", 1.0)});
+  executor.spin_until_future_complete(results);
+  goal.pose.position.x = 4.0;
+  goal.pose.position.y = 4.0;
+  EXPECT_THROW(planner->createPlan(start, goal, dummy_cancel_checker), std::runtime_error);
+
   planner->deactivate();
   planner->cleanup();
 
