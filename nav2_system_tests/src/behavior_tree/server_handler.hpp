@@ -95,6 +95,22 @@ protected:
   }
 };
 
+class DummyClearCostmapService : public DummyService<nav2_msgs::srv::ClearEntireCostmap>
+{
+public:
+  explicit DummyClearCostmapService(
+    const rclcpp::Node::SharedPtr & node,
+    std::string service_name)
+  : DummyService(node, service_name) {}
+
+protected:
+  void fillResponse(
+    const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Request>/*request*/,
+    const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response) override
+  {
+    response->success = true;
+  }
+};
 
 class ServerHandler
 {
@@ -114,8 +130,8 @@ public:
   void reset() const;
 
 public:
-  std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_local_costmap_server;
-  std::unique_ptr<DummyService<nav2_msgs::srv::ClearEntireCostmap>> clear_global_costmap_server;
+  std::unique_ptr<DummyClearCostmapService> clear_local_costmap_server;
+  std::unique_ptr<DummyClearCostmapService> clear_global_costmap_server;
   std::unique_ptr<DummyComputePathToPoseActionServer> compute_path_to_pose_server;
   std::unique_ptr<DummyFollowPathActionServer> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
