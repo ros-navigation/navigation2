@@ -233,7 +233,8 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
     {rclcpp::Parameter("test2.xy_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.yaw_goal_tolerance", 200.0),
       rclcpp::Parameter("test2.path_length_tolerance", 200.0),
-      rclcpp::Parameter("test2.stateful", true)});
+      rclcpp::Parameter("test2.stateful", true),
+      rclcpp::Parameter("test2.symmetric_yaw_tolerance", true)});
 
   rclcpp::spin_until_future_complete(
     x->get_node_base_interface(),
@@ -243,6 +244,7 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_EQ(x->get_parameter("test2.yaw_goal_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.path_length_tolerance").as_double(), 200.0);
   EXPECT_EQ(x->get_parameter("test2.stateful").as_bool(), true);
+  EXPECT_EQ(x->get_parameter("test2.symmetric_yaw_tolerance").as_bool(), true);
 
   // Test the dynamic parameters impacted the tolerances
   EXPECT_TRUE(sgc.getTolerances(pose_tol, vel_tol));
@@ -404,6 +406,26 @@ TEST(StoppedGoalChecker, is_reached)
     transformed_global_plan));
   EXPECT_FALSE(pgc.isGoalReached(first_pose.pose, last_pose.pose, velocity,
     transformed_global_plan));
+
+  current_pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.25 + M_PI);
+  transformed_global_plan.poses.clear();
+  EXPECT_FALSE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+  EXPECT_FALSE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+  EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    x->get_node_base_interface(), x->get_node_topics_interface(),
+    x->get_node_graph_interface(),
+    x->get_node_services_interface());
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test2.symmetric_yaw_tolerance", true),
+      rclcpp::Parameter("test.symmetric_yaw_tolerance", true)});
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+  EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+  EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
 }
 
 int main(int argc, char ** argv)
