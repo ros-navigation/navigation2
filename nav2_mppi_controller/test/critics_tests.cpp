@@ -316,7 +316,7 @@ TEST(CriticTests, GoalAngleCriticSymmetric)
 
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
-  EXPECT_NEAR(costs(0), 0, 0.02); // Should be zero cost due to symmetry
+  EXPECT_NEAR(costs(0), 0, 0.02);  // Should be zero cost due to symmetry
 
   path.yaws(9) = 0.0;
   critic.score(data);
