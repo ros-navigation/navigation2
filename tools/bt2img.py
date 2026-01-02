@@ -44,7 +44,6 @@ control_nodes = [
     'RoundRobin',
     'Control',
 ]
-
 action_nodes = [
     'AlwaysFailure',
     'AlwaysSuccess',
