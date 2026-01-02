@@ -167,7 +167,7 @@ def load_includes(xml_element: ET.Element, base_dir: str, processed_files: set =
                 # Copy all <BehaviorTree> elements from this file
                 for behavior_tree in included_root.findall('BehaviorTree'):
                     xml_element.append(behavior_tree)
-            except Exception as e:
+            except (ET.ParseError, OSError) as e:
                 print(f'Warning: Could not load included file {include_path}: {e}')
         else:
             if path:
