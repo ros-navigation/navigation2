@@ -732,6 +732,7 @@ float AStarAlgorithm<NodeT>::getObstacleHeuristic(
       continue;
     }
     c_cost = -c_cost;
+    // NOLINTNEXTLINE
     _shared_ctx->obstacle_heuristic_lookup_table[idx] = c_cost;  // set a positive value to close the cell
 
     // find neighbors
