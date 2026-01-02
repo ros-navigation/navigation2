@@ -88,10 +88,17 @@ def resolve_ros_package_path(ros_pkg: str, path: str) -> str:
     This function returns the actual filesystem path.
     """
     try:
-        from ament_index_python.packages import get_package_share_directory
+        from ament_index_python.packages import (
+            get_package_share_directory,
+            PackageNotFoundError,
+        )
         pkg_share_dir = get_package_share_directory(ros_pkg)
         return os.path.join(pkg_share_dir, path)
-    except (ImportError, Exception):
+    except ImportError:
+        # ament_index_python is not available; fall back to common paths
+        pass
+    except PackageNotFoundError:
+        # ROS package not found in the index; fall back to common paths
         pass
     
     # Fallback: try common ROS installation paths
