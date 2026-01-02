@@ -304,7 +304,9 @@ def add_sub_tree(
     try:
         behavior_tree = find_behavior_tree(xml_tree, subtree_id)
     except RuntimeError:
-        # Not found in this XML file (likely in an <include>)
+        # Subtree definition not found in the loaded XML; it may be missing
+        # entirely or expected from an <include> that was not loaded or does
+        # not contain the requested BehaviorTree.
         return
     
     # Recurse into the referenced tree
