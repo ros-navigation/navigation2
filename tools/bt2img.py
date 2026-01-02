@@ -171,7 +171,11 @@ def load_includes(xml_element: ET.Element, base_dir: str, processed_files: set =
                 print(f'Warning: Could not load included file {include_path}: {e}')
         else:
             if path:
-                print(f'Warning: Could not resolve included file {ros_pkg}/{path}')
+                if ros_pkg:
+                    file_desc = f'{ros_pkg}/{path}'
+                else:
+                    file_desc = path
+                print(f'Warning: Could not resolve included file {file_desc}')
         
         # Remove the <include> element
         if include in xml_element:
