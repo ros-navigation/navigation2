@@ -143,7 +143,7 @@ struct MotionPose
   : _x(x), _y(y), _theta(theta), _turn_dir(turn_dir)
   {}
 
-  MotionPose operator-(const MotionPose & p2)
+  MotionPose operator-(const MotionPose & p2) const
   {
     return MotionPose(
       this->_x - p2._x, this->_y - p2._y, this->_theta - p2._theta, TurnDirection::UNKNOWN);
@@ -200,7 +200,7 @@ struct GoalState
 };
 
 typedef std::vector<MotionPrimitive> MotionPrimitives;
-typedef std::vector<MotionPrimitive *> MotionPrimitivePtrs;
+typedef std::vector<const MotionPrimitive *> MotionPrimitivePtrs;
 
 }  // namespace nav2_smac_planner
 

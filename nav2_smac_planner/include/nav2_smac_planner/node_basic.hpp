@@ -60,7 +60,7 @@ public:
 
   typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice
   NodeT * graph_node_ptr;
-  MotionPrimitive * prim_ptr;  // Used by NodeLattice
+  const MotionPrimitive * prim_ptr;  // Used by NodeLattice
   uint64_t index;
   unsigned int motion_index;
   bool backward;

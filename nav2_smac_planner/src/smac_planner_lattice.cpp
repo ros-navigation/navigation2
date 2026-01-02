@@ -306,7 +306,6 @@ void SmacPlannerLattice::cleanup()
   RCLCPP_INFO(
     _logger, "Cleaning up plugin %s of type SmacPlannerLattice",
     _name.c_str());
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
   _a_star.reset();
   _smoother.reset();
   _raw_plan_publisher.reset();
@@ -347,7 +346,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
             std::to_string(start.pose.position.y) + ") was outside bounds");
   }
   unsigned int start_bin =
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation));
+    _a_star->getContext()->motion_table.getClosestAngularBin(tf2::getYaw(start.pose.orientation));
   _a_star->setStart(mx_start, my_start, start_bin);
 
   // Set goal point, in A* bin search coordinates
@@ -362,7 +361,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
             std::to_string(goal.pose.position.y) + ") was outside bounds");
   }
   unsigned int goal_bin =
-    NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
+    _a_star->getContext()->motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
   _a_star->setGoal(
     mx_goal, my_goal, goal_bin,
     _goal_heading_mode, _coarse_search_resolution);

@@ -142,7 +142,7 @@ TEST(AStarTest, test_a_star_2d)
   EXPECT_EQ(
     expander.tryAnalyticExpansion(
       nullptr, {}, {}, {},
-      nullptr, dummy_int1, dummy_int2), nullptr);
+      nullptr, dummy_int1, dummy_int2, 0.0), nullptr);
 
   nav2_smac_planner::Node2D * start = nullptr;
   EXPECT_EQ(
@@ -230,7 +230,6 @@ TEST(AStarTest, test_a_star_se2)
   EXPECT_GT(expansions->size(), 5u);
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_a_star_analytic_expansion)
@@ -292,7 +291,6 @@ TEST(AStarTest, test_a_star_analytic_expansion)
   }
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_a_star_lattice)
@@ -367,7 +365,6 @@ TEST(AStarTest, test_a_star_lattice)
   }
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_se2_single_pose_path)
@@ -433,7 +430,6 @@ TEST(AStarTest, test_se2_single_pose_path)
   EXPECT_GE(path.size(), 1u);
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_goal_heading_mode)
@@ -477,6 +473,7 @@ TEST(AStarTest, test_goal_heading_mode)
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
 
   a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
   EXPECT_THROW(
     a_star.setGoal(
@@ -508,7 +505,7 @@ TEST(AStarTest, test_goal_heading_mode)
     coarse_search_resolution);
   EXPECT_TRUE(a_star.getCoarseSearchResolution() == coarse_search_resolution);
 
-  unsigned int num_bins = nav2_smac_planner::NodeHybrid::motion_table.num_angle_quantization;
+  unsigned int num_bins = ctx->motion_table.num_angle_quantization;
 
   // get number of valid goal states
   unsigned int num_valid_goals = 0;
@@ -534,7 +531,6 @@ TEST(AStarTest, test_goal_heading_mode)
       80u, 80u, 10u,
       nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(AStarTest, test_constants)

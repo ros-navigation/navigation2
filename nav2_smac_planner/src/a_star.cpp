@@ -70,7 +70,9 @@ void AStarAlgorithm<NodeT>::initialize(
   _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
   if (!_is_initialized) {
-    NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
+    _shared_ctx = std::make_shared<NodeContext>();
+    _shared_ctx->precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size,
+        _search_info);
   }
   _is_initialized = true;
   _dim3_size = dim_3_size;
@@ -93,6 +95,7 @@ void AStarAlgorithm<Node2D>::initialize(
   _max_on_approach_iterations = max_on_approach_iterations;
   _terminal_checking_interval = terminal_checking_interval;
   _max_planning_time = max_planning_time;
+  _shared_ctx = std::make_shared<NodeContext>();
 
   if (dim_3_size != 1) {
     throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
@@ -100,6 +103,48 @@ void AStarAlgorithm<Node2D>::initialize(
   _dim3_size = dim_3_size;
   _expander = std::make_unique<AnalyticExpansion<Node2D>>(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::initMotionModel(
+  const MotionModel & motion_model,
+  unsigned int & size_x,
+  unsigned int & size_y,
+  unsigned int & num_angle_quantization,
+  SearchInfo & search_info)
+{
+  if constexpr (std::is_same_v<NodeT, Node2D>) {
+    if (motion_model != MotionModel::TWOD) {
+      throw std::runtime_error("Invalid motion model for 2D node.");
+    }
+    int x_size = static_cast<int>(size_x);
+    _shared_ctx->cost_travel_multiplier = search_info.cost_penalty;
+    _shared_ctx->neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
+      -x_size + 1, +x_size - 1, +x_size + 1};
+  } else if constexpr (std::is_same_v<NodeT, NodeHybrid>) {
+    switch (motion_model) {
+      case MotionModel::DUBIN:
+        _shared_ctx->motion_table.initDubin(size_x, size_y, num_angle_quantization, search_info);
+        break;
+      case MotionModel::REEDS_SHEPP:
+        _shared_ctx->motion_table.initReedsShepp(size_x, size_y, num_angle_quantization,
+          search_info);
+        break;
+      default:
+        throw std::runtime_error(
+              "Invalid motion model for Hybrid A*. Please select between"
+              " Dubin (Ackermann forward only),"
+              " Reeds-Shepp (Ackermann forward and back).");
+    }
+  } else if constexpr (std::is_same_v<NodeT, NodeLattice>) {
+    if (motion_model != MotionModel::STATE_LATTICE) {
+      throw std::runtime_error(
+            "Invalid motion model for Lattice node. Please select"
+            " STATE_LATTICE and provide a valid lattice file.");
+    }
+
+    _shared_ctx->motion_table.initMotionModel(size_x, search_info);
+  }
 }
 
 template<typename NodeT>
@@ -111,11 +156,13 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
   unsigned int y_size = _costmap->getSizeInCellsY();
 
   clearGraph();
-
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
-    NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
+    std::cout << "init motion model" << static_cast<int>(_motion_model) << std::endl;
+    initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
+    _expander->setContext(_shared_ctx.get());
+    _goal_manager.setContext(_shared_ctx.get());
   }
   _expander->setCollisionChecker(_collision_checker);
 }
@@ -129,7 +176,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
     return &(iter->second);
   }
 
-  return &(_graph.emplace(index, NodeT(index)).first->second);
+  return &(_graph.emplace(index, NodeT(index, _shared_ctx.get())).first->second);
 }
 
 template<>
@@ -155,7 +202,7 @@ void AStarAlgorithm<NodeT>::setStart(
   const unsigned int & dim_3)
 {
   _start = addToGraph(
-    NodeT::getIndex(
+    getIndex(
       static_cast<unsigned int>(mx),
       static_cast<unsigned int>(my),
       dim_3));
@@ -183,7 +230,7 @@ void AStarAlgorithm<NodeT>::populateExpansionsLog(
   expansions_log->emplace_back(
     _costmap->getOriginX() + ((coords.x + 0.5) * _costmap->getResolution()),
     _costmap->getOriginY() + ((coords.y + 0.5) * _costmap->getResolution()),
-    NodeT::motion_table.getAngleFromBin(coords.theta));
+    _shared_ctx->motion_table.getAngleFromBin(coords.theta));
 }
 
 template<>
@@ -231,20 +278,20 @@ void AStarAlgorithm<NodeT>::setGoal(
       throw std::runtime_error("Start must be set before goal.");
     }
 
-    NodeT::resetObstacleHeuristic(
+    resetObstacleHeuristic(
       _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
-        NodeT::motion_table.downsample_obstacle_heuristic);
+        _shared_ctx->motion_table.downsample_obstacle_heuristic);
   }
 
   _goal_manager.setRefGoalCoordinates(ref_goal_coord);
 
-  unsigned int num_bins = NodeT::motion_table.num_angle_quantization;
+  unsigned int num_bins = _shared_ctx->motion_table.num_angle_quantization;
   // set goal based on heading mode
   switch (goal_heading_mode) {
     case GoalHeadingMode::DEFAULT: {
         // add a single goal node with single heading
         auto goal = addToGraph(
-          NodeT::getIndex(
+          getIndex(
             static_cast<unsigned int>(mx),
             static_cast<unsigned int>(my),
             dim_3));
@@ -257,7 +304,7 @@ void AStarAlgorithm<NodeT>::setGoal(
         // Add two goals, one for each direction
         // add goal in original direction
         auto goal = addToGraph(
-          NodeT::getIndex(
+          getIndex(
             static_cast<unsigned int>(mx),
             static_cast<unsigned int>(my),
             dim_3));
@@ -267,7 +314,7 @@ void AStarAlgorithm<NodeT>::setGoal(
         // Add goal node in opposite (180°) direction
         unsigned int opposite_heading = (dim_3 + (num_bins / 2)) % num_bins;
         auto opposite_goal = addToGraph(
-          NodeT::getIndex(
+          getIndex(
             static_cast<unsigned int>(mx),
             static_cast<unsigned int>(my),
             opposite_heading));
@@ -284,7 +331,7 @@ void AStarAlgorithm<NodeT>::setGoal(
         // Add goal nodes for all headings
         for (unsigned int i = 0; i < num_bins; ++i) {
           auto goal = addToGraph(
-            NodeT::getIndex(
+            getIndex(
               static_cast<unsigned int>(mx),
               static_cast<unsigned int>(my),
               i));
@@ -421,9 +468,18 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
-    expansion_result = _expander->tryAnalyticExpansion(
-      current_node, coarse_check_goals, fine_check_goals,
-      _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance);
+    if constexpr (std::is_same_v<NodeT, NodeHybrid>|| std::is_same_v<NodeT, NodeLattice>) {
+      const Coordinates node_coords = NodeT::getCoords(current_node->getIndex(), getSizeX(),
+          getSizeDim3());
+      float obstacle_heuristic = getObstacleHeuristic(node_coords,
+          _goal_manager.getGoalsCoordinates()[0], _shared_ctx->motion_table.cost_penalty,
+          _shared_ctx->motion_table.use_quadratic_cost_penalty,
+          _shared_ctx->motion_table.downsample_obstacle_heuristic);
+      expansion_result = _expander->tryAnalyticExpansion(
+        current_node, coarse_check_goals, fine_check_goals,
+        _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
+          obstacle_heuristic);
+    }
     if (expansion_result != nullptr) {
       current_node = expansion_result;
     }
@@ -494,12 +550,265 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 {
   const Coordinates node_coords =
     NodeT::getCoords(node->getIndex(), getSizeX(), getSizeDim3());
-  float heuristic = NodeT::getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates());
+  float heuristic = 0.0f;
+  if constexpr (std::is_same_v<NodeT, Node2D>) {
+    heuristic = node->getHeuristicCost(
+      node_coords, _goal_manager.getGoalsCoordinates());
+  } else {
+    // obstacle heuristic does not depend on goal heading
+    const float obstacle_heuristic =
+      getObstacleHeuristic(node_coords, _goal_manager.getGoalsCoordinates()[0],
+        _shared_ctx->motion_table.cost_penalty,
+        _shared_ctx->motion_table.use_quadratic_cost_penalty,
+        _shared_ctx->motion_table.downsample_obstacle_heuristic);
+    heuristic = node->getHeuristicCost(node_coords, _goal_manager.getGoalsCoordinates(),
+        obstacle_heuristic);
+  }
+
   if (heuristic < _best_heuristic_node.first) {
     _best_heuristic_node = {heuristic, node->getIndex()};
   }
 
   return heuristic;
+}
+
+template<>
+void AStarAlgorithm<Node2D>::resetObstacleHeuristic(
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS>,
+  const unsigned int &,
+  const unsigned int &,
+  const unsigned int &,
+  const unsigned int &,
+  const bool)
+{
+  return;
+}
+
+template<typename NodeT>
+void AStarAlgorithm<NodeT>::resetObstacleHeuristic(
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+  const unsigned int & start_x, const unsigned int & start_y,
+  const unsigned int & goal_x, const unsigned int & goal_y,
+  const bool downsample_obstacle_heuristic)
+{
+  // Downsample costmap 2x to compute a sparse obstacle heuristic. This speeds up
+  // the planner considerably to search through 75% less cells with no detectable
+  // erosion of path quality after even modest smoothing. The error would be no more
+  // than 0.05 * normalized cost. Since this is just a search prior, there's no loss in generality
+  _shared_ctx->costmap_ros = costmap_ros_i;
+  auto costmap = _shared_ctx->costmap_ros->getCostmap();
+
+  // Clear lookup table
+  unsigned int size = 0u;
+  unsigned int size_x = 0u;
+  if (downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size = size_x *
+      ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size = size_x * costmap->getSizeInCellsY();
+  }
+
+  if (_shared_ctx->obstacle_heuristic_lookup_table.size() == size) {
+    // must reset all values
+    std::fill(
+      _shared_ctx->obstacle_heuristic_lookup_table.begin(),
+      _shared_ctx->obstacle_heuristic_lookup_table.end(), 0.0f);
+  } else {
+    unsigned int obstacle_size = _shared_ctx->obstacle_heuristic_lookup_table.size();
+    _shared_ctx->obstacle_heuristic_lookup_table.resize(size, 0.0f);
+    // must reset values for non-constructed indices
+    std::fill_n(
+      _shared_ctx->obstacle_heuristic_lookup_table.begin(), obstacle_size, 0.0f);
+  }
+
+  _shared_ctx->obstacle_heuristic_queue.clear();
+  _shared_ctx->obstacle_heuristic_queue.reserve(size);
+
+  // Set initial goal point to queue from. Divided by 2 due to downsampled costmap.
+  unsigned int goal_index;
+  if (downsample_obstacle_heuristic) {
+    goal_index = floor(goal_y / 2.0f) * size_x + floor(goal_x / 2.0f);
+  } else {
+    goal_index = floor(goal_y) * size_x + floor(goal_x);
+  }
+
+  _shared_ctx->obstacle_heuristic_queue.emplace_back(
+    distanceHeuristic2D(goal_index, size_x, start_x, start_y), goal_index);
+
+  // initialize goal cell with a very small value to differentiate it from 0.0 (~uninitialized)
+  // the negative value means the cell is in the open set
+  _shared_ctx->obstacle_heuristic_lookup_table[goal_index] = -0.00001f;
+}
+
+template<>
+float AStarAlgorithm<Node2D>::getObstacleHeuristic(
+  const Coordinates &,
+  const Coordinates &,
+  const float &,
+  const bool,
+  const bool)
+{
+  // Obstacle heuristic is not used for 2D nodes
+  return 0.0f;
+}
+
+template<typename NodeT>
+float AStarAlgorithm<NodeT>::getObstacleHeuristic(
+  const Coordinates & node_coords,
+  const Coordinates &,
+  const float & cost_penalty,
+  const bool use_quadratic_cost_penalty,
+  const bool downsample_obstacle_heuristic)
+{
+  // If already expanded, return the cost
+  auto costmap = _shared_ctx->costmap_ros->getCostmap();
+  unsigned int size_x = 0u;
+  unsigned int size_y = 0u;
+  if (downsample_obstacle_heuristic) {
+    size_x = ceil(static_cast<float>(costmap->getSizeInCellsX()) / 2.0f);
+    size_y = ceil(static_cast<float>(costmap->getSizeInCellsY()) / 2.0f);
+  } else {
+    size_x = costmap->getSizeInCellsX();
+    size_y = costmap->getSizeInCellsY();
+  }
+
+  // Divided by 2 due to downsampled costmap.
+  unsigned int start_y, start_x;
+  const bool & downsample_H = downsample_obstacle_heuristic;
+  if (downsample_H) {
+    start_y = floor(node_coords.y / 2.0f);
+    start_x = floor(node_coords.x / 2.0f);
+  } else {
+    start_y = floor(node_coords.y);
+    start_x = floor(node_coords.x);
+  }
+
+  const unsigned int start_index = start_y * size_x + start_x;
+  const float & requested_node_cost = _shared_ctx->obstacle_heuristic_lookup_table[start_index];
+  if (requested_node_cost > 0.0f) {
+    // costs are doubled due to downsampling
+    return downsample_H ? 2.0f * requested_node_cost : requested_node_cost;
+  }
+
+  // If not, expand until it is included. This dynamic programming ensures that
+  // we only expand the MINIMUM spanning set of the costmap per planning request.
+  // Rather than naively expanding the entire (potentially massive) map for a limited
+  // path, we only expand to the extent required for the furthest expansion in the
+  // search-planning request that dynamically updates during search as needed.
+
+  // start_x and start_y have changed since last call
+  // we need to recompute 2D distance heuristic and reprioritize queue
+  for (auto & n : _shared_ctx->obstacle_heuristic_queue) {
+    n.first = -_shared_ctx->obstacle_heuristic_lookup_table[n.second] +
+      distanceHeuristic2D(n.second, size_x, start_x, start_y);
+  }
+  std::make_heap(
+    _shared_ctx->obstacle_heuristic_queue.begin(), _shared_ctx->obstacle_heuristic_queue.end(),
+    ObstacleHeuristicComparator{});
+
+  const int size_x_int = static_cast<int>(size_x);
+  const float sqrt2 = sqrtf(2.0f);
+  float c_cost, cost, travel_cost, new_cost, existing_cost;
+  unsigned int mx, my;
+  unsigned int idx, new_idx = 0;
+
+  const std::vector<int> neighborhood = {1, -1,  // left right
+    size_x_int, -size_x_int,  // up down
+    size_x_int + 1, size_x_int - 1,  // upper diagonals
+    -size_x_int + 1, -size_x_int - 1};  // lower diagonals
+
+  while (!_shared_ctx->obstacle_heuristic_queue.empty()) {
+    idx = _shared_ctx->obstacle_heuristic_queue.front().second;
+    std::pop_heap(
+      _shared_ctx->obstacle_heuristic_queue.begin(), _shared_ctx->obstacle_heuristic_queue.end(),
+      ObstacleHeuristicComparator{});
+    _shared_ctx->obstacle_heuristic_queue.pop_back();
+    c_cost = _shared_ctx->obstacle_heuristic_lookup_table[idx];
+    if (c_cost > 0.0f) {
+      // cell has been processed and closed, no further cost improvements
+      // are mathematically possible thanks to euclidean distance heuristic consistency
+      continue;
+    }
+    c_cost = -c_cost;
+    _shared_ctx->obstacle_heuristic_lookup_table[idx] = c_cost;  // set a positive value to close the cell
+
+    // find neighbors
+    for (unsigned int i = 0; i != neighborhood.size(); i++) {
+      new_idx = static_cast<unsigned int>(static_cast<int>(idx) + neighborhood[i]);
+
+      // if neighbor path is better and non-lethal, set new cost and add to queue
+      if (new_idx < size_x * size_y) {
+        if (downsample_H) {
+          // Get costmap values as if downsampled
+          unsigned int y_offset = (new_idx / size_x) * 2;
+          unsigned int x_offset = (new_idx - ((new_idx / size_x) * size_x)) * 2;
+          cost = costmap->getCost(x_offset, y_offset);
+          for (unsigned int k = 0; k < 2u; ++k) {
+            unsigned int mxd = x_offset + k;
+            if (mxd >= costmap->getSizeInCellsX()) {
+              continue;
+            }
+            for (unsigned int j = 0; j < 2u; ++j) {
+              unsigned int myd = y_offset + j;
+              if (myd >= costmap->getSizeInCellsY()) {
+                continue;
+              }
+              if (k == 0 && j == 0) {
+                continue;
+              }
+              cost = std::min(cost, static_cast<float>(costmap->getCost(mxd, myd)));
+            }
+          }
+        } else {
+          cost = static_cast<float>(costmap->getCost(new_idx));
+        }
+
+        if (cost >= INSCRIBED_COST) {
+          continue;
+        }
+
+        my = new_idx / size_x;
+        mx = new_idx - (my * size_x);
+
+        if (mx >= size_x - 3 || mx <= 3) {
+          continue;
+        }
+        if (my >= size_y - 3 || my <= 3) {
+          continue;
+        }
+
+        existing_cost = _shared_ctx->obstacle_heuristic_lookup_table[new_idx];
+        if (existing_cost <= 0.0f) {
+          if (use_quadratic_cost_penalty) {
+            travel_cost =
+              (i <= 3 ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost * cost / 63504.0f));  // 252^2
+          } else {
+            travel_cost =
+              ((i <= 3) ? 1.0f : sqrt2) * (1.0f + (cost_penalty * cost / 252.0f));
+          }
+
+          new_cost = c_cost + travel_cost;
+          if (existing_cost == 0.0f || -existing_cost > new_cost) {
+            // the negative value means the cell is in the open set
+            _shared_ctx->obstacle_heuristic_lookup_table[new_idx] = -new_cost;
+            _shared_ctx->obstacle_heuristic_queue.emplace_back(
+              new_cost + distanceHeuristic2D(new_idx, size_x, start_x, start_y), new_idx);
+            std::push_heap(
+              _shared_ctx->obstacle_heuristic_queue.begin(),
+                _shared_ctx->obstacle_heuristic_queue.end(),
+              ObstacleHeuristicComparator{});
+          }
+        }
+      }
+    }
+
+    if (idx == start_index) {
+      break;
+    }
+  }
+  return downsample_H ? 2.0f * requested_node_cost : requested_node_cost;
 }
 
 template<typename NodeT>
@@ -521,6 +830,19 @@ void AStarAlgorithm<NodeT>::clearGraph()
   Graph g;
   std::swap(_graph, g);
   _graph.reserve(100000);
+}
+
+template<typename NodeT>
+uint64_t AStarAlgorithm<NodeT>::getIndex(
+  const unsigned int & x, const unsigned int & y,
+  const unsigned int & dim_3)
+{
+  if constexpr (std::is_same_v<NodeT, Node2D>) {
+    return Node2D::getIndex(x, y, dim_3);
+  } else {
+    return NodeT::getIndex(x, y, dim_3, _shared_ctx->motion_table.size_x,
+        _shared_ctx->motion_table.num_angle_quantization);
+  }
 }
 
 template<typename NodeT>
@@ -566,9 +888,25 @@ unsigned int AStarAlgorithm<NodeT>::getCoarseSearchResolution()
 }
 
 template<typename NodeT>
+float AStarAlgorithm<NodeT>::distanceHeuristic2D(
+  const uint64_t idx, const unsigned int size_x,
+  const unsigned int target_x, const unsigned int target_y)
+{
+  int dx = static_cast<int>(idx % size_x) - static_cast<int>(target_x);
+  int dy = static_cast<int>(idx / size_x) - static_cast<int>(target_y);
+  return std::sqrt(dx * dx + dy * dy);
+}
+
+template<typename NodeT>
 typename AStarAlgorithm<NodeT>::GoalManagerT AStarAlgorithm<NodeT>::getGoalManager()
 {
   return _goal_manager;
+}
+
+template<typename NodeT>
+typename AStarAlgorithm<NodeT>::NodeContext * AStarAlgorithm<NodeT>::getContext()
+{
+  return _shared_ctx.get();
 }
 
 // Instantiate algorithm for the supported template types

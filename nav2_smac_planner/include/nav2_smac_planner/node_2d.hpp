@@ -64,11 +64,17 @@ public:
   };
   typedef std::vector<Coordinates> CoordinateVector;
 
+  struct NodeContext
+  {
+    float cost_travel_multiplier;
+    std::vector<int> neighbors_grid_offsets;
+  };
+
   /**
    * @brief A constructor for nav2_smac_planner::Node2D
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(const uint64_t index);
+  explicit Node2D(const uint64_t index, const NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::Node2D
@@ -229,9 +235,9 @@ public:
    * @param Index Index of point
    * @return coordinates of point
    */
-  static inline Coordinates getCoords(const uint64_t & index)
+  inline Coordinates getCoords(const uint64_t & index)
   {
-    const unsigned int & size_x = _neighbors_grid_offsets[3];
+    const unsigned int & size_x = _ctx->neighbors_grid_offsets[3];
     return Coordinates(index % size_x, index / size_x);
   }
 
@@ -241,25 +247,9 @@ public:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  static float getHeuristicCost(
+  float getHeuristicCost(
     const Coordinates & node_coords,
     const CoordinateVector & goals_coords);
-
-  /**
-   * @brief Initialize the neighborhood to be used in A*
-   * We support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
-   * @param neighborhood The desired neighborhood type
-   * @param x_size_uint The total x size to find neighbors
-   * @param y_size The total y size to find neighbors
-   * @param num_angle_quantization Number of quantizations, must be 0
-   * @param search_info Search parameters, unused by 2D node
-   */
-  static void initMotionModel(
-    const MotionModel & motion_model,
-    unsigned int & size_x,
-    unsigned int & size_y,
-    unsigned int & num_angle_quantization,
-    SearchInfo & search_info);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -284,8 +274,6 @@ public:
 
   Node2D * parent;
   Coordinates pose;
-  static float cost_travel_multiplier;
-  static std::vector<int> _neighbors_grid_offsets;
 
 private:
   float _cell_cost;
@@ -294,6 +282,7 @@ private:
   bool _was_visited;
   bool _is_queued;
   bool _in_collision{false};
+  const NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner
