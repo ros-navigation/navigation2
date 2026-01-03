@@ -34,8 +34,17 @@ ParameterHandler::ParameterHandler(
 {
   plugin_name_ = plugin_name;
 
-  params_.max_linear_vel =
-    node->declare_or_get_parameter(plugin_name_ + ".max_linear_vel", 0.5);
+  const std::string old_name = plugin_name_ + ".desired_linear_vel";
+  const std::string new_name = plugin_name_ + ".max_linear_vel";
+  try {
+    params_.max_linear_vel = node->declare_or_get_parameter<double>(old_name);
+    RCLCPP_WARN(
+      logger_,
+      "Parameter '%s' is deprecated. Use '%s' instead.",
+      old_name.c_str(), new_name.c_str());
+  } catch (const std::exception &) {
+    params_.max_linear_vel = node->declare_or_get_parameter(new_name, 0.5);
+  }
   params_.base_max_linear_vel = params_.max_linear_vel;
 
   params_.min_linear_vel =
