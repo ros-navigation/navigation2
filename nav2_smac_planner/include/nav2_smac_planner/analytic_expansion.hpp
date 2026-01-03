@@ -116,7 +116,6 @@ public:
    * @param node The node to start the analytic path from
    * @param coarse_check_goals Coarse list of goals nodes to plan to
    * @param fine_check_goals Fine list of goals nodes to plan to
-   * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
    * @param closest_distance Closest distance to goal
@@ -127,10 +126,8 @@ public:
     const NodePtr & current_node,
     const NodeVector & coarse_check_goals,
     const NodeVector & fine_check_goals,
-    const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
-    int & closest_distance,
-    const float obstacle_heuristic);
+    const int closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal

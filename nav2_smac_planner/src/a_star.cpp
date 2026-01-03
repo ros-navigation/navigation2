@@ -469,16 +469,19 @@ bool AStarAlgorithm<NodeT>::createPath(
     // 2.1) Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     if constexpr (std::is_same_v<NodeT, NodeHybrid>|| std::is_same_v<NodeT, NodeLattice>) {
+      // See if we are closer and should be expanding more often
       const Coordinates node_coords = NodeT::getCoords(current_node->getIndex(), getSizeX(),
-          getSizeDim3());
+        getSizeDim3());
       float obstacle_heuristic = getObstacleHeuristic(node_coords,
-          _goal_manager.getGoalsCoordinates()[0], _shared_ctx->motion_table.cost_penalty,
-          _shared_ctx->motion_table.use_quadratic_cost_penalty,
-          _shared_ctx->motion_table.downsample_obstacle_heuristic);
+        _goal_manager.getGoalsCoordinates()[0], _shared_ctx->motion_table.cost_penalty,
+        _shared_ctx->motion_table.use_quadratic_cost_penalty,
+        _shared_ctx->motion_table.downsample_obstacle_heuristic);
+      closest_distance = std::min(closest_distance,
+        static_cast<int>(current_node->getHeuristicCost(
+        node_coords, _goal_manager.getGoalsCoordinates(), obstacle_heuristic)));
       expansion_result = _expander->tryAnalyticExpansion(
         current_node, coarse_check_goals, fine_check_goals,
-        _goal_manager.getGoalsCoordinates(), neighborGetter, analytic_iterations, closest_distance,
-          obstacle_heuristic);
+        neighborGetter, analytic_iterations, closest_distance);
     }
     if (expansion_result != nullptr) {
       current_node = expansion_result;
