@@ -83,16 +83,17 @@ private:
   auto make_wrapped_callback(CallbackU && user_callback)
   {
     using CB = std::decay_t<CallbackU>;
-    using UniquePtr = typename MessageT::UniquePtr;
-    using SharedPtr = typename MessageT::SharedPtr;
-    using ConstSharedPtr = typename MessageT::ConstSharedPtr;
+    using MsgUniquePtr = typename MessageT::UniquePtr;
+    using MsgSharedPtr = typename MessageT::SharedPtr;
+    using MsgConstSharedPtr = typename MessageT::ConstSharedPtr;
+
     using MsgInfo = const rclcpp::MessageInfo &;
 
     // Use shared_ptr so the lambda stays COPIABLE (rclcpp often requires copiable callbacks)
     auto cb_ptr = std::make_shared<CB>(std::forward<CallbackU>(user_callback));
 
-    if constexpr (std::is_invocable_v<CB &, UniquePtr>) {
-      return [this, cb_ptr](UniquePtr msg) {
+    if constexpr (std::is_invocable_v<CB &, MsgUniquePtr>) {
+      return [this, cb_ptr](MsgUniquePtr msg) {
                if (!this->is_activated()) {
                  log_subscription_not_enabled_once();
                  return;
@@ -100,8 +101,8 @@ private:
                should_log_.store(true);
                (*cb_ptr)(std::move(msg));
              };
-    } else if constexpr (std::is_invocable_v<CB &, SharedPtr>) {
-      return [this, cb_ptr](SharedPtr msg) {
+    } else if constexpr (std::is_invocable_v<CB &, MsgSharedPtr>) {
+      return [this, cb_ptr](MsgSharedPtr msg) {
                if (!this->is_activated()) {
                  log_subscription_not_enabled_once();
                  return;
@@ -109,8 +110,8 @@ private:
                should_log_.store(true);
                (*cb_ptr)(std::move(msg));
              };
-    } else if constexpr (std::is_invocable_v<CB &, ConstSharedPtr>) {
-      return [this, cb_ptr](ConstSharedPtr msg) {
+    } else if constexpr (std::is_invocable_v<CB &, MsgConstSharedPtr>) {
+      return [this, cb_ptr](MsgConstSharedPtr msg) {
                if (!this->is_activated()) {
                  log_subscription_not_enabled_once();
                  return;
@@ -118,8 +119,8 @@ private:
                should_log_.store(true);
                (*cb_ptr)(std::move(msg));
              };
-    } else if constexpr (std::is_invocable_v<CB &, UniquePtr, MsgInfo>) {
-      return [this, cb_ptr](UniquePtr msg, MsgInfo info) {
+    } else if constexpr (std::is_invocable_v<CB &, MsgUniquePtr, MsgInfo>) {
+      return [this, cb_ptr](MsgUniquePtr msg, MsgInfo info) {
                if (!this->is_activated()) {
                  log_subscription_not_enabled_once();
                  return;
@@ -127,8 +128,8 @@ private:
                should_log_.store(true);
                (*cb_ptr)(std::move(msg), info);
              };
-    } else if constexpr (std::is_invocable_v<CB &, SharedPtr, MsgInfo>) {
-      return [this, cb_ptr](SharedPtr msg, MsgInfo info) {
+    } else if constexpr (std::is_invocable_v<CB &, MsgSharedPtr, MsgInfo>) {
+      return [this, cb_ptr](MsgSharedPtr msg, MsgInfo info) {
                if (!this->is_activated()) {
                  log_subscription_not_enabled_once();
                  return;
