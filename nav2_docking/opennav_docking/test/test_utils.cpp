@@ -46,8 +46,8 @@ TEST(UtilsTests, parseDockParams2)
   // Don't declare B, check if "map" default
   node->declare_parameter("dockC.frame", rclcpp::ParameterValue(std::string("mapA")));
 
-  node->declare_parameter("dockC.type", rclcpp::ParameterValue(std::string("TypeA")));
-  node->declare_parameter("dockD.type", rclcpp::ParameterValue(std::string("TypeB")));
+  node->declare_parameter("dockC.type", rclcpp::ParameterValue(std::string("typeA")));
+  node->declare_parameter("dockD.type", rclcpp::ParameterValue(std::string("typeB")));
   std::vector<double> dock_pose = {0.3, 0.3, 0.3};
   node->declare_parameter("dockC.pose", rclcpp::ParameterValue(dock_pose));
   node->declare_parameter("dockD.pose", rclcpp::ParameterValue(dock_pose));
@@ -61,7 +61,7 @@ TEST(UtilsTests, parseDockParams2)
   EXPECT_TRUE(utils::parseDockParams(docks_param, node, db));
   EXPECT_EQ(db["dockC"].frame, std::string("mapA"));
   EXPECT_EQ(db["dockD"].frame, std::string("map"));
-  EXPECT_EQ(db["dockC"].type, std::string("TypeA"));
+  EXPECT_EQ(db["dockC"].type, std::string("typeA"));
   EXPECT_EQ(db["dockC"].pose.position.x, 0.3);
   EXPECT_EQ(db["dockC"].pose.position.y, 0.3);
   EXPECT_EQ(db["dockC"].id, std::string(""));
@@ -75,8 +75,8 @@ TEST(UtilsTests, parseDockParams3)
   std::vector<std::string> dock_str = {"dockE", "dockF"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
 
-  node->declare_parameter("dockE.type", rclcpp::ParameterValue(std::string("TypeA")));
-  node->declare_parameter("dockF.type", rclcpp::ParameterValue(std::string("TypeB")));
+  node->declare_parameter("dockE.type", rclcpp::ParameterValue(std::string("typeA")));
+  node->declare_parameter("dockF.type", rclcpp::ParameterValue(std::string("typeB")));
 
   std::vector<std::string> docks_param;
   node->get_parameter("docks", docks_param);
@@ -97,8 +97,8 @@ TEST(UtilsTests, parseDockFile)
   EXPECT_EQ(db.size(), 2u);
   EXPECT_EQ(db["dock1"].frame, std::string("mapA"));
   EXPECT_EQ(db["dock2"].frame, std::string("map"));
-  EXPECT_EQ(db["dock1"].type, std::string("Dockv3"));
-  EXPECT_EQ(db["dock2"].type, std::string("Dockv1"));
+  EXPECT_EQ(db["dock1"].type, std::string("dockv3"));
+  EXPECT_EQ(db["dock2"].type, std::string("dockv1"));
   EXPECT_EQ(db["dock1"].pose.position.x, 0.3);
   EXPECT_EQ(db["dock1"].pose.position.y, 0.3);
   EXPECT_EQ(db["dock1"].pose.orientation.w, 1.0);

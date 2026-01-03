@@ -30,13 +30,13 @@ planner_server:
 ```
  smoother_server:
    ros__parameters:
-    smoother_plugins: ["SimpleSmoother", "ConstrainedSmoother", "SgSmoother"]
-    SimpleSmoother:
+    smoother_plugins: ["simple_smoother", "constrained_smoother", "sg_smoother"]
+    simple_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
-    ConstrainedSmoother:
+    constrained_smoother:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       w_smooth: 100000.0 # tuned
-    SgSmoother:
+    sg_smoother:
       plugin: "nav2_smoother::SavitzkyGolaySmoother"
 ```
 
