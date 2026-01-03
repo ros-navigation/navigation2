@@ -189,7 +189,7 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param callback Callback function to handle incoming messages
  * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
  * @param callback_group The callback group to use (if provided)
- * @return A shared pointer to the created subscription
+ * @return A shared pointer to the created nav2::Subscription
  */
 template<typename MessageT, typename NodeT, typename CallbackT>
 typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
@@ -200,17 +200,13 @@ typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
   bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", true);
+     node, "allow_parameter_qos_overrides", true);
 
-  auto params_interface = node->get_node_parameters_interface();
-  auto topics_interface = node->get_node_topics_interface();
-  return rclcpp::create_subscription<MessageT, CallbackT>(
-    params_interface,
-    topics_interface,
-    topic_name,
-    qos,
-    std::forward<CallbackT>(callback),
-    createSubscriptionOptions(topic_name, allow_parameter_qos_overrides, callback_group));
+  auto options = createSubscriptionOptions(
+     topic_name, allow_parameter_qos_overrides, callback_group);
+
+  return std::make_shared<nav2::Subscription<MessageT>>(
+     node, topic_name, qos, std::forward<CallbackT>(callback), options);
 }
 
 /**
