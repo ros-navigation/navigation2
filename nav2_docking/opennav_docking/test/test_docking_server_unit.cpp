@@ -78,15 +78,15 @@ TEST(DockingServerTests, testErrorExceptions)
     rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
   node->declare_parameter(
     "test_dock.type",
-    rclcpp::ParameterValue(std::string{"DockPlugin"}));
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
   node->declare_parameter(
     "test_dock.pose",
     rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   node->declare_parameter(
     "dock_plugins",
-    rclcpp::ParameterValue(std::vector<std::string>{"DockPlugin"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
   node->declare_parameter(
-    "DockPlugin.plugin",
+    "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
   node->on_configure(rclcpp_lifecycle::State());
@@ -116,7 +116,7 @@ TEST(DockingServerTests, testErrorExceptions)
     auto goal_msg = DockRobot::Goal();
     if (1 == 0) {
       goal_msg.use_dock_id = false;
-      goal_msg.dock_type = "DockPlugin";
+      goal_msg.dock_type = "dock_plugin";
     } else {
       goal_msg.dock_id = "test_dock";
       goal_msg.navigate_to_staging_pose = false;
@@ -162,7 +162,7 @@ TEST(DockingServerTests, testErrorExceptions)
       RCLCPP_ERROR(node2->get_logger(), "Action server not available after waiting");
     }
     auto goal_msg = UndockRobot::Goal();
-    goal_msg.dock_type = "DockPlugin";
+    goal_msg.dock_type = "dock_plugin";
     auto future_goal_handle = client->async_send_goal(goal_msg);
 
     if (rclcpp::spin_until_future_complete(
@@ -197,15 +197,15 @@ TEST(DockingServerTests, getateGoalDock)
     rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
   node->declare_parameter(
     "test_dock.type",
-    rclcpp::ParameterValue(std::string{"DockPlugin"}));
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
   node->declare_parameter(
     "test_dock.pose",
     rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   node->declare_parameter(
     "dock_plugins",
-    rclcpp::ParameterValue(std::vector<std::string>{"DockPlugin"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
   node->declare_parameter(
-    "DockPlugin.plugin",
+    "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
   node->on_configure(rclcpp_lifecycle::State());
@@ -229,15 +229,15 @@ TEST(DockingServerTests, testDynamicParams)
     rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
   node->declare_parameter(
     "test_dock.type",
-    rclcpp::ParameterValue(std::string{"DockPlugin"}));
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
   node->declare_parameter(
     "test_dock.pose",
     rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   node->declare_parameter(
     "dock_plugins",
-    rclcpp::ParameterValue(std::vector<std::string>{"DockPlugin"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
   node->declare_parameter(
-    "DockPlugin.plugin",
+    "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
   node->on_configure(rclcpp_lifecycle::State());
@@ -286,15 +286,15 @@ TEST(DockingServerTests, testDockBackward)
     rclcpp::ParameterValue(std::vector<std::string>{"test_dock"}));
   node->declare_parameter(
     "test_dock.type",
-    rclcpp::ParameterValue(std::string{"DockPlugin"}));
+    rclcpp::ParameterValue(std::string{"dock_plugin"}));
   node->declare_parameter(
     "test_dock.pose",
     rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
   node->declare_parameter(
     "dock_plugins",
-    rclcpp::ParameterValue(std::vector<std::string>{"DockPlugin"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"dock_plugin"}));
   node->declare_parameter(
-    "DockPlugin.plugin",
+    "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
   // The dock_backwards parameter should be declared but not set
@@ -328,10 +328,10 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 
   // Configure docking server
   node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
-  node->declare_parameter("test_dock.type", "TestPlugin");
+  node->declare_parameter("test_dock.type", "test_plugin");
   node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
-  node->declare_parameter("dock_plugins", std::vector<std::string>{"TestPlugin"});
-  node->declare_parameter("TestPlugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
   node->declare_parameter("exception_to_throw", "");
   node->declare_parameter("dock_action_called", false);
 
@@ -378,10 +378,10 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
 
   // Configure the server with the test plugin
   node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
-  node->declare_parameter("test_dock.type", "TestPlugin");
+  node->declare_parameter("test_dock.type", "test_plugin");
   node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
-  node->declare_parameter("dock_plugins", std::vector<std::string>{"TestPlugin"});
-  node->declare_parameter("TestPlugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
 
   // Configure TestFailureDock to report success
   node->declare_parameter("exception_to_throw", "");
@@ -427,11 +427,11 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
 
   // Configure the server with the TestFailureDock plugin.
   node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
-  node->declare_parameter("test_dock.type", "TestPlugin");
+  node->declare_parameter("test_dock.type", "test_plugin");
   node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
   node->declare_parameter("test_dock.frame", "odom");
-  node->declare_parameter("dock_plugins", std::vector<std::string>{"TestPlugin"});
-  node->declare_parameter("TestPlugin.plugin", "opennav_docking::TestFailureDock");
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
   node->declare_parameter("exception_to_throw", "");
 
   // Configure the TestFailureDock to fail its startup process.
