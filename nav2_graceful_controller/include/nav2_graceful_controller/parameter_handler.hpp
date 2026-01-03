@@ -30,10 +30,8 @@ namespace nav2_graceful_controller
 
 struct Parameters
 {
-  double transform_tolerance;
   double min_lookahead;
   double max_lookahead;
-  double max_robot_pose_search_dist;
   double k_phi;
   double k_delta;
   double beta;
@@ -67,7 +65,7 @@ public:
   ParameterHandler(
     const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
-    rclcpp::Logger & logger, const double costmap_size_x);
+    rclcpp::Logger & logger);
 
 protected:
   /**

@@ -126,6 +126,14 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
   _search_info.analytic_expansion_max_length =
     analytic_expansion_max_length_m / _costmap->getResolution();
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_quadratic_cost_penalty", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".use_quadratic_cost_penalty", _search_info.use_quadratic_cost_penalty);
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".downsample_obstacle_heuristic", rclcpp::ParameterValue(true));
+  node->get_parameter(
+    name + ".downsample_obstacle_heuristic", _search_info.downsample_obstacle_heuristic);
 
   nav2::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));

@@ -1,6 +1,5 @@
 // Copyright (c) 2020 Shrijit Singh
 // Copyright (c) 2020 Samsung Research America
-// Copyright (c) 2025 Fumiya Ohnishi
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +26,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/controller_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
 using std::hypot;
@@ -61,10 +61,6 @@ void RegulatedPurePursuitController::configure(
     node, plugin_name_, logger_, costmap_->getSizeInMetersX());
   params_ = param_handler_->getParams();
 
-  // Handles global path transformations
-  path_handler_ = std::make_unique<PathHandler>(
-    params_->transform_tolerance, tf_, costmap_ros_);
-
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
 
@@ -74,7 +70,6 @@ void RegulatedPurePursuitController::configure(
   node->get_parameter("controller_frequency", control_frequency);
   control_duration_ = 1.0 / control_frequency;
 
-  global_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("received_global_plan");
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>("lookahead_point");
   curvature_carrot_pub_ = node->create_publisher<geometry_msgs::msg::PointStamped>(
     "curvature_lookahead_point");
@@ -89,7 +84,6 @@ void RegulatedPurePursuitController::cleanup()
     "Cleaning up controller: %s of type"
     " regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_.reset();
   carrot_pub_.reset();
   curvature_carrot_pub_.reset();
   is_rotating_to_heading_pub_.reset();
@@ -102,7 +96,6 @@ void RegulatedPurePursuitController::activate()
     "Activating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_->on_activate();
   carrot_pub_->on_activate();
   curvature_carrot_pub_->on_activate();
   is_rotating_to_heading_pub_->on_activate();
@@ -116,7 +109,6 @@ void RegulatedPurePursuitController::deactivate()
     "Deactivating controller: %s of type "
     "regulated_pure_pursuit_controller::RegulatedPurePursuitController",
     plugin_name_.c_str());
-  global_path_pub_->on_deactivate();
   carrot_pub_->on_deactivate();
   curvature_carrot_pub_->on_deactivate();
   is_rotating_to_heading_pub_->on_deactivate();
@@ -168,7 +160,9 @@ double calculateCurvature(geometry_msgs::msg::Point lookahead_point)
 geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & speed,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  const nav_msgs::msg::Path & transformed_global_plan,
+  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
 {
   std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
 
@@ -184,28 +178,19 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     goal_dist_tol_ = pose_tolerance.position.x;
   }
 
-  // Transform path to robot base frame
-  auto transformed_plan = path_handler_->transformGlobalPlan(
-    pose, params_->max_robot_pose_search_dist, params_->interpolate_curvature_after_goal);
-  global_path_pub_->publish(transformed_plan);
+  // Transform the plan from costmap's global frame to robot base frame
+  nav_msgs::msg::Path transformed_plan;
+  if (!nav2_util::transformPathInTargetFrame(
+      transformed_global_plan, transformed_plan, *tf_,
+      costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
+  {
+    throw nav2_core::ControllerTFError(
+      "Unable to transform plan pose into local frame");
+  }
 
   // Find look ahead distance and point on path and publish
   double lookahead_dist = getLookAheadDistance(speed);
   double curv_lookahead_dist = params_->curvature_lookahead_dist;
-
-  // Check for reverse driving
-  if (params_->allow_reversing) {
-    // Cusp check
-    const double dist_to_cusp = findVelocitySignChange(transformed_plan);
-
-    // if the lookahead distance is further than the cusp, use the cusp distance instead
-    if (dist_to_cusp < lookahead_dist) {
-      lookahead_dist = dist_to_cusp;
-    }
-    if (dist_to_cusp < curv_lookahead_dist) {
-      curv_lookahead_dist = dist_to_cusp;
-    }
-  }
 
   // Get the particular point on the path at the lookahead distance
   auto carrot_pose = nav2_util::getLookAheadPoint(lookahead_dist, transformed_plan);
@@ -421,10 +406,10 @@ void RegulatedPurePursuitController::applyConstraints(
   linear_vel = sign * linear_vel;
 }
 
-void RegulatedPurePursuitController::setPlan(const nav_msgs::msg::Path & path)
+void RegulatedPurePursuitController::newPathReceived(
+  const nav_msgs::msg::Path & /*raw_global_path*/)
 {
   has_reached_xy_tolerance_ = false;
-  path_handler_->setPlan(path);
 }
 
 void RegulatedPurePursuitController::setSpeedLimit(
@@ -452,53 +437,6 @@ void RegulatedPurePursuitController::reset()
   cancelling_ = false;
   finished_cancelling_ = false;
   has_reached_xy_tolerance_ = false;
-}
-
-double RegulatedPurePursuitController::findVelocitySignChange(
-  const nav_msgs::msg::Path & transformed_plan)
-{
-  // Iterating through the transformed global path to determine the position of the cusp
-  for (unsigned int pose_id = 1; pose_id < transformed_plan.poses.size() - 1; ++pose_id) {
-    // We have two vectors for the dot product OA and AB. Determining the vectors.
-    double oa_x = transformed_plan.poses[pose_id].pose.position.x -
-      transformed_plan.poses[pose_id - 1].pose.position.x;
-    double oa_y = transformed_plan.poses[pose_id].pose.position.y -
-      transformed_plan.poses[pose_id - 1].pose.position.y;
-    double ab_x = transformed_plan.poses[pose_id + 1].pose.position.x -
-      transformed_plan.poses[pose_id].pose.position.x;
-    double ab_y = transformed_plan.poses[pose_id + 1].pose.position.y -
-      transformed_plan.poses[pose_id].pose.position.y;
-
-    /* Checking for the existence of cusp, in the path, using the dot product
-    and determine it's distance from the robot. If there is no cusp in the path,
-    then just determine the distance to the goal location. */
-    const double dot_prod = (oa_x * ab_x) + (oa_y * ab_y);
-    if (dot_prod < 0.0) {
-      // returning the distance if there is a cusp
-      // The transformed path is in the robots frame, so robot is at the origin
-      return hypot(
-        transformed_plan.poses[pose_id].pose.position.x,
-        transformed_plan.poses[pose_id].pose.position.y);
-    }
-
-    if (
-      (hypot(oa_x, oa_y) == 0.0 &&
-      transformed_plan.poses[pose_id - 1].pose.orientation !=
-      transformed_plan.poses[pose_id].pose.orientation)
-      ||
-      (hypot(ab_x, ab_y) == 0.0 &&
-      transformed_plan.poses[pose_id].pose.orientation !=
-      transformed_plan.poses[pose_id + 1].pose.orientation))
-    {
-      // returning the distance since the points overlap
-      // but are not simply duplicate points (e.g. in place rotation)
-      return hypot(
-        transformed_plan.poses[pose_id].pose.position.x,
-        transformed_plan.poses[pose_id].pose.position.y);
-    }
-  }
-
-  return std::numeric_limits<double>::max();
 }
 }  // namespace nav2_regulated_pure_pursuit_controller
 

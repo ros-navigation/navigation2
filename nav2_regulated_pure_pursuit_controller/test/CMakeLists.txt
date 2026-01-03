@@ -12,6 +12,7 @@ target_link_libraries(test_regulated_pp
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
+  nav2_controller::feasible_path_handler
   nav2_controller::simple_goal_checker
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
