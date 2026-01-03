@@ -56,7 +56,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
   const NodeGetter & getter, int & analytic_iterations,
   const int closest_distance)
 {
-  std::cout << "Expansion motion model: " << toString(_motion_model).c_str() << std::endl;
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
     _motion_model == MotionModel::STATE_LATTICE)

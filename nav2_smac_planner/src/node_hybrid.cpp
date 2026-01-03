@@ -615,7 +615,6 @@ bool NodeHybrid::backtracePath(CoordinateVector & path)
   path.push_back(current_node->pose);
   // Convert angle to radians
   path.back().theta = _ctx->motion_table.getAngleFromBin(path.back().theta);
-  std::cout << "MotionTable: " << toString(_ctx->motion_table.motion_model).c_str() << std::endl;
   return true;
 }
 

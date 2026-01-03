@@ -159,7 +159,6 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
-    std::cout << "init motion model" << static_cast<int>(_motion_model) << std::endl;
     initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
     _expander->setContext(_shared_ctx.get());
     _goal_manager.setContext(_shared_ctx.get());
