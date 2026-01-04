@@ -18,6 +18,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
@@ -41,9 +42,10 @@ class Subscription : public rclcpp_lifecycle::SimpleManagedEntity
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(Subscription)
 
+  // Single unified constructor: (topic, qos, callback, options)
   template<typename NodeT, typename CallbackT>
   Subscription(
-    const NodeT & node,
+    const std::shared_ptr<NodeT> & node,
     const std::string & topic_name,
     const rclcpp::QoS & qos,
     CallbackT && user_callback,
@@ -52,33 +54,40 @@ public:
     logger_(node->get_logger()),
     should_log_(true)
   {
-    auto wrapped_cb = make_wrapped_callback(std::forward<CallbackT>(user_callback));
+    init(node, qos, std::forward<CallbackT>(user_callback), options);
+  }
 
-    sub_ = node->template create_subscription<MessageT>(
+  void on_activate() override
+  {
+    rclcpp_lifecycle::SimpleManagedEntity::on_activate();
+  }
+
+  void on_deactivate() override
+  {
+    rclcpp_lifecycle::SimpleManagedEntity::on_deactivate();
+    should_log_.store(true);
+  }
+
+private:
+  template<typename NodeT, typename CallbackT>
+  void init(
+    const std::shared_ptr<NodeT> & node,
+    const rclcpp::QoS & qos,
+    CallbackT && user_callback,
+    const rclcpp::SubscriptionOptions & options)
+  {
+    auto wrapped_cb = make_wrapped_callback(std::forward<CallbackT>(user_callback));
+    auto rcl_node = std::static_pointer_cast<rclcpp::Node>(node);
+    sub_ = rcl_node->template create_subscription<MessageT>(
       topic_name_, qos, std::move(wrapped_cb), options);
 
-    // If this is NOT a lifecycle node, there will be no lifecycle manager to call on_activate().
-    // To keep old behavior (callbacks run immediately), we auto-activate.
+    // Auto-activate for non-lifecycle nodes to preserve old behavior
     auto maybe_lc = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
     if (!maybe_lc) {
       this->on_activate();
     }
   }
 
-  void on_activate() override
-  {
-    rclcpp_lifecycle::SimpleManagedEntity::on_activate();
-    // No need to touch should_log_ here (logging happens only when inactive).
-  }
-
-  void on_deactivate() override
-  {
-    rclcpp_lifecycle::SimpleManagedEntity::on_deactivate();
-    // New inactive period -> allow one warning again
-    should_log_.store(true);
-  }
-
-private:
   template<typename CallbackU>
   auto make_wrapped_callback(CallbackU && user_callback)
   {
@@ -86,10 +95,9 @@ private:
     using MsgUniquePtr = typename MessageT::UniquePtr;
     using MsgSharedPtr = typename MessageT::SharedPtr;
     using MsgConstSharedPtr = typename MessageT::ConstSharedPtr;
-
     using MsgInfo = const rclcpp::MessageInfo &;
 
-    // Use shared_ptr so the lambda stays COPIABLE (rclcpp often requires copiable callbacks)
+    // Keep callback copiable
     auto cb_ptr = std::make_shared<CB>(std::forward<CallbackU>(user_callback));
 
     if constexpr (std::is_invocable_v<CB &, MsgUniquePtr>) {
@@ -138,8 +146,7 @@ private:
                (*cb_ptr)(std::move(msg), info);
              };
     } else {
-      static_assert(
-        sizeof(CB) == 0,
+      static_assert(sizeof(CB) == 0,
         "nav2::Subscription: unsupported callback signature for this MessageT");
     }
   }
@@ -154,7 +161,6 @@ private:
         topic_name_.c_str());
     }
   }
-
 
   typename rclcpp::Subscription<MessageT>::SharedPtr sub_;
   std::string topic_name_;
