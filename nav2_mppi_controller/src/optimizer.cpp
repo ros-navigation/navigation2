@@ -86,25 +86,24 @@ void Optimizer::getParams()
   getParam(s.iteration_count, "iteration_count", 1);
   getParam(s.temperature, "temperature", 0.3f);
   getParam(s.gamma, "gamma", 0.015f);
-  // Kinematic constraint parameters use ParameterType::Static to prevent default dynamic updates.
-  // Custom callbacks below guard against updates when a speed limit is active.
-  getParam(s.base_constraints.vx_max, "vx_max", 0.5f, ParameterType::Static);
-  getParam(s.base_constraints.vx_min, "vx_min", -0.35f, ParameterType::Static);
-  getParam(s.base_constraints.vy, "vy_max", 0.5f, ParameterType::Static);
-  getParam(s.base_constraints.wz, "wz_max", 1.9f, ParameterType::Static);
-  getParam(s.base_constraints.ax_max, "ax_max", 3.0f, ParameterType::Static);
-  getParam(s.base_constraints.ax_min, "ax_min", -3.0f, ParameterType::Static);
-  getParam(s.base_constraints.ay_max, "ay_max", 3.0f, ParameterType::Static);
-  getParam(s.base_constraints.ay_min, "ay_min", -3.0f, ParameterType::Static);
-  getParam(s.base_constraints.az_max, "az_max", 3.5f, ParameterType::Static);
+  getParam(s.base_constraints.vx_max, "vx_max", 0.5f);
+  getParam(s.base_constraints.vx_min, "vx_min", -0.35f);
+  getParam(s.base_constraints.vy, "vy_max", 0.5f);
+  getParam(s.base_constraints.wz, "wz_max", 1.9f);
+  getParam(s.base_constraints.ax_max, "ax_max", 3.0f);
+  getParam(s.base_constraints.ax_min, "ax_min", -3.0f);
+  getParam(s.base_constraints.ay_max, "ay_max", 3.0f);
+  getParam(s.base_constraints.ay_min, "ay_min", -3.0f);
+  getParam(s.base_constraints.az_max, "az_max", 3.5f);
   getParam(s.sampling_std.vx, "vx_std", 0.2f);
   getParam(s.sampling_std.vy, "vy_std", 0.2f);
   getParam(s.sampling_std.wz, "wz_std", 0.4f);
   getParam(s.retry_attempt_limit, "retry_attempt_limit", 1);
   getParam(s.open_loop, "open_loop", false);
 
-  // Register guarded dynamic callbacks for kinematic parameters.
-  // These allow updates only when no speed limit is active (constraints == base_constraints).
+  // Register guarded callbacks for kinematic constraint parameters.
+  // These callbacks reject dynamic updates when a speed limit is active to prevent
+  // unintentionally resetting the modified constraints back to base values.
   auto registerKinematicParam = [this](float & setting, const std::string & param_name) {
       parameters_handler_->addParamCallback(
         name_ + "." + param_name,
