@@ -45,5 +45,11 @@
       <description>mppi critic for restricting command velocities in deadband range</description>
     </class>
 
+
+    <class type="mppi::critics::WaypointCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>mppi critic for following sparse waypoints with position and orientation tolerances</description>
+    </class>
+
+
   </library>
 </class_libraries>

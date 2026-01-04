@@ -16,10 +16,10 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Tuple, TypedDict
 
-from nav2_smac_planner.lattice_primitives.helper import angle_difference, interpolate_yaws
-from nav2_smac_planner.lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
+from lattice_primitives.helper import angle_difference, interpolate_yaws
+from lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
                                                              Trajectory, TrajectoryParameters)
-from nav2_smac_planner.lattice_primitives.trajectory_generator import TrajectoryGenerator
+from lattice_primitives.trajectory_generator import TrajectoryGenerator
 import numpy as np
 from rtree import index
 

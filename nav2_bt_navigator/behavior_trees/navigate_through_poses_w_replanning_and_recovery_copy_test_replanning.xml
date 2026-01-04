@@ -1,0 +1,160 @@
+
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz through an array of poses continuously
+   and it also has recovery actions specific to planning / control as well as general system issues.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+
+    <Sequence>
+      <Sequence name="ComputePathSequence">
+        <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+        <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+        <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/>
+      </Sequence>
+
+      <!-- <RecoveryNode number_of_retries="1000000" name="NavigateRecovery"> -->
+      <RetryUntilSuccessful num_attempts="6">
+        <Sequence>
+
+          <PipelineSequence name="NavigateWithReplanning">
+
+
+          <!-- <IsStopped velocity_threshold="0.001" duration_stopped="10.0"/> -->
+            <!-- <RecoveryNode number_of_retries="2" name="StuckedRecovery">
+              <Inverter>
+                <IsStopped velocity_threshold="0.001" duration_stopped="10.0"/>
+              </Inverter>
+              <ReactiveFallback name="RecoveryFallback">
+                <RoundRobin name="RecoveryActions">
+                  <Sequence name="ClearingActions">
+                    <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+                  </Sequence>
+                  <BackUp backup_dist="0.45" backup_speed="0.05"/>
+                  <Spin spin_dist="1.57"/>
+                </RoundRobin>
+              </ReactiveFallback>
+            </RecoveryNode> -->
+             <!-- Jesli to sie nie powiedzie to zatrzyman nawigacje -->
+
+            <RateController hz="2.0">
+            <Fallback> 
+                <ReactiveSequence>
+                    <Sequence>
+                      <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "1" radius="0.5"/>
+                      <RemovePassedGoals input_goals="{truncated_goals}" output_goals="{truncated_goals}" nb_goals_to_consider = "1" radius="0.5"/>
+                      <!-- <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "6" 
+                      cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" /> -->
+                      <!-- <GoalsTruncation input_goals="{goals}" truncation_samples="6" truncated_goals="{truncated_goals}"/> -->
+                    </Sequence>
+                    <!-- <RemovePassedGoals radius="0.15" input_goals="{goals}" output_goals="{goals}"/>--> <!-- Remove goals which robot could not get with correct orientation but it is very close to that goals -->
+                    <!-- <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" cost_threshold="254.0" 
+                    use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" 
+                    input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" 
+                    lookahead_points="6"/> -->
+                    <!-- <RemoveInCollisionGoalsCustom input_goals="{goals}" output_goals="{goals}" lookahead_distance= "6" cost_threshold = "100.0"
+                    filter_sparse_poses= "False" filter_radius="0.25" filter_min_neighbors="3" />  -->
+
+                    <Fallback> 
+                      <!-- Truncated goals wymaga bycia zaktualizowanym po usunieciu passed goasl i goals in cilison-->
+                      <GoalsHasAtMostPointCount goals="{goals}" max_points="1"/>
+                      <Inverter>
+                        <GoalsHasAtMostPointCount goals="{truncated_goals}" max_points="1"/>
+                      </Inverter>
+                    </Fallback>
+                    <!-- <IsPathValid path="{path}" max_cost="254"/> -->
+
+                    <!-- <Fallback>
+                      <IsPathValid path="{path}" max_cost="254"/>
+                      <AlwaysFailure>
+                        <PublishSaveStateFlag topic_name="/dynamic_obstacles/approaching_flag"/>
+                      </AlwaysFailure>
+                    </Fallback> -->
+                    
+                </ReactiveSequence>
+                <Sequence>
+                  
+                  <!-- <RetryUntilSuccessful num_attempts="1000000">
+                  <Sequence name="PopAndPlan">
+                    <RemoveNextGoal input_goals="{goals}" output_goals="{goals}"/>
+                    <TruncateGoals input_goals="{goals}" truncation_samples="15" truncated_goals="{truncated_goals}"/>
+                    <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                    <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/>
+                    <IsPathValid path="{path}"/>
+                  </Sequence>
+                </RetryUntilSuccessful> -->
+
+                  <RecoveryNode number_of_retries="1000000" name="ComputePathRecovery">
+                      <Sequence>
+                          <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+                          <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                          <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/>
+                      </Sequence>
+                      <Sequence>
+                        <RemoveNextGoal input_goals="{goals}" output_goals="{goals}"/>
+                        <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+                        <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                      </Sequence>
+                  </RecoveryNode>
+                </Sequence>
+            </Fallback>
+            </RateController>
+
+            
+            <FollowPath path="{path}"
+                            controller_id="FollowPath"
+                            error_code_id="{follow_path_error_code}"/>
+            
+            <!-- <ReactiveSequence name="MonitorAndFollowPath">
+              <RetryUntilSuccessful num_attempts="1000">
+                <Inverter>
+                  <SequenceWithMemory name="CancelingControlAndWait">
+                    <isObstacleApproaching approaching_obstacles_topic="/dynamic_obstacles/approaching_flag"/>
+                    <CancelControl name="ControlCancel"/>
+                    <Wait wait_duration="3"/> 
+                  </SequenceWithMemory>
+                </Inverter>
+              </RetryUntilSuccessful>
+              <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="path_follow_goal_checker"/>
+            </ReactiveSequence> -->
+
+              <!-- <Wait wait_duration="5"/> -->
+              <!-- <RemoveNextGoal input_goals="{goals}" output_goals="{goals}"/> -->
+              <!-- <Fallback>
+                <IsStopped velocity_threshold="0.01" duration_stopped="0.5"/>
+                <RemoveNextGoal input_goals="{goals}" output_goals="{goals}"/>
+              </Fallback> -->
+            <!-- </RecoveryNode> -->
+            
+          </PipelineSequence>
+        </Sequence>
+
+
+
+        <!-- <Fallback name="RecoveryFallback"> 
+          <SequenceWithMemory>
+            <CancelControl/>
+            <Inverter> -->
+              <!-- <IsStopped linear_velocity_threshold="0.01" angular_velocity_threshold="0.1" duration_stopped="10.0"/> -->
+              <!-- <IsStopped velocity_threshold="0.01" duration_stopped="10.0"/>
+            </Inverter>
+          </SequenceWithMemory>
+
+          <Sequence name="RecoveryActionSteps">  -->
+            <!-- <Sequence name="ClearingActions">
+              <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            </Sequence> -->
+          <!-- <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree" reset_distance = "1.2" service_name="local_costmap/clear_around_local_costmap"/> -->
+          <!-- <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/> -->
+          <!-- <BackUpCustom backup_dist="0.45" backup_speed="0.05" cmd_vel_topic="cmd_vel" range_topics="/proximity/back/middle/range;/proximity/back/left/range;/proximity/back/right/range"/> --> 
+          <!--Back up without collision checking-->
+          <!-- <GoalsTruncation input_goals="{goals}" truncation_samples="10" truncated_goals="{truncated_goals}"/>
+          <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+          <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/> -->
+        <!-- </Sequence>
+        </Fallback> -->
+      <!-- </RecoveryNode> -->
+      </RetryUntilSuccessful>
+    </Sequence>
+  </BehaviorTree>
+</root>

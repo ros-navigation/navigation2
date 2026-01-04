@@ -62,6 +62,9 @@ public:
           "Goals with passed viapoints removed"),
       BT::InputPort<double>("radius", 0.5, "radius to goal for it to be considered for removal"),
       BT::InputPort<std::string>("robot_base_frame", "Robot base frame"),
+      BT::InputPort<int>("nb_goals_to_consider", 1, "Number of waypoints to consider"),
+      BT::InputPort<double>("yaw", 1.57,
+          "yaw threshold to goal for it to be considered for removal"),
       BT::InputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("input_waypoint_statuses",
           "Original waypoint_statuses to mark waypoint status from"),
       BT::OutputPort<std::vector<nav2_msgs::msg::WaypointStatus>>("output_waypoint_statuses",
@@ -74,10 +77,12 @@ private:
   BT::NodeStatus tick() override;
 
   double viapoint_achieved_radius_;
+  double viapoint_achieved_yaw_;
   double transform_tolerance_;
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string robot_base_frame_;
+  int nb_goals_to_consider_;
 };
 
 }  // namespace nav2_behavior_tree

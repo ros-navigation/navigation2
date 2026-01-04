@@ -70,7 +70,9 @@ public:
     ParametersHandler * param_handler)
   {
     parent_ = parent;
-    logger_ = parent_.lock()->get_logger();
+    auto node = parent_.lock();
+    logger_ = node->get_logger();
+    clock_ = node->get_clock();
     name_ = name;
     parent_name_ = parent_name;
     costmap_ros_ = costmap_ros;
@@ -111,6 +113,7 @@ protected:
 
   ParametersHandler * parameters_handler_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
+  rclcpp::Clock::SharedPtr clock_;
 };
 
 }  // namespace mppi::critics

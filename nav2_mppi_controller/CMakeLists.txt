@@ -22,6 +22,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
@@ -84,6 +85,7 @@ add_library(mppi_critics SHARED
   src/critics/prefer_forward_critic.cpp
   src/critics/twirling_critic.cpp
   src/critics/velocity_deadband_critic.cpp
+  src/critics/waypoint_critic.cpp
 )
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND APPLE)
     # Apple Clang: use C++20 and optimization, omit -fconcepts
@@ -118,6 +120,7 @@ target_link_libraries(mppi_critics PRIVATE
 
 add_library(mppi_trajectory_validators SHARED
   src/trajectory_validators/optimal_trajectory_validator.cpp
+  src/trajectory_validators/fixing_trajectory_validator.cpp
 )
 target_compile_options(mppi_trajectory_validators PUBLIC -O3)
 target_include_directories(mppi_trajectory_validators

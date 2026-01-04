@@ -1,0 +1,181 @@
+
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz through an array of poses continuously
+   and it also has recovery actions specific to planning / control as well as general system issues.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="progress_checker" topic_name="progress_checker_selector"/>
+      <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="general_goal_checker" topic_name="goal_checker_selector"/>
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <GetNextFewGoals num_goals="5" input_goals="{goals}" output_goals="{planning_goals}"/>
+      <ComputePathThroughPoses goals="{planning_goals}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+      <GetCurrentPose current_pose="{initial_pose}"/>
+      <PublishGoals input_goals="{goals}" topic_name= "debug_goals"/> 
+      <SetBlackboard output_key="last_pose" value="{initial_pose}"/>
+
+      <PipelineSequence name="NavigateLoop">
+        <ForceSuccess>
+          <Fallback name="ReplanIfNearLocalPathEnd">
+            <Sequence>
+              
+              <!-- <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.5"/>
+              <GetNextFewGoals num_goals="5" input_goals="{goals}" output_goals="{planning_goals}"/>
+              <ComputePathThroughPoses goals="{planning_goals}" path="{path}" planner_id="GridBased"/>
+              <PublishGoals input_goals="{planning_goals}" topic_name= "truncated_goals"/> -->
+
+
+              <!-- <Sequence>
+                <TruncatePathLocal input_path="{path}" output_path="{path_local}" distance_forward="3.5" distance_backward="0.0" robot_frame="base_link"/>
+                <GetPoseFromPath path="{path_local}" index="-1" pose="{last_path_point}"/>
+                <Inverter> -->
+                    <!-- It shoult allow for replanning if close to the (truncated) path end-->
+                    <!-- Distance threshold to last point is set from nav2 param goal_reached_tol -->
+                  <!-- <GoalReached goal="{last_path_point}" robot_base_frame="base_link"/>  -->
+                  <!-- Tutaj zastosowac wersje z Aros (PoseReached) -->
+                <!-- </Inverter>
+              </Sequence> -->
+
+
+                <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "10" radius="0.5" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/>
+                <GetCurrentPose current_pose="{current_pose}"/>
+                <GetPoseFromPath path="{path}" index="-1" pose="{last_path_point}"/>
+                <Inverter>
+                  <ArePosesNear ref_pose="{current_pose}" target_pose="{last_path_point}" tolerance="0.8"/>
+                </Inverter>
+            </Sequence>
+            <Sequence>
+              <GetNextFewGoals num_goals="5" input_goals="{goals}" output_goals="{planning_goals}"/>
+              <ComputePathThroughPoses goals="{planning_goals}" path="{path}" planner_id="GridBased"/>
+              <PublishGoals input_goals="{planning_goals}" topic_name= "truncated_goals"/>
+              <Delay delay_msec="1000">
+              <!-- Prevent replanning more frequent than 1 Hz. Delay used instead of Wait because it doesn't spam with logs -->
+                <AlwaysSuccess/>
+              </Delay>
+            </Sequence>
+          </Fallback>
+        </ForceSuccess>
+
+      <!-- If two poses are near then do not wait again-->
+      <!-- <RetryUntilSuccessful num_attempts="1000">
+        <ForceFailure>
+          <Fallback name="FollowOrWait">
+            <ReactiveSequence>
+              <IsPathValid path="{path}" max_cost="254"/>
+              <FollowPath path="{path}"
+                          controller_id="{selected_controller}"
+                          error_code_id="{follow_path_error_code}"/>
+            </ReactiveSequence>
+
+            <Sequence name="WaitThenReplan">
+              
+              <GetCurrentPose current_pose="{current_pose}"/>
+              <isCollisionFree nav_goal="{goals}" cost_threshold="100.0" radius="1.5"/>
+              <Fallback name="SkipWaitingIfNear">
+                <ArePosesNear ref_pose="{last_pose}" target_pose="{current_pose}" tolerance="1.5"/>
+                <Sequence>
+                  <Wait wait_duration="4.0"/>
+                  <AlwaysSuccess/>
+                </Sequence>
+              </Fallback>
+              <SetBlackboard output_key="last_pose" value="{current_pose}"/>
+              <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "100" cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+              <ComputePathThroughPoses goals="{goals}" path="{path}"
+                                      planner_id="{selected_planner}"
+                                      error_code_id="{compute_path_error_code}"
+                                      error_msg="{compute_path_error_msg}"/> 
+              
+            </Sequence>
+          </Fallback>
+        </ForceFailure>
+      </RetryUntilSuccessful> -->
+
+
+      <RetryUntilSuccessful num_attempts="1000">
+        <ForceFailure>
+          <Fallback name="FollowPathAndAvoidObstacles">
+            <ReactiveSequence>
+              <RateController hz="2.0">
+                <IsPathValid path="{path}" max_cost="254" server_timeout="50.0"/>
+              </RateController>
+              <FollowPath path="{path}"
+                          controller_id="{selected_controller}"
+                          error_code_id="{follow_path_error_code}"/>
+            </ReactiveSequence>
+            <Sequence name="CollisionWaitThenReplan">
+              <GetCurrentPose current_pose="{current_pose}"/>
+              <!-- <isCollisionFree nav_goal="{goals}" cost_threshold="100.0" radius="1.5"/> -->
+              <Fallback name="SkipWaitingIfNearLastWaitingPose">
+                <ArePosesNear ref_pose="{last_pose}" target_pose="{current_pose}" tolerance="1.5"/>
+                <Sequence>
+                  <SetBlackboard output_key="last_pose" value="{current_pose}"/>
+                  <CancelControl/>
+                  <Wait wait_duration="4.0"/>
+                  <AlwaysSuccess/>
+                </Sequence>
+              </Fallback>
+                <RetryUntilSuccessful num_attempts="1000"> 
+                  <Sequence name="Replan">
+                    <!-- <GetNextFewGoals num_goals="5" input_goals="{goals}" output_goals="{planning_goals}"/> -->
+                    <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "5" cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+                    <GetNextFewGoals num_goals="5" input_goals="{goals}" output_goals="{planning_goals}"/>
+                    <!-- It's for checking purpose if planning goals is not empty. If it's empty then this sequence should be repeated-->
+                    <ComputePathThroughPoses goals="{planning_goals}" path="{path}"
+                                    planner_id="{selected_planner}"
+                                    error_code_id="{compute_path_error_code}"
+                                    error_msg="{compute_path_error_msg}"/>
+                    <PublishGoals input_goals="{planning_goals}" topic_name= "truncated_goals"/>               
+                  </Sequence>
+                </RetryUntilSuccessful>
+              <!-- <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "100" cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+              <ComputePathThroughPoses goals="{goals}" path="{path}"
+                                      planner_id="{selected_planner}"
+                                      error_code_id="{compute_path_error_code}"
+                                      error_msg="{compute_path_error_msg}"/>  -->
+              <!-- <ConcatenatePaths input_path1="{path}" input_path2="{avoid_path}" output_path="{path}"/> -->
+            </Sequence>
+          </Fallback>
+        </ForceFailure>
+      </RetryUntilSuccessful>
+
+
+
+
+
+      <!-- If all goals has been removed then it will return failure and the procedure will be repeated-->
+      <!-- <ReactiveSequence name="MonitorAndFollowPath">
+      <RetryUntilSuccessful num_attempts="1000">
+        <Inverter>
+          <SequenceWithMemory name="CancelingControlAndWait">
+            <Inverter>
+              <isCollisionFree nav_goal="{goals}" cost_threshold="100.0" radius="1.5"/>
+            </Inverter>
+            <Inverter>
+              <IsPathValid path="{path}"/>
+            </Inverter>
+            <CancelControl name="ControlCancel"/>
+            <Wait wait_duration="3"/>
+            <RetryUntilSuccessful num_attempts="1000"> 
+              <Sequence>
+                <GetNextFewGoals num_goals="5" input_goals="{goal_poses}" output_goals="{planning_goals}"/>
+                <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "5" cost_threshold="254.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+                <GetNextFewGoals num_goals="1" input_goals="{planning_goals}" output_goals="{test_goal}"/>
+              </Sequence>
+            </RetryUntilSuccessful>
+            <ComputePathThroughPoses goals="{planning_goals}" path="{avoid_path}"
+                                planner_id="{selected_planner}"
+                                error_code_id="{compute_path_error_code}"
+                                error_msg="{compute_path_error_msg}"/>
+            <ConcatenatePaths input_path1="{path}" input_path2="{avoid_path}" output_path="{path}"/>
+          </SequenceWithMemory>
+        </Inverter>
+      </RetryUntilSuccessful>
+      <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}"/>
+    </ReactiveSequence>  -->
+
+      </PipelineSequence>
+    </Sequence>
+  </BehaviorTree>
+</root>

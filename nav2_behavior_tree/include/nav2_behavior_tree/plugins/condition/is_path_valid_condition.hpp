@@ -73,7 +73,7 @@ public:
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Path to Check"),
       BT::InputPort<std::chrono::milliseconds>("server_timeout"),
-      BT::InputPort<unsigned int>("max_cost", 253, "Maximum cost of the path"),
+      BT::InputPort<unsigned int>("max_cost", 254, "Maximum cost of the path"),
       BT::InputPort<bool>(
           "consider_unknown_as_obstacle", false,
           "Whether to consider unknown cost as obstacle")

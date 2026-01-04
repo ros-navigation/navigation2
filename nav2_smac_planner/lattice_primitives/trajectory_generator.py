@@ -15,7 +15,7 @@
 import logging
 from typing import Any, List, Tuple, TypedDict, Union
 
-from nav2_smac_planner.lattice_primitives.trajectory import (FloatNDArray, Path, Trajectory,
+from lattice_primitives.trajectory import (FloatNDArray, Path, Trajectory,
                                                              TrajectoryFloat, TrajectoryParameters)
 import numpy as np
 

@@ -89,6 +89,7 @@ void ObstacleLayer::onInitialize()
   declareParameter("max_obstacle_height", rclcpp::ParameterValue(2.0));
   declareParameter("combination_method", rclcpp::ParameterValue(1));
   declareParameter("observation_sources", rclcpp::ParameterValue(std::string("")));
+  declareParameter("footprint_clearing_padding", rclcpp::ParameterValue(0.0));
 
   auto node = node_.lock();
   if (!node) {
@@ -97,6 +98,7 @@ void ObstacleLayer::onInitialize()
 
   node->get_parameter(name_ + "." + "enabled", enabled_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
+  node->get_parameter(name_ + "." + "footprint_clearing_padding", footprint_clearing_padding_);
   node->get_parameter(name_ + "." + "min_obstacle_height", min_obstacle_height_);
   node->get_parameter(name_ + "." + "max_obstacle_height", max_obstacle_height_);
   node->get_parameter("track_unknown_space", track_unknown_space);
@@ -587,7 +589,14 @@ ObstacleLayer::updateFootprint(
   double * max_y)
 {
   if (!footprint_clearing_enabled_) {return;}
-  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+  
+  // Get the base footprint and apply padding before transformation
+  std::vector<geometry_msgs::msg::Point> padded_footprint = getFootprint();
+  if (footprint_clearing_padding_ > 0.0) {
+    padFootprint(padded_footprint, footprint_clearing_padding_);
+  }
+  // Transform the padded footprint to the robot's current pose
+  transformFootprint(robot_x, robot_y, robot_yaw, padded_footprint, transformed_footprint_);
 
   for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
     touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);

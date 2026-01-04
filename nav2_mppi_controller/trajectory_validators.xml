@@ -3,5 +3,12 @@
     <class name="mppi::DefaultOptimalTrajectoryValidator" type="mppi::OptimalTrajectoryValidator" base_class_type="mppi::OptimalTrajectoryValidator">
       <description>Default trajectory validator for MPPI controller</description>
     </class>
+
+    <class name="mppi::AutoFixingTrajectoryValidator"
+           type="mppi::AutoFixingTrajectoryValidator"
+           base_class_type="mppi::OptimalTrajectoryValidator">
+      <description>Trajectory validator with automatic collision repair before rejection.</description>
+    </class>
+
   </library>
 </class_libraries>

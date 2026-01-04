@@ -15,7 +15,7 @@
 from dataclasses import dataclass
 from typing import Any, Union
 
-from nav2_smac_planner.lattice_primitives.helper import angle_difference, normalize_angle
+from lattice_primitives.helper import angle_difference, normalize_angle
 import numpy as np
 from numpy.typing import NDArray
 

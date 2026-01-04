@@ -141,6 +141,12 @@ void ObstaclesCritic::score(CriticData & data)
   const unsigned int batch_size = data.trajectories.x.rows();
   bool all_trajectories_collide = true;
 
+    // Initialize trajectories collision tracking
+  if (!data.trajectories_in_collision) {
+    data.trajectories_in_collision = std::vector<bool>(batch_size, false);
+  }
+
+
   for(unsigned int i = 0; i != batch_size; i++) {
     bool trajectory_collide = false;
     float traj_cost = 0.0f;
@@ -177,6 +183,7 @@ void ObstaclesCritic::score(CriticData & data)
     }
 
     if (!trajectory_collide) {all_trajectories_collide = false;}
+    (*data.trajectories_in_collision)[i] = trajectory_collide;
     raw_cost(i) = trajectory_collide ? collision_cost_ : traj_cost;
   }
 

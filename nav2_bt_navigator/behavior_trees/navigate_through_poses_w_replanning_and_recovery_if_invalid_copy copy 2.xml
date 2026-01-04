@@ -1,0 +1,134 @@
+
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz through an array of poses continuously
+   and it also has recovery actions specific to planning / control as well as general system issues.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+
+    <Sequence>
+      <RecoveryNode number_of_retries="1000000" name="ComputePathRecovery">
+        <Sequence name="ComputePathSequence">
+          <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+          <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+          <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/>
+          <SetBlackboard output_key="obstacle_ahead" value="false"/>
+          <GetCurrentPose current_pose="{current_pose}"/>
+          <SetBlackboard output_key="last_stop_pose" value="{current_pose}"/>
+          <SetBlackboard output_key="is_near_last_stop" value="false"/>
+        </Sequence>
+        <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "6" 
+                      cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" 
+                      input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+      </RecoveryNode>
+
+
+      <RetryUntilSuccessful num_attempts="6">
+        <Sequence>
+          <PipelineSequence name="NavigateWithReplanning">
+            <RateController hz="2.0">
+            <Fallback> 
+                <ReactiveSequence>
+                    <Sequence>
+                      <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "10" radius="0.5" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/>
+                      <!-- <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "6" 
+                      cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" 
+                      input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" /> -->
+                      <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+                      <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                      <!-- <Inverter>
+                        <isCollisionFree nav_goal = "{last_removed_goal}" cost_threshold="100.0" radius="1.5"/>
+                      </Inverter> -->
+                    </Sequence>
+                    
+                    <Sequence>
+                      <TruncatePathLocal input_path="{path}" output_path="{path_local}" distance_forward="3.5" distance_backward="0.0" robot_frame="base_link"/>
+                      <GetPoseFromPath path="{path_local}" index="-1" pose="{last_path_point}"/>
+                      <!-- <GetMiddlePoseFromPath path="{path}" pose="{middle_path_point}"/> -->
+                      <Inverter>
+                          <!-- It shoult allow for replanning if close to the (truncated) path end-->
+                          <!-- Distance threshold to last point is set from nav2 param goal_reached_tol -->
+                          <GoalReached goal="{last_path_point}" robot_base_frame="base_link"/> 
+
+                      </Inverter>
+                    </Sequence>
+                    <IsPathValid path="{path}" max_cost="254"/>
+                </ReactiveSequence>
+                <Sequence>
+                  <RecoveryNode number_of_retries="1000000" name="ComputePathRecovery">
+                      <Sequence>
+                          <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "10" radius="0.5" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/>
+                          <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+                          <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                          <!-- isCollisionFree is optional here because ComputePathThroughPoses-->
+                          <isCollisionFree nav_goal = "{goals}" cost_threshold="100.0" radius="1.5"/>
+                          <ComputePathThroughPoses goals="{truncated_goals}" path="{path}" planner_id="GridBased"/>
+                          <SetBlackboard output_key="obstacle_ahead" value="false"/>
+                      </Sequence>
+                      <Sequence>
+                        <SetBlackboard output_key="obstacle_ahead" value="true"/>
+                        <Delay delay_msec="100">
+                          <!-- Add delay to allow MonitorAndFollowPath catch obstacle_ahead -->
+                            <AlwaysSuccess/>
+                        </Delay>
+                        <!-- Remove AFTER WAITING or immediately if pose is close -->
+                        <!-- <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "10" radius="0.5" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/> -->
+                        <!-- <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "6" 
+                      cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" 
+                      input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" /> -->
+                        <!-- <RemoveNextGoal input_goals="{goals}" output_goals="{goals}"/> -->
+                        <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "10" radius="0.5" input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}"/>
+                        <GetNextFewGoals num_goals="6" input_goals="{goals}" output_goals="{truncated_goals}"/>
+                        <PublishGoals input_goals="{truncated_goals}" topic_name= "truncated_path"/>
+                      </Sequence>
+                  </RecoveryNode>
+                </Sequence>
+            </Fallback>
+            </RateController>
+
+            <ReactiveSequence name="MonitorAndFollowPath">
+              <RetryUntilSuccessful num_attempts="1000">
+                <Inverter>
+                  <SequenceWithMemory name="CancelingControlAndWait">
+                    <!-- <isObstacleApproaching approaching_obstacles_topic="/dynamic_obstacles/approaching_flag"/> -->
+                    <ScriptCondition code="obstacle_ahead == true"/>
+                    <!-- <GetCurrentPose current_pose="{current_pose}"/> -->
+                    <Fallback name="WaitIfFarFromLastWaitingPose">
+                      <!-- Przerobić ArePosesNear tak, aby mierzona byla dlugosc sciezki a nie odleglosc euklidesowa -->
+                      <!-- <ArePosesNear ref_pose="{last_stop_pose}" target_pose="{current_pose}" tolerance="1.5"/> -->
+                      <ScriptCondition code="is_near_last_stop == true"/>
+                      <Sequence>
+                        <CancelControl name="ControlCancel"/>
+                        <Wait wait_duration="3"/>
+                        <GetCurrentPose current_pose="{current_pose}"/>
+                        <SetBlackboard output_key="last_stop_pose" value="{current_pose}"/>
+                        <SetBlackboard output_key="is_near_last_stop" value="true"/>
+                      </Sequence>
+                    </Fallback>
+                    <RemoveInCollisionGoals input_goals="{goals}" output_goals="{goals}" nb_goals_to_consider = "6" 
+                      cost_threshold="253.0" use_footprint="true" service_name="/global_costmap/get_cost_global_costmap" 
+                      input_waypoint_statuses="{waypoint_statuses}" output_waypoint_statuses="{waypoint_statuses}" />
+                  </SequenceWithMemory>
+                </Inverter>
+              </RetryUntilSuccessful>
+              <!-- <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="path_follow_goal_checker"/> -->
+              <ForceSuccess>
+                <Sequence>
+                  <GetCurrentPose current_pose="{current_pose}"/>
+                  <Inverter>
+                    <ArePosesNear ref_pose="{last_stop_pose}" target_pose="{current_pose}" tolerance="1.5"/>
+                  </Inverter>
+                  <SetBlackboard output_key="is_near_last_stop" value="false"/>
+                </Sequence>
+              </ForceSuccess> 
+              <FollowPath path="{path}"
+                            controller_id="{selected_controller}"
+                            error_code_id="{follow_path_error_code}"/>
+            </ReactiveSequence>  
+
+          </PipelineSequence>
+        </Sequence>
+      </RetryUntilSuccessful>
+    </Sequence>
+  </BehaviorTree>
+</root>

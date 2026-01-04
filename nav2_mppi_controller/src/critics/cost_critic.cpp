@@ -85,7 +85,7 @@ float CostCritic::findCircumscribedCost(
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap)
 {
   double result = -1.0;
-  const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius();
+  const double circum_radius = costmap->getLayeredCostmap()->getCircumscribedRadius() /*+ 0.2*/;
   if (static_cast<float>(circum_radius) == circumscribed_radius_) {
     // early return if footprint size is unchanged
     return circumscribed_cost_;
@@ -133,6 +133,9 @@ void CostCritic::score(CriticData & data)
     return;
   }
 
+  static bool s_footprint_active = false;
+  bool any_use_footprint_this_tick = false;
+
   // Setup cost information for various parts of the critic
   is_tracking_unknown_ = costmap_ros_->getLayeredCostmap()->isTrackingUnknown();
   auto * costmap = collision_checker_.getCostmap();
@@ -161,6 +164,11 @@ void CostCritic::score(CriticData & data)
   int strided_traj_rows = data.trajectories.x.rows();
   int outer_stride = strided_traj_rows * trajectory_point_step_;
 
+    // Initialize trajectories collision tracking
+  if (!data.trajectories_in_collision) {
+    data.trajectories_in_collision = std::vector<bool>(strided_traj_rows, false);
+  }
+
   const auto traj_x = Eigen::Map<const Eigen::ArrayXXf, 0,
       Eigen::Stride<-1, -1>>(data.trajectories.x.data(), strided_traj_rows, strided_traj_cols,
       Eigen::Stride<-1, -1>(outer_stride, 1));
@@ -185,7 +193,7 @@ void CostCritic::score(CriticData & data)
       // The footprintCostAtPose will always return "INSCRIBED" if footprint is over it
       // So the center point has more information than the footprint
       if (!worldToMapFloat(Tx, Ty, x_i, y_i)) {
-        pose_cost = 255.0f;  // NO_INFORMATION in float
+        pose_cost = 0.0f;  // NO_INFORMATION in float
       } else {
         pose_cost = static_cast<float>(costmap->getCost(getIndex(x_i, y_i)));
         if (pose_cost < 1.0f) {
@@ -193,7 +201,36 @@ void CostCritic::score(CriticData & data)
         }
       }
 
-      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+      float cost_for_scoring = pose_cost;
+      bool use_footprint_cost = consider_footprint_ &&
+        (pose_cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f);
+      any_use_footprint_this_tick = any_use_footprint_this_tick || use_footprint_cost;
+
+      if (use_footprint_cost) {
+        cost_for_scoring = static_cast<float>(collision_checker_.footprintCostAtPose(
+            static_cast<double>(Tx), static_cast<double>(Ty), static_cast<double>(traj_yaw(i, j)),
+            costmap_ros_->getRobotFootprint()));
+      }
+
+      // Check for collision based on the appropriate cost
+      bool in_collision = false;
+
+      switch (static_cast<unsigned char>(cost_for_scoring)) {
+        case (nav2_costmap_2d::LETHAL_OBSTACLE):
+          in_collision = true;
+          break;
+        case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
+          in_collision = use_footprint_cost ? false : true;
+          break;
+        case (nav2_costmap_2d::NO_INFORMATION):
+          in_collision = false;
+          break;
+        default:
+          in_collision = false;
+      }
+
+
+      if (in_collision) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
         break;
@@ -202,13 +239,14 @@ void CostCritic::score(CriticData & data)
       // Let near-collision trajectory points be punished severely
       // Note that we collision check based on the footprint actual,
       // but score based on the center-point cost regardless
-      if (pose_cost >= static_cast<float>(near_collision_cost_)) {
+      if (cost_for_scoring >= near_collision_cost_ && !near_goal) {
         traj_cost += critical_cost_;
       } else if (!near_goal) {  // Generally prefer trajectories further from obstacles
-        traj_cost += pose_cost;
+        traj_cost += cost_for_scoring;
       }
     }
 
+    (*data.trajectories_in_collision)[i] = trajectory_collide;
     all_trajectories_collide &= trajectory_collide;
   }
 
@@ -218,6 +256,18 @@ void CostCritic::score(CriticData & data)
   } else {
     data.costs += repulsive_cost * (weight_ / static_cast<float>(strided_traj_cols));
   }
+
+  if (any_use_footprint_this_tick != s_footprint_active) { 
+    static constexpr const char* RESET = "\033[0m";
+    static constexpr const char* GREEN = "\033[32;1m";
+    if (any_use_footprint_this_tick) { 
+      RCLCPP_INFO(logger_, "%s[CostCritic] TURN ON FOOTPRINT COST%s",GREEN, RESET); 
+    } else { 
+      RCLCPP_INFO(logger_, "%s[CostCritic] TURN OFF FOOTPRINT COST%s",GREEN, RESET); 
+    } 
+    s_footprint_active = any_use_footprint_this_tick; 
+  }
+  
 
   data.fail_flag = all_trajectories_collide;
 }

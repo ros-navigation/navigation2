@@ -31,7 +31,7 @@ from nav2_common.launch import LaunchConfigAsBool
 # Define local map types
 MAP_POSES_DICT = {
     'depot': {
-        'x': -8.00, 'y': 0.00, 'z': 0.01,
+        'x': -7.54, 'y': -0.3, 'z': 0.01,
         'R': 0.00, 'P': 0.00, 'Y': 0.00
     },
     'warehouse': {

@@ -139,6 +139,7 @@ StaticLayer::getParameters()
   declareParameter("map_topic", rclcpp::ParameterValue("map"));
   declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
   declareParameter("restore_cleared_footprint", rclcpp::ParameterValue(true));
+  declareParameter("footprint_clearing_padding", rclcpp::ParameterValue(0.0));
 
   auto node = node_.lock();
   if (!node) {
@@ -149,6 +150,7 @@ StaticLayer::getParameters()
   node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
   node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
   node->get_parameter(name_ + "." + "restore_cleared_footprint", restore_cleared_footprint_);
+  node->get_parameter(name_ + "." + "footprint_clearing_padding", footprint_clearing_padding_);
   node->get_parameter(name_ + "." + "map_topic", map_topic_);
   map_topic_ = joinWithParentNamespace(map_topic_);
   node->get_parameter(
@@ -386,8 +388,13 @@ StaticLayer::updateFootprint(
   double * max_y)
 {
   if (!footprint_clearing_enabled_) {return;}
-
-  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+  // Get the base footprint and apply padding before transformation
+  std::vector<geometry_msgs::msg::Point> padded_footprint = getFootprint();
+  if (footprint_clearing_padding_ > 0.0) {
+    padFootprint(padded_footprint, footprint_clearing_padding_);
+  }
+  // Transform the padded footprint to the robot's current pose
+  transformFootprint(robot_x, robot_y, robot_yaw, padded_footprint, transformed_footprint_);
 
   for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
     touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);
@@ -511,6 +518,8 @@ StaticLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "transform_tolerance") {
         transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
+      } else if (param_name == name_ + "." + "footprint_clearing_padding") {
+        footprint_clearing_padding_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {

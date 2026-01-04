@@ -319,6 +319,7 @@ void DockingServer::dockRobot()
         // Approach the dock using control law
         if (approachDock(dock, dock_pose, dock_backward)) {
           // We are docked, wait for charging to begin
+          publishZeroVelocity();
           RCLCPP_INFO(
             get_logger(), "Made contact with dock, waiting for charge to start (if applicable).");
           if (waitForCharge(dock)) {
