@@ -242,6 +242,57 @@ TEST(CriticTests, GoalAngleCritic)
   EXPECT_NEAR(costs(0), 9.42, 0.02);  // (3.14 - 0.0) * 3.0 weight
 }
 
+TEST(CriticTests, GoalAngleSymmetricCritic)
+{
+  // Standard preamble
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", "dummy_costmap", true);
+  ParametersHandler param_handler(node);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Initialization testing
+
+  // Make sure initializes correctly
+  auto getParam = param_handler.getParamGetter("critic");
+  bool symmetric_yaw_tolerance = true;
+  getParam(symmetric_yaw_tolerance, "symmetric_yaw_tolerance", true);
+  GoalAngleCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // Scoring testing
+
+  // provide state poses and path too far from `threshold_to_consider` to consider
+  state.pose.pose.position.x = 9.7;
+  path.reset(10);
+  path.x(9) = 10.0;
+  path.y(9) = 0.0;
+  path.yaws(9) = 3.14;
+  goal.position.x = 10.0;
+  critic.score(data);
+  EXPECT_GT(xt::sum(costs, immediate)(), 0);
+  EXPECT_NEAR(costs(0), 0, 0.02);  // Should be zero cost due to symmetry
+
+  path.yaws(9) = 0.0;
+  critic.score(data);
+  EXPECT_NEAR(costs(0), 0, 0.02);  // (0.0 - 0.0) * 3.0 weight
+}
+
 TEST(CriticTests, GoalCritic)
 {
   // Standard preamble
