@@ -17,6 +17,7 @@ import argparse
 import math
 import sys
 import time
+from typing import Any
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
@@ -263,11 +264,14 @@ class RouteTester(Node):
         while progressing:
             rclpy.spin_until_future_complete(self, get_result_future, timeout_sec=0.10)
             if get_result_future.result() is not None:
-                status = get_result_future.result().status  # type: ignore[union-attr]
-                if status == GoalStatus.STATUS_SUCCEEDED:
+                result_status = get_result_future.result().status  # type: ignore[union-attr]
+                if result_status == GoalStatus.STATUS_SUCCEEDED:
                     progressing = False
-                elif status == GoalStatus.STATUS_CANCELED or status == GoalStatus.STATUS_ABORTED:
-                    self.info_msg(f'Goal failed with status code: {status}')
+                elif (
+                    result_status == GoalStatus.STATUS_CANCELED
+                    or result_status == GoalStatus.STATUS_ABORTED
+                ):
+                    self.info_msg(f'Goal failed with status code: {result_status}')
                     return False
 
             # Else, processing. Check feedback
@@ -299,6 +303,7 @@ class RouteTester(Node):
         if int(last_feedback_msg.current_edge_id) != 0:
             self.error_msg('Terminal feedback state of edges is not correct!')
             return False
+        assert isinstance(last_feedback_msg.route.nodes, list)
         if int(last_feedback_msg.route.nodes[-1].nodeid) != 13:
             self.error_msg('Final route node is not correct!')
             return False
@@ -317,7 +322,7 @@ class RouteTester(Node):
         return True
 
     def feedback_callback(
-            self, feedback_msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
+            self, feedback_msg: Any) -> None:
         self.feedback_msgs.append(feedback_msg.feedback)
 
     def distanceFromGoal(self) -> float:

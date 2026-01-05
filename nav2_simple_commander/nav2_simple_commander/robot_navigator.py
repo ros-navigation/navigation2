@@ -24,11 +24,11 @@ from builtin_interfaces.msg import Duration
 from geographic_msgs.msg import GeoPose
 from geometry_msgs.msg import Point, PoseStamped, PoseWithCovarianceStamped
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import (AssistedTeleop, BackUp,  # type: ignore[attr-defined]
-                              ComputeAndTrackRoute, ComputePathThroughPoses, ComputePathToPose,
-                              ComputeRoute, DockRobot, DriveOnHeading, FollowGPSWaypoints,
-                              FollowObject, FollowPath, FollowWaypoints, NavigateThroughPoses,
-                              NavigateToPose, SmoothPath, Spin, UndockRobot)
+from nav2_msgs.action import (AssistedTeleop, BackUp, ComputeAndTrackRoute,
+                              ComputePathThroughPoses, ComputePathToPose, ComputeRoute, DockRobot,
+                              DriveOnHeading, FollowGPSWaypoints, FollowObject, FollowPath,
+                              FollowWaypoints, NavigateThroughPoses, NavigateToPose, SmoothPath,
+                              Spin, UndockRobot)
 from nav2_msgs.msg import Costmap, Route
 from nav2_msgs.srv import (ClearCostmapAroundPose, ClearCostmapAroundRobot,
                            ClearCostmapExceptRegion, ClearEntireCostmap, GetCostmap, LoadMap,
@@ -842,6 +842,7 @@ class BasicNavigator(Node):
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
+            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -904,6 +905,7 @@ class BasicNavigator(Node):
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
+            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -1070,6 +1072,7 @@ class BasicNavigator(Node):
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
+            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -1338,7 +1341,7 @@ class BasicNavigator(Node):
         return
 
     def _routeFeedbackCallback(
-            self, msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
+            self, msg: Any) -> None:
         self.debug('Received route action feedback message')
         self.route_feedback.append(msg.feedback)
         return

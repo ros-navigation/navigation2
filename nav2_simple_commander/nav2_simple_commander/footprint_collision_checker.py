@@ -66,6 +66,7 @@ class FootprintCollisionChecker:
         x1 = 0.0
         y1 = 0.0
 
+        assert isinstance(footprint.points, list)
         x0, y0 = self.worldToMapValidated(footprint.points[0].x, footprint.points[0].y)
 
         if x0 is None or y0 is None:
@@ -209,7 +210,8 @@ class FootprintCollisionChecker:
         cos_th = cos(theta)
         sin_th = sin(theta)
         oriented_footprint = Polygon()
-
+        assert isinstance(footprint.points, list)
+        assert isinstance(oriented_footprint.points, list)
         for i in range(len(footprint.points)):
             new_pt = Point32()
             new_pt.x = x + (

@@ -15,6 +15,7 @@
 from math import acos, cos, sin
 import os
 import time
+from typing import Any
 import unittest
 
 from action_msgs.msg import GoalStatus
@@ -200,7 +201,7 @@ class TestDockingServer(unittest.TestCase):
         odom.twist.twist = self.command
         self.odom_pub.publish(odom)
 
-    def action_feedback_callback(self, msg: DockRobot.Impl.FeedbackMessage) -> None:
+    def action_feedback_callback(self, msg: Any) -> None:
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
@@ -285,6 +286,7 @@ class TestDockingServer(unittest.TestCase):
 
         # Test docking action
         self.action_result = []
+        self.undock_action_result = []
         assert self.dock_action_client.wait_for_server(timeout_sec=5.0), \
             'dock_robot service not available'
 
@@ -361,21 +363,21 @@ class TestDockingServer(unittest.TestCase):
         # Test undocking action
         self.is_charging = False
         self.undock_action_client.wait_for_server(timeout_sec=5.0)
-        goal = UndockRobot.Goal()
-        goal.dock_type = 'test_dock_plugin'
-        future = self.undock_action_client.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self.node, future)
-        self.goal_handle = future.result()
-        assert self.goal_handle is not None, 'goal_handle should not be None'
-        assert self.goal_handle.accepted, 'goal_handle not accepted'
-        result_future = self.goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self.node, result_future)
-        self.action_result.append(result_future.result())
+        undock_goal = UndockRobot.Goal()
+        undock_goal.dock_type = 'test_dock_plugin'
+        undock_future = self.undock_action_client.send_goal_async(undock_goal)
+        rclpy.spin_until_future_complete(self.node, undock_future)
+        self.undock_goal_handle = undock_future.result()
+        assert self.undock_goal_handle is not None, 'goal_handle should not be None'
+        assert self.undock_goal_handle.accepted, 'goal_handle not accepted'
+        undock_result_future = self.undock_goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self.node, undock_result_future)
+        self.undock_action_result.append(undock_result_future.result())
 
-        self.assertIsNotNone(self.action_result[3])
-        if self.action_result[3] is not None:
-            self.assertEqual(self.action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
-            self.assertTrue(self.action_result[3].result.success)
+        self.assertIsNotNone(self.undock_action_result[3])
+        if self.undock_action_result[3] is not None:
+            self.assertEqual(self.undock_action_result[3].status, GoalStatus.STATUS_SUCCEEDED)
+            self.assertTrue(self.undock_action_result[3].result.success)
 
 
 @launch_testing.post_shutdown_test()  # type: ignore[no-untyped-call]

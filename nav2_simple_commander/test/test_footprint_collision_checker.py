@@ -105,6 +105,7 @@ class TestFootprintCollisionChecker(unittest.TestCase):
         fcc_.setCostmap(costmap_)
         # Create square footprint 1m x 1m
         footprint = Polygon()
+        assert isinstance(footprint.points, list)
         point = Point32()
         point.x = 0.0
         point.y = 0.0

@@ -18,12 +18,13 @@ import math
 import os
 import pickle
 from random import randint, seed, uniform
-from typing import Optional
+from typing import Any
 
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import PoseStamped
-from nav2_msgs.action import ComputePathToPose, SmoothPath
+from nav2_msgs.action import ComputePathToPose
 from nav2_simple_commander.robot_navigator import BasicNavigator
+from nav_msgs.msg import Path
 import numpy as np
 from numpy.typing import NDArray
 import rclpy
@@ -34,17 +35,20 @@ from transforms3d.euler import euler2quat
 
 def getPlannerResults(
         navigator: BasicNavigator, initial_pose: PoseStamped,
-        goal_pose: PoseStamped, planner: str) -> Optional[ComputePathToPose.Result]:
+        goal_pose: PoseStamped, planner: str) -> Any:
     result = navigator._getPathImpl(initial_pose, goal_pose, planner, use_start=True)
     if result is None or result.error_code != 0:
         print(planner, 'planner failed to produce the path')
+        return None
+    if not isinstance(result, ComputePathToPose.Result):
+        print(planner, 'planner returned invalid result type')
         return None
     return result
 
 
 def getSmootherResults(
-        navigator: BasicNavigator, path: PoseStamped,
-        smoothers: list[str]) -> Optional[list[SmoothPath.Result]]:
+        navigator: BasicNavigator, path: Path,
+        smoothers: list[str]) -> Any:
     smoothed_results = []
     for smoother in smoothers:
         smoothed_result = navigator._smoothPathImpl(path, smoother)
