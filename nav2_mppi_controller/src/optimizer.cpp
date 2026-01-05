@@ -126,6 +126,8 @@ void Optimizer::getParams()
               param_name.c_str());
             return;
           }
+          // Explicitly mark as successful and apply the update
+          result.successful = true;
           setting = static_cast<float>(param.as_double());
         });
     };
