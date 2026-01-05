@@ -11,4 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
+      - name: Create python symlink
+        run: |
+          sudo ln -sf /usr/bin/python3 /usr/bin/python
       - uses: pre-commit/action@v3.0.1
