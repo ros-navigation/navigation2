@@ -11,7 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
-      - name: Create python symlink
+      - name: Install pre-commit
+        shell: bash
         run: |
-          sudo ln -sf /usr/bin/python3 /usr/bin/python
-      - uses: pre-commit/action@v3.0.1
+          sudo apt-get install python3-venv
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python3 -m pip install pre-commit
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: pre-commit run --show-diff-on-failure --color=always --all-files
+        shell: bash
