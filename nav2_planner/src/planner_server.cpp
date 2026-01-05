@@ -762,7 +762,7 @@ void PlannerServer::isPathValid(
         "Both radius (%.2f) and footprint specified. Cannot use both. "
         "Please specify only one.",
         request->radius);
-      response->is_valid = false;
+      response->success = false;
       return;
     }
 
@@ -780,7 +780,7 @@ void PlannerServer::isPathValid(
           get_logger(),
           "Invalid footprint string '%s'. Cannot validate path.",
           request->footprint.c_str());
-        response->is_valid = false;
+        response->success = false;
         return;
       }
       use_radius = false;

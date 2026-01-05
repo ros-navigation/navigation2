@@ -73,6 +73,15 @@ BT::NodeStatus IsPathValidCondition::tick()
   request->footprint = footprint_;
   request->radius = radius_;
   auto response = client_->invoke(request, server_timeout_);
+
+  // Check if validation was successful
+  if (!response->success) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "IsPathValid service failed to validate path");
+    return BT::NodeStatus::FAILURE;
+  }
+
   if (response->is_valid) {
     return BT::NodeStatus::SUCCESS;
   }
