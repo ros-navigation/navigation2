@@ -8,8 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ros-navigation/navigation2:main
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
