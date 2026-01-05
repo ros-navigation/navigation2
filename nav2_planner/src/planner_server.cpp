@@ -776,15 +776,14 @@ void PlannerServer::isPathValid(
     } else if (!request->footprint.empty()) {
       // Custom footprint provided
       if (!nav2_costmap_2d::makeFootprintFromString(request->footprint, footprint)) {
-        RCLCPP_WARN(
+        RCLCPP_ERROR(
           get_logger(),
-          "Invalid footprint string '%s'. Using robot's default footprint.",
+          "Invalid footprint string '%s'. Cannot validate path.",
           request->footprint.c_str());
-        footprint = costmap_ros_->getRobotFootprint();
-        use_radius = false;
-      } else {
-        use_radius = false;
+        response->is_valid = false;
+        return;
       }
+      use_radius = false;
     } else if (!use_radius) {
       // Use robot's default footprint
       footprint = costmap_ros_->getRobotFootprint();
