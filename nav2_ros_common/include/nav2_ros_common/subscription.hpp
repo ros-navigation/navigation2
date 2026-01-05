@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Open Navigation LLC
+// Copyright (c) 2026 Open Navigation LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,31 +18,22 @@
 #include <atomic>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/any_subscription_callback.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/managed_entity.hpp"
 
 namespace nav2
 {
 
-/**
- * @class nav2::Subscription
- * @brief A lifecycle-enabled ROS 2 subscription for Nav2
- *
- * - Implements lifecycle transitions via SimpleManagedEntity
- * - Gates user callbacks using is_activated()
- * - For NON-lifecycle nodes (plain rclcpp::Node), it auto-activates so behavior matches old code.
- */
 template<typename MessageT>
 class Subscription : public rclcpp_lifecycle::SimpleManagedEntity
 {
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(Subscription)
 
-  // Single unified constructor: (topic, qos, callback, options)
   template<typename NodeT, typename CallbackT>
   Subscription(
     const std::shared_ptr<NodeT> & node,
@@ -52,7 +43,8 @@ public:
     const rclcpp::SubscriptionOptions & options = rclcpp::SubscriptionOptions{})
   : topic_name_(topic_name),
     logger_(node->get_logger()),
-    should_log_(true)
+    should_log_(true),
+    any_cb_(std::allocator<void>{})
   {
     init(node, qos, std::forward<CallbackT>(user_callback), options);
   }
@@ -76,78 +68,34 @@ private:
     CallbackT && user_callback,
     const rclcpp::SubscriptionOptions & options)
   {
-    auto wrapped_cb = make_wrapped_callback(std::forward<CallbackT>(user_callback));
-    auto rcl_node = std::static_pointer_cast<rclcpp::Node>(node);
-    sub_ = rcl_node->template create_subscription<MessageT>(
-      topic_name_, qos, std::move(wrapped_cb), options);
+    any_cb_.set(std::forward<CallbackT>(user_callback));
 
-    // Auto-activate for non-lifecycle nodes to preserve old behavior
+    auto wrapped_cb =
+      [this](typename MessageT::ConstSharedPtr msg, const rclcpp::MessageInfo & info)
+      {
+        if (!this->is_activated()) {
+          log_subscription_not_enabled_once();
+          return;
+        }
+        should_log_.store(true);
+        any_cb_.dispatch_intra_process(msg, info);
+      };
+
+    auto params_if = node->get_node_parameters_interface();
+    auto topics_if = node->get_node_topics_interface();
+
+    sub_ = rclcpp::create_subscription<MessageT>(
+      params_if,
+      topics_if,
+      topic_name_,
+      qos,
+      std::move(wrapped_cb),
+      options);
+
+    // Preserve old behavior for non-lifecycle nodes
     auto maybe_lc = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
     if (!maybe_lc) {
       this->on_activate();
-    }
-  }
-
-  template<typename CallbackU>
-  auto make_wrapped_callback(CallbackU && user_callback)
-  {
-    using CB = std::decay_t<CallbackU>;
-    using MsgUniquePtr = typename MessageT::UniquePtr;
-    using MsgSharedPtr = typename MessageT::SharedPtr;
-    using MsgConstSharedPtr = typename MessageT::ConstSharedPtr;
-    using MsgInfo = const rclcpp::MessageInfo &;
-
-    // Keep callback copiable
-    auto cb_ptr = std::make_shared<CB>(std::forward<CallbackU>(user_callback));
-
-    if constexpr (std::is_invocable_v<CB &, MsgUniquePtr>) {
-      return [this, cb_ptr](MsgUniquePtr msg) {
-               if (!this->is_activated()) {
-                 log_subscription_not_enabled_once();
-                 return;
-               }
-               should_log_.store(true);
-               (*cb_ptr)(std::move(msg));
-             };
-    } else if constexpr (std::is_invocable_v<CB &, MsgSharedPtr>) {
-      return [this, cb_ptr](MsgSharedPtr msg) {
-               if (!this->is_activated()) {
-                 log_subscription_not_enabled_once();
-                 return;
-               }
-               should_log_.store(true);
-               (*cb_ptr)(std::move(msg));
-             };
-    } else if constexpr (std::is_invocable_v<CB &, MsgConstSharedPtr>) {
-      return [this, cb_ptr](MsgConstSharedPtr msg) {
-               if (!this->is_activated()) {
-                 log_subscription_not_enabled_once();
-                 return;
-               }
-               should_log_.store(true);
-               (*cb_ptr)(std::move(msg));
-             };
-    } else if constexpr (std::is_invocable_v<CB &, MsgUniquePtr, MsgInfo>) {
-      return [this, cb_ptr](MsgUniquePtr msg, MsgInfo info) {
-               if (!this->is_activated()) {
-                 log_subscription_not_enabled_once();
-                 return;
-               }
-               should_log_.store(true);
-               (*cb_ptr)(std::move(msg), info);
-             };
-    } else if constexpr (std::is_invocable_v<CB &, MsgSharedPtr, MsgInfo>) {
-      return [this, cb_ptr](MsgSharedPtr msg, MsgInfo info) {
-               if (!this->is_activated()) {
-                 log_subscription_not_enabled_once();
-                 return;
-               }
-               should_log_.store(true);
-               (*cb_ptr)(std::move(msg), info);
-             };
-    } else {
-      static_assert(sizeof(CB) == 0,
-        "nav2::Subscription: unsupported callback signature for this MessageT");
     }
   }
 
@@ -166,6 +114,9 @@ private:
   std::string topic_name_;
   rclcpp::Logger logger_;
   std::atomic<bool> should_log_;
+
+  // Type-erased, “official rclcpp way” to store/dispatch callbacks
+  rclcpp::AnySubscriptionCallback<MessageT, std::allocator<void>> any_cb_;
 };
 
 }  // namespace nav2
