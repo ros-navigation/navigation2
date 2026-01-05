@@ -16,6 +16,8 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <sstream>
+#include <vector>
 
 namespace nav2_behavior_tree
 {
@@ -24,7 +26,8 @@ IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  max_cost_(254), consider_unknown_as_obstacle_(false)
+  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_(""),
+  radius_(-1.0f)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   client_ =
@@ -38,6 +41,18 @@ void IsPathValidCondition::initialize()
   getInputOrBlackboard("server_timeout", server_timeout_);
   getInput<unsigned int>("max_cost", max_cost_);
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
+  getInput<std::string>("layer_name", layer_name_);
+  getInput<std::string>("footprint", footprint_);
+  getInput<float>("radius", radius_);
+
+  // Strict mutual exclusion: cannot specify both footprint and radius
+  if (!footprint_.empty() && radius_ > 0.0f) {
+    RCLCPP_ERROR(
+      node_->get_logger(),
+      "IsPathValid: Cannot specify both 'footprint' and 'radius' parameters. "
+      "Please specify only one.");
+    throw BT::RuntimeError("Conflicting parameters: both footprint and radius specified");
+  }
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
@@ -54,10 +69,40 @@ BT::NodeStatus IsPathValidCondition::tick()
   request->path = path;
   request->max_cost = max_cost_;
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
+  request->layer_name = layer_name_;
+  request->footprint = footprint_;
+  request->radius = radius_;
   auto response = client_->invoke(request, server_timeout_);
   if (response->is_valid) {
     return BT::NodeStatus::SUCCESS;
   }
+  RCLCPP_WARN(
+    node_->get_logger(),
+    "Path is invalid according to the IsPathValid service");
+
+  // Extract collision poses based on invalid pose indices
+  std::vector<geometry_msgs::msg::PoseStamped> collision_poses;
+  if (!response->invalid_pose_indices.empty()) {
+    std::stringstream ss;
+    ss << "Path validation failed. Invalid pose indices: [";
+    for (size_t i = 0; i < response->invalid_pose_indices.size(); ++i) {
+      int32_t idx = response->invalid_pose_indices[i];
+      ss << idx;
+      if (i < response->invalid_pose_indices.size() - 1) {
+        ss << ", ";
+      }
+      // Add the collision pose if index is valid
+      if (idx >= 0 && static_cast<size_t>(idx) < path.poses.size()) {
+        collision_poses.push_back(path.poses[idx]);
+      }
+    }
+    ss << "]";
+    RCLCPP_WARN(node_->get_logger(), "%s", ss.str().c_str());
+  }
+
+  // Set collision poses output
+  setOutput("collision_poses", collision_poses);
+
   return BT::NodeStatus::FAILURE;
 }
 

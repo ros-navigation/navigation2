@@ -29,6 +29,8 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
 
 #include "nav2_planner/planner_server.hpp"
 
@@ -715,23 +717,90 @@ void PlannerServer::isPathValid(
      * and may have become occupied. The method for collision detection is based on the shape of
      * the footprint.
      */
-    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+
+    // Determine which costmap to use based on layer_name parameter
+    nav2_costmap_2d::Costmap2D * costmap_to_check = nullptr;
+
+    if (!request->layer_name.empty()) {
+      // Check a specific layer
+      auto layers = costmap_ros_->getLayeredCostmap()->getPlugins();
+      for (auto & layer : *layers) {
+        if (layer->getName() == request->layer_name) {
+          // Try to cast to CostmapLayer to get its costmap
+          auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(layer);
+          if (costmap_layer) {
+            // CostmapLayer inherits from Costmap2D, so we can use it directly
+            costmap_to_check = static_cast<nav2_costmap_2d::Costmap2D *>(costmap_layer.get());
+          }
+          break;
+        }
+      }
+
+      if (costmap_to_check == nullptr) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Requested layer '%s' not found or does not provide a costmap. "
+          "Using full costmap instead.",
+          request->layer_name.c_str());
+        costmap_to_check = costmap_;
+      }
+    } else {
+      // Use the full costmap (default behavior)
+      costmap_to_check = costmap_;
+    }
+
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_to_check->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
 
     bool use_radius = costmap_ros_->getUseRadius();
 
+    // Handle custom radius or footprint based on what's provided
+    if (request->radius > 0.0f && !request->footprint.empty()) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Both radius (%.2f) and footprint specified. Cannot use both. "
+        "Please specify only one.",
+        request->radius);
+      response->is_valid = false;
+      return;
+    }
+
+    // Determine footprint to use
+    nav2_costmap_2d::Footprint footprint;
+
+    if (request->radius > 0.0f) {
+      // Custom radius provided - create footprint from it
+      footprint = nav2_costmap_2d::makeFootprintFromRadius(request->radius);
+      use_radius = false;  // Use footprint-based collision checking
+    } else if (!request->footprint.empty()) {
+      // Custom footprint provided
+      if (!nav2_costmap_2d::makeFootprintFromString(request->footprint, footprint)) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Invalid footprint string '%s'. Using robot's default footprint.",
+          request->footprint.c_str());
+        footprint = costmap_ros_->getRobotFootprint();
+        use_radius = false;
+      } else {
+        use_radius = false;
+      }
+    } else if (!use_radius) {
+      // Use robot's default footprint
+      footprint = costmap_ros_->getRobotFootprint();
+    }
+    // If use_radius is still true, collision checking will use the costmap directly
+
     unsigned int cost = nav2_costmap_2d::FREE_SPACE;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       auto & position = request->path.poses[i].pose.position;
       if (use_radius) {
-        if (costmap_->worldToMap(position.x, position.y, mx, my)) {
-          cost = costmap_->getCost(mx, my);
+        if (costmap_to_check->worldToMap(position.x, position.y, mx, my)) {
+          cost = costmap_to_check->getCost(mx, my);
         } else {
           cost = nav2_costmap_2d::LETHAL_OBSTACLE;
         }
       } else {
-        nav2_costmap_2d::Footprint footprint = costmap_ros_->getRobotFootprint();
         auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
         cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
             position.x, position.y, theta, footprint));
@@ -748,9 +817,11 @@ void PlannerServer::isPathValid(
         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
       {
         response->is_valid = false;
+        response->invalid_pose_indices.push_back(i);
         break;
       } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
         response->is_valid = false;
+        response->invalid_pose_indices.push_back(i);
         break;
       }
     }
