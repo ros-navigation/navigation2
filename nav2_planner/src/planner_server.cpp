@@ -756,25 +756,10 @@ void PlannerServer::isPathValid(
 
     bool use_radius = costmap_ros_->getUseRadius();
 
-    // Handle custom radius or footprint based on what's provided
-    if (request->radius > 0.0f && !request->footprint.empty()) {
-      RCLCPP_ERROR(
-        get_logger(),
-        "Both radius (%.2f) and footprint specified. Cannot use both. "
-        "Please specify only one.",
-        request->radius);
-      response->success = false;
-      return;
-    }
-
     // Determine footprint to use
     nav2_costmap_2d::Footprint footprint;
 
-    if (request->radius > 0.0f) {
-      // Custom radius provided - create footprint from it
-      footprint = nav2_costmap_2d::makeFootprintFromRadius(request->radius);
-      use_radius = false;  // Use footprint-based collision checking
-    } else if (!request->footprint.empty()) {
+    if (!request->footprint.empty()) {
       // Custom footprint provided
       if (!nav2_costmap_2d::makeFootprintFromString(request->footprint, footprint)) {
         RCLCPP_ERROR(

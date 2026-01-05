@@ -85,9 +85,6 @@ public:
       BT::InputPort<std::string>(
         "footprint", "",
         "Custom footprint specification (empty = use robot footprint)"),
-      BT::InputPort<float>(
-        "radius", -1.0f,
-        "Custom radius (negative = use robot default)"),
       BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
@@ -104,7 +101,6 @@ private:
   bool consider_unknown_as_obstacle_;
   std::string layer_name_;
   std::string footprint_;
-  float radius_;
 };
 
 }  // namespace nav2_behavior_tree

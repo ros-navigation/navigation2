@@ -5,7 +5,6 @@ uint8 max_cost 254
 bool consider_unknown_as_obstacle false
 string layer_name ""
 string footprint ""
-float32 radius -1.0
 ---
 bool success
 bool is_valid

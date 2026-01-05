@@ -26,8 +26,7 @@ IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_(""),
-  radius_(-1.0f)
+  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_("")
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   client_ =
@@ -43,16 +42,6 @@ void IsPathValidCondition::initialize()
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
   getInput<std::string>("layer_name", layer_name_);
   getInput<std::string>("footprint", footprint_);
-  getInput<float>("radius", radius_);
-
-  // Strict mutual exclusion: cannot specify both footprint and radius
-  if (!footprint_.empty() && radius_ > 0.0f) {
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "IsPathValid: Cannot specify both 'footprint' and 'radius' parameters. "
-      "Please specify only one.");
-    throw BT::RuntimeError("Conflicting parameters: both footprint and radius specified");
-  }
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
@@ -71,7 +60,6 @@ BT::NodeStatus IsPathValidCondition::tick()
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
   request->layer_name = layer_name_;
   request->footprint = footprint_;
-  request->radius = radius_;
   auto response = client_->invoke(request, server_timeout_);
 
   // Check if validation was successful
