@@ -37,6 +37,7 @@
  *         David V. Lu!!
  *********************************************************************/
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 
 #include <string>
 #include <memory>
@@ -238,6 +239,11 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 
 void Costmap2DPublisher::publishCostmap()
 {
+  auto const costmap_layer = dynamic_cast<CostmapLayer *>(costmap_);
+  if (costmap_layer != nullptr && !costmap_layer->isEnabled()) {
+    return;
+  }
+
   float resolution = costmap_->getResolution();
   if (always_send_full_costmap_ || grid_resolution_ != resolution ||
     grid_width_ != costmap_->getSizeInCellsX() ||
