@@ -1,0 +1,73 @@
+// Copyright (c) 2025 Dexory
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef NAV2_CONTROLLER__PLUGINS__AXIS_GOAL_CHECKER_HPP_
+#define NAV2_CONTROLLER__PLUGINS__AXIS_GOAL_CHECKER_HPP_
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_core/goal_checker.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
+
+namespace nav2_controller
+{
+
+/**  * @class AxisGoalChecker
+  * @brief Goal Checker plugin that checks progress along the axis defined by the
+  * 2 last poses of the pathalong the axis defined by the last segment of the path to the goal.
+  *
+  * This class can be configured to allow overshoot past the goal if the is_overshoot_valid
+  *  parameter is set to true (which it is false by default).
+  */
+class AxisGoalChecker : public nav2_core::GoalChecker
+{
+public:
+  AxisGoalChecker();
+  // Standard GoalChecker Interface
+  void initialize(
+    const nav2::LifecycleNode::WeakPtr & parent,
+    const std::string & plugin_name,
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+  void reset() override;
+  bool isGoalReached(
+    const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
+    const geometry_msgs::msg::Twist & velocity,
+    const nav_msgs::msg::Path & transformed_global_plan) override;
+  bool getTolerances(
+    geometry_msgs::msg::Pose & pose_tolerance,
+    geometry_msgs::msg::Twist & vel_tolerance) override;
+
+protected:
+  double goal_tolerance_;
+  double path_length_tolerance_;
+  bool is_overshoot_valid_;
+  // Dynamic parameters handler
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::string plugin_name_;
+
+  /**
+   * @brief Callback executed when a parameter change is detected
+   * @param parameters list of changed parameters
+   */
+  rcl_interfaces::msg::SetParametersResult
+  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+};
+
+}  // namespace nav2_controller
+
+#endif  // NAV2_CONTROLLER__PLUGINS__AXIS_GOAL_CHECKER_HPP_
