@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "tf2_ros/buffer.hpp"
 
 // Tests main optimizer functions
@@ -146,6 +147,16 @@ public:
   models::ControlConstraints & getControlConstraints()
   {
     return settings_.constraints;
+  }
+
+  models::ControlConstraints & getBaseConstraints()
+  {
+    return settings_.base_constraints;
+  }
+
+  bool isSpeedLimitActiveWrapper() const
+  {
+    return isSpeedLimitActive();
   }
 
   void applyControlSequenceConstraintsWrapper()
@@ -761,6 +772,73 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
   EXPECT_LE(
     vy_delta,
     optimizer_tester.getSettings().model_dt * optimizer_tester.getControlConstraints().ay_max);
+}
+
+TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
+{
+  // This test verifies that kinematic parameters (vx_max, etc.) are rejected
+  // when a speed limit is active, but allowed when no speed limit is active.
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(30.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(1000));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(50));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(0.5));
+  node->declare_parameter("mppic.vx_min", rclcpp::ParameterValue(-0.35));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  // Use "mppic" to match the optimizer's name_ so ParametersHandler correctly routes callbacks
+  std::string name = "mppic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Start the parameter handler to enable dynamic parameter callbacks
+  param_handler.start();
+
+  // Verify initial state: no speed limit active
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Store original base_constraints value
+  float original_vx_max = optimizer_tester.getBaseConstraints().vx_max;
+  EXPECT_EQ(original_vx_max, 0.5f);
+
+  // Test 1: Dynamic parameter update SHOULD SUCCEED when no speed limit is active
+  auto result1 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 0.8));
+  EXPECT_TRUE(result1.successful);
+  // Spin to process callbacks
+  rclcpp::spin_some(node->get_node_base_interface());
+  // Verify the parameter was updated
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
+
+  // Apply a speed limit (50% reduction)
+  optimizer_tester.setSpeedLimit(50.0, true);
+  EXPECT_TRUE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Verify constraints differ from base_constraints now
+  EXPECT_NE(
+    optimizer_tester.getControlConstraints().vx_max,
+    optimizer_tester.getBaseConstraints().vx_max);
+
+  // Test 2: Dynamic parameter update SHOULD BE REJECTED when speed limit is active
+  auto result2 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
+  EXPECT_FALSE(result2.successful);
+  // Spin to process callbacks
+  rclcpp::spin_some(node->get_node_base_interface());
+  // Verify the base_constraints value was NOT updated
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
+
+  // Clear the speed limit using NO_SPEED_LIMIT constant
+  optimizer_tester.setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, false);
+  EXPECT_FALSE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // Test 3: Dynamic parameter update SHOULD SUCCEED again after clearing speed limit
+  auto result3 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
+  EXPECT_TRUE(result3.successful);
+  rclcpp::spin_some(node->get_node_base_interface());
+  EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 1.0f);
 }
 
 int main(int argc, char ** argv)
