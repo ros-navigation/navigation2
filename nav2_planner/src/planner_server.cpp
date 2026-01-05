@@ -686,6 +686,7 @@ void PlannerServer::isPathValid(
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {
+  response->success = true;
   response->is_valid = true;
 
   if (request->path.poses.empty()) {
