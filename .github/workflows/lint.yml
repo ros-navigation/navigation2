@@ -10,6 +10,8 @@ jobs:
       image: ghcr.io/ros-navigation/navigation2:main
     steps:
       - uses: actions/checkout@v6
+        with:
+          path: ${{ env.path }}
       - uses: actions/setup-python@v6
       - name: Install pre-commit
         shell: bash
@@ -24,6 +26,7 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - run: |
+          set -x
           source .venv/bin/activate
           source /opt/ros/rolling/setup.bash
           pre-commit run --show-diff-on-failure --color=always --all-files
