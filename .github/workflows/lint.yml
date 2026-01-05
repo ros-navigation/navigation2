@@ -23,5 +23,8 @@ jobs:
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - run: pre-commit run --show-diff-on-failure --color=always --all-files
+      - run: |
+          source .venv/bin/activate
+          source /opt/ros/rolling/setup.bash
+          pre-commit run --show-diff-on-failure --color=always --all-files
         shell: bash
