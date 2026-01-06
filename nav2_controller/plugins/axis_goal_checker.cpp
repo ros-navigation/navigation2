@@ -22,6 +22,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "tf2/utils.h"
 
 
 using rcl_interfaces::msg::ParameterType;
@@ -31,8 +32,8 @@ namespace nav2_controller
 {
 
 AxisGoalChecker::AxisGoalChecker()
-: goal_tolerance_(0.25),
-  path_length_tolerance_(1.0)
+: along_path_tolerance_(0.25), cross_track_tolerance_(0.25),
+  is_overshoot_valid_(false)
 {
 }
 
@@ -46,8 +47,13 @@ void AxisGoalChecker::initialize(
 
   nav2::declare_parameter_if_not_declared(
     node,
-    plugin_name + ".goal_tolerance", rclcpp::ParameterValue(0.25));
-  node->get_parameter(plugin_name + ".goal_tolerance", goal_tolerance_);
+    plugin_name + ".along_path_tolerance", rclcpp::ParameterValue(0.25));
+  node->get_parameter(plugin_name + ".along_path_tolerance", along_path_tolerance_);
+
+  nav2::declare_parameter_if_not_declared(
+    node,
+    plugin_name + ".cross_track_tolerance", rclcpp::ParameterValue(0.25));
+  node->get_parameter(plugin_name + ".cross_track_tolerance", cross_track_tolerance_);
 
   nav2::declare_parameter_if_not_declared(
     node,
@@ -104,17 +110,25 @@ bool AxisGoalChecker::isGoalReached(
       goal_pose.position.y - query_pose.position.y) *
       cos(projection_angle);
 
+    double ortho_projected_distance_to_goal = std::hypot(
+      goal_pose.position.x - query_pose.position.x,
+      goal_pose.position.y - query_pose.position.y) *
+      sin(projection_angle);
+
     if (is_overshoot_valid_) {
-      return projected_distance_to_goal < goal_tolerance_;
+      return projected_distance_to_goal < along_path_tolerance_ &&
+             fabs(ortho_projected_distance_to_goal) < cross_track_tolerance_;
     } else {
-      return fabs(projected_distance_to_goal) < goal_tolerance_;
+      return fabs(projected_distance_to_goal) < along_path_tolerance_ &&
+             fabs(ortho_projected_distance_to_goal) < cross_track_tolerance_;
     }
   } else {
-    // handle path with only 1 point, in that case reverting to single distance check
+    // handle path with only 1 point, in that case reverting to simple distance check
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    return distance_to_goal < goal_tolerance_;
+    return fabs(distance_to_goal) < along_path_tolerance_ &&
+           fabs(distance_to_goal) < cross_track_tolerance_;
   }
 }
 
@@ -124,8 +138,8 @@ bool AxisGoalChecker::getTolerances(
 {
   double invalid_field = std::numeric_limits<double>::lowest();
 
-  pose_tolerance.position.x = goal_tolerance_;
-  pose_tolerance.position.y = goal_tolerance_;
+  pose_tolerance.position.x = std::min(along_path_tolerance_, cross_track_tolerance_);
+  pose_tolerance.position.y = std::min(along_path_tolerance_, cross_track_tolerance_);
   pose_tolerance.position.z = invalid_field;
   pose_tolerance.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
@@ -152,10 +166,11 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
       continue;
     }
     if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".goal_tolerance") {
-        goal_tolerance_ = parameter.as_double();
-      } else if (name == plugin_name_ + ".path_length_tolerance") {
-        path_length_tolerance_ = parameter.as_double();
+      if (name == plugin_name_ + ".along_path_tolerance") {
+        along_path_tolerance_ = parameter.as_double();
+      }
+      if (name == plugin_name_ + ".cross_track_tolerance") {
+        cross_track_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".is_overshoot_valid") {

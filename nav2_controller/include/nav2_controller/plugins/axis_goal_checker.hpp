@@ -53,7 +53,8 @@ public:
     geometry_msgs::msg::Twist & vel_tolerance) override;
 
 protected:
-  double goal_tolerance_;
+  double along_path_tolerance_;
+  double cross_track_tolerance_;
   double path_length_tolerance_;
   bool is_overshoot_valid_;
   // Dynamic parameters handler
