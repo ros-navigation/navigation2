@@ -49,7 +49,7 @@ void DriveOnHeadingAction::initialize()
 
 void DriveOnHeadingAction::on_tick()
 {
-  if (!initalized_) {
+  if (!BT::isStatusActive(status())) {
     initialize();
   }
 }
