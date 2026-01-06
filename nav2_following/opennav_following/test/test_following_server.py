@@ -17,7 +17,7 @@ from math import cos, sin
 import os
 import threading
 import time
-from typing import Any, Callable
+from typing import Callable
 import unittest
 
 from action_msgs.msg import GoalStatus
@@ -281,7 +281,7 @@ class TestFollowingServer(unittest.TestCase):
 
     def action_feedback_callback(
         self,
-        msg: Any
+        msg: FollowObject.Feedback
     ) -> None:
         # Force the following action to run a full recovery loop when
         # the robot is at distance

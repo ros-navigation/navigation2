@@ -17,7 +17,6 @@ import argparse
 import math
 import sys
 import time
-from typing import Any
 
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
@@ -322,7 +321,7 @@ class RouteTester(Node):
         return True
 
     def feedback_callback(
-            self, feedback_msg: Any) -> None:
+            self, feedback_msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
         self.feedback_msgs.append(feedback_msg.feedback)
 
     def distanceFromGoal(self) -> float:

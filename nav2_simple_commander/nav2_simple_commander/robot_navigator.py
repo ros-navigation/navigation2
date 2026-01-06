@@ -842,7 +842,6 @@ class BasicNavigator(Node):
         rtn = self._getPathImpl(start, goal, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -905,7 +904,6 @@ class BasicNavigator(Node):
         rtn = self._getPathThroughPosesImpl(start, goals, planner_id, use_start)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -1072,7 +1070,6 @@ class BasicNavigator(Node):
         rtn = self._smoothPathImpl(path, smoother_id, max_duration, check_for_collision)
 
         if self.status == GoalStatus.STATUS_SUCCEEDED:
-            assert isinstance(rtn.path, Path)
             return rtn.path
         else:
             self.setTaskError(rtn.error_code, rtn.error_msg)
@@ -1341,7 +1338,7 @@ class BasicNavigator(Node):
         return
 
     def _routeFeedbackCallback(
-            self, msg: Any) -> None:
+            self, msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
         self.debug('Received route action feedback message')
         self.route_feedback.append(msg.feedback)
         return

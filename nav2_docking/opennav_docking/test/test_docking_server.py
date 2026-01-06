@@ -15,7 +15,6 @@
 from math import acos, cos, sin
 import os
 import time
-from typing import Any
 import unittest
 
 from action_msgs.msg import GoalStatus
@@ -201,7 +200,7 @@ class TestDockingServer(unittest.TestCase):
         odom.twist.twist = self.command
         self.odom_pub.publish(odom)
 
-    def action_feedback_callback(self, msg: Any) -> None:
+    def action_feedback_callback(self, msg: DockRobot.Impl.FeedbackMessage) -> None:
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
