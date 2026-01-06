@@ -78,6 +78,7 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
+  bool use_intra_process_comms = parent_options.use_intra_process_comms();
   nav2::replaceOrAddArgument(
     new_arguments, "-r", "__ns",
     "__ns:=" + nav2::add_namespaces(parent_namespace, name));
@@ -85,7 +86,8 @@ rclcpp::NodeOptions getChildNodeOptions(
   nav2::replaceOrAddArgument(
     new_arguments, "-p", "use_sim_time",
     "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
-  return rclcpp::NodeOptions(parent_options).arguments(new_arguments);
+  return rclcpp::NodeOptions().use_intra_process_comms(use_intra_process_comms).arguments(
+    new_arguments);
 }
 
 Costmap2DROS::Costmap2DROS(
