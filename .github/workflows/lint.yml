@@ -8,11 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ros-navigation/navigation2:main
+    env:
+        path: src/${{ github.repository }}
     steps:
       - uses: actions/checkout@v6
         with:
           path: ${{ env.path }}
-      - uses: actions/setup-python@v6
       - name: Install pre-commit
         shell: bash
         run: |
@@ -24,9 +25,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-3|${{ env.path }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - run: |
-          set -x
           source .venv/bin/activate
           source /opt/ros/rolling/setup.bash
           cd ${{ env.path }}
