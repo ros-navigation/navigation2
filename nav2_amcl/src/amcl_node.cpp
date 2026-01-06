@@ -361,7 +361,8 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::initialPoseReceived(
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -397,7 +398,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(*msg);
+  handleInitialPose(last_published_pose_);
 }
 
 void
@@ -1234,7 +1235,7 @@ AmclNode::updateParametersCallback(
 }
 
 void
-AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (!nav2::validateMsg(*msg)) {

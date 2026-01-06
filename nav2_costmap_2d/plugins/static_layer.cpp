@@ -282,7 +282,7 @@ StaticLayer::interpretValue(unsigned char value)
 }
 
 void
-StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
+StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & new_map)
 {
   if (!nav2::validateMsg(*new_map)) {
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");

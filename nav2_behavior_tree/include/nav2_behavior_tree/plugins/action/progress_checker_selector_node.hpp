@@ -91,7 +91,7 @@ private:
    *
    * @param msg the message with the id of the progress_checker_selector
    */
-  void callbackProgressCheckerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackProgressCheckerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr progress_checker_selector_sub_;
 

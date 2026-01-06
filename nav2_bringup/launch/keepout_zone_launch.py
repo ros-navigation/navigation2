@@ -34,6 +34,7 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfigAsBool('autostart')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfigAsBool('use_composition')
+    use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
     container_name = LaunchConfiguration('container_name')
     container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfigAsBool('use_respawn')
@@ -90,6 +91,12 @@ def generate_launch_description() -> LaunchDescription:
         'use_composition',
         default_value='False',
         description='Use composed bringup if True',
+    )
+
+    declare_use_intra_process_comms_cmd = DeclareLaunchArgument(
+        'use_intra_process_comms',
+        default_value='False',
+        description='Whether to use intra process communication',
     )
 
     declare_container_name_cmd = DeclareLaunchArgument(
@@ -175,6 +182,7 @@ def generate_launch_description() -> LaunchDescription:
                             {'yaml_filename': keepout_mask_yaml_file}
                         ],
                         remappings=remappings,
+                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
                     ),
                     ComposableNode(
                         package='nav2_map_server',
@@ -182,6 +190,7 @@ def generate_launch_description() -> LaunchDescription:
                         name='keepout_costmap_filter_info_server',
                         parameters=[configured_params],
                         remappings=remappings,
+                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
                     ),
                 ],
             ),
@@ -196,6 +205,7 @@ def generate_launch_description() -> LaunchDescription:
                         parameters=[
                             {'autostart': autostart, 'node_names': lifecycle_nodes}
                         ],
+                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
                     ),
                 ],
             ),
@@ -214,6 +224,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_intra_process_comms_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_use_keepout_zones_cmd)

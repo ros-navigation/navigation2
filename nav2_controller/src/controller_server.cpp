@@ -890,7 +890,7 @@ bool ControllerServer::getRobotPose(geometry_msgs::msg::PoseStamped & pose)
   return true;
 }
 
-void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::SharedPtr msg)
+void ControllerServer::speedLimitCallback(const nav2_msgs::msg::SpeedLimit::ConstSharedPtr & msg)
 {
   ControllerMap::iterator it;
   for (it = controllers_.begin(); it != controllers_.end(); ++it) {
