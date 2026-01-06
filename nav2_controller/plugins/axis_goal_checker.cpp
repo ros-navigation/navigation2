@@ -105,22 +105,22 @@ bool AxisGoalChecker::isGoalReached(
     double projection_angle = angles::shortest_angular_distance(
       robot_to_goal_yaw, end_of_path_yaw);
 
-    double projected_distance_to_goal = std::hypot(
+    double along_path_distance = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y) *
       cos(projection_angle);
 
-    double ortho_projected_distance_to_goal = std::hypot(
+    double cross_track_distance = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y) *
       sin(projection_angle);
 
     if (is_overshoot_valid_) {
-      return projected_distance_to_goal < along_path_tolerance_ &&
-             fabs(ortho_projected_distance_to_goal) < cross_track_tolerance_;
+      return along_path_distance < along_path_tolerance_ &&
+             fabs(cross_track_distance) < cross_track_tolerance_;
     } else {
-      return fabs(projected_distance_to_goal) < along_path_tolerance_ &&
-             fabs(ortho_projected_distance_to_goal) < cross_track_tolerance_;
+      return fabs(along_path_distance) < along_path_tolerance_ &&
+             fabs(cross_track_distance) < cross_track_tolerance_;
     }
   } else {
     // handle path with only 1 point, in that case reverting to simple distance check
