@@ -22,8 +22,6 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "tf2/utils.h"
-
 
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
