@@ -86,17 +86,16 @@ bool AxisGoalChecker::isGoalReached(
     return false;
   }
 
-  // Extract before_goal_pose from the path (second to last pose)
-  std::optional<geometry_msgs::msg::Pose> before_goal_pose;
+  // Check if we have at least 2 poses to determine path direction
   if (transformed_global_plan.poses.size() >= 2) {
-    before_goal_pose = transformed_global_plan.poses[transformed_global_plan.poses.size() - 2].pose;
-  }
+    // Use axis-aligned goal checking with path direction
+    const auto & before_goal_pose =
+      transformed_global_plan.poses[transformed_global_plan.poses.size() - 2].pose;
 
-  if (before_goal_pose.has_value()) {
     // end of path direction
     double end_of_path_yaw = atan2(
-      goal_pose.position.y - before_goal_pose->position.y,
-      goal_pose.position.x - before_goal_pose->position.x);
+      goal_pose.position.y - before_goal_pose.position.y,
+      goal_pose.position.x - before_goal_pose.position.x);
 
     double robot_to_goal_yaw = atan2(
       goal_pose.position.y - query_pose.position.y,
@@ -123,7 +122,7 @@ bool AxisGoalChecker::isGoalReached(
              fabs(cross_track_distance) < cross_track_tolerance_;
     }
   } else {
-    // handle path with only 1 point, in that case reverting to simple distance check
+    // Fallback: path has only 1 point, use simple distance check
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
