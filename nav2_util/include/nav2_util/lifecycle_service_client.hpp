@@ -34,8 +34,6 @@ using namespace std::chrono_literals;  // NOLINT
 class LifecycleServiceClient
 {
 public:
-  explicit LifecycleServiceClient(
-    const std::string & lifecycle_node_name);
 
   template<typename NodeT>
   explicit
@@ -79,7 +77,6 @@ public:
   uint8_t get_state(const std::chrono::milliseconds timeout = std::chrono::milliseconds(2000));
 
 protected:
-  rclcpp::Node::SharedPtr node_;  // Node only used if parent_node is not provided
   nav2::ServiceClient<lifecycle_msgs::srv::ChangeState> change_state_;
   nav2::ServiceClient<lifecycle_msgs::srv::GetState> get_state_;
 };
