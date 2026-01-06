@@ -34,7 +34,6 @@ using namespace std::chrono_literals;  // NOLINT
 class LifecycleServiceClient
 {
 public:
-
   template<typename NodeT>
   explicit
   LifecycleServiceClient(
