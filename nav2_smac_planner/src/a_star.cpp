@@ -156,6 +156,7 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
   unsigned int y_size = _costmap->getSizeInCellsY();
 
   clearGraph();
+
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;

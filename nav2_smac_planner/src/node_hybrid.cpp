@@ -95,6 +95,7 @@ void HybridMotionTable::initDubin(
     increments = ceil(angle / bin_size);
   }
   angle = increments * bin_size;
+
   // find deflections
   // If we make a right triangle out of the chord in circle of radius
   // min turning angle, we can see that delta X = R * sin (angle)
@@ -109,6 +110,7 @@ void HybridMotionTable::initDubin(
   projections.emplace_back(delta_dist, 0.0, 0.0, TurnDirection::FORWARD);  // Forward
   projections.emplace_back(delta_x, delta_y, increments, TurnDirection::LEFT);  // Left
   projections.emplace_back(delta_x, -delta_y, -increments, TurnDirection::RIGHT);  // Right
+
   if (search_info.allow_primitive_interpolation && increments > 1.0f) {
     // Create primitives that are +/- N to fill in search space to use all set angular quantizations
     // Allows us to create N many primitives so that each search iteration can expand into any angle
@@ -149,6 +151,7 @@ void HybridMotionTable::initDubin(
       delta_ys[i][j] = projections[i]._x * sin_theta + projections[i]._y * cos_theta;
     }
   }
+
   // Precompute travel costs for each motion primitive
   travel_costs.resize(projections.size());
   for (unsigned int i = 0; i != projections.size(); i++) {
@@ -615,6 +618,7 @@ bool NodeHybrid::backtracePath(CoordinateVector & path)
   path.push_back(current_node->pose);
   // Convert angle to radians
   path.back().theta = _ctx->motion_table.getAngleFromBin(path.back().theta);
+
   return true;
 }
 
