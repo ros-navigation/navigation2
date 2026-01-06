@@ -48,13 +48,6 @@ void AxisGoalChecker::initialize(
     node,
     plugin_name + ".goal_tolerance", rclcpp::ParameterValue(0.25));
   node->get_parameter(plugin_name + ".goal_tolerance", goal_tolerance_);
-  if (goal_tolerance_ <= 0.0) {
-    RCLCPP_WARN(
-      node->get_logger(),
-      "Parameter '%s.goal_tolerance' must be positive. Resetting to default value 0.25.",
-      plugin_name.c_str());
-    goal_tolerance_ = 0.25;
-  }
 
   nav2::declare_parameter_if_not_declared(
     node,
