@@ -121,7 +121,7 @@ bool AxisGoalChecker::isGoalReached(
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    return fabs(distance_to_goal) < goal_tolerance_;
+    return distance_to_goal < goal_tolerance_;
   }
 }
 
@@ -155,9 +155,11 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
   for (auto & parameter : parameters) {
     const auto & type = parameter.get_type();
     const auto & name = parameter.get_name();
-
+    if (name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
     if (type == ParameterType::PARAMETER_DOUBLE) {
-      if (name == plugin_name_ + ".segment_axis_goal_tolerance") {
+      if (name == plugin_name_ + ".goal_tolerance") {
         goal_tolerance_ = parameter.as_double();
       } else if (name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
