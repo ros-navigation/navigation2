@@ -61,6 +61,12 @@ void TrajectoryVisualizer::add(
   const std::string & marker_namespace,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
+  if ((optimal_path_pub_->get_subscription_count() == 0) &&
+    (trajectories_publisher_->get_subscription_count() == 0))
+  {
+    return;
+  }
+
   size_t size = trajectory.rows();
   if (!size) {
     return;
@@ -101,6 +107,10 @@ void TrajectoryVisualizer::add(
 void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories, const std::string & marker_namespace)
 {
+  if (trajectories_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
   size_t n_rows = trajectories.x.rows();
   size_t n_cols = trajectories.x.cols();
   const float shape_1 = static_cast<float>(n_cols);
