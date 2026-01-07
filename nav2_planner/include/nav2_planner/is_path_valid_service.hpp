@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <limits>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -111,6 +112,63 @@ public:
 
 private:
   /**
+   * @brief Get the costmap to check based on the layer name
+   * @param layer_name Name of the layer to check, or empty for full costmap
+   * @param error_msg Output parameter for error message if costmap not found
+   * @return Pointer to the costmap to check, or nullptr if layer not found
+   */
+  nav2_costmap_2d::Costmap2D * getCostmapToCheck(
+    const std::string & layer_name,
+    std::string & error_msg)
+  {
+    if (layer_name.empty()) {
+      return costmap_;
+    }
+
+    auto layers = costmap_ros_->getLayeredCostmap()->getPlugins();
+    for (auto & layer : *layers) {
+      if (layer->getName() == layer_name) {
+        auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(layer);
+        if (costmap_layer) {
+          return static_cast<nav2_costmap_2d::Costmap2D *>(costmap_layer.get());
+        }
+      }
+    }
+
+    error_msg = "Requested layer '" + layer_name + "' not found or does not provide a costmap.";
+    return nullptr;
+  }
+
+  /**
+   * @brief Get the footprint to use for collision checking
+   * @param footprint_string Custom footprint string, or empty to use robot's footprint
+   * @param footprint Output parameter for the footprint
+   * @param use_radius Output parameter indicating if radius-based checking should be used
+   * @param error_msg Output parameter for error message if footprint is invalid
+   * @return True if successful, false if footprint string is invalid
+   */
+  bool getFootprintToUse(
+    const std::string & footprint_string,
+    nav2_costmap_2d::Footprint & footprint,
+    bool & use_radius,
+    std::string & error_msg)
+  {
+    use_radius = costmap_ros_->getUseRadius();
+
+    if (!footprint_string.empty()) {
+      if (!nav2_costmap_2d::makeFootprintFromString(footprint_string, footprint)) {
+        error_msg = "Invalid footprint string '" + footprint_string + "'. Cannot validate path.";
+        return false;
+      }
+      use_radius = false;
+    } else if (!use_radius) {
+      footprint = costmap_ros_->getRobotFootprint();
+    }
+
+    return true;
+  }
+
+  /**
    * @brief Service callback to determine if the path is still valid
    */
   void callback(
@@ -152,35 +210,16 @@ private:
        */
 
       // Determine which costmap to use based on layer_name parameter
-      nav2_costmap_2d::Costmap2D * costmap_to_check = nullptr;
+      std::string error_msg;
+      nav2_costmap_2d::Costmap2D * costmap_to_check = getCostmapToCheck(
+        request->layer_name,
+        error_msg);
 
-      if (!request->layer_name.empty()) {
-        // Check a specific layer
-        auto layers = costmap_ros_->getLayeredCostmap()->getPlugins();
-        for (auto & layer : *layers) {
-          if (layer->getName() == request->layer_name) {
-            // Try to cast to CostmapLayer to get its costmap
-            auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(layer);
-            if (costmap_layer) {
-              // CostmapLayer inherits from Costmap2D, so we can use it directly
-              costmap_to_check = static_cast<nav2_costmap_2d::Costmap2D *>(costmap_layer.get());
-            }
-            break;
-          }
-        }
-
-        if (costmap_to_check == nullptr) {
-          RCLCPP_ERROR(
-            logger_,
-            "Requested layer '%s' not found or does not provide a costmap.",
-            request->layer_name.c_str());
-          response->success = false;
-          response->is_valid = false;
-          return;
-        }
-      } else {
-        // Use the full costmap (default behavior)
-        costmap_to_check = costmap_;
+      if (costmap_to_check == nullptr) {
+        RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+        response->success = false;
+        response->is_valid = false;
+        return;
       }
 
       std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
@@ -188,27 +227,15 @@ private:
       unsigned int mx = 0;
       unsigned int my = 0;
 
-      bool use_radius = costmap_ros_->getUseRadius();
-
       // Determine footprint to use
       nav2_costmap_2d::Footprint footprint;
+      bool use_radius;
 
-      if (!request->footprint.empty()) {
-        // Custom footprint provided
-        if (!nav2_costmap_2d::makeFootprintFromString(request->footprint, footprint)) {
-          RCLCPP_ERROR(
-            logger_,
-            "Invalid footprint string '%s'. Cannot validate path.",
-            request->footprint.c_str());
-          response->success = false;
-          return;
-        }
-        use_radius = false;
-      } else if (!use_radius) {
-        // Use robot's default footprint
-        footprint = costmap_ros_->getRobotFootprint();
+      if (!getFootprintToUse(request->footprint, footprint, use_radius, error_msg)) {
+        RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+        response->success = false;
+        return;
       }
-      // If use_radius is still true, collision checking will use the costmap directly
 
       // If checking against a different costmap than the main one,
       // temporarily update the collision checker
