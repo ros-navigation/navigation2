@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
+#include "nav2_core/exceptions.hpp"
 
 namespace mppi::critics
 {
@@ -40,6 +41,18 @@ void ObstaclesCritic::initialize()
       " the inflation radius to be at MINIMUM half of the robot's largest cross-section. See "
       "github.com/ros-planning/navigation2/tree/main/nav2_smac_planner#potential-fields"
       " for full instructions. This will substantially impact run-time performance.");
+  }
+
+  if (costmap_ros_->getUseRadius() == consider_footprint_) {
+    RCLCPP_WARN(
+      logger_,
+      "Inconsistent configuration in collision checking. Please verify the robot's shape settings "
+      "in both the costmap and the obstacle critic.");
+    if (costmap_ros_->getUseRadius()) {
+      throw nav2_core::PlannerException(
+              "Considering footprint in collision checking but no robot footprint provided in the "
+              "costmap.");
+    }
   }
 
   RCLCPP_INFO(

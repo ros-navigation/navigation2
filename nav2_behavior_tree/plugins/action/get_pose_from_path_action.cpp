@@ -46,12 +46,12 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   }
 
   // Account for negative indices
-  if(pose_index < 0) {
+  if (pose_index < 0) {
     pose_index = input_path.poses.size() + pose_index;
   }
 
   // out of bounds index
-  if(pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()) {
+  if (pose_index < 0 || static_cast<unsigned>(pose_index) >= input_path.poses.size()) {
     return BT::NodeStatus::FAILURE;
   }
 
@@ -60,7 +60,7 @@ inline BT::NodeStatus GetPoseFromPath::tick()
   output_pose = input_path.poses[pose_index];
 
   // populate pose frame from path if necessary
-  if(output_pose.header.frame_id.empty()) {
+  if (output_pose.header.frame_id.empty()) {
     output_pose.header.frame_id = input_path.header.frame_id;
   }
 

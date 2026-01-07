@@ -290,35 +290,38 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   _a_star->setCollisionChecker(&_collision_checker);
 
   // Set starting point, in A* bin search coordinates
-  unsigned int mx, my;
-  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)) {
+  unsigned int mx_start, my_start, mx_goal, my_goal;
+  if (!costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
     throw std::runtime_error("Start pose is out of costmap!");
   }
-  double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
+
+  double orientation_bin_start = std::round(tf2::getYaw(start.pose.orientation) / _angle_bin_size);
+  while (orientation_bin_start < 0.0) {
+    orientation_bin_start += static_cast<float>(_angle_quantizations);
   }
   // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (orientation_bin_start >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin_start -= static_cast<float>(_angle_quantizations);
   }
-  unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  unsigned int start_orientation_bin_int =
+    static_cast<unsigned int>(orientation_bin_start);
+  _a_star->setStart(mx_start, my_start, start_orientation_bin_int);
 
   // Set goal point, in A* bin search coordinates
-  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my)) {
+  if (!costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx_goal, my_goal)) {
     throw std::runtime_error("Goal pose is out of costmap!");
   }
-  orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
-  while (orientation_bin < 0.0) {
-    orientation_bin += static_cast<float>(_angle_quantizations);
+  double orientation_bin_goal = std::round(tf2::getYaw(goal.pose.orientation) / _angle_bin_size);
+  while (orientation_bin_goal < 0.0) {
+    orientation_bin_goal += static_cast<float>(_angle_quantizations);
   }
   // This is needed to handle precision issues
-  if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
-    orientation_bin -= static_cast<float>(_angle_quantizations);
+  if (orientation_bin_goal >= static_cast<float>(_angle_quantizations)) {
+    orientation_bin_goal -= static_cast<float>(_angle_quantizations);
   }
-  orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  unsigned int goal_orientation_bin_int =
+    static_cast<unsigned int>(orientation_bin_goal);
+  _a_star->setGoal(mx_goal, my_goal, goal_orientation_bin_int);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -331,6 +334,23 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   pose.pose.orientation.y = 0.0;
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
+
+  // Corner case of start and goal being on the same cell
+  if (std::floor(mx_start) == std::floor(mx_goal) &&
+    std::floor(my_start) == std::floor(my_goal) &&
+    start_orientation_bin_int == goal_orientation_bin_int)
+  {
+    pose.pose = start.pose;
+    pose.pose.orientation = goal.pose.orientation;
+    plan.poses.push_back(pose);
+
+    // Publish raw path for debug
+    if (_raw_plan_publisher->get_subscription_count() > 0) {
+      _raw_plan_publisher->publish(plan);
+    }
+
+    return plan;
+  }
 
   // Compute plan
   NodeHybrid::CoordinateVector path;

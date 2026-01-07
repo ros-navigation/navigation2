@@ -86,7 +86,7 @@ bool Polygon::configure()
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
-  
+
   return true;
 }
 
@@ -257,7 +257,7 @@ bool Polygon::getCommonParameters(std::string & polygon_pub_topic)
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".enabled", rclcpp::ParameterValue(true));
     enabled_ = node->get_parameter(polygon_name_ + ".enabled").as_bool();
-    
+
     nav2_util::declare_parameter_if_not_declared(
       node, polygon_name_ + ".max_points", rclcpp::ParameterValue(3));
     max_points_ = node->get_parameter(polygon_name_ + ".max_points").as_int();

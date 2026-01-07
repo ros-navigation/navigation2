@@ -147,6 +147,9 @@ protected:
   /// @brief the name of the overlying plugin ID
   std::string plugin_name_;
 
+  /// @brief Option to limit velocity in the trajectory generator by using current velocity
+  bool limit_vel_cmd_in_traj_;
+
   /* Backwards Compatibility Parameter: include_last_point
    *
    * dwa had an off-by-one error built into it.

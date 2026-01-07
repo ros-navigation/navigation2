@@ -18,6 +18,7 @@
 #define NAV2_UTIL__ROBOT_UTILS_HPP_
 
 #include <string>
+#include <memory>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"

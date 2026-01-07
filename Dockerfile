@@ -6,7 +6,7 @@
 # docker build -t nav2:latest \
 #   --build-arg UNDERLAY_MIXINS \
 #   --build-arg OVERLAY_MIXINS ./
-ARG FROM_IMAGE=ros:rolling
+ARG FROM_IMAGE=ros:humble
 ARG UNDERLAY_WS=/opt/underlay_ws
 ARG OVERLAY_WS=/opt/overlay_ws
 
@@ -219,7 +219,7 @@ COPY --from=caddyer /usr/bin/caddy /usr/bin/caddy
 
 # download media files
 RUN mkdir -p $ROOT_SRV/media && cd /tmp && \
-    export ICONS="icons.tar.gz" && wget https://github.com/ros-planning/navigation2/files/11506823/$ICONS && \
+    export ICONS="icons.tar.gz" && wget https://github.com/ros-navigation/navigation2/files/11506823/$ICONS && \
     echo "cae5e2a5230f87b004c8232b579781edb4a72a7431405381403c6f9e9f5f7d41 $ICONS" | sha256sum -c && \
     tar xvz -C $ROOT_SRV/media -f $ICONS && rm $ICONS
 
