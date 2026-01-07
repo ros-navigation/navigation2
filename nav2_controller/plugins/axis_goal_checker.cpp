@@ -31,7 +31,7 @@ namespace nav2_controller
 
 AxisGoalChecker::AxisGoalChecker()
 : along_path_tolerance_(0.25), cross_track_tolerance_(0.25),
-  is_overshoot_valid_(false)
+  path_length_tolerance_(1.0), is_overshoot_valid_(false)
 {
 }
 
@@ -168,6 +168,9 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
       }
       if (name == plugin_name_ + ".cross_track_tolerance") {
         cross_track_tolerance_ = parameter.as_double();
+      }
+      if (name == plugin_name_ + ".path_length_tolerance") {
+        path_length_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
       if (name == plugin_name_ + ".is_overshoot_valid") {
