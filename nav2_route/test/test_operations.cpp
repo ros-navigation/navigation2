@@ -77,7 +77,7 @@ TEST(OperationsManagerTest, test_find_operations)
   enter.operations.push_back(op);
   op.trigger = OperationTrigger::NODE;
   node2.operations.push_back(op);
-  op2.type = "test2";
+  op2.type = "test_2";
   op2.trigger = OperationTrigger::ON_EXIT;
   exit2.operations.push_back(op2);
   EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 3u);
@@ -256,10 +256,10 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   op.type = "test";
   op.trigger = OperationTrigger::NODE;
 
-  op2.type = "OpenDoor";
+  op2.type = "open_door";
   op2.trigger = OperationTrigger::NODE;
 
-  op3.type = "OpenDoor";
+  op3.type = "open_door";
   op3.trigger = OperationTrigger::NODE;
   std::string service_name = "open_door";
   std::string key = "service_name";
@@ -336,7 +336,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   // Setup working case
   Operation op3;
-  op3.type = "OpenDoor";
+  op3.type = "open_door";
   op3.trigger = OperationTrigger::NODE;
   std::string service_name = "open_door";
   std::string key = "service_name";
@@ -367,7 +367,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
   // Now, let's reset without the metadata and see that the global version is now called
   node2.operations.clear();
   Operation op4;
-  op4.type = "OpenDoor";
+  op4.type = "open_door";
   op4.trigger = OperationTrigger::NODE;
   node2.operations.push_back(op4);
 
@@ -426,7 +426,7 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   // Setup some test operations
   Operation op, op2;
   op.type = "test";
-  op2.type = "TriggerEvent";
+  op2.type = "trigger_event";
   op.trigger = OperationTrigger::NODE;
   op2.trigger = OperationTrigger::NODE;
 
