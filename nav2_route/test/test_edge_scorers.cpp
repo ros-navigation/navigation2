@@ -91,9 +91,9 @@ TEST(EdgeScorersTest, test_failed_api)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"FakeScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"fake_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "FakeScorer.plugin", rclcpp::ParameterValue(std::string{"FakePluginPath"}));
+    node, "fake_scorer.plugin", rclcpp::ParameterValue(std::string{"FakePluginPath"}));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EXPECT_THROW(
@@ -110,9 +110,10 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"DynamicEdgesScorer"}));
+    "edge_cost_functions",
+    rclcpp::ParameterValue(std::vector<std::string>{"dynamic_edges_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "DynamicEdgesScorer.plugin",
+    node, "dynamic_edges_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::DynamicEdgesScorer"}));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -122,7 +123,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   // Send service to set an edge as invalid
   auto srv_client =
     nav2::ServiceClient<nav2_msgs::srv::DynamicEdges>(
-    "route_server/DynamicEdgesScorer/adjust_edges", node2);
+    "route_server/dynamic_edges_scorer/adjust_edges", node2);
   auto req = std::make_shared<nav2_msgs::srv::DynamicEdges::Request>();
   req->closed_edges.push_back(10u);
   req->adjust_edges.resize(1);
@@ -178,9 +179,9 @@ TEST(EdgeScorersTest, test_penalty_scoring)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"PenaltyScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"penalty_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "PenaltyScorer.plugin",
+    node, "penalty_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::PenaltyScorer"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
@@ -217,9 +218,9 @@ TEST(EdgeScorersTest, test_costmap_scoring)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"CostmapScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"costmap_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "CostmapScorer.plugin",
+    node, "costmap_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::CostmapScorer"}));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -332,16 +333,16 @@ TEST(EdgeScorersTest, test_costmap_scoring_alt_profile)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"CostmapScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"costmap_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "CostmapScorer.plugin",
+    node, "costmap_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::CostmapScorer"}));
   node->declare_parameter(
-    "CostmapScorer.use_maximum", rclcpp::ParameterValue(false));
+    "costmap_scorer.use_maximum", rclcpp::ParameterValue(false));
   node->declare_parameter(
-    "CostmapScorer.invalid_on_collision", rclcpp::ParameterValue(false));
+    "costmap_scorer.invalid_on_collision", rclcpp::ParameterValue(false));
   node->declare_parameter(
-    "CostmapScorer.invalid_off_map", rclcpp::ParameterValue(false));
+    "costmap_scorer.invalid_off_map", rclcpp::ParameterValue(false));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
@@ -433,9 +434,9 @@ TEST(EdgeScorersTest, test_time_scoring)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"TimeScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"time_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "TimeScorer.plugin",
+    node, "time_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeScorer"}));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -491,9 +492,9 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"semantic_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "SemanticScorer.plugin",
+    node, "semantic_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::SemanticScorer"}));
 
   std::vector<std::string> classes;
@@ -501,12 +502,12 @@ TEST(EdgeScorersTest, test_semantic_scoring_key)
   classes.push_back("Test1");
   classes.push_back("Test2");
   nav2::declare_parameter_if_not_declared(
-    node, "SemanticScorer.semantic_classes",
+    node, "semantic_scorer.semantic_classes",
     rclcpp::ParameterValue(classes));
 
   for (unsigned int i = 0; i != classes.size(); i++) {
     nav2::declare_parameter_if_not_declared(
-      node, "SemanticScorer." + classes[i],
+      node, "semantic_scorer." + classes[i],
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
@@ -564,12 +565,12 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
-    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"SemanticScorer"}));
+    "edge_cost_functions", rclcpp::ParameterValue(std::vector<std::string>{"semantic_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "SemanticScorer.plugin",
+    node, "semantic_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::SemanticScorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "SemanticScorer.semantic_key",
+    node, "semantic_scorer.semantic_key",
     rclcpp::ParameterValue(std::string{""}));
 
   std::vector<std::string> classes;
@@ -577,12 +578,12 @@ TEST(EdgeScorersTest, test_semantic_scoring_keys)
   classes.push_back("Test1");
   classes.push_back("Test2");
   nav2::declare_parameter_if_not_declared(
-    node, "SemanticScorer.semantic_classes",
+    node, "semantic_scorer.semantic_classes",
     rclcpp::ParameterValue(classes));
 
   for (unsigned int i = 0; i != classes.size(); i++) {
     nav2::declare_parameter_if_not_declared(
-      node, "SemanticScorer." + classes[i],
+      node, "semantic_scorer." + classes[i],
       rclcpp::ParameterValue(static_cast<float>(i)));
   }
 
@@ -644,15 +645,15 @@ TEST(EdgeScorersTest, test_goal_orientation_threshold)
 
   node->declare_parameter(
     "edge_cost_functions",
-    rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"goal_orientation_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.plugin",
+    node, "goal_orientation_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::GoalOrientationScorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.orientation_tolerance",
+    node, "goal_orientation_scorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.use_orientation_threshold",
+    node, "goal_orientation_scorer.use_orientation_threshold",
     rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -715,18 +716,18 @@ TEST(EdgeScorersTest, test_goal_orientation_scoring)
 
   node->declare_parameter(
     "edge_cost_functions",
-    rclcpp::ParameterValue(std::vector<std::string>{"GoalOrientationScorer"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"goal_orientation_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.plugin",
+    node, "goal_orientation_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::GoalOrientationScorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.orientation_tolerance",
+    node, "goal_orientation_scorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.use_orientation_thershold",
+    node, "goal_orientation_scorer.use_orientation_thershold",
     rclcpp::ParameterValue(false));
   nav2::declare_parameter_if_not_declared(
-    node, "GoalOrientationScorer.orientation_weight",
+    node, "goal_orientation_scorer.orientation_weight",
     rclcpp::ParameterValue(orientation_weight));
 
 
@@ -790,15 +791,15 @@ TEST(EdgeScorersTest, test_start_pose_orientation_threshold)
 
   node->declare_parameter(
     "edge_cost_functions",
-    rclcpp::ParameterValue(std::vector<std::string>{"StartPoseOrientationScorer"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"start_pose_orientation_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.plugin",
+    node, "start_pose_orientation_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::StartPoseOrientationScorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.orientation_tolerance",
+    node, "start_pose_orientation_scorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.use_orientation_threshold",
+    node, "start_pose_orientation_scorer.use_orientation_threshold",
     rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
@@ -878,18 +879,18 @@ TEST(EdgeScorersTest, test_start_pose_orientation_scoring)
 
   node->declare_parameter(
     "edge_cost_functions",
-    rclcpp::ParameterValue(std::vector<std::string>{"StartPoseOrientationScorer"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"start_pose_orientation_scorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.plugin",
+    node, "start_pose_orientation_scorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::StartPoseOrientationScorer"}));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.orientation_tolerance",
+    node, "start_pose_orientation_scorer.orientation_tolerance",
     rclcpp::ParameterValue(1.57));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.use_orientation_thershold",
+    node, "start_pose_orientation_scorer.use_orientation_thershold",
     rclcpp::ParameterValue(false));
   nav2::declare_parameter_if_not_declared(
-    node, "StartPoseOrientationScorer.orientation_weight",
+    node, "start_pose_orientation_scorer.orientation_weight",
     rclcpp::ParameterValue(orientation_weight));
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;

@@ -153,14 +153,14 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
   // No status change, shouldn't do anything
   OperationsResult result = manager.process(false, state, route, pose, info);
   EXPECT_FALSE(result.reroute);
-  EXPECT_EQ(result.operations_triggered.size(), 1u);  // ReroutingService
-  EXPECT_EQ(result.operations_triggered[0], std::string("ReroutingService"));
+  EXPECT_EQ(result.operations_triggered.size(), 1u);  // rerouting_service
+  EXPECT_EQ(result.operations_triggered[0], std::string("rerouting_service"));
 
   // Status change, may now trigger the only plugin
   result = manager.process(true, state, route, pose, info);
   EXPECT_EQ(result.operations_triggered.size(), 2u);
-  EXPECT_EQ(result.operations_triggered[0], std::string("AdjustSpeedLimit"));
-  EXPECT_EQ(result.operations_triggered[1], std::string("ReroutingService"));
+  EXPECT_EQ(result.operations_triggered[0], std::string("adjust_speed_limit"));
+  EXPECT_EQ(result.operations_triggered[1], std::string("rerouting_service"));
   rclcpp::Rate r(10);
   r.sleep();
 
@@ -178,9 +178,9 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
 
   // Enable rerouting service, which conducts on query (not status change)
   node->declare_parameter(
-    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ReroutingService"}));
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"rerouting_service"}));
   nav2::declare_parameter_if_not_declared(
-    node, "ReroutingService.plugin",
+    node, "rerouting_service.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::ReroutingService"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
@@ -205,7 +205,7 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
 
   auto srv_client =
     nav2::ServiceClient<std_srvs::srv::Trigger>(
-    "route_server/ReroutingService/reroute", node_int);
+    "route_server/rerouting_service/reroute", node_int);
   auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp->success);
@@ -233,9 +233,9 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph)
   // This tests the trigger event plugin, ON_GRAPH actions in the
   // Operations Manager as well as the route operations client.
   node->declare_parameter(
-    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"open_door"}));
   nav2::declare_parameter_if_not_declared(
-    node, "OpenDoor.plugin",
+    node, "open_door.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
@@ -313,12 +313,12 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_global_service)
 
   // Set the global service to use instead of file settings for conflict testing
   node->declare_parameter(
-    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"open_door"}));
   nav2::declare_parameter_if_not_declared(
-    node, "OpenDoor.plugin",
+    node, "open_door.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
   nav2::declare_parameter_if_not_declared(
-    node, "OpenDoor.service_name",
+    node, "open_door.service_name",
     rclcpp::ParameterValue(std::string{"hello_world"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
@@ -401,9 +401,9 @@ TEST(OperationsManagerTest, test_trigger_event_on_graph_failures)
   // Enable trigger event operation, which conducts on node or edge change
   // when a graph object contains the request for opening a door only
   node->declare_parameter(
-    "operations", rclcpp::ParameterValue(std::vector<std::string>{"OpenDoor"}));
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"open_door"}));
   nav2::declare_parameter_if_not_declared(
-    node, "OpenDoor.plugin",
+    node, "open_door.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TriggerEvent"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
@@ -446,9 +446,9 @@ TEST(OperationsManagerTest, test_time_marker)
   auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   node->declare_parameter(
-    "operations", rclcpp::ParameterValue(std::vector<std::string>{"TimeMarker"}));
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"time_marker"}));
   nav2::declare_parameter_if_not_declared(
-    node, "TimeMarker.plugin",
+    node, "time_marker.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::TimeMarker"}));
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
@@ -553,7 +553,7 @@ public:
   {
   }
 
-  std::string getName() override {return "TestRouteOperation";}
+  std::string getName() override {return "test_route_operation";}
   OperationResult perform(
     NodePtr,
     EdgePtr,

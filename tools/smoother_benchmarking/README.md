@@ -16,8 +16,8 @@ To use the suite, modify the Nav2 bringup parameters `nav2_params.yaml` to inclu
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    planner_plugins: ["SmacHybrid"]
-    SmacHybrid:
+    planner_plugins: ["smac_hybrid"]
+    smac_hybrid:
       plugin: "nav2_smac_planner::SmacPlannerHybrid"
       tolerance: 0.5
       motion_model_for_search: "DUBIN" # default, non-reverse motion

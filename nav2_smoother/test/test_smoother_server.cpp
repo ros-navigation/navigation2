@@ -193,7 +193,7 @@ public:
   {
     // Override defaults
     default_ids_.clear();
-    default_ids_.resize(1, "SmoothPath");
+    default_ids_.resize(1, "smooth_path");
     set_parameter(rclcpp::Parameter("smoother_plugins", default_ids_));
     default_types_.clear();
     default_types_.resize(1, "DummySmoother");
@@ -241,9 +241,9 @@ public:
     smoother_server_->set_parameter(
       rclcpp::Parameter(
         "smoother_plugins",
-        rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+        rclcpp::ParameterValue(std::vector<std::string>(1, "dummy_smooth_path"))));
     smoother_server_->declare_parameter(
-      "DummySmoothPath.plugin",
+      "dummy_smooth_path.plugin",
       rclcpp::ParameterValue(std::string("DummySmoother")));
     smoother_server_->configure();
     smoother_server_->activate();
@@ -330,7 +330,7 @@ public:
 
 TEST_F(SmootherTest, testingSuccess)
 {
-  ASSERT_TRUE(sendGoal("DummySmoothPath", 0.0, 0.0, 1.0, 0.0, 500ms, true));
+  ASSERT_TRUE(sendGoal("dummy_smooth_path", 0.0, 0.0, 1.0, 0.0, 500ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
   EXPECT_EQ(result.result->path.poses.size(), (std::size_t)3);
@@ -340,7 +340,7 @@ TEST_F(SmootherTest, testingSuccess)
 
 TEST_F(SmootherTest, testingFailureOnInvalidSmootherId)
 {
-  ASSERT_TRUE(sendGoal("InvalidSmoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
+  ASSERT_TRUE(sendGoal("invalid_smoother", 0.0, 0.0, 1.0, 0.0, 500ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   SUCCEED();
@@ -356,7 +356,7 @@ TEST_F(SmootherTest, testingSuccessOnEmptyPlugin)
 
 TEST_F(SmootherTest, testingIncomplete)
 {
-  ASSERT_TRUE(sendGoal("DummySmoothPath", 0.0, 0.0, 1.0, 0.0, 50ms, true));
+  ASSERT_TRUE(sendGoal("dummy_smooth_path", 0.0, 0.0, 1.0, 0.0, 50ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
   EXPECT_FALSE(result.result->was_completed);
@@ -365,7 +365,7 @@ TEST_F(SmootherTest, testingIncomplete)
 
 TEST_F(SmootherTest, testingFailureOnException)
 {
-  ASSERT_TRUE(sendGoal("DummySmoothPath", 0.0, 0.0, 0.0, 0.0, 500ms, true));
+  ASSERT_TRUE(sendGoal("dummy_smooth_path", 0.0, 0.0, 0.0, 0.0, 500ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   SUCCEED();
@@ -373,7 +373,7 @@ TEST_F(SmootherTest, testingFailureOnException)
 
 TEST_F(SmootherTest, testingFailureOnCollision)
 {
-  ASSERT_TRUE(sendGoal("DummySmoothPath", -4.0, 0.0, 0.0, 0.0, 500ms, true));
+  ASSERT_TRUE(sendGoal("dummy_smooth_path", -4.0, 0.0, 0.0, 0.0, 500ms, true));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   SUCCEED();
@@ -381,7 +381,7 @@ TEST_F(SmootherTest, testingFailureOnCollision)
 
 TEST_F(SmootherTest, testingCollisionCheckDisabled)
 {
-  ASSERT_TRUE(sendGoal("DummySmoothPath", -4.0, 0.0, 0.0, 0.0, 500ms, false));
+  ASSERT_TRUE(sendGoal("dummy_smooth_path", -4.0, 0.0, 0.0, 0.0, 500ms, false));
   auto result = getResult();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
   SUCCEED();
@@ -393,9 +393,9 @@ TEST(SmootherConfigTest, testingConfigureSuccessWithValidSmootherPlugin)
   smoother_server->set_parameter(
     rclcpp::Parameter(
       "smoother_plugins",
-      rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+      rclcpp::ParameterValue(std::vector<std::string>(1, "dummy_smooth_path"))));
   smoother_server->declare_parameter(
-    "DummySmoothPath.plugin",
+    "dummy_smooth_path.plugin",
     rclcpp::ParameterValue(std::string("DummySmoother")));
   auto state = smoother_server->configure();
   EXPECT_EQ(state.id(), 2);  // 1 on failure, 2 on success
@@ -408,9 +408,9 @@ TEST(SmootherConfigTest, testingConfigureFailureWithInvalidSmootherPlugin)
   smoother_server->set_parameter(
     rclcpp::Parameter(
       "smoother_plugins",
-      rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+      rclcpp::ParameterValue(std::vector<std::string>(1, "dummy_smooth_path"))));
   smoother_server->declare_parameter(
-    "DummySmoothPath.plugin",
+    "dummy_smooth_path.plugin",
     rclcpp::ParameterValue(std::string("InvalidSmootherPlugin")));
   auto state = smoother_server->configure();
   EXPECT_EQ(state.id(), 1);  // 1 on failure, 2 on success

@@ -122,7 +122,7 @@ TEST_F(DockRobotActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <DockRobot use_dock_id="true" dock_id="dock1"/>
+            <DockRobot use_dock_id="true" dock_id="dock_1"/>
         </BehaviorTree>
       </root>)";
 
@@ -148,7 +148,7 @@ TEST_F(DockRobotActionTestFixture, test_tick2)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <DockRobot use_dock_id="false" dock_type="dock1"/>
+            <DockRobot use_dock_id="false" dock_type="dock_1"/>
         </BehaviorTree>
       </root>)";
 

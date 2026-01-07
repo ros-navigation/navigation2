@@ -118,20 +118,20 @@ route_server:
     smoothing_radius: 1.0                         # Radius of corner to fit into the corner
     costmap_topic: 'global_costmap/costmap_raw'   # Costmap topic when enable_nn_search is enabled. May also be used by the collision monitor operation and/or the costmap edge scorer if using the same topic to share resources.
 
-    graph_file_loader: "GeoJsonGraphFileLoader"   # Name of default file loader
+    graph_file_loader: "geo_json_graph_file_loader"   # Name of default file loader
       plugin: nav2_route::GeoJsonGraphFileLoader  # file loader plugin to use
     graph_filepath: ""                            # file path to graph to use
 
-    edge_cost_functions: ["DistanceScorer", "DynamicEdgesScorer"]  # Edge scoring cost functions to use
-    DistanceScorer:
+    edge_cost_functions: ["distance_scorer", "dynamic_edges_scorer"]  # Edge scoring cost functions to use
+    distance_scorer:
       plugin: "nav2_route::DistanceScorer"
-    DynamicEdgesScorer:
+    dynamic_edges_scorer:
       plugin: "nav2_route::DynamicEdgesScorer"
 
-    operations: ["AdjustSpeedLimit", "ReroutingService"] # Route operations plugins to use
-    AdjustSpeedLimit:
+    operations: ["adjust_speed_limit", "rerouting_service"] # Route operations plugins to use
+    adjust_speed_limit:
       plugin: "nav2_route::AdjustSpeedLimit"
-    ReroutingService:
+    rerouting_service:
       plugin: "nav2_route::ReroutingService"
 
     tracker_update_rate: 50.0                     # Rate at which to check the status of path tracking
@@ -278,8 +278,8 @@ This route operation will trigger an external service when a graph node or edge 
 | Service                                          | Description                                                    |
 |--------------------------------------------------|----------------------------------------------------------------|
 | `route_server/set_route_graph`                   | Sets new route graph to use                                    |
-| `route_server/<DynamicEdgesScorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
-| `route_server/<ReroutingService>/reroute`        | Trigger a reroute from a 3rd party                             |
+| `route_server/<dynamic_edges_scorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
+| `route_server/<rerouting_service>/reroute`        | Trigger a reroute from a 3rd party                             |
 
 | Action                           | Description                                                           |
 |----------------------------------|-----------------------------------------------------------------------|

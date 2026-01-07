@@ -103,9 +103,9 @@ See inline description of parameters in the `SmacPlanner`. This includes comment
 ```
 planner_server:
   ros__parameters:
-    planner_plugins: ["GridBased"]
+    planner_plugins: ["grid_based"]
 
-    GridBased:
+    grid_based:
       plugin: "nav2_smac_planner::SmacPlannerHybrid"
       tolerance: 0.5                      # tolerance for planning if unable to reach exact pose, in meters
       downsample_costmap: false           # whether or not to downsample the map

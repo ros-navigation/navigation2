@@ -53,15 +53,15 @@ void Optimizer::initialize(
 
   // This may throw an exception if not valid and fail initialization
   nav2::declare_parameter_if_not_declared(
-    node, name_ + ".TrajectoryValidator.plugin",
+    node, name_ + ".trajectory_validator.plugin",
     rclcpp::ParameterValue("mppi::DefaultOptimalTrajectoryValidator"));
   std::string validator_plugin_type = nav2::get_plugin_type_param(
-    node, name_ + ".TrajectoryValidator");
+    node, name_ + ".trajectory_validator");
   validator_loader_ = std::make_unique<pluginlib::ClassLoader<OptimalTrajectoryValidator>>(
     "nav2_mppi_controller", "mppi::OptimalTrajectoryValidator");
   trajectory_validator_ = validator_loader_->createUniqueInstance(validator_plugin_type);
   trajectory_validator_->initialize(
-    parent_, name_ + ".TrajectoryValidator",
+    parent_, name_ + ".trajectory_validator",
     costmap_ros_, parameters_handler_, tf_buffer, settings_);
   RCLCPP_INFO(logger_, "Loaded trajectory validator plugin: %s", validator_plugin_type.c_str());
 
@@ -173,7 +173,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits)
   noise_generator_.reset(settings_, isHolonomic());
   motion_model_->initialize(settings_.constraints, settings_.model_dt);
   trajectory_validator_->initialize(
-    parent_, name_ + ".TrajectoryValidator",
+    parent_, name_ + ".trajectory_validator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
 
   RCLCPP_INFO(logger_, "Optimizer reset");

@@ -31,12 +31,12 @@ TEST(WaypointFollowerTest, WaitAtWaypoint)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testWaypointNode");
 
-  node->declare_parameter("WAW.waypoint_pause_duration", 50);
+  node->declare_parameter("waw.waypoint_pause_duration", 50);
 
   std::unique_ptr<nav2_waypoint_follower::WaitAtWaypoint> waw(
     new nav2_waypoint_follower::WaitAtWaypoint
   );
-  waw->initialize(node, std::string("WAW"));
+  waw->initialize(node, std::string("waw"));
 
   auto start_time = node->now();
 
@@ -49,8 +49,8 @@ TEST(WaypointFollowerTest, WaitAtWaypoint)
   EXPECT_NEAR((end_time - start_time).seconds(), 0.05, 0.01);
 
   waw.reset(new nav2_waypoint_follower::WaitAtWaypoint);
-  node->set_parameter(rclcpp::Parameter("WAW.enabled", false));
-  waw->initialize(node, std::string("WAW"));
+  node->set_parameter(rclcpp::Parameter("waw.enabled", false));
+  waw->initialize(node, std::string("waw"));
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(waw->processAtWaypoint(pose, 0));
@@ -74,7 +74,7 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
   std::unique_ptr<nav2_waypoint_follower::InputAtWaypoint> iaw(
     new nav2_waypoint_follower::InputAtWaypoint
   );
-  iaw->initialize(node, std::string("IAW"));
+  iaw->initialize(node, std::string("iaw"));
   executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   auto start_time = node->now();
@@ -93,8 +93,8 @@ TEST(WaypointFollowerTest, InputAtWaypoint)
   t1.join();
 
   iaw.reset(new nav2_waypoint_follower::InputAtWaypoint);
-  node->set_parameter(rclcpp::Parameter("IAW.enabled", false));
-  iaw->initialize(node, std::string("IAW"));
+  node->set_parameter(rclcpp::Parameter("iaw.enabled", false));
+  iaw->initialize(node, std::string("iaw"));
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(iaw->processAtWaypoint(pose, 0));
@@ -137,7 +137,7 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   std::unique_ptr<nav2_waypoint_follower::PhotoAtWaypoint> paw(
     new nav2_waypoint_follower::PhotoAtWaypoint
   );
-  paw->initialize(node, std::string("PAW"));
+  paw->initialize(node, std::string("raw"));
   executor.add_node(node->shared_from_this()->get_node_base_interface());
 
   // no images, throws because can't write
@@ -151,8 +151,8 @@ TEST(WaypointFollowerTest, PhotoAtWaypoint)
   t1.join();
 
   paw.reset(new nav2_waypoint_follower::PhotoAtWaypoint);
-  node->set_parameter(rclcpp::Parameter("PAW.enabled", false));
-  paw->initialize(node, std::string("PAW"));
+  node->set_parameter(rclcpp::Parameter("raw.enabled", false));
+  paw->initialize(node, std::string("raw"));
 
   // plugin is not enabled, should exit
   EXPECT_TRUE(paw->processAtWaypoint(pose, 0));

@@ -65,10 +65,10 @@ def generate_launch_description() -> LaunchDescription:
         param_substitutions.update({'enable_groot_monitoring': 'True'})
 
     param_substitutions.update(
-        {'planner_server.ros__parameters.GridBased.plugin': os.getenv('PLANNER', '')}
+        {'planner_server.ros__parameters.grid_based.plugin': os.getenv('PLANNER', '')}
     )
     param_substitutions.update(
-        {'controller_server.ros__parameters.FollowPath.plugin': os.getenv('CONTROLLER', '')}
+        {'controller_server.ros__parameters.follow_path.plugin': os.getenv('CONTROLLER', '')}
     )
 
     configured_params = RewrittenYaml(

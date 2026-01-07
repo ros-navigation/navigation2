@@ -170,7 +170,7 @@
     </Action>
 
     <Action ID="SmoothPath">
-      <input_port name="smoother_id" default="SmoothPath"/>
+      <input_port name="smoother_id" default="smooth_path"/>
       <input_port name="unsmoothed_path">Path to be smoothed</input_port>
       <input_port name="max_smoothing_duration">Maximum smoothing duration</input_port>
       <input_port name="check_for_collisions">Bool if collision check should be performed</input_port>
@@ -182,7 +182,7 @@
     </Action>
 
     <Action ID="FollowPath">
-      <input_port name="controller_id" default="FollowPath"/>
+      <input_port name="controller_id" default="follow_path"/>
       <input_port name="path">Path to follow</input_port>
       <input_port name="goal_checker_id">Goal checker</input_port>
       <input_port name="progress_checker_id">Progress checker</input_port>

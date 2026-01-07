@@ -42,7 +42,7 @@ namespace nav2_planner
 PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("planner_server", "", options),
   gp_loader_("nav2_core", "nav2_core::GlobalPlanner"),
-  default_ids_{"GridBased"},
+  default_ids_{"grid_based"},
   default_types_{"nav2_navfn_planner::NavfnPlanner"},
   partial_plan_allowed_{false},
   costmap_update_timeout_(1s),
@@ -803,7 +803,7 @@ void PlannerServer::exceptionWarning(
 {
   std::stringstream ss;
   ss << std::fixed << std::setprecision(2)
-     << planner_id << "plugin failed to plan from ("
+     << planner_id << " plugin failed to plan from ("
      << start.pose.position.x << ", " << start.pose.position.y
      << ") to ("
      << goal.pose.position.x << ", " << goal.pose.position.y << ")"
