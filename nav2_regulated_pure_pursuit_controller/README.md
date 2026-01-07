@@ -76,6 +76,7 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled | 
 | `max_robot_pose_search_dist` | Maximum integrated distance along the path to bound the search for the closest pose to the robot. This is set by default to the maximum costmap extent, so it shouldn't be set manually unless there are loops within the local costmap. | 
 | `use_interpolation` | Enables interpolation between poses on the path for lookahead point selection. Helps sparse paths to avoid inducing discontinuous commanded velocities. Set this to false for a potential performance boost, at the expense of smooth control. | 
+| `interpolate_curvature_after_goal` | Interpolate a carrot after the goal dedicated to the curvate calculation (to avoid oscilaltions at the end of the path). | 
 
 Example fully-described XML with default parameter values:
 
@@ -123,6 +124,7 @@ controller_server:
       max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
       use_interpolation: false
+      interpolate_curvature_after_goal: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
