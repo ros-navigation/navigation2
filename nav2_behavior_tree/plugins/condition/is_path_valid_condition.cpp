@@ -26,7 +26,8 @@ IsPathValidCondition::IsPathValidCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
 : BT::ConditionNode(condition_name, conf),
-  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_("")
+  max_cost_(254), consider_unknown_as_obstacle_(false), layer_name_(""), footprint_(""),
+  check_full_path_(false)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   client_ =
@@ -42,6 +43,7 @@ void IsPathValidCondition::initialize()
   getInput<bool>("consider_unknown_as_obstacle", consider_unknown_as_obstacle_);
   getInput<std::string>("layer_name", layer_name_);
   getInput<std::string>("footprint", footprint_);
+  getInput<bool>("check_full_path", check_full_path_);
 }
 
 BT::NodeStatus IsPathValidCondition::tick()
@@ -60,6 +62,7 @@ BT::NodeStatus IsPathValidCondition::tick()
   request->consider_unknown_as_obstacle = consider_unknown_as_obstacle_;
   request->layer_name = layer_name_;
   request->footprint = footprint_;
+  request->check_full_path = check_full_path_;
   auto response = client_->invoke(request, server_timeout_);
 
   // Check if validation was successful

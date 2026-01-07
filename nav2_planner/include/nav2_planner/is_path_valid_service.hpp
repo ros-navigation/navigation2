@@ -273,11 +273,15 @@ private:
       {
         response->is_valid = false;
         response->invalid_pose_indices.push_back(i);
-        break;
+        if (!request->check_full_path) {
+          break;
+        }
       } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
         response->is_valid = false;
         response->invalid_pose_indices.push_back(i);
-        break;
+        if (!request->check_full_path) {
+          break;
+        }
       }
     }
   }

@@ -85,6 +85,9 @@ public:
       BT::InputPort<std::string>(
         "footprint", "",
         "Custom footprint specification (empty = use robot footprint)"),
+      BT::InputPort<bool>(
+        "check_full_path", false,
+        "Whether to check all poses (true) or stop at first invalid pose (false)"),
       BT::OutputPort<std::vector<geometry_msgs::msg::PoseStamped>>(
         "collision_poses",
         "Poses in the path that are in collision")
@@ -101,6 +104,7 @@ private:
   bool consider_unknown_as_obstacle_;
   std::string layer_name_;
   std::string footprint_;
+  bool check_full_path_;
 };
 
 }  // namespace nav2_behavior_tree
