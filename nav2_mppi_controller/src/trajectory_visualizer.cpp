@@ -65,8 +65,8 @@ void TrajectoryVisualizer::add(
   const std::string & marker_namespace,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
-  if ((optimal_path_pub_->get_subscription_count() == 0) &&
-    (trajectories_publisher_->get_subscription_count() == 0))
+  if (optimal_path_pub_->get_subscription_count() == 0 &&
+    trajectories_publisher_->get_subscription_count() == 0)
   {
     return;
   }
