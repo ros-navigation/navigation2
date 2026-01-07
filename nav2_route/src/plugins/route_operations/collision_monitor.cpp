@@ -39,7 +39,7 @@ void CollisionMonitor::configure(
   if (costmap_topic != server_costmap_topic) {
     RCLCPP_INFO(
       node->get_logger(),
-      "Using costmap topic: %s instead of server costmap topic: %s for CollisionMonitor.",
+      "Using costmap topic: %s instead of server costmap topic: %s for collision monitor.",
       costmap_topic.c_str(), server_costmap_topic.c_str());
     costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
     topic_ = costmap_topic;

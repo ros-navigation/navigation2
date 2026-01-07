@@ -50,8 +50,8 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     progress_checker_plugins: ["progress_checker"]
-    goal_checker_plugins: "goal_checker"
-    controller_plugins: ["FollowPath"]
+    goal_checker_plugins: ["goal_checker"]
+    controller_plugins: ["follow_path"]
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
@@ -62,7 +62,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       stateful: True
-    FollowPath:
+    follow_path:
       plugin: "nav2_rotation_shim_controller::RotationShimController"
       primary_controller: "dwb_core::DWBLocalPlanner"
       angular_dist_threshold: 0.785

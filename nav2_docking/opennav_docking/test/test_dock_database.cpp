@@ -66,7 +66,7 @@ TEST(DatabaseTests, ObjectLifecycle)
 TEST(DatabaseTests, initializeBogusPlugins)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1", "dockv2"};
+  std::vector<std::string> plugins{"dockv_1", "dockv_2"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
@@ -94,10 +94,10 @@ TEST(DatabaseTests, findTests)
 TEST(DatabaseTests, getDockInstancesBadConversionFile)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1"};
+  std::vector<std::string> plugins{"dockv_1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
-    "dockv1.plugin",
+    "dockv_1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
   // Set a valid path with a malformed file
@@ -117,10 +117,10 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
 TEST(DatabaseTests, getDockInstancesWrongPath)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1"};
+  std::vector<std::string> plugins{"dockv_1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
-    "dockv1.plugin",
+    "dockv_1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
   // Set a wrong path
@@ -136,10 +136,10 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
 TEST(DatabaseTests, reloadDbService)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1"};
+  std::vector<std::string> plugins{"dockv_1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
-    "dockv1.plugin",
+    "dockv_1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
@@ -173,10 +173,10 @@ TEST(DatabaseTests, reloadDbService)
 TEST(DatabaseTests, reloadDbMutexLocked)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::vector<std::string> plugins{"dockv1"};
+  std::vector<std::string> plugins{"dockv_1"};
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   node->declare_parameter(
-    "dockv1.plugin",
+    "dockv_1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
   // This mutex is locked when dock / undock is called

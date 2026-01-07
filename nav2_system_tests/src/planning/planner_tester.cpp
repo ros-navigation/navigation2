@@ -68,9 +68,9 @@ void PlannerTester::activate()
   auto state = rclcpp_lifecycle::State();
   planner_tester_ = std::make_shared<NavFnPlannerTester>();
   planner_tester_->declare_parameter(
-    "GridBased.use_astar", rclcpp::ParameterValue(true));
+    "grid_based.use_astar", rclcpp::ParameterValue(true));
   planner_tester_->set_parameter(
-    rclcpp::Parameter(std::string("GridBased.use_astar"), rclcpp::ParameterValue(true)));
+    rclcpp::Parameter(std::string("grid_based.use_astar"), rclcpp::ParameterValue(true)));
   planner_tester_->set_parameter(
     rclcpp::Parameter(std::string("expected_planner_frequency"), rclcpp::ParameterValue(-1.0)));
   planner_tester_->set_parameter(

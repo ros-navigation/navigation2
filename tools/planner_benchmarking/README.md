@@ -8,16 +8,16 @@ To use, modify the Nav2 bringup parameters to include the planners of interest:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    planner_plugins: ["SmacHybrid", "Smac2d", "SmacLattice", "Navfn", "ThetaStar"]
-    SmacHybrid:
+    planner_plugins: ["smac_hybrid", "smac_2d", "smac_lattice", "navfn", "theta_star"]
+    smac_hybrid:
       plugin: "nav2_smac_planner::SmacPlannerHybrid"
-    Smac2d:
+    smac_2d:
       plugin: "nav2_smac_planner::SmacPlanner2D"
-    SmacLattice:
+    smac_lattice:
       plugin: "nav2_smac_planner::SmacPlannerLattice"
-    Navfn:
+    navfn:
       plugin: "nav2_navfn_planner::NavfnPlanner"
-    ThetaStar:
+    theta_star:
       plugin: "nav2_theta_star_planner::ThetaStarPlanner"
 ```
 

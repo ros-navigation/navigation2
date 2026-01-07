@@ -93,9 +93,9 @@ protected:
     "nav2_controller::SimpleProgressChecker"};
   const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
   const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
-  const std::vector<std::string> default_controller_ids_{"FollowPath"};
+  const std::vector<std::string> default_controller_ids_{"follow_path"};
   const std::vector<std::string> default_controller_types_{"nav2_mppi_controller::MPPIController"};
-  const std::vector<std::string> default_path_handler_ids_{"PathHandler"};
+  const std::vector<std::string> default_path_handler_ids_{"path_handler"};
   const std::vector<std::string> default_path_handler_types_{
     "nav2_controller::FeasiblePathHandler"};
 };

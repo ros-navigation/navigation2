@@ -27,7 +27,7 @@
 
 // Some parameters for planner server
 static const double EXPECTED_PLANNER_FREQ{20.0};
-static const std::vector<std::string> PLANNER_PLUGINS{"GridBased"};
+static const std::vector<std::string> PLANNER_PLUGINS{"grid_based"};
 static const double COSTMAP_UPDATE_TIMEOUT{1.0};
 static const char PLANNER_PLUGIN_NAME[]{"nav2_smac_planner::SmacPlanner2D"};
 static const double PLANNER_TOLERANCE{0.1};

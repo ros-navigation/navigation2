@@ -5,8 +5,8 @@
 <root BTCPP_format="4" main_tree_to_execute="FollowPoint">
   <BehaviorTree ID="FollowPoint">
     <PipelineSequence name="NavigateWithReplanning">
-      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
-      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="follow_path" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="grid_based" topic_name="planner_selector"/>
       <RateController hz="1.0">
         <Sequence>
           <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">

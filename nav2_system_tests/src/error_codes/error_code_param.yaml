@@ -7,7 +7,7 @@ controller_server:
     failure_tolerance: -0.1
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    path_handler_plugins: ["PathHandler"]
+    path_handler_plugins: ["path_handler"]
     controller_plugins: [ "unknown", "tf_error", "invalid_path", "patience_exceeded","failed_to_make_progress", "no_valid_control"]
     unknown:
       plugin: "nav2_system_tests::UnknownErrorController"
@@ -40,7 +40,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
-    PathHandler:
+    path_handler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: false
@@ -50,7 +50,7 @@ controller_server:
       minimum_rotation_angle: 0.785
       reject_unit_path: false
     # DWB parameters
-    FollowPath:
+    follow_path:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: true
       min_vel_x: 0.0

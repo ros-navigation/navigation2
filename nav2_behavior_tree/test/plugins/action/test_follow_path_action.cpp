@@ -122,7 +122,7 @@ TEST_F(FollowPathActionTestFixture, test_tick)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <FollowPath path="{path}" controller_id="FollowPath"/>
+            <FollowPath path="{path}" controller_id="follow_path"/>
         </BehaviorTree>
       </root>)";
 
@@ -141,10 +141,10 @@ TEST_F(FollowPathActionTestFixture, test_tick)
 
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("controller_id"), std::string("FollowPath"));
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("controller_id"), std::string("follow_path"));
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses.size(), 1u);
   EXPECT_EQ(action_server_->getCurrentGoal()->path.poses[0].pose.position.x, 1.0);
-  EXPECT_EQ(action_server_->getCurrentGoal()->controller_id, std::string("FollowPath"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->controller_id, std::string("follow_path"));
 
   // halt node so another goal can be sent
   tree_->haltTree();
@@ -186,7 +186,7 @@ TEST(FollowPathAction, testProgressCheckerIdUpdate)
     R"(
     <root BTCPP_format="4">
       <BehaviorTree ID="MainTree">
-        <FollowPath path="{path}" controller_id="FollowPath" progress_checker_id="{progress_checker_id}"/>
+        <FollowPath path="{path}" controller_id="follow_path" progress_checker_id="{progress_checker_id}"/>
       </BehaviorTree>
     </root>)";
 
@@ -226,7 +226,7 @@ TEST(FollowPathAction, testGoalCheckerIdUpdate)
     R"(
     <root BTCPP_format="4">
       <BehaviorTree ID="MainTree">
-        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="{goal_checker_id}" progress_checker_id="{progress_checker_id}"/>
+        <FollowPath path="{path}" controller_id="follow_path" goal_checker_id="{goal_checker_id}" progress_checker_id="{progress_checker_id}"/>
       </BehaviorTree>
     </root>)";
 
@@ -266,7 +266,7 @@ TEST(FollowPathAction, testControllerIdUpdate)
     R"(
     <root BTCPP_format="4">
       <BehaviorTree ID="MainTree">
-        <FollowPath path="{path}" controller_id="{controller_id}" goal_checker_id="FollowPath" progress_checker_id="{progress_checker_id}"/>
+        <FollowPath path="{path}" controller_id="{controller_id}" goal_checker_id="goal_checker" progress_checker_id="{progress_checker_id}"/>
       </BehaviorTree>
     </root>)";
 

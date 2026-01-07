@@ -295,7 +295,7 @@ def run_all_tests(robot_tester: NavTester) -> bool:
             goal_pose=pose_out_of_bounds,
             behavior_tree='',
             expected_error_code=304,
-            expected_error_msg=('GridBasedplugin failed to plan from '
+            expected_error_msg=('grid_based plugin failed to plan from '
                                 '(-2.00, -0.50) to (2000.00, 4000.00): '
                                 '"Goal Coordinates of(2000.000000, 4000.000000) '
                                 'was outside bounds"'))
@@ -333,7 +333,7 @@ def run_all_tests(robot_tester: NavTester) -> bool:
         # Limit controller to generate very slow velocities
         # Note assumes nav2_dwb_controller dwb_core::DWBLocalPlanner
         robot_tester.setControllerParam(
-            'FollowPath.max_vel_x',
+            'follow_path.max_vel_x',
             Parameter.Type.DOUBLE,
             0.0001)
         result = robot_tester.runNavigateAction(

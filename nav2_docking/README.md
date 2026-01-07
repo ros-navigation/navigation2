@@ -84,10 +84,10 @@ There are two unique elements to consider in specifying docks: dock _instances_ 
 The **dock plugins** are specified in the parameter file as shown below. If you're familiar with plugins in other Nav2 servers, this should look like a familiar design pattern. Note that there is no specific information about the dock's pose or instances. These are generic attributes about the dock revision (such as staging pose, enable charging command, detection method, etc). You can add additional parameters in the dock's namespace as you choose (for example `timeout`). These can be of both charging and non-charging types.
 
 ```
-dock_plugins: ["dockv1", "dockv3"]
-dockv1:
+dock_plugins: ["dockv_1", "dockv_3"]
+dockv_1:
   plugin: "my_custom_dock_ns::Dockv1"
-dockv3:
+dockv_3:
   plugin: "my_custom_dock_ns::Dockv3"
   timeout: 10.0
 ```
@@ -95,14 +95,14 @@ dockv3:
 There are two ways to populate the database of **dock instances** in your environment: through the parameter file or an external file. If you'd like to embed your dock information in your Docking Server config file (if you only have a couple of docks), you may use a similar method as defining the dock plugins, specifying the docks in the ``docks`` parameter. Note that we specify the plugin type and the dock's location `[x, y, theta]` in a particular frame.
 
 ```
-docks: ['dock1', 'dock2']
-dock1:
-  type: "dockv3"
+docks: ['dock_1', 'dock_2']
+dock_1:
+  type: "dockv_3"
   frame: map
   pose: [0.3, 0.3, 0.0]
   id: "kitchen_dock"
-dock2:
-  type: "dockv1"
+dock_2:
+  type: "dockv_1"
   frame: map
   pose: [0.0, 0.0, 0.4]
   id: "42"
@@ -112,13 +112,13 @@ If you'd prefer to specify the docks using an external file, you may use the `do
 
 ```
 docks:
-  dock1:
-    type: "dockv3"
+  dock_1:
+    type: "dockv_3"
     frame: map
     pose: [0.3, 0.3, 0.0]
     id: "kitchen_dock"
-  dock2:
-    type: "dockv1"
+  dock_2:
+    type: "dockv_1"
     frame: map
     pose: [0.0, 0.0, 0.4]
     id: "42"

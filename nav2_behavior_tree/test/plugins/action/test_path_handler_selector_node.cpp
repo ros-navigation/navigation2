@@ -99,7 +99,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_custom_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="FeasiblePathHandler" topic_name="path_handler_selector_custom_topic_name"/>
+          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="feasible_path_handler" topic_name="path_handler_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -114,11 +114,11 @@ TEST_F(PathHandlerSelectorTestFixture, test_custom_topic)
   std::string selected_path_handler_result;
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
 
-  EXPECT_EQ(selected_path_handler_result, "FeasiblePathHandler");
+  EXPECT_EQ(selected_path_handler_result, "feasible_path_handler");
 
   std_msgs::msg::String selected_path_handler_cmd;
 
-  selected_path_handler_cmd.data = "HardPathHandler";
+  selected_path_handler_cmd.data = "hard_path_handler";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -137,7 +137,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_custom_topic)
 
   // check path_handler updated
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
-  EXPECT_EQ("HardPathHandler", selected_path_handler_result);
+  EXPECT_EQ("hard_path_handler", selected_path_handler_result);
 }
 
 TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
@@ -147,7 +147,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="GridBased"/>
+          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="grid_based"/>
         </BehaviorTree>
       </root>)";
 
@@ -162,11 +162,11 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
   std::string selected_path_handler_result;
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
 
-  EXPECT_EQ(selected_path_handler_result, "GridBased");
+  EXPECT_EQ(selected_path_handler_result, "grid_based");
 
   std_msgs::msg::String selected_path_handler_cmd;
 
-  selected_path_handler_cmd.data = "RRT";
+  selected_path_handler_cmd.data = "rrt";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -185,7 +185,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
 
   // check path_handler updated
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
-  EXPECT_EQ("RRT", selected_path_handler_result);
+  EXPECT_EQ("rrt", selected_path_handler_result);
 }
 
 int main(int argc, char ** argv)
