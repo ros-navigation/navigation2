@@ -124,8 +124,8 @@ bool AxisGoalChecker::isGoalReached(
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    return fabs(distance_to_goal) < along_path_tolerance_ &&
-           fabs(distance_to_goal) < cross_track_tolerance_;
+    double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
+    return distance_to_goal < tolerance;
   }
 }
 
