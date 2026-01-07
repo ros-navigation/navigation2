@@ -247,7 +247,7 @@ TEST(CriticTests, GoalAngleSymmetricCritic)
   // Standard preamble
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("my_node");
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", "dummy_costmap", true);
+    "dummy_costmap", "", "dummy_costmap");
   ParametersHandler param_handler(node);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
@@ -257,12 +257,11 @@ TEST(CriticTests, GoalAngleSymmetricCritic)
   models::Trajectories generated_trajectories;
   generated_trajectories.reset(1000, 30);
   models::Path path;
-  geometry_msgs::msg::Pose goal;
   xt::xtensor<float, 1> costs = xt::zeros<float>({1000});
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, goal, costs, model_dt,
-    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  {state, generated_trajectories, path, costs, model_dt, false, nullptr, nullptr, std::nullopt,
+    std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 
   // Initialization testing
@@ -283,7 +282,6 @@ TEST(CriticTests, GoalAngleSymmetricCritic)
   path.x(9) = 10.0;
   path.y(9) = 0.0;
   path.yaws(9) = 3.14;
-  goal.position.x = 10.0;
   critic.score(data);
   EXPECT_GT(xt::sum(costs, immediate)(), 0);
   EXPECT_NEAR(costs(0), 0, 0.02);  // Should be zero cost due to symmetry
