@@ -120,9 +120,9 @@ private:
     auto layers = costmap_ros_->getLayeredCostmap()->getPlugins();
     for (auto & layer : *layers) {
       if (layer->getName() == layer_name) {
-        auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(layer);
-        if (costmap_layer) {
-          return static_cast<nav2_costmap_2d::Costmap2D *>(costmap_layer.get());
+        auto * costmap_layer = dynamic_cast<nav2_costmap_2d::CostmapLayer *>(layer.get());
+        if (costmap_layer != nullptr) {
+          return static_cast<nav2_costmap_2d::Costmap2D *>(costmap_layer);
         }
       }
     }
