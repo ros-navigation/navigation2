@@ -67,13 +67,6 @@ public:
     }
 
     costmap_ = costmap_ros_->getCostmap();
-
-    // Create collision checker if not using radius-based checking
-    if (!costmap_ros_->getUseRadius()) {
-      collision_checker_ =
-        std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
-        costmap_);
-    }
   }
 
   /**
@@ -106,7 +99,6 @@ public:
    */
   void cleanup()
   {
-    collision_checker_.reset();
     costmap_ = nullptr;
   }
 
@@ -245,10 +237,13 @@ private:
       return;
     }
 
-    // If checking against a different costmap than the main one,
-    // temporarily update the collision checker
-    if (!use_radius && costmap_to_check != costmap_) {
-      collision_checker_->setCostmap(costmap_to_check);
+    // Create collision checker for this request if needed
+    std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
+    collision_checker;
+    if (!use_radius) {
+      collision_checker =
+        std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
+        costmap_to_check);
     }
 
     unsigned int cost = nav2_costmap_2d::FREE_SPACE;
@@ -262,7 +257,7 @@ private:
         }
       } else {
         auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
-        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
+        cost = static_cast<unsigned int>(collision_checker->footprintCostAtPose(
             position.x, position.y, theta, footprint));
       }
 
@@ -285,11 +280,6 @@ private:
         break;
       }
     }
-
-    // Restore the collision checker to use the main costmap if we changed it
-    if (!use_radius && costmap_to_check != costmap_) {
-      collision_checker_->setCostmap(costmap_);
-    }
   }
 
   nav2::LifecycleNode::WeakPtr node_;
@@ -297,8 +287,6 @@ private:
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_;
   nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr service_;
-  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
-  collision_checker_;
 };
 
 }  // namespace nav2_planner
