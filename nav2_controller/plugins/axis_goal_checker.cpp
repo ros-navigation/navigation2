@@ -111,22 +111,23 @@ bool AxisGoalChecker::isGoalReached(
     // end of path direction
     double end_of_path_yaw = atan2(dy, dx);
 
-    double robot_to_goal_yaw = atan2(
-      goal_pose.position.y - query_pose.position.y,
-      goal_pose.position.x - query_pose.position.x);
+    // Check if robot is already at goal (would cause atan2(0,0))
+    double robot_to_goal_dx = goal_pose.position.x - query_pose.position.x;
+    double robot_to_goal_dy = goal_pose.position.y - query_pose.position.y;
+    double distance_to_goal = std::hypot(robot_to_goal_dx, robot_to_goal_dy);
+
+    if (distance_to_goal < 1e-6) {
+      return true;  // Robot is at goal
+    }
+
+    double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
 
     double projection_angle = angles::shortest_angular_distance(
       robot_to_goal_yaw, end_of_path_yaw);
 
-    double along_path_distance = std::hypot(
-      goal_pose.position.x - query_pose.position.x,
-      goal_pose.position.y - query_pose.position.y) *
-      cos(projection_angle);
+    double along_path_distance = distance_to_goal * cos(projection_angle);
 
-    double cross_track_distance = std::hypot(
-      goal_pose.position.x - query_pose.position.x,
-      goal_pose.position.y - query_pose.position.y) *
-      sin(projection_angle);
+    double cross_track_distance = distance_to_goal * sin(projection_angle);
 
     if (is_overshoot_valid_) {
       return along_path_distance < along_path_tolerance_ &&

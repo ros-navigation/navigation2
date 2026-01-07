@@ -473,6 +473,71 @@ TEST(AxisGoalChecker, angled_approach)
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
 }
 
+TEST(AxisGoalChecker, identical_consecutive_poses)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  // Create a path where the last two poses are identical
+  nav_msgs::msg::Path path_with_duplicates = createPath({{1.5, 0.0}, {2.0, 0.0}, {2.0, 0.0}});
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.x = 2.0;
+  goal_pose.position.y = 0.0;
+  goal_pose.position.z = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  geometry_msgs::msg::Twist velocity;
+
+  // Robot within tolerance should succeed (falls back to simple distance check)
+  query_pose.position.x = 1.85;
+  query_pose.position.y = 0.0;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_duplicates));
+
+  // Robot at goal
+  query_pose = goal_pose;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_duplicates));
+
+  // Robot outside tolerance should fail
+  query_pose.position.x = 1.7;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_duplicates));
+}
+
+TEST(AxisGoalChecker, robot_at_goal_position)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.x = 2.0;
+  goal_pose.position.y = 0.0;
+  goal_pose.position.z = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  geometry_msgs::msg::Twist velocity;
+
+  // Create a normal path
+  nav_msgs::msg::Path short_path = createPath({{1.5, 0.0}, {2.0, 0.0}});
+
+  // Robot exactly at goal position
+  query_pose = goal_pose;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
+
+  // Robot extremely close to goal (within numerical precision threshold)
+  query_pose.position.x = 2.0 + 1e-7;
+  query_pose.position.y = 0.0 + 1e-7;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
