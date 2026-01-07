@@ -76,10 +76,6 @@ BT::NodeStatus IsPathValidCondition::tick()
     setOutput("collision_poses", collision_poses);
     return BT::NodeStatus::SUCCESS;
   }
-  RCLCPP_WARN(
-    node_->get_logger(),
-    "Path is invalid according to the IsPathValid service");
-
   // Extract collision poses based on invalid pose indices
   std::vector<geometry_msgs::msg::PoseStamped> collision_poses;
   if (!response->invalid_pose_indices.empty()) {

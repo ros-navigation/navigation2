@@ -738,12 +738,13 @@ void PlannerServer::isPathValid(
       }
 
       if (costmap_to_check == nullptr) {
-        RCLCPP_WARN(
+        RCLCPP_ERROR(
           get_logger(),
-          "Requested layer '%s' not found or does not provide a costmap. "
-          "Using full costmap instead.",
+          "Requested layer '%s' not found or does not provide a costmap.",
           request->layer_name.c_str());
-        costmap_to_check = costmap_;
+        response->success = false;
+        response->is_valid = false;
+        return;
       }
     } else {
       // Use the full costmap (default behavior)
@@ -775,6 +776,12 @@ void PlannerServer::isPathValid(
       footprint = costmap_ros_->getRobotFootprint();
     }
     // If use_radius is still true, collision checking will use the costmap directly
+
+    // If checking against a different costmap than the main one,
+    // temporarily update the collision checker
+    if (!use_radius && costmap_to_check != costmap_) {
+      collision_checker_->setCostmap(costmap_to_check);
+    }
 
     unsigned int cost = nav2_costmap_2d::FREE_SPACE;
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
