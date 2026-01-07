@@ -234,6 +234,7 @@ private:
     if (!getFootprintToUse(request->footprint, footprint, use_radius, error_msg)) {
       RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
       response->success = false;
+      response->is_valid = false;
       return;
     }
 
