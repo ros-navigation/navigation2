@@ -28,7 +28,7 @@
 #include "nav2_costmap_2d/costmap_layer.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/service_server.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace nav2_planner
 {
@@ -180,108 +180,115 @@ private:
     response->is_valid = true;
 
     if (request->path.poses.empty()) {
+      RCLCPP_ERROR(logger_, "Received empty path. Cannot validate path.");
+      response->success = false;
       response->is_valid = false;
       return;
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
+    if (!costmap_ros_->getRobotPose(current_pose)) {
+      RCLCPP_ERROR(logger_, "Failed to get robot pose. Cannot validate path.");
+      response->success = false;
+      response->is_valid = false;
+      return;
+    }
+
     unsigned int closest_point_index = 0;
-    if (costmap_ros_->getRobotPose(current_pose)) {
-      float current_distance = std::numeric_limits<float>::max();
-      float closest_distance = current_distance;
-      geometry_msgs::msg::Point current_point = current_pose.pose.position;
-      for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
-        geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
+    float current_distance = std::numeric_limits<float>::max();
+    float closest_distance = current_distance;
+    geometry_msgs::msg::Point current_point = current_pose.pose.position;
+    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
+      geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
 
-        current_distance = nav2_util::geometry_utils::euclidean_distance(
-          current_point,
-          path_point);
+      current_distance = nav2_util::geometry_utils::euclidean_distance(
+        current_point,
+        path_point);
 
-        if (current_distance < closest_distance) {
-          closest_point_index = i;
-          closest_distance = current_distance;
-        }
+      if (current_distance < closest_distance) {
+        closest_point_index = i;
+        closest_distance = current_distance;
       }
+    }
 
-      /**
-       * The lethal check starts at the closest point to avoid points that have already been passed
-       * and may have become occupied. The method for collision detection is based on the shape of
-       * the footprint.
-       */
+    /**
+     * The lethal check starts at the closest point to avoid points that have already been passed
+     * and may have become occupied. The method for collision detection is based on the shape of
+     * the footprint.
+     */
 
-      // Determine which costmap to use based on layer_name parameter
-      std::string error_msg;
-      nav2_costmap_2d::Costmap2D * costmap_to_check = getCostmapToCheck(
-        request->layer_name,
-        error_msg);
+    // Determine which costmap to use based on layer_name parameter
+    std::string error_msg;
+    nav2_costmap_2d::Costmap2D * costmap_to_check = getCostmapToCheck(
+      request->layer_name,
+      error_msg);
 
-      if (costmap_to_check == nullptr) {
-        RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
-        response->success = false;
-        response->is_valid = false;
-        return;
-      }
+    if (costmap_to_check == nullptr) {
+      RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+      response->success = false;
+      response->is_valid = false;
+      return;
+    }
 
-      std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
-        *(costmap_to_check->getMutex()));
-      unsigned int mx = 0;
-      unsigned int my = 0;
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+      *(costmap_to_check->getMutex()));
+    unsigned int mx = 0;
+    unsigned int my = 0;
 
-      // Determine footprint to use
-      nav2_costmap_2d::Footprint footprint;
-      bool use_radius;
+    // Determine footprint to use
+    nav2_costmap_2d::Footprint footprint;
+    bool use_radius;
 
-      if (!getFootprintToUse(request->footprint, footprint, use_radius, error_msg)) {
-        RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
-        response->success = false;
-        return;
-      }
+    if (!getFootprintToUse(request->footprint, footprint, use_radius, error_msg)) {
+      RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+      response->success = false;
+      return;
+    }
 
-      // If checking against a different costmap than the main one,
-      // temporarily update the collision checker
-      if (!use_radius && costmap_to_check != costmap_) {
-        collision_checker_->setCostmap(costmap_to_check);
-      }
+    // If checking against a different costmap than the main one,
+    // temporarily update the collision checker
+    if (!use_radius && costmap_to_check != costmap_) {
+      collision_checker_->setCostmap(costmap_to_check);
+    }
 
-      unsigned int cost = nav2_costmap_2d::FREE_SPACE;
-      for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-        auto & position = request->path.poses[i].pose.position;
-        if (use_radius) {
-          if (costmap_to_check->worldToMap(position.x, position.y, mx, my)) {
-            cost = costmap_to_check->getCost(mx, my);
-          } else {
-            cost = nav2_costmap_2d::LETHAL_OBSTACLE;
-          }
+    unsigned int cost = nav2_costmap_2d::FREE_SPACE;
+    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
+      auto & position = request->path.poses[i].pose.position;
+      if (use_radius) {
+        if (costmap_to_check->worldToMap(position.x, position.y, mx, my)) {
+          cost = costmap_to_check->getCost(mx, my);
         } else {
-          auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
-          cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
-              position.x, position.y, theta, footprint));
-        }
-
-        if (cost == nav2_costmap_2d::NO_INFORMATION && request->consider_unknown_as_obstacle) {
           cost = nav2_costmap_2d::LETHAL_OBSTACLE;
-        } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
-          cost = nav2_costmap_2d::FREE_SPACE;
         }
-
-        if (use_radius &&
-          (cost >= request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-          cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
-        {
-          response->is_valid = false;
-          response->invalid_pose_indices.push_back(i);
-          break;
-        } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
-          response->is_valid = false;
-          response->invalid_pose_indices.push_back(i);
-          break;
-        }
+      } else {
+        auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
+        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
+            position.x, position.y, theta, footprint));
       }
 
-      // Restore the collision checker to use the main costmap if we changed it
-      if (!use_radius && costmap_to_check != costmap_) {
-        collision_checker_->setCostmap(costmap_);
+      if (cost == nav2_costmap_2d::NO_INFORMATION && request->consider_unknown_as_obstacle) {
+        cost = nav2_costmap_2d::LETHAL_OBSTACLE;
+      } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
+        cost = nav2_costmap_2d::FREE_SPACE;
       }
+
+      if (use_radius &&
+        (cost >= request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
+        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
+      {
+        response->is_valid = false;
+        response->invalid_pose_indices.push_back(i);
+        break;
+      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
+        response->is_valid = false;
+        response->invalid_pose_indices.push_back(i);
+        break;
+      }
+    }
+
+    // Restore the collision checker to use the main costmap if we changed it
+    if (!use_radius && costmap_to_check != costmap_) {
+      collision_checker_->setCostmap(costmap_);
     }
   }
 
