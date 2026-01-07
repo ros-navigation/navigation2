@@ -27,9 +27,10 @@
 namespace nav2_controller
 {
 
-/**  * @class AxisGoalChecker
-  * @brief Goal Checker plugin that checks progress along the axis defined by the
-  * defined by the last segment of the path to the goal.
+/**
+  * @class AxisGoalChecker
+  * @brief Goal Checker plugin that checks progress along the axis defined by the last segment
+  * of the path to the goal.
   *
   * This class can be configured to allow overshoot past the goal if the is_overshoot_valid
   *  parameter is set to true (which is false by default).
