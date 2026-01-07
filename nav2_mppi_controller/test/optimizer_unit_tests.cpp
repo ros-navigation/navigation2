@@ -808,8 +808,6 @@ TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
   // Test 1: Dynamic parameter update SHOULD SUCCEED when no speed limit is active
   auto result1 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 0.8));
   EXPECT_TRUE(result1.successful);
-  // Spin to process callbacks
-  rclcpp::spin_some(node->get_node_base_interface());
   // Verify the parameter was updated
   EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
 
@@ -825,8 +823,6 @@ TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
   // Test 2: Dynamic parameter update SHOULD BE REJECTED when speed limit is active
   auto result2 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
   EXPECT_FALSE(result2.successful);
-  // Spin to process callbacks
-  rclcpp::spin_some(node->get_node_base_interface());
   // Verify the base_constraints value was NOT updated
   EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 0.8f);
 
@@ -837,7 +833,6 @@ TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
   // Test 3: Dynamic parameter update SHOULD SUCCEED again after clearing speed limit
   auto result3 = node->set_parameter(rclcpp::Parameter("mppic.vx_max", 1.0));
   EXPECT_TRUE(result3.successful);
-  rclcpp::spin_some(node->get_node_base_interface());
   EXPECT_EQ(optimizer_tester.getBaseConstraints().vx_max, 1.0f);
 }
 
