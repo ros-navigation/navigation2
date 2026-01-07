@@ -71,6 +71,9 @@ BT::NodeStatus IsPathValidCondition::tick()
   }
 
   if (response->is_valid) {
+    // Ensure collision_poses output is cleared when the path is valid
+    std::vector<geometry_msgs::msg::PoseStamped> collision_poses;
+    setOutput("collision_poses", collision_poses);
     return BT::NodeStatus::SUCCESS;
   }
   RCLCPP_WARN(
