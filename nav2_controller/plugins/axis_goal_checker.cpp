@@ -44,25 +44,14 @@ void AxisGoalChecker::initialize(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".along_path_tolerance", rclcpp::ParameterValue(0.25));
-  node->get_parameter(plugin_name + ".along_path_tolerance", along_path_tolerance_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".cross_track_tolerance", rclcpp::ParameterValue(0.25));
-  node->get_parameter(plugin_name + ".cross_track_tolerance", cross_track_tolerance_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".path_length_tolerance", rclcpp::ParameterValue(1.0));
-  node->get_parameter(plugin_name + ".path_length_tolerance", path_length_tolerance_);
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    plugin_name + ".is_overshoot_valid", rclcpp::ParameterValue(false));
-  node->get_parameter(plugin_name + ".is_overshoot_valid", is_overshoot_valid_);
+  along_path_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".along_path_tolerance", 0.25);
+  cross_track_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".cross_track_tolerance", 0.25);
+  path_length_tolerance_ = node->declare_or_get_parameter(
+    plugin_name + ".path_length_tolerance", 1.0);
+  is_overshoot_valid_ = node->declare_or_get_parameter(
+    plugin_name + ".is_overshoot_valid", false);
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = node->add_on_set_parameters_callback(
@@ -185,11 +174,9 @@ AxisGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parame
     if (type == ParameterType::PARAMETER_DOUBLE) {
       if (name == plugin_name_ + ".along_path_tolerance") {
         along_path_tolerance_ = parameter.as_double();
-      }
-      if (name == plugin_name_ + ".cross_track_tolerance") {
+      } else if (name == plugin_name_ + ".cross_track_tolerance") {
         cross_track_tolerance_ = parameter.as_double();
-      }
-      if (name == plugin_name_ + ".path_length_tolerance") {
+      } else if (name == plugin_name_ + ".path_length_tolerance") {
         path_length_tolerance_ = parameter.as_double();
       }
     } else if (type == ParameterType::PARAMETER_BOOL) {
