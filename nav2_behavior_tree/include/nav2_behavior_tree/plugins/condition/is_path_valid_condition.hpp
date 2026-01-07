@@ -84,7 +84,8 @@ public:
         "Name of the costmap layer to check against (empty = full costmap)"),
       BT::InputPort<std::string>(
         "footprint", "",
-        "Custom footprint specification as bracketed array of arrays, e.g., [[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
+        "Custom footprint specification as bracketed array of arrays, e.g., "
+        "[[x1,y1],[x2,y2],...] (empty = use robot footprint)"),
       BT::InputPort<bool>(
         "check_full_path", false,
         "Whether to check all poses (true) or stop at first invalid pose (false)"),
