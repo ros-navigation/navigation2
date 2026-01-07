@@ -61,6 +61,7 @@ protected:
   // Dynamic parameters handler
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::string plugin_name_;
+  rclcpp::Logger logger_{rclcpp::get_logger("AxisGoalChecker")};
 
   /**
    * @brief Callback executed when a parameter change is detected

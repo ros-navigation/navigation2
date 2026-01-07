@@ -42,6 +42,7 @@ void AxisGoalChecker::initialize(
 {
   plugin_name_ = plugin_name;
   auto node = parent.lock();
+  logger_ = node->get_logger();
 
   nav2::declare_parameter_if_not_declared(
     node,
@@ -90,10 +91,25 @@ bool AxisGoalChecker::isGoalReached(
     const auto & before_goal_pose =
       transformed_global_plan.poses[transformed_global_plan.poses.size() - 2].pose;
 
+    // Check if the last two poses are identical (would cause atan2(0,0))
+    double dx = goal_pose.position.x - before_goal_pose.position.x;
+    double dy = goal_pose.position.y - before_goal_pose.position.y;
+    double pose_distance = std::hypot(dx, dy);
+
+    // If poses are identical, fall back to simple distance check
+    if (pose_distance < 1e-6) {
+      RCLCPP_WARN(
+        logger_,
+        "Last two poses in path are identical, falling back to simple distance check");
+      double distance_to_goal = std::hypot(
+        goal_pose.position.x - query_pose.position.x,
+        goal_pose.position.y - query_pose.position.y);
+      double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
+      return distance_to_goal < tolerance;
+    }
+
     // end of path direction
-    double end_of_path_yaw = atan2(
-      goal_pose.position.y - before_goal_pose.position.y,
-      goal_pose.position.x - before_goal_pose.position.x);
+    double end_of_path_yaw = atan2(dy, dx);
 
     double robot_to_goal_yaw = atan2(
       goal_pose.position.y - query_pose.position.y,
@@ -121,6 +137,9 @@ bool AxisGoalChecker::isGoalReached(
     }
   } else {
     // Fallback: path has only 1 point, use simple distance check
+    RCLCPP_WARN(
+      logger_,
+      "Path has fewer than 2 poses, falling back to simple distance check");
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
