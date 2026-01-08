@@ -77,23 +77,32 @@ bool AxisGoalChecker::isGoalReached(
   // Check if we have at least 2 poses to determine path direction
   if (transformed_global_plan.poses.size() >= 2) {
     // Use axis-aligned goal checking with path direction
-    const auto & before_goal_pose =
-      transformed_global_plan.poses[transformed_global_plan.poses.size() - 2].pose;
+    // Find a pose before goal that is sufficiently far from goal
+    const geometry_msgs::msg::Pose * before_goal_pose_ptr = nullptr;
+    double dx = 0.0;
+    double dy = 0.0;
 
-    // Check if the last two poses are identical (would cause atan2(0,0))
-    double dx = goal_pose.position.x - before_goal_pose.position.x;
-    double dy = goal_pose.position.y - before_goal_pose.position.y;
-    double pose_distance = std::hypot(dx, dy);
+    for (int i = transformed_global_plan.poses.size() - 2; i >= 0; --i) {
+      const auto & candidate_pose = transformed_global_plan.poses[i].pose;
+      dx = goal_pose.position.x - candidate_pose.position.x;
+      dy = goal_pose.position.y - candidate_pose.position.y;
+      double pose_distance = std::hypot(dx, dy);
 
-    // If poses are identical, fall back to simple distance check
-    if (pose_distance < 1e-6) {
-      RCLCPP_WARN(
+      if (pose_distance >= 1e-6) {
+        before_goal_pose_ptr = &candidate_pose;
+        break;
+      }
+    }
+
+    // If all poses are too close to goal, fall back to simple distance check
+    if (!before_goal_pose_ptr) {
+      RCLCPP_DEBUG(
         logger_,
-        "Last two poses in path are identical, falling back to simple distance check");
+        "All poses in path are too close to goal, falling back to simple distance check");
       double distance_to_goal = std::hypot(
         goal_pose.position.x - query_pose.position.x,
         goal_pose.position.y - query_pose.position.y);
-      double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
+      double tolerance = std::hypot(along_path_tolerance_, cross_track_tolerance_);
       return distance_to_goal < tolerance;
     }
 
@@ -110,12 +119,9 @@ bool AxisGoalChecker::isGoalReached(
     }
 
     double robot_to_goal_yaw = atan2(robot_to_goal_dy, robot_to_goal_dx);
-
     double projection_angle = angles::shortest_angular_distance(
       robot_to_goal_yaw, end_of_path_yaw);
-
     double along_path_distance = distance_to_goal * cos(projection_angle);
-
     double cross_track_distance = distance_to_goal * sin(projection_angle);
 
     if (is_overshoot_valid_) {
@@ -127,13 +133,13 @@ bool AxisGoalChecker::isGoalReached(
     }
   } else {
     // Fallback: path has only 1 point, use simple distance check
-    RCLCPP_WARN(
+    RCLCPP_DEBUG(
       logger_,
       "Path has fewer than 2 poses, falling back to simple distance check");
     double distance_to_goal = std::hypot(
       goal_pose.position.x - query_pose.position.x,
       goal_pose.position.y - query_pose.position.y);
-    double tolerance = std::min(along_path_tolerance_, cross_track_tolerance_);
+    double tolerance = std::hypot(along_path_tolerance_, cross_track_tolerance_);
     return distance_to_goal < tolerance;
   }
 }

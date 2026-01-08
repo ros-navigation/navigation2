@@ -38,17 +38,47 @@ namespace nav2_controller
 class AxisGoalChecker : public nav2_core::GoalChecker
 {
 public:
+  /**
+   * @brief Construct a new Axis Goal Checker object
+   */
   AxisGoalChecker();
+
   // Standard GoalChecker Interface
+  /**
+   * @brief Initialize the goal checker
+   * @param parent Weak pointer to the lifecycle node
+   * @param plugin_name Name of the plugin
+   * @param costmap_ros Shared pointer to the costmap
+   */
   void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
+
+  /**
+   * @brief Reset the goal checker state
+   */
   void reset() override;
+
+  /**
+   * @brief Check if the goal is reached
+   * @param query_pose Current pose of the robot
+   * @param goal_pose Target goal pose
+   * @param velocity Current velocity of the robot
+   * @param transformed_global_plan The transformed global plan
+   * @return true if goal is reached, false otherwise
+   */
   bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity,
     const nav_msgs::msg::Path & transformed_global_plan) override;
+
+  /**
+   * @brief Get the position and velocity tolerances
+   * @param pose_tolerance Output parameter for pose tolerance
+   * @param vel_tolerance Output parameter for velocity tolerance
+   * @return true if tolerances are available, false otherwise
+   */
   bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) override;

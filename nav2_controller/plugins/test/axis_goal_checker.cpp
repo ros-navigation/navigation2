@@ -170,8 +170,8 @@ TEST(AxisGoalChecker, single_point_path)
   query_pose.position.y = 0.0;
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
 
-  // Robot outside tolerance
-  query_pose.position.x = 0.3;
+  // Robot outside combined tolerance (hypot(0.25, 0.25) ≈ 0.354)
+  query_pose.position.x = 0.36;
   query_pose.position.y = 0.0;
   EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path));
 }
@@ -536,6 +536,72 @@ TEST(AxisGoalChecker, robot_at_goal_position)
   query_pose.position.x = 2.0 + 1e-7;
   query_pose.position.y = 0.0 + 1e-7;
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
+}
+
+TEST(AxisGoalChecker, multiple_consecutive_poses_too_close_to_goal)
+{
+  auto node = std::make_shared<TestLifecycleNode>("axis_goal_checker_test");
+  AxisGoalChecker agc;
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+
+  agc.initialize(node, "test", costmap);
+
+  geometry_msgs::msg::Pose goal_pose;
+  goal_pose.position.x = 2.0;
+  goal_pose.position.y = 0.0;
+  goal_pose.position.z = 0.0;
+  goal_pose.orientation.w = 1.0;
+
+  geometry_msgs::msg::Pose query_pose;
+  geometry_msgs::msg::Twist velocity;
+
+  // Create a path where multiple consecutive poses at the end are extremely close to goal
+  // (within 1e-6 distance threshold), but there's a valid pose further back
+  // Keep path short to stay within path_length_tolerance
+  nav_msgs::msg::Path path_with_close_poses = createPath({
+    {1.8, 0.0},                // Valid pose before goal
+    {2.0 - 0.001, 0.0},        // Valid pose 1mm before goal (> 1e-6 threshold)
+    {2.0 + 1e-7, 0.0},         // Too close to goal
+    {2.0 + 5e-8, 1e-8},        // Too close to goal
+    {2.0, 0.0}                 // Goal position (identical)
+  });
+
+  // Robot within tolerance - should use the valid pose at (2.0-0.001, 0.0)
+  // to determine path direction
+  query_pose.position.x = 1.85;
+  query_pose.position.y = 0.0;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_close_poses));
+
+  // Robot at goal
+  query_pose = goal_pose;
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_close_poses));
+
+  // Robot outside tolerance should fail
+  query_pose.position.x = 1.7;
+  query_pose.position.y = 0.0;
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_with_close_poses));
+
+  // Create a path where ALL poses are too close to goal (should fall back to distance check)
+  nav_msgs::msg::Path path_all_close = createPath({
+    {2.0 + 1e-7, 0.0},
+    {2.0 + 5e-8, 1e-8},
+    {2.0, 0.0}
+  });
+
+  // Robot within combined tolerance should succeed (fallback to distance check)
+  query_pose.position.x = 2.0 + 0.2;
+  query_pose.position.y = 0.15;
+  double combined_tolerance = std::hypot(0.25, 0.25);
+  double distance = std::hypot(0.2, 0.15);
+  EXPECT_LT(distance, combined_tolerance);  // Verify we're within tolerance
+  EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
+
+  // Robot outside combined tolerance should fail
+  query_pose.position.x = 2.0 + 0.3;
+  query_pose.position.y = 0.3;
+  distance = std::hypot(0.3, 0.3);
+  EXPECT_GT(distance, combined_tolerance);  // Verify we're outside tolerance
+  EXPECT_FALSE(agc.isGoalReached(query_pose, goal_pose, velocity, path_all_close));
 }
 
 int main(int argc, char ** argv)
