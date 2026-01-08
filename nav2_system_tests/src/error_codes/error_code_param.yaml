@@ -33,9 +33,9 @@ controller_server:
     #  plugin: "nav2_controller::SimpleGoalChecker"
     #  xy_goal_tolerance: 0.25
     #  yaw_goal_tolerance: 0.25
-    #  stateful: True
+    #  stateful: true
     general_goal_checker:
-      stateful: True
+      stateful: true
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
@@ -43,16 +43,16 @@ controller_server:
     PathHandler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
-      enforce_path_inversion: False
-      enforce_path_rotation: False
+      enforce_path_inversion: false
+      enforce_path_rotation: false
       inversion_xy_tolerance: 0.2
       inversion_yaw_tolerance: 0.4
       minimum_rotation_angle: 0.785
-      reject_unit_path: False
+      reject_unit_path: false
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      debug_trajectory_details: True
+      debug_trajectory_details: true
       min_vel_x: 0.0
       min_vel_y: 0.0
       max_vel_x: 0.26
@@ -77,8 +77,8 @@ controller_server:
       angular_granularity: 0.025
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
-      short_circuit_trajectory_evaluation: True
-      stateful: True
+      short_circuit_trajectory_evaluation: true
+      stateful: true
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
       BaseObstacle.scale: 0.02
       PathAlign.scale: 32.0
@@ -112,8 +112,8 @@ local_costmap:
         inflation_radius: 0.55
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
-        enabled: True
-        publish_voxel_map: True
+        enabled: true
+        publish_voxel_map: true
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
@@ -123,8 +123,8 @@ local_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          clearing: True
-          marking: True
+          clearing: true
+          marking: true
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -132,8 +132,8 @@ local_costmap:
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-      always_send_full_costmap: True
+        map_subscribe_transient_local: true
+      always_send_full_costmap: true
 
 global_costmap:
   global_costmap:
@@ -148,13 +148,13 @@ global_costmap:
       plugins: ["obstacle_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
+        enabled: true
         observation_sources: scan
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          clearing: True
-          marking: True
+          clearing: true
+          marking: true
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
