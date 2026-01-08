@@ -18,7 +18,6 @@
 
 import argparse
 import os
-from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import graphviz  # pip3 install graphviz
@@ -91,25 +90,8 @@ def resolve_ros_package_path(ros_pkg: str, path: str) -> str | None:
         from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
         pkg_share_dir = get_package_share_directory(ros_pkg)
         return os.path.join(pkg_share_dir, path)
-    except ImportError:
-        # ament_index_python is not available; fall back to common paths
-        pass
-    except PackageNotFoundError:
-        # ROS package not found in the index; fall back to common paths
-        pass
-
-    # Fallback: try common ROS installation paths
-    common_paths = [
-        Path('/opt/ros') / os.environ.get('ROS_DISTRO', '') / 'share' / ros_pkg,
-        Path('/usr/share') / ros_pkg,
-    ]
-
-    for base_path in common_paths:
-        full_path = base_path / path
-        if full_path.exists():
-            return str(full_path)
-
-    return None
+    except (ImportError, PackageNotFoundError):
+        return None
 
 
 def load_includes(

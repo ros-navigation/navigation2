@@ -1,0 +1,67 @@
+digraph {
+	7770920860092 [label=RealWorldNavTree shape=box]
+	7770920860097 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Sequence</i></td></tr><tr><td align='text'><b>RealWorldNavigation</b></td></tr><tr><td align='left'><sub>name=RealWorldNavigation</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860092 -> 7770920860097
+	7770920860102 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>CheckGoal</i></td></tr><tr><td align='left'><sub>goal={goal}</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860097 -> 7770920860102
+	7770920860107 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>SubTree</i></td></tr><tr><td align='left'><sub>ID=MainTree</sub></td></tr><tr><td align='left'><sub>goal={goal}</sub></td></tr></table> > color=darkorchid1 shape=box style=filled]
+	7770920860097 -> 7770920860107
+	7770920860107 [label="SubTree: MainTree" color=darkorchid1 shape=box style=filled]
+	7770920860107 -> 7770920860107
+	7770920860322 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>RecoveryNode</i></td></tr><tr><td align='text'><b>NavigateRecovery</b></td></tr><tr><td align='left'><sub>number_of_retries=6</sub></td></tr><tr><td align='left'><sub>name=NavigateRecovery</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860107 -> 7770920860322
+	7770920860327 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>PipelineSequence</i></td></tr><tr><td align='text'><b>NavigateWithReplanning</b></td></tr><tr><td align='left'><sub>name=NavigateWithReplanning</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860322 -> 7770920860327
+	7770920860332 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ControllerSelector</i></td></tr><tr><td align='left'><sub>selected_controller={selected_controller}</sub></td></tr><tr><td align='left'><sub>default_controller=FollowPath</sub></td></tr><tr><td align='left'><sub>topic_name=controller_selector</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860327 -> 7770920860332
+	7770920860337 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>PlannerSelector</i></td></tr><tr><td align='left'><sub>selected_planner={selected_planner}</sub></td></tr><tr><td align='left'><sub>default_planner=GridBased</sub></td></tr><tr><td align='left'><sub>topic_name=planner_selector</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860327 -> 7770920860337
+	7770920860342 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>RateController</i></td></tr><tr><td align='left'><sub>hz=1.0</sub></td></tr></table> > color=darkorange1 shape=box style=filled]
+	7770920860327 -> 7770920860342
+	7770920860347 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>RecoveryNode</i></td></tr><tr><td align='text'><b>ComputePathToPose</b></td></tr><tr><td align='left'><sub>number_of_retries=1</sub></td></tr><tr><td align='left'><sub>name=ComputePathToPose</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860342 -> 7770920860347
+	7770920860357 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ComputePathToPose</i></td></tr><tr><td align='left'><sub>goal={goal}</sub></td></tr><tr><td align='left'><sub>path={path}</sub></td></tr><tr><td align='left'><sub>planner_id={selected_planner}</sub></td></tr><tr><td align='left'><sub>error_code_id={compute_path_error_code}</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860347 -> 7770920860357
+	7770920860362 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Sequence</i></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860347 -> 7770920860362
+	7770920860377 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>WouldAPlannerRecoveryHelp</i></td></tr><tr><td align='left'><sub>error_code={compute_path_error_code}</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860362 -> 7770920860377
+	7770920860387 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ClearEntireCostmap</i></td></tr><tr><td align='text'><b>ClearGlobalCostmap-Context</b></td></tr><tr><td align='left'><sub>name=ClearGlobalCostmap-Context</sub></td></tr><tr><td align='left'><sub>service_name=global_costmap/clear_entirely_global_costmap</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860362 -> 7770920860387
+	7770920860392 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>RecoveryNode</i></td></tr><tr><td align='text'><b>FollowPath</b></td></tr><tr><td align='left'><sub>number_of_retries=1</sub></td></tr><tr><td align='left'><sub>name=FollowPath</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860327 -> 7770920860392
+	7770920860402 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>FollowPath</i></td></tr><tr><td align='left'><sub>path={path}</sub></td></tr><tr><td align='left'><sub>controller_id={selected_controller}</sub></td></tr><tr><td align='left'><sub>error_code_id={follow_path_error_code}</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860392 -> 7770920860402
+	7770920860407 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Sequence</i></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860392 -> 7770920860407
+	7770920860422 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>WouldAControllerRecoveryHelp</i></td></tr><tr><td align='left'><sub>error_code={follow_path_error_code}</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860407 -> 7770920860422
+	7770920860432 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ClearEntireCostmap</i></td></tr><tr><td align='text'><b>ClearLocalCostmap-Context</b></td></tr><tr><td align='left'><sub>name=ClearLocalCostmap-Context</sub></td></tr><tr><td align='left'><sub>service_name=local_costmap/clear_entirely_local_costmap</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860407 -> 7770920860432
+	7770920860437 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Sequence</i></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860322 -> 7770920860437
+	7770920860442 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Fallback</i></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860437 -> 7770920860442
+	7770920860452 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>WouldAControllerRecoveryHelp</i></td></tr><tr><td align='left'><sub>error_code={follow_path_error_code}</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860442 -> 7770920860452
+	7770920860462 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>WouldAPlannerRecoveryHelp</i></td></tr><tr><td align='left'><sub>error_code={compute_path_error_code}</sub></td></tr></table> > color=grey shape=box style=filled]
+	7770920860442 -> 7770920860462
+	7770920860467 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ReactiveFallback</i></td></tr><tr><td align='text'><b>RecoveryFallback</b></td></tr><tr><td align='left'><sub>name=RecoveryFallback</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860437 -> 7770920860467
+	7770920860472 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>GoalUpdated</i></td></tr></table> > color=yellow2 shape=box style=filled]
+	7770920860467 -> 7770920860472
+	7770920860477 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>RoundRobin</i></td></tr><tr><td align='text'><b>RecoveryActions</b></td></tr><tr><td align='left'><sub>name=RecoveryActions</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860467 -> 7770920860477
+	7770920860482 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Sequence</i></td></tr><tr><td align='text'><b>ClearingActions</b></td></tr><tr><td align='left'><sub>name=ClearingActions</sub></td></tr></table> > color=chartreuse4 shape=box style=filled]
+	7770920860477 -> 7770920860482
+	7770920860492 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ClearEntireCostmap</i></td></tr><tr><td align='text'><b>ClearLocalCostmap-Subtree</b></td></tr><tr><td align='left'><sub>name=ClearLocalCostmap-Subtree</sub></td></tr><tr><td align='left'><sub>service_name=local_costmap/clear_entirely_local_costmap</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860482 -> 7770920860492
+	7770920860502 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>ClearEntireCostmap</i></td></tr><tr><td align='text'><b>ClearGlobalCostmap-Subtree</b></td></tr><tr><td align='left'><sub>name=ClearGlobalCostmap-Subtree</sub></td></tr><tr><td align='left'><sub>service_name=global_costmap/clear_entirely_global_costmap</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860482 -> 7770920860502
+	7770920860507 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Spin</i></td></tr><tr><td align='left'><sub>spin_dist=1.57</sub></td></tr><tr><td align='left'><sub>error_code_id={spin_error_code}</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860477 -> 7770920860507
+	7770920860512 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>Wait</i></td></tr><tr><td align='left'><sub>wait_duration=5.0</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860477 -> 7770920860512
+	7770920860517 [label=< <table border='0' cellspacing='0' cellpadding='0'><tr><td align='text'><i>BackUp</i></td></tr><tr><td align='left'><sub>backup_dist=0.30</sub></td></tr><tr><td align='left'><sub>backup_speed=0.15</sub></td></tr><tr><td align='left'><sub>error_code_id={backup_code_id}</sub></td></tr></table> > color=cornflowerblue shape=box style=filled]
+	7770920860477 -> 7770920860517
+}
