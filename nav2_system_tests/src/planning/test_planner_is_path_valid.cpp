@@ -37,6 +37,7 @@ TEST(testIsPathValid, testIsPathValid)
   // empty path
   auto response = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   ASSERT_NE(response, nullptr);
+  EXPECT_FALSE(response->success);
   EXPECT_FALSE(response->is_valid);
 
   // invalid path
@@ -50,6 +51,7 @@ TEST(testIsPathValid, testIsPathValid)
   }
   response = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
   EXPECT_FALSE(response->is_valid);
 
   // valid path
@@ -62,6 +64,7 @@ TEST(testIsPathValid, testIsPathValid)
   }
   response = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
   EXPECT_TRUE(response->is_valid);
 
   // valid path, but contains NO_INFORMATION(255)
@@ -75,12 +78,14 @@ TEST(testIsPathValid, testIsPathValid)
   }
   response = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
   EXPECT_FALSE(response->is_valid);
 
   // valid path but higher than max cost
   max_cost = 0;
   response = planner_tester->isPathValid(path, max_cost, consider_unknown_as_obstacle);
   ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
   EXPECT_FALSE(response->is_valid);
 }
 
