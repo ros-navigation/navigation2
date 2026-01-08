@@ -147,10 +147,9 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan");
 
-  // Create and configure is path valid service
+  // Create is path valid service
   is_path_valid_service_ = std::make_unique<IsPathValidService>(
     shared_from_this(), costmap_ros_);
-  is_path_valid_service_->configure();
 
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
@@ -192,7 +191,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
 
-  is_path_valid_service_->activate();
+  is_path_valid_service_->initialize();
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = add_on_set_parameters_callback(
@@ -227,7 +226,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
-  is_path_valid_service_->deactivate();
+  is_path_valid_service_->reset();
 
   dyn_params_handler_.reset();
 
@@ -255,7 +254,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
-  is_path_valid_service_->cleanup();
   is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;

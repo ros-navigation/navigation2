@@ -50,34 +50,19 @@ public:
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
   : node_(node), costmap_ros_(costmap_ros), logger_(rclcpp::get_logger("is_path_valid_service"))
   {
-    auto node_shared = node_.lock();
-    if (!node_shared) {
-      throw std::runtime_error("Failed to lock node in IsPathValidService constructor");
-    }
   }
 
   /**
-   * @brief Configure the service
+   * @brief Initialize the service
    */
-  void configure()
+  void initialize()
   {
     auto node = node_.lock();
     if (!node) {
-      throw std::runtime_error("Failed to lock node in configure");
+      throw std::runtime_error("Failed to lock node in initialize");
     }
 
     costmap_ = costmap_ros_->getCostmap();
-  }
-
-  /**
-   * @brief Activate the service
-   */
-  void activate()
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error("Failed to lock node in activate");
-    }
 
     service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
       "is_path_valid",
@@ -87,18 +72,11 @@ public:
   }
 
   /**
-   * @brief Deactivate the service
+   * @brief Reset the service
    */
-  void deactivate()
+  void reset()
   {
     service_.reset();
-  }
-
-  /**
-   * @brief Cleanup the service
-   */
-  void cleanup()
-  {
     costmap_ = nullptr;
   }
 
@@ -106,12 +84,9 @@ private:
   /**
    * @brief Get the costmap to check based on the layer name
    * @param layer_name Name of the layer to check, or empty for full costmap
-   * @param error_msg Output parameter for error message if costmap not found
    * @return Pointer to the costmap to check, or nullptr if layer not found
    */
-  nav2_costmap_2d::Costmap2D * getCostmapToCheck(
-    const std::string & layer_name,
-    std::string & error_msg)
+  nav2_costmap_2d::Costmap2D * getCostmapToCheck(const std::string & layer_name)
   {
     if (layer_name.empty()) {
       return costmap_;
@@ -127,7 +102,9 @@ private:
       }
     }
 
-    error_msg = "Requested layer '" + layer_name + "' not found or does not provide a costmap.";
+    RCLCPP_ERROR(
+      logger_, "Requested layer '%s' not found or does not provide a costmap.",
+      layer_name.c_str());
     return nullptr;
   }
 
@@ -136,20 +113,20 @@ private:
    * @param footprint_string Custom footprint string, or empty to use robot's footprint
    * @param footprint Output parameter for the footprint
    * @param use_radius Output parameter indicating if radius-based checking should be used
-   * @param error_msg Output parameter for error message if footprint is invalid
    * @return True if successful, false if footprint string is invalid
    */
   bool getFootprintToUse(
     const std::string & footprint_string,
     nav2_costmap_2d::Footprint & footprint,
-    bool & use_radius,
-    std::string & error_msg)
+    bool & use_radius)
   {
     use_radius = costmap_ros_->getUseRadius();
 
     if (!footprint_string.empty()) {
       if (!nav2_costmap_2d::makeFootprintFromString(footprint_string, footprint)) {
-        error_msg = "Invalid footprint string '" + footprint_string + "'. Cannot validate path.";
+        RCLCPP_ERROR(
+          logger_, "Invalid footprint string '%s'. Cannot validate path.",
+          footprint_string.c_str());
         return false;
       }
       use_radius = false;
@@ -158,6 +135,33 @@ private:
     }
 
     return true;
+  }
+
+  /**
+   * @brief Find the closest point on the path to the current pose
+   * @param current_pose The current robot pose
+   * @param path The path to search
+   * @return Index of the closest pose in the path
+   */
+  unsigned int findClosestPointIndex(
+    const geometry_msgs::msg::PoseStamped & current_pose,
+    const nav_msgs::msg::Path & path)
+  {
+    unsigned int closest_point_index = 0;
+    float closest_distance = std::numeric_limits<float>::max();
+    const auto & current_point = current_pose.pose.position;
+
+    for (unsigned int i = 0; i < path.poses.size(); ++i) {
+      const auto & path_point = path.poses[i].pose.position;
+      float distance = nav2_util::geometry_utils::euclidean_distance(current_point, path_point);
+
+      if (distance < closest_distance) {
+        closest_point_index = i;
+        closest_distance = distance;
+      }
+    }
+
+    return closest_point_index;
   }
 
   /**
@@ -186,37 +190,17 @@ private:
       return;
     }
 
-    unsigned int closest_point_index = 0;
-    float current_distance = std::numeric_limits<float>::max();
-    float closest_distance = current_distance;
-    geometry_msgs::msg::Point current_point = current_pose.pose.position;
-    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
-      geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
-
-      current_distance = nav2_util::geometry_utils::euclidean_distance(
-        current_point,
-        path_point);
-
-      if (current_distance < closest_distance) {
-        closest_point_index = i;
-        closest_distance = current_distance;
-      }
-    }
-
     /**
      * The lethal check starts at the closest point to avoid points that have already been passed
      * and may have become occupied. The method for collision detection is based on the shape of
      * the footprint.
      */
+    unsigned int closest_point_index = findClosestPointIndex(current_pose, request->path);
 
     // Determine which costmap to use based on layer_name parameter
-    std::string error_msg;
-    nav2_costmap_2d::Costmap2D * costmap_to_check = getCostmapToCheck(
-      request->layer_name,
-      error_msg);
+    nav2_costmap_2d::Costmap2D * costmap_to_check = getCostmapToCheck(request->layer_name);
 
-    if (costmap_to_check == nullptr) {
-      RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+    if (!costmap_to_check) {
       response->success = false;
       response->is_valid = false;
       return;
@@ -231,8 +215,7 @@ private:
     nav2_costmap_2d::Footprint footprint;
     bool use_radius;
 
-    if (!getFootprintToUse(request->footprint, footprint, use_radius, error_msg)) {
-      RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
+    if (!getFootprintToUse(request->footprint, footprint, use_radius)) {
       response->success = false;
       response->is_valid = false;
       return;
