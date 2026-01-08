@@ -33,6 +33,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav2_planner/planner_server.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 
 namespace nav2_system_tests
 {
@@ -57,22 +58,46 @@ public:
     std::cout << "" << std::endl;
   }
 
-  void setCostmap(nav2_util::Costmap * costmap)
+  void setCostmap(nav2_util::Costmap * costmap, const std::string & layer_name = "")
   {
-    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
-      *(costmap_ros_->getCostmap()->getMutex()));
-
     nav2_msgs::msg::CostmapMetaData prop;
     nav2_msgs::msg::Costmap cm = costmap->get_costmap(prop);
     prop = cm.metadata;
-    costmap_ros_->getCostmap()->resizeMap(
-      prop.size_x, prop.size_y,
-      prop.resolution, prop.origin.position.x, prop.origin.position.x);
-    // Volatile prevents compiler from treating costmap_ptr as unused or changing its address
-    volatile unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
-    delete[] costmap_ptr;
-    costmap_ptr = new unsigned char[prop.size_x * prop.size_y];
-    std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
+
+    if (layer_name.empty()) {
+      // Default behavior: update master costmap directly
+      std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+        *(costmap_ros_->getCostmap()->getMutex()));
+
+      costmap_ros_->getCostmap()->resizeMap(
+        prop.size_x, prop.size_y,
+        prop.resolution, prop.origin.position.x, prop.origin.position.x);
+
+      unsigned char * costmap_ptr = costmap_ros_->getCostmap()->getCharMap();
+      std::copy(cm.data.begin(), cm.data.end(), costmap_ptr);
+    } else {
+      // Update specific layer by copying directly to its char map
+      auto * layered_costmap = costmap_ros_->getLayeredCostmap();
+      auto * plugins = layered_costmap->getPlugins();
+
+      for (auto & plugin : *plugins) {
+        if (plugin->getName() == layer_name) {
+          auto costmap_layer = std::dynamic_pointer_cast<nav2_costmap_2d::CostmapLayer>(plugin);
+          if (costmap_layer) {
+            std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(
+              *(costmap_layer->getMutex()));
+
+            costmap_layer->resizeMap(
+              prop.size_x, prop.size_y,
+              prop.resolution, prop.origin.position.x, prop.origin.position.x);
+
+            unsigned char * layer_costmap_ptr = costmap_layer->getCharMap();
+            std::copy(cm.data.begin(), cm.data.end(), layer_costmap_ptr);
+          }
+          break;
+        }
+      }
+    }
   }
 
   bool createPath(
@@ -143,7 +168,9 @@ public:
   void loadDefaultMap();
 
   // Alternatively, use a preloaded 10x10 costmap
-  void loadSimpleCostmap(const nav2_util::TestCostmap & testCostmapType);
+  void loadSimpleCostmap(
+    const nav2_util::TestCostmap & testCostmapType,
+    const std::string & layer_name = "");
 
   // Runs a single test with default poses depending on the loaded map
   // Success criteria is a collision free path and a deviation to a
@@ -181,7 +208,6 @@ private:
   bool track_unknown_space_;
   int lethal_threshold_;
   int unknown_cost_value_;
-  nav2_util::TestCostmap testCostmapType_;
 
   // The static map
   std::shared_ptr<nav_msgs::msg::OccupancyGrid> map_;

@@ -294,6 +294,72 @@ TEST(testIsPathValid, testCheckFullPath)
   EXPECT_GT(response->invalid_pose_indices.size(), 1u);
 }
 
+TEST(testIsPathValid, testSpecificLayerVsFullCostmap)
+{
+  auto planner_tester = std::make_shared<PlannerTester>();
+  planner_tester->activate();
+
+  // Load top_left_obstacle to static_layer (obstacle at rows 2-4, cols 2-4)
+  planner_tester->loadSimpleCostmap(TestCostmap::top_left_obstacle, "static_layer");
+
+  // Load bottom_left_obstacle to master costmap (obstacle at rows 5-7, cols 2-4)
+  planner_tester->loadSimpleCostmap(TestCostmap::bottom_left_obstacle);
+
+  nav_msgs::msg::Path path;
+  unsigned int max_cost = 253;
+  bool consider_unknown_as_obstacle = false;
+
+  // Create path through top-left area (row 3, cols 1-5)
+  // This should be INVALID on static_layer but VALID on full costmap
+  path.poses.clear();
+  for (float i = 1.0; i < 6.0; i += 1.0) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.position.y = 3.0;
+    path.poses.push_back(pose);
+  }
+
+  // Check on static_layer - should be invalid (has top_left_obstacle)
+  auto response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "static_layer");
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_FALSE(response->is_valid);
+  EXPECT_FALSE(response->invalid_pose_indices.empty());
+
+  // Check on full costmap - should be valid (has bottom_left_obstacle, not top_left)
+  response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "");
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_TRUE(response->is_valid);
+
+  // Create path through bottom-left area (row 6, cols 1-5)
+  // This should be VALID on static_layer but INVALID on full costmap
+  path.poses.clear();
+  for (float i = 1.0; i < 6.0; i += 1.0) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    pose.pose.position.y = 6.0;
+    path.poses.push_back(pose);
+  }
+
+  // Check on static_layer - should be valid (no obstacle in this area)
+  response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "static_layer");
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_TRUE(response->is_valid);
+
+  // Check on full costmap - should be invalid (has bottom_left_obstacle)
+  response = planner_tester->isPathValid(
+    path, max_cost, consider_unknown_as_obstacle, "");
+  ASSERT_NE(response, nullptr);
+  EXPECT_TRUE(response->success);
+  EXPECT_FALSE(response->is_valid);
+  EXPECT_FALSE(response->invalid_pose_indices.empty());
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -42,7 +42,7 @@ PlannerTester::PlannerTester()
   map_set_(false), costmap_set_(false),
   using_fake_costmap_(true), trinary_costmap_(true),
   track_unknown_space_(false), lethal_threshold_(100), unknown_cost_value_(-1),
-  testCostmapType_(TestCostmap::open_space), base_transform_(nullptr),
+  base_transform_(nullptr),
   map_publish_rate_(100s)
 {
 }
@@ -208,7 +208,9 @@ void PlannerTester::loadDefaultMap()
   setCostmap();
 }
 
-void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
+void PlannerTester::loadSimpleCostmap(
+  const TestCostmap & testCostmapType,
+  const std::string & layer_name)
 {
   RCLCPP_INFO(get_logger(), "loadSimpleCostmap called.");
   if (costmap_set_) {
@@ -216,6 +218,11 @@ void PlannerTester::loadSimpleCostmap(const TestCostmap & testCostmapType)
   }
 
   costmap_->set_test_costmap(testCostmapType);
+
+  // Update the planner's costmap (or specific layer) after planner is created
+  if (planner_tester_) {
+    planner_tester_->setCostmap(costmap_.get(), layer_name);
+  }
 
   costmap_set_ = true;
   using_fake_costmap_ = true;
@@ -403,7 +410,6 @@ std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> PlannerTester::isPathVali
   bool consider_unknown_as_obstacle, const std::string & layer_name,
   const std::string & footprint, bool check_full_path)
 {
-  planner_tester_->setCostmap(costmap_.get());
   // create a fake service request
   auto request = std::make_shared<nav2_msgs::srv::IsPathValid::Request>();
   request->path = path;
