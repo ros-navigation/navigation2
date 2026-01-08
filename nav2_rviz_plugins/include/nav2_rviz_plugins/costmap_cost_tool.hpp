@@ -17,7 +17,8 @@
 
 #include <nav2_msgs/srv/get_cost.hpp>
 #include <rviz_common/tool.hpp>
-#include <rviz_default_plugins/tools/point/point_tool.hpp>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/qos_profile_property.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 namespace nav2_rviz_plugins
@@ -42,7 +43,6 @@ public:
   void handleGlobalCostResponse(rclcpp::Client<nav2_msgs::srv::GetCost>::SharedFuture);
 
 private Q_SLOTS:
-  void updateAutoDeactivate();
 
 private:
   rclcpp::Client<nav2_msgs::srv::GetCost>::SharedPtr local_cost_client_;
