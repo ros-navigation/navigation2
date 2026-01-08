@@ -133,34 +133,34 @@ StaticLayer::getParameters()
   int temp_lethal_threshold = 0;
   double temp_tf_tol = 0.0;
 
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
-  declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
-  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
-  declareParameter("map_topic", rclcpp::ParameterValue("map"));
-  declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
-  declareParameter("restore_cleared_footprint", rclcpp::ParameterValue(true));
-
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
-  node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node->get_parameter(name_ + "." + "restore_cleared_footprint", restore_cleared_footprint_);
-  node->get_parameter(name_ + "." + "map_topic", map_topic_);
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  subscribe_to_updates_ = node->declare_or_get_parameter(
+    name_ + "." + "subscribe_to_updates", false);
+  footprint_clearing_enabled_ = node->declare_or_get_parameter(
+    name_ + "." + "footprint_clearing_enabled", false);
+  restore_cleared_footprint_ = node->declare_or_get_parameter(
+    name_ + "." + "restore_cleared_footprint", true);
+  map_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "map_topic", std::string("map"));
   map_topic_ = joinWithParentNamespace(map_topic_);
-  node->get_parameter(
-    name_ + "." + "map_subscribe_transient_local",
-    map_subscribe_transient_local_);
+  map_subscribe_transient_local_ = node->declare_or_get_parameter(
+    name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
-  node->get_parameter("use_maximum", use_maximum_);
-  node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
-  node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
-  node->get_parameter("unknown_cost_value", unknown_cost_value_);
-  node->get_parameter("trinary_costmap", trinary_costmap_);
+  use_maximum_ = node->declare_or_get_parameter(
+    name_ + "." + "use_maximum", false);
+  temp_lethal_threshold = node->declare_or_get_parameter(
+    name_ + "." + "lethal_cost_threshold", 100);
+  unknown_cost_value_ = node->declare_or_get_parameter(
+    name_ + "." + "unknown_cost_value", static_cast<unsigned char>(0xff));
+  inscribed_obstacle_cost_value_ = node->declare_or_get_parameter(
+    name_ + "." + "inscribed_obstacle_cost_value", 99);
+  trinary_costmap_ = node->declare_or_get_parameter(
+    name_ + "." + "trinary_costmap", true);
   node->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds

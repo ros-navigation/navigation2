@@ -67,13 +67,11 @@ void BinaryFilter::initializeFilter(
   }
 
   // Declare parameters specific to BinaryFilter only
-  std::string binary_state_topic;
-  declareParameter("default_state", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "default_state", default_state_);
-  declareParameter("binary_state_topic", rclcpp::ParameterValue("binary_state"));
-  node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
-  declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
-  node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
+  // std::string binary_state_topic;
+  default_state_ = node->declare_or_get_parameter(name_ + "." + "default_state", false);
+  std::string binary_state_topic = node->declare_or_get_parameter(name_ + "." +
+    "binary_state_topic", std::string("binary_state"));
+  flip_threshold_ = node->declare_or_get_parameter(name_ + "." + "flip_threshold", 50.0);
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
