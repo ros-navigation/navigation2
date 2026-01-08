@@ -17,6 +17,7 @@
 # for instructions
 
 import argparse
+import logging
 import os
 import xml.etree.ElementTree as ET
 
@@ -90,7 +91,11 @@ def resolve_ros_package_path(ros_pkg: str, path: str) -> str | None:
         from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
         pkg_share_dir = get_package_share_directory(ros_pkg)
         return os.path.join(pkg_share_dir, path)
-    except (ImportError, PackageNotFoundError):
+    except ImportError as e:
+        logging.error(f'Failed to import ament_index_python: {e}')
+        return None
+    except PackageNotFoundError as e:
+        logging.error(f'ROS package "{ros_pkg}" not found: {e}')
         return None
 
 
