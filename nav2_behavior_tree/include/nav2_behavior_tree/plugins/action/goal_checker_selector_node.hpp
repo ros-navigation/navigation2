@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the goal_checker_selector
    */
-  void callbackGoalCheckerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackGoalCheckerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr goal_checker_selector_sub_;
 

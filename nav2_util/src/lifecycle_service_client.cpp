@@ -30,23 +30,6 @@ using namespace std::chrono_literals;
 namespace nav2_util
 {
 
-LifecycleServiceClient::LifecycleServiceClient(
-  const string & lifecycle_node_name)
-: node_(generate_internal_node(lifecycle_node_name + "_lifecycle_client")),
-  change_state_(lifecycle_node_name + "/change_state", node_,
-    true /*creates and spins an internal executor*/),
-  get_state_(lifecycle_node_name + "/get_state", node_,
-    true /*creates and spins an internal executor*/)
-{
-  // Block until server is up
-  rclcpp::Rate r(20);
-  while (!get_state_.wait_for_service(2s)) {
-    RCLCPP_INFO(
-      node_->get_logger(), "Waiting for service %s...", get_state_.getServiceName().c_str());
-    r.sleep();
-  }
-}
-
 bool LifecycleServiceClient::change_state(
   const uint8_t transition,
   const milliseconds transition_timeout,

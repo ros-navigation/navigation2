@@ -269,9 +269,9 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   }
 
   // Publish whether we are rotating to goal heading
-  std_msgs::msg::Bool is_rotating_to_heading_msg;
-  is_rotating_to_heading_msg.data = is_rotating_to_heading_;
-  is_rotating_to_heading_pub_->publish(is_rotating_to_heading_msg);
+  auto is_rotating_to_heading_msg = std::make_unique<std_msgs::msg::Bool>();
+  is_rotating_to_heading_msg->data = is_rotating_to_heading_;
+  is_rotating_to_heading_pub_->publish(std::move(is_rotating_to_heading_msg));
 
   // populate and return message
   geometry_msgs::msg::TwistStamped cmd_vel;

@@ -117,8 +117,8 @@ protected:
    * @brief Callback for incoming velocity commands
    * @param msg Twist message
    */
-  void inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
-  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void inputCommandCallback(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
+  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
 
   /**
    * @brief Main worker timer function
@@ -140,7 +140,7 @@ protected:
 
   rclcpp::Clock::SharedPtr clock_;
   geometry_msgs::msg::TwistStamped last_cmd_;
-  geometry_msgs::msg::TwistStamped::SharedPtr command_;
+  geometry_msgs::msg::TwistStamped command_;
 
   // Parameters
   double smoothing_frequency_;
@@ -150,6 +150,7 @@ protected:
   bool stopped_{true};
   bool scale_velocities_;
   bool is_6dof_;
+  bool received_first_command_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;

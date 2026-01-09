@@ -226,14 +226,14 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
         target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel))
     {
       // Publish the selected target_pose
-      motion_target_pub_->publish(target_pose);
+      motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
       // Publish marker for slowdown radius around motion target for debugging / visualization
       auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
         target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
+      slowdown_pub_->publish(std::make_unique<visualization_msgs::msg::Marker>(slowdown_marker));
       // Publish the local plan
       local_plan.header = transformed_plan.header;
-      local_plan_pub_->publish(local_plan);
+      local_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(local_plan));
       // Successfully found velocity command
       return cmd_vel;
     }

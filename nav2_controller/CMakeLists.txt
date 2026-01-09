@@ -169,6 +169,27 @@ target_link_libraries(position_goal_checker PRIVATE
   pluginlib::pluginlib
 )
 
+add_library(axis_goal_checker SHARED plugins/axis_goal_checker.cpp)
+target_include_directories(axis_goal_checker
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+target_link_libraries(axis_goal_checker PUBLIC
+  ${geometry_msgs_TARGETS}
+  nav2_core::nav2_core
+  nav2_ros_common::nav2_ros_common
+  nav2_costmap_2d::nav2_costmap_2d_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+  ${rcl_interfaces_TARGETS}
+)
+target_link_libraries(axis_goal_checker PRIVATE
+  angles::angles
+  nav2_util::nav2_util_core
+  pluginlib::pluginlib
+)
+
 add_library(feasible_path_handler SHARED plugins/feasible_path_handler.cpp)
 target_include_directories(feasible_path_handler
   PUBLIC
@@ -211,6 +232,7 @@ install(TARGETS
   pose_progress_checker
   simple_goal_checker
   stopped_goal_checker
+  axis_goal_checker
   feasible_path_handler
   ${library_name}
   EXPORT ${library_name}
@@ -233,6 +255,7 @@ ament_export_libraries(simple_progress_checker
   simple_goal_checker
   stopped_goal_checker
   position_goal_checker
+  axis_goal_checker
   feasible_path_handler
   ${library_name})
 ament_export_dependencies(

@@ -90,11 +90,11 @@ private:
   /**
    * @brief Callback for the filter information
    */
-  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg);
+  void filterInfoCallback(const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg);
   /**
    * @brief Callback for the filter mask
    */
-  void maskCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void maskCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
   /**
    * @brief Changes binary state of filter. Sends a message with new state.
    * @param state New binary state
@@ -107,7 +107,7 @@ private:
 
   nav2::Publisher<std_msgs::msg::Bool>::SharedPtr binary_state_pub_;
 
-  nav_msgs::msg::OccupancyGrid::SharedPtr filter_mask_;
+  nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
 
   std::string global_frame_;  // Frame of current layer (master_grid)
 

@@ -213,7 +213,7 @@ double RangeSensorLayer::sensor_model(double r, double phi, double theta)
 }
 
 void RangeSensorLayer::bufferIncomingRangeMsg(
-  const sensor_msgs::msg::Range::SharedPtr range_message)
+  const sensor_msgs::msg::Range::ConstSharedPtr & range_message)
 {
   range_message_mutex_.lock();
   range_msgs_buffer_.push_back(*range_message);

@@ -289,8 +289,8 @@ void SmootherServer::smoothPlan()
         rclcpp::Duration(goal->max_smoothing_duration).seconds(),
         rclcpp::Duration(result->smoothing_duration).seconds());
     }
-
-    plan_publisher_->publish(result->path);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(result->path);
+    plan_publisher_->publish(std::move(msg));
 
     // Check for collisions
     if (goal->check_for_collisions) {

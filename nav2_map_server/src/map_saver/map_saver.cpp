@@ -178,11 +178,11 @@ bool MapSaver::saveMapTopicToFile(
       save_parameters_loc.occupied_thresh = occupied_thresh_default_;
     }
 
-    std::promise<nav_msgs::msg::OccupancyGrid::SharedPtr> prom;
-    std::future<nav_msgs::msg::OccupancyGrid::SharedPtr> future_result = prom.get_future();
+    std::promise<nav_msgs::msg::OccupancyGrid::ConstSharedPtr> prom;
+    std::future<nav_msgs::msg::OccupancyGrid::ConstSharedPtr> future_result = prom.get_future();
     // A callback function that receives map message from subscribed topic
     auto mapCallback = [&prom](
-      const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void {
+      const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg) -> void {
         prom.set_value(msg);
       };
 
@@ -212,7 +212,7 @@ bool MapSaver::saveMapTopicToFile(
     // map_sub is no more needed
     map_sub.reset();
     // Map message received. Saving it to file
-    nav_msgs::msg::OccupancyGrid::SharedPtr map_msg = future_result.get();
+    nav_msgs::msg::OccupancyGrid::ConstSharedPtr map_msg = future_result.get();
     if (saveMapToFile(*map_msg, save_parameters_loc)) {
       RCLCPP_INFO(get_logger(), "Map saved successfully");
       return true;
