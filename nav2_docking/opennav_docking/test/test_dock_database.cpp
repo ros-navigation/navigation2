@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <filesystem>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/dock_database.hpp"
@@ -100,12 +101,14 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
     "dockv1.plugin",
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
 
+  std::filesystem::path file_path;
+  ament_index_cpp::get_package_share_directory("opennav_docking", file_path);
+
   // Set a valid path with a malformed file
   node->declare_parameter(
     "dock_database",
     rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("opennav_docking") +
-      "/dock_files/test_dock_bad_conversion_file.yaml"));
+      (file_path / "dock_files" / "test_dock_bad_conversion_file.yaml").string()));
 
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
@@ -149,8 +152,10 @@ TEST(DatabaseTests, reloadDbService)
     node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_file.yaml";
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_file.yaml";
+  request->filepath = filepath.string();
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_call(request);
   EXPECT_EQ(
@@ -160,8 +165,9 @@ TEST(DatabaseTests, reloadDbService)
 
   // Try again with a bogus file
   auto request2 = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request2->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/file_does_not_exist.yaml";
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "file_does_not_exist.yaml";
+  request2->filepath = filepath.string();
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result2 = client->async_call(request2);
   EXPECT_EQ(
@@ -190,8 +196,10 @@ TEST(DatabaseTests, reloadDbMutexLocked)
     node->create_client<nav2_msgs::srv::ReloadDockDatabase>("test/reload_database");
 
   auto request = std::make_shared<nav2_msgs::srv::ReloadDockDatabase::Request>();
-  request->filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_file.yaml";
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_file.yaml";
+  request->filepath = filepath.string();
   EXPECT_TRUE(client->wait_for_service(1s));
   auto result = client->async_call(request);
   EXPECT_EQ(

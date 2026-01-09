@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <filesystem>
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "opennav_docking/utils.hpp"
@@ -91,9 +92,10 @@ TEST(UtilsTests, parseDockFile)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test4");
   DockMap db;
-  std::string filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_file.yaml";
-  EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
+  std::filesystem::path filepath;
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_file.yaml";
+  EXPECT_TRUE(utils::parseDockFile(filepath.string(), node, db));
   EXPECT_EQ(db.size(), 2u);
   EXPECT_EQ(db["dock1"].frame, std::string("mapA"));
   EXPECT_EQ(db["dock2"].frame, std::string("map"));
@@ -115,24 +117,26 @@ TEST(UtilsTests, parseDockFile2)
   DockMap db;
 
   // Test with a file that has no docks
-  std::string filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_no_docks_file.yaml";
-  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+  std::filesystem::path filepath;
+
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_no_docks_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath.string(), node, db));
 
   // Test with a file that has no type
-  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_no_type_file.yaml";
-  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_no_type_file.yaml";
+
+  EXPECT_FALSE(utils::parseDockFile(filepath.string(), node, db));
 
   // Test with a file that has no pose
-  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_no_pose_file.yaml";
-  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_no_pose_file.yaml";
 
   // Test with a file that has wring pose array size
-  filepath = ament_index_cpp::get_package_share_directory("opennav_docking") +
-    "/dock_files/test_dock_bad_pose_file.yaml";
-  EXPECT_FALSE(utils::parseDockFile(filepath, node, db));
+  ament_index_cpp::get_package_share_directory("opennav_docking", filepath);
+  filepath = filepath / "dock_files" / "test_dock_bad_pose_file.yaml";
+  EXPECT_FALSE(utils::parseDockFile(filepath.string(), node, db));
 }
 
 TEST(UtilsTests, testgetDockPoseStamped)
