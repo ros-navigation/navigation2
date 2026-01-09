@@ -149,16 +149,21 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       get_logger(),
       "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
     on_cleanup(state);
-    return nav2::CallbackReturn::FAILURE;
+    return nav2_util::CallbackReturn::FAILURE;
   }
 
+  // Define option to overwrite the timestamp of the message containing the smoothed velocity
+  declare_parameter_if_not_declared(node, "stamp_smoothed_velocity_with_smoothing_time", rclcpp::ParameterValue(false));
+  node->get_parameter("stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
+
   // Setup inputs / outputs
-  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed");
+  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
-    "cmd_vel",
+    "cmd_vel", rclcpp::QoS(1),
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
-    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1));
+    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1)
+  );
 
   declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
   bool use_realtime_priority = false;
@@ -318,9 +323,21 @@ void VelocitySmoother::smootherTimer()
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel->header = command_.header;
+  auto delta_time_since_last_update = now() - last_command_time_;
+  if (stamp_smoothed_velocity_with_smoothing_time_) {
+    // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
+    rclcpp::Time t(cmd_vel->header.stamp);
+
+    // compute new time by using nanoseconds
+    uint64_t new_ns = t.nanoseconds() + delta_time_since_last_update.nanoseconds();
+
+    // update the header
+    cmd_vel->header.stamp.sec = static_cast<int32_t>(new_ns / 1000000000ULL);
+    cmd_vel->header.stamp.nanosec = static_cast<uint32_t>(new_ns % 1000000000ULL);
+  }
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
-  if (now() - last_command_time_ > velocity_timeout_) {
+  if (delta_time_since_last_update > velocity_timeout_) {
     if (last_cmd_.twist == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
