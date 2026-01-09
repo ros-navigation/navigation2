@@ -43,6 +43,7 @@ public:
   {
     (void)request_header;
     (void)request;
+    response->success = true;
     response->is_valid = true;
   }
 };
