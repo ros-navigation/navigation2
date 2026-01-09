@@ -28,6 +28,8 @@
 #ifndef NAV2_AMCL__PF__PF_HPP_
 #define NAV2_AMCL__PF__PF_HPP_
 
+#include <stdint.h>
+
 #include "nav2_amcl/pf/pf_vector.hpp"
 #include "nav2_amcl/pf/pf_kdtree.hpp"
 
@@ -147,7 +149,7 @@ void pf_free(pf_t * pf);
 
 // Seed the RNG used inside the particle filter implementation.
 // Pass a fixed value for deterministic replay; pass a time-based value for default behavior.
-void pf_seed(pf_t * pf, long int seedval);
+void pf_seed(pf_t * pf, int64_t seedval);
 
 // Initialize the filter using a gaussian
 void pf_init(pf_t * pf, pf_vector_t mean, pf_matrix_t cov);

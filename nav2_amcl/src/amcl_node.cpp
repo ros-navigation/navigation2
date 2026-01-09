@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -1472,9 +1473,9 @@ AmclNode::initParticleFilter()
   // Seed RNG used by PF resampling and pose generation.
   // Keep legacy behavior (time-based) unless user explicitly sets a seed.
   if (random_seed_ >= 0) {
-    pf_seed(pf_, static_cast<long int>(random_seed_));
+    pf_seed(pf_, static_cast<int64_t>(random_seed_));
   } else {
-    pf_seed(pf_, static_cast<long int>(time(nullptr)));
+    pf_seed(pf_, static_cast<int64_t>(std::time(nullptr)));
   }
 
   pf_->pop_err = pf_err_;

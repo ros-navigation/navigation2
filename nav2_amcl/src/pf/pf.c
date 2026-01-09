@@ -112,10 +112,10 @@ pf_t * pf_alloc(
 // This is intentionally explicit so that callers can choose:
 // - time-based seed for "random by default" behavior, or
 // - fixed seed for deterministic replay boundaries.
-void pf_seed(pf_t * pf, long int seedval)
+void pf_seed(pf_t * pf, int64_t seedval)
 {
   (void)pf;
-  srand48(seedval);
+  srand48((long int)seedval);
 }
 
 // Free an existing filter
