@@ -28,6 +28,7 @@
 #include <float.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -53,8 +54,6 @@ pf_t * pf_alloc(
   pf_t * pf;
   pf_sample_set_t * set;
   pf_sample_t * sample;
-
-  srand48(time(NULL));
 
   pf = calloc(1, sizeof(pf_t));
 
