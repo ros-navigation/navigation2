@@ -43,15 +43,17 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   getInput("path", new_path);
   getInput("proximity_threshold", prox_thr);
   getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
+
   if(new_path.poses.empty()) {
     RCLCPP_WARN(node_->get_logger(), "Path is empty");
     return BT::NodeStatus::FAILURE;
   }
 
+  bool path_pruning = true;
   if (max_robot_pose_search_dist < 0.0) {
-    max_robot_pose_search_dist = std::numeric_limits<double>::max();
+    path_pruning = false;
   }
-  bool path_pruning = std::isfinite(max_robot_pose_search_dist);
+
 
   if (!path_pruning || new_path != path_) {
     path_ = new_path;

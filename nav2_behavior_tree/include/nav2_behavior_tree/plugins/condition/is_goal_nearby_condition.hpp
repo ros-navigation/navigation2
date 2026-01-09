@@ -67,7 +67,7 @@ public:
     return {
       BT::InputPort<nav_msgs::msg::Path>("path", "Planned path"),
       BT::InputPort<double>(
-        "proximity_threshold", 3.0,
+        "proximity_threshold", 1.0,
         "Proximity length (m) of the remaining path considered as a nearby"),
       BT::InputPort<double>(
         "max_robot_pose_search_dist", -1.0,
