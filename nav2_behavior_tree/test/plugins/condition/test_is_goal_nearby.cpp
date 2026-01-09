@@ -117,7 +117,7 @@ TEST_F(IsGoalNearbyConditionTestFixture, empty_path_returns_failure)
           <IsGoalNearby
             path="{path}"
             proximity_threshold="1.0"
-            max_robot_pose_search_dist="infinity"
+            max_robot_pose_search_dist="-1"
           />
         </BehaviorTree>
       </root>)";
@@ -141,7 +141,7 @@ TEST_F(IsGoalNearbyConditionTestFixture, far_from_goal_returns_failure)
           <IsGoalNearby
             path="{path}"
             proximity_threshold="0.5"
-            max_robot_pose_search_dist="infinity"
+            max_robot_pose_search_dist="-1"
           />
         </BehaviorTree>
       </root>)";
@@ -166,7 +166,7 @@ TEST_F(IsGoalNearbyConditionTestFixture, near_goal_returns_success)
           <IsGoalNearby
             path="{path}"
             proximity_threshold="0.5"
-            max_robot_pose_search_dist="infinity"
+            max_robot_pose_search_dist="-1"
           />
         </BehaviorTree>
       </root>)";
@@ -211,7 +211,7 @@ TEST_F(IsGoalNearbyConditionTestFixture,
 
   tree_->haltTree();
 
-  config_->blackboard->set("max_robot_pose_search_dist", std::numeric_limits<double>::infinity());
+  config_->blackboard->set("max_robot_pose_search_dist", -1.0);
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
 
@@ -242,6 +242,60 @@ TEST_F(IsGoalNearbyConditionTestFixture, path_pruning_coverage)
   config_->blackboard->set("path", path);
 
   setRobotPoseInMap(1.0, 0.0);
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(IsGoalNearbyConditionTestFixture, invalid_robot_frame_returns_failure)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <IsGoalNearby
+            path="{path}"
+            proximity_threshold="0.5"
+            robot_base_frame="nonexistent_robot_frame"
+          />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  auto path = makeStraightPathInMap({0.0, 1.0});
+  config_->blackboard->set("path", path);
+
+  tree_->rootNode()->executeTick();
+  EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
+}
+
+TEST_F(IsGoalNearbyConditionTestFixture, invalid_path_frame_returns_failure)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <IsGoalNearby
+            path="{path}"
+            proximity_threshold="0.5"
+          />
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+
+  // Create path in non-existent frame to trigger transform error
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "nonexistent_frame";
+  geometry_msgs::msg::PoseStamped ps;
+  ps.header.frame_id = "nonexistent_frame";
+  ps.pose.position.x = 1.0;
+  ps.pose.orientation.w = 1.0;
+  path.poses.push_back(ps);
+
+  config_->blackboard->set("path", path);
+  setRobotPoseInMap(0.0, 0.0);
+
   tree_->rootNode()->executeTick();
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::FAILURE);
 }

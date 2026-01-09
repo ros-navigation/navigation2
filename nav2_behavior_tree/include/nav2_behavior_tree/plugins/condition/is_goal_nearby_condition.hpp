@@ -18,10 +18,14 @@
 #include <string>
 #include <limits>
 #include <memory>
+#include <vector>
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp/condition_node.h"
+#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -30,6 +34,9 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS when
  * remaining length of the current planned path
  * is less than proximity_threshold and FAILURE otherwise.
+ *
+ * Use max_robot_pose_search_dist to limit search distance when path updates regularly
+ * to reduce computational cost. Disable (set negative) for full path search.
  */
 class IsGoalNearbyCondition : public BT::ConditionNode
 {
@@ -63,17 +70,23 @@ public:
         "proximity_threshold", 3.0,
         "Proximity length (m) of the remaining path considered as a nearby"),
       BT::InputPort<double>(
-        "max_robot_pose_search_dist", std::numeric_limits<double>::infinity(),
-        "Maximum forward integrated distance along the path (starting from the last detected pose) "
-        "to bound the search for the closest pose to the robot. When set to infinity (default), "
-        "whole path is searched every time"),
+        "max_robot_pose_search_dist", -1.0,
+        "Maximum forward integrated distance along the path "
+        "(starting from the last detected pose) to bound the search for the closest pose "
+        "to the robot. When set to negative value (default), whole path is searched every time"),
+      BT::InputPort<std::string>("global_frame", "map", "Global frame"),
+      BT::InputPort<std::string>("robot_base_frame", "base_link", "Robot base frame"),
     };
   }
 
 private:
+  nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   nav_msgs::msg::Path path_;
-  nav_msgs::msg::Path::_poses_type::iterator closest_pose_detection_begin_;
+  std::vector<geometry_msgs::msg::PoseStamped>::iterator closest_pose_detection_begin_;
+  double transform_tolerance_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
 };
 
 }  // namespace nav2_behavior_tree

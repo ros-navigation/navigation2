@@ -22,23 +22,35 @@ namespace nav2_behavior_tree
 IsGoalNearbyCondition::IsGoalNearbyCondition(
   const std::string & condition_name,
   const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
+: BT::ConditionNode(condition_name, conf),
+  transform_tolerance_(0.1)
 {
+  node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   tf_buffer_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  node_->get_parameter("transform_tolerance", transform_tolerance_);
+
+  global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "global_frame", this);
+  robot_base_frame_ = BT::deconflictPortAndParamFrame<std::string>(
+    node_, "robot_base_frame", this);
 }
 
 BT::NodeStatus IsGoalNearbyCondition::tick()
 {
   nav_msgs::msg::Path new_path;
   double prox_thr = 0.0;
-  double max_robot_pose_search_dist = std::numeric_limits<double>::infinity();
+  double max_robot_pose_search_dist = -1.0;
   getInput("path", new_path);
   getInput("proximity_threshold", prox_thr);
   getInput("max_robot_pose_search_dist", max_robot_pose_search_dist);
   if(new_path.poses.empty()) {
+    RCLCPP_WARN(node_->get_logger(), "Path is empty");
     return BT::NodeStatus::FAILURE;
   }
 
+  if (max_robot_pose_search_dist < 0.0) {
+    max_robot_pose_search_dist = std::numeric_limits<double>::max();
+  }
   bool path_pruning = std::isfinite(max_robot_pose_search_dist);
 
   if (!path_pruning || new_path != path_) {
@@ -46,8 +58,11 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
     closest_pose_detection_begin_ = path_.poses.begin();
   }
 
-  geometry_msgs::msg::PoseStamped pose;  // robot pose in map frame
-  if (!nav2_util::getCurrentPose(pose, *tf_buffer_, "map", "base_link", 0.05)) {
+  geometry_msgs::msg::PoseStamped pose;
+  if (!nav2_util::getCurrentPose(
+      pose, *tf_buffer_, global_frame_, robot_base_frame_, transform_tolerance_))
+  {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose");
     return BT::NodeStatus::FAILURE;
   }
 
@@ -56,6 +71,9 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   if (!nav2_util::transformPoseInTargetFrame(pose, robot_pose, *tf_buffer_,
     path_.header.frame_id))
   {
+    RCLCPP_ERROR(
+      node_->get_logger(), "Failed to transform robot pose to path frame '%s'",
+      path_.header.frame_id.c_str());
     return BT::NodeStatus::FAILURE;
   }
 
@@ -77,9 +95,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
       return nav2_util::geometry_utils::euclidean_distance(robot_pose, ps);
     });
 
-  if (path_pruning) {
-    closest_pose_detection_begin_ = closest_pose_it;
-  }
+  closest_pose_detection_begin_ = closest_pose_it;
 
   const std::size_t closest_index =
     static_cast<std::size_t>(closest_pose_it - path_.poses.begin());
