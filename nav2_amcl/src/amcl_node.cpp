@@ -1473,9 +1473,11 @@ AmclNode::initParticleFilter()
   // Seed RNG used by PF resampling and pose generation.
   // Keep legacy behavior (time-based) unless user explicitly sets a seed.
   if (random_seed_ >= 0) {
-    pf_seed(pf_, static_cast<int64_t>(random_seed_));
+    // `srand48` expects a platform `long` seed. We avoid using `long` in our code and accept
+    // truncation when seeding.
+    srand48(static_cast<int>(random_seed_));
   } else {
-    pf_seed(pf_, static_cast<int64_t>(std::time(nullptr)));
+    srand48(static_cast<int>(std::time(nullptr)));
   }
 
   pf_->pop_err = pf_err_;

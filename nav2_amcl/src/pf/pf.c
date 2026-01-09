@@ -109,17 +109,6 @@ pf_t * pf_alloc(
   return pf;
 }
 
-// Seed the particle filter RNG used by pf.c and amcl_node.cpp (drand48/srand48).
-// This is intentionally explicit so that callers can choose:
-// - time-based seed for "random by default" behavior, or
-// - fixed seed for deterministic replay boundaries.
-void pf_seed(pf_t * pf, int64_t seedval)
-{
-  (void)pf;
-  // Avoid use of C type 'long' (cpplint runtime/int). We accept truncation for seeding.
-  srand48((int)seedval);
-}
-
 // Free an existing filter
 void pf_free(pf_t * pf)
 {

@@ -290,7 +290,6 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
-  // If >= 0, use a fixed seed for deterministic replay. If < 0, seed from time.
   int random_seed_{-1};
 
   // Laser scan related
