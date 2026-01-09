@@ -28,6 +28,7 @@
 #include <float.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -115,7 +116,8 @@ pf_t * pf_alloc(
 void pf_seed(pf_t * pf, int64_t seedval)
 {
   (void)pf;
-  srand48((long int)seedval);
+  // Avoid use of C type 'long' (cpplint runtime/int). We accept truncation for seeding.
+  srand48((int)seedval);
 }
 
 // Free an existing filter
