@@ -16,10 +16,13 @@ line_length = 99
 [tool.mypy]
 explicit_package_bases = true
 strict = true
+warn_unused_configs = false
 
 [[tool.mypy.overrides]]
 module = [
     "matplotlib.*",
+    "transforms3d.*",
+    "graphviz.*",
     "rtree.*",
     "launch.*",
     "ament_index_python.*",
@@ -50,3 +53,4 @@ module = [
 ]
 
 ignore_missing_imports = true
+disallow_untyped_calls = false
