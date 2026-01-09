@@ -54,8 +54,6 @@ pf_t * pf_alloc(
   pf_sample_set_t * set;
   pf_sample_t * sample;
 
-  srand48(time(NULL));
-
   pf = calloc(1, sizeof(pf_t));
 
   pf->random_pose_fn = random_pose_fn;
@@ -108,6 +106,16 @@ pf_t * pf_alloc(
   pf_init_converged(pf);
 
   return pf;
+}
+
+// Seed the particle filter RNG used by pf.c and amcl_node.cpp (drand48/srand48).
+// This is intentionally explicit so that callers can choose:
+// - time-based seed for "random by default" behavior, or
+// - fixed seed for deterministic replay boundaries.
+void pf_seed(pf_t * pf, long int seedval)
+{
+  (void)pf;
+  srand48(seedval);
 }
 
 // Free an existing filter
