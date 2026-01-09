@@ -26,7 +26,6 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
-#include "nav2_smac_planner/nav2_smac_planner_common_visibility_control.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
@@ -92,28 +91,28 @@ struct HybridMotionTable
    * @param node Ptr to NodeHybrid
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeHybrid * node);
+  MotionPoses getProjections(const NodeHybrid * node) const;
 
   /**
    * @brief Get the angular bin to use from a raw orientation
    * @param theta Angle in radians
    * @return bin index of closest angle to request
    */
-  unsigned int getClosestAngularBin(const double & theta);
+  unsigned int getClosestAngularBin(const double & theta) const;
 
   /**
    * @brief Get the raw orientation from an angular bin
    * @param bin_idx Index of the bin
    * @return Raw orientation in radians
    */
-  float getAngleFromBin(const unsigned int & bin_idx);
+  float getAngleFromBin(const unsigned int & bin_idx) const;
 
   /**
    * @brief Get the angle scaled across bins from a raw orientation
    * @param theta Angle in radians
    * @return angle scaled across bins
    */
-  double getAngle(const double & theta);
+  double getAngle(const double & theta) const;
 
   MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;
@@ -183,11 +182,38 @@ public:
 
   typedef std::vector<Coordinates> CoordinateVector;
 
+  struct NodeContext
+  {
+    HybridMotionTable motion_table;
+    // Wavefront lookup and queue for continuing to expand as needed
+    LookupTable obstacle_heuristic_lookup_table;
+    ObstacleHeuristicQueue obstacle_heuristic_queue;
+
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+    // Dubin / Reeds-Shepp lookup and size for dereferencing
+    LookupTable dist_heuristic_lookup_table;
+    float size_lookup;
+
+    /**
+     * @brief Compute the SE2 distance heuristic
+     * @param lookup_table_dim Size, in costmap pixels, of the
+     * each lookup table dimension to populate
+     * @param motion_model Motion model to use for state space
+     * @param dim_3_size Number of quantization bins for caching
+     * @param search_info Info containing minimum radius to use
+     */
+    void precomputeDistanceHeuristic(
+      const float & lookup_table_dim,
+      const MotionModel & motion_model,
+      const unsigned int & dim_3_size,
+      const SearchInfo & search_info);
+  };
+
   /**
    * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeHybrid(const uint64_t index);
+  explicit NodeHybrid(const uint64_t index, const NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeHybrid
@@ -336,21 +362,6 @@ public:
   }
 
   /**
-   * @brief Get index at coordinates
-   * @param x X coordinate of point
-   * @param y Y coordinate of point
-   * @param angle Theta coordinate of point
-   * @return Index
-   */
-  static inline uint64_t getIndex(
-    const unsigned int & x, const unsigned int & y, const unsigned int & angle)
-  {
-    return getIndex(
-      x, y, angle, motion_table.size_x,
-      motion_table.num_angle_quantization);
-  }
-
-  /**
    * @brief Get coordinates at index
    * @param index Index of point
    * @param width Width of costmap
@@ -373,51 +384,10 @@ public:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  static float getHeuristicCost(
+  float getHeuristicCost(
     const Coordinates & node_coords,
-    const CoordinateVector & goals_coords);
-
-  /**
-   * @brief Initialize motion models
-   * @param motion_model Motion model enum to use
-   * @param size_x Size of X of graph
-   * @param size_y Size of y of graph
-   * @param angle_quantization Size of theta bins of graph
-   * @param search_info Search info to use
-   */
-  static void initMotionModel(
-    const MotionModel & motion_model,
-    unsigned int & size_x,
-    unsigned int & size_y,
-    unsigned int & angle_quantization,
-    SearchInfo & search_info);
-
-  /**
-   * @brief Compute the SE2 distance heuristic
-   * @param lookup_table_dim Size, in costmap pixels, of the
-   * each lookup table dimension to populate
-   * @param motion_model Motion model to use for state space
-   * @param dim_3_size Number of quantization bins for caching
-   * @param search_info Info containing minimum radius to use
-   */
-  static void precomputeDistanceHeuristic(
-    const float & lookup_table_dim,
-    const MotionModel & motion_model,
-    const unsigned int & dim_3_size,
-    const SearchInfo & search_info);
-
-  /**
-   * @brief Compute the Obstacle heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @return heuristic Heuristic value
-   */
-  static float getObstacleHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & cost_penalty,
-    const bool use_quadratic_cost_penalty,
-    const bool downsample_obstacle_heuristic);
+    const CoordinateVector & goals_coords,
+    const float obstacle_heuristic);
 
   /**
    * @brief Compute the Distance heuristic
@@ -427,21 +397,10 @@ public:
    * additional motion heuristics if required
    * @return heuristic Heuristic value
    */
-  static float getDistanceHeuristic(
+  float getDistanceHeuristic(
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
     const float & obstacle_heuristic);
-
-  /**
-   * @brief reset the obstacle heuristic state
-   * @param costmap_ros Costmap to use
-   * @param goal_coords Coordinates to start heuristic expansion at
-   */
-  static void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y,
-    const bool downsample_obstacle_heuristic);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -464,28 +423,8 @@ public:
    */
   bool backtracePath(CoordinateVector & path);
 
-  /**
-    * @brief Destroy shared pointer assets at the end of the process that don't
-    * require normal destruction handling
-    */
-  static void destroyStaticAssets()
-  {
-    costmap_ros.reset();
-  }
-
   NodeHybrid * parent;
   Coordinates pose;
-
-  // Constants required across all nodes but don't want to allocate more than once
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static HybridMotionTable motion_table;
-  // Wavefront lookup and queue for continuing to expand as needed
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable obstacle_heuristic_lookup_table;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static ObstacleHeuristicQueue obstacle_heuristic_queue;
-
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
-  // Dubin / Reeds-Shepp lookup and size for dereferencing
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
 
 private:
   float _cell_cost;
@@ -495,6 +434,7 @@ private:
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;
   bool _is_node_valid{false};
+  const NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner

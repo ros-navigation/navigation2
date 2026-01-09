@@ -43,6 +43,7 @@ public:
   typedef typename NodeT::Coordinates Coordinates;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
   typedef typename NodeT::CoordinateVector CoordinateVector;
+  using NodeContext = typename NodeT::NodeContext;
 
   /**
    * @struct nav2_smac_planner::AnalyticExpansion::AnalyticExpansionNodes
@@ -108,12 +109,13 @@ public:
    */
   void setCollisionChecker(GridCollisionChecker * collision_checker);
 
+  void setContext(NodeContext * ctx);
+
   /**
    * @brief Attempt an analytic path completion
    * @param node The node to start the analytic path from
    * @param coarse_check_goals Coarse list of goals nodes to plan to
    * @param fine_check_goals Fine list of goals nodes to plan to
-   * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
    * @param closest_distance Closest distance to goal
@@ -124,9 +126,8 @@ public:
     const NodePtr & current_node,
     const NodeVector & coarse_check_goals,
     const NodeVector & fine_check_goals,
-    const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
-    int & closest_distance);
+    const int closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -187,6 +188,7 @@ protected:
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
   std::list<std::unique_ptr<NodeT>> _detached_nodes;
+  const NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner
