@@ -61,7 +61,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Activating");
         action_server_->activate();
       });
-    
+
     omit_preempt_subs_ = create_subscription<std_msgs::msg::Empty>(
       "omit_preemption",
       1,

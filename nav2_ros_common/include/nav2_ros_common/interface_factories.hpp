@@ -200,15 +200,15 @@ create_subscription(
   auto wrapped_callback = [node, callback = std::forward<CallbackT>(callback)]
     (typename MessageT::SharedPtr msg) {
       // Only process if node is active
-      if (node->get_current_state().id()==lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+      if (node->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
         callback(msg);
       }
-      //  ignore when inactive 
+      //  ignore when inactive
     };
-    
+
   return node->rclcpp_lifecycle::LifecycleNode::template create_subscription<MessageT>(
       topic_name, qos, wrapped_callback
-    );
+  );
 }
 
 /**

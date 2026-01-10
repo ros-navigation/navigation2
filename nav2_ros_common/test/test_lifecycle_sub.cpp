@@ -15,9 +15,9 @@
 #include <std_msgs/msg/string.hpp>
 #include "nav2_ros_common/lifecycle_node.hpp"
 
-class TestNode : public nav2:: LifecycleNode
+class TestNode : public nav2::LifecycleNode
 {
-public: 
+public:
   TestNode()
   :nav2::LifecycleNode("test_lifecycle_sub")
   {
@@ -50,7 +50,7 @@ protected:
     return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2:: CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
     RCLCPP_INFO(get_logger(), "Deactivating - subscription will ignore messages");
     return nav2::CallbackReturn::SUCCESS;
