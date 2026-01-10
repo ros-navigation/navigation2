@@ -122,7 +122,7 @@ TEST_F(UndockRobotActionTestFixture, test_tick)
     R"(
       <root main_tree_to_execute = "MainTree" >
         <BehaviorTree ID="MainTree">
-            <UndockRobot dock_type="dock_1"/>
+            <UndockRobot dock_type="dock1"/>
         </BehaviorTree>
       </root>)";
 

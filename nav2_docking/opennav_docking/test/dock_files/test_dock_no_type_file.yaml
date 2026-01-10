@@ -1,4 +1,4 @@
 docks:
-  dock_1:
+  dock1:
     frame: "map_a"
     pose: [0.3, 0.3, 0.0]

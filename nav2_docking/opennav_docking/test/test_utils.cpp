@@ -95,18 +95,18 @@ TEST(UtilsTests, parseDockFile)
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
   EXPECT_EQ(db.size(), 2u);
-  EXPECT_EQ(db["dock_1"].frame, std::string("map_a"));
-  EXPECT_EQ(db["dock_2"].frame, std::string("map"));
-  EXPECT_EQ(db["dock_1"].type, std::string("dockv_3"));
-  EXPECT_EQ(db["dock_2"].type, std::string("dockv_1"));
-  EXPECT_EQ(db["dock_1"].pose.position.x, 0.3);
-  EXPECT_EQ(db["dock_1"].pose.position.y, 0.3);
-  EXPECT_EQ(db["dock_1"].pose.orientation.w, 1.0);
-  EXPECT_EQ(db["dock_2"].pose.position.x, 0.0);
-  EXPECT_EQ(db["dock_2"].pose.position.y, 0.0);
-  EXPECT_NE(db["dock_2"].pose.orientation.w, 1.0);
-  EXPECT_EQ(db["dock_1"].id, std::string(""));
-  EXPECT_EQ(db["dock_2"].id, std::string("2"));
+  EXPECT_EQ(db["dock1"].frame, std::string("map_a"));
+  EXPECT_EQ(db["dock2"].frame, std::string("map"));
+  EXPECT_EQ(db["dock1"].type, std::string("dockv3"));
+  EXPECT_EQ(db["dock2"].type, std::string("dockv1"));
+  EXPECT_EQ(db["dock1"].pose.position.x, 0.3);
+  EXPECT_EQ(db["dock1"].pose.position.y, 0.3);
+  EXPECT_EQ(db["dock1"].pose.orientation.w, 1.0);
+  EXPECT_EQ(db["dock2"].pose.position.x, 0.0);
+  EXPECT_EQ(db["dock2"].pose.position.y, 0.0);
+  EXPECT_NE(db["dock2"].pose.orientation.w, 1.0);
+  EXPECT_EQ(db["dock1"].id, std::string(""));
+  EXPECT_EQ(db["dock2"].id, std::string("2"));
 }
 
 TEST(UtilsTests, parseDockFile2)
