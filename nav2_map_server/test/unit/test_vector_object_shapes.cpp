@@ -39,8 +39,8 @@
 
 static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
 
-static const char POLYGON_NAME[]{"Polygon"};
-static const char CIRCLE_NAME[]{"Circle"};
+static const char POLYGON_NAME[]{"polygon"};
+static const char CIRCLE_NAME[]{"circle"};
 static const char GLOBAL_FRAME_ID[]{"map"};
 static const char SHAPE_FRAME_ID[]{"shape"};
 static double FRAME_SHIFT = 0.1;
