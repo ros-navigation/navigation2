@@ -77,7 +77,7 @@ TEST(OperationsManagerTest, test_find_operations)
   enter.operations.push_back(op);
   op.trigger = OperationTrigger::NODE;
   node2.operations.push_back(op);
-  op2.type = "test_2";
+  op2.type = "test2";
   op2.trigger = OperationTrigger::ON_EXIT;
   exit2.operations.push_back(op2);
   EXPECT_EQ(manager.findGraphOperations(&node2, &enter, &exit2).size(), 3u);

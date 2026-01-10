@@ -1,9 +1,9 @@
 docks:
-  dock_1:
-    type: "dockv_3"
+  dock1:
+    type: "dockv3"
     frame: "map_a"
     pose: [0.3, 0.3, 0.0]
-  dock_2:
-    type: "dockv_1"
+  dock2:
+    type: "dockv1"
     pose: [0.0, 0.0, 0.4]
     id: "2"

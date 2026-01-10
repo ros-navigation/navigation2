@@ -38,12 +38,12 @@ TEST(DeclareParameter, useValidParameter)
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
-  layer.declareParameter("test_1", rclcpp::ParameterValue("test_val_1"));
+  layer.declareParameter("test1", rclcpp::ParameterValue("test_val1"));
   try {
-    std::string val = node->get_parameter("test_layer.test_1").as_string();
-    EXPECT_EQ(val, "test_val_1");
+    std::string val = node->get_parameter("test_layer.test1").as_string();
+    EXPECT_EQ(val, "test_val1");
   } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-    FAIL() << "test_layer.test_1 parameter is not set";
+    FAIL() << "test_layer.test1 parameter is not set";
   }
 }
 
@@ -57,10 +57,10 @@ TEST(DeclareParameter, useInvalidParameter)
 
   layer.initialize(&layers, "test_layer", &tf, node, nullptr);
 
-  layer.declareParameter("test_2", rclcpp::PARAMETER_STRING);
+  layer.declareParameter("test2", rclcpp::PARAMETER_STRING);
   try {
-    std::string val = node->get_parameter("test_layer.test_2").as_string();
-    FAIL() << "Incorrectly handling test_layer.test_2 parameter which was not set";
+    std::string val = node->get_parameter("test_layer.test2").as_string();
+    FAIL() << "Incorrectly handling test_layer.test2 parameter which was not set";
   } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
     SUCCEED();
   }
