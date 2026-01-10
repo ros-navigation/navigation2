@@ -511,8 +511,8 @@ collision_monitor:
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-    polygons: ["FootprintApproach"]
-    FootprintApproach:
+    polygons: ["footprint_approach"]
+    footprint_approach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "local_costmap/published_footprint"
