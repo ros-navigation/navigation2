@@ -59,21 +59,17 @@ inline rclcpp::SubscriptionOptions createSubscriptionOptions(
   rclcpp::QOSLivelinessChangedCallbackType qos_liveliness_changed_callback = nullptr)
 {
   rclcpp::SubscriptionOptions options;
-  // Allow for all topics to have QoS overrides
   if (allow_parameter_qos_overrides) {
     options.qos_overriding_options = rclcpp::QosOverridingOptions(
       {rclcpp::QosPolicyKind::Depth, rclcpp::QosPolicyKind::Durability,
         rclcpp::QosPolicyKind::Reliability, rclcpp::QosPolicyKind::History});
   }
 
-  // Set the callback group to use for this subscription, if given
   options.callback_group = callback_group_ptr;
 
-  // ROS 2 default logs this already
   options.event_callbacks.incompatible_qos_callback = requested_incompatible_qos_callback;
   options.event_callbacks.incompatible_type_callback = incompatible_qos_type_callback;
 
-  // Set the event callbacks if given, else log
   if (qos_message_lost_callback) {
     options.event_callbacks.message_lost_callback =
       qos_message_lost_callback;
@@ -187,30 +183,32 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param node Node to create the subscription on
  * @param topic_name Name of topic
  * @param callback Callback function to handle incoming messages
- * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
+ * @param qos QoS settings for the subscription (default is nav2:: qos::StandardTopicQoS())
  * @param callback_group The callback group to use (if provided)
- * @return A shared pointer to the created subscription
+ * @return A shared pointer to the created lifecycle-enabled subscription
  */
 template<typename MessageT, typename NodeT, typename CallbackT>
-typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
+typename nav2::Subscription<MessageT>::SharedPtr
+create_subscription(
   const NodeT & node,
   const std::string & topic_name,
   CallbackT && callback,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
-  bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", true);
+  (void)callback_group;
+  auto wrapped_callback = [node, callback = std::forward<CallbackT>(callback)]
+      (typename MessageT::SharedPtr msg) {
+      // Only process if node is active
+      if (node->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        callback(msg);
+      }
+      //  ignore when inactive
+    };
 
-  auto params_interface = node->get_node_parameters_interface();
-  auto topics_interface = node->get_node_topics_interface();
-  return rclcpp::create_subscription<MessageT, CallbackT>(
-    params_interface,
-    topics_interface,
-    topic_name,
-    qos,
-    std::forward<CallbackT>(callback),
-    createSubscriptionOptions(topic_name, allow_parameter_qos_overrides, callback_group));
+  return node->rclcpp_lifecycle::LifecycleNode::template create_subscription<MessageT>(
+    topic_name, qos, wrapped_callback
+  );
 }
 
 /**

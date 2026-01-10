@@ -17,15 +17,11 @@
 
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/managed_entity.hpp"
 
 namespace nav2
 {
 
-/**
-  * @brief A ROS 2 subscription for Nav2
-  * This is a convenience type alias to simplify the use of subscriptions in Nav2
-  * which may be further built up on in the future with custom APIs.
-  */
 template<typename MessageT>
 using Subscription = rclcpp::Subscription<MessageT>;
 
