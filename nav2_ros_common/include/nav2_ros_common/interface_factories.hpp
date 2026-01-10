@@ -188,42 +188,27 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @return A shared pointer to the created lifecycle-enabled subscription
  */
 template<typename MessageT, typename NodeT, typename CallbackT>
-typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
+typename nav2::Subscription<MessageT>::SharedPtr
+create_subscription(
   const NodeT & node,
-  const std::string topic_name,
+  const std::string & topic_name,
   CallbackT && callback,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
 {
-  bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-    node, "allow_parameter_qos_overrides", true);
-
-  auto params_interface = node->get_node_parameters_interface();
-  auto topics_interface = node->get_node_topics_interface();
-
-  using MessageSharedPtr = std::shared_ptr<MessageT>;
-  std::function<void(MessageSharedPtr)> user_callback = std::forward<CallbackT>(callback);
-
-  auto nav2_sub = std::make_shared<nav2::Subscription<MessageT>>(nullptr, topic_name);
-
-  auto wrapped_callback = [nav2_sub, user_callback](MessageSharedPtr msg) {
-      if (nav2_sub->should_process_message()) {
-        user_callback(msg);
+  (void)callback_group;
+  auto wrapped_callback = [node, callback = std::forward<CallbackT>(callback)]
+    (typename MessageT::SharedPtr msg) {
+      // Only process if node is active
+      if (node->get_current_state().id()==lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        callback(msg);
       }
-    // If not activated, should_process_message() logs the warning
+      //  ignore when inactive 
     };
-
-  auto rclcpp_subscription = rclcpp::create_subscription<MessageT>(
-    params_interface,
-    topics_interface,
-    topic_name,
-    qos,
-    wrapped_callback,
-    createSubscriptionOptions(topic_name, allow_parameter_qos_overrides, callback_group));
-
-  nav2_sub->set_subscription(rclcpp_subscription);
-
-  return nav2_sub;
+    
+  return node->rclcpp_lifecycle::LifecycleNode::template create_subscription<MessageT>(
+      topic_name, qos, wrapped_callback
+    );
 }
 
 /**

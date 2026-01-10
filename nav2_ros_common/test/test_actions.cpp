@@ -27,11 +27,11 @@ using GoalHandle = rclcpp_action::ServerGoalHandle<Fibonacci>;
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
-class FibonacciServerNode : public rclcpp::Node
+class FibonacciServerNode : public nav2::LifecycleNode
 {
 public:
   FibonacciServerNode()
-  : rclcpp::Node("fibonacci_server_node")
+  :nav2::LifecycleNode("fibonacci_server_node")
   {
   }
 
@@ -49,7 +49,7 @@ public:
     deactivate_subs_ = create_subscription<std_msgs::msg::Empty>(
       "deactivate_server",
       1,
-      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {
+      [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Deactivating");
         action_server_->deactivate();
       });
@@ -57,15 +57,15 @@ public:
     activate_subs_ = create_subscription<std_msgs::msg::Empty>(
       "activate_server",
       1,
-      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {
+      [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Activating");
         action_server_->activate();
       });
-
+    
     omit_preempt_subs_ = create_subscription<std_msgs::msg::Empty>(
       "omit_preemption",
       1,
-      [this](std_msgs::msg::Empty::UniquePtr /*msg*/) {
+      [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Ignoring preemptions");
         do_premptions_ = false;
       });

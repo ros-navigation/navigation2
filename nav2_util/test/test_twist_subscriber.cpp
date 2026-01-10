@@ -34,8 +34,8 @@ TEST(TwistSubscriber, Unstamped)
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
     sub_node, "cmd_vel",
-    [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
-    [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;},
+    [&](const geometry_msgs::msg::Twist::SharedPtr msg) {sub_msg.twist = *msg;},
+    [&](const geometry_msgs::msg::TwistStamped::SharedPtr msg) {sub_msg = *msg;},
     rclcpp::QoS(1)
   );
 
@@ -73,8 +73,8 @@ TEST(TwistSubscriber, Stamped)
   geometry_msgs::msg::TwistStamped sub_msg {};
   auto vel_subscriber = std::make_unique<nav2_util::TwistSubscriber>(
     sub_node, "cmd_vel",
-    [&](const geometry_msgs::msg::Twist msg) {sub_msg.twist = msg;},
-    [&](const geometry_msgs::msg::TwistStamped msg) {sub_msg = msg;}
+    [&](const geometry_msgs::msg::Twist::SharedPtr msg) {sub_msg.twist = *msg;},
+    [&](const geometry_msgs::msg::TwistStamped::SharedPtr msg) {sub_msg = *msg;}
   );
 
   auto pub_node = std::make_shared<nav2::LifecycleNode>("pub_node", "");

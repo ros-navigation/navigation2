@@ -156,15 +156,9 @@ public:
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
-    auto sub = nav2::interfaces::create_subscription<MessageT>(
-      shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
-
-    if (get_current_state().id() ==
-      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-    {
-      sub->on_activate();
-    }
-    return sub;
+    return nav2::interfaces::create_subscription<MessageT>(
+      shared_from_this(), topic_name,
+      std::forward<CallbackT>(callback), qos, callback_group);
   }
 
   /**

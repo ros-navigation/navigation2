@@ -8,7 +8,6 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -16,9 +15,9 @@
 #include <std_msgs/msg/string.hpp>
 #include "nav2_ros_common/lifecycle_node.hpp"
 
-class TestNode : public nav2::LifecycleNode
+class TestNode : public nav2:: LifecycleNode
 {
-public:
+public: 
   TestNode()
   :nav2::LifecycleNode("test_lifecycle_sub")
   {
@@ -31,11 +30,11 @@ public:
 
     sub_ = create_subscription<std_msgs::msg::String>(
       "test_topic",
-      [this](std_msgs::msg::String::SharedPtr msg) {
+      [this](const std_msgs::msg::String::SharedPtr msg) {
         RCLCPP_INFO(get_logger(), "Received: %s", msg->data.c_str());
       });
 
-    RCLCPP_INFO(get_logger(), "Subscription created ");
+    RCLCPP_INFO(get_logger(), "Subscription created");
   }
 
 protected:
@@ -47,19 +46,13 @@ protected:
 
   nav2::CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
-    RCLCPP_INFO(get_logger(), "Activating subscription");
-    if (sub_) {
-      sub_->on_activate();
-    }
+    RCLCPP_INFO(get_logger(), "Activating - subscription will now process messages");
     return nav2::CallbackReturn::SUCCESS;
   }
 
-  nav2::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+  nav2:: CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
   {
-    RCLCPP_INFO(get_logger(), "Deactivating subscription");
-    if (sub_) {
-      sub_->on_deactivate();
-    }
+    RCLCPP_INFO(get_logger(), "Deactivating - subscription will ignore messages");
     return nav2::CallbackReturn::SUCCESS;
   }
 
