@@ -29,7 +29,7 @@ EdgeScorer::EdgeScorer(
 : plugin_loader_("nav2_route", "nav2_route::EdgeCostFunction")
 {
   // load plugins with a default of the DistanceScorer
-  const std::vector<std::string> default_plugin_ids({"DistanceScorer", "DynamicEdgesScorer"});
+  const std::vector<std::string> default_plugin_ids({"distance_scorer", "dynamic_edges_scorer"});
   const std::vector<std::string> default_plugin_types(
     {"nav2_route::DistanceScorer", "nav2_route::DynamicEdgesScorer"});
 

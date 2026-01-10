@@ -157,7 +157,7 @@ protected:
     behavior_ = std::make_shared<DummyBehavior>();
     behavior_->configure(
       node_lifecycle_,
-      "Behavior",
+      "behavior",
       tf_buffer_,
       local_collision_checker_,
       global_collision_checker_);
@@ -167,7 +167,7 @@ protected:
       node_lifecycle_->get_node_base_interface(),
       node_lifecycle_->get_node_graph_interface(),
       node_lifecycle_->get_node_logging_interface(),
-      node_lifecycle_->get_node_waitables_interface(), "Behavior");
+      node_lifecycle_->get_node_waitables_interface(), "behavior");
     std::cout << "Setup complete." << std::endl;
   }
 

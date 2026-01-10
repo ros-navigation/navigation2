@@ -332,7 +332,7 @@ TEST(RouteServerTest, test_complete_action_api)
   auto node_int = std::make_shared<rclcpp::Node>("my_node2");
   auto srv_client =
     nav2::ServiceClient<std_srvs::srv::Trigger>(
-    "route_server/ReroutingService/reroute", node_int);
+    "route_server/rerouting_service/reroute", node_int);
   auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
   EXPECT_TRUE(resp->success);

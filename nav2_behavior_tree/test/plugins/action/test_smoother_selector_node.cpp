@@ -100,7 +100,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="DWB" topic_name="smoother_selector_custom_topic_name"/>
+          <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="dwb" topic_name="smoother_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -115,11 +115,11 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
   std::string selected_smoother_result;
   EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
-  EXPECT_EQ(selected_smoother_result, "DWB");
+  EXPECT_EQ(selected_smoother_result, "dwb");
 
   std_msgs::msg::String selected_smoother_cmd;
 
-  selected_smoother_cmd.data = "DWC";
+  selected_smoother_cmd.data = "dwc";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -138,7 +138,7 @@ TEST_F(SmootherSelectorTestFixture, test_custom_topic)
 
   // check smoother updated
   EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
-  EXPECT_EQ("DWC", selected_smoother_result);
+  EXPECT_EQ("dwc", selected_smoother_result);
 }
 
 TEST_F(SmootherSelectorTestFixture, test_default_topic)
@@ -148,7 +148,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="GridBased"/>
+          <SmootherSelector selected_smoother="{selected_smoother}" default_smoother="grid_based"/>
         </BehaviorTree>
       </root>)";
 
@@ -163,11 +163,11 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
   std::string selected_smoother_result;
   EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
 
-  EXPECT_EQ(selected_smoother_result, "GridBased");
+  EXPECT_EQ(selected_smoother_result, "grid_based");
 
   std_msgs::msg::String selected_smoother_cmd;
 
-  selected_smoother_cmd.data = "RRT";
+  selected_smoother_cmd.data = "rrt";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -186,7 +186,7 @@ TEST_F(SmootherSelectorTestFixture, test_default_topic)
 
   // check smoother updated
   EXPECT_TRUE(config_->blackboard->get("selected_smoother", selected_smoother_result));
-  EXPECT_EQ("RRT", selected_smoother_result);
+  EXPECT_EQ("rrt", selected_smoother_result);
 }
 
 int main(int argc, char ** argv)

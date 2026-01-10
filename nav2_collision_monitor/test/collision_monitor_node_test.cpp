@@ -51,10 +51,10 @@ static const char CMD_VEL_OUT_TOPIC[]{"cmd_vel_out"};
 static const char STATE_TOPIC[]{"collision_monitor_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_monitor/collision_points_marker"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
-static const char SCAN_NAME[]{"Scan"};
-static const char POINTCLOUD_NAME[]{"PointCloud"};
-static const char RANGE_NAME[]{"Range"};
-static const char POLYGON_NAME[]{"Polygon"};
+static const char SCAN_NAME[]{"scan"};
+static const char POINTCLOUD_NAME[]{"pointcloud"};
+static const char RANGE_NAME[]{"range"};
+static const char POLYGON_NAME[]{"polygon"};
 static const int MIN_POINTS{2};
 static const double SLOWDOWN_RATIO{0.7};
 static const double LINEAR_LIMIT{0.4};
@@ -805,9 +805,9 @@ TEST_F(Tester, testToggleService)
 {
   // Set parameters for collision monitor
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Stop"}, {SCAN_NAME});
+  setVectors({"stop"}, {SCAN_NAME});
 
   // Test the parameter in disabled state
   cm_->set_parameter(rclcpp::Parameter("enabled", false));
@@ -845,11 +845,11 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   // Set Collision Monitor parameters.
   // Making two polygons: outer polygon for slowdown and inner for robot stop.
   setCommonParameters();
-  addPolygon("Limit", POLYGON, 3.0, "limit");
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("limit", POLYGON, 3.0, "limit");
+  addPolygon("slowdown", POLYGON, 2.0, "slowdown");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Limit", "SlowDown", "Stop"}, {SCAN_NAME});
+  setVectors({"limit", "slowdown", "stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -880,7 +880,7 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * ratio, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, LIMIT);
-  ASSERT_EQ(action_state_->polygon_name, "Limit");
+  ASSERT_EQ(action_state_->polygon_name, "limit");
 
   // 3. Obstacle is in slowdown robot zone
   publishScan(1.5, curr_time);
@@ -892,7 +892,7 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
-  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
+  ASSERT_EQ(action_state_->polygon_name, "slowdown");
 
   // 4. Obstacle is inside stop zone
   publishScan(0.5, curr_time);
@@ -904,7 +904,7 @@ TEST_F(Tester, testProcessStopSlowdownLimit)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_EQ(action_state_->polygon_name, "stop");
 
   // 5. Restoring back normal operation
   publishScan(4.5, curr_time);
@@ -932,11 +932,11 @@ TEST_F(Tester, testPolygonSource)
   // Set source_timeout to 0.0 to clear out quickly the polygons from test to test
   cm_->set_parameter(
     rclcpp::Parameter("source_timeout", 0.1));
-  addPolygon("Limit", POLYGON, 3.0, "limit");
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("limit", POLYGON, 3.0, "limit");
+  addPolygon("slowdown", POLYGON, 2.0, "slowdown");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(POLYGON_NAME, POLYGON_SOURCE);
-  setVectors({"Limit", "SlowDown", "Stop"}, {POLYGON_NAME});
+  setVectors({"limit", "slowdown", "stop"}, {POLYGON_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -969,7 +969,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_NEAR(cmd_vel_out_->angular.z, 0.1 * ratio, EPSILON);
   EXPECT_TRUE(waitActionState(500ms));
   EXPECT_EQ(action_state_->action_type, LIMIT);
-  EXPECT_EQ(action_state_->polygon_name, "Limit");
+  EXPECT_EQ(action_state_->polygon_name, "limit");
 
   // 3. Obstacle is in slowdown robot zone
   curr_time = cm_->now();
@@ -982,7 +982,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_NEAR(cmd_vel_out_->angular.z, 0.1 * SLOWDOWN_RATIO, EPSILON);
   EXPECT_TRUE(waitActionState(500ms));
   EXPECT_EQ(action_state_->action_type, SLOWDOWN);
-  EXPECT_EQ(action_state_->polygon_name, "SlowDown");
+  EXPECT_EQ(action_state_->polygon_name, "slowdown");
 
   // 4. Obstacle is inside stop zone
   curr_time = cm_->now();
@@ -995,7 +995,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   EXPECT_TRUE(waitActionState(500ms));
   EXPECT_EQ(action_state_->action_type, STOP);
-  EXPECT_EQ(action_state_->polygon_name, "Stop");
+  EXPECT_EQ(action_state_->polygon_name, "stop");
 
   // 5. Restoring back normal operation
   curr_time = cm_->now();
@@ -1021,9 +1021,9 @@ TEST_F(Tester, testProcessApproach)
   // Set Collision Monitor parameters.
   // Making one circle footprint for approach.
   setCommonParameters();
-  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("approach", CIRCLE, 1.0, "approach");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Approach"}, {SCAN_NAME});
+  setVectors({"approach"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1055,7 +1055,7 @@ TEST_F(Tester, testProcessApproach)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // 3. Obstacle is inside robot footprint
   publishScan(0.5, curr_time);
@@ -1090,9 +1090,9 @@ TEST_F(Tester, testProcessApproachRotation)
   // Set Collision Monitor parameters.
   // Making one circle footprint for approach.
   setCommonParameters();
-  addPolygon("Approach", POLYGON, 1.0, "approach");
+  addPolygon("approach", POLYGON, 1.0, "approach");
   addSource(RANGE_NAME, RANGE);
-  setVectors({"Approach"}, {RANGE_NAME});
+  setVectors({"approach"}, {RANGE_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1127,7 +1127,7 @@ TEST_F(Tester, testProcessApproachRotation)
     (M_PI / 4) * (SIMULATION_TIME_STEP / TIME_BEFORE_COLLISION));
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // 3. Obstacle is inside robot footprint
   publishRange(0.5, curr_time);
@@ -1162,11 +1162,11 @@ TEST_F(Tester, testCrossOver)
   // Making two polygons: outer polygon for slowdown and inner circle
   // as robot footprint for approach.
   setCommonParameters();
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("slowdown", POLYGON, 2.0, "slowdown");
+  addPolygon("approach", CIRCLE, 1.0, "approach");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
   addSource(RANGE_NAME, RANGE);
-  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  setVectors({"slowdown", "approach"}, {POINTCLOUD_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1189,7 +1189,7 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // 2. Obstacle is inside slowdown zone, but speed is too slow for approach
   publishRange(1.5, curr_time);
@@ -1201,7 +1201,7 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
-  ASSERT_EQ(action_state_->polygon_name, "SlowDown");
+  ASSERT_EQ(action_state_->polygon_name, "slowdown");
 
   // 3. Increase robot speed to return again into approach mode.
   // The speed should be safer for approach mode, so robot will go to the approach (ahead in 0.5 m)
@@ -1216,7 +1216,7 @@ TEST_F(Tester, testCrossOver)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1230,11 +1230,11 @@ TEST_F(Tester, testSourceTimeout)
   // Making two polygons: outer polygon for slowdown and inner circle
   // as robot footprint for approach.
   setCommonParameters();
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("slowdown", POLYGON, 2.0, "slowdown");
+  addPolygon("approach", CIRCLE, 1.0, "approach");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
   addSource(RANGE_NAME, RANGE);
-  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  setVectors({"slowdown", "approach"}, {POINTCLOUD_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1254,7 +1254,7 @@ TEST_F(Tester, testSourceTimeout)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "invalid source");
+  ASSERT_EQ(action_state_->polygon_name, "invalid_source");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1268,11 +1268,11 @@ TEST_F(Tester, testSourceTimeoutOverride)
   // Making two polygons: outer polygon for slowdown and inner circle
   // as robot footprint for approach.
   setCommonParameters();
-  addPolygon("SlowDown", POLYGON, 2.0, "slowdown");
-  addPolygon("Approach", CIRCLE, 1.0, "approach");
+  addPolygon("slowdown", POLYGON, 2.0, "slowdown");
+  addPolygon("approach", CIRCLE, 1.0, "approach");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
   addSource(RANGE_NAME, RANGE);
-  setVectors({"SlowDown", "Approach"}, {POINTCLOUD_NAME, RANGE_NAME});
+  setVectors({"slowdown", "approach"}, {POINTCLOUD_NAME, RANGE_NAME});
   cm_->set_parameter(rclcpp::Parameter("source_timeout", 0.0));
 
   // Start Collision Monitor node
@@ -1297,7 +1297,7 @@ TEST_F(Tester, testSourceTimeoutOverride)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1309,10 +1309,10 @@ TEST_F(Tester, testCeasePublishZeroVel)
 
   // Configure stop and approach zones, and basic data source
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
-  addPolygon("Approach", CIRCLE, 2.0, "approach");
+  addPolygon("stop", POLYGON, 1.0, "stop");
+  addPolygon("approach", CIRCLE, 2.0, "approach");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Stop", "Approach"}, {SCAN_NAME});
+  setVectors({"stop", "approach"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1330,7 +1330,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, APPROACH);
-  ASSERT_EQ(action_state_->polygon_name, "Approach");
+  ASSERT_EQ(action_state_->polygon_name, "approach");
 
   // Wait more than STOP_PUB_TIMEOUT time
   std::this_thread::sleep_for(std::chrono::duration<double>(STOP_PUB_TIMEOUT + 0.01));
@@ -1361,7 +1361,7 @@ TEST_F(Tester, testCeasePublishZeroVel)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_EQ(action_state_->polygon_name, "stop");
 
   // Wait more than STOP_PUB_TIMEOUT time
   std::this_thread::sleep_for(std::chrono::duration<double>(STOP_PUB_TIMEOUT + 0.01));
@@ -1379,10 +1379,10 @@ TEST_F(Tester, testPolygonNotEnabled)
   // Set Collision Monitor parameters.
   // Create a STOP polygon
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   // Create a Scan source
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Stop"}, {SCAN_NAME});
+  setVectors({"stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1399,12 +1399,12 @@ TEST_F(Tester, testPolygonNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_EQ(action_state_->polygon_name, "stop");
 
   // Disable polygon by calling service
   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
   auto parameter_msg = std::make_shared<rcl_interfaces::msg::Parameter>();
-  parameter_msg->name = "Stop.enabled";
+  parameter_msg->name = "stop.enabled";
   parameter_msg->value.type = rcl_interfaces::msg::ParameterType::PARAMETER_BOOL;
   parameter_msg->value.bool_value = false;
   set_parameters_msg->parameters.push_back(*parameter_msg);
@@ -1434,10 +1434,10 @@ TEST_F(Tester, testSourceNotEnabled)
   // Set Collision Monitor parameters.
   // Create a STOP polygon
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   // Create a Scan source
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Stop"}, {SCAN_NAME});
+  setVectors({"stop"}, {SCAN_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1454,7 +1454,7 @@ TEST_F(Tester, testSourceNotEnabled)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "Stop");
+  ASSERT_EQ(action_state_->polygon_name, "stop");
 
   // Disable source by calling service
   auto set_parameters_msg = std::make_shared<rcl_interfaces::srv::SetParameters::Request>();
@@ -1489,9 +1489,9 @@ TEST_F(Tester, testProcessNonActive)
   rclcpp::Time curr_time = cm_->now();
 
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"Stop"}, {SCAN_NAME});
+  setVectors({"stop"}, {SCAN_NAME});
 
   // Configure Collision Monitor node, but not activate
   cm_->configure();
@@ -1511,9 +1511,9 @@ TEST_F(Tester, testProcessNonActive)
 TEST_F(Tester, testIncorrectPolygonType)
 {
   setCommonParameters();
-  addPolygon("UnknownShape", POLYGON_UNKNOWN, 1.0, "stop");
+  addPolygon("unknown_shape", POLYGON_UNKNOWN, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"UnknownShape"}, {SCAN_NAME});
+  setVectors({"unknown_shape"}, {SCAN_NAME});
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
@@ -1522,9 +1522,9 @@ TEST_F(Tester, testIncorrectPolygonType)
 TEST_F(Tester, testIncorrectSourceType)
 {
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
-  addSource("UnknownSource", SOURCE_UNKNOWN);
-  setVectors({"Stop"}, {"UnknownSource"});
+  addPolygon("stop", POLYGON, 1.0, "stop");
+  addSource("unknown_source", SOURCE_UNKNOWN);
+  setVectors({"stop"}, {"unknown_source"});
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
@@ -1533,7 +1533,7 @@ TEST_F(Tester, testIncorrectSourceType)
 TEST_F(Tester, testPolygonsNotSet)
 {
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
 
   // Check that Collision Monitor node can not be configured for this parameters set
@@ -1543,9 +1543,9 @@ TEST_F(Tester, testPolygonsNotSet)
 TEST_F(Tester, testSourcesNotSet)
 {
   setCommonParameters();
-  addPolygon("Stop", POLYGON, 1.0, "stop");
+  addPolygon("stop", POLYGON, 1.0, "stop");
   addSource(SCAN_NAME, SCAN);
-  cm_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"Stop"}));
+  cm_->declare_parameter("polygons", rclcpp::ParameterValue(std::vector<std::string>{"stop"}));
 
   // Check that Collision Monitor node can not be configured for this parameters set
   cm_->cant_configure();
@@ -1585,15 +1585,15 @@ TEST_F(Tester, testVelocityPolygonStop)
 {
   // Set Collision Monitor parameters.
   // Add velocity polygon with 2 sub polygon:
-  // 1. Forward:  0 -> 0.5 m/s
-  // 2. Backward: 0 -> -0.5 m/s
+  // 1. forward:  0 -> 0.5 m/s
+  // 2. backward: 0 -> -0.5 m/s
   setCommonParameters();
-  addPolygon("VelocityPolygon", VELOCITY_POLYGON, 1.0, "stop");
-  addPolygonVelocitySubPolygon("VelocityPolygon", "Forward", 0.0, 0.5, 0.0, 1.0, 4.0);
-  addPolygonVelocitySubPolygon("VelocityPolygon", "Backward", -0.5, 0.0, 0.0, 1.0, 2.0);
-  setPolygonVelocityVectors("VelocityPolygon", {"Forward", "Backward"});
+  addPolygon("velocity_polygon", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("velocity_polygon", "forward", 0.0, 0.5, 0.0, 1.0, 4.0);
+  addPolygonVelocitySubPolygon("velocity_polygon", "backward", -0.5, 0.0, 0.0, 1.0, 2.0);
+  setPolygonVelocityVectors("velocity_polygon", {"forward", "backward"});
   addSource(POINTCLOUD_NAME, POINTCLOUD);
-  setVectors({"VelocityPolygon"}, {POINTCLOUD_NAME});
+  setVectors({"velocity_polygon"}, {POINTCLOUD_NAME});
 
   rclcpp::Time curr_time = cm_->now();
   // Start Collision Monitor node
@@ -1601,7 +1601,7 @@ TEST_F(Tester, testVelocityPolygonStop)
   // Check that robot stops when source is enabled
   sendTransforms(curr_time);
 
-  // 1. Obstacle is far away from Forward velocity polygon
+  // 1. Obstacle is far away from forward velocity polygon
   publishPointCloud(4.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(4.5, 0.01), 500ms, curr_time));
   publishCmdVel(0.4, 0.0, 0.1);
@@ -1610,7 +1610,7 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
-  // 2. Obstacle is in Forward velocity polygon
+  // 2. Obstacle is in forward velocity polygon
   publishPointCloud(3.0, curr_time);
   ASSERT_TRUE(waitData(std::hypot(3.0, 0.01), 500ms, curr_time));
   publishCmdVel(0.4, 0.0, 0.1);
@@ -1620,10 +1620,10 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+  ASSERT_EQ(action_state_->polygon_name, "velocity_polygon");
 
-  // 3. Switch to Backward velocity polygon
-  // Obstacle is far away from Backward velocity polygon
+  // 3. Switch to backward velocity polygon
+  // Obstacle is far away from backward velocity polygon
   publishCmdVel(-0.4, 0.0, 0.1);
   ASSERT_TRUE(waitCmdVel(500ms));
   ASSERT_NEAR(cmd_vel_out_->linear.x, -0.4, EPSILON);
@@ -1633,7 +1633,7 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_EQ(action_state_->action_type, DO_NOTHING);
   ASSERT_EQ(action_state_->polygon_name, "");
 
-  // 4. Obstacle is in Backward velocity polygon
+  // 4. Obstacle is in backward velocity polygon
   publishPointCloud(-1.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(-1.5, 0.01), 500ms, curr_time));
   publishCmdVel(-0.4, 0.0, 0.1);
@@ -1643,7 +1643,7 @@ TEST_F(Tester, testVelocityPolygonStop)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+  ASSERT_EQ(action_state_->polygon_name, "velocity_polygon");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1653,16 +1653,16 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
 {
   // Set Collision Monitor parameters.
   // Add velocity polygon with 2 sub polygon:
-  // 1. Forward:  0 -> 0.5 m/s
-  // 2. Backward: 0 -> -0.5 m/s
+  // 1. forward:  0 -> 0.5 m/s
+  // 2. backward: 0 -> -0.5 m/s
   setCommonParameters();
-  addPolygon("VelocityPolygon", VELOCITY_POLYGON, 1.0, "stop");
-  addPolygonVelocitySubPolygon("VelocityPolygon", "Forward", 0.0, 0.5, 0.0, 1.0, 4.0);
-  addPolygonVelocitySubPolygon("VelocityPolygon", "Backward", -0.5, 0.0, 0.0, 1.0, 2.0);
-  setPolygonVelocityVectors("VelocityPolygon", {"Forward", "Backward"});
+  addPolygon("velocity_polygon", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("velocity_polygon", "forward", 0.0, 0.5, 0.0, 1.0, 4.0);
+  addPolygonVelocitySubPolygon("velocity_polygon", "backward", -0.5, 0.0, 0.0, 1.0, 2.0);
+  setPolygonVelocityVectors("velocity_polygon", {"forward", "backward"});
   addSource(POINTCLOUD_NAME, POINTCLOUD);
   setGlobalHeightParams(POINTCLOUD_NAME, 0.5);
-  setVectors({"VelocityPolygon"}, {POINTCLOUD_NAME});
+  setVectors({"velocity_polygon"}, {POINTCLOUD_NAME});
 
   cm_->set_parameter(
     rclcpp::Parameter("source_timeout", 2.0));
@@ -1673,7 +1673,7 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
   // Check that robot stops when source is enabled
   sendTransforms(curr_time);
 
-  // 1. Obstacle is in Forward velocity polygon and below global height
+  // 1. Obstacle is in forward velocity polygon and below global height
   publishPointCloudWithHeight(3.0, 0.4, curr_time);
   ASSERT_FALSE(waitData(std::hypot(3.0, 0.01), 500ms, curr_time));
   publishCmdVel(0.4, 0.0, 0.1);
@@ -1682,7 +1682,7 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
   ASSERT_NEAR(cmd_vel_out_->linear.y, 0.0, EPSILON);
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
-  // 2. Obstacle is in Forward velocity polygon and above global height
+  // 2. Obstacle is in forward velocity polygon and above global height
   publishPointCloudWithHeight(3.0, 0.6, curr_time);
   ASSERT_TRUE(waitData(std::hypot(3.0, 0.01), 500ms, curr_time));
   publishCmdVel(0.4, 0.0, 0.1);
@@ -1692,7 +1692,7 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "VelocityPolygon");
+  ASSERT_EQ(action_state_->polygon_name, "velocity_polygon");
 
   // 3. Pointcloud without height field, invalid source.
   publishPointCloud(2.5, curr_time);
@@ -1701,7 +1701,7 @@ TEST_F(Tester, testVelocityPolygonStopGlobalHeight)
   ASSERT_FALSE(waitCmdVel(500ms));
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, STOP);
-  ASSERT_EQ(action_state_->polygon_name, "invalid source");
+  ASSERT_EQ(action_state_->polygon_name, "invalid_source");
 
   // Stop Collision Monitor node
   cm_->stop();
@@ -1718,9 +1718,9 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
   addSource(RANGE_NAME, RANGE);
   std::vector<std::string> range_only_sources_names = {RANGE_NAME};
   std::vector<std::string> all_sources_names = {SCAN_NAME, RANGE_NAME};
-  addPolygon("StopOnRangeSource", POLYGON, 1.0, "stop", range_only_sources_names);
-  addPolygon("SlowdownOnAllSources", POLYGON, 1.0, "slowdown");
-  setVectors({"StopOnRangeSource", "SlowdownOnAllSources"}, {SCAN_NAME, RANGE_NAME});
+  addPolygon("stop_on_range_source", POLYGON, 1.0, "stop", range_only_sources_names);
+  addPolygon("slowdown_on_all_sources", POLYGON, 1.0, "slowdown");
+  setVectors({"stop_on_range_source", "slowdown_on_all_sources"}, {SCAN_NAME, RANGE_NAME});
 
   // Start Collision Monitor node
   cm_->start();
@@ -1743,7 +1743,7 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
   // Since the stop polygon is only checking range source, slowdown action should be applied
   ASSERT_TRUE(waitActionState(500ms));
   ASSERT_EQ(action_state_->action_type, SLOWDOWN);
-  ASSERT_EQ(action_state_->polygon_name, "SlowdownOnAllSources");
+  ASSERT_EQ(action_state_->polygon_name, "slowdown_on_all_sources");
 
   // Stop Collision Monitor node
   cm_->stop();

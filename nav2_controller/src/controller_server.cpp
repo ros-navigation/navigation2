@@ -85,14 +85,14 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       nav2_core::ProgressChecker::Ptr progress_checker =
         progress_checker_loader_.createUniqueInstance(params_->progress_checker_types[i]);
       RCLCPP_INFO(
-        get_logger(), "Created progress_checker : %s of type %s",
+        get_logger(), "Created progress checker : %s of type %s",
         params_->progress_checker_ids[i].c_str(), params_->progress_checker_types[i].c_str());
       progress_checker->initialize(node, params_->progress_checker_ids[i]);
       progress_checkers_.insert({params_->progress_checker_ids[i], progress_checker});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         get_logger(),
-        "Failed to create progress_checker. Exception: %s", ex.what());
+        "Failed to create progress checker. Exception: %s", ex.what());
       on_cleanup(state);
       return nav2::CallbackReturn::FAILURE;
     }
@@ -328,7 +328,7 @@ bool ControllerServer::findControllerId(
       current_controller = controllers_.begin()->first;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with controller name %s, "
+        get_logger(), "follow_path called with controller name %s, "
         "which does not exist. Available controllers are: %s.",
         c_name.c_str(), controller_ids_concat_.c_str());
       return false;
@@ -354,7 +354,7 @@ bool ControllerServer::findGoalCheckerId(
       current_goal_checker = goal_checkers_.begin()->first;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with goal_checker name %s in parameter"
+        get_logger(), "follow_path called with goal checker name %s in parameter"
         " 'current_goal_checker', which does not exist. Available goal checkers are: %s.",
         c_name.c_str(), goal_checker_ids_concat_.c_str());
       return false;
@@ -380,7 +380,7 @@ bool ControllerServer::findProgressCheckerId(
       return true;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with progress_checker name %s in parameter"
+        get_logger(), "follow_path called with progress checker name %s in parameter"
         " 'current_progress_checker', but no progress checkers are configured.",
         c_name.c_str());
       return false;
@@ -396,7 +396,7 @@ bool ControllerServer::findProgressCheckerId(
       current_progress_checker = progress_checkers_.begin()->first;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with progress_checker name %s in parameter"
+        get_logger(), "follow_path called with progress checker name %s in parameter"
         " 'current_progress_checker', which does not exist. Available progress checkers are: %s.",
         c_name.c_str(), progress_checker_ids_concat_.c_str());
       return false;
@@ -422,7 +422,7 @@ bool ControllerServer::findPathHandlerId(
       current_path_handler = path_handlers_.begin()->first;
     } else {
       RCLCPP_ERROR(
-        get_logger(), "FollowPath called with path_handler name %s in parameter"
+        get_logger(), "follow_path called with path_handler name %s in parameter"
         " 'current_path_handler', which does not exist. Available path handlers are: %s.",
         c_name.c_str(), path_handler_ids_concat_.c_str());
       return false;

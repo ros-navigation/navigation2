@@ -98,7 +98,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector_custom_topic_name"/>
+          <PlannerSelector selected_planner="{selected_planner}" default_planner="grid_based" topic_name="planner_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -113,11 +113,11 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
   std::string selected_planner_result;
   EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
-  EXPECT_EQ(selected_planner_result, "GridBased");
+  EXPECT_EQ(selected_planner_result, "grid_based");
 
   std_msgs::msg::String selected_planner_cmd;
 
-  selected_planner_cmd.data = "RRT";
+  selected_planner_cmd.data = "rrt";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -136,7 +136,7 @@ TEST_F(PlannerSelectorTestFixture, test_custom_topic)
 
   // check planner updated
   EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
-  EXPECT_EQ("RRT", selected_planner_result);
+  EXPECT_EQ("rrt", selected_planner_result);
 }
 
 TEST_F(PlannerSelectorTestFixture, test_default_topic)
@@ -146,7 +146,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased"/>
+          <PlannerSelector selected_planner="{selected_planner}" default_planner="grid_based"/>
         </BehaviorTree>
       </root>)";
 
@@ -161,11 +161,11 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
   std::string selected_planner_result;
   EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
 
-  EXPECT_EQ(selected_planner_result, "GridBased");
+  EXPECT_EQ(selected_planner_result, "grid_based");
 
   std_msgs::msg::String selected_planner_cmd;
 
-  selected_planner_cmd.data = "RRT";
+  selected_planner_cmd.data = "rrt";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -184,7 +184,7 @@ TEST_F(PlannerSelectorTestFixture, test_default_topic)
 
   // check planner updated
   EXPECT_TRUE(config_->blackboard->get("selected_planner", selected_planner_result));
-  EXPECT_EQ("RRT", selected_planner_result);
+  EXPECT_EQ("rrt", selected_planner_result);
 }
 
 int main(int argc, char ** argv)

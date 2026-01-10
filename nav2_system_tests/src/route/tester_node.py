@@ -196,7 +196,7 @@ class RouteTester(Node):
         time.sleep(1)
         self.info_msg('Triggering a reroute')
         srv_client: Client[Trigger.Request, Trigger.Response] = \
-            self.create_client(Trigger, 'route_server/ReroutingService/reroute')
+            self.create_client(Trigger, 'route_server/rerouting_service/reroute')
         while not srv_client.wait_for_service(timeout_sec=1.0):
             self.info_msg('Reroute service not available, waiting...')
         req = Trigger.Request()
