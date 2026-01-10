@@ -19,7 +19,7 @@ class TestNode : public nav2::LifecycleNode
 {
 public:
   TestNode()
-  :nav2::LifecycleNode("test_lifecycle_sub")
+  : nav2::LifecycleNode("test_lifecycle_sub")
   {
     RCLCPP_INFO(get_logger(), "Test node created");
   }

@@ -56,9 +56,9 @@ install(TARGETS ${PROJECT_NAME}
 
 ament_export_include_directories(include/${PROJECT_NAME})
 add_executable(test_lifecycle_sub test/test_lifecycle_sub.cpp)
-ament_target_dependencies(test_lifecycle_sub 
-  rclcpp 
-  std_msgs 
+ament_target_dependencies(test_lifecycle_sub
+  rclcpp
+  std_msgs
   lifecycle_msgs
   rclcpp_lifecycle
 )

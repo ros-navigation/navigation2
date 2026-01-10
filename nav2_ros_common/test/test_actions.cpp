@@ -31,7 +31,7 @@ class FibonacciServerNode : public nav2::LifecycleNode
 {
 public:
   FibonacciServerNode()
-  :nav2::LifecycleNode("fibonacci_server_node")
+  : nav2::LifecycleNode("fibonacci_server_node")
   {
   }
 
@@ -48,27 +48,27 @@ public:
 
     deactivate_subs_ = create_subscription<std_msgs::msg::Empty>(
       "deactivate_server",
-      1,
       [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Deactivating");
         action_server_->deactivate();
-      });
+      },
+      rclcpp::QoS(1));
 
     activate_subs_ = create_subscription<std_msgs::msg::Empty>(
       "activate_server",
-      1,
       [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Activating");
         action_server_->activate();
-      });
+      },
+      rclcpp::QoS(1));
 
     omit_preempt_subs_ = create_subscription<std_msgs::msg::Empty>(
       "omit_preemption",
-      1,
       [this](std_msgs::msg::Empty::SharedPtr /*msg*/) {
         RCLCPP_INFO(this->get_logger(), "Ignoring preemptions");
         do_premptions_ = false;
-      });
+      },
+      rclcpp::QoS(1));
   }
 
   void on_term()

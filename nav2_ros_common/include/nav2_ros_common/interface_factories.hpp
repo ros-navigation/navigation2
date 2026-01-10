@@ -198,7 +198,7 @@ create_subscription(
 {
   (void)callback_group;
   auto wrapped_callback = [node, callback = std::forward<CallbackT>(callback)]
-    (typename MessageT::SharedPtr msg) {
+      (typename MessageT::SharedPtr msg) {
       // Only process if node is active
       if (node->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
         callback(msg);
@@ -207,7 +207,7 @@ create_subscription(
     };
 
   return node->rclcpp_lifecycle::LifecycleNode::template create_subscription<MessageT>(
-      topic_name, qos, wrapped_callback
+    topic_name, qos, wrapped_callback
   );
 }
 
