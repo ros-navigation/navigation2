@@ -72,18 +72,21 @@
     <Action ID="ClearEntireCostmap">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
+      <input_port name="plugins">List of specific plugins to clear.</input_port>
     </Action>
 
     <Action ID="ClearCostmapExceptRegion">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="reset_distance">Distance from the robot above which obstacles are cleared</input_port>
+      <input_port name="plugins">List of specific plugins to clear.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundRobot">
       <input_port name="service_name">Service name</input_port>
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="reset_distance">Distance from the robot under which obstacles are cleared</input_port>
+      <input_port name="plugins">List of specific plugins to clear.</input_port>
     </Action>
 
     <Action ID="ClearCostmapAroundPose">
@@ -91,6 +94,7 @@
       <input_port name="server_timeout">Server timeout</input_port>
       <input_port name="pose">Pose around which to clear the costmap</input_port>
       <input_port name="reset_distance">Distance from the pose under which obstacles are cleared</input_port>
+      <input_port name="plugins">List of specific plugins to clear.</input_port>
     </Action>
 
     <Action ID="ComputePathToPose">
