@@ -325,13 +325,13 @@ void VelocitySmoother::smootherTimer()
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel->header = command_.header;
-  auto delta_time_since_last_update = now() - last_command_time_;
+  auto delta_time_since_last_command = now() - last_command_time_;
   if (stamp_smoothed_velocity_with_smoothing_time_) {
     // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
     rclcpp::Time t(cmd_vel->header.stamp);
 
     // compute new time by using nanoseconds
-    uint64_t new_ns = t.nanoseconds() + delta_time_since_last_update.nanoseconds();
+    uint64_t new_ns = t.nanoseconds() + delta_time_since_last_command.nanoseconds();
 
     // update the header
     cmd_vel->header.stamp.sec = static_cast<int32_t>(new_ns / 1000000000ULL);
@@ -339,7 +339,7 @@ void VelocitySmoother::smootherTimer()
   }
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
-  if (delta_time_since_last_update > velocity_timeout_) {
+  if (delta_time_since_last_command > velocity_timeout_) {
     if (last_cmd_.twist == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
