@@ -153,8 +153,10 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   }
 
   // Define option to overwrite the timestamp of the message containing the smoothed velocity
-  declare_parameter_if_not_declared(node, "stamp_smoothed_velocity_with_smoothing_time", rclcpp::ParameterValue(false));
-  node->get_parameter("stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
+  declare_parameter_if_not_declared(
+    node, "stamp_smoothed_velocity_with_smoothing_time", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    "stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
 
   // Setup inputs / outputs
   smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
