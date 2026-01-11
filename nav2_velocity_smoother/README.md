@@ -60,6 +60,7 @@ velocity_smoother:
    	odom_topic: "odom"  # Topic of odometry to use for estimating current velocities
    	odom_duration: 0.1  # Period of time (s) to sample odometry information in for velocity estimation
 	enable_stamped_cmd_vel: false # Whether to stamp the velocity. True uses TwistStamped. False uses Twist
+    stamp_smoothed_velocity_with_smoothing_time: false # Whether to smooth the timestamp of the header message of TwistStamped output instead of keeping the timestamp of the last received command
 ```
 
 ## Topics
