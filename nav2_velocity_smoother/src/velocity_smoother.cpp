@@ -149,7 +149,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
       get_logger(),
       "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP.");
     on_cleanup(state);
-    return nav2_util::CallbackReturn::FAILURE;
+    return nav2::CallbackReturn::FAILURE;
   }
 
   // Define option to overwrite the timestamp of the message containing the smoothed velocity
@@ -159,13 +159,12 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     "stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
 
   // Setup inputs / outputs
-  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
+  smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed");
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
-    "cmd_vel", rclcpp::QoS(1),
+    "cmd_vel",
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
-    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1)
-  );
+    std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1));
 
   declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
   bool use_realtime_priority = false;
