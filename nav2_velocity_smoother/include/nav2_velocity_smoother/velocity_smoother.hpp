@@ -151,7 +151,7 @@ protected:
   bool scale_velocities_;
   bool is_6dof_;
   bool received_first_command_;
-  // whether to overwite the timestamp of the smoothed message or to keep the command timestamp
+  // whether to overwite the timestamp of the smoothed message or to keep last command's timestamp
   bool stamp_smoothed_velocity_with_smoothing_time_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
