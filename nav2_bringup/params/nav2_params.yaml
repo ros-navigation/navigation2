@@ -483,6 +483,7 @@ route_server:
 velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0
+    stamp_smoothed_velocity_with_smoothing_time: false
     scale_velocities: false
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 2.0]
