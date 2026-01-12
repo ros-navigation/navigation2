@@ -107,10 +107,10 @@ private:
   nav2::ActionClient<Undock>::SharedPtr undock_client_;
 
   // Docking / Undocking action feedback subscribers
-  nav2::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
-  nav2::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
-  nav2::Subscription<Dock::Impl::GoalStatusMessage>::SharedPtr docking_goal_status_sub_;
-  nav2::Subscription<Undock::Impl::GoalStatusMessage>::SharedPtr undocking_goal_status_sub_;
+  rclcpp::Subscription<Dock::Impl::FeedbackMessage>::SharedPtr docking_feedback_sub_;
+  rclcpp::Subscription<Undock::Impl::FeedbackMessage>::SharedPtr undocking_feedback_sub_;
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr docking_goal_status_sub_;
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr undocking_goal_status_sub_;
 
   // Goal related state
   DockGoalHandle::SharedPtr dock_goal_handle_;

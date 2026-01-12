@@ -146,13 +146,13 @@ private:
     nav_through_poses_action_client_;
 
   // Navigation action feedback subscribers
-  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
+  rclcpp::Subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>::SharedPtr
     navigation_feedback_sub_;
-  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
+  rclcpp::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>::SharedPtr
     nav_through_poses_feedback_sub_;
-  nav2::Subscription<nav2_msgs::action::NavigateToPose::Impl::GoalStatusMessage>::SharedPtr
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr
     navigation_goal_status_sub_;
-  nav2::Subscription<nav2_msgs::action::NavigateThroughPoses::Impl::GoalStatusMessage>::SharedPtr
+  rclcpp::Subscription<action_msgs::msg::GoalStatusArray>::SharedPtr
     nav_through_poses_goal_status_sub_;
 
   // Tf's for initial pose
