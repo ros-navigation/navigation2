@@ -42,12 +42,13 @@ public:
 
     initial_pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
       "initialpose", rclcpp::SystemDefaultsQoS());
-    subscription_ = nav2::interfaces::create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    subscription_ = nav2::interfaces::create_subscription<
+      geometry_msgs::msg::PoseWithCovarianceStamped>(
       node,
       "amcl_pose",
       std::bind(&TestAmclPose::amcl_pose_callback, this, std::placeholders::_1),
       rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-      
+
     initial_pose_pub_->publish(testPose_);
   }
 

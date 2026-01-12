@@ -31,7 +31,6 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 
-
 namespace nav2
 {
 // Forward declare nav2::LifecycleNode (defined in lifecycle_node.hpp)
@@ -206,30 +205,31 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param callback_group The callback group to use (if provided)
  * @return A shared pointer to the created nav2::Subscription
  */
- template<typename MessageT, typename NodeT, typename CallbackT, typename Alloc = std::allocator<void>>
- typename nav2::Subscription<MessageT, Alloc>::SharedPtr
- create_subscription(
-   const NodeT & node,
-   const std::string & topic_name,
-   CallbackT && callback,
-   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
- {
-   bool allow_parameter_qos_overrides =
-     nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
- 
-   auto options = createSubscriptionOptions(
+template<typename MessageT, typename NodeT, typename CallbackT,
+  typename Alloc = std::allocator<void>>
+typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const NodeT & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+{
+  bool allow_parameter_qos_overrides =
+    nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
+
+  auto options = createSubscriptionOptions(
      topic_name, allow_parameter_qos_overrides, callback_group);
- 
-   auto sub = std::make_shared<nav2::Subscription<MessageT, Alloc>>(
+
+  auto sub = std::make_shared<nav2::Subscription<MessageT, Alloc>>(
      node,
      topic_name,
      std::forward<CallbackT>(callback),
      qos,
      options);
- 
-   return sub;
- }
+
+  return sub;
+}
 
 
 /**
