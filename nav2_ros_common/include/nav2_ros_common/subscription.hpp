@@ -121,7 +121,8 @@ private:
 
     RCLCPP_WARN(
       logger_,
-      "Trying to take messages on topic '%s', but the subscription is not activated. Dropping until activation.",
+      "Trying to take messages on topic '%s', but the subscription is not activated. "
+      "Dropping until activation.",
       topic_name_.c_str());
   }
 

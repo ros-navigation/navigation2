@@ -113,7 +113,7 @@ public:
       binary_state_topic,
       std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1),
       rclcpp::QoS(10));
-      
+
 
     // Initialize with default state
     msg_.data = default_state;

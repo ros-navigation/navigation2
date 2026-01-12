@@ -113,7 +113,6 @@ public:
         last_action_ = msg.action_type;
       },
       rclcpp::QoS(10));
-
   }
 
   // Spin until we passed the obstacle window (8s) + margin

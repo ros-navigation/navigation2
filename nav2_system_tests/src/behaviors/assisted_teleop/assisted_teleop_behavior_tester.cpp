@@ -57,12 +57,13 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
   cmd_vel_pub_ =
     node_->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel_teleop", 10);
 
-  subscription_ = nav2::interfaces::create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+  subscription_ = nav2::interfaces::create_subscription<
+    geometry_msgs::msg::PoseWithCovarianceStamped>(
     node_,
     "amcl_pose",
     std::bind(&AssistedTeleopBehaviorTester::amclPoseCallback, this, std::placeholders::_1),
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  
+
   filtered_vel_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::TwistStamped>(
     node_,
     "cmd_vel",
