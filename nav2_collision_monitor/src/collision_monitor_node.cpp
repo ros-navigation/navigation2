@@ -14,6 +14,7 @@
 
 #include "nav2_collision_monitor/collision_monitor_node.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <utility>
 #include <functional>
@@ -271,6 +272,22 @@ bool CollisionMonitor::getParameters(
   stop_pub_timeout_ =
     rclcpp::Duration::from_seconds(get_parameter("stop_pub_timeout").as_double());
 
+  // Steering field angle limiter parameters
+  nav2::declare_parameter_if_not_declared(
+    node, "steering_field_limiter_enabled", rclcpp::ParameterValue(false));
+  steering_field_limiter_enabled_ =
+    get_parameter("steering_field_limiter_enabled").as_bool();
+
+  nav2::declare_parameter_if_not_declared(
+    node, "low_speed_threshold", rclcpp::ParameterValue(0.3));
+  low_speed_threshold_ =
+    get_parameter("low_speed_threshold").as_double();
+
+  nav2::declare_parameter_if_not_declared(
+    node, "high_speed_threshold", rclcpp::ParameterValue(1.0));
+  high_speed_threshold_ =
+    get_parameter("high_speed_threshold").as_double();
+
   if (
     !configureSources(
       base_frame_id, odom_frame_id, transform_tolerance, source_timeout, base_shift_correction))
@@ -471,6 +488,16 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     collision_points_marker_pub_->publish(std::move(marker_array));
   }
 
+  // Process steering field angle limiter for medium speed maneuvers
+  // This may modify robot_action if steering needs to be limited
+  processSteeringFieldLimiter(cmd_vel_in, sources_collision_points_map, robot_action,
+    action_polygon);
+
+  // Store the velocity for polygon processing - this is either cmd_vel_in (if steering field
+  // limiter is disabled) or a modified velocity (if steering was limited)
+  // Use this consistently for all polygon processing to avoid cascading modifications
+  const Velocity velocity_for_processing = robot_action.req_vel;
+
   for (std::shared_ptr<Polygon> polygon : polygons_) {
     if (!polygon->getEnabled()) {
       continue;
@@ -481,19 +508,21 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
     }
 
     // Update polygon coordinates
-    polygon->updatePolygon(cmd_vel_in);
+    polygon->updatePolygon(velocity_for_processing);
 
     const ActionType at = polygon->getActionType();
     if (at == STOP || at == SLOWDOWN || at == LIMIT) {
       // Process STOP/SLOWDOWN for the selected polygon
       if (processStopSlowdownLimit(
-          polygon, sources_collision_points_map, cmd_vel_in, robot_action))
+          polygon, sources_collision_points_map, velocity_for_processing, robot_action))
       {
         action_polygon = polygon;
       }
     } else if (at == APPROACH) {
       // Process APPROACH for the selected polygon
-      if (processApproach(polygon, sources_collision_points_map, cmd_vel_in, robot_action)) {
+      if (processApproach(polygon, sources_collision_points_map, velocity_for_processing,
+          robot_action))
+      {
         action_polygon = polygon;
       }
     }
@@ -656,6 +685,258 @@ void CollisionMonitor::publishPolygons() const
       polygon->publish();
     }
   }
+}
+
+bool CollisionMonitor::processSteeringFieldLimiter(
+  const Velocity & cmd_vel_in,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+  Action & robot_action,
+  std::shared_ptr<Polygon> & action_polygon)
+{
+  if (!steering_field_limiter_enabled_) {
+    return false;
+  }
+
+  const double linear_vel = cmd_vel_in.x;
+  const double angular_vel = cmd_vel_in.tw;
+
+  // For low speeds (< low_speed_threshold_), don't apply steering field limiter
+  // Let the robot enter neighbor field and risk E-stop if necessary
+  if (std::abs(linear_vel) < low_speed_threshold_) {
+    return false;
+  }
+
+  // For high speeds (> high_speed_threshold_), don't apply steering field limiter
+  // Use the old/normal collision monitor logic
+  if (std::abs(linear_vel) > high_speed_threshold_) {
+    return false;
+  }
+
+  // For medium speeds (low_speed_threshold_ <= speed <= high_speed_threshold_),
+  // apply steering field limiter logic:
+  // - Check if warning field is full
+  // - If full, check neighbor steering field and slow down
+  // - Progressively limit steering to neighbor fields until desired angle is reached
+
+  // Find polygons matching the requested velocity
+  auto matching_polygons = findPolygonsForVelocity(linear_vel, angular_vel);
+
+  if (matching_polygons.empty()) {
+    // No matching polygons, try to find neighbor fields progressively
+    // Determine direction to search for neighbors based on angular velocity sign
+    int direction = (angular_vel >= 0) ? 1 : -1;
+
+    auto neighbor_polygons = findNeighborSteeringFields(angular_vel, linear_vel, direction);
+
+    for (const auto & neighbor : neighbor_polygons) {
+      // Update neighbor polygon with a velocity in its range to set its shape
+      double neighbor_theta_min, neighbor_theta_max;
+      if (!getPolygonAngularRange(neighbor, neighbor_theta_min, neighbor_theta_max)) {
+        neighbor->updatePolygon(cmd_vel_in);
+        continue;
+      }
+
+      // Use the middle of the neighbor's theta range
+      Velocity neighbor_vel = cmd_vel_in;
+      neighbor_vel.tw = (neighbor_theta_min + neighbor_theta_max) / 2.0;
+      neighbor->updatePolygon(neighbor_vel);
+
+      if (isFieldClear(neighbor, sources_collision_points_map)) {
+        // Neighbor field is clear, limit steering to this field's range
+        // Only cap the steering - never force more steering than requested
+        double limited_angular = angular_vel;
+        if (direction > 0) {
+          // Searching toward positive angles, cap at neighbor's max
+          limited_angular = std::min(angular_vel, neighbor_theta_max);
+        } else {
+          // Searching toward negative angles, cap at neighbor's min
+          limited_angular = std::max(angular_vel, neighbor_theta_min);
+        }
+
+        robot_action.req_vel.tw = limited_angular;
+        robot_action.action_type = LIMIT;
+        robot_action.polygon_name = neighbor->getName();
+        action_polygon = neighbor;
+
+        RCLCPP_DEBUG(
+          get_logger(),
+          "Steering field limiter: limited angular from %.3f to %.3f via %s",
+          angular_vel, limited_angular, neighbor->getName().c_str());
+        return true;
+      }
+      // Neighbor field has obstacles, continue to next neighbor
+    }
+  } else {
+    // We have matching polygons, check if warning field is full
+    for (const auto & polygon : matching_polygons) {
+      // Skip STOP polygons - they should be handled by normal polygon processing
+      // Steering field limiter only applies to SLOWDOWN and LIMIT polygons
+      if (polygon->getActionType() == STOP) {
+        continue;
+      }
+
+      polygon->updatePolygon(cmd_vel_in);
+
+      if (!isFieldClear(polygon, sources_collision_points_map)) {
+        // Warning field is full, check neighbor steering fields and slow down
+        int direction = (angular_vel >= 0) ? 1 : -1;
+        auto neighbors = findNeighborSteeringFields(angular_vel, linear_vel, direction);
+
+        bool found_clear_neighbor = false;
+        for (const auto & neighbor : neighbors) {
+          // Update neighbor polygon with a velocity in its range to set its shape
+          double theta_min, theta_max;
+          if (getPolygonAngularRange(neighbor, theta_min, theta_max)) {
+            // Use the middle of the neighbor's theta range
+            Velocity neighbor_vel = cmd_vel_in;
+            neighbor_vel.tw = (theta_min + theta_max) / 2.0;
+            neighbor->updatePolygon(neighbor_vel);
+          } else {
+            neighbor->updatePolygon(cmd_vel_in);
+          }
+
+          if (isFieldClear(neighbor, sources_collision_points_map)) {
+            // Neighbor field is clear, limit steering to that field
+            // Only cap the steering - never force more steering than requested
+            double limit_theta_min, limit_theta_max;
+            if (getPolygonAngularRange(neighbor, limit_theta_min, limit_theta_max)) {
+              double limited_angular = angular_vel;
+              if (direction > 0) {
+                // Searching toward positive angles, cap at neighbor's max
+                limited_angular = std::min(angular_vel, limit_theta_max);
+              } else {
+                // Searching toward negative angles, cap at neighbor's min
+                limited_angular = std::max(angular_vel, limit_theta_min);
+              }
+
+              robot_action.req_vel.tw = limited_angular;
+              robot_action.action_type = SLOWDOWN;
+              robot_action.polygon_name = neighbor->getName();
+              action_polygon = neighbor;
+
+              RCLCPP_INFO(
+                get_logger(),
+                "Steering field limiter: warning field full, steering to %s (angular: %.3f -> %.3f)",
+                neighbor->getName().c_str(), angular_vel, limited_angular);
+              found_clear_neighbor = true;
+              return true;
+            }
+          }
+        }
+
+        // If no clear neighbor found in target direction, limit to straight (0 rad/s)
+        // and slow down - don't steer into the opposite direction
+        if (!found_clear_neighbor) {
+          robot_action.req_vel.tw = 0.0;
+          robot_action.action_type = SLOWDOWN;
+          robot_action.polygon_name = polygon->getName();
+          robot_action.req_vel.x = cmd_vel_in.x * polygon->getSlowdownRatio();
+          robot_action.req_vel.y = cmd_vel_in.y * polygon->getSlowdownRatio();
+          action_polygon = polygon;
+
+          RCLCPP_INFO(
+            get_logger(),
+            "Steering field limiter: target blocked, no clear neighbor, "
+            "limiting to straight (0 rad/s), slowing down");
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+std::vector<std::shared_ptr<Polygon>> CollisionMonitor::findPolygonsForVelocity(
+  double linear_vel, double angular_vel) const
+{
+  std::vector<std::shared_ptr<Polygon>> result;
+
+  for (const auto & polygon : polygons_) {
+    auto velocity_polygon = std::dynamic_pointer_cast<VelocityPolygon>(polygon);
+    if (velocity_polygon && velocity_polygon->isVelocityInRange(linear_vel, angular_vel)) {
+      result.push_back(polygon);
+    }
+  }
+
+  return result;
+}
+
+std::vector<std::shared_ptr<Polygon>> CollisionMonitor::findNeighborSteeringFields(
+  double current_angular, double linear_vel, int direction) const
+{
+  std::vector<std::pair<double, std::shared_ptr<Polygon>>> candidates;
+
+  for (const auto & polygon : polygons_) {
+    auto velocity_polygon = std::dynamic_pointer_cast<VelocityPolygon>(polygon);
+    if (!velocity_polygon) {
+      continue;
+    }
+
+    double linear_min, linear_max;
+    if (!velocity_polygon->getLinearRange(linear_min, linear_max)) {
+      continue;
+    }
+
+    // Check if linear velocity is in range
+    if (linear_vel < linear_min || linear_vel > linear_max) {
+      continue;
+    }
+
+    double theta_min, theta_max;
+    if (!velocity_polygon->getAngularRange(theta_min, theta_max)) {
+      continue;
+    }
+
+    // Check if this is a neighbor in the specified direction
+    if (direction > 0) {
+      // Looking for polygons with higher angles
+      if (theta_min > current_angular) {
+        double distance = theta_min - current_angular;
+        candidates.push_back({distance, polygon});
+      }
+    } else {
+      // Looking for polygons with lower angles
+      if (theta_max < current_angular) {
+        double distance = current_angular - theta_max;
+        candidates.push_back({distance, polygon});
+      }
+    }
+  }
+
+  // Sort by distance (closest first)
+  std::sort(candidates.begin(), candidates.end(),
+    [](const auto & a, const auto & b) {return a.first < b.first;});
+
+  std::vector<std::shared_ptr<Polygon>> result;
+  for (const auto & candidate : candidates) {
+    result.push_back(candidate.second);
+  }
+
+  return result;
+}
+
+bool CollisionMonitor::isFieldClear(
+  const std::shared_ptr<Polygon> polygon,
+  const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const
+{
+  if (!polygon->isShapeSet()) {
+    return true;  // If shape not set, consider it clear
+  }
+
+  return polygon->getPointsInside(sources_collision_points_map) < polygon->getMinPoints();
+}
+
+bool CollisionMonitor::getPolygonAngularRange(
+  const std::shared_ptr<Polygon> polygon,
+  double & theta_min, double & theta_max) const
+{
+  auto velocity_polygon = std::dynamic_pointer_cast<VelocityPolygon>(polygon);
+  if (!velocity_polygon) {
+    return false;
+  }
+
+  return velocity_polygon->getAngularRange(theta_min, theta_max);
 }
 
 }  // namespace nav2_collision_monitor

@@ -141,6 +141,8 @@ public:
 
   // Configuring
   void setCommonParameters();
+  void enableSteeringFieldLimiter(
+    bool enable, double low_speed_threshold, double high_speed_threshold = 1.0);
   void addPolygon(
     const std::string & polygon_name, const PolygonType type,
     const double size, const std::string & at,
@@ -324,6 +326,34 @@ void Tester::setCommonParameters()
     "stop_pub_timeout", rclcpp::ParameterValue(STOP_PUB_TIMEOUT));
   cm_->set_parameter(
     rclcpp::Parameter("stop_pub_timeout", STOP_PUB_TIMEOUT));
+
+  // Steering field limiter parameters (disabled by default)
+  cm_->declare_parameter(
+    "steering_field_limiter_enabled", rclcpp::ParameterValue(false));
+  cm_->set_parameter(
+    rclcpp::Parameter("steering_field_limiter_enabled", false));
+
+  cm_->declare_parameter(
+    "low_speed_threshold", rclcpp::ParameterValue(0.3));
+  cm_->set_parameter(
+    rclcpp::Parameter("low_speed_threshold", 0.3));
+
+  cm_->declare_parameter(
+    "high_speed_threshold", rclcpp::ParameterValue(1.0));
+  cm_->set_parameter(
+    rclcpp::Parameter("high_speed_threshold", 1.0));
+}
+
+void Tester::enableSteeringFieldLimiter(
+  bool enable, double low_speed_threshold, double high_speed_threshold)
+{
+  // Parameters are already declared in setCommonParameters(), just set values
+  cm_->set_parameter(
+    rclcpp::Parameter("steering_field_limiter_enabled", enable));
+  cm_->set_parameter(
+    rclcpp::Parameter("low_speed_threshold", low_speed_threshold));
+  cm_->set_parameter(
+    rclcpp::Parameter("high_speed_threshold", high_speed_threshold));
 }
 
 void Tester::addPolygon(
@@ -1651,6 +1681,814 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
   ASSERT_EQ(action_state_->polygon_name, "SlowdownOnAllSources");
 
   // Stop Collision Monitor node
+  cm_->stop();
+}
+
+// =============================================================================
+// Steering Field Angle Limiter Tests
+// =============================================================================
+// These tests verify the steering field angle limiter functionality where:
+// - For each (speed, steering_angle) pair, there are 3 polygon types:
+//   stop (emergency), slowdown (warning), and limit fields
+// - Fields form a matrix with speed and steering angle as axes
+// - Neighbor fields are adjacent in the matrix (next higher/lower speed or angle)
+// - Low speed threshold is 0.3 m/s
+// =============================================================================
+
+TEST_F(Tester, testSteeringFieldWarningFullCheckNeighbor)
+{
+  // Test: When warning field is full, check neighbor steering field and slow down
+  // Setup: Create velocity polygons for different steering angles
+  // - Center (0 deg): stop=1.0m, slowdown=2.0m, limit=3.0m
+  // - Left neighbor (+30 deg): stop=1.0m, slowdown=2.0m, limit=3.0m
+  // - Right neighbor (-30 deg): stop=1.0m, slowdown=2.0m, limit=3.0m
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3);
+
+  // Create velocity polygons for center steering (theta: -0.2 to 0.2 rad)
+  addPolygon("SteeringCenter", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("SteeringCenter", "Forward", 0.0, 1.0, -0.2, 0.2, 1.0);
+  setPolygonVelocityVectors("SteeringCenter", {"Forward"});
+
+  // Create velocity polygon for left steering (theta: 0.2 to 0.7 rad)
+  addPolygon("SteeringLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringLeft", "ForwardLeft", 0.0, 1.0, 0.2, 0.7, 2.0);
+  setPolygonVelocityVectors("SteeringLeft", {"ForwardLeft"});
+
+  // Create velocity polygon for right steering (theta: -0.7 to -0.2 rad)
+  addPolygon("SteeringRight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringRight", "ForwardRight", 0.0, 1.0, -0.7, -0.2, 2.0);
+  setPolygonVelocityVectors("SteeringRight", {"ForwardRight"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringCenter", "SteeringLeft", "SteeringRight"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Scenario: Obstacle in center warning field, but left neighbor field is clear
+  // Expected: System should check left neighbor and allow steering left with slowdown
+  publishPointCloud(1.5, curr_time);  // Obstacle at 1.5m (in slowdown zone)
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Command forward with slight left steering
+  publishCmdVel(0.5, 0.0, 0.3);  // theta=0.3 rad (in left steering range)
+  ASSERT_TRUE(waitCmdVel(500ms));
+
+  // Should slow down due to warning field, but not stop
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldProgressiveChecking)
+{
+  // Test: Different steering angles result in different polygon checks
+  // Field1 has larger polygon than Field0, so steering left avoids obstacle
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3);
+
+  // Single velocity polygon with multiple sub-polygons for different angles
+  addPolygon("SteeringFields", VELOCITY_POLYGON, 1.0, "stop");
+  // Center field: small polygon (1.0m), obstacle at 0.8m will trigger stop
+  addPolygonVelocitySubPolygon("SteeringFields", "Center", 0.0, 1.0, -0.2, 0.2, 1.0);
+  // Left field: larger polygon (2.0m), but obstacle at 0.8m still inside
+  addPolygonVelocitySubPolygon("SteeringFields", "Left", 0.0, 1.0, 0.2, 0.6, 2.0);
+  setPolygonVelocityVectors("SteeringFields", {"Center", "Left"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringFields"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 0.8m - inside center (1.0m) and left (2.0m) polygons
+  publishPointCloud(0.8, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(0.8, 0.01), 500ms, curr_time));
+
+  // Forward (theta=0) - center field - should stop
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+
+  // Steering left (theta=0.4) - left field - still stops (obstacle inside 2.0m)
+  publishCmdVel(0.5, 0.0, 0.4);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // Both fields have obstacles, so robot should stop
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldLowSpeedBehavior)
+{
+  // Test: At low speed (< 0.3 m/s), allow entering neighbor steering field
+  // At low speeds, the system can be more aggressive with steering changes
+  // and risk E-Stop if necessary
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3);
+
+  // Low speed field (0 to 0.3 m/s)
+  addPolygon("LowSpeedCenter", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("LowSpeedCenter", "Slow", 0.0, 0.3, -0.5, 0.5, 0.5);
+  setPolygonVelocityVectors("LowSpeedCenter", {"Slow"});
+
+  // Low speed left field - smaller stop zone for low speed
+  addPolygon("LowSpeedLeft", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("LowSpeedLeft", "SlowLeft", 0.0, 0.3, 0.5, 1.0, 0.5);
+  setPolygonVelocityVectors("LowSpeedLeft", {"SlowLeft"});
+
+  // High speed field (0.3 to 1.0 m/s)
+  addPolygon("HighSpeedCenter", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("HighSpeedCenter", "Fast", 0.3, 1.0, -0.5, 0.5, 1.5);
+  setPolygonVelocityVectors("HighSpeedCenter", {"Fast"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"LowSpeedCenter", "LowSpeedLeft", "HighSpeedCenter"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at medium distance
+  publishPointCloud(1.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.0, 0.01), 500ms, curr_time));
+
+  // At low speed (0.2 m/s), should be able to move since obstacle is outside small polygon
+  publishCmdVel(0.2, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.2, EPSILON);
+
+  // At high speed (0.5 m/s), should be stopped since obstacle is inside larger polygon
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldWarnFreeProgressiveSteering)
+{
+  // Test: When steering into a clear field, velocity passes through
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3);
+
+  // Single velocity polygon covering left steering angles
+  addPolygon("LeftField", VELOCITY_POLYGON, 1.0, "limit");
+  addPolygonVelocitySubPolygon("LeftField", "Left", 0.0, 1.0, 0.2, 0.8, 3.0);
+  setPolygonVelocityVectors("LeftField", {"Left"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"LeftField"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle far away (outside 3.0m polygon)
+  publishPointCloud(4.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(4.0, 0.01), 500ms, curr_time));
+
+  // Request left steering (theta=0.5) - in LeftField range, obstacle outside
+  publishCmdVel(0.5, 0.0, 0.5);
+  ASSERT_TRUE(waitCmdVel(500ms));
+
+  // Field is clear, velocity should pass through
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.5, EPSILON);
+
+  cm_->stop();
+
+  // TODO: add test for changing steering field to higher limit than current field
+  // -> limit steering to current limit if warn in next heigher neighbor
+}
+
+TEST_F(Tester, testSteeringFieldHighSpeedKeepsCurrentLogic)
+{
+  // Test: For very high speeds (> 1.0 m/s), use old/normal collision monitor logic
+  // Steering field limiter only applies between 0.3 and 1.0 m/s
+  setCommonParameters();
+  // Enable limiter with thresholds: 0.3 (low) to 1.0 (high)
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Velocity polygon covering very high speeds (> 1.0 m/s)
+  addPolygon("VeryHighSpeedPolygon", VELOCITY_POLYGON, 1.0, "stop");
+  addPolygonVelocitySubPolygon("VeryHighSpeedPolygon", "VeryFast", 1.0, 2.0, -1.0, 1.0, 2.0);
+  setPolygonVelocityVectors("VeryHighSpeedPolygon", {"VeryFast"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"VeryHighSpeedPolygon"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle inside polygon
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Very high speed (1.5 m/s > 1.0 threshold) - steering field limiter doesn't apply
+  // Standard collision monitor behavior: obstacle inside polygon triggers STOP
+  publishCmdVel(1.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  // Obstacle outside polygon
+  publishPointCloud(2.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
+
+  // Very high speed with clear field - should pass through normally
+  publishCmdVel(1.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 1.5, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldMatrixNeighborCheck)
+{
+  // Test: Single velocity polygon with sub-polygons for different speed/angle combos
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3);
+
+  // Create a velocity polygon with sub-polygons for different speed ranges
+  addPolygon("SpeedFields", VELOCITY_POLYGON, 1.0, "stop");
+  // Low speed center: small polygon (0.8m)
+  addPolygonVelocitySubPolygon("SpeedFields", "LowCenter", 0.0, 0.3, -0.5, 0.5, 0.8);
+  // High speed center: larger polygon (1.5m)
+  addPolygonVelocitySubPolygon("SpeedFields", "HighCenter", 0.3, 1.0, -0.5, 0.5, 1.5);
+  setPolygonVelocityVectors("SpeedFields", {"LowCenter", "HighCenter"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SpeedFields"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.2m - inside high speed polygon (1.5m) but outside low speed (0.8m)
+  publishPointCloud(1.2, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.2, 0.01), 500ms, curr_time));
+
+  // Low speed (0.2 m/s) - obstacle outside 0.8m polygon, should pass
+  publishCmdVel(0.2, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.2, EPSILON);
+
+  // High speed (0.5 m/s) - obstacle inside 1.5m polygon, should stop
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, STOP);
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.0, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldLimitToStraight)
+{
+  // Test: When target field is blocked and no clear neighbor in target direction,
+  // limit steering to 0 rad/s (straight) and slow down - don't steer opposite
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Create velocity polygons for 3 steering ranges:
+  // Straight field (theta: -0.2 to 0.2) - will be CLEAR
+  // Little left field (theta: 0.2 to 0.4) - will be BLOCKED
+  // Far left field (theta: 0.4 to 0.8) - will be BLOCKED (target direction)
+
+  addPolygon("SteeringStraight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringStraight", "Straight", 0.0, 1.0, -0.2, 0.2, 3.0);
+  setPolygonVelocityVectors("SteeringStraight", {"Straight"});
+
+  addPolygon("SteeringLittleLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringLittleLeft", "LittleLeft", 0.0, 1.0, 0.2, 0.4, 2.0);
+  setPolygonVelocityVectors("SteeringLittleLeft", {"LittleLeft"});
+
+  addPolygon("SteeringFarLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringFarLeft", "FarLeft", 0.0, 1.0, 0.4, 0.8, 2.0);
+  setPolygonVelocityVectors("SteeringFarLeft", {"FarLeft"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringStraight", "SteeringLittleLeft", "SteeringFarLeft"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.5m - inside LittleLeft (2.0m) and FarLeft (2.0m) polygons,
+  // but outside Straight (3.0m) polygon
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request far left steering (theta=0.6) at medium speed
+  // Target field (FarLeft) is blocked, neighbor (LittleLeft) also blocked
+  // No clear neighbor in target direction (positive)
+  // Should limit steering to 0 rad/s (straight) and slow down
+  publishCmdVel(0.5, 0.0, 0.6);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  // Should get SLOWDOWN action
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+
+  // Steering should be limited to 0 rad/s (straight)
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+
+  // Speed should be slowed down
+  ASSERT_LT(cmd_vel_out_->linear.x, 0.5);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldNegativeDirection)
+{
+  // Test: Steering in negative direction (turning right)
+  // Mirror of left steering tests to ensure symmetry
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Create velocity polygons for right steering:
+  // Straight field (theta: -0.2 to 0.2) - will be BLOCKED
+  // Little right field (theta: -0.4 to -0.2) - will be CLEAR (neighbor)
+  // Far right field (theta: -0.8 to -0.4) - target direction
+
+  addPolygon("SteeringStraight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringStraight", "Straight", 0.0, 1.0, -0.2, 0.2, 2.0);
+  setPolygonVelocityVectors("SteeringStraight", {"Straight"});
+
+  addPolygon("SteeringLittleRight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringLittleRight", "LittleRight", 0.0, 1.0, -0.4, -0.2, 3.0);
+  setPolygonVelocityVectors("SteeringLittleRight", {"LittleRight"});
+
+  addPolygon("SteeringFarRight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringFarRight", "FarRight", 0.0, 1.0, -0.8, -0.4, 2.0);
+  setPolygonVelocityVectors("SteeringFarRight", {"FarRight"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringStraight", "SteeringLittleRight", "SteeringFarRight"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.5m - inside Straight (2.0m) and FarRight (2.0m),
+  // but outside LittleRight (3.0m)
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request far right steering (theta=-0.6) at medium speed
+  // Target field (FarRight) is blocked, but neighbor (LittleRight) is clear
+  // Should limit steering to LittleRight boundary (-0.4) and slow down
+  publishCmdVel(0.5, 0.0, -0.6);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  // Should get SLOWDOWN action
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+
+  // Steering should be limited - either to neighbor boundary or to straight
+  // Depending on neighbor search finding clear field
+  ASSERT_GE(cmd_vel_out_->angular.z, -0.5);  // Should not go beyond -0.4 much
+  ASSERT_LE(cmd_vel_out_->angular.z, 0.0);   // Should be at most straight (0)
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldNegativeLimitToStraight)
+{
+  // Test: Negative steering with all neighbors blocked -> limit to straight
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // All right-side fields blocked, only straight is clear
+  addPolygon("SteeringStraight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringStraight", "Straight", 0.0, 1.0, -0.2, 0.2, 3.0);
+  setPolygonVelocityVectors("SteeringStraight", {"Straight"});
+
+  addPolygon("SteeringLittleRight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringLittleRight", "LittleRight", 0.0, 1.0, -0.4, -0.2, 2.0);
+  setPolygonVelocityVectors("SteeringLittleRight", {"LittleRight"});
+
+  addPolygon("SteeringFarRight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringFarRight", "FarRight", 0.0, 1.0, -0.8, -0.4, 2.0);
+  setPolygonVelocityVectors("SteeringFarRight", {"FarRight"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringStraight", "SteeringLittleRight", "SteeringFarRight"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.5m - blocks all right-side fields
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request far right steering - all neighbors blocked
+  publishCmdVel(0.5, 0.0, -0.6);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Should limit to straight (0 rad/s)
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldClearNeighborAfterBlockedOnes)
+{
+  // Test: Find clear neighbor after passing through blocked fields
+  // Setup: target blocked, first neighbor blocked, second neighbor clear
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Far left (target) - blocked
+  addPolygon("FarLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("FarLeft", "FL", 0.0, 1.0, 0.6, 1.0, 2.0);
+  setPolygonVelocityVectors("FarLeft", {"FL"});
+
+  // Mid left (first neighbor) - blocked
+  addPolygon("MidLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("MidLeft", "ML", 0.0, 1.0, 0.3, 0.6, 2.0);
+  setPolygonVelocityVectors("MidLeft", {"ML"});
+
+  // Little left (second neighbor) - CLEAR
+  addPolygon("LittleLeft", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("LittleLeft", "LL", 0.0, 1.0, 0.0, 0.3, 3.0);
+  setPolygonVelocityVectors("LittleLeft", {"LL"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"FarLeft", "MidLeft", "LittleLeft"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle blocks FarLeft and MidLeft but not LittleLeft
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request far left steering (theta=0.8)
+  publishCmdVel(0.5, 0.0, 0.8);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Should find LittleLeft as clear and limit to its max boundary (0.3)
+  ASSERT_LE(cmd_vel_out_->angular.z, 0.35);  // Limited to around 0.3
+  ASSERT_GE(cmd_vel_out_->angular.z, 0.0);   // Still positive
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldSpeedThresholdBoundary)
+{
+  // Test: Behavior exactly at speed threshold boundaries
+  // At low speed (< 0.3), limiter is disabled, normal collision monitor applies
+  // At medium speed (0.3-1.0), limiter is active
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Polygon active for medium speeds (0.3-1.0) with slowdown
+  addPolygon("MediumSpeed", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("MediumSpeed", "Med", 0.3, 1.0, -0.5, 0.5, 2.0);
+  setPolygonVelocityVectors("MediumSpeed", {"Med"});
+
+  // Low speed polygon - clear (large range so obstacle is outside)
+  addPolygon("LowSpeed", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("LowSpeed", "Low", 0.0, 0.3, -0.5, 0.5, 3.0);
+  setPolygonVelocityVectors("LowSpeed", {"Low"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"MediumSpeed", "LowSpeed"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.5m - inside MediumSpeed polygon (2.0m) but outside LowSpeed (3.0m)
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // At exactly low speed threshold (0.3 m/s) - limiter should apply
+  // Obstacle inside MediumSpeed polygon triggers slowdown
+  publishCmdVel(0.3, 0.0, 0.0);  // Straight steering to avoid limiter interference
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Speed should be reduced
+  ASSERT_LT(cmd_vel_out_->linear.x, 0.3);
+
+  // Clear obstacle for next test
+  publishPointCloud(10.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(10.0, 0.01), 500ms, curr_time));
+
+  // Just below low threshold (0.29 m/s) - limiter disabled
+  // With obstacle far away, should pass through regardless
+  publishCmdVel(0.29, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  // Should pass through with no slowdown
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.29, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldAllFieldsBlocked)
+{
+  // Test: All fields including straight are blocked
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // All fields have same small range - all blocked
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.2, 0.2, 2.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.2, 0.6, 2.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addPolygon("Right", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Right", "R", 0.0, 1.0, -0.6, -0.2, 2.0);
+  setPolygonVelocityVectors("Right", {"R"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left", "Right"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle blocks all fields
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request left steering - all blocked, should limit to straight and slow
+  publishCmdVel(0.5, 0.0, 0.4);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Should limit to straight even though straight is also blocked
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  ASSERT_LT(cmd_vel_out_->linear.x, 0.5);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldTargetClearPassThrough)
+{
+  // Test: Target field is clear - velocity passes through unchanged
+  // Note: steering limiter only affects steering angle, normal collision
+  // monitor processing still applies to speed based on matched polygon
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.2, 0.2, 2.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.2, 0.6, 3.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle far away - outside both polygons
+  publishPointCloud(4.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(4.0, 0.01), 500ms, curr_time));
+
+  // Request left steering - target (Left) is clear, obstacle outside
+  publishCmdVel(0.5, 0.0, 0.4);
+  ASSERT_TRUE(waitCmdVel(500ms));
+
+  // Target is clear with obstacle outside, should pass through
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.4, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldLimitActionType)
+{
+  // Test: Steering field limiter with LIMIT action type polygon
+  // Verify that LIMIT polygons also work with the steering field limiter
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "limit");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.2, 0.2, 2.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "limit");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.2, 0.6, 3.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle far away - outside both polygons
+  publishPointCloud(4.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(4.0, 0.01), 500ms, curr_time));
+
+  // Request left steering with obstacle far away
+  publishCmdVel(0.5, 0.0, 0.4);
+  ASSERT_TRUE(waitCmdVel(500ms));
+
+  // All fields clear, should pass through
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.4, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldLimiterDisabled)
+{
+  // Test: When steering_field_limiter_enabled is false, normal behavior applies
+  // Normal slowdown scales all velocities (linear and angular) by slowdown ratio
+  setCommonParameters();
+  enableSteeringFieldLimiter(false, 0.3, 1.0);  // DISABLED
+
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.2, 0.2, 2.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.2, 0.6, 2.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle blocks both fields
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request left steering - with limiter disabled, normal slowdown applies
+  publishCmdVel(0.5, 0.0, 0.4);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  // Should apply slowdown normally (no steering field special logic)
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // With limiter disabled, angular velocity is NOT forced to 0
+  // Normal slowdown scales angular too: 0.4 * 0.7 = 0.28
+  ASSERT_GT(cmd_vel_out_->angular.z, 0.0);  // Should not be forced to 0
+  ASSERT_LT(cmd_vel_out_->angular.z, 0.5);  // Should be slowed
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldMultipleSubPolygonsSingleVelocityPolygon)
+{
+  // Test: Single VelocityPolygon with multiple sub-polygons for angles
+  // Verify steering field limiter works with complex polygon configurations
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  // Single velocity polygon with 5 sub-polygons for different angles
+  addPolygon("SteeringMatrix", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("SteeringMatrix", "FarRight", 0.0, 1.0, -0.8, -0.4, 2.0);
+  addPolygonVelocitySubPolygon("SteeringMatrix", "LittleRight", 0.0, 1.0, -0.4, -0.1, 2.0);
+  addPolygonVelocitySubPolygon("SteeringMatrix", "Straight", 0.0, 1.0, -0.1, 0.1, 3.0);
+  addPolygonVelocitySubPolygon("SteeringMatrix", "LittleLeft", 0.0, 1.0, 0.1, 0.4, 2.0);
+  addPolygonVelocitySubPolygon("SteeringMatrix", "FarLeft", 0.0, 1.0, 0.4, 0.8, 2.0);
+  setPolygonVelocityVectors(
+    "SteeringMatrix",
+    {"FarRight", "LittleRight", "Straight", "LittleLeft", "FarLeft"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"SteeringMatrix"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle at 1.5m - blocks all except Straight (3.0m)
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request far left (0.6) - blocked, neighbors blocked, limit to straight
+  publishCmdVel(0.5, 0.0, 0.6);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+  // Speed is slowed down
+  ASSERT_LT(cmd_vel_out_->linear.x, 0.5);
+
+  // Update obstacle position far away to clear all fields
+  publishPointCloud(4.0, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(4.0, 0.01), 500ms, curr_time));
+
+  // Now request straight (0.0) - all fields clear
+  publishCmdVel(0.5, 0.0, 0.0);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_NEAR(cmd_vel_out_->linear.x, 0.5, EPSILON);
+  ASSERT_NEAR(cmd_vel_out_->angular.z, 0.0, EPSILON);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldSmallAngleRequest)
+{
+  // Test: Small steering angle just into blocked neighbor
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.2, 0.2, 3.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.2, 0.6, 2.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle blocks left field only
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request small left angle (0.25) - just inside blocked Left field
+  // Neighbor search should find Straight as clear
+  publishCmdVel(0.5, 0.0, 0.25);
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Should limit to Straight field boundary (0.2)
+  ASSERT_LE(cmd_vel_out_->angular.z, 0.25);
+  ASSERT_GE(cmd_vel_out_->angular.z, 0.0);
+
+  cm_->stop();
+}
+
+TEST_F(Tester, testSteeringFieldYVelocityPreserved)
+{
+  // Test: Y velocity (lateral) is also scaled with slowdown
+  setCommonParameters();
+  enableSteeringFieldLimiter(true, 0.3, 1.0);
+
+  addPolygon("Straight", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Straight", "S", 0.0, 1.0, -0.3, 0.3, 3.0);
+  setPolygonVelocityVectors("Straight", {"S"});
+
+  addPolygon("Left", VELOCITY_POLYGON, 1.0, "slowdown");
+  addPolygonVelocitySubPolygon("Left", "L", 0.0, 1.0, 0.3, 0.8, 2.0);
+  setPolygonVelocityVectors("Left", {"L"});
+
+  addSource(POINTCLOUD_NAME, POINTCLOUD);
+  setVectors({"Straight", "Left"}, {POINTCLOUD_NAME});
+
+  rclcpp::Time curr_time = cm_->now();
+  cm_->start();
+  sendTransforms(curr_time);
+
+  // Obstacle blocks left
+  publishPointCloud(1.5, curr_time);
+  ASSERT_TRUE(waitData(std::hypot(1.5, 0.01), 500ms, curr_time));
+
+  // Request with Y velocity
+  publishCmdVel(0.5, 0.2, 0.5);  // Include Y velocity
+  ASSERT_TRUE(waitCmdVel(500ms));
+  ASSERT_TRUE(waitActionState(500ms));
+
+  ASSERT_EQ(action_state_->action_type, SLOWDOWN);
+  // Both X and Y should be scaled
+  ASSERT_LT(cmd_vel_out_->linear.x, 0.5);
+  ASSERT_LT(cmd_vel_out_->linear.y, 0.2);
+  // Steering limited
+  ASSERT_LE(cmd_vel_out_->angular.z, 0.35);
+
   cm_->stop();
 }
 

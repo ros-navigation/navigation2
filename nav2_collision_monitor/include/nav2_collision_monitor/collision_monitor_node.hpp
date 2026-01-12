@@ -200,6 +200,60 @@ protected:
    */
   void publishPolygons() const;
 
+  /**
+   * @brief Process steering field angle limiter logic
+   * @param cmd_vel_in Input desired robot velocity
+   * @param sources_collision_points_map Map of collision points from sources
+   * @param robot_action Output robot action to be modified
+   * @param action_polygon Output polygon that caused the action (if any)
+   * @return True if steering field limiter modified the action
+   */
+  bool processSteeringFieldLimiter(
+    const Velocity & cmd_vel_in,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map,
+    Action & robot_action,
+    std::shared_ptr<Polygon> & action_polygon);
+
+  /**
+   * @brief Find velocity polygons that match given speed and angular velocity ranges
+   * @param linear_vel Linear velocity to check
+   * @param angular_vel Angular velocity to check
+   * @return Vector of polygons matching the velocity criteria
+   */
+  std::vector<std::shared_ptr<Polygon>> findPolygonsForVelocity(
+    double linear_vel, double angular_vel) const;
+
+  /**
+   * @brief Find neighbor steering field polygons (adjacent angular ranges)
+   * @param current_angular Current angular velocity
+   * @param linear_vel Linear velocity to filter by
+   * @param direction 1 for higher angles, -1 for lower angles
+   * @return Vector of neighbor polygons sorted by proximity to current angle
+   */
+  std::vector<std::shared_ptr<Polygon>> findNeighborSteeringFields(
+    double current_angular, double linear_vel, int direction) const;
+
+  /**
+   * @brief Check if a polygon's field is clear (no obstacles above min_points)
+   * @param polygon Polygon to check
+   * @param sources_collision_points_map Map of collision points from sources
+   * @return True if field is clear
+   */
+  bool isFieldClear(
+    const std::shared_ptr<Polygon> polygon,
+    const std::unordered_map<std::string, std::vector<Point>> & sources_collision_points_map) const;
+
+  /**
+   * @brief Get the angular velocity range for a velocity polygon
+   * @param polygon Polygon to get range from
+   * @param theta_min Output minimum angular velocity
+   * @param theta_max Output maximum angular velocity
+   * @return True if polygon is a velocity polygon with angular range
+   */
+  bool getPolygonAngularRange(
+    const std::shared_ptr<Polygon> polygon,
+    double & theta_min, double & theta_max) const;
+
   // ----- Variables -----
 
   /// @brief TF buffer
@@ -236,6 +290,14 @@ protected:
   rclcpp::Time stop_stamp_;
   /// @brief Timeout after which 0-velocity ceases to be published
   rclcpp::Duration stop_pub_timeout_;
+
+  // Steering field angle limiter parameters
+  /// @brief Whether steering field angle limiter is enabled
+  bool steering_field_limiter_enabled_;
+  /// @brief Low speed threshold for steering field limiter (below this, don't apply limiter)
+  double low_speed_threshold_;
+  /// @brief High speed threshold for steering field limiter (above this, use old logic)
+  double high_speed_threshold_;
 };  // class CollisionMonitor
 
 }  // namespace nav2_collision_monitor

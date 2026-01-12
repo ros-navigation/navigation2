@@ -190,4 +190,50 @@ bool VelocityPolygon::isInRange(
   return in_range;
 }
 
+bool VelocityPolygon::getAngularRange(double & theta_min, double & theta_max) const
+{
+  if (sub_polygons_.empty()) {
+    return false;
+  }
+
+  theta_min = sub_polygons_[0].theta_min_;
+  theta_max = sub_polygons_[0].theta_max_;
+
+  for (const auto & sub_polygon : sub_polygons_) {
+    theta_min = std::min(theta_min, sub_polygon.theta_min_);
+    theta_max = std::max(theta_max, sub_polygon.theta_max_);
+  }
+
+  return true;
+}
+
+bool VelocityPolygon::getLinearRange(double & linear_min, double & linear_max) const
+{
+  if (sub_polygons_.empty()) {
+    return false;
+  }
+
+  linear_min = sub_polygons_[0].linear_min_;
+  linear_max = sub_polygons_[0].linear_max_;
+
+  for (const auto & sub_polygon : sub_polygons_) {
+    linear_min = std::min(linear_min, sub_polygon.linear_min_);
+    linear_max = std::max(linear_max, sub_polygon.linear_max_);
+  }
+
+  return true;
+}
+
+bool VelocityPolygon::isVelocityInRange(double linear_vel, double angular_vel) const
+{
+  for (const auto & sub_polygon : sub_polygons_) {
+    if (linear_vel >= sub_polygon.linear_min_ && linear_vel <= sub_polygon.linear_max_ &&
+      angular_vel >= sub_polygon.theta_min_ && angular_vel <= sub_polygon.theta_max_)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace nav2_collision_monitor

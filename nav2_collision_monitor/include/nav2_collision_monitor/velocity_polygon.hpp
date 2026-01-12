@@ -68,6 +68,30 @@ public:
    */
   void updatePolygon(const Velocity & cmd_vel_in) override;
 
+  /**
+   * @brief Get the angular velocity range for this velocity polygon
+   * @param theta_min Output minimum angular velocity across all sub-polygons
+   * @param theta_max Output maximum angular velocity across all sub-polygons
+   * @return True if ranges were found
+   */
+  bool getAngularRange(double & theta_min, double & theta_max) const;
+
+  /**
+   * @brief Get the linear velocity range for this velocity polygon
+   * @param linear_min Output minimum linear velocity across all sub-polygons
+   * @param linear_max Output maximum linear velocity across all sub-polygons
+   * @return True if ranges were found
+   */
+  bool getLinearRange(double & linear_min, double & linear_max) const;
+
+  /**
+   * @brief Check if a given velocity is within this polygon's range
+   * @param linear_vel Linear velocity to check
+   * @param angular_vel Angular velocity to check
+   * @return True if velocity is within range
+   */
+  bool isVelocityInRange(double linear_vel, double angular_vel) const;
+
 protected:
   /**
     * @brief Custom struct to store the parameters of the sub-polygon
