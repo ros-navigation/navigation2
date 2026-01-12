@@ -456,6 +456,8 @@ Tester::Tester()
   test_node_ = std::make_shared<TestNode>();
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
+  test_node_->configure();
+  test_node_->activate();
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(test_node_->get_clock());
   tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
@@ -470,6 +472,8 @@ Tester::~Tester()
   polygon_.reset();
   costmap_.reset();
 
+  test_node_->deactivate();
+  test_node_->cleanup();
   test_node_.reset();
 
   tf_listener_.reset();
