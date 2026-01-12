@@ -187,10 +187,11 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param callback_group The callback group to use (if provided)
  * @return A shared pointer to the created lifecycle-enabled subscription
  */
-template<typename MessageT, typename NodeT, typename CallbackT>
+// Function 1: For LifecycleNode (with lifecycle checking)
+template<typename MessageT, typename CallbackT>
 typename nav2::Subscription<MessageT>::SharedPtr
 create_subscription(
-  const NodeT & node,
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
   const std::string & topic_name,
   CallbackT && callback,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
@@ -198,19 +199,29 @@ create_subscription(
 {
   (void)callback_group;
   auto wrapped_callback = [node, callback = std::forward<CallbackT>(callback)]
-      (typename MessageT::SharedPtr msg) {
-      // Only process if node is active
+    (typename MessageT::SharedPtr msg) {
       if (node->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
         callback(msg);
       }
-      //  ignore when inactive
     };
-
   return node->rclcpp_lifecycle::LifecycleNode::template create_subscription<MessageT>(
-    topic_name, qos, wrapped_callback
-  );
+    topic_name, qos, wrapped_callback);
 }
 
+// Function 2: For plain Node (no lifecycle, always active)
+template<typename MessageT, typename CallbackT>
+typename nav2::Subscription<MessageT>::SharedPtr
+create_subscription(
+  const std::shared_ptr<rclcpp::Node> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+{
+  (void)callback_group;
+  return node->template create_subscription<MessageT>(
+    topic_name, qos, std::forward<CallbackT>(callback));
+}
 /**
  * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
  * @param node Node to create the publisher on

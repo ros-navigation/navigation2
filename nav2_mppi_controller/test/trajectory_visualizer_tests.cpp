@@ -48,7 +48,7 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
 
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
     "~/transformed_global_plan",
-    [&](const nav_msgs::msg::Path msg) {received_path = msg;});
+    [&](const nav_msgs::msg::Path::SharedPtr msg) {received_path = *msg;});
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
@@ -72,7 +72,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalTrajectory)
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
     "~/candidate_trajectories",
-    [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
+    [&](const visualization_msgs::msg::MarkerArray::SharedPtr msg) {received_msg = *msg;});
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
 
@@ -137,7 +137,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   visualization_msgs::msg::MarkerArray received_msg;
   auto my_sub = node->create_subscription<visualization_msgs::msg::MarkerArray>(
     "~/candidate_trajectories",
-    [&](const visualization_msgs::msg::MarkerArray msg) {received_msg = msg;});
+    [&](const visualization_msgs::msg::MarkerArray::SharedPtr msg) {received_msg = *msg;});
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
@@ -171,7 +171,7 @@ TEST(TrajectoryVisualizerTests, VisOptimalPath)
   nav_msgs::msg::Path received_path;
   auto my_sub = node->create_subscription<nav_msgs::msg::Path>(
     "~/optimal_path",
-    [&](const nav_msgs::msg::Path msg) {received_path = msg;});
+    [&](const nav_msgs::msg::Path::SharedPtr msg) {received_path = *msg;});
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
