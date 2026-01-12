@@ -342,13 +342,14 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vy = s.model_dt * s.constraints.ay_min;
   float max_delta_wz = s.model_dt * s.constraints.az_max;
 
-  // limit acceleration between current initial_velocities_ and first control in the sequence
-  float vx_last = initial_velocities_(0);
-  float wz_last = initial_velocities_(2);
+  // limit acceleration between state.speed (current speed or last command, depends on open_loop)
+  // and first control in the sequence
+  float vx_last = static_cast<float>(state_.speed.linear.x);
+  float wz_last = static_cast<float>(state_.speed.angular.z);
 
   float vy_last = 0;
   if (isHolonomic()) {
-    vy_last = initial_velocities_(1);
+    vy_last = static_cast<float>(state_.speed.linear.y);
   }
 
   for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
@@ -382,24 +383,20 @@ void Optimizer::applyControlSequenceConstraints()
 }
 
 void Optimizer::updateStateVelocities(
-  models::State & state)
+  models::State & state) const
 {
   updateInitialStateVelocities(state);
   propagateStateVelocitiesFromInitials(state);
 }
 
-void Optimizer::updateInitialStateVelocities(models::State & state)
+void Optimizer::updateInitialStateVelocities(models::State & state) const
 {
-  state.vx.col(0) = control_sequence_.vx(0);
-  state.wz.col(0) = control_sequence_.wz(0);
+  state.vx.col(0) = static_cast<float>(state.speed.linear.x);
+  state.wz.col(0) = static_cast<float>(state.speed.angular.z);
 
   if (isHolonomic()) {
-    state.vy.col(0) = control_sequence_.vy(0);
+    state.vy.col(0) = static_cast<float>(state.speed.linear.y);
   }
-
-  initial_velocities_(0) = control_sequence_.vx(0);
-  initial_velocities_(1) = control_sequence_.vy(0);
-  initial_velocities_(2) = control_sequence_.wz(0);
 }
 
 void Optimizer::propagateStateVelocitiesFromInitials(
