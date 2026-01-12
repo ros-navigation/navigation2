@@ -44,11 +44,14 @@ public:
    * @brief Constructor for IsPathValidService
    * @param node Lifecycle node pointer
    * @param costmap_ros Costmap ROS wrapper
+   * @param costmap_update_timeout Timeout for waiting for costmap updates
    */
   IsPathValidService(
     nav2::LifecycleNode::WeakPtr node,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
-  : node_(node), costmap_ros_(costmap_ros), logger_(rclcpp::get_logger("is_path_valid_service"))
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+    const rclcpp::Duration & costmap_update_timeout)
+  : node_(node), costmap_ros_(costmap_ros), logger_(rclcpp::get_logger("is_path_valid_service")),
+    costmap_update_timeout_(costmap_update_timeout)
   {
   }
 
@@ -81,6 +84,15 @@ public:
   }
 
 private:
+  /**
+   * @brief Wait for the costmap to become current
+   * @throws std::runtime_error if costmap times out waiting for update
+   */
+  void waitForCostmap()
+  {
+    costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
+  }
+
   /**
    * @brief Get the costmap to check based on the layer name
    * @param layer_name Name of the layer to check, or empty for full costmap
@@ -182,6 +194,15 @@ private:
       return;
     }
 
+    try {
+      waitForCostmap();
+    } catch (const std::exception & ex) {
+      RCLCPP_ERROR(logger_, "Failed to wait for costmap: %s", ex.what());
+      response->success = false;
+      response->is_valid = false;
+      return;
+    }
+
     geometry_msgs::msg::PoseStamped current_pose;
     if (!costmap_ros_->getRobotPose(current_pose)) {
       RCLCPP_ERROR(logger_, "Failed to get robot pose. Cannot validate path.");
@@ -274,6 +295,7 @@ private:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_;
+  rclcpp::Duration costmap_update_timeout_;
   nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr service_;
 };
 

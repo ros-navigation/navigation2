@@ -147,13 +147,13 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan");
 
-  // Create is path valid service
-  is_path_valid_service_ = std::make_unique<IsPathValidService>(
-    shared_from_this(), costmap_ros_);
-
   double costmap_update_timeout_dbl;
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
+
+  // Create is path valid service
+  is_path_valid_service_ = std::make_unique<IsPathValidService>(
+    shared_from_this(), costmap_ros_, costmap_update_timeout_);
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = create_action_server<ActionToPose>(
@@ -281,14 +281,10 @@ bool PlannerServer::isServerInactive(
 
 void PlannerServer::waitForCostmap()
 {
-  // Don't compute a plan until costmap is valid (after clear costmap)
-  rclcpp::Rate r(100);
-  auto waiting_start = now();
-  while (!costmap_ros_->isCurrent()) {
-    if (now() - waiting_start > costmap_update_timeout_) {
-      throw nav2_core::PlannerTimedOut("Costmap timed out waiting for update");
-    }
-    r.sleep();
+  try {
+    costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
+  } catch (const std::runtime_error & ex) {
+    throw nav2_core::PlannerTimedOut(ex.what());
   }
 }
 
