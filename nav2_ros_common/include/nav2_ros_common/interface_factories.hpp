@@ -27,6 +27,16 @@
 #include "nav2_ros_common/subscription.hpp"
 #include "nav2_ros_common/action_client.hpp"
 #include "rclcpp_action/client.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
+
+
+namespace nav2
+{
+// Forward declare nav2::LifecycleNode (defined in lifecycle_node.hpp)
+class LifecycleNode;
+}  // namespace nav2
 
 namespace nav2
 {
@@ -183,7 +193,12 @@ inline rclcpp::PublisherOptions createPublisherOptions(
 }
 
 /**
- * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
+ * @brief Create a subscription to a topic using Nav2 QoS profiles and allocator-aware SubscriptionOptions.
+ *
+ * If the node is a nav2::LifecycleNode, the subscription will be registered as a managed
+ * entity so it participates in lifecycle transitions, and will be auto-activated if the
+ * node is already ACTIVE.
+ *
  * @param node Node to create the subscription on
  * @param topic_name Name of topic
  * @param callback Callback function to handle incoming messages
@@ -191,23 +206,62 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param callback_group The callback group to use (if provided)
  * @return A shared pointer to the created nav2::Subscription
  */
-template<typename MessageT, typename NodeT, typename CallbackT>
-typename nav2::Subscription<MessageT>::SharedPtr create_subscription(
-  const NodeT & node,
+ template<typename MessageT, typename NodeT, typename CallbackT, typename Alloc = std::allocator<void>>
+ typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+ create_subscription(
+   const NodeT & node,
+   const std::string & topic_name,
+   CallbackT && callback,
+   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+ {
+   bool allow_parameter_qos_overrides =
+     nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
+ 
+   auto options = createSubscriptionOptions(
+     topic_name, allow_parameter_qos_overrides, callback_group);
+ 
+   auto sub = std::make_shared<nav2::Subscription<MessageT, Alloc>>(
+     node,
+     topic_name,
+     std::forward<CallbackT>(callback),
+     qos,
+     options);
+ 
+   return sub;
+ }
+
+
+/**
+ * @brief Create a subscription on a nav2::LifecycleNode (managed-entity registration happens in the definition).
+ *
+ * NOTE: Declaration only here. Definition is in lifecycle_node.hpp to avoid circular includes.
+ */
+template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
+typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<nav2::LifecycleNode> & node,
   const std::string & topic_name,
   CallbackT && callback,
   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
-{
-  bool allow_parameter_qos_overrides = nav2::declare_or_get_parameter(
-     node, "allow_parameter_qos_overrides", true);
+  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr);
 
-  auto options = createSubscriptionOptions(
-     topic_name, allow_parameter_qos_overrides, callback_group);
-
-  return std::make_shared<nav2::Subscription<MessageT>>(
-     node, topic_name, qos, std::forward<CallbackT>(callback), options);
-}
+/**
+ * @brief Create a subscription on a base rclcpp_lifecycle::LifecycleNode.
+ *
+ * If the runtime type is nav2::LifecycleNode, it will be registered as a managed entity.
+ * Otherwise it behaves like the generic path (no registration).
+ *
+ * NOTE: Declaration only here. Definition is in lifecycle_node.hpp to avoid circular includes.
+ */
+template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
+typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr);
 
 /**
  * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions

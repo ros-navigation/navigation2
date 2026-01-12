@@ -30,7 +30,35 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 #include "nav2_ros_common/interface_factories.hpp"
+#include "nav2_ros_common/subscription.hpp"
+
+namespace nav2 {
+  class LifecycleNode;
+  }
+  
+namespace nav2::interfaces {
+
+template<typename MessageT, typename CallbackT, typename Alloc>
+typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<nav2::LifecycleNode> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos,
+  const rclcpp::CallbackGroup::SharedPtr & callback_group);
+
+template<typename MessageT, typename CallbackT, typename Alloc>
+typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos,
+  const rclcpp::CallbackGroup::SharedPtr & callback_group);
+
+}  // namespace nav2::interfaces
 
 namespace nav2
 {
@@ -139,28 +167,32 @@ public:
       default_value, parameter_descriptor);
   }
 
-  /**
-   * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions
-   * @param topic_name Name of topic
-   * @param callback Callback function to handle incoming messages
-   * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
-   * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created nav2::Subscription
-   */
-  template<
-    typename MessageT,
-    typename CallbackT>
-  typename nav2::Subscription<MessageT>::SharedPtr
-  create_subscription(
-    const std::string & topic_name,
-    CallbackT && callback,
-    const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
-  {
-    return nav2::interfaces::create_subscription<MessageT>(
-      shared_from_this(), topic_name,
-      std::forward<CallbackT>(callback), qos, callback_group);
-  }
+/**
+ * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions.
+ * The resulting subscription is managed/activated through the Nav2 interface factory.
+ *
+ * @param topic_name Name of topic
+ * @param callback Callback function to handle incoming messages
+ * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
+ * @param callback_group The callback group to use (if provided)
+ * @return A shared pointer to the created nav2::Subscription
+ */
+ template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
+ typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+ create_subscription(
+   const std::string & topic_name,
+   CallbackT && callback,
+   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+ {
+  return nav2::interfaces::create_subscription<MessageT, CallbackT, Alloc>(
+    shared_from_this(),
+    topic_name,
+    std::forward<CallbackT>(callback),
+    qos,
+    callback_group);
+ } 
+ 
 
   /**
    * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
@@ -429,6 +461,43 @@ protected:
 
 private:
   /**
+   * @brief Internal helper to register a managed entity with this LifecycleNode.
+   *
+   * This wraps the base class protected API `add_managed_entity()` in a way that
+   * keeps the base API protected, while allowing specific Nav2 factory overloads
+   * to register entities safely.
+   *
+   * @param node The nav2::LifecycleNode instance
+   * @param ent The managed entity to register
+   */
+   static void register_managed_entity(
+    ::nav2::LifecycleNode & node,
+    std::weak_ptr<rclcpp_lifecycle::ManagedEntityInterface> ent)
+  {
+    node.add_managed_entity(std::move(ent));
+  }
+  
+
+  template<typename MessageT, typename CallbackT, typename Alloc>
+  friend typename Subscription<MessageT, Alloc>::SharedPtr
+  interfaces::create_subscription(
+    const std::shared_ptr<LifecycleNode> & node,
+    const std::string & topic_name,
+    CallbackT && callback,
+    const rclcpp::QoS & qos,
+    const rclcpp::CallbackGroup::SharedPtr & callback_group);
+
+  template<typename MessageT, typename CallbackT, typename Alloc>
+  friend typename Subscription<MessageT, Alloc>::SharedPtr
+  interfaces::create_subscription(
+    const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
+    const std::string & topic_name,
+    CallbackT && callback,
+    const rclcpp::QoS & qos,
+    const rclcpp::CallbackGroup::SharedPtr & callback_group);
+
+
+  /**
    * @brief Get the enable_lifecycle_services parameter value from NodeOptions
    * @param options NodeOptions to check for the parameter
    * @return true if lifecycle services should be enabled, false otherwise
@@ -445,6 +514,76 @@ private:
     return true;
   }
 };
+
+namespace interfaces
+{
+
+template<typename MessageT, typename CallbackT, typename Alloc>
+typename ::nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<::nav2::LifecycleNode> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos,
+  const rclcpp::CallbackGroup::SharedPtr & callback_group)
+{
+  bool allow_parameter_qos_overrides =
+    nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
+
+  auto options = createSubscriptionOptions(
+    topic_name, allow_parameter_qos_overrides, callback_group);
+
+  auto sub = std::make_shared<::nav2::Subscription<MessageT, Alloc>>(
+    node,
+    topic_name,
+    std::forward<CallbackT>(callback),
+    qos,
+    options);
+
+  ::nav2::LifecycleNode::register_managed_entity(*node, sub);
+
+  if (node->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+    sub->on_activate();
+  }
+
+  return sub;
+}
+
+template<typename MessageT, typename CallbackT, typename Alloc>
+typename ::nav2::Subscription<MessageT, Alloc>::SharedPtr
+create_subscription(
+  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
+  const std::string & topic_name,
+  CallbackT && callback,
+  const rclcpp::QoS & qos,
+  const rclcpp::CallbackGroup::SharedPtr & callback_group)
+{
+  bool allow_parameter_qos_overrides =
+    nav2::declare_or_get_parameter(node, "allow_parameter_qos_overrides", true);
+
+  auto options = createSubscriptionOptions(
+    topic_name, allow_parameter_qos_overrides, callback_group);
+
+  auto sub = std::make_shared<::nav2::Subscription<MessageT, Alloc>>(
+    node,
+    topic_name,
+    std::forward<CallbackT>(callback),
+    qos,
+    options);
+
+  if (auto nav2_lc = std::dynamic_pointer_cast<::nav2::LifecycleNode>(node)) {
+    ::nav2::LifecycleNode::register_managed_entity(*nav2_lc, sub);
+
+    if (nav2_lc->get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+      sub->on_activate();
+    }
+  }
+
+  return sub;
+}
+
+}  // namespace nav2::interfaces
+
 
 }  // namespace nav2
 

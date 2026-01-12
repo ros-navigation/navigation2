@@ -22,29 +22,36 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/any_subscription_callback.hpp"
+#include "rclcpp/message_memory_strategy.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/managed_entity.hpp"
+
+#include "nav2_ros_common/qos_profiles.hpp"
 
 namespace nav2
 {
 
-template<typename MessageT>
+template<typename MessageT, typename Alloc = std::allocator<void>>
 class Subscription : public rclcpp_lifecycle::SimpleManagedEntity
 {
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(Subscription)
 
+  using RclcppSub = rclcpp::Subscription<MessageT, Alloc>;
+  using Options = rclcpp::SubscriptionOptionsWithAllocator<Alloc>;
+  using AnyCb = rclcpp::AnySubscriptionCallback<MessageT, Alloc>;
+
   template<typename NodeT, typename CallbackT>
   Subscription(
     const std::shared_ptr<NodeT> & node,
     const std::string & topic_name,
-    const rclcpp::QoS & qos,
     CallbackT && user_callback,
-    const rclcpp::SubscriptionOptions & options = rclcpp::SubscriptionOptions{})
+    const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+    const Options & options = Options{})
   : topic_name_(topic_name),
     logger_(node->get_logger()),
     should_log_(true),
-    any_cb_(std::allocator<void>{})
+    any_cb_(*options.get_allocator())
   {
     init(node, qos, std::forward<CallbackT>(user_callback), options);
   }
@@ -52,6 +59,7 @@ public:
   void on_activate() override
   {
     rclcpp_lifecycle::SimpleManagedEntity::on_activate();
+    should_log_.store(true);
   }
 
   void on_deactivate() override
@@ -60,13 +68,18 @@ public:
     should_log_.store(true);
   }
 
+  const char * get_topic_name() const noexcept
+  {
+    return topic_name_.c_str();
+  }
+
 private:
   template<typename NodeT, typename CallbackT>
   void init(
     const std::shared_ptr<NodeT> & node,
     const rclcpp::QoS & qos,
     CallbackT && user_callback,
-    const rclcpp::SubscriptionOptions & options)
+    const Options & options)
   {
     any_cb_.set(std::forward<CallbackT>(user_callback));
 
@@ -90,9 +103,10 @@ private:
       topic_name_,
       qos,
       std::move(wrapped_cb),
-      options);
+      options,
+      rclcpp::message_memory_strategy::MessageMemoryStrategy<MessageT, Alloc>::create_default());
 
-    // Preserve old behavior for non-lifecycle nodes
+    // Legacy behavior: if this is NOT a lifecycle node, auto-activate immediately.
     auto maybe_lc = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
     if (!maybe_lc) {
       this->on_activate();
@@ -101,22 +115,21 @@ private:
 
   void log_subscription_not_enabled_once()
   {
-    if (should_log_.exchange(false)) {
-      RCLCPP_WARN(
-        logger_,
-        "Subscription on [%s] is not enabled yet (node not activated). "
-        "Dropping messages until activation.",
-        topic_name_.c_str());
+    if (!should_log_.exchange(false)) {
+      return;
     }
+
+    RCLCPP_WARN(
+      logger_,
+      "Trying to take messages on topic '%s', but the subscription is not activated. Dropping until activation.",
+      topic_name_.c_str());
   }
 
-  typename rclcpp::Subscription<MessageT>::SharedPtr sub_;
+  typename RclcppSub::SharedPtr sub_;
   std::string topic_name_;
   rclcpp::Logger logger_;
   std::atomic<bool> should_log_;
-
-  // Type-erased, “official rclcpp way” to store/dispatch callbacks
-  rclcpp::AnySubscriptionCallback<MessageT, std::allocator<void>> any_cb_;
+  AnyCb any_cb_;
 };
 
 }  // namespace nav2
