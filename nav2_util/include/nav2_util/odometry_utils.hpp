@@ -144,7 +144,7 @@ protected:
    * @brief Callback of odometry subscriber to process
    * @param msg Odometry msg to smooth
    */
-  void odomCallback(nav_msgs::msg::Odometry::SharedPtr msg);
+  void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr & msg);
 
   /**
    * @brief Update internal state of the smoother after getting new data

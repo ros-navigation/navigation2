@@ -11,13 +11,13 @@ vector_object_server:
     Poly:
       type: "polygon"
       frame_id: "map"
-      closed: True
+      closed: true
       value: 100
       points: [0.3, 0.5, -0.4, 1.2, -0.4, -0.2]
     Circle:
       type: "circle"
       frame_id: "map"
-      fill: True
+      fill: true
       value: 100
       center: [1.5, 0.5]
       radius: 0.7

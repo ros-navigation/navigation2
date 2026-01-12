@@ -388,6 +388,95 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
   delete costmap;
 }
 
+TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string filePath =
+    pkg_share_dir +
+    "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
+    "/output.json";
+
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.use_quadratic_cost_penalty = true;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.1;
+  info.lattice_filepath = filePath;
+  info.cache_obstacle_heuristic = true;
+  info.allow_reverse_expansion = true;
+  info.rotation_penalty = 5.0;
+
+  unsigned int size_x = 10;
+  unsigned int size_y = 10;
+  unsigned int size_theta = 16;
+
+  // Check defaulted constants
+  nav2_smac_planner::NodeLattice testA(49);
+
+  nav2_smac_planner::NodeLattice::initMotionModel(
+    nav2_smac_planner::MotionModel::STATE_LATTICE, size_x, size_y, size_theta, info);
+
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    10, 10, 0.05, 0.0, 0.0, 0);
+
+  for (unsigned int x = 4; x <= 6; x++) {
+    for (unsigned int y = 4; y <= 6; y++) {
+      costmapA->setCost(x, y, 253);
+    }
+  }
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  // test construction
+  nav2_smac_planner::NodeLattice testB(49);
+  EXPECT_TRUE(std::isnan(testA.getCost()));
+
+  // test node valid and cost
+  testA.pose.x = 5;
+  testA.pose.y = 5;
+  testA.pose.theta = 0;
+  EXPECT_EQ(testA.isNodeValid(true, checker.get()), false);
+  EXPECT_EQ(testA.getCost(), 253);
+
+  // Get motion primitives for testing
+  unsigned int direction_change_index = 0;
+  nav2_smac_planner::MotionPrimitivePtrs testB_prims =
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    &testB, direction_change_index);
+  nav2_smac_planner::MotionPrimitivePtrs testA_prims =
+    nav2_smac_planner::NodeLattice::motion_table.getMotionPrimitives(
+    &testA, direction_change_index);
+
+  testB.setMotionPrimitive(testB_prims[0]);
+  testA.setMotionPrimitive(testA_prims[0]);
+  float cost1 = testB.getTraversalCost(&testA);
+  EXPECT_NEAR(cost1, 37.288f, 0.1);
+
+  testA.setMotionPrimitive(testA_prims[1]);
+  float cost2 = testB.getTraversalCost(&testA);
+  EXPECT_NEAR(cost2, 21.17f, 0.1);
+
+  testA.setMotionPrimitive(testA_prims[2]);
+  float cost3 = testB.getTraversalCost(&testA);
+  EXPECT_NEAR(cost3, 7.84f, 0.1);
+  // will throw because never collision checked testB
+  EXPECT_THROW(testA.getTraversalCost(&testB), std::runtime_error);
+  delete costmapA;
+}
+
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

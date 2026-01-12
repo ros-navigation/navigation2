@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the planner_selector
    */
-  void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackPlannerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;

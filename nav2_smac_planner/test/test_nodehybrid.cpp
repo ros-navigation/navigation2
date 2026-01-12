@@ -197,11 +197,14 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmap->setCost(50, j, 254);
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
-    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic);
   float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
     testB.pose,
-    info.cost_penalty);
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
 
   EXPECT_NEAR(wide_passage_cost, 91.1f, 0.1f);
 
@@ -213,11 +216,13 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   }
   nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
     costmap_ros,
-    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
   float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
     testA.pose,
     testB.pose,
-    info.cost_penalty);
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
 
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 

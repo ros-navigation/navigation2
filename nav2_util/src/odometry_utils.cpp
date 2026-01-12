@@ -23,7 +23,7 @@ using namespace std::chrono_literals;  // NOLINT
 namespace nav2_util
 {
 
-void OdomSmoother::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+void OdomSmoother::odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr & msg)
 {
   std::lock_guard<std::mutex> lock(odom_mutex_);
   received_odom_ = true;

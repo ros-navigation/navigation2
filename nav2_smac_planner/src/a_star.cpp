@@ -232,7 +232,8 @@ void AStarAlgorithm<NodeT>::setGoal(
     }
 
     NodeT::resetObstacleHeuristic(
-      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
+      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
+        NodeT::motion_table.downsample_obstacle_heuristic);
   }
 
   _goal_manager.setRefGoalCoordinates(ref_goal_coord);

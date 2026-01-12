@@ -79,7 +79,7 @@ TEST(ServiceClient, can_ServiceClient_invoke_in_callback)
   auto sub = sub_node->create_subscription<std_msgs::msg::Empty>(
     "empty_topic",
     rclcpp::QoS(1),
-    [&client](std_msgs::msg::Empty::SharedPtr) {
+    [&client](std_msgs::msg::Empty::ConstSharedPtr) {
       auto req = std::make_shared<std_srvs::srv::Empty::Request>();
       auto res = client.invoke(req);
     });
