@@ -623,10 +623,6 @@ Costmap2DROS::waitUntilCurrent(const rclcpp::Duration & timeout)
     }
     r.sleep();
   }
-  auto wait_duration = (now() - waiting_start).seconds();
-  if (wait_duration > 0.001) {
-    RCLCPP_INFO(get_logger(), "Waited %.3f seconds for costmap to become current", wait_duration);
-  }
 }
 
 void

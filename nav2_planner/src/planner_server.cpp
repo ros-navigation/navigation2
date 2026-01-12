@@ -281,10 +281,12 @@ bool PlannerServer::isServerInactive(
 
 void PlannerServer::waitForCostmap()
 {
-  try {
-    costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
-  } catch (const std::runtime_error & ex) {
-    throw nav2_core::PlannerTimedOut(ex.what());
+  if (costmap_update_timeout_ > rclcpp::Duration(0, 0)) {
+    try {
+      costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
+    } catch (const std::runtime_error & ex) {
+      throw nav2_core::PlannerTimedOut(ex.what());
+    }
   }
 }
 

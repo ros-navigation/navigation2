@@ -85,15 +85,6 @@ public:
 
 private:
   /**
-   * @brief Wait for the costmap to become current
-   * @throws std::runtime_error if costmap times out waiting for update
-   */
-  void waitForCostmap()
-  {
-    costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
-  }
-
-  /**
    * @brief Get the costmap to check based on the layer name
    * @param layer_name Name of the layer to check, or empty for full costmap
    * @return Pointer to the costmap to check, or nullptr if layer not found
@@ -194,13 +185,16 @@ private:
       return;
     }
 
-    try {
-      waitForCostmap();
-    } catch (const std::exception & ex) {
-      RCLCPP_ERROR(logger_, "Failed to wait for costmap: %s", ex.what());
-      response->success = false;
-      response->is_valid = false;
-      return;
+    // Wait for costmap to become current (skip if timeout is zero or negative)
+    if (costmap_update_timeout_ > rclcpp::Duration(0, 0)) {
+      try {
+        costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
+      } catch (const std::exception & ex) {
+        RCLCPP_ERROR(logger_, "Failed to wait for costmap: %s", ex.what());
+        response->success = false;
+        response->is_valid = false;
+        return;
+      }
     }
 
     geometry_msgs::msg::PoseStamped current_pose;
