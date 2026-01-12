@@ -29,6 +29,9 @@
 #include "nav2_msgs/msg/collision_monitor_state.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
+#include "nav2_ros_common/subscription.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
+
 
 using nav2_msgs::msg::CollisionMonitorState;
 
@@ -72,21 +75,26 @@ public:
 
     // We only start collecting after we have seen *both* /clock and /local_costmap
     // This avoids counting "startup zero cmd" as real data.
-    cm_sub_ = this->create_subscription<nav2_msgs::msg::Costmap>(
-      "/local_costmap/costmap", rclcpp::QoS(1).reliable().durability_volatile(),
+    cm_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+      shared_from_this(),
+      "/local_costmap/costmap",
       [this](const nav2_msgs::msg::Costmap &){
         if (!got_costmap_) {got_costmap_ = true; cm_sub_.reset();}
-      });
+      },
+      rclcpp::QoS(1).reliable().durability_volatile());
 
-    clock_sub_ = this->create_subscription<rosgraph_msgs::msg::Clock>(
-      "/clock", rclcpp::QoS(1).best_effort().durability_volatile(),
+    clock_sub_ = nav2::interfaces::create_subscription<rosgraph_msgs::msg::Clock>(
+      shared_from_this(),
+      "/clock",
       [this](const rosgraph_msgs::msg::Clock &){
         if (!got_clock_) {got_clock_ = true; clock_sub_.reset();}
-      });
+      },
+      rclcpp::QoS(1).best_effort().durability_volatile());
 
     // This is the *output* we evaluate. In the launch file you can remap it.
-    cmd_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "/cmd_vel", rclcpp::QoS(60),
+    cmd_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::Twist>(
+      shared_from_this(),
+      "/cmd_vel",
       [this](const geometry_msgs::msg::Twist & msg){
         if (!got_clock_ || !got_costmap_) {
           // don't collect before system is “live”
@@ -94,14 +102,18 @@ public:
         }
         const double t = this->now().seconds();
         samples_.push_back(Sample{t, msg.linear.x, last_action_});
-      });
+      },
+      rclcpp::QoS(60));
 
     // Optional: subscribe to CM state to help debugging (not used in asserts)
-    state_sub_ = this->create_subscription<CollisionMonitorState>(
-      "/collision_state", rclcpp::QoS(10),
+    state_sub_ = nav2::interfaces::create_subscription<CollisionMonitorState>(
+      shared_from_this(),
+      "/collision_state",
       [this](const CollisionMonitorState & msg){
         last_action_ = msg.action_type;
-      });
+      },
+      rclcpp::QoS(10));
+
   }
 
   // Spin until we passed the obstacle window (8s) + margin
@@ -229,10 +241,10 @@ public:
 
 private:
   // Subscriptions
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr cm_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
-  rclcpp::Subscription<CollisionMonitorState>::SharedPtr state_sub_;
-  rclcpp::Subscription<rosgraph_msgs::msg::Clock>::SharedPtr clock_sub_;
+  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr cm_sub_;
+  nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_sub_;
+  nav2::Subscription<CollisionMonitorState>::SharedPtr state_sub_;
+  nav2::Subscription<rosgraph_msgs::msg::Clock>::SharedPtr clock_sub_;
 
   // Buffers/state
   std::vector<Sample> samples_;
