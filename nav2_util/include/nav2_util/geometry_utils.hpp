@@ -179,7 +179,7 @@ inline int find_next_matching_goal_in_waypoint_statuses(
     waypoint_statuses.begin(), waypoint_statuses.end(),
     [&goal](const nav2_msgs::msg::WaypointStatus & status) {
       return status.waypoint_pose == goal &&
-      status.waypoint_status == nav2_msgs::msg::WaypointStatus::PENDING;
+             status.waypoint_status == nav2_msgs::msg::WaypointStatus::PENDING;
     });
 
   if (itr == waypoint_statuses.end()) {
