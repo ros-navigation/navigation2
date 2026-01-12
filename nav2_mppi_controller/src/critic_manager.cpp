@@ -37,6 +37,7 @@ void CriticManager::getParams()
   auto node = parent_.lock();
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(critic_names_, "critics", std::vector<std::string>{}, ParameterType::Static);
+  getParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
 }
 
 void CriticManager::loadCritics()
@@ -44,6 +45,13 @@ void CriticManager::loadCritics()
   if (!loader_) {
     loader_ = std::make_unique<pluginlib::ClassLoader<critics::CriticFunction>>(
       "nav2_mppi_controller", "mppi::critics::CriticFunction");
+  }
+
+  auto node = parent_.lock();
+  if (publish_critics_stats_) {
+    critics_effect_pub_ = node->create_publisher<nav2_msgs::msg::CriticsStats>(
+    "~/critics_stats", 10);
+    critics_effect_pub_->on_activate();
   }
 
   critics_.clear();
@@ -67,11 +75,44 @@ std::string CriticManager::getFullName(const std::string & name)
 void CriticManager::evalTrajectoriesScores(
   CriticData & data) const
 {
-  for (const auto & critic : critics_) {
+  std::unique_ptr<nav2_msgs::msg::CriticsStats> stats_msg;
+  if (publish_critics_stats_) {
+    stats_msg = std::make_unique<nav2_msgs::msg::CriticsStats>();
+    stats_msg->critics.reserve(critics_.size());
+    stats_msg->changed.reserve(critics_.size());
+    stats_msg->costs_sum.reserve(critics_.size());
+  }
+
+  for (size_t i = 0; i < critics_.size(); ++i) {
     if (data.fail_flag) {
       break;
     }
-    critic->score(data);
+
+    // Store costs before critic evaluation
+    Eigen::ArrayXf costs_before;
+    if (publish_critics_stats_) {
+      costs_before = data.costs;
+    }
+
+    critics_[i]->score(data);
+
+    // Calculate statistics if publishing is enabled
+    if (publish_critics_stats_) {
+      stats_msg->critics.push_back(critic_names_[i]);
+
+      // Calculate sum of costs added by this individual critic
+      Eigen::ArrayXf cost_diff = data.costs - costs_before;
+      float costs_sum = cost_diff.sum();
+      stats_msg->costs_sum.push_back(costs_sum);
+      stats_msg->changed.push_back(costs_sum != 0.0f);
+    }
+  }
+
+  // Publish statistics if enabled
+  if (critics_effect_pub_) {
+    auto node = parent_.lock();
+    stats_msg->stamp = node->get_clock()->now();
+    critics_effect_pub_->publish(std::move(stats_msg));
   }
 }
 
