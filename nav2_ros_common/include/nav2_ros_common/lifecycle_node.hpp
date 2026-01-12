@@ -180,22 +180,22 @@ public:
  * @param callback_group The callback group to use (if provided)
  * @return A shared pointer to the created nav2::Subscription
  */
- template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
- typename nav2::Subscription<MessageT, Alloc>::SharedPtr
- create_subscription(
-   const std::string & topic_name,
-   CallbackT && callback,
-   const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-   const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
- {
-  return nav2::interfaces::create_subscription<MessageT, CallbackT, Alloc>(
+  template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
+  typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+  create_subscription(
+    const std::string & topic_name,
+    CallbackT && callback,
+    const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+    const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
+  {
+    return nav2::interfaces::create_subscription<MessageT, CallbackT, Alloc>(
     shared_from_this(),
     topic_name,
     std::forward<CallbackT>(callback),
     qos,
     callback_group);
- } 
- 
+  }
+
 
   /**
    * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
@@ -496,13 +496,13 @@ private:
    * @param node The nav2::LifecycleNode instance
    * @param ent The managed entity to register
    */
-   static void register_managed_entity(
+  static void register_managed_entity(
     ::nav2::LifecycleNode & node,
     std::weak_ptr<rclcpp_lifecycle::ManagedEntityInterface> ent)
   {
     node.add_managed_entity(std::move(ent));
   }
-  
+
 
   template<typename MessageT, typename CallbackT, typename Alloc>
   friend typename Subscription<MessageT, Alloc>::SharedPtr
@@ -608,7 +608,7 @@ create_subscription(
   return sub;
 }
 
-}  // namespace nav2::interfaces
+}  // namespace interfaces
 
 
 }  // namespace nav2
