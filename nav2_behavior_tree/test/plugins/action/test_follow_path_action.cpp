@@ -200,6 +200,7 @@ TEST(FollowPathAction, testProgressCheckerIdUpdate)
   config->blackboard->set("progress_checker_id", std::string("new_progress_checker"));
   auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
   auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  ASSERT_NE(follow_path_node, nullptr);
   follow_path_node->on_wait_for_result(feedback);
 }
 
@@ -239,6 +240,7 @@ TEST(FollowPathAction, testGoalCheckerIdUpdate)
   config->blackboard->set("goal_checker_id", std::string("new_goal_checker"));
   auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
   auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  ASSERT_NE(follow_path_node, nullptr);
   follow_path_node->on_wait_for_result(feedback);
 }
 
@@ -278,6 +280,7 @@ TEST(FollowPathAction, testControllerIdUpdate)
   config->blackboard->set("controller_id", std::string("new_controller"));
   auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
   auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  ASSERT_NE(follow_path_node, nullptr);
   follow_path_node->on_wait_for_result(feedback);
 }
 
@@ -317,6 +320,7 @@ TEST(FollowPathAction, testPathHandlerUpdate)
   config->blackboard->set("path_handler_id", std::string("new_path_handler"));
   auto feedback = std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
   auto follow_path_node = dynamic_cast<nav2_behavior_tree::FollowPathAction *>(tree->rootNode());
+  ASSERT_NE(follow_path_node, nullptr);
   follow_path_node->on_wait_for_result(feedback);
 }
 
