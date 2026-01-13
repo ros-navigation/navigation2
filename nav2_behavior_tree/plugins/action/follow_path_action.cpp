@@ -115,16 +115,14 @@ void FollowPathAction::on_wait_for_result(
   }
 
   if (feedback) {
-    feedback_ = *feedback;
-    setOutput("tracking_feedback", feedback_.tracking_feedback);
+    setOutput("tracking_feedback", feedback->tracking_feedback);
   }
 }
 
 void FollowPathAction::resetFeedbackAndOutputPorts()
 {
   nav2_msgs::msg::TrackingFeedback empty_feedback;
-  feedback_.tracking_feedback = empty_feedback;
-  setOutput("tracking_feedback", feedback_.tracking_feedback);
+  setOutput("tracking_feedback", empty_feedback);
 }
 
 }  // namespace nav2_behavior_tree

@@ -109,9 +109,6 @@ public:
           "error_msg", "The follow path error msg"),
       });
   }
-
-protected:
-  Action::Feedback feedback_;
 };
 
 }  // namespace nav2_behavior_tree
