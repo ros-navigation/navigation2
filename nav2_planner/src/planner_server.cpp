@@ -29,6 +29,8 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
 
 #include "nav2_planner/planner_server.hpp"
 
@@ -86,12 +88,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
-
-  if (!costmap_ros_->getUseRadius()) {
-    collision_checker_ =
-      std::make_unique<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(
-      costmap_);
-  }
 
   // Launch a thread to run the costmap node
   costmap_thread_ = std::make_unique<nav2::NodeThread>(costmap_ros_);
@@ -155,6 +151,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
+  // Create is path valid service
+  is_path_valid_service_ = std::make_unique<IsPathValidService>(
+    shared_from_this(), costmap_ros_, costmap_update_timeout_);
+
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = create_action_server<ActionToPose>(
     "compute_path_to_pose",
@@ -191,11 +191,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
 
-  is_path_valid_service_ = create_service<nav2_msgs::srv::IsPathValid>(
-    "is_path_valid",
-    std::bind(
-      &PlannerServer::isPathValid, this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+  is_path_valid_service_->initialize();
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = add_on_set_parameters_callback(
@@ -230,6 +226,8 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
+  is_path_valid_service_->reset();
+
   dyn_params_handler_.reset();
 
   // destroy bond connection
@@ -243,7 +241,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
 
-  is_path_valid_service_.reset();
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
@@ -257,6 +254,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
+  is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;
   return nav2::CallbackReturn::SUCCESS;
@@ -283,14 +281,12 @@ bool PlannerServer::isServerInactive(
 
 void PlannerServer::waitForCostmap()
 {
-  // Don't compute a plan until costmap is valid (after clear costmap)
-  rclcpp::Rate r(100);
-  auto waiting_start = now();
-  while (!costmap_ros_->isCurrent()) {
-    if (now() - waiting_start > costmap_update_timeout_) {
-      throw nav2_core::PlannerTimedOut("Costmap timed out waiting for update");
+  if (costmap_update_timeout_ > rclcpp::Duration(0, 0)) {
+    try {
+      costmap_ros_->waitUntilCurrent(costmap_update_timeout_);
+    } catch (const std::runtime_error & ex) {
+      throw nav2_core::PlannerTimedOut(ex.what());
     }
-    r.sleep();
   }
 }
 
@@ -676,84 +672,6 @@ PlannerServer::publishPlan(const nav_msgs::msg::Path & path)
   auto msg = std::make_unique<nav_msgs::msg::Path>(path);
   if (plan_publisher_->is_activated() && plan_publisher_->get_subscription_count() > 0) {
     plan_publisher_->publish(std::move(msg));
-  }
-}
-
-void PlannerServer::isPathValid(
-  const std::shared_ptr<rmw_request_id_t>/*request_header*/,
-  const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
-  std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
-{
-  response->is_valid = true;
-
-  if (request->path.poses.empty()) {
-    response->is_valid = false;
-    return;
-  }
-
-  geometry_msgs::msg::PoseStamped current_pose;
-  unsigned int closest_point_index = 0;
-  if (costmap_ros_->getRobotPose(current_pose)) {
-    float current_distance = std::numeric_limits<float>::max();
-    float closest_distance = current_distance;
-    geometry_msgs::msg::Point current_point = current_pose.pose.position;
-    for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
-      geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
-
-      current_distance = nav2_util::geometry_utils::euclidean_distance(
-        current_point,
-        path_point);
-
-      if (current_distance < closest_distance) {
-        closest_point_index = i;
-        closest_distance = current_distance;
-      }
-    }
-
-    /**
-     * The lethal check starts at the closest point to avoid points that have already been passed
-     * and may have become occupied. The method for collision detection is based on the shape of
-     * the footprint.
-     */
-    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
-    unsigned int mx = 0;
-    unsigned int my = 0;
-
-    bool use_radius = costmap_ros_->getUseRadius();
-
-    unsigned int cost = nav2_costmap_2d::FREE_SPACE;
-    for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
-      auto & position = request->path.poses[i].pose.position;
-      if (use_radius) {
-        if (costmap_->worldToMap(position.x, position.y, mx, my)) {
-          cost = costmap_->getCost(mx, my);
-        } else {
-          cost = nav2_costmap_2d::LETHAL_OBSTACLE;
-        }
-      } else {
-        nav2_costmap_2d::Footprint footprint = costmap_ros_->getRobotFootprint();
-        auto theta = tf2::getYaw(request->path.poses[i].pose.orientation);
-        cost = static_cast<unsigned int>(collision_checker_->footprintCostAtPose(
-            position.x, position.y, theta, footprint));
-      }
-
-      if (cost == nav2_costmap_2d::NO_INFORMATION && request->consider_unknown_as_obstacle) {
-        cost = nav2_costmap_2d::LETHAL_OBSTACLE;
-      } else if (cost == nav2_costmap_2d::NO_INFORMATION) {
-        cost = nav2_costmap_2d::FREE_SPACE;
-      }
-
-      if (use_radius &&
-        (cost >= request->max_cost || cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
-        cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE))
-      {
-        response->is_valid = false;
-        break;
-      } else if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost >= request->max_cost) {
-        response->is_valid = false;
-        break;
-      }
-    }
   }
 }
 
