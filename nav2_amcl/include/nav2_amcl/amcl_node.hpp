@@ -290,6 +290,7 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
+  int random_seed_{-1};
 
   // Laser scan related
   /*
