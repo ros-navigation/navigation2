@@ -152,12 +152,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     return nav2::CallbackReturn::FAILURE;
   }
 
-  // Define option to overwrite the timestamp of the message containing the smoothed velocity
-  declare_parameter_if_not_declared(
-    node, "stamp_smoothed_velocity_with_smoothing_time", rclcpp::ParameterValue(false));
-  node->get_parameter(
-    "stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
-
   // Setup inputs / outputs
   smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed");
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
@@ -325,17 +319,16 @@ void VelocitySmoother::smootherTimer()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel->header = command_.header;
   auto delta_time_since_last_command = now() - last_command_time_;
-  if (stamp_smoothed_velocity_with_smoothing_time_) {
-    // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
-    rclcpp::Time t(cmd_vel->header.stamp);
+    
+  // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
+  rclcpp::Time t(cmd_vel->header.stamp);
 
-    // compute new time by using nanoseconds
-    uint64_t new_ns = t.nanoseconds() + delta_time_since_last_command.nanoseconds();
+  // compute new time by using nanoseconds
+  uint64_t new_ns = t.nanoseconds() + delta_time_since_last_command.nanoseconds();
 
-    // update the header
-    cmd_vel->header.stamp.sec = static_cast<int32_t>(new_ns / 1000000000ULL);
-    cmd_vel->header.stamp.nanosec = static_cast<uint32_t>(new_ns % 1000000000ULL);
-  }
+  // update the header
+  cmd_vel->header.stamp.sec = static_cast<int32_t>(new_ns / 1000000000ULL);
+  cmd_vel->header.stamp.nanosec = static_cast<uint32_t>(new_ns % 1000000000ULL);
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (delta_time_since_last_command > velocity_timeout_) {
