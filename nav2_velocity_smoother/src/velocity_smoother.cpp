@@ -319,7 +319,7 @@ void VelocitySmoother::smootherTimer()
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel->header = command_.header;
   auto delta_time_since_last_command = now() - last_command_time_;
-    
+ 
   // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
   rclcpp::Time t(cmd_vel->header.stamp);
 
