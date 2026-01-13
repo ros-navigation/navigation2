@@ -24,7 +24,6 @@ amcl:
     pf_z: 0.99
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
-    # Set >= 0 for deterministic replayability; keep default (-1) for time-based seeding.
     random_seed: -1
     resample_interval: 1
     robot_model_type: "nav2_amcl::DifferentialMotionModel"

@@ -958,9 +958,6 @@ AmclNode::initParameters()
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
   allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
     "allow_parameter_qos_overrides", true);
-  // Deterministic replay knob:
-  // - set random_seed >= 0 to make AMCL replayable under dispute (same inputs -> same outputs),
-  // - keep default (-1) to preserve time-seeded behavior.
   random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
