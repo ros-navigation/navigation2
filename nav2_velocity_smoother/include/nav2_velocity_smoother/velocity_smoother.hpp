@@ -149,6 +149,8 @@ protected:
   bool open_loop_;
   bool stopped_{true};
   bool scale_velocities_;
+  // whether to overwite the timestamp of the smoothed message or to keep last command's timestamp
+  bool stamp_smoothed_velocity_with_smoothing_time_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;

@@ -289,6 +289,7 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0
+    stamp_smoothed_velocity_with_smoothing_time: False
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [0.26, 0.0, 1.0]

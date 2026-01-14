@@ -145,6 +145,12 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  // Define option to overwrite the timestamp of the message containing the smoothed velocity
+  declare_parameter_if_not_declared(
+    node, "stamp_smoothed_velocity_with_smoothing_time", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    "stamp_smoothed_velocity_with_smoothing_time", stamp_smoothed_velocity_with_smoothing_time_);
+
   // Setup inputs / outputs
   smoothed_cmd_pub_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel_smoothed", 1);
   cmd_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
@@ -309,11 +315,21 @@ void VelocitySmoother::smootherTimer()
     return;
   }
 
+  auto const delta_time_since_last_command = now() - last_command_time_;
+
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  cmd_vel->header = command_->header;
+  cmd_vel->header.frame_id = command_->header.frame_id;
+  if (stamp_smoothed_velocity_with_smoothing_time_) {
+    // Smooth the timestamp of the smoothed message
+    // Do not keep the same timestamp of the last command; this causes jerky behavior
+    // See https://github.com/ros-navigation/navigation2/issues/5857
+    cmd_vel->header.stamp = command_->header.stamp + delta_time_since_last_command;
+  } else {
+    cmd_vel->header.stamp = command_->header.stamp;
+  }
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
-  if (now() - last_command_time_ > velocity_timeout_) {
+  if (delta_time_since_last_command > velocity_timeout_) {
     if (last_cmd_.twist == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
