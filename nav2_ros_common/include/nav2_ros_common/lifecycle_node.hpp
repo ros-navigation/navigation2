@@ -161,7 +161,7 @@ public:
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
     bool allow_parameter_qos_overrides =
-    nav2::declare_or_get_parameter(shared_from_this(), "allow_parameter_qos_overrides", true);
+      nav2::declare_or_get_parameter(shared_from_this(), "allow_parameter_qos_overrides", true);
     auto options = nav2::interfaces::createSubscriptionOptions(
       topic_name, allow_parameter_qos_overrides, callback_group);
 
@@ -179,7 +179,7 @@ public:
     {
       sub->on_activate();
     }
-    
+
     return sub;
   }
 
@@ -473,7 +473,6 @@ protected:
   rclcpp::TimerBase::SharedPtr autostart_timer_;
 
 private:
-
   /**
    * @brief Get the enable_lifecycle_services parameter value from NodeOptions
    * @param options NodeOptions to check for the parameter
