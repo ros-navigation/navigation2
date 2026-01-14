@@ -159,20 +159,11 @@ public:
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
-    bool allow_parameter_qos_overrides =
-      nav2::declare_or_get_parameter(shared_from_this(), "allow_parameter_qos_overrides", true);
-    auto options = nav2::interfaces::createSubscriptionOptions(
-      topic_name, allow_parameter_qos_overrides, callback_group);
-
-    auto sub = std::make_shared<nav2::Subscription<MessageT, Alloc>>(
-      shared_from_this(),
-      topic_name,
-      std::forward<CallbackT>(callback),
-      qos,
-      options);
+    auto sub = nav2::interfaces::create_subscription<MessageT, Alloc>(
+      shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
     this->add_managed_entity(sub);
 
-    // Automatically activate the publisher if the node is already active
+    // Automatically activate the subscription if the node is already active
     if (get_current_state().id() ==
       lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     {
