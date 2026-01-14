@@ -193,8 +193,6 @@ bool ThetaStar::losCheck(
   sx = x1 > x0 ? 1 : -1;
   sy = y1 > y0 ? 1 : -1;
 
-  int u_x = (sx - 1) / 2;
-  int u_y = (sy - 1) / 2;
   cx = x0;
   cy = y0;
 
@@ -202,16 +200,10 @@ bool ThetaStar::losCheck(
     while (cx != x1) {
       f += dy;
       if (f >= dx) {
-        if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
-          return false;
-        }
         cy += sy;
         f -= dx;
       }
-      if (f != 0 && !isSafe(cx + u_x, cy + u_y, sl_cost)) {
-        return false;
-      }
-      if (dy == 0 && !isSafe(cx + u_x, cy, sl_cost) && !isSafe(cx + u_x, cy - 1, sl_cost)) {
+      if (!isSafe(cx, cy, sl_cost)) {
         return false;
       }
       cx += sx;
@@ -220,21 +212,21 @@ bool ThetaStar::losCheck(
     while (cy != y1) {
       f = f + dx;
       if (f >= dy) {
-        if (!isSafe(cx + u_x, cy + u_y, sl_cost)) {
-          return false;
-        }
         cx += sx;
         f -= dy;
       }
-      if (f != 0 && !isSafe(cx + u_x, cy + u_y, sl_cost)) {
-        return false;
-      }
-      if (dx == 0 && !isSafe(cx, cy + u_y, sl_cost) && !isSafe(cx - 1, cy + u_y, sl_cost)) {
+      if (!isSafe(cx, cy, sl_cost)) {
         return false;
       }
       cy += sy;
     }
   }
+
+  // Check the endpoint
+  if (!isSafe(x1, y1, sl_cost)) {
+    return false;
+  }
+
   return true;
 }
 
