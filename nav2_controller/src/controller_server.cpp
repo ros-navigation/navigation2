@@ -744,9 +744,9 @@ void ControllerServer::computeAndPublishVelocity()
     tracking_feedback_msg->robot_pose = pose;
     tracking_feedback_msg->distance_to_goal = current_distance_to_goal;
     tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
+    start_index_ = path_search_result.closest_segment_index;
     tracking_feedback_msg->remaining_path_length =
       nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
-    start_index_ = path_search_result.closest_segment_index;
 
     // Update current tracking error and publish
     current_tracking_feedback = *tracking_feedback_msg;

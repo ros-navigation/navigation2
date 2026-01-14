@@ -130,6 +130,9 @@ protected:
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  size_t start_index_ = 0;
+  nav_msgs::msg::Path previous_path_;
+  double search_window_;
 };
 
 }  // namespace nav2_bt_navigator

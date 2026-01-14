@@ -1084,6 +1084,9 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
       syncTabsWithAccumulatedPoses();  // Sync tabs with new pose
     } else {
       acummulated_poses_ = nav_msgs::msg::Goals();
+      // Reset goal index for single goal navigation
+      goal_index_ = 0;
+      store_poses_.goals.push_back(pose);
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);

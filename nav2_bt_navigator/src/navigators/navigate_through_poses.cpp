@@ -19,6 +19,7 @@
 #include <limits>
 #include <stdexcept>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
+#include "nav2_util/path_utils.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -39,6 +40,7 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(
     getName() + ".waypoint_statuses_blackboard_id",
     std::string("waypoint_statuses"));
+  search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -157,25 +159,19 @@ NavigateThroughPosesNavigator::onLoop()
   nav_msgs::msg::Path current_path;
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
+    // Reset start index if path is updated
+    if (nav2_util::isPathUpdated(current_path, previous_path_) || previous_path_.poses.size() == 0u) {
+      start_index_ = 0;
+      previous_path_ = current_path;
+    }
     // Find the closest pose to current pose on global path
-    auto find_closest_pose_idx =
-      [&current_pose, &current_path]() {
-        size_t closest_pose_idx = 0;
-        double curr_min_dist = std::numeric_limits<double>::max();
-        for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-          double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-            current_pose, current_path.poses[curr_idx]);
-          if (curr_dist < curr_min_dist) {
-            curr_min_dist = curr_dist;
-            closest_pose_idx = curr_idx;
-          }
-        }
-        return closest_pose_idx;
-      };
+    const auto path_search_result = nav2_util::distance_from_path(
+      current_path, current_pose.pose, start_index_, search_window_);
 
     // Calculate distance on the path
+    start_index_ = path_search_result.closest_segment_index;
     double distance_remaining =
-      nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
+      nav2_util::geometry_utils::calculate_path_length(current_path, start_index_);
 
     // Default value for time remaining
     rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
@@ -190,7 +186,6 @@ NavigateThroughPosesNavigator::onLoop()
       estimated_time_remaining =
         rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed));
     }
-
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
   }
@@ -279,6 +274,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set("number_recoveries", 0);  // NOLINT
+  nav_msgs::msg::Path empty_path;
+  previous_path_ = empty_path;
 
   // Update the goal pose on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
