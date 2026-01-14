@@ -316,19 +316,14 @@ void VelocitySmoother::smootherTimer()
     return;
   }
 
+  auto const delta_time_since_last_command = now() - last_command_time_;
+
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
   cmd_vel->header = command_.header;
-  auto delta_time_since_last_command = now() - last_command_time_;
-
-  // convert header.stamp (builtin_interfaces::msg::Time) to rclcpp::Time
-  rclcpp::Time t(cmd_vel->header.stamp);
-
-  // compute new time by using nanoseconds
-  uint64_t new_ns = t.nanoseconds() + delta_time_since_last_command.nanoseconds();
-
-  // update the header
-  cmd_vel->header.stamp.sec = static_cast<int32_t>(new_ns / 1000000000ULL);
-  cmd_vel->header.stamp.nanosec = static_cast<uint32_t>(new_ns % 1000000000ULL);
+  // Smooth the timestamp of the smoothed message
+  // Do not keep the same timestamp of the last command; this causes jerky behavior
+  // See https://github.com/ros-navigation/navigation2/issues/5857
+  cmd_vel->header.stamp = cmd_vel->header.stamp + delta_time_since_last_command;
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
   if (delta_time_since_last_command > velocity_timeout_) {
