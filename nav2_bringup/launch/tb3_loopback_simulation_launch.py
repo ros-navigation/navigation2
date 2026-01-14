@@ -21,9 +21,9 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, SetParameter
-from launch_ros.descriptions import ParameterFile
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch_ros.actions import LoadComposableNodes, Node, SetParameter
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from nav2_common.launch import LaunchConfigAsBool, RewrittenYaml
 
 
@@ -48,6 +48,7 @@ def generate_launch_description() -> LaunchDescription:
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_robot_state_pub = LaunchConfigAsBool('use_robot_state_pub')
     use_rviz = LaunchConfigAsBool('use_rviz')
+    container_name_full = (namespace, '/', 'nav2_container')
 
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
@@ -154,6 +155,7 @@ def generate_launch_description() -> LaunchDescription:
             'use_localization': 'False',  # Don't use SLAM, AMCL
             'use_keepout_zones': 'False',
             'use_speed_zones': 'False',
+            'container_name': 'nav2_container',
         }.items(),
     )
 
@@ -176,6 +178,7 @@ def generate_launch_description() -> LaunchDescription:
     )
 
     start_map_server = GroupAction(
+        condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
             SetParameter('use_sim_time', True),
             Node(
@@ -249,6 +252,7 @@ def generate_launch_description() -> LaunchDescription:
     # Add the actions to launch all of the navigation nodes
     ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(start_map_server)
+    ld.add_action(start_composable_map_server)
     ld.add_action(loopback_sim_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
