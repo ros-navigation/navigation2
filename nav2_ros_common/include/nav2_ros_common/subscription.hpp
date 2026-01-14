@@ -15,7 +15,6 @@
 #ifndef NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 #define NAV2_ROS_COMMON__SUBSCRIPTION_HPP_
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
@@ -50,7 +49,6 @@ public:
     const Options & options = Options{})
   : topic_name_(topic_name),
     logger_(node->get_logger()),
-    should_log_(true),
     any_cb_(*options.get_allocator())
   {
     init(node, qos, std::forward<CallbackT>(user_callback), options);
@@ -59,13 +57,11 @@ public:
   void on_activate() override
   {
     rclcpp_lifecycle::SimpleManagedEntity::on_activate();
-    should_log_.store(true);
   }
 
   void on_deactivate() override
   {
     rclcpp_lifecycle::SimpleManagedEntity::on_deactivate();
-    should_log_.store(true);
   }
 
   const char * get_topic_name() const noexcept
@@ -87,10 +83,13 @@ private:
       [this](typename MessageT::ConstSharedPtr msg, const rclcpp::MessageInfo & info)
       {
         if (!this->is_activated()) {
-          log_subscription_not_enabled_once();
+          RCLCPP_WARN_ONCE(
+            logger_,
+            "Trying to take messages on topic '%s', but the subscription is not activated. "
+            "Dropping until activation.",
+            topic_name_.c_str());
           return;
         }
-        should_log_.store(true);
         any_cb_.dispatch_intra_process(msg, info);
       };
 
@@ -105,31 +104,11 @@ private:
       std::move(wrapped_cb),
       options,
       rclcpp::message_memory_strategy::MessageMemoryStrategy<MessageT, Alloc>::create_default());
-
-    // Legacy behavior: if this is NOT a lifecycle node, auto-activate immediately.
-    auto maybe_lc = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
-    if (!maybe_lc) {
-      this->on_activate();
-    }
-  }
-
-  void log_subscription_not_enabled_once()
-  {
-    if (!should_log_.exchange(false)) {
-      return;
-    }
-
-    RCLCPP_WARN(
-      logger_,
-      "Trying to take messages on topic '%s', but the subscription is not activated. "
-      "Dropping until activation.",
-      topic_name_.c_str());
   }
 
   typename RclcppSub::SharedPtr sub_;
   std::string topic_name_;
   rclcpp::Logger logger_;
-  std::atomic<bool> should_log_;
   AnyCb any_cb_;
 };
 

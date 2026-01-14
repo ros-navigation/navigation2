@@ -194,9 +194,7 @@ inline rclcpp::PublisherOptions createPublisherOptions(
 /**
  * @brief Create a subscription to a topic using Nav2 QoS profiles and allocator-aware SubscriptionOptions.
  *
- * If the node is a nav2::LifecycleNode, the subscription will be registered as a managed
- * entity so it participates in lifecycle transitions, and will be auto-activated if the
- * node is already ACTIVE.
+ * If the node is not a lifecycle node, the subscription will be auto-activated.
  *
  * @param node Node to create the subscription on
  * @param topic_name Name of topic
@@ -228,40 +226,17 @@ create_subscription(
      qos,
      options);
 
+  // Auto-activate if the node is not a base lifecycle node
+  // Try to cast to lifecycle node - if it fails, it's a regular node
+  auto lc_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+  if (!lc_node) {
+    // Not a lifecycle node, auto-activate the subscription
+    sub->on_activate();
+  }
+
   return sub;
 }
 
-
-/**
- * @brief Create a subscription on a nav2::LifecycleNode (managed-entity registration happens in the definition).
- *
- * NOTE: Declaration only here. Definition is in lifecycle_node.hpp to avoid circular includes.
- */
-template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
-typename nav2::Subscription<MessageT, Alloc>::SharedPtr
-create_subscription(
-  const std::shared_ptr<nav2::LifecycleNode> & node,
-  const std::string & topic_name,
-  CallbackT && callback,
-  const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr);
-
-/**
- * @brief Create a subscription on a base rclcpp_lifecycle::LifecycleNode.
- *
- * If the runtime type is nav2::LifecycleNode, it will be registered as a managed entity.
- * Otherwise it behaves like the generic path (no registration).
- *
- * NOTE: Declaration only here. Definition is in lifecycle_node.hpp to avoid circular includes.
- */
-template<typename MessageT, typename CallbackT, typename Alloc = std::allocator<void>>
-typename nav2::Subscription<MessageT, Alloc>::SharedPtr
-create_subscription(
-  const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> & node,
-  const std::string & topic_name,
-  CallbackT && callback,
-  const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
-  const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr);
 
 /**
  * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
