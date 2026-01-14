@@ -27,7 +27,7 @@ from launch_ros.actions import Node
 import launch_testing
 import launch_testing.actions
 from lifecycle_msgs.srv import GetState
-from nav2_msgs.action import FollowObject  # type: ignore[attr-defined]
+from nav2_msgs.action import FollowObject
 import pytest
 import rclpy
 from rclpy.action import ActionClient
@@ -219,8 +219,8 @@ class TestFollowingServer(unittest.TestCase):
 
     def wait_for_node_to_be_active(self, node_name: str, timeout_sec: float = 10.0) -> None:
         """Wait for a managed node to become active."""
-        client: Client[GetState.Request, GetState.Response] = (
-            self.node.create_client(GetState, f'{node_name}/get_state')
+        client: Client[GetState.Request, GetState.Response] = (  # type: ignore[name-defined]
+            self.node.create_client(GetState, f'{node_name}/get_state')  # type: ignore[arg-type]
         )
         if not client.wait_for_service(timeout_sec=2.0):
             self.fail(f'Service get_state for {node_name} not available.')
@@ -281,7 +281,7 @@ class TestFollowingServer(unittest.TestCase):
 
     def action_feedback_callback(
         self,
-        msg: FollowObject.Feedback
+        msg: FollowObject.Feedback  # type: ignore[name-defined]
     ) -> None:
         # Force the following action to run a full recovery loop when
         # the robot is at distance
@@ -300,9 +300,9 @@ class TestFollowingServer(unittest.TestCase):
         self.timer = self.node.create_timer(0.05, self.timer_callback)
 
         # Create action client
-        self.follow_action_client: ActionClient[
+        self.follow_action_client: ActionClient[  # type: ignore[name-defined]
             FollowObject.Goal, FollowObject.Result, FollowObject.Feedback
-        ] = ActionClient(self.node, FollowObject, 'follow_object')
+        ] = ActionClient(self.node, FollowObject, 'follow_object')  # type: ignore[arg-type]
 
         # Subscribe to command velocity
         self.node.create_subscription(

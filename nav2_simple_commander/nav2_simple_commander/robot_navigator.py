@@ -525,8 +525,7 @@ class BasicNavigator(Node):
         return RunningTask.ASSISTED_TELEOP
 
     def followPath(self, path: Path, controller_id: str = '',
-                   goal_checker_id: str = '', progress_checker_id: str = '',
-                   path_handler_id: str = '') -> Optional[RunningTask]:
+                   goal_checker_id: str = '') -> Optional[RunningTask]:
         self.clearPreviousState()
         """Send a `FollowPath` action request."""
         self.debug("Waiting for 'FollowPath' action server")
@@ -537,8 +536,6 @@ class BasicNavigator(Node):
         goal_msg.path = path
         goal_msg.controller_id = controller_id
         goal_msg.goal_checker_id = goal_checker_id
-        goal_msg.progress_checker_id = progress_checker_id
-        goal_msg.path_handler_id = path_handler_id
 
         self.info('Executing path...')
         send_goal_future = self.follow_path_client.send_goal_async(

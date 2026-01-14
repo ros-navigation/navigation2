@@ -33,12 +33,6 @@
 
 namespace nav2
 {
-// Forward declare nav2::LifecycleNode (defined in lifecycle_node.hpp)
-class LifecycleNode;
-}  // namespace nav2
-
-namespace nav2
-{
 
 namespace interfaces
 {
