@@ -43,6 +43,7 @@ def generate_launch_description() -> LaunchDescription:
     autostart = LaunchConfigAsBool('autostart')
     use_composition = LaunchConfigAsBool('use_composition')
     use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
+    container_name = LaunchConfiguration('container_name')
     use_respawn = LaunchConfigAsBool('use_respawn')
     log_level = LaunchConfiguration('log_level')
     use_localization = LaunchConfigAsBool('use_localization')
@@ -165,7 +166,7 @@ def generate_launch_description() -> LaunchDescription:
         [
             Node(
                 condition=IfCondition(use_composition),
-                name='nav2_container',
+                name=container_name,
                 namespace=namespace,
                 package='rclcpp_components',
                 executable='component_container_isolated',
@@ -201,7 +202,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
-                    'container_name': 'nav2_container',
+                    'container_name': container_name,
                 }.items(),
             ),
 
@@ -218,7 +219,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
-                    'container_name': 'nav2_container',
+                    'container_name': container_name,
                 }.items(),
             ),
 
@@ -235,7 +236,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_composition': use_composition,
                     'use_intra_process_comms': use_intra_process_comms,
                     'use_respawn': use_respawn,
-                    'container_name': 'nav2_container',
+                    'container_name': container_name,
                 }.items(),
             ),
 
@@ -254,7 +255,7 @@ def generate_launch_description() -> LaunchDescription:
                     'use_respawn': use_respawn,
                     'use_keepout_zones': use_keepout_zones,
                     'use_speed_zones': use_speed_zones,
-                    'container_name': 'nav2_container',
+                    'container_name': container_name,
                 }.items(),
             ),
         ]
