@@ -604,6 +604,19 @@ Costmap2DROS::updateMap()
 }
 
 void
+Costmap2DROS::waitUntilCurrent(const rclcpp::Duration & timeout)
+{
+  rclcpp::Rate r(100);
+  auto waiting_start = now();
+  while (!isCurrent()) {
+    if (now() - waiting_start > timeout) {
+      throw std::runtime_error("Costmap timed out waiting for update");
+    }
+    r.sleep();
+  }
+}
+
+void
 Costmap2DROS::start()
 {
   RCLCPP_INFO(get_logger(), "start");

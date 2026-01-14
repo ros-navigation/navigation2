@@ -23,6 +23,8 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <ctime>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -956,6 +958,7 @@ AmclNode::initParameters()
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
   allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
     "allow_parameter_qos_overrides", true);
+  random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1463,6 +1466,17 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
+
+  // Seed RNG used by PF resampling and pose generation.
+  // Keep legacy behavior (time-based) unless user explicitly sets a seed.
+  if (random_seed_ >= 0) {
+    // `srand48` expects a platform `long` seed. We avoid using `long` in our code and accept
+    // truncation when seeding.
+    srand48(static_cast<int>(random_seed_));
+  } else {
+    srand48(static_cast<int>(std::time(nullptr)));
+  }
+
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
