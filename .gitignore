@@ -70,3 +70,6 @@ Session.vim
 
 # Vim Temporary
 .netrwhist
+
+# CTest
+Testing/
