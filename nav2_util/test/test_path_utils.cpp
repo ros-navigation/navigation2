@@ -602,12 +602,12 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
 TEST(UtilsTests, IsPathUpdatedTest)
 {
   auto makePose = [](double x, double y) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = x;
-    pose.pose.position.y = y;
-    pose.pose.position.z = 0.0;
-    return pose;
-  };
+      geometry_msgs::msg::PoseStamped pose;
+      pose.pose.position.x = x;
+      pose.pose.position.y = y;
+      pose.pose.position.z = 0.0;
+      return pose;
+    };
 
   // Same end pose but different size
   nav_msgs::msg::Path old_path, new_path;
