@@ -1084,6 +1084,9 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
       syncTabsWithAccumulatedPoses();  // Sync tabs with new pose
     } else {
       acummulated_poses_ = nav_msgs::msg::Goals();
+      // Reset goal index for single goal navigation
+      goal_index_ = 0;
+      store_poses_.goals.push_back(pose);
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
@@ -1627,6 +1630,8 @@ inline std::string Nav2Panel::toLabel(T & msg)
     toString(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Distance remaining:</td><td>" +
     toString(msg.distance_remaining, 2) + " m"
+    "</td></tr><tr><td width=150>Tracking error:</td><td>" +
+    toString(msg.tracking_error, 2) + " m"
     "</td></tr><tr><td width=150>Time taken:</td><td>" +
     toString(rclcpp::Duration(msg.navigation_time).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Recoveries:</td><td>" +
