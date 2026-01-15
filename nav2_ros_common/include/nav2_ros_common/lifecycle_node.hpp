@@ -159,7 +159,7 @@ public:
     const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
     const rclcpp::CallbackGroup::SharedPtr & callback_group = nullptr)
   {
-    auto sub = nav2::interfaces::create_subscription<MessageT, Alloc>(
+    auto sub = nav2::interfaces::create_subscription<MessageT>(
       shared_from_this(), topic_name, std::forward<CallbackT>(callback), qos, callback_group);
     this->add_managed_entity(sub);
 

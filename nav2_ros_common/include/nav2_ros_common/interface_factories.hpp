@@ -197,9 +197,8 @@ inline rclcpp::PublisherOptions createPublisherOptions(
  * @param callback_group The callback group to use (if provided)
  * @return A shared pointer to the created nav2::Subscription
  */
-template<typename MessageT, typename NodeT, typename CallbackT,
-  typename Alloc = std::allocator<void>>
-typename nav2::Subscription<MessageT, Alloc>::SharedPtr
+template<typename MessageT, typename NodeT, typename CallbackT>
+typename nav2::Subscription<MessageT>::SharedPtr
 create_subscription(
   const NodeT & node,
   const std::string & topic_name,
@@ -213,7 +212,7 @@ create_subscription(
   auto options = createSubscriptionOptions(
      topic_name, allow_parameter_qos_overrides, callback_group);
 
-  auto sub = std::make_shared<nav2::Subscription<MessageT, Alloc>>(
+  auto sub = std::make_shared<nav2::Subscription<MessageT>>(
      node,
      topic_name,
      std::forward<CallbackT>(callback),
