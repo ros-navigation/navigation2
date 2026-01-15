@@ -15,6 +15,9 @@
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Tuple, TypedDict
+import os
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 from nav2_smac_planner.lattice_primitives.helper import angle_difference, interpolate_yaws
 from nav2_smac_planner.lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
@@ -274,80 +277,105 @@ class LatticeGenerator:
             filter(lambda x: 0 <= x and x <= np.pi / 2, self.headings)
         )
 
+        num_cpus = os.cpu_count() or 1
+        max_workers = min(len(initial_headings), max(1, num_cpus - 1))
+        
+        compute_func = partial(self._compute_for_single_heading)
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            # compute results in parallel
+            results = list(executor.map(compute_func, initial_headings))
+            for heading, trajectories in results:
+                quadrant1_end_poses[heading] = trajectories
+
+        # Once we have found the minimal trajectory set for quadrant 1
+        # we can leverage symmetry to create the complete minimal set
+        return self._create_complete_minimal_spanning_set(quadrant1_end_poses)
+
+    def _compute_for_single_heading(self, start_heading: float):
+        """
+        Compute the minimal trajectory set for a specific starting heading.
+        This function runs in a separate process.
+
+        Args
+        ----
+        start_heading: float
+            The initial heading angle in radians
+
+        Returns
+        -------
+        Dict[float, List[Tuple[FloatNDArray, float]]]
+            The start_heading and the list of discovered minimal trajectories
+        """
+        
+        local_trajectories = []
+        prior_end_poses = index.Index()
         # Use the minimum trajectory length to find the starting wave front
         min_trajectory_length = self._compute_min_trajectory_length()
         wave_front_start_pos = int(
             np.round(min_trajectory_length / self.grid_resolution)
         )
+        wave_front_cur_pos = wave_front_start_pos
+        iterations_without_trajectory = 0
 
-        for start_heading in initial_headings:
-            iterations_without_trajectory = 0
+        # To get target headings: sort headings radially and remove those
+        # that are more than 90 degrees away
+        target_headings = sorted(
+            self.headings, key=lambda x: (abs(x - start_heading), -x)
+        )
+        target_headings = list(
+            filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
+        )
 
-            prior_end_poses = index.Index()
+        while iterations_without_trajectory < self.stopping_threshold:
+            iterations_without_trajectory += 1
 
-            wave_front_cur_pos = wave_front_start_pos
+            # Generate x,y coordinates for current wave front
+            positions = self._get_wave_front_points(wave_front_cur_pos)
 
-            # To get target headings: sort headings radially and remove those
-            # that are more than 90 degrees away
-            target_headings = sorted(
-                self.headings, key=lambda x: (abs(x - start_heading), -x)
-            )
-            target_headings = list(
-                filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
-            )
+            for target_point in positions:
+                for target_heading in target_headings:
+                    # Use 10% of grid separation for finer granularity
+                    # when checking if trajectory overlaps another already
+                    # seen trajectory
+                    trajectory = self.trajectory_generator.generate_trajectory(
+                        target_point,
+                        start_heading,
+                        target_heading,
+                        0.1 * self.grid_resolution,
+                    )
 
-            while iterations_without_trajectory < self.stopping_threshold:
-                iterations_without_trajectory += 1
+                    if trajectory is not None:
+                        # Check if path overlaps something in minimal
+                        # spanning set
+                        if self._is_minimal_trajectory(trajectory, prior_end_poses):
 
-                # Generate x,y coordinates for current wave front
-                positions = self._get_wave_front_points(wave_front_cur_pos)
+                            # Add end pose to minimal set
+                            new_end_pose = np.array(
+                                [target_point[0], target_point[1], target_heading]
+                            )
 
-                for target_point in positions:
-                    for target_heading in target_headings:
-                        # Use 10% of grid separation for finer granularity
-                        # when checking if trajectory overlaps another already
-                        # seen trajectory
-                        trajectory = self.trajectory_generator.generate_trajectory(
-                            target_point,
-                            start_heading,
-                            target_heading,
-                            0.1 * self.grid_resolution,
-                        )
+                            local_trajectories.append(
+                                (target_point, target_heading)
+                            )
 
-                        if trajectory is not None:
-                            # Check if path overlaps something in minimal
-                            # spanning set
-                            if self._is_minimal_trajectory(trajectory, prior_end_poses):
+                            # Create a new bounding box in the RTree
+                            # for this trajectory
+                            left_bb = target_point[0] - self.DISTANCE_THRESHOLD
+                            right_bb = target_point[0] + self.DISTANCE_THRESHOLD
+                            bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
+                            top_bb = target_point[1] + self.DISTANCE_THRESHOLD
 
-                                # Add end pose to minimal set
-                                new_end_pose = np.array(
-                                    [target_point[0], target_point[1], target_heading]
-                                )
+                            prior_end_poses.insert(
+                                0,
+                                (left_bb, bottom_bb, right_bb, top_bb),
+                                new_end_pose,
+                            )
 
-                                quadrant1_end_poses[start_heading].append(
-                                    (target_point, target_heading)
-                                )
+                            iterations_without_trajectory = 0
 
-                                # Create a new bounding box in the RTree
-                                # for this trajectory
-                                left_bb = target_point[0] - self.DISTANCE_THRESHOLD
-                                right_bb = target_point[0] + self.DISTANCE_THRESHOLD
-                                bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
-                                top_bb = target_point[1] + self.DISTANCE_THRESHOLD
+            wave_front_cur_pos += 1
 
-                                prior_end_poses.insert(
-                                    0,
-                                    (left_bb, bottom_bb, right_bb, top_bb),
-                                    new_end_pose,
-                                )
-
-                                iterations_without_trajectory = 0
-
-                wave_front_cur_pos += 1
-
-        # Once we have found the minimal trajectory set for quadrant 1
-        # we can leverage symmetry to create the complete minimal set
-        return self._create_complete_minimal_spanning_set(quadrant1_end_poses)
+        return start_heading, local_trajectories
 
     def _flip_angle(self, angle: int, flip_type: Flip) -> float:
         """
