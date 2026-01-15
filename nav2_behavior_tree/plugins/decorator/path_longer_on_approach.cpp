@@ -65,7 +65,8 @@ inline BT::NodeStatus PathLongerOnApproach::tick()
 
   // Check if the path is updated and valid, compare the old and the new path length,
   // given the goal proximity and check if the new path is longer
-  if (nav2_util::isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_, prox_len_) &&
+  if (nav2_util::isPathUpdated(new_path_, old_path_) && isRobotInGoalProximity(old_path_,
+    prox_len_) &&
     isNewPathLonger(new_path_, old_path_, length_factor_) && !first_time_)
   {
     const BT::NodeStatus child_state = child_node_->executeTick();
