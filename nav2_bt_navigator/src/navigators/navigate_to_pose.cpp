@@ -18,6 +18,7 @@
 #include <limits>
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
 #include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_feedback.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -36,6 +37,10 @@ NavigateToPoseNavigator::configure(
   path_blackboard_id_ = node->declare_or_get_parameter(
     getName() + ".path_blackboard_id",
     std::string("path"));
+  tracking_feedback_blackboard_id_ = node->declare_or_get_parameter(
+    getName() + ".tracking_feedback_blackboard_id",
+    std::string("tracking_feedback"));
+
   search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
 
   // Odometry smoother object for getting current speed
@@ -179,6 +184,11 @@ NavigateToPoseNavigator::onLoop()
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
+  nav2_msgs::msg::TrackingFeedback tracking_feedback;
+  res = blackboard->get(
+    tracking_feedback_blackboard_id_,
+    tracking_feedback);
+  feedback_msg->tracking_error = tracking_feedback.tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }

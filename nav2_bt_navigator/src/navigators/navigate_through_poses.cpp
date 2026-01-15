@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 #include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_feedback.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -36,10 +37,14 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
+  tracking_feedback_blackboard_id_ = node->declare_or_get_parameter(
+    getName() + ".tracking_feedback_blackboard_id",
+    std::string("tracking_feedback"));
   waypoint_statuses_blackboard_id_ =
     node->declare_or_get_parameter(
     getName() + ".waypoint_statuses_blackboard_id",
     std::string("waypoint_statuses"));
+
   search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
 
   // Odometry smoother object for getting current speed
@@ -199,6 +204,11 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
   feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
+  nav2_msgs::msg::TrackingFeedback tracking_feedback;
+  res = blackboard->get(
+    tracking_feedback_blackboard_id_,
+    tracking_feedback);
+  feedback_msg->tracking_error = tracking_feedback.tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }

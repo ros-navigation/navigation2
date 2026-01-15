@@ -110,6 +110,7 @@ protected:
   rclcpp::Time start_time_;
   std::string goals_blackboard_id_;
   std::string path_blackboard_id_;
+  std::string tracking_feedback_blackboard_id_;
   std::string waypoint_statuses_blackboard_id_;
 
   // Odometry smoother object
