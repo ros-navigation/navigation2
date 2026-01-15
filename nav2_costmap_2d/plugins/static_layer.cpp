@@ -151,16 +151,11 @@ StaticLayer::getParameters()
   map_subscribe_transient_local_ = node->declare_or_get_parameter(
     name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
-  use_maximum_ = node->declare_or_get_parameter(
-    name_ + "." + "use_maximum", false);
-  temp_lethal_threshold = node->declare_or_get_parameter(
-    name_ + "." + "lethal_cost_threshold", 100);
-  unknown_cost_value_ = node->declare_or_get_parameter(
-    name_ + "." + "unknown_cost_value", static_cast<unsigned char>(0xff));
-  inscribed_obstacle_cost_value_ = node->declare_or_get_parameter(
-    name_ + "." + "inscribed_obstacle_cost_value", 99);
-  trinary_costmap_ = node->declare_or_get_parameter(
-    name_ + "." + "trinary_costmap", true);
+  node->get_parameter("use_maximum", use_maximum_);
+  node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
+  node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
+  node->get_parameter("unknown_cost_value", unknown_cost_value_);
+  node->get_parameter("trinary_costmap", trinary_costmap_);
   node->get_parameter("transform_tolerance", temp_tf_tol);
 
   // Enforce bounds

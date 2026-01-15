@@ -111,6 +111,11 @@ Costmap2DROS::Costmap2DROS(
 void Costmap2DROS::init()
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
+  declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
+  declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
+  declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
+  declare_parameter("use_maximum", rclcpp::ParameterValue(false));
 }
 
 Costmap2DROS::~Costmap2DROS()
