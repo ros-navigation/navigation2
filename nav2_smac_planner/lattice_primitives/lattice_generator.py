@@ -13,11 +13,11 @@
 # limitations under the License. Reserved.
 
 from collections import defaultdict
-from enum import Enum
-from typing import Any, Dict, List, Tuple, TypedDict
-import os
 from concurrent.futures import ProcessPoolExecutor
+from enum import Enum
 from functools import partial
+import os
+from typing import Any, Dict, List, Tuple, TypedDict
 
 from nav2_smac_planner.lattice_primitives.helper import angle_difference, interpolate_yaws
 from nav2_smac_planner.lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
@@ -279,7 +279,7 @@ class LatticeGenerator:
 
         num_cpus = os.cpu_count() or 1
         max_workers = min(len(initial_headings), max(1, num_cpus - 1))
-        
+
         compute_func = partial(self._compute_for_single_heading)
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             # compute results in parallel
@@ -306,7 +306,7 @@ class LatticeGenerator:
         Dict[float, List[Tuple[FloatNDArray, float]]]
             The start_heading and the list of discovered minimal trajectories
         """
-        
+
         local_trajectories = []
         prior_end_poses = index.Index()
         # Use the minimum trajectory length to find the starting wave front
