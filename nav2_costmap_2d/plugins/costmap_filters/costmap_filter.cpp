@@ -75,7 +75,7 @@ void CostmapFilter::onInitialize()
     filter_info_topic_ = node->declare_or_get_parameter<std::string>(name_ + "." +
       "filter_info_topic");
     double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
-       0.1);
+      0.1);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
 
     // Costmap Filter enabling service

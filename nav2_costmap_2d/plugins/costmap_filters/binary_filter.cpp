@@ -67,7 +67,6 @@ void BinaryFilter::initializeFilter(
   }
 
   // Declare parameters specific to BinaryFilter only
-  // std::string binary_state_topic;
   default_state_ = node->declare_or_get_parameter(name_ + "." + "default_state", false);
   std::string binary_state_topic = node->declare_or_get_parameter(name_ + "." +
     "binary_state_topic", std::string("binary_state"));
