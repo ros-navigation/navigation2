@@ -219,4 +219,14 @@ unsigned int removePosesAfterFirstConstraint(
   return first_after_constraint;
 }
 
+bool isPathUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path)
+{
+  return old_path.poses.size() != 0 &&
+         new_path.poses.size() != 0 &&
+         new_path.poses.size() != old_path.poses.size() &&
+         old_path.poses.back().pose.position == new_path.poses.back().pose.position;
+}
+
 }  // namespace nav2_util

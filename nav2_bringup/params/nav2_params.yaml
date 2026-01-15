@@ -55,10 +55,12 @@ bt_navigator:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1667
+      search_window: 2.0
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1669
+      search_window: 2.0
     bt_search_directories:
       - $(find-pkg-share nav2_bt_navigator)/behavior_trees
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
