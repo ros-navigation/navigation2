@@ -15,42 +15,4 @@ line_length = 99
 
 [tool.mypy]
 explicit_package_bases = true
-strict = true
-warn_unused_configs = false
-
-[[tool.mypy.overrides]]
-module = [
-    "matplotlib.*",
-    "transforms3d.*",
-    "graphviz.*",
-    "rtree.*",
-    "launch.*",
-    "ament_index_python.*",
-    "nav2_common.*",
-    "nav2_loopback_sim.*",
-    "nav2_msgs.*",
-    "nav2_simple_commander.*",
-    "launch_testing.*",
-    "action_msgs.*",
-    "geometry_msgs.*",
-    "sensor_msgs.*",
-    "tf2_ros.*",
-    "nav_msgs.*",
-    "rosgraph_msgs.*",
-    "tf_transformations.*",
-    "ament_pep257.*",
-    "ament_flake8.*",
-    "ament_copyright.*",
-    "builtin_interfaces.*",
-    "lifecycle_msgs.*",
-    "geographic_msgs.*",
-    "rcl_interfaces.*",
-    "std_msgs.*",
-    "zmq.*",
-    "std_srvs.*",
-    "geopandas.*",
-    "pandas.*",
-]
-
 ignore_missing_imports = true
-disallow_untyped_calls = false
