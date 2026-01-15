@@ -139,6 +139,15 @@ public:
     return current_;
   }
 
+  /**
+   * @brief Set whether the data in the layer is up to date.
+   * @param current Whether the layer is current.
+   */
+  void setCurrent(bool current)
+  {
+    current_ = current;
+  }
+
   /**@brief Gets whether the layer is enabled. */
   bool isEnabled() const
   {

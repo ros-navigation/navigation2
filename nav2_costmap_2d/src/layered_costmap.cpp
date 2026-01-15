@@ -58,7 +58,6 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
 : primary_costmap_(), combined_costmap_(),
   global_frame_(global_frame),
   rolling_window_(rolling_window),
-  current_(false),
   minx_(0.0),
   miny_(0.0),
   maxx_(0.0),
@@ -261,22 +260,41 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   byn_ = yn;
 
   initialized_ = true;
-}
 
-bool LayeredCostmap::isCurrent()
-{
-  current_ = true;
+  // Set current_ = true for all disabled plugins
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    current_ = current_ && ((*plugin)->isCurrent() || !(*plugin)->isEnabled());
+    if (*plugin && !(*plugin)->isEnabled()) {
+      (*plugin)->setCurrent(true);
+    }
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
   {
-    current_ = current_ && ((*filter)->isCurrent() || !(*filter)->isEnabled());
+    if (!(*filter)->isEnabled()) {
+      (*filter)->setCurrent(true);
+    }
   }
-  return current_;
+}
+
+bool LayeredCostmap::isCurrent()
+{
+  for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
+    plugin != plugins_.end(); ++plugin)
+  {
+    if (!(*plugin)->isCurrent()) {
+      return false;
+    }
+  }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end(); ++filter)
+  {
+    if (!(*filter)->isCurrent()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec)
