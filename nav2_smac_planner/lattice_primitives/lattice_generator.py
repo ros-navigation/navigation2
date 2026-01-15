@@ -294,6 +294,7 @@ class LatticeGenerator:
     def _compute_for_single_heading(self, start_heading: float):
         """
         Compute the minimal trajectory set for a specific starting heading.
+
         This function runs in a separate process.
 
         Args
@@ -305,8 +306,8 @@ class LatticeGenerator:
         -------
         Dict[float, List[Tuple[FloatNDArray, float]]]
             The start_heading and the list of discovered minimal trajectories
-        """
 
+        """
         local_trajectories = []
         prior_end_poses = index.Index()
         # Use the minimum trajectory length to find the starting wave front
