@@ -148,7 +148,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="grid_based"/>
+          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="goal_checker"/>
         </BehaviorTree>
       </root>)";
 
@@ -163,11 +163,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   std::string selected_goal_checker_result;
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
-  EXPECT_EQ(selected_goal_checker_result, "grid_based");
+  EXPECT_EQ(selected_goal_checker_result, "goal_checker");
 
   std_msgs::msg::String selected_goal_checker_cmd;
 
-  selected_goal_checker_cmd.data = "rrt";
+  selected_goal_checker_cmd.data = "new_goal_checker";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -186,7 +186,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   // check goal_checker updated
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
-  EXPECT_EQ("rrt", selected_goal_checker_result);
+  EXPECT_EQ("new_goal_checker", selected_goal_checker_result);
 }
 
 int main(int argc, char ** argv)

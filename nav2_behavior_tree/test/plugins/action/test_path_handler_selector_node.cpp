@@ -147,7 +147,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="grid_based"/>
+          <PathHandlerSelector selected_path_handler="{selected_path_handler}" default_path_handler="path_handler"/>
         </BehaviorTree>
       </root>)";
 
@@ -162,11 +162,11 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
   std::string selected_path_handler_result;
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
 
-  EXPECT_EQ(selected_path_handler_result, "grid_based");
+  EXPECT_EQ(selected_path_handler_result, "path_handler");
 
   std_msgs::msg::String selected_path_handler_cmd;
 
-  selected_path_handler_cmd.data = "rrt";
+  selected_path_handler_cmd.data = "new_path_handler";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -185,7 +185,7 @@ TEST_F(PathHandlerSelectorTestFixture, test_default_topic)
 
   // check path_handler updated
   EXPECT_TRUE(config_->blackboard->get("selected_path_handler", selected_path_handler_result));
-  EXPECT_EQ("rrt", selected_path_handler_result);
+  EXPECT_EQ("new_path_handler", selected_path_handler_result);
 }
 
 int main(int argc, char ** argv)

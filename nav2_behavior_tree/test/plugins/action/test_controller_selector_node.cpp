@@ -147,7 +147,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <ControllerSelector selected_controller="{selected_controller}" default_controller="grid_based"/>
+          <ControllerSelector selected_controller="{selected_controller}" default_controller="follow_path"/>
         </BehaviorTree>
       </root>)";
 
@@ -162,11 +162,11 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
   std::string selected_controller_result;
   EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
 
-  EXPECT_EQ(selected_controller_result, "grid_based");
+  EXPECT_EQ(selected_controller_result, "follow_path");
 
   std_msgs::msg::String selected_controller_cmd;
 
-  selected_controller_cmd.data = "rrt";
+  selected_controller_cmd.data = "new_follow_path";
 
   auto controller_selector_pub =
     node_->create_publisher<std_msgs::msg::String>(
@@ -184,7 +184,7 @@ TEST_F(ControllerSelectorTestFixture, test_default_topic)
 
   // check controller updated
   EXPECT_TRUE(config_->blackboard->get("selected_controller", selected_controller_result));
-  EXPECT_EQ("rrt", selected_controller_result);
+  EXPECT_EQ("new_follow_path", selected_controller_result);
 }
 
 int main(int argc, char ** argv)

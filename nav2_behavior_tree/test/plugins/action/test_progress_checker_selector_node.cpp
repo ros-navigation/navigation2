@@ -150,7 +150,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="grid_based"/>
+          <ProgressCheckerSelector selected_progress_checker="{selected_progress_checker}" default_progress_checker="progress_checker"/>
         </BehaviorTree>
       </root>)";
 
@@ -167,11 +167,11 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
     "selected_progress_checker",
     selected_progress_checker_result);
 
-  EXPECT_EQ(selected_progress_checker_result, "grid_based");
+  EXPECT_EQ(selected_progress_checker_result, "progress_checker");
 
   std_msgs::msg::String selected_progress_checker_cmd;
 
-  selected_progress_checker_cmd.data = "rrt";
+  selected_progress_checker_cmd.data = "new_progress_checker";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -190,7 +190,7 @@ TEST_F(ProgressCheckerSelectorTestFixture, test_default_topic)
 
   // check goal_checker updated
   res = config_->blackboard->get("selected_progress_checker", selected_progress_checker_result);
-  EXPECT_EQ("rrt", selected_progress_checker_result);
+  EXPECT_EQ("new_progress_checker", selected_progress_checker_result);
 }
 
 int main(int argc, char ** argv)
