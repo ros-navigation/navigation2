@@ -27,6 +27,7 @@
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/managed_entity.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "bondcpp/bond.hpp"
 #include "bond/msg/constants.hpp"
@@ -145,11 +146,9 @@ public:
    * @param callback Callback function to handle incoming messages
    * @param qos QoS settings for the subscription (default is nav2::qos::StandardTopicQoS())
    * @param callback_group The callback group to use (if provided)
-   * @return A shared pointer to the created nav2::Subscription
+   * @return A shared pointer to the created nav2::LifecycleSubscription
    */
-  template<
-    typename MessageT,
-    typename CallbackT>
+  template<typename MessageT, typename CallbackT>
   typename nav2::Subscription<MessageT>::SharedPtr
   create_subscription(
     const std::string & topic_name,
@@ -369,6 +368,47 @@ public:
     }
   }
 
+  // ADDED: New methods for lifecycle interface management
+  /**
+   * @brief Add a managed entity (publisher, subscription, etc.) to be lifecycle-managed
+   * @param entity Shared pointer to the managed entity
+   */
+  void add_managed_entity(std::shared_ptr<rclcpp_lifecycle::ManagedEntityInterface> entity)
+  {
+    managed_entities_.push_back(entity);
+  }
+
+  /**
+   * @brief Activate all managed interfaces in the correct order
+   * Order: Publishers -> Service Clients -> Action Clients ->
+   *        Subscriptions -> Service Servers -> Action Servers
+   */
+  void activateInterfaces()
+  {
+    RCLCPP_INFO(get_logger(), "Activating all managed interfaces for %s", get_name());
+    for (auto & entity : managed_entities_) {
+      if (entity) {
+        entity->on_activate();
+      }
+    }
+  }
+
+  /**
+   * @brief Deactivate all managed interfaces in reverse order
+   * Order: Action Servers -> Service Servers -> Subscriptions ->
+   *        Action Clients -> Service Clients -> Publishers
+   */
+  void deactivateInterfaces()
+  {
+    RCLCPP_INFO(get_logger(), "Deactivating all managed interfaces for %s", get_name());
+    // Deactivate in reverse order
+    for (auto it = managed_entities_.rbegin(); it != managed_entities_.rend(); ++it) {
+      if (*it) {
+        (*it)->on_deactivate();
+      }
+    }
+  }
+
 protected:
   /**
    * @brief Print notifications for lifecycle node
@@ -426,6 +466,9 @@ protected:
   std::shared_ptr<bond::Bond> bond_{nullptr};
   double bond_heartbeat_period{0.1};
   rclcpp::TimerBase::SharedPtr autostart_timer_;
+
+  // ADDED: Vector to store all managed entities (publishers, subscriptions, etc.)
+  std::vector<std::shared_ptr<rclcpp_lifecycle::ManagedEntityInterface>> managed_entities_;
 
 private:
   /**
