@@ -26,6 +26,7 @@
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/types.hpp"
+#include "nav2_smac_planner/a_star.hpp"
 
 TEST(NodeHybridTest, test_node_hybrid)
 {
@@ -37,15 +38,18 @@ TEST(NodeHybridTest, test_node_hybrid)
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
   info.retrospective_penalty = 0.1;
-  unsigned int size_x = 10;
-  unsigned int size_y = 10;
   unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
 
-  // Check defaulted constants
-  nav2_smac_planner::NodeHybrid testA(49);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
 
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     10, 10, 0.05, 0.0, 0.0, 0);
@@ -59,9 +63,12 @@ TEST(NodeHybridTest, test_node_hybrid)
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
   // test construction
-  nav2_smac_planner::NodeHybrid testB(49);
+  nav2_smac_planner::NodeHybrid testA(49, ctx);
+  nav2_smac_planner::NodeHybrid testB(49, ctx);
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // test node valid and cost
@@ -105,7 +112,7 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_EQ(testA.getMotionPrimitiveIndex(), 2u);
 
   // check operator== works on index
-  nav2_smac_planner::NodeHybrid testC(49);
+  nav2_smac_planner::NodeHybrid testC(49, ctx);
   EXPECT_TRUE(testA == testC);
 
   // check accumulated costs are set
@@ -145,12 +152,19 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
   info.cost_penalty = 1.7;
   info.retrospective_penalty = 0.0;
-  unsigned int size_x = 100;
-  unsigned int size_y = 100;
   unsigned int size_theta = 72;
 
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
 
   nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
     100, 100, 0.1, 0.0, 0.0, 0);
@@ -181,13 +195,15 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
-  nav2_smac_planner::NodeHybrid testA(0);
+  nav2_smac_planner::NodeHybrid testA(0, ctx);
   testA.pose.x = 10;
   testA.pose.y = 50;
   testA.pose.theta = 0;
 
-  nav2_smac_planner::NodeHybrid testB(1);
+  nav2_smac_planner::NodeHybrid testB(1, ctx);
   testB.pose.x = 90;
   testB.pose.y = 51;  // goal is a bit closer to the high-cost passage
   testB.pose.theta = 0;
@@ -196,10 +212,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmap->setCost(50, j, 254);
   }
-  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+ a_star.resetObstacleHeuristic(
     costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
     info.downsample_obstacle_heuristic);
-  float wide_passage_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
+  float wide_passage_cost = a_star.getObstacleHeuristic(
     testA.pose,
     testB.pose,
     info.cost_penalty,
@@ -214,10 +230,10 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmap->setCost(50, j, 250);
   }
-  nav2_smac_planner::NodeHybrid::resetObstacleHeuristic(
+  a_star.resetObstacleHeuristic(
     costmap_ros,
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
-  float two_passages_cost = nav2_smac_planner::NodeHybrid::getObstacleHeuristic(
+  float two_passages_cost = a_star.getObstacleHeuristic(
     testA.pose,
     testB.pose,
     info.cost_penalty,
@@ -227,42 +243,56 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
   delete costmapA;
-  nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
 TEST(NodeHybridTest, test_node_debin_neighbors)
 {
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   nav2_smac_planner::SearchInfo info;
   info.change_penalty = 1.2;
   info.non_straight_penalty = 1.4;
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 4;  // 0.2 in grid coordinates
   info.retrospective_penalty = 0.0;
-  unsigned int size_x = 100;
-  unsigned int size_y = 100;
   unsigned int size_theta = 72;
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
 
   // test neighborhood computation
-  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 3u);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._x, 1.731517, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._theta, 0, 0.01);
+  EXPECT_EQ(ctx->motion_table.projections.size(), 3u);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._x, 1.731517, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._y, 0, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._theta, 0, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._y, 0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._theta, 5, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[1]._x, 1.69047, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[1]._y, 0.3747, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[1]._theta, 5, 0.01);
 
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._x, 1.69047, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.3747, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -5, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[2]._x, 1.69047, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[2]._y, -0.3747, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[2]._theta, -5, 0.01);
 }
 
 TEST(NodeHybridTest, test_interpolation_prims)
 {
-  unsigned int size_x = 100;
-  unsigned int size_y = 100;
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   unsigned int size_theta = 64;
 
   nav2_smac_planner::SearchInfo info;
@@ -274,16 +304,32 @@ TEST(NodeHybridTest, test_interpolation_prims)
 
   // Test to make sure the right num. of prims are generated when interpolation is on
   info.allow_primitive_interpolation = true;
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
 
-  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 5u);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  EXPECT_EQ(ctx->motion_table.projections.size(), 5u);
 }
 
 TEST(NodeHybridTest, test_interpolation_prims2)
 {
-  unsigned int size_x = 100;
-  unsigned int size_y = 100;
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
   unsigned int size_theta = 72;
 
   nav2_smac_planner::SearchInfo info;
@@ -295,10 +341,27 @@ TEST(NodeHybridTest, test_interpolation_prims2)
 
   // Test to make sure the right num. of prims are generated when interpolation is on
   info.allow_primitive_interpolation = true;
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::DUBIN, size_x, size_y, size_theta, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
 
-  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 7u);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  EXPECT_EQ(ctx->motion_table.projections.size(), 7u);
 }
 
 TEST(NodeHybridTest, test_node_reeds_neighbors)
@@ -310,37 +373,18 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   info.reverse_penalty = 2.1;
   info.minimum_turning_radius = 8;  // 0.4 in grid coordinates
   info.retrospective_penalty = 0.0;
-  unsigned int size_x = 100;
-  unsigned int size_y = 100;
   unsigned int size_theta = 72;
-  nav2_smac_planner::NodeHybrid::initMotionModel(
-    nav2_smac_planner::MotionModel::REEDS_SHEPP, size_x, size_y, size_theta, info);
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
 
-  EXPECT_EQ(nav2_smac_planner::NodeHybrid::motion_table.projections.size(), 6u);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._x, 2.088, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[0]._theta, 0, 0.01);
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
 
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._x, 2.070, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._y, 0.272, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[1]._theta, 3, 0.01);
-
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._x, 2.070, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._y, -0.272, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[2]._theta, -3, 0.01);
-
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._x, -2.088, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._y, 0, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[3]._theta, 0, 0.01);
-
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._x, -2.07, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._y, 0.272, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[4]._theta, -3, 0.01);
-
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._x, -2.07, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._y, -0.272, 0.01);
-  EXPECT_NEAR(nav2_smac_planner::NodeHybrid::motion_table.projections[5]._theta, 3, 0.01);
-
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
   nav2_costmap_2d::Costmap2D costmapA(100, 100, 0.05, 0.0, 0.0, 0);
 
   // Convert raw costmap into a costmap ros object
@@ -352,7 +396,35 @@ TEST(NodeHybridTest, test_node_reeds_neighbors)
   std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
     std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, lnode);
   checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
-  nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  EXPECT_EQ(ctx->motion_table.projections.size(), 6u);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._x, 2.088, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._y, 0, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[0]._theta, 0, 0.01);
+
+  EXPECT_NEAR(ctx->motion_table.projections[1]._x, 2.070, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[1]._y, 0.272, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[1]._theta, 3, 0.01);
+
+  EXPECT_NEAR(ctx->motion_table.projections[2]._x, 2.070, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[2]._y, -0.272, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[2]._theta, -3, 0.01);
+
+  EXPECT_NEAR(ctx->motion_table.projections[3]._x, -2.088, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[3]._y, 0, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[3]._theta, 0, 0.01);
+
+  EXPECT_NEAR(ctx->motion_table.projections[4]._x, -2.07, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[4]._y, 0.272, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[4]._theta, -3, 0.01);
+
+  EXPECT_NEAR(ctx->motion_table.projections[5]._x, -2.07, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[5]._y, -0.272, 0.01);
+  EXPECT_NEAR(ctx->motion_table.projections[5]._theta, 3, 0.01);
+
+  nav2_smac_planner::NodeHybrid * node = new nav2_smac_planner::NodeHybrid(49, ctx);
   std::function<bool(const uint64_t &, nav2_smac_planner::NodeHybrid * &)> neighborGetter =
     [](const uint64_t &, nav2_smac_planner::NodeHybrid * &) -> bool
     {

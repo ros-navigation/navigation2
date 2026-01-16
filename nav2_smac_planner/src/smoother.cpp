@@ -253,7 +253,7 @@ void Smoother::findBoundaryExpansion(
   BoundaryExpansion & expansion,
   const nav2_costmap_2d::Costmap2D * costmap)
 {
-  static ompl::base::ScopedState<> from(state_space_), to(state_space_), s(state_space_);
+  ompl::base::ScopedState<> from(state_space_), to(state_space_), s(state_space_);
 
   from[0] = start.position.x;
   from[1] = start.position.y;

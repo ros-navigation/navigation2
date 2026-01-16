@@ -44,17 +44,9 @@ add_library(${library_name}_common SHARED
   src/node_lattice.cpp
   src/smoother.cpp
 )
-# Add GenerateExportHeader support for symbol visibility, as we are using
-# static members we need to explicitly export them on Windows, as
-# CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS does not work with static members.
-include(GenerateExportHeader)
-generate_export_header(${library_name}_common
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}/${library_name}_common_visibility_control.hpp"
-)
 target_include_directories(${library_name}_common
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
     ${OMPL_INCLUDE_DIRS}
 )
@@ -181,11 +173,6 @@ install(TARGETS ${library_name}_common ${library_name} ${library_name}_2d ${libr
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
-install(FILES
-  "${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME}/${library_name}_common_visibility_control.hpp"
-  DESTINATION include/${PROJECT_NAME}
-)
-
 install(DIRECTORY lattice_primitives/sample_primitives DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
