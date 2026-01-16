@@ -56,15 +56,18 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   scale_velocities_ = this->declare_or_get_parameter("scale_velocities", false);
 
   // Kinematics
-  max_velocities_ = this->declare_or_get_parameter("max_velocity", std::vector<double>{0.50, 0.0, 2.5});
-  min_velocities_ = this->declare_or_get_parameter("min_velocity", std::vector<double>{-0.50, 0.0, -2.5});
+  max_velocities_ = this->declare_or_get_parameter("max_velocity",
+      std::vector<double>{0.50, 0.0, 2.5});
+  min_velocities_ = this->declare_or_get_parameter("min_velocity",
+      std::vector<double>{-0.50, 0.0, -2.5});
   max_accels_ = this->declare_or_get_parameter("max_accel", std::vector<double>{2.5, 0.0, 3.2});
   max_decels_ = this->declare_or_get_parameter("max_decel", std::vector<double>{-2.5, 0.0, -3.2});
 
   // Get feature parameters
   odom_topic_ = this->declare_or_get_parameter("odom_topic", std::string("odom"));
   odom_duration_ = this->declare_or_get_parameter("odom_duration", 0.1);
-  deadband_velocities_ = this->declare_or_get_parameter("deadband_velocity", std::vector<double>{0.0, 0.0, 0.0});
+  deadband_velocities_ = this->declare_or_get_parameter("deadband_velocity",
+      std::vector<double>{0.0, 0.0, 0.0});
   velocity_timeout_dbl = this->declare_or_get_parameter("velocity_timeout", 1.0);
   velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
 

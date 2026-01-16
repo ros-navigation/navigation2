@@ -68,7 +68,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   std::string costmap_topic = this->declare_or_get_parameter<std::string>(
     "costmap_topic", "global_costmap/costmap_raw");
   costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
-  
+
   try {
     graph_loader_ = std::make_shared<GraphLoader>(node, tf_, route_frame_);
     if (!graph_loader_->loadGraphFromParameter(graph_, id_to_graph_map_)) {
