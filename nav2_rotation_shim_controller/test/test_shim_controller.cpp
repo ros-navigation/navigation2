@@ -219,8 +219,8 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  costmap->set_parameter(rclcpp::Parameter("origin_x", 0.0));
-  costmap->set_parameter(rclcpp::Parameter("origin_y", 0.0));
+  costmap->declare_parameter("origin_x", 0.0);
+  costmap->declare_parameter("origin_y", 0.0);
   costmap->configure();
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
 
