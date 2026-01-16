@@ -38,7 +38,7 @@ namespace nav2_util
 * @param tf_buffer TF buffer to use for the transformation
 * @param global_frame Frame to transform into
 * @param robot_frame Frame to transform from
-* @param transform_timeout How long to wait for the target frame. Default value is zero (no blocking).
+* @param transform_timeout How long to wait for the target frame. When value is zero the functions does not block.
 * @return bool Whether it could be transformed successfully
 */
 bool getCurrentPose(
@@ -53,7 +53,7 @@ bool getCurrentPose(
 * @param transformed_pose Output transformation
 * @param tf_buffer TF buffer to use for the transformation
 * @param target_frame Frame to transform into
-* @param transform_timeout How long to wait for the target frame. Default value is zero (no blocking).
+* @param transform_timeout How long to wait for the target frame. When value is zero the functions does not block.
 * @return bool Whether it could be transformed successfully
 */
 bool transformPoseInTargetFrame(
