@@ -218,6 +218,7 @@ class LatticeGenerator:
             for prior_end_pose in prior_end_poses.intersection(
                 (left_bb, bottom_bb, right_bb, top_bb), objects='raw'
             ):
+                assert isinstance(prior_end_pose, np.ndarray)
                 if (
                     self._point_to_line_distance(p1, p2, prior_end_pose[:-1])
                     < self.DISTANCE_THRESHOLD
