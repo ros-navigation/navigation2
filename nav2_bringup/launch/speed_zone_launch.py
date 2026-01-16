@@ -155,7 +155,10 @@ def generate_launch_description() -> LaunchDescription:
                 name='lifecycle_manager_speed_zone',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[
+                    configured_params,
+                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
+                ],
             ),
         ],
     )
@@ -203,6 +206,7 @@ def generate_launch_description() -> LaunchDescription:
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_speed_zone',
                         parameters=[
+                            configured_params,
                             {'autostart': autostart, 'node_names': lifecycle_nodes}
                         ],
                         extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],

@@ -222,7 +222,6 @@ private:
 
   bool rolling_window_;  /// < @brief Whether or not the costmap should roll with the robot
 
-  bool current_;
   double minx_, miny_, maxx_, maxy_;
   unsigned int bx0_, bxn_, by0_, byn_;
 

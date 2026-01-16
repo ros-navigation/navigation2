@@ -72,44 +72,6 @@ Layer::getFootprint() const
   return layered_costmap_->getFootprint();
 }
 
-void
-Layer::declareParameter(
-  const std::string & param_name,
-  const rclcpp::ParameterValue & value)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  local_params_.insert(param_name);
-  nav2::declare_parameter_if_not_declared(
-    node, getFullName(param_name), value);
-}
-
-void
-Layer::declareParameter(
-  const std::string & param_name,
-  const rclcpp::ParameterType & param_type)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  local_params_.insert(param_name);
-  nav2::declare_parameter_if_not_declared(
-    node, getFullName(param_name), param_type);
-}
-
-bool
-Layer::hasParameter(const std::string & param_name)
-{
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-  return node->has_parameter(getFullName(param_name));
-}
-
 std::string
 Layer::getFullName(const std::string & param_name)
 {

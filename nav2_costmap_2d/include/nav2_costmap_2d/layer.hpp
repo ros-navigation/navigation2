@@ -139,6 +139,15 @@ public:
     return current_;
   }
 
+  /**
+   * @brief Set whether the data in the layer is up to date.
+   * @param current Whether the layer is current.
+   */
+  void setCurrent(bool current)
+  {
+    current_ = current;
+  }
+
   /**@brief Gets whether the layer is enabled. */
   bool isEnabled() const
   {
@@ -147,17 +156,6 @@ public:
 
   /** @brief Convenience function for layered_costmap_->getFootprint(). */
   const std::vector<geometry_msgs::msg::Point> & getFootprint() const;
-
-  /** @brief Convenience functions for declaring ROS parameters */
-  void declareParameter(
-    const std::string & param_name,
-    const rclcpp::ParameterValue & value);
-  /** @brief Convenience functions for declaring ROS parameters */
-  void declareParameter(
-    const std::string & param_name,
-    const rclcpp::ParameterType & param_type);
-  /** @brief Convenience functions for declaring ROS parameters */
-  bool hasParameter(const std::string & param_name);
   /** @brief Convenience functions for declaring ROS parameters */
   std::string getFullName(const std::string & param_name);
 
@@ -199,9 +197,6 @@ protected:
   // Currently this var is managed by subclasses.
   // TODO(bpwilcox): make this managed by this class and/or container class.
   bool enabled_;
-
-  // Names of the parameters declared on the ROS node
-  std::unordered_set<std::string> local_params_;
 
 private:
   std::vector<geometry_msgs::msg::Point> footprint_spec_;

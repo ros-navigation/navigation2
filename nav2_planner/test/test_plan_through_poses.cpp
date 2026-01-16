@@ -163,10 +163,10 @@ void Tester::setParameters()
     PLANNER_PLUGINS.front() + ".tolerance", rclcpp::ParameterValue(PLANNER_TOLERANCE));
 
   auto costmap = planner_->getCostmapROS();
-  costmap->set_parameter(rclcpp::Parameter("height", COSTMAP_HEIGHT_METERS));
-  costmap->set_parameter(rclcpp::Parameter("width", COSTMAP_WIDTH_METERS));
-  costmap->set_parameter(rclcpp::Parameter("resolution", COSTMAP_RESOLUTION));
-  costmap->set_parameter(rclcpp::Parameter("plugins", COSTMAP_PLUGINS));
+  costmap->declare_parameter("height", COSTMAP_HEIGHT_METERS);
+  costmap->declare_parameter("width", COSTMAP_WIDTH_METERS);
+  costmap->declare_parameter("resolution", COSTMAP_RESOLUTION);
+  costmap->declare_parameter("plugins", COSTMAP_PLUGINS);
 
   costmap->declare_parameter("static_layer.plugin", rclcpp::ParameterValue(COSTMAP_LAYER_NAME));
   costmap->declare_parameter("static_layer.lethal_cost_threshold", rclcpp::ParameterValue(100));

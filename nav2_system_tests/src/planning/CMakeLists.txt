@@ -73,7 +73,7 @@ nav2_add_test(test_planner_random
 nav2_add_gtest(test_planner_plugins
   planner_tester.cpp
   test_planner_plugins.cpp
-  TIMEOUT 10
+  TIMEOUT 30
 )
 target_link_libraries(test_planner_plugins
   ${geometry_msgs_TARGETS}

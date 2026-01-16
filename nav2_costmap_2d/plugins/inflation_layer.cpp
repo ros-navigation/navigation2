@@ -89,22 +89,18 @@ InflationLayer::~InflationLayer()
 void
 InflationLayer::onInitialize()
 {
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
-  declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
-  declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
-  declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
-
   {
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
     }
-    node->get_parameter(name_ + "." + "enabled", enabled_);
-    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+    enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+    inflation_radius_ = node->declare_or_get_parameter(name_ + "." + "inflation_radius", 0.55);
+    cost_scaling_factor_ = node->declare_or_get_parameter(
+      name_ + "." + "cost_scaling_factor", 10.0);
+    inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
+    inflate_around_unknown_ = node->declare_or_get_parameter(
+      name_ + "." + "inflate_around_unknown", false);
 
     dyn_params_handler_ = node->add_on_set_parameters_callback(
       std::bind(
