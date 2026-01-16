@@ -34,6 +34,29 @@ TEST(RobotUtils, LookupExceptionError)
   ASSERT_FALSE(nav2_util::transformPoseInTargetFrame(global_pose, global_pose, tf, "map", 0.1));
 }
 
+TEST(RobotUtils, TimeoutError)
+{
+  rclcpp::init(0, nullptr);
+  auto node = std::make_shared<rclcpp::Node>("name", rclcpp::NodeOptions());
+
+  rclcpp::Time start_time = node->get_clock()->now();
+  rclcpp::Time fake_time = start_time + rclcpp::Duration::from_seconds(1.0);
+
+
+  geometry_msgs::msg::TransformStamped t;
+  t.header.stamp = fake_time;
+  t.header.frame_id = "map";
+  t.child_frame_id = "base_link";
+
+
+  tf2_ros::Buffer tf(node->get_clock());
+  tf.setTransform(t, "unittest", false);
+
+  geometry_msgs::msg::PoseStamped global_pose;
+  ASSERT_FALSE(nav2_util::getCurrentPose(global_pose, tf, "map", "base_link", 0.1));
+}
+
+
 TEST(RobotUtils, validateTwist)
 {
   geometry_msgs::msg::Twist msg;
