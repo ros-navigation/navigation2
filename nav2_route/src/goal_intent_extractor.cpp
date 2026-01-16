@@ -49,7 +49,7 @@ void GoalIntentExtractor::configure(
   min_dist_from_goal_ = static_cast<float>(
     nav2::declare_or_get_parameter<double>(node, "min_prune_dist_from_goal", 0.15));
   min_dist_from_start_ = static_cast<float>(
-    node->get_parameter("min_prune_dist_from_start").as_double());
+    nav2::declare_or_get_parameter<double>(node, "min_prune_dist_from_start", 0.10));
 
   enable_search_ = nav2::declare_or_get_parameter<bool>(node, "enable_nn_search", true);
   max_nn_search_iterations_ = nav2::declare_or_get_parameter<int>(
