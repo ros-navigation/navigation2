@@ -32,6 +32,7 @@ TEST(RobotUtils, LookupExceptionError)
   ASSERT_FALSE(nav2_util::getCurrentPose(global_pose, tf, "map", "base_link", 0.1));
   global_pose.header.frame_id = "base_link";
   ASSERT_FALSE(nav2_util::transformPoseInTargetFrame(global_pose, global_pose, tf, "map", 0.1));
+  rclcpp::shutdown();
 }
 
 TEST(RobotUtils, TimeoutError)
@@ -54,6 +55,7 @@ TEST(RobotUtils, TimeoutError)
 
   geometry_msgs::msg::PoseStamped global_pose;
   ASSERT_FALSE(nav2_util::getCurrentPose(global_pose, tf, "map", "base_link", 0.1));
+  rclcpp::shutdown();
 }
 
 
