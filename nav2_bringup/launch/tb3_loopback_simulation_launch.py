@@ -224,7 +224,7 @@ def generate_launch_description() -> LaunchDescription:
                         name='lifecycle_manager_map_server',
                         parameters=[
                             configured_params,
-                            {'autostart': autostart, 'node_names': lifecycle_nodes}
+                            {'autostart': autostart}, {'node_names': ['map_server']}
                         ],
                         extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}],
                     ),
