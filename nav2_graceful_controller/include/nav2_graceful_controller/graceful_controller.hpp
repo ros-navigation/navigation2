@@ -116,6 +116,7 @@ protected:
    * @param dist_to_target Distance to target pose
    * @param dist_to_goal Distance to navigation goal
    * @param trajectory Trajectory to validate in simulation
+   * @param transformed_plan Transformed global plan in costmap frame
    * @param costmap_transform Transform between global and local costmap
    * @param cmd_vel Initial command velocity to validate in simulation
    * @return true if target pose is valid, false otherwise
@@ -125,6 +126,7 @@ protected:
     double dist_to_target,
     double dist_to_goal,
     nav_msgs::msg::Path & trajectory,
+    const nav_msgs::msg::Path & transformed_plan,
     geometry_msgs::msg::TransformStamped & costmap_transform,
     geometry_msgs::msg::TwistStamped & cmd_vel);
 
@@ -159,9 +161,12 @@ protected:
    * @param x The x coordinate of the robot in global frame
    * @param y The y coordinate of the robot in global frame
    * @param theta The orientation of the robot in global frame
+   * @param inflation_scale Scaling factor for the robot footprint
    * @return Whether in collision
    */
-  bool inCollision(const double & x, const double & y, const double & theta);
+  bool inCollision(
+    const double & x, const double & y, const double & theta,
+    double inflation_scale = 1.0);
 
   /**
    * @brief Compute the distance to each pose in a path
