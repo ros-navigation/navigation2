@@ -195,9 +195,8 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
     {dynamic_window.max_angular_vel / curvature, dynamic_window.max_angular_vel}
   };
 
-  double best_linear_vel = 0.0;
+  double best_linear_vel = -std::numeric_limits<double>::max() * sign;
   double best_angular_vel = 0.0;
-  bool found_intersection = false;
 
   for (auto [linear_vel, angular_vel] : candidates) {
     // Check whether the candidate lies within the dynamic window
@@ -206,23 +205,16 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
       angular_vel >= dynamic_window.min_angular_vel &&
       angular_vel <= dynamic_window.max_angular_vel)
     {
-      if (!found_intersection) {
-      // initialize by the first found intersection
-        found_intersection = true;
+      // Select the candidate with the largest linear velocity (considering moving direction)
+      if (linear_vel * sign > best_linear_vel * sign) {
         best_linear_vel = linear_vel;
         best_angular_vel = angular_vel;
-      } else {
-      // Select the candidate with the largest linear velocity (considering moving direction)
-        if (linear_vel * sign > best_linear_vel * sign) {
-          best_linear_vel = linear_vel;
-          best_angular_vel = angular_vel;
-        }
       }
     }
   }
 
-  // If intersections exist, return the best intersection point
-  if (found_intersection) {
+  // If best_linear_vel was updated, it means that a valid intersection exists
+  if (best_linear_vel != -std::numeric_limits<double>::max() * sign) {
     optimal_linear_vel = best_linear_vel;
     optimal_angular_vel = best_angular_vel;
     return std::make_tuple(optimal_linear_vel, optimal_angular_vel);
@@ -247,13 +239,11 @@ inline std::tuple<double, double> computeOptimalVelocityWithinDynamicWindow(
       return std::abs(curvature * corner[0] - corner[1]) / denom;
     };
 
-  // initialize with the first corner
-  double closest_dist = compute_dist(corners[0]);
-  best_linear_vel = corners[0][0];
-  best_angular_vel = corners[0][1];
+  double closest_dist = std::numeric_limits<double>::max();
+  best_linear_vel = -std::numeric_limits<double>::max() * sign;
+  best_angular_vel = 0.0;
 
-  for (size_t i = 1; i < corners.size(); ++i) {
-    const auto & corner = corners[i];
+  for (const auto & corner : corners) {
     const double dist = compute_dist(corner);
     // Update if this corner is closer to the line,
     // or equally close but has a larger linear velocity (considering moving direction)
