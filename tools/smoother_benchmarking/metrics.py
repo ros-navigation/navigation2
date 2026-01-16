@@ -126,7 +126,7 @@ def main() -> None:
     costmap = np.asarray(costmap_msg.data)
     costmap.resize(costmap_msg.metadata.size_y, costmap_msg.metadata.size_x)
 
-    planner = 'SmacHybrid'
+    planner = 'smac_hybrid'
     smoothers = ['simple_smoother', 'constrained_smoother', 'sg_smoother']
     max_cost = 210
     side_buffer = 10

@@ -25,7 +25,7 @@ GraphLoader::GraphLoader(
   std::shared_ptr<tf2_ros::Buffer> tf,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileLoader"),
-  default_plugin_id_("GeoJsonGraphFileLoader")
+  default_plugin_id_("geo_json_graph_file_loader")
 {
   logger_ = node->get_logger();
   tf_ = tf;

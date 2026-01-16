@@ -100,7 +100,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="SimpleGoalCheck" topic_name="goal_checker_selector_custom_topic_name"/>
+          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="simple_goal_checker" topic_name="goal_checker_selector_custom_topic_name"/>
         </BehaviorTree>
       </root>)";
 
@@ -115,11 +115,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
   std::string selected_goal_checker_result;
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
-  EXPECT_EQ(selected_goal_checker_result, "SimpleGoalCheck");
+  EXPECT_EQ(selected_goal_checker_result, "simple_goal_checker");
 
   std_msgs::msg::String selected_goal_checker_cmd;
 
-  selected_goal_checker_cmd.data = "AngularGoalChecker";
+  selected_goal_checker_cmd.data = "angular_goal_checker";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -138,7 +138,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_custom_topic)
 
   // check goal_checker updated
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
-  EXPECT_EQ("AngularGoalChecker", selected_goal_checker_result);
+  EXPECT_EQ("angular_goal_checker", selected_goal_checker_result);
 }
 
 TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
@@ -148,7 +148,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="GridBased"/>
+          <GoalCheckerSelector selected_goal_checker="{selected_goal_checker}" default_goal_checker="goal_checker"/>
         </BehaviorTree>
       </root>)";
 
@@ -163,11 +163,11 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
   std::string selected_goal_checker_result;
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
 
-  EXPECT_EQ(selected_goal_checker_result, "GridBased");
+  EXPECT_EQ(selected_goal_checker_result, "goal_checker");
 
   std_msgs::msg::String selected_goal_checker_cmd;
 
-  selected_goal_checker_cmd.data = "RRT";
+  selected_goal_checker_cmd.data = "new_goal_checker";
 
   rclcpp::QoS qos = nav2::qos::LatchedPublisherQoS();
 
@@ -186,7 +186,7 @@ TEST_F(GoalCheckerSelectorTestFixture, test_default_topic)
 
   // check goal_checker updated
   EXPECT_TRUE(config_->blackboard->get("selected_goal_checker", selected_goal_checker_result));
-  EXPECT_EQ("RRT", selected_goal_checker_result);
+  EXPECT_EQ("new_goal_checker", selected_goal_checker_result);
 }
 
 int main(int argc, char ** argv)

@@ -432,7 +432,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
         source->getSourceTimeout().seconds() != 0.0)
       {
         action_polygon = nullptr;
-        robot_action.polygon_name = "invalid source";
+        robot_action.polygon_name = "invalid_source";
         robot_action.action_type = STOP;
         robot_action.req_vel.x = 0.0;
         robot_action.req_vel.y = 0.0;
@@ -606,7 +606,7 @@ void CollisionMonitor::notifyActionState(
   const Action & robot_action, const std::shared_ptr<Polygon> action_polygon) const
 {
   if (robot_action.action_type == STOP) {
-    if (robot_action.polygon_name == "invalid source") {
+    if (robot_action.polygon_name == "invalid_source") {
       RCLCPP_WARN(
         get_logger(),
         "Robot to stop due to invalid source."

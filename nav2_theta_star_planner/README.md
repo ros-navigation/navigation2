@@ -55,8 +55,8 @@ Below are the default values of the parameters :
 planner_server:
   ros__parameters:
     planner_plugin_types: ["nav2_theta_star_planner::ThetaStarPlanner"]
-    planner_plugin_ids: ["GridBased"]
-    GridBased:
+    planner_plugin_ids: ["grid_based"]
+    grid_based:
       how_many_corners: 8
       w_euc_cost: 1.0
       w_traversal_cost: 2.0

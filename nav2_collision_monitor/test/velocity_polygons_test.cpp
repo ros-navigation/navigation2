@@ -41,11 +41,11 @@ static constexpr double EPSILON = std::numeric_limits<float>::epsilon();
 
 static const char BASE_FRAME_ID[]{"base_link"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
-static const char POLYGON_NAME[]{"TestVelocityPolygon"};
-static const char SUB_POLYGON_FORWARD_NAME[]{"Forward"};
-static const char SUB_POLYGON_BACKWARD_NAME[]{"Backward"};
-static const char SUB_POLYGON_LEFT_NAME[]{"Left"};
-static const char SUB_POLYGON_RIGHT_NAME[]{"Right"};
+static const char POLYGON_NAME[]{"test_velocity_polygon"};
+static const char SUB_POLYGON_FORWARD_NAME[]{"forward"};
+static const char SUB_POLYGON_BACKWARD_NAME[]{"backward"};
+static const char SUB_POLYGON_LEFT_NAME[]{"left"};
+static const char SUB_POLYGON_RIGHT_NAME[]{"right"};
 static const std::vector<double> FORWARD_POLYGON{
   0.5, 0.5, 0.5, -0.5, 0.0, -0.5, 0.0, 0.5};
 static const std::vector<double> BACKWARD_POLYGON{

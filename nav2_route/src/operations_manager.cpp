@@ -33,7 +33,7 @@ OperationsManager::OperationsManager(
 
   // Have some default operations
   const std::vector<std::string> default_plugin_ids(
-    {"AdjustSpeedLimit", "ReroutingService"});
+    {"adjust_speed_limit", "rerouting_service"});
   const std::vector<std::string> default_plugin_types(
     {"nav2_route::AdjustSpeedLimit", "nav2_route::ReroutingService"});
 

@@ -85,7 +85,7 @@ public:
     }
     try {
       auto dummy_cancel_checker = []() {return false;};
-      path = planners_["GridBased"]->createPlan(start, goal, dummy_cancel_checker);
+      path = planners_["grid_based"]->createPlan(start, goal, dummy_cancel_checker);
       // The situation when createPlan() did not throw any exception
       // does not guarantee that plan was created correctly.
       // So it should be checked additionally that path is correct.

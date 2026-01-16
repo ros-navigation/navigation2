@@ -1,4 +1,4 @@
 docks:
   dock1:
     type: "dockv3"
-    frame: "mapA"
+    frame: "map_a"

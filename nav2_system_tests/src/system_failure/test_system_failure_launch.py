@@ -53,7 +53,7 @@ def generate_launch_description() -> LaunchDescription:
 
     # Replace the `use_astar` setting on the params file
     param_substitutions = {
-        'planner_server.ros__parameters.GridBased.use_astar': 'False'
+        'planner_server.ros__parameters.grid_based.use_astar': 'False'
     }
     configured_params = RewrittenYaml(
         source_file=params_file,

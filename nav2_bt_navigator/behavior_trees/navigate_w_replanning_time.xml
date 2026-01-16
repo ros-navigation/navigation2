@@ -5,8 +5,8 @@
 <root BTCPP_format="4" main_tree_to_execute="NavigateWithReplanningTime">
   <BehaviorTree ID="NavigateWithReplanningTime">
     <PipelineSequence name="NavigateWithReplanning">
-      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
-      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="follow_path" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="grid_based" topic_name="planner_selector"/>
       <RateController hz="1.0">
         <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
       </RateController>
