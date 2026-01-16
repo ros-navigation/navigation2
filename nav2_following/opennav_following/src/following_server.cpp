@@ -262,7 +262,7 @@ void FollowingServer::followObject()
         RCLCPP_INFO(get_logger(), "Subscribing to pose topic: %s", pose_topic.c_str());
         dynamic_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
           pose_topic,
-          [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+          [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose) {
             detected_dynamic_pose_ = *pose;
           },
           nav2::qos::StandardTopicQoS(1));  // Only want the most recent pose

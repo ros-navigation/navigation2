@@ -25,7 +25,11 @@
 
 TEST(WPTest, test_dynamic_parameters)
 {
-  auto amcl = std::make_shared<nav2_amcl::AmclNode>();
+  rclcpp::NodeOptions options;
+  // Ensure we cover the deterministic-seed branch in initParticleFilter().
+  options.parameter_overrides({{"random_seed", 42}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
   amcl->configure();
   amcl->activate();
 
@@ -118,6 +122,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(amcl->get_parameter("do_beamskip").as_bool(), false);
   EXPECT_EQ(amcl->get_parameter("set_initial_pose").as_bool(), false);
   EXPECT_EQ(amcl->get_parameter("first_map_only").as_bool(), false);
+  EXPECT_EQ(amcl->get_parameter("random_seed").as_int(), 42);
 
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("alpha1", -1.0)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);

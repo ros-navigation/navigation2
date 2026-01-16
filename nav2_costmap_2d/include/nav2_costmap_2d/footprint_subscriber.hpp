@@ -85,13 +85,13 @@ protected:
   /**
    * @brief Callback to process new footprint updates.
    */
-  void footprint_callback(const geometry_msgs::msg::PolygonStamped::SharedPtr msg);
+  void footprint_callback(const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & msg);
 
   tf2_ros::Buffer & tf_;
   std::string robot_base_frame_;
   double transform_tolerance_;
   bool footprint_received_{false};
-  geometry_msgs::msg::PolygonStamped::SharedPtr footprint_;
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr footprint_;
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr footprint_sub_;
 };
 

@@ -53,7 +53,7 @@ public:
    * @brief Callback function for odom topic
    * @param msg Shared pointer to nav_msgs::msg::Odometry::SharedPtr message
    */
-  void onOdomReceived(const typename nav_msgs::msg::Odometry::SharedPtr msg);
+  void onOdomReceived(const nav_msgs::msg::Odometry::ConstSharedPtr & msg);
 
   /**
    * @brief The main override required by a BT action
