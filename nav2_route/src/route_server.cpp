@@ -42,7 +42,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", nav2::qos::LatchedPublisherQoS());
 
-  route_publisher_ = create_publisher<nav_msgs::msg::Path>("route_path");
+  route_publisher_ = create_publisher<nav2_msgs::msg::Route>("route");
 
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",
@@ -279,7 +279,7 @@ RouteServer::processRouteRequest(
       RCLCPP_INFO(
         get_logger(), "Route found with %zu nodes and %zu edges",
         route.edges.size() + 1u, route.edges.size());
-      publishRouteAsPath(route);
+      publishRoute(route);
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
 
       if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
@@ -392,20 +392,10 @@ void RouteServer::setRouteGraph(
 }
 
 void
-RouteServer::publishRouteAsPath(const Route & route)
+RouteServer::publishRoute(const Route & route)
 {
-  auto msg = std::make_unique<nav_msgs::msg::Path>();
-  msg->header.frame_id = route_frame_;
-  msg->header.stamp = this->now();
-  // add start node
-  msg->poses.push_back(utils::toMsg(route.start_node->coords.x, route.start_node->coords.y));
-  // add each edge's end node
-  for (const auto & edge : route.edges) {
-    msg->poses.push_back(utils::toMsg(edge->end->coords.x, edge->end->coords.y));
-  }
-
   if (route_publisher_->is_activated() && route_publisher_->get_subscription_count() > 0) {
-    route_publisher_->publish(std::move(msg));
+    route_publisher_->publish(utils::toMsg(route, route_frame_, this->now()));
   }
 }
 

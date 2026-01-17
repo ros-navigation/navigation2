@@ -36,7 +36,6 @@
 #include "nav2_msgs/srv/set_route_graph.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
-#include "nav_msgs/msg/path.hpp"
 
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
@@ -202,10 +201,10 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
   /**
-   * @brief Publish the sparse calculated route as a nav_msgs/Path
-   * @param route Route to convert and publish
+   * @brief Publish the route msg
+   * @param route to create message from and publish
    */
-  void publishRouteAsPath(const Route & route);
+  void publishRoute(const Route & route);
 
   /**
    * @brief Log exception warnings, templated by action message type
@@ -226,8 +225,8 @@ protected:
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
 
-  // Publish the sparse calculated route as a nav_msgs/Path
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr route_publisher_;
+  // Route publisher
+  nav2::Publisher<nav2_msgs::msg::Route>::SharedPtr route_publisher_;
 
   // Set or modify graph
   nav2::ServiceServer<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
