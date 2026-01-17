@@ -30,12 +30,12 @@ void PenaltyScorer::configure(
   name_ = name;
 
   // Find the tag at high the speed limit information is stored
-  penalty_tag_ = nav2::declare_or_get_parameter<std::string>(
+  penalty_tag_ = nav2::declare_or_get_parameter(
     node, getName() + ".penalty_tag", std::string("penalty"));
 
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter<double>(node, getName() + ".weight", 1.0));
+    nav2::declare_or_get_parameter(node, getName() + ".weight", 1.0));
 }
 
 bool PenaltyScorer::score(

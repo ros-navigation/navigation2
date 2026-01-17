@@ -107,7 +107,7 @@ protected:
     logger_ = node->get_logger();
     node_ = node;
 
-    main_srv_name_ = nav2::declare_or_get_parameter<std::string>(
+    main_srv_name_ = nav2::declare_or_get_parameter(
       node, getName() + ".service_name", std::string(""));
 
     configureEvent(node, name);

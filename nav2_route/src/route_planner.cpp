@@ -29,7 +29,7 @@ void RoutePlanner::configure(
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber)
 {
-  max_iterations_ = nav2::declare_or_get_parameter<int>(node, "max_iterations", 0);
+  max_iterations_ = nav2::declare_or_get_parameter(node, "max_iterations", 0);
 
   if (max_iterations_ <= 0) {
     max_iterations_ = std::numeric_limits<int>::max();

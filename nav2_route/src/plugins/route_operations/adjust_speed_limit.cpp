@@ -29,7 +29,7 @@ void AdjustSpeedLimit::configure(
   RCLCPP_INFO(node->get_logger(), "Configuring Adjust speed limit operation.");
   name_ = name;
   logger_ = node->get_logger();
-  speed_tag_ = nav2::declare_or_get_parameter<std::string>(
+  speed_tag_ = nav2::declare_or_get_parameter(
     node, getName() + ".speed_tag", std::string("speed_limit"));
 
   nav2::declare_parameter_if_not_declared(
