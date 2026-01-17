@@ -30,12 +30,12 @@ GraphSaver::GraphSaver(
   tf_ = tf;
   route_frame_ = frame;
 
-  graph_filepath_ = nav2::declare_or_get_parameter<std::string>(
+  graph_filepath_ = nav2::declare_or_get_parameter(
     node, "graph_filepath", std::string(""));
 
   // Default Graph Parser
   const std::string default_plugin_type = "nav2_route::GeoJsonGraphFileSaver";
-  auto graph_file_saver_id = nav2::declare_or_get_parameter<std::string>(
+  auto graph_file_saver_id = nav2::declare_or_get_parameter(
     node, "graph_file_saver", default_plugin_id_);
   if (graph_file_saver_id == default_plugin_id_) {
     nav2::declare_parameter_if_not_declared(

@@ -33,7 +33,7 @@ EdgeScorer::EdgeScorer(
   const std::vector<std::string> default_plugin_types(
     {"nav2_route::DistanceScorer", "nav2_route::DynamicEdgesScorer"});
 
-  auto edge_cost_function_ids = nav2::declare_or_get_parameter<std::vector<std::string>>(
+  auto edge_cost_function_ids = nav2::declare_or_get_parameter(
     node, "edge_cost_functions", default_plugin_ids);
 
   if (edge_cost_function_ids == default_plugin_ids) {

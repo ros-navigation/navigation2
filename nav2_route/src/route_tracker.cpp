@@ -32,11 +32,11 @@ void RouteTracker::configure(
   action_server_ = action_server;
   tf_buffer_ = tf_buffer;
 
-  radius_threshold_ = nav2::declare_or_get_parameter<double>(node, "radius_to_achieve_node", 2.0);
-  boundary_radius_threshold_ = nav2::declare_or_get_parameter<double>(
+  radius_threshold_ = nav2::declare_or_get_parameter(node, "radius_to_achieve_node", 2.0);
+  boundary_radius_threshold_ = nav2::declare_or_get_parameter(
     node, "boundary_radius_to_achieve_node", 1.0);
-  tracker_update_rate_ = nav2::declare_or_get_parameter<double>(node, "tracker_update_rate", 50.0);
-  aggregate_blocked_ids_ = nav2::declare_or_get_parameter<bool>(
+  tracker_update_rate_ = nav2::declare_or_get_parameter(node, "tracker_update_rate", 50.0);
+  aggregate_blocked_ids_ = nav2::declare_or_get_parameter(
     node, "aggregate_blocked_ids", false);
 
   operations_manager_ = std::make_unique<OperationsManager>(node, costmap_subscriber);

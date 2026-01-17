@@ -59,16 +59,16 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  route_frame_ = this->declare_or_get_parameter<std::string>(
-    "route_frame", "map");
-  base_frame_ = this->declare_or_get_parameter<std::string>(
-    "base_frame", "base_link");
+  route_frame_ = this->declare_or_get_parameter(
+    "route_frame", std::string("map"));
+  base_frame_ = this->declare_or_get_parameter(
+    "base_frame", std::string("base_link"));
   max_planning_time_ = this->declare_or_get_parameter(
     "max_planning_time", 2.0);
 
   // Create costmap subscriber
-  std::string costmap_topic = this->declare_or_get_parameter<std::string>(
-    "costmap_topic", "global_costmap/costmap_raw");
+  std::string costmap_topic = this->declare_or_get_parameter(
+    "costmap_topic", std::string("global_costmap/costmap_raw"));
   costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
 
   try {

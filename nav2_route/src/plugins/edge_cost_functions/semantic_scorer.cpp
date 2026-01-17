@@ -30,7 +30,7 @@ void SemanticScorer::configure(
   name_ = name;
 
   // Find the semantic data
-  std::vector<std::string> classes = nav2::declare_or_get_parameter<std::vector<std::string>>(
+  std::vector<std::string> classes = nav2::declare_or_get_parameter(
     node, getName() + ".semantic_classes", std::vector<std::string>{});
   for (auto & cl : classes) {
     nav2::declare_parameter_if_not_declared(
@@ -41,12 +41,12 @@ void SemanticScorer::configure(
 
   // Find the key to look for semantic data for within the metadata. If set to empty string,
   // will search instead for any key in the metadata.
-  key_ = nav2::declare_or_get_parameter<std::string>(
+  key_ = nav2::declare_or_get_parameter(
     node, getName() + ".semantic_key", std::string("class"));
 
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter<double>(node, getName() + ".weight", 1.0));
+    nav2::declare_or_get_parameter(node, getName() + ".weight", 1.0));
 }
 
 void SemanticScorer::metadataKeyScorer(Metadata & mdata, float & score)

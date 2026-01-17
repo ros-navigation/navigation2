@@ -37,7 +37,7 @@ OperationsManager::OperationsManager(
   const std::vector<std::string> default_plugin_types(
     {"nav2_route::AdjustSpeedLimit", "nav2_route::ReroutingService"});
 
-  auto operation_ids = nav2::declare_or_get_parameter<std::vector<std::string>>(
+  auto operation_ids = nav2::declare_or_get_parameter(
     node, "operations", default_plugin_ids);
 
   if (operation_ids == default_plugin_ids) {
