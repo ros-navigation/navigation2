@@ -201,6 +201,12 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
   /**
+   * @brief Publish the route msg
+   * @param route to create message from and publish
+   */
+  void publishRoute(const Route & route);
+
+  /**
    * @brief Log exception warnings, templated by action message type
    * @param goal Goal that failed
    * @param exception Exception message
@@ -215,9 +221,12 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
-  // Publish the route for visualization
+  // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
+
+  // Route publisher
+  nav2::Publisher<nav2_msgs::msg::Route>::SharedPtr route_publisher_;
 
   // Set or modify graph
   nav2::ServiceServer<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;
