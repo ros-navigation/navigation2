@@ -49,38 +49,6 @@ public:
 
 protected:
   /**
-    * @brief Checks if cost represents a collision
-    * @param cost Point cost at pose center
-    * @param x X of pose
-    * @param y Y of pose
-    * @param theta theta of pose
-    * @return bool if in collision
-    */
-  inline bool inCollision(float cost, float x, float y, float theta)
-  {
-    // If consider_footprint_ check footprint scort for collision
-    float score_cost = cost;
-    if (consider_footprint_ &&
-      (cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
-    {
-      score_cost = static_cast<float>(collision_checker_.footprintCostAtPose(
-          static_cast<double>(x), static_cast<double>(y), static_cast<double>(theta),
-          costmap_ros_->getRobotFootprint()));
-    }
-
-    switch (static_cast<unsigned char>(score_cost)) {
-      case (nav2_costmap_2d::LETHAL_OBSTACLE):
-        return true;
-      case (nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE):
-        return consider_footprint_ ? false : true;
-      case (nav2_costmap_2d::NO_INFORMATION):
-        return is_tracking_unknown_ ? false : true;
-    }
-
-    return false;
-  }
-
-  /**
     * @brief Find the min cost of the inflation decay function for which the robot MAY be
     * in collision in any orientation
     * @param costmap Costmap2DROS to get minimum inscribed cost (e.g. 128 in inflation layer documentation)
