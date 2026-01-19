@@ -33,9 +33,8 @@ void SemanticScorer::configure(
   std::vector<std::string> classes = nav2::declare_or_get_parameter(
     node, getName() + ".semantic_classes", std::vector<std::string>{});
   for (auto & cl : classes) {
-    nav2::declare_parameter_if_not_declared(
-      node, getName() + "." + cl, rclcpp::ParameterType::PARAMETER_DOUBLE);
-    const double cost = node->get_parameter(getName() + "." + cl).as_double();
+    const double cost = nav2::declare_or_get_parameter<double>(
+      node, getName() + "." + cl);
     semantic_info_[cl] = static_cast<float>(cost);
   }
 
