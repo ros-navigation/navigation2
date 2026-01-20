@@ -220,7 +220,6 @@ create_subscription(
      options);
 
   // Auto-activate if the node is not a base lifecycle node
-  // Try to cast to lifecycle node - if it fails, it's a regular node
   auto lc_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
   if (!lc_node) {
     // Not a lifecycle node, auto-activate the subscription
