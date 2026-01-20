@@ -395,7 +395,9 @@ void
 RouteServer::publishRoute(const Route & route)
 {
   if (route_publisher_->is_activated() && route_publisher_->get_subscription_count() > 0) {
-    route_publisher_->publish(utils::toMsg(route, route_frame_, this->now()));
+    auto msg = std::make_unique<nav2_msgs::msg::Route>(
+      utils::toMsg(route, route_frame_, this->now()));
+    route_publisher_->publish(std::move(msg));
   }
 }
 
