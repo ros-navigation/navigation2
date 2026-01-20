@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import tempfile
-from typing import IO, Optional
+from typing import IO, Optional, Sequence
 
 import launch
 
 
+@launch.frontend.expose_substitution('replace-string')
 class ReplaceString(launch.Substitution):
     """
     Substitution that replaces strings on a given file.
@@ -45,6 +46,10 @@ class ReplaceString(launch.Substitution):
                 replacements[key]
             )
         self.__condition = condition
+
+    @classmethod
+    def parse(cls, data: Sequence[launch.SomeSubstitutionsType]):
+        raise NotImplementedError()
 
     @property
     def name(self) -> list[launch.Substitution]:
