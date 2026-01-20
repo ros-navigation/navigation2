@@ -186,7 +186,7 @@ inline rclcpp::PublisherOptions createPublisherOptions(
 }
 
 /**
- * @brief Create a subscription to a topic using Nav2 QoS profiles and allocator-aware SubscriptionOptions.
+ * @brief Create a subscription to a topic using Nav2 QoS profiles and SubscriptionOptions.
  *
  * If the node is not a lifecycle node, the subscription will be auto-activated.
  *
