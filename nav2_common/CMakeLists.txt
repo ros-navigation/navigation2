@@ -6,9 +6,6 @@ find_package(ament_cmake_core REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(backward_ros REQUIRED)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(nav2_package)
-
 ament_python_install_package(nav2_common)
 
 ament_package(
