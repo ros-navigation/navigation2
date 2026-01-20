@@ -30,12 +30,12 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  graph_filepath_ = nav2::declare_or_get_parameter(
-    node, "graph_filepath", std::string(""));
+  graph_filepath_ = node->declare_or_get_parameter(
+    "graph_filepath", std::string(""));
 
   // Default Graph Parser
-  auto graph_file_loader_id = nav2::declare_or_get_parameter(
-    node, "graph_file_loader", default_plugin_id_);
+  auto graph_file_loader_id = node->declare_or_get_parameter(
+    "graph_file_loader", default_plugin_id_);
   if (graph_file_loader_id == default_plugin_id_) {
     nav2::declare_parameter_if_not_declared(
       node, default_plugin_id_ + ".plugin",

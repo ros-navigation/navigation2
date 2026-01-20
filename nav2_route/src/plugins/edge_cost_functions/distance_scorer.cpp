@@ -30,12 +30,12 @@ void DistanceScorer::configure(
   name_ = name;
 
   // Find the tag at high the speed limit information is stored
-  speed_tag_ = nav2::declare_or_get_parameter(
-    node, getName() + ".speed_tag", std::string("speed_limit"));
+  speed_tag_ = node->declare_or_get_parameter(
+    getName() + ".speed_tag", std::string("speed_limit"));
 
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".weight", 1.0));
+    node->declare_or_get_parameter(getName() + ".weight", 1.0));
 }
 
 bool DistanceScorer::score(

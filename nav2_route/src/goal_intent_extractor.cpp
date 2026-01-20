@@ -42,20 +42,20 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph);
 
-  prune_goal_ = nav2::declare_or_get_parameter(node, "prune_goal", true);
+  prune_goal_ = node->declare_or_get_parameter("prune_goal", true);
 
   max_dist_from_edge_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, "max_prune_dist_from_edge", 8.0));
+    node->declare_or_get_parameter("max_prune_dist_from_edge", 8.0));
   min_dist_from_goal_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, "min_prune_dist_from_goal", 0.15));
+    node->declare_or_get_parameter("min_prune_dist_from_goal", 0.15));
   min_dist_from_start_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, "min_prune_dist_from_start", 0.10));
+    node->declare_or_get_parameter("min_prune_dist_from_start", 0.10));
 
-  enable_search_ = nav2::declare_or_get_parameter(node, "enable_nn_search", true);
-  max_nn_search_iterations_ = nav2::declare_or_get_parameter(
-    node, "max_nn_search_iterations", 10000);
+  enable_search_ = node->declare_or_get_parameter("enable_nn_search", true);
+  max_nn_search_iterations_ = node->declare_or_get_parameter(
+    "max_nn_search_iterations", 10000);
 
-  int num_of_nearest_nodes = nav2::declare_or_get_parameter(node, "num_nearest_nodes", 5);
+  int num_of_nearest_nodes = node->declare_or_get_parameter("num_nearest_nodes", 5);
   node_spatial_tree_->setNumOfNearestNodes(num_of_nearest_nodes);
 }
 

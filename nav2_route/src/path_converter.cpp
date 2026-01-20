@@ -27,10 +27,10 @@ namespace nav2_route
 void PathConverter::configure(nav2::LifecycleNode::SharedPtr node)
 {
   // Density to make path points
-  density_ = static_cast<float>(nav2::declare_or_get_parameter(node, "path_density", 0.05));
+  density_ = static_cast<float>(node->declare_or_get_parameter("path_density", 0.05));
   smoothing_radius_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, "smoothing_radius", 1.0));
-  smooth_corners_ = nav2::declare_or_get_parameter(node, "smooth_corners", false);
+    node->declare_or_get_parameter("smoothing_radius", 1.0));
+  smooth_corners_ = node->declare_or_get_parameter("smooth_corners", false);
 
   path_pub_ = node->create_publisher<nav_msgs::msg::Path>("plan");
   path_pub_->on_activate();

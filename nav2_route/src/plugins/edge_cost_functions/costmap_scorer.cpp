@@ -33,28 +33,28 @@ void CostmapScorer::configure(
 
   // Find whether to use average or maximum cost values
   use_max_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".use_maximum", true));
+    node->declare_or_get_parameter(getName() + ".use_maximum", true));
 
   // Edge is invalid if its in collision
   invalid_on_collision_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".invalid_on_collision", true));
+    node->declare_or_get_parameter(getName() + ".invalid_on_collision", true));
 
   // Edge is invalid if edge is off the costmap
   invalid_off_map_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".invalid_off_map", true));
+    node->declare_or_get_parameter(getName() + ".invalid_off_map", true));
 
   // Max cost to be considered valid
   max_cost_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".max_cost", 253.0));
+    node->declare_or_get_parameter(getName() + ".max_cost", 253.0));
 
   // Resolution to check the costmap over (1=every cell, 2=every other cell, etc.)
   check_resolution_ = static_cast<unsigned int>(
-    nav2::declare_or_get_parameter(node, getName() + ".check_resolution", 2));
+    node->declare_or_get_parameter(getName() + ".check_resolution", 2));
 
   // Create costmap subscriber if not the same as the server costmap
   std::string server_costmap_topic = node->get_parameter("costmap_topic").as_string();
-  std::string costmap_topic = nav2::declare_or_get_parameter(
-    node, getName() + ".costmap_topic", std::string("global_costmap/costmap_raw"));
+  std::string costmap_topic = node->declare_or_get_parameter(
+    getName() + ".costmap_topic", std::string("global_costmap/costmap_raw"));
   if (costmap_topic != server_costmap_topic) {
     costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
       node, costmap_topic);
@@ -68,7 +68,7 @@ void CostmapScorer::configure(
 
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".weight", 1.0));
+    node->declare_or_get_parameter(getName() + ".weight", 1.0));
 }
 
 void CostmapScorer::prepare()

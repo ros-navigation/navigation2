@@ -30,12 +30,12 @@ void StartPoseOrientationScorer::configure(
   name_ = name;
   logger_ = node->get_logger();
 
-  orientation_tolerance_ = nav2::declare_or_get_parameter(
-    node, getName() + ".orientation_tolerance", M_PI / 2.0);
+  orientation_tolerance_ = node->declare_or_get_parameter(
+    getName() + ".orientation_tolerance", M_PI / 2.0);
   orientation_weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".orientation_weight", 1.0));
-  use_orientation_threshold_ = nav2::declare_or_get_parameter(
-    node, getName() + ".use_orientation_threshold", false);
+    node->declare_or_get_parameter(getName() + ".orientation_weight", 1.0));
+  use_orientation_threshold_ = node->declare_or_get_parameter(
+    getName() + ".use_orientation_threshold", false);
 
   tf_buffer_ = tf_buffer;
 }

@@ -30,18 +30,18 @@ void TimeScorer::configure(
   name_ = name;
 
   // Find the tag at high the speed limit information is stored
-  speed_tag_ = nav2::declare_or_get_parameter(
-    node, getName() + ".speed_tag", std::string("abs_speed_limit"));
+  speed_tag_ = node->declare_or_get_parameter(
+    getName() + ".speed_tag", std::string("abs_speed_limit"));
 
-  prev_time_tag_ = nav2::declare_or_get_parameter(
-    node, getName() + ".time_tag", std::string("abs_time_taken"));
+  prev_time_tag_ = node->declare_or_get_parameter(
+    getName() + ".time_tag", std::string("abs_time_taken"));
 
   // Find the proportional weight to apply, if multiple cost functions
   weight_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".weight", 1.0));
+    node->declare_or_get_parameter(getName() + ".weight", 1.0));
 
   max_vel_ = static_cast<float>(
-    nav2::declare_or_get_parameter(node, getName() + ".max_vel", 0.5));
+    node->declare_or_get_parameter(getName() + ".max_vel", 0.5));
 }
 
 bool TimeScorer::score(
