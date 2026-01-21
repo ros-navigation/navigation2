@@ -69,7 +69,7 @@ public:
     return topic_name_.c_str();
   }
 
-private:
+protected:
   template<typename NodeT, typename CallbackT>
   void init(
     const std::shared_ptr<NodeT> & node,
