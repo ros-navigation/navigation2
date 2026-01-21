@@ -291,16 +291,23 @@ bool GracefulController::validateTargetPose(
     if (params_->prefer_final_rotation) {
       // Avoid instability and big sweeping turns at the end of paths by
       // ignoring final heading
-      std::size_t last_index = transformed_plan.poses.size() - 1;
-      double path_heading_at_goal = std::atan2(
-        transformed_plan.poses[last_index].pose.position.y -
-          transformed_plan.poses[last_index - 1].pose.position.y,
-        transformed_plan.poses[last_index].pose.position.x -
-          transformed_plan.poses[last_index - 1].pose.position.x);
-      double target_yaw = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
-      if (std::fabs(angles::shortest_angular_distance(path_heading_at_goal, target_yaw)) >
-        params_->final_rotation_tolerance)
-      {
+      bool ignore_final_heading = true;
+      if (transformed_plan.poses.size() >= 2) {
+        std::size_t last_index = transformed_plan.poses.size() - 1;
+        double path_heading_at_goal = std::atan2(
+          transformed_plan.poses[last_index].pose.position.y -
+            transformed_plan.poses[last_index - 1].pose.position.y,
+          transformed_plan.poses[last_index].pose.position.x -
+            transformed_plan.poses[last_index - 1].pose.position.x);
+        double target_yaw = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
+        if (
+          std::fabs(angles::shortest_angular_distance(path_heading_at_goal, target_yaw)) <=
+          params_->final_rotation_tolerance)
+        {
+          ignore_final_heading = false;
+        }
+      }
+      if (ignore_final_heading) {
         double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
         target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
       }
