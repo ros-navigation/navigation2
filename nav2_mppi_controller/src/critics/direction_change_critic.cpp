@@ -49,15 +49,21 @@ void DirectionChangeCritic::score(CriticData & data)
     return;
   }
 
+  // Penalize the magnitude of velocity difference when crossing zero (direction change)
+  // Calculate |vx - current_speed| only where signs differ, otherwise 0
+
   constexpr size_t penalize_up_to_idx = 2;
+  const float current_speed = data.state.speed.linear.x;
+  // Process in-place using Eigen views to avoid allocations
+  auto vx_view = data.state.vx.leftCols(penalize_up_to_idx);
+
+  // TODO also penalize change direction in wz (and vy for holonomic case) . maybe add a flag to enable/disable wz
   if (power_ > 1u) {
-    data.costs += (
-      // only penalize the first penalize_up_to_idx elements
-      (data.state.vx.leftCols(penalize_up_to_idx).unaryExpr([&](const float & x){return std::sign(x *
-        data.state.speed.linear.x);})).rowwise().sum() * weight_).pow(power_);
+    data.costs += ((vx_view * current_speed < 0.0f).select(
+      (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_).pow(power_);
   } else {
-    data.costs += (data.state.vx.leftCols(penalize_up_to_idx).unaryExpr([&](const float & x){
-      return std::sign(x * data.state.speed.linear.x);})).rowwise().sum() * weight_;
+    data.costs += (vx_view * current_speed < 0.0f).select(
+      (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_;
   }
 }
 
