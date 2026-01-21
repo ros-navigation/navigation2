@@ -33,6 +33,7 @@ class ConfigDict(TypedDict):
     stopping_threshold: int
     num_of_headings: int
     motion_model: str
+    trajectory_distinctness_ratio: float
 
 
 class LatticeGenerator:
@@ -66,6 +67,7 @@ class LatticeGenerator:
         self.turning_radius = config['turning_radius']
         self.stopping_threshold = config['stopping_threshold']
         self.num_of_headings = config['num_of_headings']
+        self.trajectory_distinctness_ratio = config['trajectory_distinctness_ratio']
         self.headings = self._get_heading_discretization(config['num_of_headings'])
 
         self.motion_model = self.MotionModel[config['motion_model'].upper()]
@@ -308,6 +310,7 @@ class LatticeGenerator:
             The start_heading and the list of discovered minimal trajectories
 
         """
+        trajectories_by_heading = defaultdict(list)
         local_trajectories = []
         prior_end_poses = index.Index()
         # Use the minimum trajectory length to find the starting wave front
@@ -349,30 +352,41 @@ class LatticeGenerator:
                         # Check if path overlaps something in minimal
                         # spanning set
                         if self._is_minimal_trajectory(trajectory, prior_end_poses):
+                            current_length = trajectory.parameters.total_length
+                            is_distinct_enough = True
 
-                            # Add end pose to minimal set
-                            new_end_pose = np.array(
-                                [target_point[0], target_point[1], target_heading]
-                            )
+                            # Loop through the local trajectories with the same target heading
+                            for prev_pos, prev_len in trajectories_by_heading[target_heading]:
+                                dist = np.linalg.norm(target_point - prev_pos)
+                                if dist < self.trajectory_distinctness_ratio * min(current_length, prev_len):
+                                    is_distinct_enough = False
+                                    break
 
-                            local_trajectories.append(
-                                (target_point, target_heading)
-                            )
+                            if is_distinct_enough:
+                                trajectories_by_heading[target_heading].append((target_point, current_length))
+                                # Add end pose to minimal set
+                                new_end_pose = np.array(
+                                    [target_point[0], target_point[1], target_heading]
+                                )
 
-                            # Create a new bounding box in the RTree
-                            # for this trajectory
-                            left_bb = target_point[0] - self.DISTANCE_THRESHOLD
-                            right_bb = target_point[0] + self.DISTANCE_THRESHOLD
-                            bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
-                            top_bb = target_point[1] + self.DISTANCE_THRESHOLD
+                                local_trajectories.append(
+                                    (target_point, target_heading)
+                                )
 
-                            prior_end_poses.insert(
-                                0,
-                                (left_bb, bottom_bb, right_bb, top_bb),
-                                new_end_pose,
-                            )
+                                # Create a new bounding box in the RTree
+                                # for this trajectory
+                                left_bb = target_point[0] - self.DISTANCE_THRESHOLD
+                                right_bb = target_point[0] + self.DISTANCE_THRESHOLD
+                                bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
+                                top_bb = target_point[1] + self.DISTANCE_THRESHOLD
 
-                            iterations_without_trajectory = 0
+                                prior_end_poses.insert(
+                                    0,
+                                    (left_bb, bottom_bb, right_bb, top_bb),
+                                    new_end_pose,
+                                )
+
+                                iterations_without_trajectory = 0
 
             wave_front_cur_pos += 1
 
