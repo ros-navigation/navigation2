@@ -53,11 +53,16 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  // Don't apply when first getting bearing w.r.t. the path
+  // Only apply critic when trajectories reach far enough along the way path.
+  // This ensures that path alignment is only considered when actually tracking the path (e.g. not driving very slow
+  // or when first getting bearing w.r.t. the path)
   utils::setPathFurthestPointIfNotSet(data);
-  // Up to furthest only, closest path point is always 0 from path handler
-  const size_t path_segments_count = *data.furthest_reached_path_point;
-  float path_segments_flt = static_cast<float>(path_segments_count);
+  if (*data.furthest_reached_path_point < offset_from_furthest_) {
+    return;
+  }
+
+  // use the whole local path as reference path
+  const size_t path_segments_count = data.path.x.size() - 1;
 
   // Visualize target pose if enabled
   if (visualize_furthest_point_ && path_segments_count > 0 &&
@@ -75,17 +80,14 @@ void PathAlignCritic::score(CriticData & data)
     furthest_point_pub_->publish(std::move(furthest_point));
   }
 
-  if (path_segments_count < offset_from_furthest_) {
-    return;
-  }
-
   // Don't apply when dynamic obstacles are blocking significant proportions of the local path
+  const float path_segments_count_flt = static_cast<float>(path_segments_count);
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   std::vector<bool> & path_pts_valid = *data.path_pts_valid;
   float invalid_ctr = 0.0f;
   for (size_t i = 0; i < path_segments_count; i++) {
     if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / path_segments_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
+    if (invalid_ctr / path_segments_count_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
       return;
     }
   }
