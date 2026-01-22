@@ -83,14 +83,23 @@ protected:
       [this](typename MessageT::ConstSharedPtr msg, const rclcpp::MessageInfo & info)
       {
         if (!this->is_activated()) {
-          RCLCPP_WARN_ONCE(
+          RCLCPP_WARN_THROTTLE(
             logger_,
+            *clock_,
+            1000,  // milliseconds -> 1Hz
             "Trying to take messages on topic '%s', but the subscription is not activated. "
             "Dropping until activation.",
             topic_name_.c_str());
           return;
         }
-        any_cb_.dispatch_intra_process(msg, info);
+        // Use the appropriate dispatch method based on whether the message came from
+        // intra-process (composition) or inter-process (DDS/serialization)
+        if (info.get_rmw_message_info().from_intra_process) {
+          any_cb_.dispatch_intra_process(msg, info);
+        } else {
+          auto non_const_msg = std::make_shared<MessageT>(*msg);
+          any_cb_.dispatch(non_const_msg, info);
+        }
       };
 
     auto params_if = node->get_node_parameters_interface();
@@ -109,6 +118,7 @@ protected:
   typename RclcppSub::SharedPtr sub_;
   std::string topic_name_;
   rclcpp::Logger logger_;
+  rclcpp::Clock::SharedPtr clock_;
   AnyCb any_cb_;
 };
 
