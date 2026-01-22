@@ -38,6 +38,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
@@ -255,7 +256,7 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
 {
   // Get the BT root directory
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
 
   ASSERT_TRUE(std::filesystem::exists(root_dir));
@@ -671,7 +672,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -722,7 +723,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -782,7 +783,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -845,7 +846,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -947,7 +948,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -1019,7 +1020,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
