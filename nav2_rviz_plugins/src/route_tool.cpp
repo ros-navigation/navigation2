@@ -54,8 +54,8 @@ void RouteTool::onInitialize(void)
   }
   auto node = ros_node_abstraction->get_raw_node();
 
-  clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
-    "clicked_point", 1, [this](const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg) {
+  clicked_point_subscription_ = nav2::interfaces::create_subscription<geometry_msgs::msg::PointStamped>(
+    node, "clicked_point", [this](const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg) {
       ui_->add_field_1->setText(std::to_string(msg->point.x).c_str());
       ui_->add_field_2->setText(std::to_string(msg->point.y).c_str());
       ui_->edit_field_1->setText(std::to_string(msg->point.x).c_str());

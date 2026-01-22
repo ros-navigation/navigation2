@@ -24,6 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
@@ -108,11 +109,9 @@ public:
   : Node("speed_limit_sub"), speed_limit_updated_(false)
   {
     subscriber_ = nav2::interfaces::create_subscription<nav2_msgs::msg::SpeedLimit>(
-    shared_from_this(),
-    // ^^^ FIX: use Nav2 factory so the returned type is nav2::Subscription<...>::SharedPtr
-    speed_limit_topic,
-    std::bind(&SpeedLimitSubscriber::speedLimitCallback, this, std::placeholders::_1),
-    rclcpp::QoS(10));
+      shared_from_this(), speed_limit_topic,
+      std::bind(&SpeedLimitSubscriber::speedLimitCallback, this, std::placeholders::_1),
+      rclcpp::QoS(10));
   }
 
   void speedLimitCallback(

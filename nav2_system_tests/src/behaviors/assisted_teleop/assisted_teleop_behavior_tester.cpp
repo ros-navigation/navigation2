@@ -68,7 +68,7 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
     node_,
     "cmd_vel",
     std::bind(&AssistedTeleopBehaviorTester::filteredVelCallback, this, std::placeholders::_1),
-    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    rclcpp::SystemDefaultsQoS());
   std::string costmap_topic = "/local_costmap/costmap_raw";
   std::string footprint_topic = "/local_costmap/published_footprint";
 

@@ -27,6 +27,7 @@
 #include "nav2_route/types.hpp"
 #include "nav2_route/utils.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 #include "rviz_common/panel.hpp"
 #include "std_msgs/msg/int16.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -110,7 +111,7 @@ private:
 
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
-  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
+  nav2::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr
     clicked_point_subscription_;
 
   unsigned int next_node_id_ = 0;

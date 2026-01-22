@@ -895,8 +895,8 @@ Nav2Panel::onInitialize()
 
   // create action feedback subscribers
   navigation_feedback_sub_ =
-    node->create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
-    "navigate_to_pose/_action/feedback",
+    nav2::interfaces::create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
+    node, "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       if (stoi(nr_of_loops_->displayText().toStdString()) > 0) {
@@ -920,8 +920,8 @@ Nav2Panel::onInitialize()
       }
     });
   nav_through_poses_feedback_sub_ =
-    node->create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
-    "navigate_through_poses/_action/feedback",
+    nav2::interfaces::create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
+    node, "navigate_through_poses/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
     msg) {
@@ -929,8 +929,8 @@ Nav2Panel::onInitialize()
     });
 
   // create action goal status subscribers
-  navigation_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
-    "navigate_to_pose/_action/status",
+  navigation_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
+    node, "navigate_to_pose/_action/status",
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
@@ -948,8 +948,8 @@ Nav2Panel::onInitialize()
         navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel());
       }
     });
-  nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
-    "navigate_through_poses/_action/status",
+  nav_through_poses_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
+    node, "navigate_through_poses/_action/status",
     rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
