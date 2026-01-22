@@ -12,7 +12,6 @@
   <build_depend>qt6-base-dev</build_depend>
   <build_depend>qt6-scxml-dev</build_depend>
 
-  <depend>ament_index_cpp</depend>
   <depend>backward_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav2_lifecycle_manager</depend>

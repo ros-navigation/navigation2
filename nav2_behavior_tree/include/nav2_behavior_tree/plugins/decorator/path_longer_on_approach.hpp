@@ -74,16 +74,6 @@ public:
 
 private:
   /**
-   * @brief Checks if the global path is updated
-   * @param new_path new path to the goal
-   * @param old_path current path to the goal
-   * @return whether the path is updated for the current goal
-   */
-  bool isPathUpdated(
-    nav_msgs::msg::Path & new_path,
-    nav_msgs::msg::Path & old_path);
-
-  /**
    * @brief Checks if the robot is in the goal proximity
    * @param old_path current path to the goal
    * @param prox_leng proximity length from the goal

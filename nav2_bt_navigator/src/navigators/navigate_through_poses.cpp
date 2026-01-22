@@ -19,6 +19,9 @@
 #include <limits>
 #include <stdexcept>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
+#include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_feedback.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -35,10 +38,15 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
+  tracking_feedback_blackboard_id_ = node->declare_or_get_parameter(
+    getName() + ".tracking_feedback_blackboard_id",
+    std::string("tracking_feedback"));
   waypoint_statuses_blackboard_id_ =
     node->declare_or_get_parameter(
     getName() + ".waypoint_statuses_blackboard_id",
     std::string("waypoint_statuses"));
+
+  search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -61,7 +69,7 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
 {
   auto node = parent_node.lock();
   std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+    nav2::get_package_share_directory("nav2_bt_navigator");
 
   auto default_bt_xml_filename = node->declare_or_get_parameter(
     "default_nav_through_poses_bt_xml",
@@ -157,25 +165,21 @@ NavigateThroughPosesNavigator::onLoop()
   nav_msgs::msg::Path current_path;
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
+    // Reset start index if path is updated
+    if (nav2_util::isPathUpdated(current_path,
+        previous_path_) || previous_path_.poses.size() == 0u)
+    {
+      start_index_ = 0;
+      previous_path_ = current_path;
+    }
     // Find the closest pose to current pose on global path
-    auto find_closest_pose_idx =
-      [&current_pose, &current_path]() {
-        size_t closest_pose_idx = 0;
-        double curr_min_dist = std::numeric_limits<double>::max();
-        for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-          double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-            current_pose, current_path.poses[curr_idx]);
-          if (curr_dist < curr_min_dist) {
-            curr_min_dist = curr_dist;
-            closest_pose_idx = curr_idx;
-          }
-        }
-        return closest_pose_idx;
-      };
+    const auto path_search_result = nav2_util::distance_from_path(
+      current_path, current_pose.pose, start_index_, search_window_);
 
     // Calculate distance on the path
+    start_index_ = path_search_result.closest_segment_index;
     double distance_remaining =
-      nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
+      nav2_util::geometry_utils::calculate_path_length(current_path, start_index_);
 
     // Default value for time remaining
     rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
@@ -201,6 +205,11 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
   feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
+  nav2_msgs::msg::TrackingFeedback tracking_feedback;
+  res = blackboard->get(
+    tracking_feedback_blackboard_id_,
+    tracking_feedback);
+  feedback_msg->tracking_error = tracking_feedback.tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -279,6 +288,7 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set("number_recoveries", 0);  // NOLINT
+  previous_path_ = nav_msgs::msg::Path();
 
   // Update the goal pose on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
