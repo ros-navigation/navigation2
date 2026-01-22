@@ -920,7 +920,8 @@ Nav2Panel::onInitialize()
     },
     rclcpp::SystemDefaultsQoS());
   nav_through_poses_feedback_sub_ =
-    nav2::interfaces::create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
+    nav2::interfaces::create_subscription<
+    nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
     node, "navigate_through_poses/_action/feedback",
     [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
     msg) {
@@ -929,7 +930,8 @@ Nav2Panel::onInitialize()
     rclcpp::SystemDefaultsQoS());
 
   // create action goal status subscribers
-  navigation_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
+  navigation_goal_status_sub_ =
+    nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "navigate_to_pose/_action/status",
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
@@ -948,7 +950,8 @@ Nav2Panel::onInitialize()
       }
     },
     rclcpp::SystemDefaultsQoS());
-  nav_through_poses_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
+  nav_through_poses_goal_status_sub_ =
+    nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "navigate_through_poses/_action/status",
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
