@@ -229,7 +229,6 @@ create_subscription(
   return sub;
 }
 
-
 /**
  * @brief Create a publisher to a topic using Nav2 QoS profiles and PublisherOptions
  * @param node Node to create the publisher on
