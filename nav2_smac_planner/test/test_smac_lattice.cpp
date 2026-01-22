@@ -22,6 +22,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/a_star.hpp"
@@ -273,7 +274,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   parameters.push_back(
     rclcpp::Parameter(
       "test.lattice_filepath",
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+      nav2::get_package_share_directory("nav2_smac_planner") +
       "/sample_primitives/test/output.json"));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);

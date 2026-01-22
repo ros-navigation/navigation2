@@ -80,7 +80,6 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(ament_cmake_pytest REQUIRED)
-  find_package(ament_index_cpp REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
   ament_find_gtest()

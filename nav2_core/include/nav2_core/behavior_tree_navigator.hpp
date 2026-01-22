@@ -26,6 +26,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "nav2_behavior_tree/bt_action_server.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_core
 {
@@ -203,7 +204,7 @@ public:
 
     auto search_directories = node->declare_or_get_parameter(
       "bt_search_directories",
-      std::vector<std::string>{ament_index_cpp::get_package_share_directory(
+      std::vector<std::string>{nav2::get_package_share_directory(
           "nav2_bt_navigator") + "/behavior_trees"}
     );
 

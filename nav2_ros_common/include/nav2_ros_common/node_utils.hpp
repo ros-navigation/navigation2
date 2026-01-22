@@ -25,6 +25,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/srv/list_parameters.hpp"
 #include "pluginlib/exceptions.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 #ifdef __APPLE__
   #include <pthread.h>
@@ -433,6 +434,17 @@ inline void replaceOrAddArgument(
     arguments.push_back(option);
     arguments.push_back(new_argument);
   }
+}
+
+inline std::string get_package_share_directory(const std::string & package_name)
+{
+  #if RCLCPP_VERSION_GTE(30, 1, 4)
+  std::filesystem::path pkg_share_dir;
+  ament_index_cpp::get_package_share_directory(package_name, pkg_share_dir);
+  return pkg_share_dir.string();
+  #else
+  return ament_index_cpp::get_package_share_directory(package_name);
+  #endif
 }
 
 }  // namespace nav2

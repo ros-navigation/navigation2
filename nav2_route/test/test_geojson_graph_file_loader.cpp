@@ -348,7 +348,7 @@ TEST(GeoJsonGraphFileLoader, simple_graph)
 
 TEST(GeoJsonGraphFileLoader, sample_graph)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
+  auto file_path = nav2::get_package_share_directory("nav2_route") +
     "/graphs/sample_graph.geojson";
 
   Graph graph;
@@ -379,7 +379,7 @@ TEST(GeoJsonGraphFileLoader, sample_graph)
 
 TEST(GeoJsonGraphFileLoader, invalid_file)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
+  auto file_path = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/invalid.json";
   GeoJsonGraphFileLoader graph_file_loader;
   Graph graph;
