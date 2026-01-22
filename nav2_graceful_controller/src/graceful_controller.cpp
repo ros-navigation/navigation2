@@ -460,7 +460,7 @@ bool GracefulController::inCollision(
 
   if (inflation_scale < 1.0) {
     RCLCPP_WARN(logger_, "Inflation ratio cannot be less than 1.0");
-    inflation_scale = 1.0;
+    throw nav2_core::NoValidControl("Inflation ratio less than 1.0");
   }
 
   // Calculate the cost of the footprint at the robot's current position depending
