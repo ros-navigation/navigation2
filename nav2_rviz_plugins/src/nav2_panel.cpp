@@ -897,7 +897,6 @@ Nav2Panel::onInitialize()
   navigation_feedback_sub_ =
     nav2::interfaces::create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
     node, "navigate_to_pose/_action/feedback",
-    rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       if (stoi(nr_of_loops_->displayText().toStdString()) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
@@ -918,20 +917,20 @@ Nav2Panel::onInitialize()
       } else {
         navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel(msg->feedback));
       }
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
   nav_through_poses_feedback_sub_ =
     nav2::interfaces::create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
     node, "navigate_through_poses/_action/feedback",
-    rclcpp::SystemDefaultsQoS(),
     [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
     msg) {
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel(msg->feedback));
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
 
   // create action goal status subscribers
   navigation_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "navigate_to_pose/_action/status",
-    rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
@@ -947,17 +946,18 @@ Nav2Panel::onInitialize()
         loop_count_ = 0;
         navigation_feedback_indicator_->setText(getNavToPoseFeedbackLabel());
       }
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
   nav_through_poses_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "navigate_through_poses/_action/status",
-    rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
         navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel());
       }
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
 }
 
 void

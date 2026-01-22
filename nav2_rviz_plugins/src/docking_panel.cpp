@@ -279,15 +279,14 @@ void DockingPanel::onInitialize()
   // Create action feedback subscriber
   docking_feedback_sub_ = nav2::interfaces::create_subscription<Dock::Impl::FeedbackMessage>(
     node, "dock_robot/_action/feedback",
-    rclcpp::SystemDefaultsQoS(),
     [this](const Dock::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       docking_feedback_indicator_->setText(getDockFeedbackLabel(msg->feedback));
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
 
   // Create action goal status subscribers
   docking_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "dock_robot/_action/status",
-    rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
@@ -295,15 +294,16 @@ void DockingPanel::onInitialize()
       if (msg->status_list.back().status == action_msgs::msg::GoalStatus::STATUS_SUCCEEDED) {
         docking_feedback_indicator_->setText(getDockFeedbackLabel());
       }
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
 
   undocking_goal_status_sub_ = nav2::interfaces::create_subscription<action_msgs::msg::GoalStatusArray>(
     node, "undock_robot/_action/status",
-    rclcpp::SystemDefaultsQoS(),
     [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       docking_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
-    });
+    },
+    rclcpp::SystemDefaultsQoS());
 }
 
 void DockingPanel::startThread()
