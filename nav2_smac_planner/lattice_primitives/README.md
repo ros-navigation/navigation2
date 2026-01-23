@@ -71,7 +71,7 @@ Number of discrete angular headings used. Due to the way discretization is done 
 
 **trajectory_distinctness_ratio** (float)
 
-A pruning parameter that determines the spatial density of the motion primitive library by defining a dynamic distance threshold based on a trajectory's length. A higher ratio results in a sparser, more computationally efficient lattice, while a lower ratio provides denser options. Taking a minimum turning radius of 2.0m as an example, the images below illustrate the difference in primitive density between ratios of 0.3, 0.5, and 0.9.
+A pruning parameter that determines the spatial density of the motion primitive library by defining a dynamic distance similarity threshold based on a trajectory's length. A higher ratio results in a sparser, more computationally efficient lattice, while a lower ratio provides denser options. Taking a minimum turning radius of 2.0m as an example, the images below illustrate the difference in primitive density between ratios of 0.3, 0.5, and 0.9.
 
 0.3:
 
