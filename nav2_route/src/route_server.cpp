@@ -42,6 +42,8 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", nav2::qos::LatchedPublisherQoS());
 
+  route_publisher_ = create_publisher<nav2_msgs::msg::Route>("route");
+
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",
     std::bind(&RouteServer::computeRoute, this),
@@ -111,6 +113,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
+  route_publisher_->on_activate();
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -122,6 +125,7 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
+  route_publisher_->on_deactivate();
   destroyBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -139,6 +143,7 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   path_converter_.reset();
   goal_intent_extractor_.reset();
   graph_vis_publisher_.reset();
+  route_publisher_.reset();
   transform_listener_.reset();
   tf_.reset();
   graph_.clear();
@@ -274,6 +279,7 @@ RouteServer::processRouteRequest(
       RCLCPP_INFO(
         get_logger(), "Route found with %zu nodes and %zu edges",
         route.edges.size() + 1u, route.edges.size());
+      publishRoute(route);
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
 
       if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
@@ -383,6 +389,16 @@ void RouteServer::setRouteGraph(
     get_logger(),
     "Failed to set new route graph: %s!", request->graph_filepath.c_str());
   response->success = false;
+}
+
+void
+RouteServer::publishRoute(const Route & route)
+{
+  if (route_publisher_->is_activated() && route_publisher_->get_subscription_count() > 0) {
+    auto msg = std::make_unique<nav2_msgs::msg::Route>(
+      utils::toMsg(route, route_frame_, this->now()));
+    route_publisher_->publish(std::move(msg));
+  }
 }
 
 template<typename GoalT>

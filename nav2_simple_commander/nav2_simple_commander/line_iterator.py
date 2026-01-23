@@ -89,9 +89,7 @@ class LineIterator:
             self.b_ = y1 - (self.m_ * x1)
         else:
             self.valid_ = False
-            raise ValueError(
-                'Line has zero length (All 4 points have same coordinates)'
-            )
+            raise ValueError('Line has zero length (All 4 points have same coordinates)')
 
     def isValid(self) -> bool:
         """Check if line is valid."""

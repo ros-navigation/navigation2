@@ -27,7 +27,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 using namespace nav2_smac_planner;  // NOLINT
 

@@ -27,6 +27,7 @@
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 TEST(AStarTest, test_a_star_2d)
@@ -303,7 +304,7 @@ TEST(AStarTest, test_a_star_lattice)
   info.retrospective_penalty = 0.1;
   info.analytic_expansion_ratio = 3.5;
   info.lattice_filepath =
-    ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+    nav2::get_package_share_directory("nav2_smac_planner") +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
     "/output.json";
   info.minimum_turning_radius = 8;  // in grid coordinates 0.4/0.05

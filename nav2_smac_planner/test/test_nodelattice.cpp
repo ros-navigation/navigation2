@@ -22,6 +22,7 @@
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smac_planner/a_star.hpp"
 
@@ -29,7 +30,7 @@ using json = nlohmann::json;
 
 TEST(NodeLatticeTest, parser_test)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -88,7 +89,7 @@ TEST(NodeLatticeTest, parser_test)
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -151,7 +152,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -207,7 +208,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 TEST(NodeLatticeTest, test_node_lattice)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -299,7 +300,7 @@ TEST(NodeLatticeTest, test_node_lattice)
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -363,7 +364,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
 TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -448,7 +449,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
