@@ -71,8 +71,9 @@ void AStarAlgorithm<NodeT>::initialize(
   _max_planning_time = max_planning_time;
   if (!_is_initialized) {
     _shared_ctx = std::make_shared<NodeContext>();
-    _shared_ctx->distance_heuristic->precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size,
-        _search_info, _shared_ctx->motion_table);
+    _shared_ctx->distance_heuristic->precomputeDistanceHeuristic(lookup_table_size, _motion_model,
+      dim_3_size,
+      _search_info, _shared_ctx->motion_table);
   }
   _is_initialized = true;
   _dim3_size = dim_3_size;

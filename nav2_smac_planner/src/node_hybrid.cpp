@@ -288,7 +288,7 @@ void HybridMotionTable::initReedsShepp(
   }
 }
 
-MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node) const
+MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node)
 {
   MotionPoses projection_list;
   projection_list.reserve(projections.size());
@@ -317,18 +317,18 @@ MotionPoses HybridMotionTable::getProjections(const NodeHybrid * node) const
   return projection_list;
 }
 
-unsigned int HybridMotionTable::getClosestAngularBin(const double & theta) const
+unsigned int HybridMotionTable::getClosestAngularBin(const double & theta)
 {
   auto bin = static_cast<unsigned int>(round(static_cast<float>(theta) / bin_size));
   return bin < num_angle_quantization ? bin : 0u;
 }
 
-float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx) const
+float HybridMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
   return bin_idx * bin_size;
 }
 
-double HybridMotionTable::getAngle(const double & theta) const
+double HybridMotionTable::getAngle(const double & theta)
 {
   return theta / bin_size;
 }
@@ -436,12 +436,14 @@ float NodeHybrid::getHeuristicCost(
   // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic =
     _ctx->obstacle_heuristic->getObstacleHeuristic(node_coords, _ctx->motion_table.cost_penalty,
-    _ctx->motion_table.use_quadratic_cost_penalty, _ctx->motion_table.downsample_obstacle_heuristic);
+      _ctx->motion_table.use_quadratic_cost_penalty,
+      _ctx->motion_table.downsample_obstacle_heuristic);
   float distance_heuristic = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < goals_coords.size(); i++) {
     distance_heuristic = std::min(
       distance_heuristic,
-      _ctx->distance_heuristic->getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic, _ctx->motion_table));
+      _ctx->distance_heuristic->getDistanceHeuristic(node_coords, goals_coords[i],
+        obstacle_heuristic, _ctx->motion_table));
   }
   return std::max(obstacle_heuristic, distance_heuristic);
 }

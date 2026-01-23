@@ -112,9 +112,9 @@ void LatticeMotionTable::initMotionModel(
 
 MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(
   const NodeLattice * node,
-  unsigned int & direction_change_index) const
+  unsigned int & direction_change_index)
 {
-  const MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
+  MotionPrimitives & prims_at_heading = motion_primitives[node->pose.theta];
   MotionPrimitivePtrs primitive_projection_list;
   for (unsigned int i = 0; i != prims_at_heading.size(); i++) {
     primitive_projection_list.push_back(&prims_at_heading[i]);
@@ -133,7 +133,7 @@ MotionPrimitivePtrs LatticeMotionTable::getMotionPrimitives(
       reserve_heading -= num_angle_quantization;
     }
 
-    const MotionPrimitives & prims_at_reverse_heading = motion_primitives[reserve_heading];
+    MotionPrimitives & prims_at_reverse_heading = motion_primitives[reserve_heading];
     for (unsigned int i = 0; i != prims_at_reverse_heading.size(); i++) {
       primitive_projection_list.push_back(&prims_at_reverse_heading[i]);
     }
@@ -156,7 +156,7 @@ LatticeMetadata LatticeMotionTable::getLatticeMetadata(const std::string & latti
   return metadata;
 }
 
-unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta) const
+unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta)
 {
   float min_dist = std::numeric_limits<float>::max();
   unsigned int closest_idx = 0;
@@ -171,12 +171,12 @@ unsigned int LatticeMotionTable::getClosestAngularBin(const double & theta) cons
   return closest_idx;
 }
 
-float LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx) const
+float & LatticeMotionTable::getAngleFromBin(const unsigned int & bin_idx)
 {
   return lattice_metadata.heading_angles[bin_idx];
 }
 
-double LatticeMotionTable::getAngle(const double & theta) const
+double LatticeMotionTable::getAngle(const double & theta)
 {
   return getClosestAngularBin(theta);
 }
@@ -217,7 +217,7 @@ void NodeLattice::reset()
 bool NodeLattice::isNodeValid(
   const bool & traverse_unknown,
   GridCollisionChecker * collision_checker,
-  const MotionPrimitive * motion_primitive,
+  MotionPrimitive * motion_primitive,
   bool is_backwards)
 {
   // Already found, we can return the result
@@ -358,12 +358,14 @@ float NodeLattice::getHeuristicCost(
   // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic = _ctx->obstacle_heuristic->getObstacleHeuristic(
     node_coords, _ctx->motion_table.cost_penalty,
-    _ctx->motion_table.use_quadratic_cost_penalty, _ctx->motion_table.downsample_obstacle_heuristic);
+    _ctx->motion_table.use_quadratic_cost_penalty,
+      _ctx->motion_table.downsample_obstacle_heuristic);
   float distance_heuristic = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < goals_coords.size(); i++) {
     distance_heuristic = std::min(
       distance_heuristic,
-      _ctx->distance_heuristic->getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic, _ctx->motion_table));
+      _ctx->distance_heuristic->getDistanceHeuristic(node_coords, goals_coords[i],
+        obstacle_heuristic, _ctx->motion_table));
   }
   return std::max(obstacle_heuristic, distance_heuristic);
 }

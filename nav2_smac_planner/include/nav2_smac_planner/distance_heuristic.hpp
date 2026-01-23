@@ -73,8 +73,7 @@ private:
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   LookupTable dist_heuristic_lookup_table_;
   float size_lookup_;
-
 };
 
 }  // namespace nav2_smac_planner
-#endif // NAV2_SMAC_PLANNER__DISTANCE_HEURISTIC_HPP_
+#endif  // NAV2_SMAC_PLANNER__DISTANCE_HEURISTIC_HPP_

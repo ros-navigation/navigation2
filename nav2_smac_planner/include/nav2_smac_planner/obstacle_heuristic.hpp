@@ -15,6 +15,9 @@
 #ifndef NAV2_SMAC_PLANNER__OBSTACLE_HEURISTIC_HPP_
 #define NAV2_SMAC_PLANNER__OBSTACLE_HEURISTIC_HPP_
 
+#include <utility>
+#include <vector>
+#include <memory>
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -74,8 +77,8 @@ public:
     const bool downsample_obstacle_heuristic);
 
   inline float distanceHeuristic2D(
-  const uint64_t idx, const unsigned int size_x,
-  const unsigned int target_x, const unsigned int target_y)
+    const uint64_t idx, const unsigned int size_x,
+    const unsigned int target_x, const unsigned int target_y)
   {
     int dx = static_cast<int>(idx % size_x) - static_cast<int>(target_x);
     int dy = static_cast<int>(idx / size_x) - static_cast<int>(target_y);

@@ -79,28 +79,28 @@ struct HybridMotionTable
    * @param node Ptr to NodeHybrid
    * @return A set of motion poses
    */
-  MotionPoses getProjections(const NodeHybrid * node) const;
+  MotionPoses getProjections(const NodeHybrid * node);
 
   /**
    * @brief Get the angular bin to use from a raw orientation
    * @param theta Angle in radians
    * @return bin index of closest angle to request
    */
-  unsigned int getClosestAngularBin(const double & theta) const;
+  unsigned int getClosestAngularBin(const double & theta);
 
   /**
    * @brief Get the raw orientation from an angular bin
    * @param bin_idx Index of the bin
    * @return Raw orientation in radians
    */
-  float getAngleFromBin(const unsigned int & bin_idx) const;
+  float getAngleFromBin(const unsigned int & bin_idx);
 
   /**
    * @brief Get the angle scaled across bins from a raw orientation
    * @param theta Angle in radians
    * @return angle scaled across bins
    */
-  double getAngle(const double & theta) const;
+  double getAngle(const double & theta);
 
   MotionModel motion_model = MotionModel::UNKNOWN;
   MotionPoses projections;
@@ -138,6 +138,14 @@ public:
 
   struct NodeContext
   {
+    /**
+     * @brief A constructor for nav2_smac_planner::NodeContext
+     */
+    NodeContext()
+    {
+      obstacle_heuristic = std::make_unique<ObstacleHeuristic>();
+      distance_heuristic = std::make_unique<DistanceHeuristic<NodeHybrid>>();
+    }
     HybridMotionTable motion_table;
     std::unique_ptr<ObstacleHeuristic> obstacle_heuristic;
     std::unique_ptr<DistanceHeuristic<NodeHybrid>> distance_heuristic;

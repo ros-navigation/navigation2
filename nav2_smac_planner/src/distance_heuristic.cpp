@@ -269,9 +269,11 @@ float DistanceHeuristic<NodeLattice>::getDistanceHeuristic(
 
 // Instantiate algorithm for the supported template types
 template void DistanceHeuristic<NodeHybrid>::precomputeDistanceHeuristic<HybridMotionTable>(
-  const float &, const MotionModel &, const unsigned int &, const SearchInfo &, HybridMotionTable &);
+  const float &, const MotionModel &, const unsigned int &, const SearchInfo &,
+  HybridMotionTable &);
 template void DistanceHeuristic<NodeLattice>::precomputeDistanceHeuristic<LatticeMotionTable>(
-  const float &, const MotionModel &, const unsigned int &, const SearchInfo &, LatticeMotionTable &);
+  const float &, const MotionModel &, const unsigned int &, const SearchInfo &,
+  LatticeMotionTable &);
 template float DistanceHeuristic<NodeHybrid>::getDistanceHeuristic<HybridMotionTable>(
   const Coordinates &, const Coordinates &, const float &, HybridMotionTable &);
 template float DistanceHeuristic<NodeLattice>::getDistanceHeuristic<LatticeMotionTable>(

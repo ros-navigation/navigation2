@@ -65,7 +65,7 @@ struct LatticeMotionTable
    */
   MotionPrimitivePtrs getMotionPrimitives(
     const NodeLattice * node,
-    unsigned int & direction_change_index) const;
+    unsigned int & direction_change_index);
 
   /**
    * @brief Get file metadata needed
@@ -81,21 +81,21 @@ struct LatticeMotionTable
    * @param theta Angle in radians
    * @return bin index of closest angle to request
    */
-  unsigned int getClosestAngularBin(const double & theta) const;
+  unsigned int getClosestAngularBin(const double & theta);
 
   /**
    * @brief Get the raw orientation from an angular bin
    * @param bin_idx Index of the bin
    * @return Raw orientation in radians
    */
-  float getAngleFromBin(const unsigned int & bin_idx) const;
+  float & getAngleFromBin(const unsigned int & bin_idx);
 
   /**
    * @brief Get the angular bin to use from a raw orientation
    * @param theta Angle in radians
    * @return bin index of closest angle to request
    */
-  double getAngle(const double & theta) const;
+  double getAngle(const double & theta);
 
   unsigned int size_x;
   unsigned int num_angle_quantization;
@@ -135,7 +135,8 @@ public:
     /**
      * @brief A constructor for nav2_smac_planner::NodeContext
      */
-    NodeContext() {
+    NodeContext()
+    {
       obstacle_heuristic = std::make_unique<ObstacleHeuristic>();
       distance_heuristic = std::make_unique<DistanceHeuristic<NodeLattice>>();
     }
@@ -184,7 +185,7 @@ public:
    * @brief Sets the motion primitive used to achieve node in search
    * @param pointer to motion primitive
    */
-  inline void setMotionPrimitive(const MotionPrimitive * prim)
+  inline void setMotionPrimitive(MotionPrimitive * prim)
   {
     _motion_primitive = prim;
   }
@@ -193,7 +194,7 @@ public:
    * @brief Gets the motion primitive used to achieve node in search
    * @return pointer to motion primitive
    */
-  inline const MotionPrimitive * getMotionPrimitive() const
+  inline MotionPrimitive * & getMotionPrimitive()
   {
     return _motion_primitive;
   }
@@ -281,7 +282,7 @@ public:
   bool isNodeValid(
     const bool & traverse_unknown,
     GridCollisionChecker * collision_checker,
-    const MotionPrimitive * primitive = nullptr,
+    MotionPrimitive * primitive = nullptr,
     bool is_backwards = false);
 
   /**
@@ -371,7 +372,7 @@ private:
   float _accumulated_cost;
   uint64_t _index;
   bool _was_visited;
-  const MotionPrimitive * _motion_primitive;
+  MotionPrimitive * _motion_primitive;
   bool _backwards;
   bool _is_node_valid{false};
   NodeContext * _ctx;
