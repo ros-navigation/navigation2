@@ -53,17 +53,27 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
   const NodePtr & current_node,
   const NodeVector & coarse_check_goals,
   const NodeVector & fine_check_goals,
+  const CoordinateVector & goals_coords,
   const NodeGetter & getter, int & analytic_iterations,
-  const int closest_distance)
+  int & closest_distance)
 {
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
     _motion_model == MotionModel::STATE_LATTICE)
   {
+    // See if we are closer and should be expanding more often
+    const Coordinates node_coords =
+      NodeT::getCoords(
+      current_node->getIndex(), _collision_checker->getCostmap()->getSizeInCellsX(), _dim_3_size);
+
     AnalyticExpansionNodes current_best_analytic_nodes;
     NodePtr current_best_goal = nullptr;
     NodePtr current_best_node = nullptr;
     float current_best_score = std::numeric_limits<float>::max();
+
+    closest_distance = std::min(
+      closest_distance,
+      static_cast<int>(current_node->getHeuristicCost(node_coords, goals_coords)));
 
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration
@@ -476,8 +486,9 @@ typename AnalyticExpansion<Node2D>::NodePtr AnalyticExpansion<Node2D>::tryAnalyt
   const NodePtr &,
   const NodeVector &,
   const NodeVector &,
+  const CoordinateVector &,
   const NodeGetter &, int &,
-  const int)
+  int &)
 {
   return NodePtr(nullptr);
 }

@@ -25,6 +25,8 @@
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/obstacle_heuristic.hpp"
+#include "nav2_smac_planner/distance_heuristic.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/utils.hpp"
 
@@ -130,33 +132,24 @@ public:
 
   struct NodeContext
   {
-    LatticeMotionTable motion_table;
-    // Dubin / Reeds-Shepp lookup and size for dereferencing
-    LookupTable dist_heuristic_lookup_table;
-    ObstacleHeuristicQueue obstacle_heuristic_queue;
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
-    LookupTable obstacle_heuristic_lookup_table;
-    float size_lookup;
     /**
-     * @brief Compute the SE2 distance heuristic
-     * @param lookup_table_dim Size, in costmap pixels, of the
-     * each lookup table dimension to populate
-     * @param motion_model Motion model to use for state space
-     * @param dim_3_size Number of quantization bins for caching
-     * @param search_info Info containing minimum radius to use
+     * @brief A constructor for nav2_smac_planner::NodeContext
      */
-    void precomputeDistanceHeuristic(
-      const float & lookup_table_dim,
-      const MotionModel & motion_model,
-      const unsigned int & dim_3_size,
-      const SearchInfo & search_info);
+    NodeContext() {
+      obstacle_heuristic = std::make_unique<ObstacleHeuristic>();
+      distance_heuristic = std::make_unique<DistanceHeuristic<NodeLattice>>();
+    }
+
+    LatticeMotionTable motion_table;
+    std::unique_ptr<ObstacleHeuristic> obstacle_heuristic;
+    std::unique_ptr<DistanceHeuristic<NodeLattice>> distance_heuristic;
   };
 
   /**
    * @brief A constructor for nav2_smac_planner::NodeLattice
    * @param index The index of this node for self-reference
    */
-  explicit NodeLattice(const uint64_t index, const NodeContext * ctx);
+  explicit NodeLattice(const uint64_t index, NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeLattice
@@ -341,21 +334,7 @@ public:
    */
   float getHeuristicCost(
     const Coordinates & node_coords,
-    const CoordinateVector & goals_coords,
-    const float obstacle_heuristic);
-
-  /**
-   * @brief Compute the Distance heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @param obstacle_heuristic Value of the obstacle heuristic to compute
-   * additional motion heuristics if required
-   * @return heuristic Heuristic value
-   */
-  float getDistanceHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & obstacle_heuristic);
+    const CoordinateVector & goals_coords);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -395,7 +374,7 @@ private:
   const MotionPrimitive * _motion_primitive;
   bool _backwards;
   bool _is_node_valid{false};
-  const NodeContext * _ctx;
+  NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner

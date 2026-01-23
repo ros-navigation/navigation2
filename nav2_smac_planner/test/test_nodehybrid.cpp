@@ -212,12 +212,11 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmap->setCost(50, j, 254);
   }
- a_star.resetObstacleHeuristic(
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
     costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
     info.downsample_obstacle_heuristic);
-  float wide_passage_cost = a_star.getObstacleHeuristic(
+  float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
-    testB.pose,
     info.cost_penalty,
     info.use_quadratic_cost_penalty,
     info.downsample_obstacle_heuristic);
@@ -230,12 +229,11 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   for (unsigned int j = 61; j <= 70; ++j) {
     costmap->setCost(50, j, 250);
   }
-  a_star.resetObstacleHeuristic(
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
     costmap_ros,
     testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
-  float two_passages_cost = a_star.getObstacleHeuristic(
+  float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
-    testB.pose,
     info.cost_penalty,
     info.use_quadratic_cost_penalty,
     info.downsample_obstacle_heuristic);

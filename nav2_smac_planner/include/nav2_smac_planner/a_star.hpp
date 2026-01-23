@@ -215,30 +215,6 @@ public:
 
   NodeContext * getContext();
 
-   /**
-   * @brief reset the obstacle heuristic state
-   * @param costmap_ros Costmap to use
-   * @param goal_coords Coordinates to start heuristic expansion at
-   */
-  void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y,
-    const bool downsample_obstacle_heuristic);
-
-  /**
-   * @brief Compute the Obstacle heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @return heuristic Heuristic value
-   */
-  float getObstacleHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & cost_penalty,
-    const bool use_quadratic_cost_penalty,
-    const bool downsample_obstacle_heuristic);
-
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -291,10 +267,6 @@ protected:
 
   inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & dim3);
-
-  inline float distanceHeuristic2D(
-    const uint64_t idx, const unsigned int size_x,
-    const unsigned int target_x, const unsigned int target_y);
 
   /**
    * @brief Check if node has been visited

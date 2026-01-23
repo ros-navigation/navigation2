@@ -142,7 +142,7 @@ TEST(AStarTest, test_a_star_2d)
   int dummy_int2 = 0;
   EXPECT_EQ(
     expander.tryAnalyticExpansion(
-      nullptr, {}, {},
+      nullptr, {}, {}, {},
       nullptr, dummy_int1, dummy_int2), nullptr);
 
   nav2_smac_planner::Node2D * start = nullptr;

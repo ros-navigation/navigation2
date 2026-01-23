@@ -21,7 +21,7 @@
 namespace nav2_smac_planner
 {
 
-Node2D::Node2D(const uint64_t index, const NodeContext * ctx)
+Node2D::Node2D(const uint64_t index, NodeContext * ctx)
 : parent(nullptr),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),

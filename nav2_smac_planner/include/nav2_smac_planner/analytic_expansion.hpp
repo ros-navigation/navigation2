@@ -116,6 +116,7 @@ public:
    * @param node The node to start the analytic path from
    * @param coarse_check_goals Coarse list of goals nodes to plan to
    * @param fine_check_goals Fine list of goals nodes to plan to
+   * @param goals_coords vector of goal coordinates to plan to
    * @param getter Gets a node at a set of coordinates
    * @param iterations Iterations to run over
    * @param closest_distance Closest distance to goal
@@ -126,8 +127,9 @@ public:
     const NodePtr & current_node,
     const NodeVector & coarse_check_goals,
     const NodeVector & fine_check_goals,
+    const CoordinateVector & goals_coords,
     const NodeGetter & getter, int & iterations,
-    const int closest_distance);
+    int & closest_distance);
 
   /**
    * @brief Perform an analytic path expansion to the goal
@@ -188,7 +190,7 @@ protected:
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
   std::list<std::unique_ptr<NodeT>> _detached_nodes;
-  const NodeContext * _ctx;
+  NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner

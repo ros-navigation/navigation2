@@ -38,30 +38,7 @@ public:
   typedef Node2D * NodePtr;
   typedef std::unique_ptr<std::vector<Node2D>> Graph;
   typedef std::vector<NodePtr> NodeVector;
-
-  /**
-   * @class nav2_smac_planner::Node2D::Coordinates
-   * @brief Node2D implementation of coordinate structure
-   */
-  struct Coordinates
-  {
-    Coordinates() {}
-    Coordinates(const float & x_in, const float & y_in)
-    : x(x_in), y(y_in)
-    {}
-
-    inline bool operator==(const Coordinates & rhs) const
-    {
-      return this->x == rhs.x && this->y == rhs.y;
-    }
-
-    inline bool operator!=(const Coordinates & rhs) const
-    {
-      return !(*this == rhs);
-    }
-
-    float x, y;
-  };
+  using Coordinates = nav2_smac_planner::Coordinates2D;
   typedef std::vector<Coordinates> CoordinateVector;
 
   struct NodeContext
@@ -74,7 +51,7 @@ public:
    * @brief A constructor for nav2_smac_planner::Node2D
    * @param index The index of this node for self-reference
    */
-  explicit Node2D(const uint64_t index, const NodeContext * ctx);
+  explicit Node2D(const uint64_t index, NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::Node2D
@@ -282,7 +259,7 @@ private:
   bool _was_visited;
   bool _is_queued;
   bool _in_collision{false};
-  const NodeContext * _ctx;
+  NodeContext * _ctx;
 };
 
 }  // namespace nav2_smac_planner

@@ -181,55 +181,7 @@ double LatticeMotionTable::getAngle(const double & theta) const
   return getClosestAngularBin(theta);
 }
 
-void NodeLattice::NodeContext::precomputeDistanceHeuristic(
-  const float & lookup_table_dim,
-  const MotionModel & /*motion_model*/,
-  const unsigned int & dim_3_size,
-  const SearchInfo & search_info)
-{
-  // Dubin or Reeds-Shepp shortest distances
-  if (!search_info.allow_reverse_expansion) {
-    motion_table.state_space = std::make_shared<ompl::base::DubinsStateSpace>(
-      search_info.minimum_turning_radius);
-    motion_table.motion_model = MotionModel::DUBIN;
-  } else {
-    motion_table.state_space = std::make_shared<ompl::base::ReedsSheppStateSpace>(
-      search_info.minimum_turning_radius);
-    motion_table.motion_model = MotionModel::REEDS_SHEPP;
-  }
-  motion_table.lattice_metadata =
-    LatticeMotionTable::getLatticeMetadata(search_info.lattice_filepath);
-
-  ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
-  to[0] = 0.0;
-  to[1] = 0.0;
-  to[2] = 0.0;
-  size_lookup = lookup_table_dim;
-  float motion_heuristic = 0.0;
-  unsigned int index = 0;
-  int dim_3_size_int = static_cast<int>(dim_3_size);
-
-  // Create a lookup table of Dubin/Reeds-Shepp distances in a window around the goal
-  // to help drive the search towards admissible approaches. Due to symmetries in the
-  // Heuristic space, we need to only store 2 of the 4 quadrants and simply mirror
-  // around the X axis any relative node lookup. This reduces memory overhead and increases
-  // the size of a window a platform can store in memory.
-  dist_heuristic_lookup_table.resize(size_lookup * ceil(size_lookup / 2.0) * dim_3_size_int);
-  for (float x = ceil(-size_lookup / 2.0); x <= floor(size_lookup / 2.0); x += 1.0) {
-    for (float y = 0.0; y <= floor(size_lookup / 2.0); y += 1.0) {
-      for (int heading = 0; heading != dim_3_size_int; heading++) {
-        from[0] = x;
-        from[1] = y;
-        from[2] = motion_table.getAngleFromBin(heading);
-        motion_heuristic = motion_table.state_space->distance(from(), to());
-        dist_heuristic_lookup_table[index] = motion_heuristic;
-        index++;
-      }
-    }
-  }
-}
-
-NodeLattice::NodeLattice(const uint64_t index, const NodeContext * ctx)
+NodeLattice::NodeLattice(const uint64_t index, NodeContext * ctx)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
@@ -400,84 +352,20 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
 
 float NodeLattice::getHeuristicCost(
   const Coordinates & node_coords,
-  const CoordinateVector & goals_coords,
-  const float obstacle_heuristic)
+  const CoordinateVector & goals_coords)
 {
+  // get obstacle heuristic value
+  // obstacle heuristic does not depend on goal heading
+  const float obstacle_heuristic = _ctx->obstacle_heuristic->getObstacleHeuristic(
+    node_coords, _ctx->motion_table.cost_penalty,
+    _ctx->motion_table.use_quadratic_cost_penalty, _ctx->motion_table.downsample_obstacle_heuristic);
   float distance_heuristic = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < goals_coords.size(); i++) {
     distance_heuristic = std::min(
       distance_heuristic,
-      getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic));
+      _ctx->distance_heuristic->getDistanceHeuristic(node_coords, goals_coords[i], obstacle_heuristic, _ctx->motion_table));
   }
   return std::max(obstacle_heuristic, distance_heuristic);
-}
-
-float NodeLattice::getDistanceHeuristic(
-  const Coordinates & node_coords,
-  const Coordinates & goal_coords,
-  const float & obstacle_heuristic)
-{
-  // rotate and translate node_coords such that goal_coords relative is (0,0,0)
-  // Due to the rounding involved in exact cell increments for caching,
-  // this is not an exact replica of a live heuristic, but has bounded error.
-  // (Usually less than 1 cell length)
-
-  // This angle is negative since we are de-rotating the current node
-  // by the goal angle; cos(-th) = cos(th) & sin(-th) = -sin(th)
-  const TrigValues & trig_vals = _ctx->motion_table.trig_values[goal_coords.theta];
-  const float cos_th = trig_vals.first;
-  const float sin_th = -trig_vals.second;
-  const float dx = node_coords.x - goal_coords.x;
-  const float dy = node_coords.y - goal_coords.y;
-
-  double dtheta_bin = node_coords.theta - goal_coords.theta;
-  if (dtheta_bin < 0) {
-    dtheta_bin += _ctx->motion_table.num_angle_quantization;
-  }
-  if (dtheta_bin > _ctx->motion_table.num_angle_quantization) {
-    dtheta_bin -= _ctx->motion_table.num_angle_quantization;
-  }
-
-  Coordinates node_coords_relative(
-    round(dx * cos_th - dy * sin_th),
-    round(dx * sin_th + dy * cos_th),
-    round(dtheta_bin));
-
-  // Check if the relative node coordinate is within the localized window around the goal
-  // to apply the distance heuristic. Since the lookup table is contains only the positive
-  // X axis, we mirror the Y and theta values across the X axis to find the heuristic values.
-  float motion_heuristic = 0.0;
-  const int floored_size = floor(_ctx->size_lookup / 2.0);
-  const int ceiling_size = ceil(_ctx->size_lookup / 2.0);
-  const float mirrored_relative_y = abs(node_coords_relative.y);
-  if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
-    // Need to mirror angle if Y coordinate was mirrored
-    int theta_pos;
-    if (node_coords_relative.y < 0.0) {
-      theta_pos = _ctx->motion_table.num_angle_quantization - node_coords_relative.theta;
-    } else {
-      theta_pos = node_coords_relative.theta;
-    }
-    const int x_pos = node_coords_relative.x + floored_size;
-    const int y_pos = static_cast<int>(mirrored_relative_y);
-    const int index =
-      x_pos * ceiling_size * _ctx->motion_table.num_angle_quantization +
-      y_pos * _ctx->motion_table.num_angle_quantization +
-      theta_pos;
-    motion_heuristic = _ctx->dist_heuristic_lookup_table[index];
-  } else if (obstacle_heuristic == 0.0) {
-    ompl::base::ScopedState<> from(_ctx->motion_table.state_space),
-    to(_ctx->motion_table.state_space);
-    to[0] = goal_coords.x;
-    to[1] = goal_coords.y;
-    to[2] = _ctx->motion_table.getAngleFromBin(goal_coords.theta);
-    from[0] = node_coords.x;
-    from[1] = node_coords.y;
-    from[2] = _ctx->motion_table.getAngleFromBin(node_coords.theta);
-    motion_heuristic = _ctx->motion_table.state_space->distance(from(), to());
-  }
-
-  return motion_heuristic;
 }
 
 void NodeLattice::getNeighbors(
