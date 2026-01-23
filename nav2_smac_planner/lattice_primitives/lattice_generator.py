@@ -236,9 +236,9 @@ class LatticeGenerator:
 
         current_length = float(trajectory.parameters.total_length)
         # Iterate through the local trajectories with the same target heading
-        for prev_pos, prev_len in trajectories_by_heading[target_heading]:
+        for prev_pos in trajectories_by_heading[target_heading]:
             dist = np.linalg.norm(target_point - prev_pos)
-            if dist < self.trajectory_distinctness_ratio * float(min(current_length, prev_len)):
+            if dist < self.trajectory_distinctness_ratio * float(current_length):
                 return False
 
         return True
@@ -365,9 +365,7 @@ class LatticeGenerator:
                         if self._is_minimal_trajectory(trajectory, prior_end_poses,
                                                        trajectories_by_heading, target_point,
                                                        target_heading):
-                            trajectories_by_heading[target_heading].append(
-                                (target_point, float(trajectory.parameters.total_length))
-                            )
+                            trajectories_by_heading[target_heading].append((target_point))
                             # Add end pose to minimal set
                             new_end_pose = np.array(
                                 [target_point[0], target_point[1], target_heading]
