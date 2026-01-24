@@ -370,6 +370,23 @@ float NodeLattice::getHeuristicCost(
   return std::max(obstacle_heuristic, distance_heuristic);
 }
 
+void NodeLattice::initMotionModel(
+  NodeContext * ctx,
+  const MotionModel & motion_model,
+  unsigned int & size_x,
+  unsigned int & /*size_y*/,
+  unsigned int & /*num_angle_quantization*/,
+  SearchInfo & search_info)
+{
+  if (motion_model != MotionModel::STATE_LATTICE) {
+    throw std::runtime_error(
+            "Invalid motion model for Lattice node. Please select"
+            " STATE_LATTICE and provide a valid lattice file.");
+  }
+
+  ctx->motion_table.initMotionModel(size_x, search_info);
+}
+
 void NodeLattice::getNeighbors(
   std::function<bool(const uint64_t &,
   nav2_smac_planner::NodeLattice * &)> & NeighborGetter,

@@ -338,6 +338,22 @@ public:
     const CoordinateVector & goals_coords);
 
   /**
+   * @brief Initialize motion models
+   * @param motion_model Motion model enum to use
+   * @param size_x Size of X of graph
+   * @param size_y Size of y of graph
+   * @param angle_quantization Size of theta bins of graph
+   * @param search_info Search info to use
+   */
+  static void initMotionModel(
+    NodeContext * ctx,
+    const MotionModel & motion_model,
+    unsigned int & size_x,
+    unsigned int & size_y,
+    unsigned int & angle_quantization,
+    SearchInfo & search_info);
+
+  /**
    * @brief Retrieve all valid neighbors of a node.
    * @param validity_checker Functor for state validity checking
    * @param collision_checker Collision checker to use

@@ -120,13 +120,6 @@ public:
     std::function<bool()> cancel_checker,
     std::vector<std::tuple<float, float, float>> * expansions_log = nullptr);
 
-  void initMotionModel(
-    const MotionModel & motion_model,
-    unsigned int & size_x,
-    unsigned int & size_y,
-    unsigned int & num_angle_quantization,
-    SearchInfo & search_info);
-
   /**
    * @brief Sets the collision checker to use
    * @param collision_checker Collision checker to use for checking state validity

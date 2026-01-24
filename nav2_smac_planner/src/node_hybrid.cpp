@@ -448,6 +448,30 @@ float NodeHybrid::getHeuristicCost(
   return std::max(obstacle_heuristic, distance_heuristic);
 }
 
+void NodeHybrid::initMotionModel(
+  NodeContext * ctx,
+  const MotionModel & motion_model,
+  unsigned int & size_x,
+  unsigned int & size_y,
+  unsigned int & num_angle_quantization,
+  SearchInfo & search_info)
+{
+  // find the motion model selected
+  switch (motion_model) {
+    case MotionModel::DUBIN:
+      ctx->motion_table.initDubin(size_x, size_y, num_angle_quantization, search_info);
+      break;
+    case MotionModel::REEDS_SHEPP:
+      ctx->motion_table.initReedsShepp(size_x, size_y, num_angle_quantization, search_info);
+      break;
+    default:
+      throw std::runtime_error(
+              "Invalid motion model for Hybrid A*. Please select between"
+              " Dubin (Ackermann forward only),"
+              " Reeds-Shepp (Ackermann forward and back).");
+  }
+}
+
 void NodeHybrid::getNeighbors(
   std::function<bool(const uint64_t &,
   nav2_smac_planner::NodeHybrid * &)> & NeighborGetter,

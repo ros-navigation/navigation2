@@ -91,6 +91,24 @@ float Node2D::getHeuristicCost(
   return std::sqrt(dx * dx + dy * dy);
 }
 
+void Node2D::initMotionModel(
+  NodeContext * ctx,
+  const MotionModel & motion_model,
+  unsigned int & x_size_uint,
+  unsigned int & /*size_y*/,
+  unsigned int & /*num_angle_quantization*/,
+  SearchInfo & search_info)
+{
+  if (motion_model != MotionModel::TWOD) {
+    throw std::runtime_error("Invalid motion model for 2D node.");
+  }
+
+  int x_size = static_cast<int>(x_size_uint);
+  ctx->cost_travel_multiplier = search_info.cost_penalty;
+  ctx->neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
+    -x_size + 1, +x_size - 1, +x_size + 1};
+}
+
 void Node2D::getNeighbors(
   std::function<bool(const uint64_t &,
   nav2_smac_planner::Node2D * &)> & NeighborGetter,

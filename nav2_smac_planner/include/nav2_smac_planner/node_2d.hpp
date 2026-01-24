@@ -229,6 +229,23 @@ public:
     const CoordinateVector & goals_coords);
 
   /**
+   * @brief Initialize the neighborhood to be used in A*
+   * We support 4-connect (VON_NEUMANN) and 8-connect (MOORE)
+   * @param neighborhood The desired neighborhood type
+   * @param x_size_uint The total x size to find neighbors
+   * @param y_size The total y size to find neighbors
+   * @param num_angle_quantization Number of quantizations, must be 0
+   * @param search_info Search parameters, unused by 2D node
+   */
+  static void initMotionModel(
+    NodeContext * ctx,
+    const MotionModel & motion_model,
+    unsigned int & size_x,
+    unsigned int & size_y,
+    unsigned int & num_angle_quantization,
+    SearchInfo & search_info);
+
+  /**
    * @brief Retrieve all valid neighbors of a node.
    * @param validity_checker Functor for state validity checking
    * @param collision_checker Collision checker to use

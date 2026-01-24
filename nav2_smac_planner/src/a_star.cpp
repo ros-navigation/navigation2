@@ -107,48 +107,6 @@ void AStarAlgorithm<Node2D>::initialize(
 }
 
 template<typename NodeT>
-void AStarAlgorithm<NodeT>::initMotionModel(
-  const MotionModel & motion_model,
-  unsigned int & size_x,
-  unsigned int & size_y,
-  unsigned int & num_angle_quantization,
-  SearchInfo & search_info)
-{
-  if constexpr (std::is_same_v<NodeT, Node2D>) {
-    if (motion_model != MotionModel::TWOD) {
-      throw std::runtime_error("Invalid motion model for 2D node.");
-    }
-    int x_size = static_cast<int>(size_x);
-    _shared_ctx->cost_travel_multiplier = search_info.cost_penalty;
-    _shared_ctx->neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
-      -x_size + 1, +x_size - 1, +x_size + 1};
-  } else if constexpr (std::is_same_v<NodeT, NodeHybrid>) {
-    switch (motion_model) {
-      case MotionModel::DUBIN:
-        _shared_ctx->motion_table.initDubin(size_x, size_y, num_angle_quantization, search_info);
-        break;
-      case MotionModel::REEDS_SHEPP:
-        _shared_ctx->motion_table.initReedsShepp(size_x, size_y, num_angle_quantization,
-          search_info);
-        break;
-      default:
-        throw std::runtime_error(
-              "Invalid motion model for Hybrid A*. Please select between"
-              " Dubin (Ackermann forward only),"
-              " Reeds-Shepp (Ackermann forward and back).");
-    }
-  } else if constexpr (std::is_same_v<NodeT, NodeLattice>) {
-    if (motion_model != MotionModel::STATE_LATTICE) {
-      throw std::runtime_error(
-            "Invalid motion model for Lattice node. Please select"
-            " STATE_LATTICE and provide a valid lattice file.");
-    }
-
-    _shared_ctx->motion_table.initMotionModel(size_x, search_info);
-  }
-}
-
-template<typename NodeT>
 void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision_checker)
 {
   _collision_checker = collision_checker;
@@ -161,7 +119,8 @@ void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision
   if (getSizeX() != x_size || getSizeY() != y_size) {
     _x_size = x_size;
     _y_size = y_size;
-    initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
+    NodeT::initMotionModel(_shared_ctx.get(), _motion_model, _x_size, _y_size, _dim3_size,
+        _search_info);
     _expander->setContext(_shared_ctx.get());
     _goal_manager.setContext(_shared_ctx.get());
   }

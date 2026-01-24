@@ -125,81 +125,9 @@ void DistanceHeuristic<NodeLattice>::precomputeDistanceHeuristic(
   }
 }
 
-template<>
+template<typename NodeT>
 template<typename MotionTableT>
-float DistanceHeuristic<NodeHybrid>::getDistanceHeuristic(
-  const Coordinates & node_coords,
-  const Coordinates & goal_coords,
-  const float & obstacle_heuristic,
-  MotionTableT & motion_table)
-{
-  // rotate and translate node_coords such that goal_coords relative is (0,0,0)
-  // Due to the rounding involved in exact cell increments for caching,
-  // this is not an exact replica of a live heuristic, but has bounded error.
-  // (Usually less than 1 cell)
-
-  // This angle is negative since we are de-rotating the current node
-  // by the goal angle; cos(-th) = cos(th) & sin(-th) = -sin(th)
-  const TrigValues & trig_vals = motion_table.trig_values[goal_coords.theta];
-  const float cos_th = trig_vals.first;
-  const float sin_th = -trig_vals.second;
-  const float dx = node_coords.x - goal_coords.x;
-  const float dy = node_coords.y - goal_coords.y;
-
-  double dtheta_bin = node_coords.theta - goal_coords.theta;
-  if (dtheta_bin < 0) {
-    dtheta_bin += motion_table.num_angle_quantization;
-  }
-  if (dtheta_bin > motion_table.num_angle_quantization) {
-    dtheta_bin -= motion_table.num_angle_quantization;
-  }
-
-  Coordinates node_coords_relative(
-    round(dx * cos_th - dy * sin_th),
-    round(dx * sin_th + dy * cos_th),
-    round(dtheta_bin));
-
-  // Check if the relative node coordinate is within the localized window around the goal
-  // to apply the distance heuristic. Since the lookup table is contains only the positive
-  // X axis, we mirror the Y and theta values across the X axis to find the heuristic values.
-  float motion_heuristic = 0.0;
-  const int floored_size = floor(size_lookup_ / 2.0);
-  const int ceiling_size = ceil(size_lookup_ / 2.0);
-  const float mirrored_relative_y = abs(node_coords_relative.y);
-  if (abs(node_coords_relative.x) < floored_size && mirrored_relative_y < floored_size) {
-    // Need to mirror angle if Y coordinate was mirrored
-    int theta_pos;
-    if (node_coords_relative.y < 0.0) {
-      theta_pos = motion_table.num_angle_quantization - node_coords_relative.theta;
-    } else {
-      theta_pos = node_coords_relative.theta;
-    }
-    const int x_pos = node_coords_relative.x + floored_size;
-    const int y_pos = static_cast<int>(mirrored_relative_y);
-    const int index =
-      x_pos * ceiling_size * motion_table.num_angle_quantization +
-      y_pos * motion_table.num_angle_quantization +
-      theta_pos;
-    motion_heuristic = dist_heuristic_lookup_table_[index];
-  } else if (obstacle_heuristic <= 0.0) {
-    // If no obstacle heuristic value, must have some H to use
-    // In nominal situations, this should never be called.
-    ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
-    to[0] = goal_coords.x;
-    to[1] = goal_coords.y;
-    to[2] = goal_coords.theta * motion_table.num_angle_quantization;
-    from[0] = node_coords.x;
-    from[1] = node_coords.y;
-    from[2] = node_coords.theta * motion_table.num_angle_quantization;
-    motion_heuristic = motion_table.state_space->distance(from(), to());
-  }
-
-  return motion_heuristic;
-}
-
-template<>
-template<typename MotionTableT>
-float DistanceHeuristic<NodeLattice>::getDistanceHeuristic(
+float DistanceHeuristic<NodeT>::getDistanceHeuristic(
   const Coordinates & node_coords,
   const Coordinates & goal_coords,
   const float & obstacle_heuristic,
@@ -253,14 +181,19 @@ float DistanceHeuristic<NodeLattice>::getDistanceHeuristic(
       y_pos * motion_table.num_angle_quantization +
       theta_pos;
     motion_heuristic = dist_heuristic_lookup_table_[index];
-  } else if (obstacle_heuristic == 0.0) {
+  } else if (obstacle_heuristic <= 0.0) {
     ompl::base::ScopedState<> from(motion_table.state_space), to(motion_table.state_space);
     to[0] = goal_coords.x;
     to[1] = goal_coords.y;
-    to[2] = motion_table.getAngleFromBin(goal_coords.theta);
     from[0] = node_coords.x;
     from[1] = node_coords.y;
-    from[2] = motion_table.getAngleFromBin(node_coords.theta);
+    if constexpr (std::is_same_v<NodeT, NodeHybrid>) {
+      to[2] = goal_coords.theta * motion_table.num_angle_quantization;
+      from[2] = node_coords.theta * motion_table.num_angle_quantization;
+    } else {
+      to[2] = motion_table.getAngleFromBin(goal_coords.theta);
+      from[2] = motion_table.getAngleFromBin(node_coords.theta);
+    }
     motion_heuristic = motion_table.state_space->distance(from(), to());
   }
 
