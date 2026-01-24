@@ -85,7 +85,7 @@ public:
     return std::sqrt(dx * dx + dy * dy);
   }
 
-private:
+protected:
   LookupTable obstacle_heuristic_lookup_table_;
   ObstacleHeuristicQueue obstacle_heuristic_queue_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;

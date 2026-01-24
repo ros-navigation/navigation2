@@ -69,7 +69,7 @@ public:
     const float & obstacle_heuristic,
     MotionTableT & motion_table);
 
-private:
+protected:
   // Dubin / Reeds-Shepp lookup and size for dereferencing
   LookupTable dist_heuristic_lookup_table_;
   float size_lookup_;
