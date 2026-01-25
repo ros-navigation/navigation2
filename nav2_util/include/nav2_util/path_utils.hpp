@@ -101,6 +101,16 @@ unsigned int removePosesAfterFirstConstraint(
   float rotation_threshold);
 
 /**
+ * @brief Checks if the global path or goal is updated
+ * @param new_path new path to the goal
+ * @param old_path current path to the goal
+ * @return whether the path or goal is updated
+ */
+bool isPathOrGoalUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path);
+
+/**
  * @brief Checks if the global path is updated
  * @param new_path new path to the goal
  * @param old_path current path to the goal

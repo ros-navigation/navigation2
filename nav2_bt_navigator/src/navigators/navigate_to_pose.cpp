@@ -30,6 +30,7 @@ NavigateToPoseNavigator::configure(
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
+  previous_path_ = nav_msgs::msg::Path();
   auto node = parent_node.lock();
 
   goal_blackboard_id_ = node->declare_or_get_parameter(
@@ -147,8 +148,8 @@ NavigateToPoseNavigator::onLoop()
   auto res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
     // Reset start index if path is updated
-    if (nav2_util::isPathUpdated(current_path,
-        previous_path_) || previous_path_.poses.size() == 0u)
+    if (nav2_util::isPathOrGoalUpdated(current_path,
+        previous_path_))
     {
       start_index_ = 0;
       previous_path_ = current_path;
@@ -189,7 +190,8 @@ NavigateToPoseNavigator::onLoop()
   res = blackboard->get(
     tracking_feedback_blackboard_id_,
     tracking_feedback);
-  feedback_msg->tracking_error = tracking_feedback.tracking_error;
+  feedback_msg->position_error = tracking_feedback.position_error;
+  feedback_msg->heading_error = tracking_feedback.heading_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -264,8 +266,6 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set("number_recoveries", 0);  // NOLINT
-  previous_path_ = nav_msgs::msg::Path();
-
   // Update the goal pose on the blackboard
   blackboard->set(goal_blackboard_id_, goal_pose);
 
