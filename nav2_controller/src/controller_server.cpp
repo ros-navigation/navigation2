@@ -752,7 +752,7 @@ void ControllerServer::computeAndPublishVelocity()
         path_yaw = angles::normalize_angle(path_yaw + M_PI);
       }
       double robot_yaw = tf2::getYaw(robot_pose_in_path_frame.pose.orientation);
-      heading_error = angles::shortest_angular_distance(  
+      heading_error = angles::shortest_angular_distance(
         robot_yaw, path_yaw);
     }
 
