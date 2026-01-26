@@ -20,8 +20,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -63,16 +63,16 @@ public:
   /**
    * @brief Callback for the costmap topic
    */
-  void costmapCallback(const nav2_msgs::msg::Costmap::SharedPtr msg);
+  void costmapCallback(const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> msg);
 
 protected:
   std::shared_ptr<Costmap2D> costmap_;
-  nav2_msgs::msg::Costmap::SharedPtr costmap_msg_;
+  std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> costmap_msg_;
   std::string topic_name_;
   bool costmap_received_{false};
-  rclcpp::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  rclcpp::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
 };
 
-}  // namespace nav2_costmap_2d
+}
 
 #endif  // NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_

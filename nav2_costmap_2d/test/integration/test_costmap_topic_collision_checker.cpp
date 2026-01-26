@@ -38,6 +38,7 @@
 #include "tf2/utils.h"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::placeholders;
@@ -56,11 +57,12 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 public:
   DummyCostmapSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
-    std::string & topic_name)
+    const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {}
 
-  void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
+  void setCostmap(
+    const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> & msg)
   {
     costmap_msg_ = msg;
     costmap_received_ = true;
@@ -235,8 +237,15 @@ protected:
   void publishCostmap()
   {
     layers_->updateMap(x_, y_, yaw_);
-    costmap_sub_->setCostmap(
-      std::make_shared<nav2_msgs::msg::Costmap>(toCostmapMsg(layers_->getCostmap())));
+    auto * cm = layers_->getCostmap();
+    auto ros_msg = toCostmapMsg(cm);
+
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    stamped->header = ros_msg.header;
+    stamped->metadata = ros_msg.metadata;
+    stamped->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*cm);
+
+    costmap_sub_->setCostmap(stamped);
   }
 
   void publishPose(double x, double y, double /*theta*/, const rclcpp::Time & stamp)

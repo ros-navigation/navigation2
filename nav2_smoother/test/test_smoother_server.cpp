@@ -30,6 +30,7 @@
 #include "nav2_msgs/action/smooth_path.hpp"
 #include "nav2_smoother/nav2_smoother.hpp"
 #include "tf2_ros/create_timer_ros.h"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 using SmoothAction = nav2_msgs::action::SmoothPath;
 using ClientGoalHandle = rclcpp_action::ClientGoalHandle<SmoothAction>;
@@ -148,7 +149,14 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
+    using CostmapAdapter =
+      rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
+
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    CostmapAdapter::convert_to_custom(
+      *msg, *stamped);
+
+    std::atomic_store(&costmap_msg_, stamped);
     costmap_received_ = true;
   }
 };
