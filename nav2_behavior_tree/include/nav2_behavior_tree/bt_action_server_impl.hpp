@@ -335,7 +335,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       blackboard->template set("node", client_node_);
       blackboard->template set<std::chrono::milliseconds>("server_timeout",
           default_server_timeout_);
-      blackboard->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("cancel_timeout",
+        default_cancel_timeout_);
       blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->template set<std::chrono::milliseconds>(
         "wait_for_service_timeout",
