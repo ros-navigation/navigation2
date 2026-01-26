@@ -137,7 +137,7 @@ class GpsWaypointFollowerTest(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             rclpy.spin_until_future_complete(self, future)
@@ -194,9 +194,10 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     result = test.run(True, False)
     assert not result
     result = not result
+    assert isinstance(test.action_result.missed_waypoints, list)
     assert (
         test.action_result.missed_waypoints[0].error_code
-        == ComputePathToPose.Result().GOAL_OUTSIDE_MAP
+        == ComputePathToPose.Result.GOAL_OUTSIDE_MAP
     )
     assert (test.action_result.missed_waypoints[0].error_msg != '')
 

@@ -8,6 +8,7 @@ from nav2_msgs.action._dock_robot import DockRobot
 from nav2_msgs.action._drive_on_heading import DriveOnHeading
 from nav2_msgs.action._dummy_behavior import DummyBehavior
 from nav2_msgs.action._follow_gps_waypoints import FollowGPSWaypoints
+from nav2_msgs.action._follow_object import FollowObject
 from nav2_msgs.action._follow_path import FollowPath
 from nav2_msgs.action._follow_waypoints import FollowWaypoints
 from nav2_msgs.action._navigate_through_poses import NavigateThroughPoses
@@ -29,6 +30,7 @@ __all__ = [
     'DummyBehavior',
     'FollowGPSWaypoints',
     'FollowPath',
+    'FollowObject',
     'FollowWaypoints',
     'NavigateThroughPoses',
     'NavigateToPose',
