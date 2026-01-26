@@ -160,8 +160,8 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   default_server_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("default_server_timeout", 20));
 
-  default_halt_timeout_ = std::chrono::milliseconds(
-    node->declare_or_get_parameter("default_halt_timeout", 50));
+  default_cancel_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_cancel_timeout", 50));
 
   wait_for_service_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("wait_for_service_timeout", 1000));
@@ -181,7 +181,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // Put items on the blackboard
   blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
-  blackboard_->template set<std::chrono::milliseconds>("halt_timeout", default_halt_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
@@ -335,7 +335,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       blackboard->template set("node", client_node_);
       blackboard->template set<std::chrono::milliseconds>("server_timeout",
           default_server_timeout_);
-      blackboard->template set<std::chrono::milliseconds>("halt_timeout", default_halt_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);
       blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->template set<std::chrono::milliseconds>(
         "wait_for_service_timeout",

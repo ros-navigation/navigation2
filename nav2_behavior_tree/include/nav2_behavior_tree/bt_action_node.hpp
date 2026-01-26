@@ -62,7 +62,7 @@ public:
     auto bt_loop_duration =
       config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
     getInputOrBlackboard("server_timeout", server_timeout_);
-    getInputOrBlackboard("halt_timeout", halt_timeout_);
+    getInputOrBlackboard("cancel_timeout", cancel_timeout_);
     wait_for_service_timeout_ =
       config().blackboard->template get<std::chrono::milliseconds>("wait_for_service_timeout");
 
@@ -335,7 +335,7 @@ public:
           "Failed to cancel action server for %s", action_name_.c_str());
       }
 
-      if (callback_group_executor_.spin_until_future_complete(future_result, halt_timeout_) !=
+      if (callback_group_executor_.spin_until_future_complete(future_result, cancel_timeout_) !=
         rclcpp::FutureReturnCode::SUCCESS)
       {
         RCLCPP_ERROR(
@@ -487,7 +487,7 @@ protected:
   std::chrono::milliseconds server_timeout_;
 
   // The timeout value when cancelling actions during halt
-  std::chrono::milliseconds halt_timeout_;
+  std::chrono::milliseconds cancel_timeout_;
 
   // The timeout value for BT loop execution
   std::chrono::milliseconds max_timeout_;
