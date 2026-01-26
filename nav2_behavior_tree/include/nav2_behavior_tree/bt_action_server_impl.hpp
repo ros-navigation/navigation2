@@ -172,6 +172,7 @@ bool BtActionServer<ActionT>::on_configure()
     nullptr, std::chrono::milliseconds(500), false);
 
   // Get parameters for BT timeouts
+<<<<<<< HEAD
   int bt_loop_duration;
   node->get_parameter("bt_loop_duration", bt_loop_duration);
   bt_loop_duration_ = std::chrono::milliseconds(bt_loop_duration);
@@ -182,6 +183,22 @@ bool BtActionServer<ActionT>::on_configure()
   node->get_parameter("wait_for_service_timeout", wait_for_service_timeout);
   wait_for_service_timeout_ = std::chrono::milliseconds(wait_for_service_timeout);
   node->get_parameter("always_reload_bt_xml", always_reload_bt_xml_);
+=======
+  bt_loop_duration_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("bt_loop_duration", 10));
+
+  default_server_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_server_timeout", 20));
+
+  default_cancel_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_cancel_timeout", 50));
+
+  wait_for_service_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("wait_for_service_timeout", 1000));
+
+  always_reload_bt_ = node->declare_or_get_parameter(
+    "always_reload_bt_xml", false);
+>>>>>>> 640196af (Add cancel timeout when cancelling actions (#5895))
 
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
@@ -193,10 +210,18 @@ bool BtActionServer<ActionT>::on_configure()
   blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
+<<<<<<< HEAD
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
   blackboard_->set<std::chrono::milliseconds>(
+=======
+  blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>(
+>>>>>>> 640196af (Add cancel timeout when cancelling actions (#5895))
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
@@ -294,10 +319,20 @@ bool BtActionServer<ActionT>::loadBehaviorTree(const std::string & bt_xml_filena
     tree_ = bt_->createTreeFromFile(filename, blackboard_);
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
+<<<<<<< HEAD
       blackboard->set("node", client_node_);
       blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
       blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->set<std::chrono::milliseconds>(
+=======
+      blackboard->template set("node", client_node_);
+      blackboard->template set<std::chrono::milliseconds>("server_timeout",
+          default_server_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("cancel_timeout",
+        default_cancel_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->template set<std::chrono::milliseconds>(
+>>>>>>> 640196af (Add cancel timeout when cancelling actions (#5895))
         "wait_for_service_timeout",
         wait_for_service_timeout_);
     }
