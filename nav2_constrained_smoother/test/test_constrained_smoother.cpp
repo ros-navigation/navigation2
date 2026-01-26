@@ -27,6 +27,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.hpp"
@@ -83,13 +84,12 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>::
+    convert_to_custom(*msg, *stamped);
 
-    processCurrentCostmapMsg();
+    std::atomic_store(&costmap_msg_, stamped);
+    costmap_received_ = true;
   }
 };
 

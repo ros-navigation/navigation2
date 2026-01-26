@@ -29,6 +29,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/savitzky_golay_smoother.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 using namespace nav2_smoother;  // NOLINT
 using namespace std::chrono_literals;  // NOLINT
@@ -48,8 +49,16 @@ TEST(SmootherTest, test_sg_smoother_basics)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  using CostmapAdapter =
+    rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
+
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  CostmapAdapter::convert_to_custom(
+    *costmap_msg, *stamped);
+
+  dummy_costmap->costmapCallback(stamped);
+
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
@@ -121,8 +130,13 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  CostmapAdapter::convert_to_custom(
+    *costmap_msg, *stamped);
+
+  dummy_costmap->costmapCallback(stamped);
+
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;
@@ -221,8 +235,13 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
-  dummy_costmap->costmapCallback(costmap_msg);
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+  CostmapAdapter::convert_to_custom(
+    *costmap_msg, *stamped);
+
+  dummy_costmap->costmapCallback(stamped);
+
 
   // Make smoother
   std::shared_ptr<tf2_ros::Buffer> dummy_tf;

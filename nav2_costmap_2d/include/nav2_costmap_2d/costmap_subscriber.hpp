@@ -20,9 +20,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_msgs/msg/costmap.hpp"
-#include "nav2_msgs/msg/costmap_update.hpp"
-#include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -74,16 +73,7 @@ public:
   /**
    * @brief Callback for the costmap topic
    */
-  void costmapCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr & msg);
-  /**
-   * @brief Callback for the costmap's update topic
-   */
-  void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & update_msg);
-
-  std::string getFrameID() const
-  {
-    return frame_id_;
-  }
+  void costmapCallback(const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> msg);
 
 protected:
   bool isCostmapReceived() {return costmap_ != nullptr;}
@@ -98,14 +88,12 @@ protected:
   nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
 
   std::shared_ptr<Costmap2D> costmap_;
-  nav2_msgs::msg::Costmap::ConstSharedPtr costmap_msg_;
-
+  std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> costmap_msg_;
   std::string topic_name_;
-  std::string frame_id_;
-  std::mutex costmap_msg_mutex_;
-  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
+  bool costmap_received_{false};
+  rclcpp::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
 };
 
-}  // namespace nav2_costmap_2d
+}
 
 #endif  // NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
