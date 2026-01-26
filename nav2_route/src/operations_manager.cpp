@@ -87,6 +87,31 @@ void OperationsManager::findGraphOperationsToProcess(
   }
 }
 
+void OperationsManager::on_activate()
+{
+  for (auto & op : query_operations_) {
+    op->on_activate();
+  }
+  for (auto & op : change_operations_) {
+    op->on_activate();
+  }
+  for (auto & it : graph_operations_) {
+    it.second->on_activate();
+  }
+}
+void OperationsManager::on_deactivate()
+{
+  for (auto & op : query_operations_) {
+    op->on_deactivate();
+  }
+  for (auto & op : change_operations_) {
+    op->on_deactivate();
+  }
+  for (auto & it : graph_operations_) {
+    it.second->on_deactivate();
+  }
+}
+
 OperationPtrs OperationsManager::findGraphOperations(
   const NodePtr node, const EdgePtr edge_enter, const EdgePtr edge_exit)
 {

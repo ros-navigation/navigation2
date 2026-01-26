@@ -107,6 +107,12 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
   route_publisher_->on_activate();
+  if (set_graph_service_) {
+    set_graph_service_->on_activate();
+  }
+  if (route_tracker_) {
+    route_tracker_->on_activate();
+  }
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -119,6 +125,12 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
   route_publisher_->on_deactivate();
+  if (set_graph_service_) {
+    set_graph_service_->on_deactivate();
+  }
+  if (route_tracker_) {
+    route_tracker_->on_deactivate();
+  }
   destroyBond();
   return nav2::CallbackReturn::SUCCESS;
 }
