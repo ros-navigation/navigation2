@@ -37,7 +37,7 @@ namespace nav2_planner
  * @class nav2_planner::IsPathValidService
  * @brief Service to determine if a path is still valid given the current costmap state
  */
-class IsPathValidService
+class IsPathValidService : public nav2::ServiceServer<nav2_msgs::srv::IsPathValid>
 {
 public:
   /**
@@ -47,12 +47,21 @@ public:
    * @param costmap_update_timeout Timeout for waiting for costmap updates
    */
   IsPathValidService(
-    nav2::LifecycleNode::WeakPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const rclcpp::Duration & costmap_update_timeout)
-  : node_(node), costmap_ros_(costmap_ros), logger_(rclcpp::get_logger("is_path_valid_service")),
-    costmap_update_timeout_(costmap_update_timeout)
+  : nav2::ServiceServer<nav2_msgs::srv::IsPathValid>(
+      "is_path_valid",                                    // 1. service_name
+      node,                                               // 2. node
+      std::bind(&IsPathValidService::callback, this,       // 3. callback
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+      // 4. callback_group defaults to nullptr as per your wrapper
+  ),
+    costmap_ros_(costmap_ros),
+    costmap_update_timeout_(costmap_update_timeout),
+    logger_(node->get_logger()) // <--- INITIALIZE LOGGER HERE
   {
+    costmap_ = costmap_ros_->getCostmap();
   }
 
   /**
@@ -67,11 +76,12 @@ public:
 
     costmap_ = costmap_ros_->getCostmap();
 
-    service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
-      "is_path_valid",
-      std::bind(
-        &IsPathValidService::callback, this,
-        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    // service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
+    //   "is_path_valid",
+    //   node,
+    //   std::bind(
+    //     &IsPathValidService::callback, this,
+    //     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   }
 
   /**
@@ -288,8 +298,8 @@ private:
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
-  rclcpp::Logger logger_;
   rclcpp::Duration costmap_update_timeout_;
+  rclcpp::Logger logger_;
   nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr service_;
 };
 
