@@ -100,6 +100,9 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
+  void on_activate();
+  void on_deactivate();
+
 protected:
   /**
    * @brief Processes a vector of operations plugins, by trigger

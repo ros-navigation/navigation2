@@ -116,6 +116,9 @@ public:
     const Route & route, const nav_msgs::msg::Path & path,
     ReroutingState & rerouting_info);
 
+  void on_activate();
+  void on_deactivate();
+
 protected:
   nav2_msgs::msg::Route route_msg_;
   nav_msgs::msg::Path path_;
