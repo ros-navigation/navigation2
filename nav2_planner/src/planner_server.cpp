@@ -51,20 +51,6 @@ PlannerServer::PlannerServer(const rclcpp::NodeOptions & options)
   costmap_(nullptr)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  // Declare this node's parameters
-  declare_parameter("planner_plugins", default_ids_);
-  declare_parameter("expected_planner_frequency", 1.0);
-  declare_parameter("costmap_update_timeout", 1.0);
-  declare_parameter("allow_partial_planning", false);
-
-  get_parameter("planner_plugins", planner_ids_);
-  if (planner_ids_ == default_ids_) {
-    for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
-    }
-  }
-
   // Setup the global costmap
   costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "global_costmap", std::string{get_namespace()},
@@ -85,6 +71,21 @@ nav2::CallbackReturn
 PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
+  auto node = shared_from_this();
+
+  // Declare this node's parameters
+  planner_ids_ = node->declare_or_get_parameter("planner_plugins", default_ids_);
+  double expected_planner_frequency = node->declare_or_get_parameter(
+    "expected_planner_frequency", 1.0);
+  double costmap_update_timeout_dbl = node->declare_or_get_parameter(
+    "costmap_update_timeout", 1.0);
+  partial_plan_allowed_ = node->declare_or_get_parameter("allow_partial_planning", false);
+
+  if (planner_ids_ == default_ids_) {
+    for (size_t i = 0; i < default_ids_.size(); ++i) {
+      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+    }
+  }
 
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
@@ -99,8 +100,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   tf_ = costmap_ros_->getTfBuffer();
 
   planner_types_.resize(planner_ids_.size());
-
-  auto node = shared_from_this();
 
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     try {
@@ -130,10 +129,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(),
     "Planner Server has %s planners available.", planner_ids_concat_.c_str());
 
-  get_parameter("allow_partial_planning", partial_plan_allowed_);
-
-  double expected_planner_frequency;
-  get_parameter("expected_planner_frequency", expected_planner_frequency);
   if (expected_planner_frequency > 0) {
     max_planner_duration_ = 1 / expected_planner_frequency;
   } else {
@@ -147,8 +142,6 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan");
 
-  double costmap_update_timeout_dbl;
-  get_parameter("costmap_update_timeout", costmap_update_timeout_dbl);
   costmap_update_timeout_ = rclcpp::Duration::from_seconds(costmap_update_timeout_dbl);
 
   // Create is path valid service
