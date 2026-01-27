@@ -220,8 +220,11 @@ public:
     typename nav2::ServiceServer<ServiceT>::CallbackType cb,
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   {
-    return nav2::interfaces::create_service<ServiceT>(
-      shared_from_this(), service_name, cb, callback_group);
+    auto srv = nav2::interfaces::create_service<ServiceT>(
+      shared_from_this(), service_name, std::move(cb), callback_group);
+
+    this->add_managed_entity(srv);
+    return srv;
   }
 
   /**

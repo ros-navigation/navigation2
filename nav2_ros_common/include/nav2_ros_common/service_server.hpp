@@ -50,13 +50,15 @@ public:
     const std::string & service_name,
     const NodeT & node,
     CallbackType callback,
-    // const rclcpp::QoS & qos = nav2::qos::StandardTopicQoS(),
+    // const rclcpp::QoS & qos = rclcpp::ServicesQoS(),
     rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name),
     callback_(callback),
-    clock_(node->get_clock()),
-    logger_(node->get_logger())
+    logger_(get_node_ptr(node)->get_logger())
   {
+    auto node_ptr = get_node_ptr(node);
+
+    // logger_ = node_ptr->get_logger();
     server_ = rclcpp::create_service<ServiceT>(
       node->get_node_base_interface(),
       node->get_node_services_interface(),
@@ -73,16 +75,6 @@ public:
       node->get_node_parameters_interface(), node->get_clock());
   }
 
-  void on_activate() override
-  {
-    rclcpp_lifecycle::SimpleManagedEntity::on_activate();
-  }
-
-  void on_deactivate() override
-  {
-    rclcpp_lifecycle::SimpleManagedEntity::on_deactivate();
-  }
-
 protected:
   void handle_service(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -90,21 +82,56 @@ protected:
     std::shared_ptr<ResponseType> response)
   {
     if (!this->is_activated()) {
-      RCLCPP_WARN_THROTTLE(
-          logger_,
-          *clock_,
-          1000,
-          "Service '%s' called while not activate .",
-          service_name_.c_str());
+      // Set failure in response if node not active
+      try_set_success(response, false);
+      try_set_message(response, "Service call rejected: Node not in  active state");
+
+      RCLCPP_DEBUG(
+        logger_,
+        "Service '%s' called while not activated",
+        service_name_.c_str());
       return;
     }
 
     callback_(request_header, request, response);
   }
+
+private:
+  template<typename T>
+  std::shared_ptr<T> get_node_ptr(const std::shared_ptr<T> & ptr) {return ptr;}
+
+  template<typename T>
+  std::shared_ptr<T> get_node_ptr(const std::weak_ptr<T> & ptr)
+  {
+    auto locked = ptr.lock();
+    if (!locked) {
+      throw std::runtime_error("Node expire before creating service:" + service_name_);
+    }
+    return locked;
+  }
+
+  // SFINAE helpers for bool and message field
+  template<typename R>
+  auto try_set_success(std::shared_ptr<R> r, bool val) -> decltype(r->success, void())
+  {
+    r->success = val;
+  }
+  void try_set_success(...) {}
+
+  template<typename R>
+  auto try_set_message(std::shared_ptr<R> r, const std::string & m) -> decltype(r->message, void())
+  {
+    r->message = m;
+  }
+  template<typename R>
+  auto try_set_message(std::shared_ptr<R> r, const std::string & m) -> decltype(r->error_msg,
+  void()) {r->error_msg = m;}
+  void try_set_message(...) {}
+
   std::string service_name_;
   CallbackType callback_;
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
-  rclcpp::Clock::SharedPtr clock_;
+  // rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_;
 };
 
