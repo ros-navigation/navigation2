@@ -60,8 +60,8 @@ public:
 
     // logger_ = node_ptr->get_logger();
     server_ = rclcpp::create_service<ServiceT>(
-      node->get_node_base_interface(),
-      node->get_node_services_interface(),
+      node_ptr->get_node_base_interface(),
+      node_ptr->get_node_services_interface(),
       service_name,
       [this](const std::shared_ptr<rmw_request_id_t> request_header,
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
@@ -72,7 +72,7 @@ public:
 
     nav2::setIntrospectionMode(
       this->server_,
-      node->get_node_parameters_interface(), node->get_clock());
+      node_ptr->get_node_parameters_interface(), node_ptr->get_clock());
   }
 
 protected:
