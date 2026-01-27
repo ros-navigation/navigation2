@@ -36,7 +36,7 @@ void AdjustSpeedLimit::configure(
 
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-  std::string topic = node->get_parameter(getName() + ".speed_limit").as_string();
+  std::string topic = node->get_parameter(getName() + ".speed_limit_topic").as_string();
 
   speed_limit_pub_ = node->create_publisher<nav2_msgs::msg::SpeedLimit>(topic, 10);
   speed_limit_pub_->on_activate();
