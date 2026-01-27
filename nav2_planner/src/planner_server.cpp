@@ -83,7 +83,8 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
 
   if (planner_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
-      declare_parameter(default_ids_[i] + ".plugin", default_types_[i]);
+      nav2::declare_parameter_if_not_declared(
+        node, default_ids_[i] + ".plugin", rclcpp::ParameterValue(default_types_[i]));
     }
   }
 

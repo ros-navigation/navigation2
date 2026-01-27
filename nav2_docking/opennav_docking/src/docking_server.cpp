@@ -57,7 +57,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     RCLCPP_WARN(
       get_logger(), "Parameter dock_backwards is deprecated. "
       "Please use the dock_direction parameter in your dock plugin instead.");
-  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
+  } catch (...) {
   }
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
