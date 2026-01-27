@@ -32,16 +32,15 @@ void CostmapScorer::configure(
   clock_ = node->get_clock();
 
   // Find whether to use average or maximum cost values
-  use_max_ = static_cast<float>(
-    node->declare_or_get_parameter(getName() + ".use_maximum", true));
+  use_max_ = node->declare_or_get_parameter(getName() + ".use_maximum", true);
 
   // Edge is invalid if its in collision
-  invalid_on_collision_ = static_cast<float>(
-    node->declare_or_get_parameter(getName() + ".invalid_on_collision", true));
+  invalid_on_collision_ = node->declare_or_get_parameter(
+    getName() + ".invalid_on_collision", true);
 
   // Edge is invalid if edge is off the costmap
-  invalid_off_map_ = static_cast<float>(
-    node->declare_or_get_parameter(getName() + ".invalid_off_map", true));
+  invalid_off_map_ = node->declare_or_get_parameter(
+    getName() + ".invalid_off_map", true);
 
   // Max cost to be considered valid
   max_cost_ = static_cast<float>(
