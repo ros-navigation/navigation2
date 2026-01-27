@@ -48,42 +48,30 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring velocity smoother");
   auto node = shared_from_this();
-  std::string feedback_type;
-  double velocity_timeout_dbl;
 
   // Smoothing metadata
-  declare_parameter_if_not_declared(node, "smoothing_frequency", rclcpp::ParameterValue(20.0));
-  declare_parameter_if_not_declared(
-    node, "feedback", rclcpp::ParameterValue(std::string("OPEN_LOOP")));
-  declare_parameter_if_not_declared(node, "scale_velocities", rclcpp::ParameterValue(false));
-  node->get_parameter("smoothing_frequency", smoothing_frequency_);
-  node->get_parameter("feedback", feedback_type);
-  node->get_parameter("scale_velocities", scale_velocities_);
+  smoothing_frequency_ = node->declare_or_get_parameter(
+    "smoothing_frequency", 20.0);
+  std::string feedback_type = node->declare_or_get_parameter(
+    "feedback", std::string("OPEN_LOOP"));
+  scale_velocities_ = node->declare_or_get_parameter("scale_velocities", false);
 
   // Kinematics
-  declare_parameter_if_not_declared(
-    node, "max_velocity", rclcpp::ParameterValue(std::vector<double>{0.50, 0.0, 2.5}));
-  declare_parameter_if_not_declared(
-    node, "min_velocity", rclcpp::ParameterValue(std::vector<double>{-0.50, 0.0, -2.5}));
-  declare_parameter_if_not_declared(
-    node, "max_accel", rclcpp::ParameterValue(std::vector<double>{2.5, 0.0, 3.2}));
-  declare_parameter_if_not_declared(
-    node, "max_decel", rclcpp::ParameterValue(std::vector<double>{-2.5, 0.0, -3.2}));
-  node->get_parameter("max_velocity", max_velocities_);
-  node->get_parameter("min_velocity", min_velocities_);
-  node->get_parameter("max_accel", max_accels_);
-  node->get_parameter("max_decel", max_decels_);
+  max_velocities_ = node->declare_or_get_parameter(
+    "max_velocity", std::vector<double>{0.50, 0.0, 2.5});
+  min_velocities_ = node->declare_or_get_parameter(
+    "min_velocity", std::vector<double>{-0.50, 0.0, -2.5});
+  max_accels_ = node->declare_or_get_parameter(
+    "max_accel", std::vector<double>{2.5, 0.0, 3.2});
+  max_decels_ = node->declare_or_get_parameter(
+    "max_decel", std::vector<double>{-2.5, 0.0, -3.2});
 
   // Get feature parameters
-  declare_parameter_if_not_declared(node, "odom_topic", rclcpp::ParameterValue("odom"));
-  declare_parameter_if_not_declared(node, "odom_duration", rclcpp::ParameterValue(0.1));
-  declare_parameter_if_not_declared(
-    node, "deadband_velocity", rclcpp::ParameterValue(std::vector<double>{0.0, 0.0, 0.0}));
-  declare_parameter_if_not_declared(node, "velocity_timeout", rclcpp::ParameterValue(1.0));
-  node->get_parameter("odom_topic", odom_topic_);
-  node->get_parameter("odom_duration", odom_duration_);
-  node->get_parameter("deadband_velocity", deadband_velocities_);
-  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
+  odom_topic_ = node->declare_or_get_parameter("odom_topic", std::string("odom"));
+  odom_duration_ = node->declare_or_get_parameter("odom_duration", 0.1);
+  deadband_velocities_ = node->declare_or_get_parameter(
+    "deadband_velocity", std::vector<double>{0.0, 0.0, 0.0});
+  double velocity_timeout_dbl = node->declare_or_get_parameter("velocity_timeout", 1.0);
   velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
 
   // Check if parameters are properly set
@@ -160,9 +148,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
     std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1));
 
-  declare_parameter_if_not_declared(node, "use_realtime_priority", rclcpp::ParameterValue(false));
-  bool use_realtime_priority = false;
-  node->get_parameter("use_realtime_priority", use_realtime_priority);
+  bool use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
   if (use_realtime_priority) {
     try {
       nav2::setSoftRealTimePriority();

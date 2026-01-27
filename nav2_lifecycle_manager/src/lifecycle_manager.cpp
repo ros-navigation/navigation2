@@ -43,8 +43,10 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   autostart_ = nav2::declare_or_get_parameter(node, "autostart", false);
   double bond_timeout_s = nav2::declare_or_get_parameter(node, "bond_timeout", 4.0);
   double service_timeout_s = nav2::declare_or_get_parameter(node, "service_timeout", 5.0);
-  double respawn_timeout_s = nav2::declare_or_get_parameter(node, "bond_respawn_max_duration", 10.0);
-  attempt_respawn_reconnection_ = nav2::declare_or_get_parameter(node, "attempt_respawn_reconnection", true);
+  double respawn_timeout_s = nav2::declare_or_get_parameter(
+    node, "bond_respawn_max_duration", 10.0);
+  attempt_respawn_reconnection_ = nav2::declare_or_get_parameter(
+    node, "attempt_respawn_reconnection", true);
   bond_heartbeat_period_ = nav2::declare_or_get_parameter(node, "bond_heartbeat_period", 0.25);
 
   registerRclPreshutdownCallback();

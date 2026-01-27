@@ -43,7 +43,7 @@ void SavitzkyGolaySmoother::configure(
   poly_order_ = node->declare_or_get_parameter(
     name + ".poly_order", 3);
 
-    if (window_size_ % 2 == 0 || window_size_ <= 2) {
+  if (window_size_ % 2 == 0 || window_size_ <= 2) {
     throw nav2_core::SmootherException(
             "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
   }

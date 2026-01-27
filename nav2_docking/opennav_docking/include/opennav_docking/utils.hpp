@@ -128,7 +128,7 @@ inline bool parseDockParams(
       curr_dock.type = node->declare_or_get_parameter<std::string>(dock_name + ".type");
     } catch (...) {
       RCLCPP_ERROR(node->get_logger(), "Dock %s has no dock 'type'.", dock_name.c_str());
-      return false;      
+      return false;
     }
 
     pose_arr.clear();
@@ -139,7 +139,7 @@ inline bool parseDockParams(
       }
     } catch (...) {
       RCLCPP_ERROR(node->get_logger(), "Dock %s has no valid 'pose'.", dock_name.c_str());
-      return false;    
+      return false;
     }
 
     curr_dock.pose.position.x = pose_arr[0];

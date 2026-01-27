@@ -211,7 +211,7 @@ bool DockDatabase::getDockInstances(const nav2::LifecycleNode::SharedPtr & node)
   try {
     docks_param = node->declare_or_get_parameter<std::vector<std::string>>("docks");
     RCLCPP_INFO(node->get_logger(), "Loading docks from parameter file.");
-    return utils::parseDockParams(docks_param, node, dock_instances_);    
+    return utils::parseDockParams(docks_param, node, dock_instances_);
   } catch (...) {
     // pass
   }
