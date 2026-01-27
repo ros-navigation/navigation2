@@ -205,6 +205,9 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   pf_ = nullptr;
 
   // Laser Scan
+  for (const auto & laser : lasers_) {
+    delete laser;
+  }
   lasers_.clear();
   lasers_update_.clear();
   frame_to_laser_.clear();
@@ -1217,6 +1220,9 @@ AmclNode::updateParametersCallback(
 
   // Re-initialize the lasers and it's filters
   if (reinit_laser) {
+    for(auto & laser : lasers_) {
+      delete laser;
+    }
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
@@ -1303,6 +1309,9 @@ AmclNode::freeMapDependentMemory()
 
   // Clear queued laser objects because they hold pointers to the existing
   // map, #5202.
+  for (auto & laser : lasers_) {
+    delete laser;
+  }
   lasers_.clear();
   lasers_update_.clear();
   frame_to_laser_.clear();
