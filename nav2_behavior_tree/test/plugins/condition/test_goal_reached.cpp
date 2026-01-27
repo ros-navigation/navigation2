@@ -33,6 +33,7 @@ public:
   void SetUp()
   {
     node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue{0.1});
+    node_->declare_parameter("goal_reached_tol", rclcpp::ParameterValue{0.25});
 
     geometry_msgs::msg::PoseStamped goal;
     goal.header.stamp = node_->now();
@@ -92,6 +93,21 @@ TEST_F(GoalReachedConditionTestFixture, test_behavior)
   transform_handler_->updateRobotPose(pose);
   std::this_thread::sleep_for(500ms);
   EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+
+  // Just outside tolerance (dx = 0.26 > 0.25) -> should fail
+  pose.position.x = 0.74;
+  pose.position.y = 1.0;
+  transform_handler_->updateRobotPose(pose);
+  std::this_thread::sleep_for(500ms);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::FAILURE);
+
+  // Just inside tolerance (dx = 0.24 < 0.25) -> should succeed
+  pose.position.x = 0.76;
+  pose.position.y = 1.0;
+  transform_handler_->updateRobotPose(pose);
+  std::this_thread::sleep_for(500ms);
+  EXPECT_EQ(tree_->tickOnce(), BT::NodeStatus::SUCCESS);
+
 }
 
 int main(int argc, char ** argv)

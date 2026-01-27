@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <chrono>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -65,11 +66,21 @@ TEST_F(DistanceTraveledConditionTestFixture, test_behavior)
     // updated pose is i * 0.51
     // we wait for the traveled distance to reach a value > i * 0.5
     // we can assume the current transform has been updated at this point
+    auto start = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(2);
+
     while (traveled < i * 0.5) {
       if (nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer())) {
         traveled = pose.pose.position.x;
       }
+
+      if (std::chrono::steady_clock::now() - start > timeout) {
+        FAIL() << "Timed out waiting for TF pose update at step " << i
+              << " (expected traveled >= " << i * 0.5 << ", got " << traveled << ")";
+        break;
+      }
     }
+
 
     if (i % 2) {
       EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
