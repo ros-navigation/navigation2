@@ -25,12 +25,12 @@ target_link_libraries(${library_name} PUBLIC
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
-  nav2_ros_common::nav2_ros_common
 )
 target_link_libraries(${library_name} PRIVATE
   ${bond_TARGETS}
 )
 target_include_directories(${library_name} PUBLIC
+  "$<BUILD_INTERFACE:${nav2_ros_common_INCLUDE_DIRS}>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 
@@ -38,11 +38,6 @@ add_executable(lifecycle_bringup
   lifecycle_bringup_commandline.cpp
 )
 target_link_libraries(lifecycle_bringup PRIVATE ${library_name} rclcpp::rclcpp)
-
-add_executable(base_footprint_publisher
-  base_footprint_publisher.cpp
-)
-target_link_libraries(base_footprint_publisher PRIVATE ${library_name} rclcpp::rclcpp ${tf2_msgs_TARGETS})
 
 install(TARGETS
   ${library_name}
