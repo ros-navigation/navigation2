@@ -61,6 +61,9 @@ BtActionServer<ActionT>::BtActionServer(
   if (!node->has_parameter("default_server_timeout")) {
     node->declare_parameter("default_server_timeout", 20);
   }
+  if (!node->has_parameter("default_cancel_timeout")) {
+    node->declare_parameter("default_cancel_timeout", 50);
+  }
   if (!node->has_parameter("action_server_result_timeout")) {
     node->declare_parameter("action_server_result_timeout", 900.0);
   }
