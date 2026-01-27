@@ -35,6 +35,12 @@ ServerHandler::ServerHandler()
     node_, "local_costmap/clear_entirely_local_costmap");
   clear_global_costmap_server = std::make_unique<DummyClearEntireCostmapService>(
     node_, "global_costmap/clear_entirely_global_costmap");
+  clear_costmap_around_robot_server = std::make_unique<DummyClearCostmapAroundRobotService>(
+    node_, "local_costmap/clear_around_local_costmap");
+  clear_costmap_except_region_server = std::make_unique<DummyClearCostmapExceptRegionService>(
+    node_, "local_costmap/clear_except_local_costmap");
+  clear_costmap_around_pose_server = std::make_unique<DummyClearCostmapAroundPoseService>(
+    node_, "local_costmap/clear_around_pose_local_costmap");
   compute_path_to_pose_server = std::make_unique<DummyComputePathToPoseActionServer>(node_);
   follow_path_server = std::make_unique<DummyFollowPathActionServer>(node_);
   spin_server = std::make_unique<DummyActionServer<nav2_msgs::action::Spin>>(
@@ -89,6 +95,9 @@ void ServerHandler::reset() const
 {
   clear_global_costmap_server->reset();
   clear_local_costmap_server->reset();
+  clear_costmap_around_robot_server->reset();
+  clear_costmap_except_region_server->reset();
+  clear_costmap_around_pose_server->reset();
   compute_path_to_pose_server->reset();
   follow_path_server->reset();
   spin_server->reset();
