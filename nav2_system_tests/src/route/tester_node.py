@@ -316,7 +316,8 @@ class RouteTester(Node):
         self.info_msg('Goal succeeded!')
         return True
 
-    def feedback_callback(self, feedback_msg: ComputeAndTrackRoute.Feedback) -> None:
+    def feedback_callback(
+            self, feedback_msg: ComputeAndTrackRoute.Impl.FeedbackMessage) -> None:
         self.feedback_msgs.append(feedback_msg.feedback)
 
     def distanceFromGoal(self) -> float:
@@ -386,7 +387,7 @@ class RouteTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down navigation lifecycle manager...')
@@ -401,7 +402,7 @@ class RouteTester(Node):
             self.info_msg(f'{transition_service} service not available, waiting...')
 
         req = ManageLifecycleNodes.Request()
-        req.command = ManageLifecycleNodes.Request().SHUTDOWN
+        req.command = ManageLifecycleNodes.Request.SHUTDOWN
         future = mgr_client.call_async(req)
         try:
             self.info_msg('Shutting down localization lifecycle manager...')

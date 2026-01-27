@@ -33,30 +33,17 @@ void AssistedTeleop::onConfigure()
   }
 
   // set up parameters
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "projection_time", rclcpp::ParameterValue(1.0));
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "simulation_time_step", rclcpp::ParameterValue(0.1));
-
-  nav2::declare_parameter_if_not_declared(
-    node,
-    "cmd_vel_teleop", rclcpp::ParameterValue(std::string("cmd_vel_teleop")));
-
-  node->get_parameter("projection_time", projection_time_);
-  node->get_parameter("simulation_time_step", simulation_time_step_);
-
-  std::string cmd_vel_teleop;
-  node->get_parameter("cmd_vel_teleop", cmd_vel_teleop);
+  projection_time_ = node->declare_or_get_parameter("projection_time", 1.0);
+  simulation_time_step_ = node->declare_or_get_parameter("simulation_time_step", 0.1);
+  std::string cmd_vel_teleop = node->declare_or_get_parameter(
+    "cmd_vel_teleop", std::string("cmd_vel_teleop"));
 
   vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
     cmd_vel_teleop,
-    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+    [&](const geometry_msgs::msg::Twist::ConstSharedPtr & msg) {
       teleop_twist_.twist = *msg;
-    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    }, [&](const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg) {
       teleop_twist_ = *msg;
     });
 
@@ -172,7 +159,7 @@ geometry_msgs::msg::Pose AssistedTeleop::projectPose(
   return projected_pose;
 }
 
-void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)
+void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::ConstSharedPtr &)
 {
   preempt_teleop_ = true;
 }

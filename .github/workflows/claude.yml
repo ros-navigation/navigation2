@@ -23,6 +23,7 @@ jobs:
         github.actor == 'tonynajjar' ||
         github.actor == 'ruffsl' ||
         github.actor == 'doisyg' ||
+        github.actor == 'mini-1235' ||
         github.actor == 'padhupradheep'
       )
 
@@ -34,7 +35,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
 

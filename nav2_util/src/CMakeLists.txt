@@ -6,6 +6,7 @@ add_library(${library_name} SHARED
   controller_utils.cpp
   odometry_utils.cpp
   array_parser.cpp
+  path_utils.cpp
 )
 target_include_directories(${library_name}
   PUBLIC
@@ -25,6 +26,8 @@ target_link_libraries(${library_name} PUBLIC
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
+  nav2_ros_common::nav2_ros_common
+  angles::angles
 )
 target_link_libraries(${library_name} PRIVATE
   ${bond_TARGETS}

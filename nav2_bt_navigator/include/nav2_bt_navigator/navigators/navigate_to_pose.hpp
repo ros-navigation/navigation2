@@ -66,7 +66,7 @@ public:
    * from rviz
    * @param pose Pose received via atopic
    */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose);
 
   /**
    * @brief Get action name for this navigator
@@ -127,9 +127,13 @@ protected:
 
   std::string goal_blackboard_id_;
   std::string path_blackboard_id_;
+  std::string tracking_feedback_blackboard_id_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
+  size_t start_index_ = 0;
+  nav_msgs::msg::Path previous_path_;
+  double search_window_;
 };
 
 }  // namespace nav2_bt_navigator

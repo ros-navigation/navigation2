@@ -73,33 +73,28 @@ void RangeSensorLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  declareParameter("phi", rclcpp::ParameterValue(1.2));
-  node->get_parameter(name_ + "." + "phi", phi_v_);
-  declareParameter("inflate_cone", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name_ + "." + "inflate_cone", inflate_cone_);
-  declareParameter("no_readings_timeout", rclcpp::ParameterValue(0.0));
-  node->get_parameter(name_ + "." + "no_readings_timeout", no_readings_timeout_);
-  declareParameter("clear_threshold", rclcpp::ParameterValue(0.2));
-  node->get_parameter(name_ + "." + "clear_threshold", clear_threshold_);
-  declareParameter("mark_threshold", rclcpp::ParameterValue(0.8));
-  node->get_parameter(name_ + "." + "mark_threshold", mark_threshold_);
-  declareParameter("clear_on_max_reading", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "clear_on_max_reading", clear_on_max_reading_);
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  phi_v_ = node->declare_or_get_parameter(name_ + "." + "phi", 1.2);
+  inflate_cone_ = node->declare_or_get_parameter(name_ + "." + "inflate_cone", 1.0);
+  no_readings_timeout_ = node->declare_or_get_parameter(
+    name_ + "." + "no_readings_timeout", 0.0);
+  clear_threshold_ = node->declare_or_get_parameter(
+    name_ + "." + "clear_threshold", 0.2);
+  mark_threshold_ = node->declare_or_get_parameter(
+    name_ + "." + "mark_threshold", 0.8);
+  clear_on_max_reading_ = node->declare_or_get_parameter(
+    name_ + "." + "clear_on_max_reading", false);
 
   double temp_tf_tol = 0.0;
   node->get_parameter("transform_tolerance", temp_tf_tol);
   transform_tolerance_ = tf2::durationFromSec(temp_tf_tol);
 
-  std::vector<std::string> topic_names{};
-  declareParameter("topics", rclcpp::ParameterValue(topic_names));
-  node->get_parameter(name_ + "." + "topics", topic_names);
+  std::vector<std::string> topic_names = node->declare_or_get_parameter(
+    name_ + "." + "topics", std::vector<std::string>{});
 
   InputSensorType input_sensor_type = InputSensorType::ALL;
-  std::string sensor_type_name;
-  declareParameter("input_sensor_type", rclcpp::ParameterValue("ALL"));
-  node->get_parameter(name_ + "." + "input_sensor_type", sensor_type_name);
+  std::string sensor_type_name = node->declare_or_get_parameter(
+    name_ + "." + "input_sensor_type", std::string("ALL"));
 
   std::transform(
     sensor_type_name.begin(), sensor_type_name.end(),
@@ -213,7 +208,7 @@ double RangeSensorLayer::sensor_model(double r, double phi, double theta)
 }
 
 void RangeSensorLayer::bufferIncomingRangeMsg(
-  const sensor_msgs::msg::Range::SharedPtr range_message)
+  const sensor_msgs::msg::Range::ConstSharedPtr & range_message)
 {
   range_message_mutex_.lock();
   range_msgs_buffer_.push_back(*range_message);

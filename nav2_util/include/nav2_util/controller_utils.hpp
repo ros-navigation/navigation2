@@ -38,6 +38,19 @@ geometry_msgs::msg::Point circleSegmentIntersection(
   double r);
 
 /**
+* @brief Find the linear interpolation between two points
+* at a given distance starting from first endpoint.
+* @param p1 first endpoint of line segment
+* @param p2 second endpoint of line segment
+* @param target_dist interpolation distance from first endpoint of line segment
+* @return point of intersection
+*/
+geometry_msgs::msg::Point linearInterpolation(
+  const geometry_msgs::msg::Point & p1,
+  const geometry_msgs::msg::Point & p2,
+  const double target_dist);
+
+/**
 * @brief Get lookahead point
 * @param lookahead_dist Optimal lookahead distance
 * @param path Current global path

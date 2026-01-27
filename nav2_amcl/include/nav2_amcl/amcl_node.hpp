@@ -92,14 +92,27 @@ protected:
   nav2::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
 
   // Since the sensor data from gazebo or the robot is not lifecycle enabled, we won't
   // respond until we're in the active state
@@ -124,7 +137,7 @@ protected:
    * @brief Get new map from ROS topic to localize in
    * @param msg Map message
    */
-  void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
   /*
    * @brief Handle a new map message
    * @param msg Map message
@@ -198,7 +211,8 @@ protected:
   /*
    * @brief Handle with an initial pose estimate is received
    */
-  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initialPoseReceived(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
   /*
    * @brief Handle when a laser scan is received
    */
@@ -276,6 +290,7 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
+  int random_seed_{-1};
 
   // Laser scan related
   /*
@@ -399,6 +414,7 @@ protected:
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
   bool freespace_downsampling_ = false;
+  bool allow_parameter_qos_overrides_ = true;
 };
 
 }  // namespace nav2_amcl

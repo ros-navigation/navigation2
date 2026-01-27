@@ -44,6 +44,8 @@
 #include <vector>
 #include <limits>
 
+#include <rclcpp/clock.hpp>
+
 #include "nav2_costmap_2d/footprint.hpp"
 
 
@@ -56,7 +58,6 @@ LayeredCostmap::LayeredCostmap(std::string global_frame, bool rolling_window, bo
 : primary_costmap_(), combined_costmap_(),
   global_frame_(global_frame),
   rolling_window_(rolling_window),
-  current_(false),
   minx_(0.0),
   miny_(0.0),
   maxx_(0.0),
@@ -115,7 +116,9 @@ void LayeredCostmap::resizeMap(
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    (*plugin)->matchSize();
+    if (*plugin) {
+      (*plugin)->matchSize();
+    }
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
@@ -146,9 +149,11 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   }
 
   if (isOutofBounds(robot_x, robot_y)) {
-    RCLCPP_WARN(
+    rclcpp::Clock clock{RCL_ROS_TIME};
+    RCLCPP_WARN_THROTTLE(
       rclcpp::get_logger("nav2_costmap_2d"),
-      "Robot is out of bounds of the costmap!");
+      clock, 5000,
+      "Robot is out of bounds of the costmap");
   }
 
   if (plugins_.size() == 0 && filters_.size() == 0) {
@@ -255,22 +260,41 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   byn_ = yn;
 
   initialized_ = true;
-}
 
-bool LayeredCostmap::isCurrent()
-{
-  current_ = true;
+  // Set current_ = true for all disabled plugins
   for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
     plugin != plugins_.end(); ++plugin)
   {
-    current_ = current_ && ((*plugin)->isCurrent() || !(*plugin)->isEnabled());
+    if (*plugin && !(*plugin)->isEnabled()) {
+      (*plugin)->setCurrent(true);
+    }
   }
   for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
     filter != filters_.end(); ++filter)
   {
-    current_ = current_ && ((*filter)->isCurrent() || !(*filter)->isEnabled());
+    if (!(*filter)->isEnabled()) {
+      (*filter)->setCurrent(true);
+    }
   }
-  return current_;
+}
+
+bool LayeredCostmap::isCurrent()
+{
+  for (vector<std::shared_ptr<Layer>>::iterator plugin = plugins_.begin();
+    plugin != plugins_.end(); ++plugin)
+  {
+    if (!(*plugin)->isCurrent()) {
+      return false;
+    }
+  }
+  for (vector<std::shared_ptr<Layer>>::iterator filter = filters_.begin();
+    filter != filters_.end(); ++filter)
+  {
+    if (!(*filter)->isCurrent()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void LayeredCostmap::setFootprint(const std::vector<geometry_msgs::msg::Point> & footprint_spec)

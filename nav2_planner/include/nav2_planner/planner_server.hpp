@@ -39,8 +39,8 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "nav2_core/global_planner.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
-#include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_core/planner_exceptions.hpp"
+#include "nav2_planner/is_path_valid_service.hpp"
 
 namespace nav2_planner
 {
@@ -200,16 +200,6 @@ protected:
   void computePlanThroughPoses();
 
   /**
-   * @brief The service callback to determine if the path is still valid
-   * @param request to the service
-   * @param response from the service
-   */
-  void isPathValid(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
-    std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response);
-
-  /**
    * @brief Publish a path for visualization purposes
    * @param path Reference to Global Path
    */
@@ -244,6 +234,7 @@ protected:
   std::vector<std::string> default_types_;
   std::vector<std::string> planner_ids_;
   std::vector<std::string> planner_types_;
+  bool partial_plan_allowed_;
   double max_planner_duration_;
   rclcpp::Duration costmap_update_timeout_;
   std::string planner_ids_concat_;
@@ -255,14 +246,12 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::unique_ptr<nav2::NodeThread> costmap_thread_;
   nav2_costmap_2d::Costmap2D * costmap_;
-  std::unique_ptr<nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>
-  collision_checker_;
 
   // Publishers for the path
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
   // Service to determine if the path is valid
-  nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
+  std::unique_ptr<IsPathValidService> is_path_valid_service_;
 };
 
 }  // namespace nav2_planner

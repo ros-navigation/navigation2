@@ -29,6 +29,7 @@
   <depend>tf2_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
+  <depend>ament_index_cpp</depend>
 
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_lint_auto</test_depend>
@@ -36,6 +37,7 @@
   <test_depend>std_srvs</test_depend>
   <test_depend>test_msgs</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

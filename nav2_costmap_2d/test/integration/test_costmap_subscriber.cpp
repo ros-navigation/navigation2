@@ -79,7 +79,7 @@ public:
     costmapSubscriber.reset();
     costmapToSend.reset();
   }
-  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  void costmapCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
   {
     this->fullCostmapMsgCount++;
     std::vector<uint8_t> data;
@@ -88,20 +88,20 @@ public:
     }
     receivedGrids.push_back(data);
   }
-  void costmapRawCallback(const nav2_msgs::msg::Costmap::SharedPtr)
+  void costmapRawCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr)
   {
     this->fullCostmapRawMsgCount++;
   }
-  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::SharedPtr update_msg)
+  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update_msg)
   {
     this->updateCostmapMsgCount++;
     std::vector<uint8_t> data;
-    for(unsigned int i = 0; i < update_msg->data.size(); i++) {
+    for (unsigned int i = 0; i < update_msg->data.size(); i++) {
       data.push_back(update_msg->data[i]);
     }
     receivedGrids.push_back(data);
   }
-  void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr)
+  void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr)
   {
     this->updateCostmapRawMsgCount++;
   }
@@ -262,7 +262,7 @@ TEST_F(TestCostmapSubscriberShould, handleCostmapUpdateMsgs)
       costmapToSend->setCost(observation.x, observation.y, observation.cost);
     }
     // Publish full costmap for the first iteration
-    if(!first_iteration) {
+    if (!first_iteration) {
       x0 = mapChange.x0;
       xn = mapChange.xn;
       y0 = mapChange.y0;
@@ -300,7 +300,7 @@ TEST_F(
   ASSERT_ANY_THROW(costmapSubscriber->getCostmap());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

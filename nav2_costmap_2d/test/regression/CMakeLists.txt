@@ -11,7 +11,7 @@ install(TARGETS
 )
 
 # Costmap2D plugins API calling order test
-ament_add_gtest(plugin_api_order plugin_api_order.cpp)
+nav2_add_gtest(plugin_api_order plugin_api_order.cpp)
 target_link_libraries(plugin_api_order
   nav2_costmap_2d_core
 )

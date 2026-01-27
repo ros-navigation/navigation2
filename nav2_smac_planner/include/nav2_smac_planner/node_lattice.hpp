@@ -106,6 +106,8 @@ struct LatticeMotionTable
   float rotation_penalty;
   float min_turning_radius;
   bool allow_reverse_expansion;
+  bool downsample_obstacle_heuristic;
+  bool use_quadratic_cost_penalty;
   std::vector<std::vector<MotionPrimitive>> motion_primitives;
   ompl::base::StateSpacePtr state_space;
   std::vector<TrigValues> trig_values;
@@ -354,10 +356,12 @@ public:
   static void resetObstacleHeuristic(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y)
+    const unsigned int & goal_x, const unsigned int & goal_y,
+    const bool downsample_obstacle_heuristic)
   {
     // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::resetObstacleHeuristic(costmap_ros, start_x, start_y, goal_x, goal_y);
+    NodeHybrid::resetObstacleHeuristic(costmap_ros, start_x, start_y, goal_x, goal_y,
+      downsample_obstacle_heuristic);
   }
 
   /**
@@ -369,9 +373,12 @@ public:
   static float getObstacleHeuristic(
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
-    const double & cost_penalty)
+    const double & cost_penalty,
+    const bool use_quadratic_cost_penalty,
+    const bool downsample_obstacle_heuristic)
   {
-    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords, cost_penalty);
+    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords, cost_penalty,
+      use_quadratic_cost_penalty, downsample_obstacle_heuristic);
   }
 
   /**

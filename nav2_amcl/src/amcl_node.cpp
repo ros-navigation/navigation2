@@ -23,6 +23,8 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <ctime>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -58,6 +60,12 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+  init_pose_[0] = 0.0;
+  init_pose_[1] = 0.0;
+  init_pose_[2] = 0.0;
+  init_cov_[0] = 0.0;
+  init_cov_[1] = 0.0;
+  init_cov_[2] = 0.0;
 }
 
 AmclNode::~AmclNode()
@@ -116,9 +124,13 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
-      &AmclNode::dynamicParametersCallback,
+      &AmclNode::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &AmclNode::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
 
   // create bond connection
@@ -139,8 +151,10 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   particle_cloud_pub_->on_deactivate();
 
   // shutdown and reset dynamic parameter handler
-  remove_on_set_parameters_callback(dyn_params_handler_.get());
-  dyn_params_handler_.reset();
+  remove_post_set_parameters_callback(post_set_params_handler_.get());
+  post_set_params_handler_.reset();
+  remove_on_set_parameters_callback(on_set_params_handler_.get());
+  on_set_params_handler_.reset();
 
   // destroy bond connection
   destroyBond();
@@ -349,7 +363,8 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::initialPoseReceived(
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -385,7 +400,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(*msg);
+  handleInitialPose(last_published_pose_);
 }
 
 void
@@ -941,6 +956,9 @@ AmclNode::initParameters()
   scan_topic_ = this->declare_or_get_parameter("scan_topic", std::string{"scan"});
   map_topic_ = this->declare_or_get_parameter("map_topic", std::string{"map"});
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
+  allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
+    "allow_parameter_qos_overrides", true);
+  random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -986,84 +1004,93 @@ AmclNode::initParameters()
   }
 }
 
-/**
-  * @brief Callback executed when a parameter change is detected
-  * @param event ParameterEvent message
-  */
-rcl_interfaces::msg::SetParametersResult
-AmclNode::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find('.') != std::string::npos) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() <= 0.0 && param_name == "save_pose_rate") {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0 &&  // NOLINT(readability/braces)
+        (param_name != "laser_min_range" || param_name != "laser_max_range"))
+      {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (parameter.as_int() <= 0.0 && param_name == "resample_interval") {
+        RCLCPP_WARN(
+          get_logger(), "The value of resample_interval is incorrectly set, "
+          "it should be >0. Ignoring parameter update.");
+        result.successful = false;
+      } else if (parameter.as_int() < 0.0) {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
+        result.successful = false;
+      } else if (param_name == "max_particles" && parameter.as_int() < min_particles_) {
+        RCLCPP_WARN(
+          get_logger(), "The value of max_particles is incorrectly set, "
+          "it should be larger than min_particles. Ignoring parameter update.");
+        result.successful = false;
+      } else if (param_name == "min_particles" && parameter.as_int() > max_particles_) {
+        RCLCPP_WARN(
+          get_logger(), "The value of min_particles is incorrectly set, "
+          "it should be smaller than max particles. Ignoring parameter update.");
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+AmclNode::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
-  rcl_interfaces::msg::SetParametersResult result;
-  double save_pose_rate;
-  double tmp_tol;
-
-  int max_particles = max_particles_;
-  int min_particles = min_particles_;
 
   bool reinit_pf = false;
   bool reinit_odom = false;
   bool reinit_laser = false;
   bool reinit_map = false;
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
-
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "alpha1") {
         alpha1_ = parameter.as_double();
-        // alpha restricted to be non-negative
-        if (alpha1_ < 0.0) {
-          RCLCPP_WARN(
-            get_logger(), "You've set alpha1 to be negative,"
-            " this isn't allowed, so the alpha1 will be set to be zero.");
-          alpha1_ = 0.0;
-        }
         reinit_odom = true;
       } else if (param_name == "alpha2") {
         alpha2_ = parameter.as_double();
-        // alpha restricted to be non-negative
-        if (alpha2_ < 0.0) {
-          RCLCPP_WARN(
-            get_logger(), "You've set alpha2 to be negative,"
-            " this isn't allowed, so the alpha2 will be set to be zero.");
-          alpha2_ = 0.0;
-        }
         reinit_odom = true;
       } else if (param_name == "alpha3") {
         alpha3_ = parameter.as_double();
-        // alpha restricted to be non-negative
-        if (alpha3_ < 0.0) {
-          RCLCPP_WARN(
-            get_logger(), "You've set alpha3 to be negative,"
-            " this isn't allowed, so the alpha3 will be set to be zero.");
-          alpha3_ = 0.0;
-        }
         reinit_odom = true;
       } else if (param_name == "alpha4") {
         alpha4_ = parameter.as_double();
-        // alpha restricted to be non-negative
-        if (alpha4_ < 0.0) {
-          RCLCPP_WARN(
-            get_logger(), "You've set alpha4 to be negative,"
-            " this isn't allowed, so the alpha4 will be set to be zero.");
-          alpha4_ = 0.0;
-        }
         reinit_odom = true;
       } else if (param_name == "alpha5") {
         alpha5_ = parameter.as_double();
-        // alpha restricted to be non-negative
-        if (alpha5_ < 0.0) {
-          RCLCPP_WARN(
-            get_logger(), "You've set alpha5 to be negative,"
-            " this isn't allowed, so the alpha5 will be set to be zero.");
-          alpha5_ = 0.0;
-        }
         reinit_odom = true;
       } else if (param_name == "beam_skip_distance") {
         beam_skip_distance_ = parameter.as_double();
@@ -1099,13 +1126,13 @@ AmclNode::dynamicParametersCallback(
         alpha_slow_ = parameter.as_double();
         reinit_pf = true;
       } else if (param_name == "save_pose_rate") {
-        save_pose_rate = parameter.as_double();
+        double save_pose_rate = parameter.as_double();
         save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
       } else if (param_name == "transform_tolerance") {
-        tmp_tol = parameter.as_double();
+        double tmp_tol = parameter.as_double();
         transform_tolerance_ = tf2::durationFromSec(tmp_tol);
         reinit_laser = true;
       } else if (param_name == "update_min_a") {
@@ -1173,19 +1200,6 @@ AmclNode::dynamicParametersCallback(
     }
   }
 
-  // Checking if the minimum particles is greater than max_particles_
-  if (min_particles_ > max_particles_) {
-    RCLCPP_ERROR(
-      this->get_logger(),
-      "You've set min_particles to be greater than max particles,"
-      " this isn't allowed.");
-    // sticking to the old values
-    max_particles_ = max_particles;
-    min_particles_ = min_particles;
-    result.successful = false;
-    return result;
-  }
-
   // Re-initialize the particle filter
   if (reinit_pf) {
     if (pf_ != NULL) {
@@ -1219,15 +1233,12 @@ AmclNode::dynamicParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS());
+      nav2::qos::LatchedSubscriptionQoS(3));
   }
-
-  result.successful = true;
-  return result;
 }
 
 void
-AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (!nav2::validateMsg(*msg)) {
@@ -1350,8 +1361,8 @@ AmclNode::initTransforms()
 void
 AmclNode::initMessageFilters()
 {
-  auto sub_opt = rclcpp::SubscriptionOptions();
-  sub_opt.callback_group = callback_group_;
+  auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
@@ -1394,7 +1405,7 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS());
+    nav2::qos::LatchedSubscriptionQoS(3));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
@@ -1404,17 +1415,20 @@ AmclNode::initServices()
 {
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
-    std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
+    std::bind(
+      &AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
   initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
     "set_initial_pose",
-    std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
-    std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 }
 
@@ -1452,6 +1466,17 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
+
+  // Seed RNG used by PF resampling and pose generation.
+  // Keep legacy behavior (time-based) unless user explicitly sets a seed.
+  if (random_seed_ >= 0) {
+    // `srand48` expects a platform `long` seed. We avoid using `long` in our code and accept
+    // truncation when seeding.
+    srand48(static_cast<int>(random_seed_));
+  } else {
+    srand48(static_cast<int>(std::time(nullptr)));
+  }
+
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

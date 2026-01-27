@@ -415,7 +415,9 @@ public:
   static float getObstacleHeuristic(
     const Coordinates & node_coords,
     const Coordinates & goal_coords,
-    const float & cost_penalty);
+    const float & cost_penalty,
+    const bool use_quadratic_cost_penalty,
+    const bool downsample_obstacle_heuristic);
 
   /**
    * @brief Compute the Distance heuristic
@@ -438,7 +440,8 @@ public:
   static void resetObstacleHeuristic(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y);
+    const unsigned int & goal_x, const unsigned int & goal_y,
+    const bool downsample_obstacle_heuristic);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -474,7 +477,6 @@ public:
   Coordinates pose;
 
   // Constants required across all nodes but don't want to allocate more than once
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float travel_distance_cost;
   NAV2_SMAC_PLANNER_COMMON_EXPORT static HybridMotionTable motion_table;
   // Wavefront lookup and queue for continuing to expand as needed
   NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable obstacle_heuristic_lookup_table;

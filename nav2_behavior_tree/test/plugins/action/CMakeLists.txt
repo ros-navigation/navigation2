@@ -1,6 +1,6 @@
 find_package(test_msgs REQUIRED)
 
-ament_add_gtest(test_bt_action_node test_bt_action_node.cpp)
+nav2_add_gtest(test_bt_action_node test_bt_action_node.cpp)
 target_link_libraries(test_bt_action_node rclcpp::rclcpp ${test_msgs_TARGETS} rclcpp_action::rclcpp_action ${library_name})
 
 plugin_add_test(test_action_spin_action test_spin_action.cpp nav2_spin_action_bt_node)
@@ -91,6 +91,12 @@ plugin_add_test(test_goal_checker_selector_node test_goal_checker_selector_node.
 
 plugin_add_test(test_progress_checker_selector_node test_progress_checker_selector_node.cpp nav2_progress_checker_selector_bt_node)
 
+plugin_add_test(test_path_handler_selector_node test_path_handler_selector_node.cpp nav2_path_handler_selector_bt_node)
+
 plugin_add_test(test_toggle_collision_monitor_service
   test_toggle_collision_monitor_service.cpp
   nav2_toggle_collision_monitor_service_bt_node)
+
+plugin_add_test(test_follow_object_action test_follow_object_action.cpp opennav_follow_action_bt_node)
+
+plugin_add_test(test_follow_object_cancel_node test_follow_object_cancel_node.cpp opennav_follow_cancel_bt_node)

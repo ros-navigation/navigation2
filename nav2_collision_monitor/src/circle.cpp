@@ -95,12 +95,10 @@ bool Circle::getParameters(
   bool use_dynamic_sub = true;  // if getting parameter radius fails, use dynamic subscription
   try {
     // Leave it not initialized: the will cause an error if it will not set
-    nav2::declare_parameter_if_not_declared(
-      node, polygon_name_ + ".radius", rclcpp::PARAMETER_DOUBLE);
-    radius_ = node->get_parameter(polygon_name_ + ".radius").as_double();
+    radius_ = node->declare_or_get_parameter<double>(polygon_name_ + ".radius");
     radius_squared_ = radius_ * radius_;
     use_dynamic_sub = false;
-  } catch (const rclcpp::exceptions::ParameterUninitializedException &) {
+  } catch (const rclcpp::exceptions::InvalidParameterValueException &) {
     RCLCPP_INFO(
       logger_,
       "[%s]: Polygon circle radius is not defined. Using dynamic subscription instead.",

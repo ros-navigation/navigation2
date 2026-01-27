@@ -29,6 +29,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
 #include "nav2_controller/plugins/position_goal_checker.hpp"
+#include "nav2_rotation_shim_controller/parameter_handler.hpp"
 
 namespace nav2_rotation_shim_controller
 {
@@ -82,18 +83,22 @@ public:
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @param global_goal The last pose of the global plan
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * /*goal_checker*/) override;
+    nav2_core::GoalChecker * /*goal_checker*/,
+    const nav_msgs::msg::Path & transformed_global_plan,
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   /**
-   * @brief nav2_core setPlan - Sets the global plan
-   * @param path The global plan
+   * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server
+   * @param raw_global_path The global plan from the Planner Server
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -116,14 +121,8 @@ protected:
    * May throw exception if a point at least that far away cannot be found
    * @return pt location of the output point
    */
-  geometry_msgs::msg::PoseStamped getSampledPathPt();
-
-  /**
-   * @brief Find the goal point in path
-   * May throw exception if the path is empty
-   * @return pt location of the output point
-   */
-  geometry_msgs::msg::PoseStamped getSampledPathGoal();
+  geometry_msgs::msg::PoseStamped getSampledPathPt(
+    const geometry_msgs::msg::PoseStamped & global_goal);
 
   /**
    * @brief Uses TF to find the location of the sampled path point in base frame
@@ -157,17 +156,10 @@ protected:
 
   /**
    * @brief Checks if the goal has changed based on the given path.
-   * @param path The path to compare with the current goal.
+   * @param goal The goal to compare with the last goal.
    * @return True if the goal has changed, false otherwise.
    */
-  bool isGoalChanged(const nav_msgs::msg::Path & path);
-
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  bool isGoalChanged(const geometry_msgs::msg::PoseStamped & goal);
 
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
@@ -182,18 +174,12 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  double forward_sampling_distance_, angular_dist_threshold_, angular_disengage_threshold_;
-  double rotate_to_heading_angular_vel_, max_angular_accel_;
-  double control_duration_, simulate_ahead_time_;
-  bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
-  bool closed_loop_;
-  bool use_path_orientations_;
+  geometry_msgs::msg::PoseStamped current_goal_;
+  Parameters * params_;
+  bool in_rotation_;
   double last_angular_vel_ = std::numeric_limits<double>::max();
-
-  // Dynamic parameters handler
-  std::mutex mutex_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
   std::unique_ptr<nav2_controller::PositionGoalChecker> position_goal_checker_;
+  std::unique_ptr<nav2_rotation_shim_controller::ParameterHandler> param_handler_;
 };
 
 }  // namespace nav2_rotation_shim_controller

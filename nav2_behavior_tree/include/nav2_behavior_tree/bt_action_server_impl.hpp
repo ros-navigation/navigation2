@@ -21,7 +21,7 @@
 #include <limits>
 #include <memory>
 #include <set>
-#include <unordered_set>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -67,6 +67,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
     "compute_path",
     "dock_robot",
     "drive_on_heading",
+    "follow_object",
     "follow_path",
     "nav_thru_poses",
     "nav_to_pose",
@@ -76,9 +77,10 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   };
 
   if (node->has_parameter("error_code_names")) {
-    throw std::runtime_error("parameter 'error_code_names' has been replaced by "
-      " 'error_code_name_prefixes' and MUST be removed.\n"
-      " Please review migration guide and update your configuration.");
+    throw std::runtime_error(
+            "parameter 'error_code_names' has been replaced by "
+            " 'error_code_name_prefixes' and MUST be removed.\n"
+            " Please review migration guide and update your configuration.");
   }
 
   // Declare and get error code name prefixes parameter
@@ -99,8 +101,9 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
         << "Make sure these match your BT and there are not other sources of error codes you"
         << "reported to your application");
   } else {
-    RCLCPP_INFO_STREAM(logger_, "Error_code parameters were set to:"
-      << error_code_name_prefixes_str);
+    RCLCPP_INFO_STREAM(
+      logger_, "Error_code parameters were set to:"
+        << error_code_name_prefixes_str);
   }
 }
 
@@ -122,7 +125,8 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // Use suffix '_rclcpp_node' to keep parameter file consistency #1773
 
   auto new_arguments = node->get_node_options().arguments();
-  nav2::replaceOrAddArgument(new_arguments, "-r", "__node", std::string("__node:=") +
+  nav2::replaceOrAddArgument(
+    new_arguments, "-r", "__node", std::string("__node:=") +
     std::string(node->get_name()) + "_" + client_node_name + "_rclcpp_node");
   auto options = node->get_node_options();
   options = options.arguments(new_arguments);
@@ -156,6 +160,9 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   default_server_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("default_server_timeout", 20));
 
+  default_cancel_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_cancel_timeout", 50));
+
   wait_for_service_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("wait_for_service_timeout", 1000));
 
@@ -172,10 +179,11 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   blackboard_ = BT::Blackboard::create();
 
   // Put items on the blackboard
-  blackboard_->set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>(
+  blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
     wait_for_service_timeout_);
 
@@ -252,53 +260,92 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     is_bt_id = true;
   }
 
-  std::unordered_set<std::string> used_bt_id;
-  for (const auto & directory : search_directories_) {
-    try {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() == ".xml") {
-          auto current_bt_id = bt_->extractBehaviorTreeID(entry.path().string());
-          if (current_bt_id.empty()) {
-            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)",
-              entry.path().string().c_str());
+  std::set<std::string> registered_ids;
+  std::string main_id;
+  auto register_all_bt_files = [&](const std::string & skip_file = "") {
+      for (const auto & directory : search_directories_) {
+        for (const auto & entry : fs::directory_iterator(directory)) {
+          if (entry.path().extension() != ".xml") {
             continue;
           }
-          auto [it, inserted] = used_bt_id.insert(current_bt_id);
-          if (!inserted) {
-            RCLCPP_WARN(
-              logger_,
-              "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
-              "ID: %s File: %s",
-              current_bt_id.c_str(), entry.path().string().c_str());
+          if (!skip_file.empty() && entry.path().string() == skip_file) {
+            continue;
           }
+
+          auto id = bt_->extractBehaviorTreeID(entry.path().string());
+          if (id.empty()) {
+            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
+            continue;
+          }
+          if (registered_ids.count(id)) {
+            RCLCPP_WARN(
+              logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
+              entry.path().c_str(), id.c_str());
+            continue;
+          }
+
+          RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
           bt_->registerTreeFromFile(entry.path().string());
+          registered_ids.insert(id);
         }
       }
-    } catch (const std::exception & e) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        "Exception reading behavior tree directory: " + std::string(e.what()));
-      return false;
-    }
-  }
-  // Try to load the main BT tree (by ID)
+    };
+
   try {
-    if(!is_bt_id) {
-      tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
+    if (!is_bt_id) {
+      // file_or_id is a filename: register it first
+      std::string main_file = file_or_id;
+      main_id = bt_->extractBehaviorTreeID(main_file);
+      if (main_id.empty()) {
+        RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        return false;
+      }
+      RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
+      bt_->registerTreeFromFile(main_file);
+      registered_ids.insert(main_id);
+
+      // When a filename is specified, it must be register first
+      // and treat it as the "main" tree to execute.
+      // This ensures the requested tree is always available
+      // and prioritized, even if other files in the directory have duplicate IDs.
+      // The lambda then skips this main file to avoid
+      // re-registering it or logging a duplicate warning.
+      // In contrast, when an ID is specified, it's unknown which file is "main"
+      // so all files are registered and conflicts are handled in the lambda.
+      register_all_bt_files(main_file);
     } else {
-      tree_ = bt_->createTree(file_or_id, blackboard_);
+      // file_or_id is an ID: register all files, skipping conflicts
+      main_id = file_or_id;
+      register_all_bt_files();
     }
+  } catch (const std::exception & e) {
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Exception registering behavior trees: " + std::string(e.what()));
+    return false;
+  }
+
+  // Create the tree with the specified ID
+  try {
+    tree_ = bt_->createTree(main_id, blackboard_);
+    RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
 
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
-      blackboard->set("node", client_node_);
-      blackboard->set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);
-      blackboard->set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
-      blackboard->set<std::chrono::milliseconds>(
-          "wait_for_service_timeout", wait_for_service_timeout_);
+      blackboard->template set("node", client_node_);
+      blackboard->template set<std::chrono::milliseconds>("server_timeout",
+          default_server_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("cancel_timeout",
+        default_cancel_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
+      blackboard->template set<std::chrono::milliseconds>(
+        "wait_for_service_timeout",
+        wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Exception when creating BT tree from file: ") + e.what());
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when creating BT tree from ID: ") + e.what());
     return false;
   }
 
@@ -372,7 +419,8 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
 
     case nav2_behavior_tree::BtStatus::FAILED:
       action_server_->terminate_current(result);
-      RCLCPP_ERROR(logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
+      RCLCPP_ERROR(
+        logger_, "Goal failed error_code:%d error_msg:'%s'", result->error_code,
         result->error_msg.c_str());
       break;
 
@@ -392,7 +440,8 @@ void BtActionServer<ActionT, NodeT>::setInternalError(
 {
   internal_error_code_ = error_code;
   internal_error_msg_ = error_msg;
-  RCLCPP_ERROR(logger_, "Setting internal error error_code:%d, error_msg:%s",
+  RCLCPP_ERROR(
+    logger_, "Setting internal error error_code:%d, error_msg:%s",
     internal_error_code_, internal_error_msg_.c_str());
 }
 
@@ -457,9 +506,9 @@ void BtActionServer<ActionT, NodeT>::cleanErrorCodes()
   std::string name;
   for (const auto & error_code_name_prefix : error_code_name_prefixes_) {
     name = error_code_name_prefix + "_error_code";
-    blackboard_->set<unsigned short>(name, 0);  //NOLINT
+    blackboard_->template set<unsigned short>(name, 0);  //NOLINT
     name = error_code_name_prefix + "_error_msg";
-    blackboard_->set<std::string>(name, "");
+    blackboard_->template set<std::string>(name, "");
   }
   resetInternalError();
 }

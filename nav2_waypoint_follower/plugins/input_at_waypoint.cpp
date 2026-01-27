@@ -72,7 +72,7 @@ void InputAtWaypoint::initialize(
     input_topic, std::bind(&InputAtWaypoint::Cb, this, _1));
 }
 
-void InputAtWaypoint::Cb(const std_msgs::msg::Empty::SharedPtr /*msg*/)
+void InputAtWaypoint::Cb(const std_msgs::msg::Empty::ConstSharedPtr & /*msg*/)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   input_received_ = true;

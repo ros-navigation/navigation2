@@ -67,7 +67,7 @@ public:
       rclcpp::Parameter(
         bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 
-    bond_heartbeat_period = this->declare_or_get_parameter<double>("bond_heartbeat_period", 0.1);
+    bond_heartbeat_period = this->declare_or_get_parameter<double>("bond_heartbeat_period", 0.25);
     bool autostart_node = this->declare_or_get_parameter("autostart_node", false);
     if (autostart_node) {
       autostart();
@@ -100,6 +100,23 @@ public:
       context->remove_pre_shutdown_callback(*(rcl_preshutdown_cb_handle_.get()));
       rcl_preshutdown_cb_handle_.reset();
     }
+  }
+
+  /**
+   * @brief Declares or gets a parameter with specified type (not value).
+   * If the parameter is already declared, returns its value;
+   * otherwise declares it with the specified type.
+   * @param parameter_name Name of the parameter
+   * @param parameter_descriptor Optional parameter descriptor
+   * @return The value of the parameter or throws an exception if not set
+   */
+  template<typename ParameterT>
+  inline ParameterT declare_or_get_parameter(
+    const std::string & parameter_name,
+    const ParameterDescriptor & parameter_descriptor = ParameterDescriptor())
+  {
+    return nav2::declare_or_get_parameter<ParameterT>(
+      this, parameter_name, parameter_descriptor);
   }
 
   /**

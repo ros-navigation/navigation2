@@ -19,6 +19,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_util/controller_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
@@ -43,13 +44,8 @@ void GracefulController::configure(
   // Handles storage and dynamic configuration of parameters.
   // Returns pointer to data current param settings.
   param_handler_ = std::make_unique<ParameterHandler>(
-    node, plugin_name_, logger_,
-    costmap_ros_->getCostmap()->getSizeInMetersX());
+    node, plugin_name_, logger_);
   params_ = param_handler_->getParams();
-
-  // Handles global path transformations
-  path_handler_ = std::make_unique<PathHandler>(
-    params_->transform_tolerance, tf_buffer_, costmap_ros_);
 
   // Handles the control law to generate the velocity commands
   control_law_ = std::make_unique<SmoothControlLaw>(
@@ -57,13 +53,12 @@ void GracefulController::configure(
     params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
 
   // Initialize footprint collision checker
-  if(params_->use_collision_detection) {
+  if (params_->use_collision_detection) {
     collision_checker_ = std::make_unique<nav2_costmap_2d::
         FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>>(costmap_ros_->getCostmap());
   }
 
   // Publishers
-  transformed_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("transformed_global_plan");
   local_plan_pub_ = node->create_publisher<nav_msgs::msg::Path>("local_plan");
   motion_target_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("motion_target");
   slowdown_pub_ = node->create_publisher<visualization_msgs::msg::Marker>("slowdown");
@@ -77,12 +72,10 @@ void GracefulController::cleanup()
     logger_,
     "Cleaning up controller: %s of type graceful_controller::GracefulController",
     plugin_name_.c_str());
-  transformed_plan_pub_.reset();
   local_plan_pub_.reset();
   motion_target_pub_.reset();
   slowdown_pub_.reset();
   collision_checker_.reset();
-  path_handler_.reset();
   param_handler_.reset();
   control_law_.reset();
 }
@@ -93,10 +86,10 @@ void GracefulController::activate()
     logger_,
     "Activating controller: %s of type nav2_graceful_controller::GracefulController",
     plugin_name_.c_str());
-  transformed_plan_pub_->on_activate();
   local_plan_pub_->on_activate();
   motion_target_pub_->on_activate();
   slowdown_pub_->on_activate();
+  param_handler_->activate();
 }
 
 void GracefulController::deactivate()
@@ -105,16 +98,18 @@ void GracefulController::deactivate()
     logger_,
     "Deactivating controller: %s of type nav2_graceful_controller::GracefulController",
     plugin_name_.c_str());
-  transformed_plan_pub_->on_deactivate();
   local_plan_pub_->on_deactivate();
   motion_target_pub_->on_deactivate();
   slowdown_pub_->on_deactivate();
+  param_handler_->deactivate();
 }
 
 geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & pose,
   const geometry_msgs::msg::Twist & /*velocity*/,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker * goal_checker,
+  const nav_msgs::msg::Path & transformed_global_plan,
+  const geometry_msgs::msg::PoseStamped & /*global_goal*/)
 {
   std::lock_guard<std::mutex> param_lock(param_handler_->getMutex());
 
@@ -130,21 +125,23 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     goal_dist_tolerance_ = pose_tolerance.position.x;
   }
 
+  // Transform the plan from costmap's global frame to robot base frame
+  nav_msgs::msg::Path transformed_plan;
+  if (!nav2_util::transformPathInTargetFrame(
+      transformed_global_plan, transformed_plan, *tf_buffer_,
+      costmap_ros_->getBaseFrameID(), costmap_ros_->getTransformTolerance()))
+  {
+    throw nav2_core::ControllerTFError(
+    "Unable to transform plan pose into local frame");
+  }
+
   // Update the smooth control law with the new params
   control_law_->setCurvatureConstants(
     params_->k_phi, params_->k_delta, params_->beta, params_->lambda);
   control_law_->setSlowdownRadius(params_->slowdown_radius);
   control_law_->setSpeedLimit(params_->v_linear_min, params_->v_linear_max, params_->v_angular_max);
-
-  // Transform path to robot base frame
-  auto transformed_plan = path_handler_->transformGlobalPlan(
-    pose, params_->max_robot_pose_search_dist);
-
   // Add proper orientations to plan, if needed
   validateOrientations(transformed_plan.poses);
-
-  // Publish plan for visualization
-  transformed_plan_pub_->publish(transformed_plan);
 
   // Transform local frame to global frame to use in collision checking
   geometry_msgs::msg::TransformStamped costmap_transform;
@@ -229,14 +226,14 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
         target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel))
     {
       // Publish the selected target_pose
-      motion_target_pub_->publish(target_pose);
+      motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
       // Publish marker for slowdown radius around motion target for debugging / visualization
       auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
         target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
+      slowdown_pub_->publish(std::make_unique<visualization_msgs::msg::Marker>(slowdown_marker));
       // Publish the local plan
       local_plan.header = transformed_plan.header;
-      local_plan_pub_->publish(local_plan);
+      local_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(local_plan));
       // Successfully found velocity command
       return cmd_vel;
     }
@@ -245,9 +242,8 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
   throw nav2_core::NoValidControl("Collision detected in trajectory");
 }
 
-void GracefulController::setPlan(const nav_msgs::msg::Path & path)
+void GracefulController::newPathReceived(const nav_msgs::msg::Path & /*raw_global_path*/)
 {
-  path_handler_->setPlan(path);
   goal_reached_ = false;
   do_initial_rotation_ = true;
 }
@@ -343,12 +339,12 @@ bool GracefulController::simulateTrajectory(
   }
 
   double distance = std::numeric_limits<double>::max();
-  double resolution_ = costmap_ros_->getCostmap()->getResolution();
-  double dt = (params_->v_linear_max > 0.0) ? resolution_ / params_->v_linear_max : 0.0;
+  double resolution = costmap_ros_->getCostmap()->getResolution();
+  double dt = (params_->v_linear_max > 0.0) ? resolution / params_->v_linear_max : 0.0;
 
   // Set max iter to avoid infinite loop
   unsigned int max_iter = 3 *
-    std::hypot(motion_target.pose.position.x, motion_target.pose.position.y) / resolution_;
+    std::hypot(motion_target.pose.position.x, motion_target.pose.position.y) / resolution;
 
   // Generate path
   do{
@@ -395,7 +391,7 @@ bool GracefulController::simulateTrajectory(
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(motion_target.pose, next_pose.pose);
-  }while(distance > resolution_ && trajectory.poses.size() < max_iter);
+  }while(distance > resolution && trajectory.poses.size() < max_iter);
 
   return true;
 }
@@ -405,8 +401,9 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   geometry_msgs::msg::Twist vel;
   vel.linear.x = 0.0;
   vel.angular.z = params_->rotation_scaling_factor * angle_to_target * params_->v_angular_max;
-  vel.angular.z = std::copysign(1.0, vel.angular.z) * std::max(abs(vel.angular.z),
-      params_->v_angular_min_in_place);
+  vel.angular.z = std::copysign(1.0, vel.angular.z) * std::max(
+    abs(vel.angular.z),
+    params_->v_angular_min_in_place);
   return vel;
 }
 

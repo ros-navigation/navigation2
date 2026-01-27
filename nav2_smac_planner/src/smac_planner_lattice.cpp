@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_smac_planner/smac_planner_lattice.hpp"
 
 // #define BENCHMARK_TESTING
@@ -85,7 +86,7 @@ void SmacPlannerLattice::configure(
   // Default to a well rounded model: 16 bin, 0.4m turning radius, ackermann model
   nav2::declare_parameter_if_not_declared(
     node, name + ".lattice_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+      nav2::get_package_share_directory("nav2_smac_planner") +
       "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json"));
   node->get_parameter(name + ".lattice_filepath", _search_info.lattice_filepath);
   nav2::declare_parameter_if_not_declared(
@@ -126,6 +127,14 @@ void SmacPlannerLattice::configure(
   node->get_parameter(name + ".analytic_expansion_max_length", analytic_expansion_max_length_m);
   _search_info.analytic_expansion_max_length =
     analytic_expansion_max_length_m / _costmap->getResolution();
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_quadratic_cost_penalty", rclcpp::ParameterValue(false));
+  node->get_parameter(
+    name + ".use_quadratic_cost_penalty", _search_info.use_quadratic_cost_penalty);
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".downsample_obstacle_heuristic", rclcpp::ParameterValue(true));
+  node->get_parameter(
+    name + ".downsample_obstacle_heuristic", _search_info.downsample_obstacle_heuristic);
 
   nav2::declare_parameter_if_not_declared(
     node, name + ".max_planning_time", rclcpp::ParameterValue(5.0));
@@ -329,10 +338,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!_costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -344,10 +353,10 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!_costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -357,7 +366,7 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
     NodeLattice::motion_table.getClosestAngularBin(tf2::getYaw(goal.pose.orientation));
   _a_star->setGoal(
     mx_goal, my_goal, goal_bin,
-      _goal_heading_mode, _coarse_search_resolution);
+    _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -382,7 +391,8 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -404,17 +414,17 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   {
     if (_debug_visualizations) {
       auto now = _clock->now();
-      geometry_msgs::msg::PoseArray msg;
+      auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
       geometry_msgs::msg::Pose msg_pose;
-      msg.header.stamp = now;
-      msg.header.frame_id = _global_frame;
+      msg->header.stamp = now;
+      msg->header.frame_id = _global_frame;
       for (auto & e : *expansions) {
         msg_pose.position.x = std::get<0>(e);
         msg_pose.position.y = std::get<1>(e);
         msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-        msg.poses.push_back(msg_pose);
+        msg->poses.push_back(msg_pose);
       }
-      _expansions_publisher->publish(msg);
+      _expansions_publisher->publish(std::move(msg));
     }
 
     // Note: If the start is blocked only one iteration will occur before failure
@@ -451,23 +461,24 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   if (_debug_visualizations) {
     auto now = _clock->now();
     // Publish expansions for debug
-    geometry_msgs::msg::PoseArray msg;
+    auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
     geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = now;
-    msg.header.frame_id = _global_frame;
+    msg->header.stamp = now;
+    msg->header.frame_id = _global_frame;
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
       msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-      msg.poses.push_back(msg_pose);
+      msg->poses.push_back(msg_pose);
     }
-    _expansions_publisher->publish(msg);
+    _expansions_publisher->publish(std::move(msg));
 
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
       // Clear all markers first
@@ -546,7 +557,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0) {
+    if (param_name.find(_name + ".") != 0) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
@@ -638,8 +649,8 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         if (_metadata.number_of_headings % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
             _logger,
-              "coarse iteration should be an increment of the number<"
-              " of angular bins configured. Disabling course research!"
+            "coarse iteration should be an increment of the number<"
+            " of angular bins configured. Disabling course research!"
           );
           _coarse_search_resolution = 1;
         }

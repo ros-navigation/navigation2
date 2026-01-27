@@ -43,7 +43,7 @@ TEST(NodeBasicTest, test_node_basic)
   EXPECT_EQ(node3.graph_node_ptr, nullptr);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

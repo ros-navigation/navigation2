@@ -26,8 +26,6 @@ from launch_ros.actions import Node
 import launch_testing
 import launch_testing.actions
 import launch_testing.asserts
-import launch_testing.markers
-import launch_testing.util
 from lifecycle_msgs.srv import GetState
 from nav2_common.launch import RewrittenYaml
 from nav2_msgs.action import DockRobot, NavigateToPose, UndockRobot
@@ -36,6 +34,7 @@ import pytest
 import rclpy
 from rclpy.action.client import ActionClient
 from rclpy.action.server import ActionServer, ServerGoalHandle
+from rclpy.client import Client
 from sensor_msgs.msg import BatteryState
 import tf2_ros
 from tf2_ros import TransformBroadcaster
@@ -133,9 +132,10 @@ class TestDockingServer(unittest.TestCase):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
         self.odom_pub = self.node.create_publisher(Odometry, 'odom', 10)
 
-    def wait_for_node_to_be_active(self, node_name, timeout_sec=10.0):
+    def wait_for_node_to_be_active(self, node_name: str, timeout_sec: float = 30.0) -> None:
         """Wait for a managed node to become active."""
-        client = self.node.create_client(GetState, f'{node_name}/get_state')
+        client: Client[GetState.Request, GetState.Response] = \
+            self.node.create_client(GetState, f'{node_name}/get_state')
         if not client.wait_for_service(timeout_sec=2.0):
             self.fail(f'Service get_state for {node_name} not available.')
 
@@ -144,7 +144,8 @@ class TestDockingServer(unittest.TestCase):
             req = GetState.Request()
             future = client.call_async(req)
             rclpy.spin_until_future_complete(self.node, future, timeout_sec=1.0)
-            if future.result() and future.result().current_state.id == 3:  # 3 = ACTIVE
+            result = future.result()
+            if result is not None and result.current_state.id == 3:  # 3 = ACTIVE
                 self.node.get_logger().info(f'Node {node_name} is active.')
                 return
             time.sleep(0.5)
@@ -199,12 +200,12 @@ class TestDockingServer(unittest.TestCase):
         odom.twist.twist = self.command
         self.odom_pub.publish(odom)
 
-    def action_feedback_callback(self, msg: DockRobot.Feedback) -> None:
+    def action_feedback_callback(self, msg: DockRobot.Impl.FeedbackMessage) -> None:
         # Force the docking action to run a full recovery loop and then
         # make contact with the dock (based on pose of robot) before
         # we report that the robot is charging
         if msg.feedback.num_retries > 0 and \
-                msg.feedback.state == msg.feedback.WAIT_FOR_CHARGE:
+                msg.feedback.state == DockRobot.Feedback.WAIT_FOR_CHARGE:
             self.is_charging = True
 
     def nav_execute_callback(

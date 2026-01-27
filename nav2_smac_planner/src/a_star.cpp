@@ -232,7 +232,8 @@ void AStarAlgorithm<NodeT>::setGoal(
     }
 
     NodeT::resetObstacleHeuristic(
-      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
+      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
+        NodeT::motion_table.downsample_obstacle_heuristic);
   }
 
   _goal_manager.setRefGoalCoordinates(ref_goal_coord);
@@ -323,6 +324,17 @@ bool AStarAlgorithm<NodeT>::areInputsValid()
 }
 
 template<typename NodeT>
+bool AStarAlgorithm<NodeT>::getClosestPathWithinTolerance(CoordinateVector & path)
+{
+  if (_best_heuristic_node.first < getToleranceHeuristic()) {
+    _graph.at(_best_heuristic_node.second).backtracePath(path);
+    return true;
+  }
+
+  return false;
+}
+
+template<typename NodeT>
 bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance,
@@ -339,7 +351,8 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_check_goals, fine_check_goals;
-  _goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals,
+  _goal_manager.prepareGoalsForAnalyticExpansion(
+    coarse_check_goals, fine_check_goals,
     _coarse_search_resolution);
 
   // 0) Add starting point to the open set
@@ -381,7 +394,8 @@ bool AStarAlgorithm<NodeT>::createPath(
       std::chrono::duration<double> planning_duration =
         std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);
       if (static_cast<double>(planning_duration.count()) >= _max_planning_time) {
-        return false;
+        // In case of timeout, return the path that is closest, if within tolerance.
+        return getClosestPathWithinTolerance(path);
       }
     }
 
@@ -448,12 +462,8 @@ bool AStarAlgorithm<NodeT>::createPath(
     }
   }
 
-  if (_best_heuristic_node.first < getToleranceHeuristic()) {
-    // If we run out of search options, return the path that is closest, if within tolerance.
-    return _graph.at(_best_heuristic_node.second).backtracePath(path);
-  }
-
-  return false;
+  // If we run out of search options, return the path that is closest, if within tolerance.
+  return getClosestPathWithinTolerance(path);
 }
 
 template<typename NodeT>

@@ -21,8 +21,7 @@
 #include <algorithm>
 #include <mutex>
 
-#include "nav2_util/odometry_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
@@ -31,10 +30,8 @@ namespace nav2_graceful_controller
 
 struct Parameters
 {
-  double transform_tolerance;
   double min_lookahead;
   double max_lookahead;
-  double max_robot_pose_search_dist;
   double k_phi;
   double k_delta;
   double beta;
@@ -59,42 +56,38 @@ struct Parameters
  * @class nav2_graceful_controller::ParameterHandler
  * @brief Handles parameters and dynamic parameters for GracefulMotionController
  */
-class ParameterHandler
+class ParameterHandler : public nav2_util::ParameterHandler<Parameters>
 {
 public:
   /**
    * @brief Constructor for nav2_graceful_controller::ParameterHandler
    */
   ParameterHandler(
-    nav2::LifecycleNode::SharedPtr node,
+    const nav2::LifecycleNode::SharedPtr & node,
     std::string & plugin_name,
-    rclcpp::Logger & logger, const double costmap_size_x);
-
-  /**
-   * @brief Destructor for nav2_graceful_controller::ParameterHandler
-   */
-  ~ParameterHandler();
-
-  std::mutex & getMutex() {return mutex_;}
-
-  Parameters * getParams() {return &params_;}
+    rclcpp::Logger & logger);
 
 protected:
-  nav2::LifecycleNode::WeakPtr node_;
+  /**
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
+   */
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters) override;
 
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
 
-  // Dynamic parameters handler
-  std::mutex mutex_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  Parameters params_;
   std::string plugin_name_;
-  rclcpp::Logger logger_ {rclcpp::get_logger("GracefulMotionController")};
 };
 
 }  // namespace nav2_graceful_controller

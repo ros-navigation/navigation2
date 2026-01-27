@@ -27,7 +27,6 @@
 #include "nav2_smac_planner/a_star.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/smoother.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 using namespace nav2_smac_planner;  // NOLINT
 
@@ -182,7 +181,7 @@ TEST(SmootherTest, test_full_smoother)
   nav2_smac_planner::NodeHybrid::destroyStaticAssets();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

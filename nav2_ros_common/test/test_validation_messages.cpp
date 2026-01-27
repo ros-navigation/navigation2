@@ -242,6 +242,30 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   std::vector<int8_t> invalid_data(100 * 99, 0);   // Incorrect data size
   invalid_occupancy_grid.data = invalid_data;
   EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow uint32_t OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = 65536;
+  invalid_occupancy_grid.info.height = 65536;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow INT16_MAX OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = INT16_MAX + 1;
+  invalid_occupancy_grid.info.height = 100;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
+
+  // Test overflow INT16_MAX OccupancyGrid message
+  invalid_occupancy_grid.header.frame_id = "map";
+  invalid_occupancy_grid.info.resolution = 0.05;
+  invalid_occupancy_grid.info.width = 100;
+  invalid_occupancy_grid.info.height = INT16_MAX + 1;
+  invalid_occupancy_grid.data = data;
+  EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
@@ -296,6 +320,44 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   invalidate_msg2.pose.orientation.w = -0.32979028309372299;
 
   EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
+
+  // Test over MAX value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg3;
+
+  invalidate_msg3.covariance[0] = 2e9;  // > MAX_COVARIANCE (1e9)
+  for (size_t i = 1; i < invalidate_msg3.covariance.size(); ++i) {
+    invalidate_msg3.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg3.pose.position.x = 0.0;
+  invalidate_msg3.pose.position.y = 0.0;
+  invalidate_msg3.pose.position.z = 0.0;
+
+  invalidate_msg3.pose.orientation.x = 0.0;
+  invalidate_msg3.pose.orientation.y = 0.0;
+  invalidate_msg3.pose.orientation.z = 0.0;
+  invalidate_msg3.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg3));
+
+  // Test below MIN value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg4;
+
+  invalidate_msg4.covariance[0] = -0.01;  // < MIN_COVARIANCE (0)
+  for (size_t i = 1; i < invalidate_msg4.covariance.size(); ++i) {
+    invalidate_msg4.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg4.pose.position.x = 0.0;
+  invalidate_msg4.pose.position.y = 0.0;
+  invalidate_msg4.pose.position.z = 0.0;
+
+  invalidate_msg4.pose.orientation.x = 0.0;
+  invalidate_msg4.pose.orientation.y = 0.0;
+  invalidate_msg4.pose.orientation.z = 0.0;
+  invalidate_msg4.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg4));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {

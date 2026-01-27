@@ -55,7 +55,7 @@ protected:
   void initTestPose();
 
 private:
-  void amcl_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+  void amcl_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg)
   {
     auto amcl_pose = msg->pose;
     amcl_pose_x = amcl_pose.pose.position.x;
@@ -113,7 +113,7 @@ TEST_F(TestAmclPose, SimpleAmclTest)
   EXPECT_EQ(true, defaultAmclTest());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/critics/goal_angle_critic.hpp"
-
+#include "angles/angles.h"
 namespace mppi::critics
 {
 
@@ -24,12 +24,13 @@ void GoalAngleCritic::initialize()
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 3.0f);
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
+  getParam(symmetric_yaw_tolerance_, "symmetric_yaw_tolerance", false);
 
   RCLCPP_INFO(
     logger_,
-    "GoalAngleCritic instantiated with %d power, %f weight, and %f "
-    "angular threshold.",
-    power_, weight_, threshold_to_consider_);
+    "GoalAngleCritic instantiated with %d power, %f weight, %f "
+    "angular threshold and symmetric_yaw_tolerance %s",
+    power_, weight_, threshold_to_consider_, symmetric_yaw_tolerance_ ? "enabled" : "disabled");
 }
 
 void GoalAngleCritic::score(CriticData & data)
@@ -42,12 +43,20 @@ void GoalAngleCritic::score(CriticData & data)
 
   double goal_yaw = tf2::getYaw(goal.orientation);
 
-  if(power_ > 1u) {
-    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_).pow(power_).eval();
+  auto angular_distances = utils::shortest_angular_distance(data.trajectories.yaws,
+    goal_yaw).abs().eval();
+
+  if (symmetric_yaw_tolerance_) {
+    double symmetric_goal_yaw = angles::normalize_angle(goal_yaw + M_PI);
+    auto symmetric_distances = utils::shortest_angular_distance(data.trajectories.yaws,
+      symmetric_goal_yaw).abs().eval();
+    angular_distances = angular_distances.min(symmetric_distances);
+  }
+
+  if (power_ > 1u) {
+    data.costs += ((angular_distances.rowwise().mean()) * weight_).pow(power_).eval();
   } else {
-    data.costs += (((utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw).abs()).
-      rowwise().mean()) * weight_).eval();
+    data.costs += ((angular_distances.rowwise().mean()) * weight_).eval();
   }
 }
 

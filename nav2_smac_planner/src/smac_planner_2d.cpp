@@ -273,7 +273,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -308,7 +309,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   // Find how much time we have left to do smoothing
@@ -362,7 +364,7 @@ SmacPlanner2D::dynamicParametersCallback(std::vector<rclcpp::Parameter> paramete
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0) {
+    if (param_name.find(_name + ".") != 0) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {

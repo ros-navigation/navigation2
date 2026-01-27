@@ -181,6 +181,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
   node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
   node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+  node_->declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
   node_->declare_parameter(
     "unknown_cost_value",
     rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
@@ -634,7 +635,7 @@ TEST_F(TestNode, testDynParamsSet)
   costmap->on_shutdown(rclcpp_lifecycle::State());
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

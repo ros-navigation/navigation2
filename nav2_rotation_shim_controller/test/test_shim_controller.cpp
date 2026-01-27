@@ -23,6 +23,7 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "nav2_rotation_shim_controller/nav2_rotation_shim_controller.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
 
@@ -39,24 +40,15 @@ public:
     return primary_controller_;
   }
 
-  nav_msgs::msg::Path getPath()
-  {
-    return current_path_;
-  }
-
   bool isPathUpdated()
   {
     return path_updated_;
   }
 
-  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper()
+  geometry_msgs::msg::PoseStamped getSampledPathPtWrapper(
+    const geometry_msgs::msg::PoseStamped & global_goal)
   {
-    return getSampledPathPt();
-  }
-
-  bool isGoalChangedWrapper(const nav_msgs::msg::Path & path)
-  {
-    return isGoalChanged(path);
+    return getSampledPathPt(global_goal);
   }
 
   geometry_msgs::msg::Pose transformPoseToBaseFrameWrapper(geometry_msgs::msg::PoseStamped pt)
@@ -95,7 +87,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
     node->get_node_services_interface());
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter(
-        "PathFollower.primary_controller",
+        "PathFollower.primary_controller.plugin",
         std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"))});
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -124,8 +116,10 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
+  // disable collision check
+  node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -133,7 +127,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
-  path.header.frame_id = "hi mate!";
+  path.header.frame_id = "base_link";
   path.poses.resize(10);
   path.poses[1].pose.position.x = 0.1;
   path.poses[1].pose.position.y = 0.1;
@@ -141,25 +135,20 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
   path.poses[2].pose.position.y = 1.0;
   path.poses[3].pose.position.x = 10.0;
   path.poses[3].pose.position.y = 10.0;
+  geometry_msgs::msg::PoseStamped robot_pose;
+  nav2_controller::SimpleGoalChecker checker;
+  geometry_msgs::msg::Twist velocity;
+  auto goal = path.poses.back();
   EXPECT_EQ(controller->isPathUpdated(), false);
-  controller->setPlan(path);
-  EXPECT_EQ(controller->getPath().header.frame_id, std::string("hi mate!"));
-  EXPECT_EQ(controller->getPath().poses.size(), 10u);
+  controller->computeVelocityCommands(robot_pose, velocity, &checker, path, goal);
+  controller->newPathReceived(path);
   EXPECT_EQ(controller->isPathUpdated(), true);
 
   // Test getting a sampled point
-  auto pose = controller->getSampledPathPtWrapper();
+  geometry_msgs::msg::PoseStamped global_goal;
+  auto pose = controller->getSampledPathPtWrapper(global_goal);
   EXPECT_EQ(pose.pose.position.x, 1.0);  // default forward sampling is 0.5
   EXPECT_EQ(pose.pose.position.y, 1.0);
-
-  nav_msgs::msg::Path path_invalid_leng;
-  controller->setPlan(path_invalid_leng);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
-
-  nav_msgs::msg::Path path_invalid_dists;
-  path.poses.resize(10);
-  controller->setPlan(path_invalid_dists);
-  EXPECT_THROW(controller->getSampledPathPtWrapper(), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, rotationAndTransformTests)
@@ -173,7 +162,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   node->declare_parameter("controller_frequency", 1.0);
@@ -192,7 +181,7 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
   path.poses[2].pose.position.y = 1.0;
   path.poses[3].pose.position.x = 10.0;
   path.poses[3].pose.position.y = 10.0;
-  controller->setPlan(path);
+  controller->newPathReceived(path);
 
   const geometry_msgs::msg::Twist velocity;
   EXPECT_EQ(
@@ -230,8 +219,8 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  costmap->set_parameter(rclcpp::Parameter("origin_x", -25.0));
-  costmap->set_parameter(rclcpp::Parameter("origin_y", -25.0));
+  costmap->declare_parameter("origin_x", 0.0);
+  costmap->declare_parameter("origin_y", 0.0);
   costmap->configure();
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
 
@@ -246,17 +235,18 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter("controller_frequency", 1.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
-  path.header.frame_id = "fake_frame";
   path.poses.resize(10);
 
   geometry_msgs::msg::PoseStamped pose;
@@ -265,14 +255,6 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap);
 
-  // send without setting a path - should go to RPP immediately
-  // then it should throw an exception because the path is empty and invalid
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
-
-  // Set with a path -- should attempt to find a sampled point but throw exception
-  // because it cannot be found, then go to RPP and throw exception because it cannot be transformed
-  controller->setPlan(path);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
 
   path.header.frame_id = "base_link";
   path.poses[1].pose.position.x = 0.1;
@@ -286,27 +268,13 @@ TEST(RotationShimControllerTest, computeVelocityTests)
   // this should allow it to find the sampled point, then transform to base_link
   // validly because we setup the TF for it. The -1.0 should be selected since default min
   // is 0.5 and that should cause a rotation in place
-  controller->setPlan(path);
+  controller->newPathReceived(path);
+  path_handler.setPlan(path);
   tf_broadcaster->sendTransform(transform);
-  auto effort = controller->computeVelocityCommands(pose, velocity, &checker);
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
+  auto effort = controller->computeVelocityCommands(pose, velocity, &checker,
+    path, goal);
   EXPECT_EQ(fabs(effort.twist.angular.z), 1.8);
-
-  path.header.frame_id = "base_link";
-  path.poses[1].pose.position.x = 0.1;
-  path.poses[1].pose.position.y = 0.1;
-  path.poses[2].pose.position.x = 1.0;
-  path.poses[2].pose.position.y = 0.0;
-  path.poses[2].header.frame_id = "base_link";
-  path.poses[3].pose.position.x = 10.0;
-  path.poses[3].pose.position.y = 10.0;
-
-  // this should allow it to find the sampled point, then transform to base_link
-  // validly because we setup the TF for it. The 1.0 should be selected since default min
-  // is 0.5 and that should cause a pass off to the RPP controller which will throw
-  // and exception because it is off of the costmap
-  controller->setPlan(path);
-  tf_broadcaster->sendTransform(transform);
-  EXPECT_THROW(controller->computeVelocityCommands(pose, velocity, &checker), std::runtime_error);
 }
 
 TEST(RotationShimControllerTest, openLoopRotationTests) {
@@ -331,7 +299,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
@@ -346,6 +314,8 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -377,13 +347,20 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
   path.poses[3].header.frame_id = "base_link";
 
   // Calculate first velocity command
-  controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  controller->newPathReceived(path);
+  path_handler.setPlan(path);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
+    transformed_global_plan, goal);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.16, 1e-4);
 
   // Test second velocity command with wrong odometry
   velocity.angular.z = 1.8;
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan,
+    goal);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -0.32, 1e-4);
 }
 
@@ -409,15 +386,19 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "PathFollower.rotate_to_goal_heading",
     true);
+  node->declare_parameter("controller_frequency", 1.0);
+  node->declare_parameter("PathFollower.primary_controller.use_collision_detection", false);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -448,15 +429,21 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   path.poses[3].pose.orientation.w = 0.9238795;
   path.poses[3].header.frame_id = "base_link";
 
-  controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  controller->newPathReceived(path);
+  path_handler.setPlan(path);
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
+    path, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -1.8);
 
   // goal heading 45 degrees to the right
   path.poses[3].pose.orientation.z = 0.3826834;
   path.poses[3].pose.orientation.w = 0.9238795;
-  controller->setPlan(path);
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  controller->newPathReceived(path);
+  path_handler.setPlan(path);
+  goal = path.poses.back();
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, path,
+    goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, 1.8);
 }
 
@@ -482,7 +469,7 @@ TEST(RotationShimControllerTest, accelerationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
@@ -497,6 +484,8 @@ TEST(RotationShimControllerTest, accelerationTests) {
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
   controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
   // Test state update and path setting
   nav_msgs::msg::Path path;
@@ -528,13 +517,20 @@ TEST(RotationShimControllerTest, accelerationTests) {
   path.poses[3].header.frame_id = "base_link";
 
   // Test acceleration limits
-  controller->setPlan(path);
-  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  controller->newPathReceived(path);
+  path_handler.setPlan(path);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
+  geometry_msgs::msg::PoseStamped goal = path.poses.back();
+  auto cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker,
+    transformed_global_plan, goal);
   EXPECT_EQ(cmd_vel.twist.angular.z, -0.025);
 
   // Test slowing down to avoid overshooting
   velocity.angular.z = -1.8;
-  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker);
+  cmd_vel = controller->computeVelocityCommands(pose, velocity, &checker, transformed_global_plan,
+    goal);
   EXPECT_NEAR(cmd_vel.twist.angular.z, -std::sqrt(2 * 0.5 * M_PI / 4), 1e-4);
 }
 
@@ -549,6 +545,9 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   rclcpp_lifecycle::State state;
   costmap->on_configure(state);
   auto tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
+  geometry_msgs::msg::PoseStamped robot_pose;
+  nav2_controller::SimpleGoalChecker checker;
+  geometry_msgs::msg::Twist velocity;
 
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "base_link";
@@ -561,11 +560,13 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller",
+    "PathFollower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "PathFollower.rotate_to_heading_once",
     true);
+  // disable collision check
+  node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -576,17 +577,21 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
   path.poses.resize(2);
   path.poses.back().pose.position.x = 2.0;
   path.poses.back().pose.position.y = 2.0;
+  auto goal = path.poses.back();
 
-  // Test: Current path is empty, should return true
-  EXPECT_EQ(controller->isGoalChangedWrapper(path), true);
+  // Test: Current path is empty, should return false
+  EXPECT_EQ(controller->isPathUpdated(), false);
 
-  // Test: Last pose of the current path is the same, should return false
-  controller->setPlan(path);
-  EXPECT_EQ(controller->isGoalChangedWrapper(path), false);
+  // Test: Last pose of the current path is the same, should return true
+  controller->newPathReceived(path);
+  controller->computeVelocityCommands(robot_pose, velocity, &checker, path, goal);
+  EXPECT_EQ(controller->isPathUpdated(), true);
 
   // Test: Last pose of the current path differs, should return true
   path.poses.back().pose.position.x = 3.0;
-  EXPECT_EQ(controller->isGoalChangedWrapper(path), true);
+  goal = path.poses.back();
+  controller->computeVelocityCommands(robot_pose, velocity, &checker, path, goal);
+  EXPECT_EQ(controller->isPathUpdated(), true);
 }
 
 TEST(RotationShimControllerTest, testDynamicParameter)
@@ -600,7 +605,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "test.primary_controller",
+    "test.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   auto controller = std::make_shared<RotationShimShim>();
@@ -618,7 +623,7 @@ TEST(RotationShimControllerTest, testDynamicParameter)
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 7.0),
       rclcpp::Parameter("test.max_angular_accel", 7.0),
       rclcpp::Parameter("test.simulate_ahead_time", 7.0),
-      rclcpp::Parameter("test.primary_controller", std::string("HI")),
+      rclcpp::Parameter("test.primary_controller.plugin", std::string("HI")),
       rclcpp::Parameter("test.rotate_to_goal_heading", true),
       rclcpp::Parameter("test.rotate_to_heading_once", true),
       rclcpp::Parameter("test.closed_loop", false),
@@ -637,9 +642,29 @@ TEST(RotationShimControllerTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_once").as_bool(), true);
   EXPECT_EQ(node->get_parameter("test.closed_loop").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_path_orientations").as_bool(), true);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.angular_dist_threshold", -1.0)}
+  );
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("test.angular_dist_threshold").as_double(), 7.0);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.simulate_ahead_time", -0.1)}
+  );
+
+  rclcpp::spin_until_future_complete(
+    node->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node->get_parameter("test.simulate_ahead_time").as_double(), 7.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

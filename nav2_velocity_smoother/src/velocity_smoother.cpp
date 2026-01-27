@@ -230,7 +230,7 @@ VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 }
 
 void VelocitySmoother::inputCommandStampedCallback(
-  const geometry_msgs::msg::TwistStamped::SharedPtr msg)
+  const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg)
 {
   // If message contains NaN or Inf, ignore
   if (!nav2_util::validateTwist(msg->twist)) {
@@ -238,16 +238,17 @@ void VelocitySmoother::inputCommandStampedCallback(
     return;
   }
 
-  command_ = msg;
+  command_ = *msg;
   if (msg->header.stamp.sec == 0 && msg->header.stamp.nanosec == 0) {
     last_command_time_ = now();
   } else {
     last_command_time_ = msg->header.stamp;
   }
+  received_first_command_ = true;
 }
 
 void VelocitySmoother::inputCommandCallback(
-  geometry_msgs::msg::Twist::SharedPtr msg)
+  const geometry_msgs::msg::Twist::ConstSharedPtr & msg)
 {
   auto twist_stamped = std::make_shared<geometry_msgs::msg::TwistStamped>();
   twist_stamped->twist = *msg;
@@ -311,21 +312,27 @@ double VelocitySmoother::applyConstraints(
 void VelocitySmoother::smootherTimer()
 {
   // Wait until the first command is received
-  if (!command_) {
+  if (!received_first_command_) {
     return;
   }
 
+  auto const delta_time_since_last_command = now() - last_command_time_;
+
   auto cmd_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-  cmd_vel->header = command_->header;
+  cmd_vel->header.frame_id = command_.header.frame_id;
+  // Smooth the timestamp of the smoothed message
+  // Do not keep the same timestamp of the last command; this causes jerky behavior
+  // See https://github.com/ros-navigation/navigation2/issues/5857
+  cmd_vel->header.stamp = command_.header.stamp + delta_time_since_last_command;
 
   // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
-  if (now() - last_command_time_ > velocity_timeout_) {
+  if (delta_time_since_last_command > velocity_timeout_) {
     if (last_cmd_.twist == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
       return;
     }
-    *command_ = geometry_msgs::msg::TwistStamped();
-    command_->header.stamp = now();
+    command_ = geometry_msgs::msg::TwistStamped();
+    command_.header.stamp = now();
   }
 
   stopped_ = false;
@@ -340,33 +347,33 @@ void VelocitySmoother::smootherTimer()
 
   // Apply absolute velocity restrictions to the command
   if(!is_6dof_) {
-    command_->twist.linear.x = std::clamp(
-      command_->twist.linear.x, min_velocities_[0],
+    command_.twist.linear.x = std::clamp(
+      command_.twist.linear.x, min_velocities_[0],
       max_velocities_[0]);
-    command_->twist.linear.y = std::clamp(
-      command_->twist.linear.y, min_velocities_[1],
+    command_.twist.linear.y = std::clamp(
+      command_.twist.linear.y, min_velocities_[1],
       max_velocities_[1]);
-    command_->twist.angular.z = std::clamp(
-      command_->twist.angular.z, min_velocities_[2],
+    command_.twist.angular.z = std::clamp(
+      command_.twist.angular.z, min_velocities_[2],
       max_velocities_[2]);
   } else {
-    command_->twist.linear.x = std::clamp(
-      command_->twist.linear.x, min_velocities_[0],
+    command_.twist.linear.x = std::clamp(
+      command_.twist.linear.x, min_velocities_[0],
       max_velocities_[0]);
-    command_->twist.linear.y = std::clamp(
-      command_->twist.linear.y, min_velocities_[1],
+    command_.twist.linear.y = std::clamp(
+      command_.twist.linear.y, min_velocities_[1],
       max_velocities_[1]);
-    command_->twist.linear.z = std::clamp(
-      command_->twist.linear.z, min_velocities_[2],
+    command_.twist.linear.z = std::clamp(
+      command_.twist.linear.z, min_velocities_[2],
       max_velocities_[2]);
-    command_->twist.angular.x = std::clamp(
-      command_->twist.angular.x, min_velocities_[3],
+    command_.twist.angular.x = std::clamp(
+      command_.twist.angular.x, min_velocities_[3],
       max_velocities_[3]);
-    command_->twist.angular.y = std::clamp(
-      command_->twist.angular.y, min_velocities_[4],
+    command_.twist.angular.y = std::clamp(
+      command_.twist.angular.y, min_velocities_[4],
       max_velocities_[4]);
-    command_->twist.angular.z = std::clamp(
-      command_->twist.angular.z, min_velocities_[5],
+    command_.twist.angular.z = std::clamp(
+      command_.twist.angular.z, min_velocities_[5],
       max_velocities_[5]);
   }
 
@@ -378,97 +385,97 @@ void VelocitySmoother::smootherTimer()
   double eta = 1.0;
   if (scale_velocities_) {
     double curr_eta = -1.0;
-    if(!is_6dof_) {
+    if (!is_6dof_) {
       curr_eta = findEtaConstraint(
-        current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0]);
+        current_.twist.linear.x, command_.twist.linear.x, max_accels_[0], max_decels_[0]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1]);
+        current_.twist.linear.y, command_.twist.linear.y, max_accels_[1], max_decels_[1]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2]);
+        current_.twist.angular.z, command_.twist.angular.z, max_accels_[2], max_decels_[2]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
     } else {
       curr_eta = findEtaConstraint(
-        current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0]);
+        current_.twist.linear.x, command_.twist.linear.x, max_accels_[0], max_decels_[0]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1]);
+        current_.twist.linear.y, command_.twist.linear.y, max_accels_[1], max_decels_[1]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.linear.z, command_->twist.linear.z, max_accels_[2], max_decels_[2]);
+        current_.twist.linear.z, command_.twist.linear.z, max_accels_[2], max_decels_[2]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.angular.x, command_->twist.angular.x, max_accels_[3], max_decels_[3]);
+        current_.twist.angular.x, command_.twist.angular.x, max_accels_[3], max_decels_[3]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.angular.y, command_->twist.angular.y, max_accels_[4], max_decels_[4]);
+        current_.twist.angular.y, command_.twist.angular.y, max_accels_[4], max_decels_[4]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
 
       curr_eta = findEtaConstraint(
-        current_.twist.angular.z, command_->twist.angular.z, max_accels_[5], max_decels_[5]);
+        current_.twist.angular.z, command_.twist.angular.z, max_accels_[5], max_decels_[5]);
       if (curr_eta > 0.0 && std::fabs(1.0 - curr_eta) > std::fabs(1.0 - eta)) {
         eta = curr_eta;
       }
     }
   }
 
-  if(!is_6dof_) {
+  if (!is_6dof_) {
     cmd_vel->twist.linear.x = applyConstraints(
-      current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0], eta);
+      current_.twist.linear.x, command_.twist.linear.x, max_accels_[0], max_decels_[0], eta);
     cmd_vel->twist.linear.y = applyConstraints(
-      current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1], eta);
+      current_.twist.linear.y, command_.twist.linear.y, max_accels_[1], max_decels_[1], eta);
     cmd_vel->twist.angular.z = applyConstraints(
-      current_.twist.angular.z, command_->twist.angular.z, max_accels_[2], max_decels_[2], eta);
+      current_.twist.angular.z, command_.twist.angular.z, max_accels_[2], max_decels_[2], eta);
   } else {
     cmd_vel->twist.linear.x = applyConstraints(
-      current_.twist.linear.x, command_->twist.linear.x, max_accels_[0], max_decels_[0], eta);
+      current_.twist.linear.x, command_.twist.linear.x, max_accels_[0], max_decels_[0], eta);
     cmd_vel->twist.linear.y = applyConstraints(
-      current_.twist.linear.y, command_->twist.linear.y, max_accels_[1], max_decels_[1], eta);
+      current_.twist.linear.y, command_.twist.linear.y, max_accels_[1], max_decels_[1], eta);
     cmd_vel->twist.linear.z = applyConstraints(
-      current_.twist.linear.z, command_->twist.linear.z, max_accels_[2], max_decels_[2], eta);
+      current_.twist.linear.z, command_.twist.linear.z, max_accels_[2], max_decels_[2], eta);
     cmd_vel->twist.angular.x = applyConstraints(
-      current_.twist.angular.x, command_->twist.angular.x, max_accels_[3], max_decels_[3], eta);
+      current_.twist.angular.x, command_.twist.angular.x, max_accels_[3], max_decels_[3], eta);
     cmd_vel->twist.angular.y = applyConstraints(
-      current_.twist.angular.y, command_->twist.angular.y, max_accels_[4], max_decels_[4], eta);
+      current_.twist.angular.y, command_.twist.angular.y, max_accels_[4], max_decels_[4], eta);
     cmd_vel->twist.angular.z = applyConstraints(
-      current_.twist.angular.z, command_->twist.angular.z, max_accels_[5], max_decels_[5], eta);
+      current_.twist.angular.z, command_.twist.angular.z, max_accels_[5], max_decels_[5], eta);
   }
 
   last_cmd_ = *cmd_vel;
 
 
   // Apply deadband restrictions & publish
-  if(!is_6dof_) {
+  if (!is_6dof_) {
     cmd_vel->twist.linear.x =
       fabs(cmd_vel->twist.linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->twist.linear.x;
     cmd_vel->twist.linear.y =
       fabs(cmd_vel->twist.linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->twist.linear.y;
-    cmd_vel->twist.linear.z = command_->twist.linear.z;
-    cmd_vel->twist.angular.x = command_->twist.angular.x;
-    cmd_vel->twist.angular.y = command_->twist.angular.y;
+    cmd_vel->twist.linear.z = command_.twist.linear.z;
+    cmd_vel->twist.angular.x = command_.twist.angular.x;
+    cmd_vel->twist.angular.y = command_.twist.angular.y;
     cmd_vel->twist.angular.z =
       fabs(cmd_vel->twist.angular.z) < deadband_velocities_[2] ? 0.0 : cmd_vel->twist.angular.z;
   } else {
@@ -503,7 +510,17 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "smoothing_frequency") {
-        smoothing_frequency_ = parameter.as_double();
+        double smoothing_frequency = parameter.as_double();
+        if (smoothing_frequency <= 0.0) {
+          RCLCPP_WARN(
+            get_logger(),
+            "smoothing_frequency must be positive, received: %f. Ignoring update.",
+            smoothing_frequency);
+          result.successful = false;
+          result.reason = "smoothing_frequency must be greater than 0.0";
+          break;
+        }
+        smoothing_frequency_ = smoothing_frequency;
         if (timer_) {
           timer_->cancel();
           timer_.reset();
@@ -524,8 +541,9 @@ VelocitySmoother::dynamicParametersCallback(std::vector<rclcpp::Parameter> param
     } else if (param_type == ParameterType::PARAMETER_DOUBLE_ARRAY) {
       size_t size = is_6dof_ ? 6 : 3;
       if (parameter.as_double_array().size() != size) {
-        RCLCPP_WARN(get_logger(), "Invalid size of parameter %s. Must be size %ld",
-            param_name.c_str(), size);
+        RCLCPP_WARN(
+          get_logger(), "Invalid size of parameter %s. Must be size %ld",
+          param_name.c_str(), size);
         result.successful = false;
         break;
       }

@@ -41,7 +41,8 @@ public:
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & /*query_pose*/,
     const geometry_msgs::msg::Pose & /*goal_pose*/,
-    const geometry_msgs::msg::Twist & /*velocity*/) {return false;}
+    const geometry_msgs::msg::Twist & /*velocity*/,
+    const nav_msgs::msg::Path & /*transformed_global_plan*/) {return false;}
 
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
@@ -289,7 +290,7 @@ TEST(UtilsTests, SmootherTest)
   std::mt19937 engine;
   std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.2f);
   auto noises = Eigen::ArrayXf::NullaryExpr(
-    30, [&] () {return normal_dist(engine);});
+    30, [&]() {return normal_dist(engine);});
   noisey_sequence.vx += noises;
   noisey_sequence.vy += noises;
   noisey_sequence.wz += noises;
@@ -338,69 +339,6 @@ TEST(UtilsTests, SmootherTest)
   }
 
   EXPECT_LT(smoothed_val, original_val);
-}
-
-TEST(UtilsTests, FindPathInversionTest)
-{
-  // Straight path, no inversions to be found
-  nav_msgs::msg::Path path;
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = i;
-    path.poses.push_back(pose);
-  }
-  EXPECT_EQ(utils::findFirstPathInversion(path), 10u);
-
-  // To short to process
-  path.poses.erase(path.poses.begin(), path.poses.begin() + 7);
-  EXPECT_EQ(utils::findFirstPathInversion(path), 3u);
-
-  // Has inversion at index 10, so should return 11 for the first point afterwards
-  // 0 1 2 3 4 5 6 7 8 9 10 **9** 8 7 6 5 4 3 2 1
-  path.poses.clear();
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = i;
-    path.poses.push_back(pose);
-  }
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = 10 - i;
-    path.poses.push_back(pose);
-  }
-  EXPECT_EQ(utils::findFirstPathInversion(path), 11u);
-}
-
-TEST(UtilsTests, RemovePosesAfterPathInversionTest)
-{
-  nav_msgs::msg::Path path;
-  // straight path
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = i;
-    path.poses.push_back(pose);
-  }
-  EXPECT_EQ(utils::removePosesAfterFirstInversion(path), 0u);
-
-  // try empty path
-  path.poses.clear();
-  EXPECT_EQ(utils::removePosesAfterFirstInversion(path), 0u);
-
-  // cusping path
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = i;
-    path.poses.push_back(pose);
-  }
-  for (unsigned int i = 0; i != 10; i++) {
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = 10 - i;
-    path.poses.push_back(pose);
-  }
-  EXPECT_EQ(utils::removePosesAfterFirstInversion(path), 11u);
-  // Check to see if removed
-  EXPECT_EQ(path.poses.size(), 11u);
-  EXPECT_EQ(path.poses.back().pose.position.x, 10);
 }
 
 TEST(UtilsTests, ShiftColumnsByOnePlaceTest)
@@ -488,25 +426,29 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
   yaw_between_points.setZero(10);
 
   // Try with both angles 0
-  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  Eigen::ArrayXf yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with yaw between points as pi/4
   yaw_between_points.setConstant(M_PIF_2 / 2);
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with yaw between points as pi/2
   yaw_between_points.setConstant(M_PIF_2);
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_TRUE(yaws_between_points_corrected.isApprox(yaw_between_points));
 
   // Try with a few yaw between points  more than pi/2
   yaw_between_points[1] = 1.2 * M_PIF_2;
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(last_yaws,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    last_yaws,
     yaw_between_points);
   EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
   EXPECT_NEAR(yaws_between_points_corrected[0], yaw_between_points[0], 1e-3);
@@ -514,7 +456,8 @@ TEST(UtilsTests, NormalizeYawsBetweenPointsTest)
 
   // Try with goal angle 0
   float goal_angle = 0;
-  yaws_between_points_corrected = utils::normalize_yaws_between_points(goal_angle,
+  yaws_between_points_corrected = utils::normalize_yaws_between_points(
+    goal_angle,
     yaw_between_points);
   EXPECT_NEAR(yaws_between_points_corrected[1], -0.8 * M_PIF_2, 1e-3);
 }
@@ -600,7 +543,7 @@ TEST(UtilsTests, getLastPathPoseTest)
   EXPECT_NEAR(last_path_pose.orientation.w, 0.0, 1e-3);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

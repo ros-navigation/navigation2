@@ -59,6 +59,8 @@ void LatticeMotionTable::initMotionModel(
   allow_reverse_expansion = search_info.allow_reverse_expansion;
   rotation_penalty = search_info.rotation_penalty;
   min_turning_radius = search_info.minimum_turning_radius;
+  downsample_obstacle_heuristic = search_info.downsample_obstacle_heuristic;
+  use_quadratic_cost_penalty = search_info.use_quadratic_cost_penalty;
 
   if (current_lattice_filepath == search_info.lattice_filepath) {
     return;
@@ -230,8 +232,9 @@ bool NodeLattice::isNodeValid(
   // Check primitive end pose
   // Convert grid quantization of primitives to radians, then collision checker quantization
   static const double bin_size = 2.0 * M_PI / collision_checker->getPrecomputedAngles().size();
-  const double angle = std::fmod(motion_table.getAngleFromBin(this->pose.theta),
-      2.0 * M_PI) / bin_size;
+  const double angle = std::fmod(
+    motion_table.getAngleFromBin(this->pose.theta),
+    2.0 * M_PI) / bin_size;
   if (collision_checker->inCollision(
       this->pose.x, this->pose.y, angle /*bin in collision checker*/, traverse_unknown))
   {
@@ -316,8 +319,16 @@ float NodeLattice::getTraversalCost(const NodePtr & child)
   }
 
   float travel_cost = 0.0;
-  float travel_cost_raw = prim_length *
-    (motion_table.travel_distance_reward + motion_table.cost_penalty * normalized_cost);
+  float travel_cost_raw = 0.0;
+  if (motion_table.use_quadratic_cost_penalty) {
+    travel_cost_raw = prim_length *
+      (motion_table.travel_distance_reward +
+      motion_table.cost_penalty * normalized_cost * normalized_cost);
+  } else {
+    travel_cost_raw = prim_length *
+      (motion_table.travel_distance_reward +
+      motion_table.cost_penalty * normalized_cost);
+  }
 
   if (transition_prim->arc_length < 0.001) {
     // New motion is a straight motion, no additional costs to be applied
@@ -349,7 +360,8 @@ float NodeLattice::getHeuristicCost(
   // get obstacle heuristic value
   // obstacle heuristic does not depend on goal heading
   const float obstacle_heuristic = getObstacleHeuristic(
-    node_coords, goals_coords[0], motion_table.cost_penalty);
+    node_coords, goals_coords[0], motion_table.cost_penalty,
+      motion_table.use_quadratic_cost_penalty, motion_table.downsample_obstacle_heuristic);
   float distance_heuristic = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < goals_coords.size(); i++) {
     distance_heuristic = std::min(

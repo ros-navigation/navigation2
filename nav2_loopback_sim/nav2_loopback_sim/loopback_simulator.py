@@ -14,14 +14,14 @@
 
 
 import math
-from typing import Optional
+from typing import Optional, Union
 
-from geometry_msgs.msg import (PoseWithCovarianceStamped, Quaternion, TransformStamped, Twist,
-                               TwistStamped, Vector3)
+from geometry_msgs.msg import (Pose, PoseWithCovarianceStamped, Quaternion, TransformStamped,
+                               Twist, TwistStamped, Vector3)
 from nav2_loopback_sim.utils import (addYawToQuat, getMapOccupancy, matrixToTransform,
                                      transformStampedToMatrix, worldToMap)
 from nav2_simple_commander.line_iterator import LineIterator
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import OccupancyGrid, Odometry
 from nav_msgs.srv import GetMap
 import numpy as np
 import rclpy
@@ -29,6 +29,7 @@ from rclpy.client import Client
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.subscription import Subscription
 from rclpy.timer import Timer
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import LaserScan
@@ -49,12 +50,12 @@ class LoopbackSimulator(Node):
 
     def __init__(self) -> None:
         super().__init__(node_name='loopback_simulator')
-        self.curr_cmd_vel = None
+        self.curr_cmd_vel: Optional[Twist] = None
         self.curr_cmd_vel_time = self.get_clock().now()
-        self.initial_pose: PoseWithCovarianceStamped = None
+        self.initial_pose: Optional[Pose] = None
         self.timer: Optional[Timer] = None
         self.setupTimer = None
-        self.map = None
+        self.map: Optional[OccupancyGrid] = None
         self.mat_base_to_laser: Optional[np.ndarray[np.float64, np.dtype[np.float64]]] = None
 
         self.declare_parameter('update_duration', 0.01)
@@ -122,6 +123,9 @@ class LoopbackSimulator(Node):
         self.initial_pose_sub = self.create_subscription(
             PoseWithCovarianceStamped,
             'initialpose', self.initialPoseCallback, 10)
+
+        self.cmd_vel_sub: Union[Subscription[Twist], Subscription[TwistStamped]]
+
         if not use_stamped:
             self.cmd_vel_sub = self.create_subscription(
                 Twist,
@@ -292,7 +296,8 @@ class LoopbackSimulator(Node):
         odom.pose.pose.position.x = odom_to_base_link.transform.translation.x
         odom.pose.pose.position.y = odom_to_base_link.transform.translation.y
         odom.pose.pose.orientation = odom_to_base_link.transform.rotation
-        odom.twist.twist = self.curr_cmd_vel
+        if self.curr_cmd_vel is not None:
+            odom.twist.twist = self.curr_cmd_vel
         self.odom_pub.publish(odom)
 
     def info(self, msg: str) -> None:

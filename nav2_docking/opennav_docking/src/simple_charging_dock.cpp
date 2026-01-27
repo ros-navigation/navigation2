@@ -129,7 +129,7 @@ void SimpleChargingDock::configure(
     dock_pose_.header.stamp = rclcpp::Time(0);
     dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       "detected_dock_pose",
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+      [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose) {
         detected_dock_pose_ = *pose;
         initial_pose_received_ = true;
       },
@@ -162,7 +162,7 @@ void SimpleChargingDock::configure(
   if (use_battery_status_) {
     battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
       "battery_state",
-      [this](const sensor_msgs::msg::BatteryState::SharedPtr state) {
+      [this](const sensor_msgs::msg::BatteryState::ConstSharedPtr & state) {
         is_charging_ = state->current > charging_threshold_;
       });
   }
@@ -211,7 +211,7 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
   staging_pose.pose.orientation = tf2::toMsg(orientation);
 
   // Publish staging pose for debugging purposes
-  staging_pose_pub_->publish(staging_pose);
+  staging_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(staging_pose));
   return staging_pose;
 }
 
@@ -219,7 +219,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
 {
   // If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
-    dock_pose_pub_->publish(pose);
+    dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(pose));
     dock_pose_ = pose;
     return true;
   }
@@ -236,7 +236,10 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   // Validate that external pose is new enough
   auto timeout = rclcpp::Duration::from_seconds(external_detection_timeout_);
   if (node_->now() - detected.header.stamp > timeout) {
-    RCLCPP_WARN(node_->get_logger(), "Lost detection or did not detect: timeout exceeded");
+    RCLCPP_WARN(
+      node_->get_logger(), "Lost detection or did not detect: "
+      "timeout exceeded (is %2.2f seconds old)",
+      static_cast<float>((node_->now() - detected.header.stamp).seconds()));
     return false;
   }
 
@@ -249,19 +252,26 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
           pose.header.frame_id, detected.header.frame_id,
           detected.header.stamp, rclcpp::Duration::from_seconds(0.2)))
       {
-        RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
+        RCLCPP_WARN(
+          node_->get_logger(), "Failed to transform detected dock pose: "
+          "cannot transform %s to %s (at time %2.2f s)",
+          detected.header.frame_id.c_str(),
+          pose.header.frame_id.c_str(),
+          static_cast<float>(
+            detected.header.stamp.sec + detected.header.stamp.nanosec * 1e-9
+        ));
         return false;
       }
       tf2_buffer_->transform(detected, detected, pose.header.frame_id);
     } catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
+      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose: %s", ex.what());
       return false;
     }
   }
 
   // Filter the detected pose
   detected = filter_->update(detected);
-  filtered_dock_pose_pub_->publish(detected);
+  filtered_dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(detected));
 
   // Rotate the just the orientation, then remove roll/pitch
   geometry_msgs::msg::PoseStamped just_orientation;
@@ -285,7 +295,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
   dock_pose_.pose.position.z = 0.0;
 
   // Publish & return dock pose for debugging purposes
-  dock_pose_pub_->publish(dock_pose_);
+  dock_pose_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(dock_pose_));
   pose = dock_pose_;
   return true;
 }
@@ -335,7 +345,8 @@ bool SimpleChargingDock::hasStoppedCharging()
   return !isCharging();
 }
 
-void SimpleChargingDock::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state)
+void SimpleChargingDock::jointStateCallback(
+  const sensor_msgs::msg::JointState::ConstSharedPtr & state)
 {
   double velocity = 0.0;
   double effort = 0.0;
@@ -391,7 +402,7 @@ bool SimpleChargingDock::startDetectionProcess()
   if (subscribe_toggle_ && !dock_pose_sub_) {
     dock_pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
       "detected_dock_pose",
-      [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+      [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose) {
         detected_dock_pose_ = *pose;
         initial_pose_received_ = true;
       },
