@@ -101,7 +101,8 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   auto get_use_collision_detection = false;
   get_parameter("controller.use_collision_detection", get_use_collision_detection);
   if (get_use_collision_detection) {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(
+      get_logger(),
       "Collision detection is not supported in the following server. Please disable "
       "the controller.use_collision_detection parameter.");
     return nav2::CallbackReturn::FAILURE;
@@ -249,7 +250,8 @@ void FollowingServer::followObject()
     auto target_frame = goal->tracked_frame;
     if (target_frame.empty()) {
       if (pose_topic.empty()) {
-        RCLCPP_ERROR(get_logger(),
+        RCLCPP_ERROR(
+          get_logger(),
           "Both pose topic and target frame are empty. Cannot follow object.");
         result->error_code = FollowObject::Result::FAILED_TO_DETECT_OBJECT;
         result->error_msg = "No pose topic or target frame provided.";
@@ -260,7 +262,7 @@ void FollowingServer::followObject()
         RCLCPP_INFO(get_logger(), "Subscribing to pose topic: %s", pose_topic.c_str());
         dynamic_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
           pose_topic,
-          [this](const geometry_msgs::msg::PoseStamped::SharedPtr pose) {
+          [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr & pose) {
             detected_dynamic_pose_ = *pose;
           },
           nav2::qos::StandardTopicQoS(1));  // Only want the most recent pose
@@ -305,7 +307,8 @@ void FollowingServer::followObject()
           if (static_object_timeout_ > 0.0) {
             auto static_duration = this->now() - static_object_start_time_;
             if (static_duration.seconds() > static_object_timeout_) {
-              RCLCPP_INFO(get_logger(),
+              RCLCPP_INFO(
+                get_logger(),
                 "Object has been static for %.2f seconds (timeout: %.2f), stopping.",
                 static_duration.seconds(), static_object_timeout_);
               result->total_elapsed_time = this->now() - action_start_time_;
@@ -636,7 +639,8 @@ bool FollowingServer::getFramePose(
     pose.pose.position.z = transform.transform.translation.z;
     pose.pose.orientation = transform.transform.rotation;
   } catch (const tf2::TransformException & ex) {
-    RCLCPP_WARN(get_logger(),
+    RCLCPP_WARN(
+      get_logger(),
       "Failed to get transform for frame %s: %s", frame_id.c_str(), ex.what());
     return false;
   }
@@ -656,7 +660,7 @@ bool FollowingServer::getTrackingPose(
   if (!frame_id.empty()) {
     if (!getFramePose(pose, frame_id)) {
       throw opennav_docking_core::FailedToDetectDock(
-        "Failed to get pose in target frame: " + frame_id);
+              "Failed to get pose in target frame: " + frame_id);
     }
   } else {
     // Use the traditional pose detection from topic

@@ -35,7 +35,7 @@ namespace nav2_behavior_tree
  * to get the decision about what controller must be used. It is usually used before of
  * the FollowPath. The selected_controller output port is passed to controller_id
  * input port of the FollowPath
- * @note This is an Asynchronous node. It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class ControllerSelector : public BT::SyncActionNode
 {
@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the controller_selector
    */
-  void callbackControllerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackControllerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr controller_selector_sub_;
 

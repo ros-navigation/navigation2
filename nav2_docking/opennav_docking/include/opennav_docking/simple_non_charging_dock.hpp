@@ -57,14 +57,14 @@ public:
    */
   void cleanup() override;
 
-   /**
-    * @brief Method to active Behavior and any threads involved in execution.
-    */
+  /**
+   * @brief Method to active Behavior and any threads involved in execution.
+   */
   void activate() override;
 
-   /**
-    * @brief Method to deactivate Behavior and any threads involved in execution.
-    */
+  /**
+   * @brief Method to deactivate Behavior and any threads involved in execution.
+   */
   void deactivate() override;
 
   /**
@@ -101,7 +101,7 @@ public:
   bool stopDetectionProcess() override;
 
 protected:
-  void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr state);
+  void jointStateCallback(const sensor_msgs::msg::JointState::ConstSharedPtr & state);
 
   // Optionally subscribe to a detected dock pose topic
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr dock_pose_sub_;

@@ -24,6 +24,7 @@ amcl:
     pf_z: 0.99
     recovery_alpha_fast: 0.0
     recovery_alpha_slow: 0.0
+    random_seed: -1
     resample_interval: 1
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     save_pose_rate: 0.5
@@ -47,6 +48,7 @@ bt_navigator:
     bt_loop_duration: 10
     filter_duration: 0.3
     default_server_timeout: 20
+    default_cancel_timeout: 50
     wait_for_service_timeout: 1000
     introspection_mode: "disabled"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
@@ -54,10 +56,12 @@ bt_navigator:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1667
+      search_window: 2.0
     navigate_through_poses:
       plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
       enable_groot_monitoring: false
       groot_server_port: 1669
+      search_window: 2.0
     bt_search_directories:
       - $(find-pkg-share nav2_bt_navigator)/behavior_trees
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
@@ -96,6 +100,7 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
+    path_handler_plugins: ["PathHandler"]
     use_realtime_priority: false
     speed_limit_topic: "speed_limit"
 
@@ -109,12 +114,22 @@ controller_server:
     #  plugin: "nav2_controller::SimpleGoalChecker"
     #  xy_goal_tolerance: 0.25
     #  yaw_goal_tolerance: 0.25
-    #  stateful: True
+    #  stateful: true
     general_goal_checker:
-      stateful: True
+      stateful: true
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
+      path_length_tolerance: 1.0
+    PathHandler:
+      plugin: "nav2_controller::FeasiblePathHandler"
+      prune_distance: 2.0
+      enforce_path_inversion: false
+      enforce_path_rotation: false
+      inversion_xy_tolerance: 0.2
+      inversion_yaw_tolerance: 0.4
+      minimum_rotation_angle: 0.785
+      reject_unit_path: false
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
@@ -133,8 +148,6 @@ controller_server:
       vy_max: 0.5
       wz_max: 1.9
       iteration_count: 1
-      prune_distance: 1.7
-      transform_tolerance: 0.1
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -237,7 +250,7 @@ local_costmap:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: KEEPOUT_ZONE_ENABLED
         filter_info_topic: "keepout_costmap_filter_info"
-        override_lethal_cost: True
+        override_lethal_cost: true
         lethal_override_cost: 200
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -245,8 +258,8 @@ local_costmap:
         inflation_radius: 0.70
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
-        enabled: True
-        publish_voxel_map: True
+        enabled: true
+        publish_voxel_map: true
         origin_z: 0.0
         z_resolution: 0.05
         z_voxels: 16
@@ -262,8 +275,8 @@ local_costmap:
           #   * Use global topic `/scan` if you do not wish the node namespace to apply
           topic: scan
           max_obstacle_height: 2.0
-          clearing: True
-          marking: True
+          clearing: true
+          marking: true
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -271,8 +284,8 @@ local_costmap:
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-      always_send_full_costmap: True
+        map_subscribe_transient_local: true
+      always_send_full_costmap: true
       introspection_mode: "disabled"
 
 global_costmap:
@@ -291,7 +304,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: KEEPOUT_ZONE_ENABLED
         filter_info_topic: "keepout_costmap_filter_info"
-        override_lethal_cost: True
+        override_lethal_cost: true
         lethal_override_cost: 200
       speed_filter:
         plugin: "nav2_costmap_2d::SpeedFilter"
@@ -300,7 +313,7 @@ global_costmap:
         speed_limit_topic: "speed_limit"
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
+        enabled: true
         observation_sources: scan
         scan:
           # A relative topic will be appended to the parent of the global_costmap namespace.
@@ -311,8 +324,8 @@ global_costmap:
           #   * Use global topic `/scan` if you do not wish the node namespace to apply
           topic: scan
           max_obstacle_height: 2.0
-          clearing: True
-          marking: True
+          clearing: true
+          marking: true
           data_type: "LaserScan"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -320,12 +333,12 @@ global_costmap:
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
+        map_subscribe_transient_local: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.7
-      always_send_full_costmap: True
+      always_send_full_costmap: true
       introspection_mode: "disabled"
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -367,11 +380,12 @@ map_saver:
     save_map_timeout: 5.0
     free_thresh_default: 0.25
     occupied_thresh_default: 0.65
-    map_subscribe_transient_local: True
+    map_subscribe_transient_local: true
     introspection_mode: "disabled"
 
 planner_server:
   ros__parameters:
+    allow_partial_planning: false
     expected_planner_frequency: 20.0
     planner_plugins: ["GridBased"]
     costmap_update_timeout: 1.0
@@ -391,16 +405,16 @@ smoother_server:
       max_its: 1000
       refinement_num: 2
       # True for Hybrid A* or State Lattice to not smooth over directional changes
-      enforce_path_inversion: True
-      do_refinement: True
+      enforce_path_inversion: true
+      do_refinement: true
     route_smoother:
       plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
       max_its: 1000
       refinement_num: 5
       # False for Route Server or others where smoothing out sharp corners is OK
-      enforce_path_inversion: False
-      do_refinement: True
+      enforce_path_inversion: false
+      do_refinement: true
 
 behavior_server:
   ros__parameters:
@@ -444,7 +458,7 @@ waypoint_follower:
     waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
-      enabled: True
+      enabled: true
       waypoint_pause_duration: 200
 
 route_server:
@@ -473,7 +487,7 @@ route_server:
 velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0
-    scale_velocities: False
+    scale_velocities: false
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 2.0]
     min_velocity: [-0.5, 0.0, -2.0]
@@ -486,7 +500,7 @@ velocity_smoother:
 
 collision_monitor:
   ros__parameters:
-    enabled: True
+    enabled: true
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
@@ -494,7 +508,7 @@ collision_monitor:
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.2
     source_timeout: 1.0
-    base_shift_correction: True
+    base_shift_correction: true
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
@@ -506,15 +520,15 @@ collision_monitor:
       time_before_collision: 1.2
       simulation_time_step: 0.1
       min_points: 6
-      visualize: False
-      enabled: True
+      visualize: false
+      enabled: true
     observation_sources: ["scan"]
     scan:
       type: "scan"
       topic: "scan"
       min_height: 0.15
       max_height: 2.0
-      enabled: True
+      enabled: true
 
 docking_server:
   ros__parameters:

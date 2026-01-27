@@ -66,8 +66,8 @@ public:
            *  Now we declare overrides of rviz_common::Panel functions for saving and
            *  loading data from the config file.  Here the data is the topic name.
            */
-  virtual void save(rviz_common::Config config) const;
-  virtual void load(const rviz_common::Config & config);
+  void save(rviz_common::Config config) const override;
+  void load(const rviz_common::Config & config) override;
 
 
   /**

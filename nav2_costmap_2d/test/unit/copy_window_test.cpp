@@ -43,7 +43,7 @@ TEST(CopyWindow, copyInvalidWindow)
   ASSERT_FALSE(dst.copyWindow(src, 0, 0, 6, 6, 0, 0));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

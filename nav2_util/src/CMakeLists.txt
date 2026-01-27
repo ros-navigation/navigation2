@@ -27,6 +27,7 @@ target_link_libraries(${library_name} PUBLIC
   ${tf2_geometry_msgs_TARGETS}
   pluginlib::pluginlib
   nav2_ros_common::nav2_ros_common
+  angles::angles
 )
 target_link_libraries(${library_name} PRIVATE
   ${bond_TARGETS}

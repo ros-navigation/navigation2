@@ -1,5 +1,5 @@
 # Tests
-ament_add_gtest(velocity_smoother_tests
+nav2_add_gtest(velocity_smoother_tests
   test_velocity_smoother.cpp
 )
 target_link_libraries(velocity_smoother_tests

@@ -69,6 +69,23 @@ Number of discrete angular headings used. Due to the way discretization is done 
 </br>
 </br>
 
+**trajectory_distinctness_ratio** (float)
+
+A pruning parameter that determines the spatial density of the motion primitive library by defining a dynamic distance similarity threshold based on a trajectory's length. A higher ratio results in a sparser, more computationally efficient lattice, while a lower ratio provides denser options. Taking a minimum turning radius of 2.0m as an example, the images below illustrate the difference in primitive density between ratios of 0.3, 0.5, and 0.9.
+
+Set to 0.0 for previous behavior from Jan 2026 to disable.
+
+0.3:
+
+![ ](docs/distinctness_0.3.png)
+
+0.5:
+![ ](docs/distinctness_0.5.png)
+
+0.9:
+![ ](docs/distinctness_0.9.png)
+
+
 ## Output file structure
 The output file is a JSON file and contains the following fields:
 
@@ -155,7 +172,7 @@ The lattice generator is generally based on the generation of the control set as
 
 3. When a path is generated it is checked to ensure it does not pass "close" to another path. If it does it is removed, otherwise it remains in the set
 
-    - "Close" is defined to be within half the grid resolution for length and half the average angular bin size for angular rotation
+    - "Close" is defined to be within half the grid resolution for length and half the average angular bin size for angular rotation; additionally, the distance to an existing endpoint must be less than the trajectory_distinctness_ratio multiplied by the trajectory's length
 
 4. Steps 2-3 are repeated for the next wavefront which is a grid resolution step further away from the origin.
 

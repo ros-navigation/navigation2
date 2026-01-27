@@ -26,6 +26,9 @@
 #include "nav2_regulated_pure_pursuit_controller/regulated_pure_pursuit_controller.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "nav2_controller/plugins/feasible_path_handler.hpp"
+#include "nav2_controller/plugins/simple_goal_checker.hpp"
 
 class BasicAPIRPP : public nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController
 {
@@ -33,9 +36,7 @@ public:
   BasicAPIRPP()
   : nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController() {}
 
-  nav_msgs::msg::Path getPlan() {return path_handler_->getPlan();}
-
-  double getSpeed() {return params_->desired_linear_vel;}
+  double getSpeed() {return params_->max_linear_vel;}
 
   std::unique_ptr<geometry_msgs::msg::PointStamped> createCarrotMsgWrapper(
     const geometry_msgs::msg::PoseStamped & carrot_pose)
@@ -79,18 +80,6 @@ public:
       curvature, curr_speed, pose_cost, path,
       linear_vel, sign);
   }
-
-  double findVelocitySignChangeWrapper(
-    const nav_msgs::msg::Path & transformed_plan)
-  {
-    return findVelocitySignChange(transformed_plan);
-  }
-
-  nav_msgs::msg::Path transformGlobalPlanWrapper(
-    const geometry_msgs::msg::PoseStamped & pose)
-  {
-    return path_handler_->transformGlobalPlan(pose, params_->max_robot_pose_search_dist);
-  }
 };
 
 TEST(RegulatedPurePursuitTest, basicAPI)
@@ -107,14 +96,6 @@ TEST(RegulatedPurePursuitTest, basicAPI)
   ctrl->activate();
   ctrl->deactivate();
   ctrl->cleanup();
-
-  // setPlan and get plan
-  nav_msgs::msg::Path path;
-  path.poses.resize(2);
-  path.poses[0].header.frame_id = "fake_frame";
-  ctrl->setPlan(path);
-  EXPECT_EQ(ctrl->getPlan().poses.size(), 2ul);
-  EXPECT_EQ(ctrl->getPlan().poses[0].header.frame_id, std::string("fake_frame"));
 
   // set speed limit
   const double base_speed = ctrl->getSpeed();
@@ -143,46 +124,6 @@ TEST(RegulatedPurePursuitTest, createCarrotMsg)
   EXPECT_EQ(rtn->point.x, 1.0);
   EXPECT_EQ(rtn->point.y, 12.0);
   EXPECT_EQ(rtn->point.z, 0.01);
-}
-
-TEST(RegulatedPurePursuitTest, findVelocitySignChange)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("testRPPfindVelocitySignChange");
-  auto ctrl = std::make_shared<BasicAPIRPP>();
-
-  std::string name = "PathFollower";
-  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
-  ctrl->configure(node, name, tf, costmap);
-
-  geometry_msgs::msg::PoseStamped pose;
-  pose.header.frame_id = "smb";
-  auto time = node->get_clock()->now();
-  pose.header.stamp = time;
-  pose.pose.position.x = 1.0;
-  pose.pose.position.y = 0.0;
-
-  nav_msgs::msg::Path path;
-  path.poses.resize(3);
-  path.header.frame_id = "smb";
-  path.header.stamp = pose.header.stamp;
-  path.poses[0].pose.position.x = 1.0;
-  path.poses[0].pose.position.y = 1.0;
-  path.poses[1].pose.position.x = 2.0;
-  path.poses[1].pose.position.y = 2.0;
-  path.poses[2].pose.position.x = -1.0;
-  path.poses[2].pose.position.y = -1.0;
-  ctrl->setPlan(path);
-  auto rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, sqrt(8.0));
-
-  path.poses[2].pose.position.x = 3.0;
-  path.poses[2].pose.position.y = 3.0;
-  ctrl->setPlan(path);
-  rtn = ctrl->findVelocitySignChangeWrapper(path);
-  EXPECT_EQ(rtn, std::numeric_limits<double>::max());
 }
 
 TEST(RegulatedPurePursuitTest, lookaheadAPI)
@@ -439,20 +380,26 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     node->get_node_services_interface());
 
   auto results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.desired_linear_vel", 1.0),
+    {rclcpp::Parameter("test.max_linear_vel", 1.0),
+      rclcpp::Parameter("test.min_linear_vel", -1.0),
+      rclcpp::Parameter("test.max_angular_vel", 2.0),
+      rclcpp::Parameter("test.min_angular_vel", -2.0),
+      rclcpp::Parameter("test.max_linear_accel", 2.0),
+      rclcpp::Parameter("test.max_linear_decel", -2.0),
+      rclcpp::Parameter("test.max_angular_accel", 3.0),
+      rclcpp::Parameter("test.max_angular_decel", -3.0),
       rclcpp::Parameter("test.lookahead_dist", 7.0),
       rclcpp::Parameter("test.max_lookahead_dist", 7.0),
       rclcpp::Parameter("test.min_lookahead_dist", 6.0),
       rclcpp::Parameter("test.lookahead_time", 1.8),
       rclcpp::Parameter("test.rotate_to_heading_angular_vel", 18.0),
       rclcpp::Parameter("test.min_approach_linear_velocity", 1.0),
+      rclcpp::Parameter("test.approach_velocity_scaling_dist", 0.8),
       rclcpp::Parameter("test.max_allowed_time_to_collision_up_to_carrot", 2.0),
       rclcpp::Parameter("test.min_distance_to_obstacle", 2.0),
       rclcpp::Parameter("test.cost_scaling_dist", 2.0),
       rclcpp::Parameter("test.cost_scaling_gain", 4.0),
       rclcpp::Parameter("test.regulated_linear_scaling_min_radius", 10.0),
-      rclcpp::Parameter("test.transform_tolerance", 30.0),
-      rclcpp::Parameter("test.max_angular_accel", 3.0),
       rclcpp::Parameter("test.rotate_to_heading_min_angle", 0.7),
       rclcpp::Parameter("test.regulated_linear_scaling_min_speed", 4.0),
       rclcpp::Parameter("test.use_velocity_scaled_lookahead_dist", false),
@@ -461,19 +408,28 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
       rclcpp::Parameter("test.inflation_cost_scaling_factor", 1.0),
       rclcpp::Parameter("test.allow_reversing", false),
       rclcpp::Parameter("test.use_rotate_to_heading", false),
-      rclcpp::Parameter("test.stateful", false)});
+      rclcpp::Parameter("test.stateful", false),
+      rclcpp::Parameter("test.use_dynamic_window", true)});
 
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
     results);
 
-  EXPECT_EQ(node->get_parameter("test.desired_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_vel").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.min_linear_vel").as_double(), -1.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_vel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.min_angular_vel").as_double(), -2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_accel").as_double(), 2.0);
+  EXPECT_EQ(node->get_parameter("test.max_linear_decel").as_double(), -2.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
+  EXPECT_EQ(node->get_parameter("test.max_angular_decel").as_double(), -3.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.max_lookahead_dist").as_double(), 7.0);
   EXPECT_EQ(node->get_parameter("test.min_lookahead_dist").as_double(), 6.0);
   EXPECT_EQ(node->get_parameter("test.lookahead_time").as_double(), 1.8);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_angular_vel").as_double(), 18.0);
   EXPECT_EQ(node->get_parameter("test.min_approach_linear_velocity").as_double(), 1.0);
+  EXPECT_EQ(node->get_parameter("test.approach_velocity_scaling_dist").as_double(), 0.8);
   EXPECT_EQ(
     node->get_parameter(
       "test.max_allowed_time_to_collision_up_to_carrot").as_double(), 2.0);
@@ -481,8 +437,6 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.cost_scaling_dist").as_double(), 2.0);
   EXPECT_EQ(node->get_parameter("test.cost_scaling_gain").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_radius").as_double(), 10.0);
-  EXPECT_EQ(node->get_parameter("test.transform_tolerance").as_double(), 30.0);
-  EXPECT_EQ(node->get_parameter("test.max_angular_accel").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("test.rotate_to_heading_min_angle").as_double(), 0.7);
   EXPECT_EQ(node->get_parameter("test.regulated_linear_scaling_min_speed").as_double(), 4.0);
   EXPECT_EQ(node->get_parameter("test.use_velocity_scaled_lookahead_dist").as_bool(), false);
@@ -494,6 +448,7 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
   EXPECT_EQ(node->get_parameter("test.allow_reversing").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_rotate_to_heading").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.stateful").as_bool(), false);
+  EXPECT_EQ(node->get_parameter("test.use_dynamic_window").as_bool(), true);
 
   // Should fail
   auto results2 = rec_param->set_parameters_atomically(
@@ -520,358 +475,72 @@ TEST(RegulatedPurePursuitTest, testDynamicParameter)
     results4);
 }
 
-class TransformGlobalPlanTest : public ::testing::Test
+TEST(RegulatedPurePursuitTest, computeVelocityByDWPP)
 {
-protected:
-  void SetUp() override
-  {
-    ctrl_ = std::make_shared<BasicAPIRPP>();
-    node_ = std::make_shared<nav2::LifecycleNode>("testRPP");
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-  }
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
+  std::string name = "PathFollower";
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
 
-  void configure_costmap(uint16_t width, double resolution)
-  {
-    constexpr char costmap_frame[] = "test_costmap_frame";
-    constexpr char robot_frame[] = "test_robot_frame";
+  // Enable DWPP so computeVelocityCommands executes the dynamic window branch.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_dynamic_window", rclcpp::ParameterValue(false));
+  node->set_parameter(rclcpp::Parameter(name + ".use_dynamic_window", true));
 
-    auto results = costmap_->set_parameters(
-    {
-      rclcpp::Parameter("global_frame", costmap_frame),
-      rclcpp::Parameter("robot_base_frame", robot_frame),
-      rclcpp::Parameter("width", width),
-      rclcpp::Parameter("height", width),
-      rclcpp::Parameter("resolution", resolution)
-    });
-    for (const auto & result : results) {
-      EXPECT_TRUE(result.successful) << result.reason;
-    }
+  // Disable collision detection to simplify test.
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_collision_detection", rclcpp::ParameterValue(true));
+  node->set_parameter(rclcpp::Parameter(name + ".use_collision_detection", false));
 
-    rclcpp_lifecycle::State state;
-    costmap_->on_configure(state);
-  }
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
 
-  void configure_controller(double max_robot_pose_search_dist)
-  {
-    std::string plugin_name = "test_rpp";
-    nav2::declare_parameter_if_not_declared(
-      node_, plugin_name + ".max_robot_pose_search_dist",
-      rclcpp::ParameterValue(max_robot_pose_search_dist));
-    ctrl_->configure(node_, plugin_name, tf_buffer_, costmap_);
-  }
+  auto stamp = node->get_clock()->now();
 
-  void setup_transforms(geometry_msgs::msg::Point & robot_position)
-  {
-    transform_time_ = node_->get_clock()->now();
-    // Note: transforms go parent to child
+  // Simple straight path ahead of the robot in map frame.
+  geometry_msgs::msg::PoseStamped start_pose;
+  start_pose.header.frame_id = "map";
+  start_pose.header.stamp = stamp;
+  start_pose.pose.orientation.w = 1.0;
+  auto plan = path_utils::generate_path(
+    start_pose, 0.1,
+    {std::make_unique<path_utils::Straight>(2.0)});
+  ctrl->newPathReceived(plan);
+  path_handler.setPlan(plan);
 
-    // We will have a separate path and costmap frame for completeness,
-    // but we will leave them cooincident for convenience.
-    geometry_msgs::msg::TransformStamped path_to_costmap;
-    path_to_costmap.header.frame_id = PATH_FRAME;
-    path_to_costmap.header.stamp = transform_time_;
-    path_to_costmap.child_frame_id = COSTMAP_FRAME;
-    path_to_costmap.transform.translation.x = 0.0;
-    path_to_costmap.transform.translation.y = 0.0;
-    path_to_costmap.transform.translation.z = 0.0;
+  // Provide transform into base frame so the controller can compute commands.
+  geometry_msgs::msg::TransformStamped map_to_base;
+  map_to_base.header.stamp = stamp;
+  map_to_base.header.frame_id = "map";
+  map_to_base.child_frame_id = "base_link";
+  map_to_base.transform.rotation.w = 1.0;
+  tf->setTransform(map_to_base, "dwpp-controller-test");
 
-    geometry_msgs::msg::TransformStamped costmap_to_robot;
-    costmap_to_robot.header.frame_id = COSTMAP_FRAME;
-    costmap_to_robot.header.stamp = transform_time_;
-    costmap_to_robot.child_frame_id = ROBOT_FRAME;
-    costmap_to_robot.transform.translation.x = robot_position.x;
-    costmap_to_robot.transform.translation.y = robot_position.y;
-    costmap_to_robot.transform.translation.z = robot_position.z;
-
-    tf2_msgs::msg::TFMessage tf_message;
-    tf_message.transforms = {
-      path_to_costmap,
-      costmap_to_robot
-    };
-    for (const auto & transform : tf_message.transforms) {
-      tf_buffer_->setTransform(transform, "test", false);
-    }
-    tf_buffer_->setUsingDedicatedThread(true);  // lying to let it do transforms
-  }
-
-  static constexpr char PATH_FRAME[] = "test_path_frame";
-  static constexpr char COSTMAP_FRAME[] = "test_costmap_frame";
-  static constexpr char ROBOT_FRAME[] = "test_robot_frame";
-
-  std::shared_ptr<BasicAPIRPP> ctrl_;
-  nav2::LifecycleNode::SharedPtr node_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  rclcpp::Time transform_time_;
-};
-
-// This tests that not only should nothing get pruned on a costmap
-// that contains the entire global_plan, and also that it doesn't skip to the end of the path
-// which is closer to the robot pose than the start.
-TEST_F(TransformGlobalPlanTest, no_pruning_on_large_costmap)
-{
   geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  robot_pose.pose.position.x = -0.1;
-  robot_pose.pose.position.y = 0.0;
-  robot_pose.pose.position.z = 0.0;
-  // A really big costmap
-  // the max_costmap_extent should be 50m
+  robot_pose.header.frame_id = "base_link";
+  robot_pose.header.stamp = stamp;
+  robot_pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist current_speed;
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap);
 
-  configure_costmap(100u, 0.1);
-  configure_controller(5.0);
-  setup_transforms(robot_pose.pose.position);
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(
+    closest_point, pruned_plan_end);
+  auto goal = path_handler.getTransformedGoal(robot_pose.header.stamp);
+  auto cmd_vel = ctrl->computeVelocityCommands(
+    robot_pose, current_speed, &checker, transformed_global_plan, goal);
 
-  // Set up test path;
+  EXPECT_EQ(cmd_vel.twist.linear.x, 0.125);
+  EXPECT_EQ(cmd_vel.twist.angular.z, 0.0);
 
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  constexpr double spacing = 0.1;
-  constexpr double circle_radius = 1.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::LeftCircle>(circle_radius)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-
-  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
-  EXPECT_EQ(transformed_plan.poses.size(), global_plan.poses.size());
-}
-
-// This plan shouldn't get pruned because of the costmap,
-// but should be half pruned because it is halfway around the circle
-TEST_F(TransformGlobalPlanTest, transform_start_selection)
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  robot_pose.pose.position.x = 0.0;
-  robot_pose.pose.position.y = 4.0;  // on the other side of the circle
-  robot_pose.pose.position.z = 0.0;
-  // Could set orientation going the other way, but RPP doesn't care
-  constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0;  // diameter 4
-
-  // A really big costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(100u, 0.1);
-  // This should just be at least half the circumference: pi*r ~= 6
-  constexpr double max_robot_pose_search_dist = 10.0;
-  configure_controller(max_robot_pose_search_dist);
-  setup_transforms(robot_pose.pose.position);
-
-  // Set up test path;
-
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::LeftCircle>(circle_radius)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
-  EXPECT_NEAR(transformed_plan.poses.size(), global_plan.poses.size() / 2, 1);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
-}
-
-// This should throw an exception when all poses are outside of the costmap
-TEST_F(TransformGlobalPlanTest, all_poses_outside_of_costmap)
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  // far away from the path
-  robot_pose.pose.position.x = 1000.0;
-  robot_pose.pose.position.y = 1000.0;
-  robot_pose.pose.position.z = 0.0;
-  // Could set orientation going the other way, but RPP doesn't care
-  constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0;  // diameter 4
-
-  // A "normal" costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(10u, 0.1);
-  // This should just be at least half the circumference: pi*r ~= 6
-  constexpr double max_robot_pose_search_dist = 10.0;
-  configure_controller(max_robot_pose_search_dist);
-  setup_transforms(robot_pose.pose.position);
-
-  // Set up test path;
-
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::LeftCircle>(circle_radius)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-  EXPECT_THROW(ctrl_->transformGlobalPlanWrapper(robot_pose), nav2_core::ControllerException);
-}
-
-// Should shortcut the circle if the circle is shorter than max_robot_pose_search_dist
-TEST_F(TransformGlobalPlanTest, good_circle_shortcut)
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  // far away from the path
-  robot_pose.pose.position.x = -0.1;
-  robot_pose.pose.position.y = 0.0;
-  robot_pose.pose.position.z = 0.0;
-  // Could set orientation going the other way, but RPP doesn't care
-  constexpr double spacing = 0.1;
-  constexpr double circle_radius = 2.0;  // diameter 4
-
-  // A "normal" costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(100u, 0.1);
-  // This should just be at least the circumference: 2*pi*r ~= 12
-  constexpr double max_robot_pose_search_dist = 15.0;
-  configure_controller(max_robot_pose_search_dist);
-  setup_transforms(robot_pose.pose.position);
-
-  // Set up test path;
-
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::LeftCircle>(circle_radius)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
-  EXPECT_NEAR(transformed_plan.poses.size(), 1, 1);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
-}
-
-// Simple costmap pruning on a straight line
-TEST_F(TransformGlobalPlanTest, costmap_pruning)
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  // far away from the path
-  robot_pose.pose.position.x = -0.1;
-  robot_pose.pose.position.y = 0.0;
-  robot_pose.pose.position.z = 0.0;
-  // Could set orientation going the other way, but RPP doesn't care
-  constexpr double spacing = 1.0;
-
-  // A "normal" costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(20u, 0.5);
-  constexpr double max_robot_pose_search_dist = 10.0;
-  configure_controller(max_robot_pose_search_dist);
-  setup_transforms(robot_pose.pose.position);
-
-  // Set up test path;
-
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  constexpr double path_length = 100.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::Straight>(path_length)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
-  EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
-}
-
-// Should prune out later portions of the path that come back into the costmap
-TEST_F(TransformGlobalPlanTest, prune_after_leaving_costmap)
-{
-  geometry_msgs::msg::PoseStamped robot_pose;
-  robot_pose.header.frame_id = COSTMAP_FRAME;
-  robot_pose.header.stamp = transform_time_;
-  // far away from the path
-  robot_pose.pose.position.x = -0.1;
-  robot_pose.pose.position.y = 0.0;
-  robot_pose.pose.position.z = 0.0;
-  // Could set orientation going the other way, but RPP doesn't care
-  constexpr double spacing = 1.0;
-
-  // A "normal" costmap
-  // the max_costmap_extent should be 50m
-  configure_costmap(20u, 0.5);
-  constexpr double max_robot_pose_search_dist = 10.0;
-  configure_controller(max_robot_pose_search_dist);
-  setup_transforms(robot_pose.pose.position);
-
-  // Set up test path;
-
-  geometry_msgs::msg::PoseStamped start_of_path;
-  start_of_path.header.frame_id = PATH_FRAME;
-  start_of_path.header.stamp = transform_time_;
-  start_of_path.pose.position.x = 0.0;
-  start_of_path.pose.position.y = 0.0;
-  start_of_path.pose.position.z = 0.0;
-
-  constexpr double path_length = 100.0;
-
-  auto global_plan = path_utils::generate_path(
-    start_of_path, spacing, {
-    std::make_unique<path_utils::Straight>(path_length),
-    std::make_unique<path_utils::LeftTurnAround>(1.0),
-    std::make_unique<path_utils::Straight>(path_length)
-  });
-
-  ctrl_->setPlan(global_plan);
-
-  // Transform the plan
-  auto transformed_plan = ctrl_->transformGlobalPlanWrapper(robot_pose);
-  // This should be essentially the same as the regular straight path
-  EXPECT_NEAR(transformed_plan.poses.size(), 10u, 1);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.x, 0.0, 0.5);
-  EXPECT_NEAR(transformed_plan.poses[0].pose.position.y, 0.0, 0.5);
+  ctrl->deactivate();
+  ctrl->cleanup();
 }
 
 int main(int argc, char **argv)

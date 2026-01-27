@@ -100,7 +100,7 @@ protected:
    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
   rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
-    std::vector<rclcpp::Parameter> parameters);
+    const std::vector<rclcpp::Parameter> & parameters);
 
   /**
    * @brief Apply parameter updates after validation
@@ -108,7 +108,7 @@ protected:
    * It updates the internal configuration of the node with the new parameter values.
    * @param parameters List of parameters that have been updated.
    */
-  void updateParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   // Dynamic parameters handler
   rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
@@ -137,7 +137,7 @@ protected:
    * @brief Get new map from ROS topic to localize in
    * @param msg Map message
    */
-  void mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+  void mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg);
   /*
    * @brief Handle a new map message
    * @param msg Map message
@@ -211,7 +211,8 @@ protected:
   /*
    * @brief Handle with an initial pose estimate is received
    */
-  void initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+  void initialPoseReceived(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg);
   /*
    * @brief Handle when a laser scan is received
    */
@@ -289,6 +290,7 @@ protected:
   bool pf_init_;
   pf_vector_t pf_odom_pose_;
   int resample_count_{0};
+  int random_seed_{-1};
 
   // Laser scan related
   /*
@@ -412,6 +414,7 @@ protected:
   std::string scan_topic_{"scan"};
   std::string map_topic_{"map"};
   bool freespace_downsampling_ = false;
+  bool allow_parameter_qos_overrides_ = true;
 };
 
 }  // namespace nav2_amcl

@@ -25,7 +25,11 @@
 
 TEST(WPTest, test_dynamic_parameters)
 {
-  auto amcl = std::make_shared<nav2_amcl::AmclNode>();
+  rclcpp::NodeOptions options;
+  // Ensure we cover the deterministic-seed branch in initParticleFilter().
+  options.parameter_overrides({{"random_seed", 42}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
   amcl->configure();
   amcl->activate();
 
@@ -118,6 +122,7 @@ TEST(WPTest, test_dynamic_parameters)
   EXPECT_EQ(amcl->get_parameter("do_beamskip").as_bool(), false);
   EXPECT_EQ(amcl->get_parameter("set_initial_pose").as_bool(), false);
   EXPECT_EQ(amcl->get_parameter("first_map_only").as_bool(), false);
+  EXPECT_EQ(amcl->get_parameter("random_seed").as_int(), 42);
 
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("alpha1", -1.0)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
@@ -138,9 +143,19 @@ TEST(WPTest, test_dynamic_parameters)
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("min_particles", 2000)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
   EXPECT_EQ(amcl->get_parameter("min_particles").as_int(), 100);
+
+  // Test zero save_pose_rate rejection
+  results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", 0.0)});
+  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
+
+  // Test negative save_pose_rate rejection
+  results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", -1.0)});
+  rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

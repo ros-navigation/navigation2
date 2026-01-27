@@ -38,6 +38,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/string_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 #include "nav2_behavior_tree/plugins_list.hpp"
 #include "nav2_behavior_tree/behavior_tree_engine.hpp"
@@ -80,13 +81,14 @@ public:
 
   BT::Blackboard::Ptr setBlackboardVariables()
   {
-     // Create and populate the blackboard
+    // Create and populate the blackboard
     blackboard = BT::Blackboard::create();
     blackboard->set("node", node_);
     blackboard->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(20));
     blackboard->set<std::chrono::milliseconds>("bt_loop_duration", std::chrono::milliseconds(10));
-    blackboard->set<std::chrono::milliseconds>("wait_for_service_timeout",
-             std::chrono::milliseconds(1000));
+    blackboard->set<std::chrono::milliseconds>(
+      "wait_for_service_timeout",
+      std::chrono::milliseconds(1000));
     blackboard->set("tf_buffer", tf_);
     blackboard->set("initial_pose_received", false);
     blackboard->set("number_recoveries", 0);
@@ -112,8 +114,9 @@ public:
     namespace fs = std::filesystem;
     const std::string kXmlExtension = ".xml";
     const bool is_bt_id = (file_or_id.length() < kXmlExtension.size()) ||
-      (file_or_id.compare(file_or_id.length() - kXmlExtension.size(),
-                          kXmlExtension.size(), kXmlExtension) != 0);
+      (file_or_id.compare(
+        file_or_id.length() - kXmlExtension.size(),
+        kXmlExtension.size(), kXmlExtension) != 0);
 
     std::set<std::string> registered_ids;
     std::string main_id;
@@ -253,7 +256,7 @@ TEST_F(BehaviorTreeTestFixture, TestBTXMLFiles)
 {
   // Get the BT root directory
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
 
   ASSERT_TRUE(std::filesystem::exists(root_dir));
@@ -285,7 +288,8 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   std::string malformed_main = "/tmp/malformed_main.xml";
 
   // Valid subtree
-  write_file(valid_subtree,
+  write_file(
+    valid_subtree,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "    <BehaviorTree ID=\"NoopTree\">\n"
@@ -297,7 +301,8 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
   write_file(invalid_subtree, "<root><invalid></root>");
 
   // Main tree referencing the valid subtree
-  write_file(main_file,
+  write_file(
+    main_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
     "  <include path=\"/tmp/valid_subtree.xml\">\n"
@@ -333,7 +338,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 
   // 2. Valid XML with ID
   std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
-  write_file(valid_xml,
+  write_file(
+    valid_xml,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "  <BehaviorTree ID=\"TestTree\">\n"
@@ -356,7 +362,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 
   // 6. No root element
   std::string no_root_file = "/tmp/extract_bt_id_no_root.xml";
-  write_file(no_root_file,
+  write_file(
+    no_root_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<!-- no root element, just a comment -->\n");
   auto no_root_id = bt_handler->extractBehaviorTreeID(no_root_file);
@@ -364,7 +371,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 
   // 7. No <BehaviorTree> child
   std::string no_bt_element = "/tmp/extract_bt_id_no_bt.xml";
-  write_file(no_bt_element,
+  write_file(
+    no_bt_element,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "  <Dummy />\n"
@@ -374,7 +382,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
 
   // 8. No ID attribute
   std::string no_id_attr = "/tmp/extract_bt_id_no_id.xml";
-  write_file(no_id_attr,
+  write_file(
+    no_id_attr,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "  <BehaviorTree>\n"
@@ -429,13 +438,14 @@ TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithFileSpecified) {
   EXPECT_TRUE(result);
 
   bool found_conflict =
-    log_output.find("Skipping conflicting BT file \"" + dup2_file +
-      "\" (duplicate ID DuplicateTree)") != std::string::npos;
+    log_output.find(
+    "Skipping conflicting BT file \"" + dup2_file +
+    "\" (duplicate ID DuplicateTree)") != std::string::npos;
   EXPECT_TRUE(found_conflict);
 
   EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos);
   EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos)
-      << "Should warn about duplicate ID";
+    << "Should warn about duplicate ID";
   EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
 
   std::filesystem::remove_all(tmp_dir);
@@ -579,23 +589,23 @@ TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithIDSpecified) {
   EXPECT_TRUE(result) << "Tree should still load despite duplicate IDs";
 
   EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos)
-      << "Should have registered at least one BT file";
+    << "Should have registered at least one BT file";
   EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos)
-      << "Should warn about duplicate IDs";
+    << "Should warn about duplicate IDs";
   EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos)
-      << "Should have created BT from the given ID";
+    << "Should have created BT from the given ID";
 
-bool registered_dup1 =
+  bool registered_dup1 =
     log_output.find("Registering Tree from File: " + dup1_file) != std::string::npos;
-bool registered_dup2 =
+  bool registered_dup2 =
     log_output.find("Registering Tree from File: " + dup2_file) != std::string::npos;
 
-EXPECT_TRUE(registered_dup1 || registered_dup2)
+  EXPECT_TRUE(registered_dup1 || registered_dup2)
     << "At least one duplicate file should have been registered";
-EXPECT_FALSE(registered_dup1 && registered_dup2)
+  EXPECT_FALSE(registered_dup1 && registered_dup2)
     << "Only one of the duplicate files should be registered as the main tree";
-EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos);
-EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
+  EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos);
+  EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
 
 
   std::filesystem::remove_all(tmp_dir);
@@ -612,7 +622,8 @@ TEST_F(BehaviorTreeTestFixture, TestSkipFilesWithMissingID) {
 
   // File with missing ID
   std::string no_id_file = tmp_dir + "/no_id.xml";
-  write_file(no_id_file,
+  write_file(
+    no_id_file,
     "<?xml version=\"1.0\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "  <BehaviorTree>\n"  // No ID attribute
@@ -621,7 +632,8 @@ TEST_F(BehaviorTreeTestFixture, TestSkipFilesWithMissingID) {
     "</root>\n");
 
   std::string valid_file = tmp_dir + "/valid.xml";
-  write_file(valid_file,
+  write_file(
+    valid_file,
     "<?xml version=\"1.0\"?>\n"
     "<root BTCPP_format=\"4\">\n"
     "  <BehaviorTree ID=\"ValidTree\">\n"
@@ -660,7 +672,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllSuccess)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -711,7 +723,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -739,7 +751,7 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
   // Goal count should be 2 since only two goals are sent to ComputePathToPose
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 14);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 4);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_code, 207);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_msg, "Timeout");
 
@@ -748,14 +760,14 @@ TEST_F(BehaviorTreeTestFixture, TestAllFailure)
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_code, 0);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_msg, "");
 
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 5);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 5);
-  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 5);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
 
   // Service count is 1 to try and resolve global planner error
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 13);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 3);
 
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 6);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 1);
 }
 
 /**
@@ -771,7 +783,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateSubtreeRecoveries)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -834,7 +846,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoverySimple)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -936,7 +948,7 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 
@@ -965,24 +977,24 @@ TEST_F(BehaviorTreeTestFixture, TestNavigateRecoveryComplex)
   EXPECT_EQ(result, BT::NodeStatus::FAILURE);
 
   // ComputePathToPose is called 12 times
-  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 7);
+  EXPECT_EQ(server_handler->compute_path_to_pose_server->getGoalCount(), 3);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_code, 0);
   EXPECT_EQ(server_handler->compute_path_to_pose_server->getResult()->error_msg, "");
 
   // FollowPath is called 4 times
-  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 14);
+  EXPECT_EQ(server_handler->follow_path_server->getGoalCount(), 6);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_code, 106);
   EXPECT_EQ(server_handler->follow_path_server->getResult()->error_msg, "No valid control");
 
   // Local costmap is cleared 5 times
-  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 9);
+  EXPECT_EQ(server_handler->clear_local_costmap_server->getRequestCount(), 4);
 
   // Global costmap is cleared 8 times
-  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 2);
+  EXPECT_EQ(server_handler->clear_global_costmap_server->getRequestCount(), 1);
 
   // All recovery action servers receive 2 goals
-  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 2);
-  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 2);
+  EXPECT_EQ(server_handler->spin_server->getGoalCount(), 1);
+  EXPECT_EQ(server_handler->wait_server->getGoalCount(), 1);
   EXPECT_EQ(server_handler->backup_server->getGoalCount(), 1);
 }
 
@@ -1008,7 +1020,7 @@ TEST_F(BehaviorTreeTestFixture, TestRecoverySubtreeGoalUpdated)
 {
   // Load behavior tree from file
   const auto root_dir = std::filesystem::path(
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator")
+    nav2::get_package_share_directory("nav2_bt_navigator")
     ) / "behavior_trees";
   auto bt_file = root_dir / "navigate_to_pose_w_replanning_and_recovery.xml";
 

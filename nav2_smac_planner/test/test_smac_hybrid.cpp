@@ -67,6 +67,8 @@ TEST(SmacTest, test_smac_se2)
 {
   nav2::LifecycleNode::SharedPtr nodeSE2 =
     std::make_shared<nav2::LifecycleNode>("SmacSE2Test");
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(nodeSE2->get_node_base_interface());
   nodeSE2->declare_parameter("test.debug_visualizations", rclcpp::ParameterValue(true));
 
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros =
@@ -80,6 +82,25 @@ TEST(SmacTest, test_smac_se2)
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsample_costmap", true));
   nodeSE2->declare_parameter("test.downsampling_factor", 2);
   nodeSE2->set_parameter(rclcpp::Parameter("test.downsampling_factor", 2));
+
+  geometry_msgs::msg::PoseArray::ConstSharedPtr received_expansions;
+  nav_msgs::msg::Path::ConstSharedPtr received_unsmoothed_plan;
+  bool expansions_received = false;
+  bool unsmoothed_plan_received = false;
+
+  auto expansions_sub = nodeSE2->create_subscription<geometry_msgs::msg::PoseArray>(
+    "expansions",
+    [&](const geometry_msgs::msg::PoseArray::ConstSharedPtr msg) {
+      received_expansions = msg;
+      expansions_received = true;
+    });
+
+  auto unsmoothed_plan_sub = nodeSE2->create_subscription<nav_msgs::msg::Path>(
+    "unsmoothed_plan",
+    [&](const nav_msgs::msg::Path::ConstSharedPtr msg) {
+      unsmoothed_plan_received = true;
+      received_unsmoothed_plan = msg;
+    });
 
   auto dummy_cancel_checker = []() {
       return false;
@@ -105,7 +126,7 @@ TEST(SmacTest, test_smac_se2)
   EXPECT_THROW(planner->configure(nodeSE2, "test", nullptr, costmap_ros), std::runtime_error);
   nodeSE2->set_parameter(rclcpp::Parameter("test.motion_model_for_search", std::string("DUBIN")));
 
-    // invalid coarse search resolution
+  // invalid coarse search resolution
   nodeSE2->set_parameter(rclcpp::Parameter("test.coarse_search_resolution", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_on_approach_iterations", -1));
   nodeSE2->set_parameter(rclcpp::Parameter("test.max_iterations", -1));
@@ -140,12 +161,43 @@ TEST(SmacTest, test_smac_se2)
   } catch (...) {
   }
 
+  executor.spin_all(std::chrono::milliseconds(50));
+  EXPECT_EQ(expansions_received, true);
+  EXPECT_FALSE(received_expansions->poses.empty());
+  EXPECT_EQ(received_expansions->header.frame_id, "map");
+  for (const auto & pose : received_expansions->poses) {
+    EXPECT_FALSE(std::isnan(pose.position.x));
+    EXPECT_FALSE(std::isnan(pose.position.y));
+    EXPECT_FALSE(std::isnan(pose.orientation.w));
+  }
+  EXPECT_EQ(unsmoothed_plan_received, true);
+  EXPECT_FALSE(received_unsmoothed_plan->poses.empty());
+  EXPECT_EQ(received_unsmoothed_plan->header.frame_id, "map");
+  for (const auto & pose_stamped : received_unsmoothed_plan->poses) {
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.position.x));
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.position.y));
+    EXPECT_FALSE(std::isnan(pose_stamped.pose.orientation.w));
+  }
+
   // corner case where the start and goal are on the same cell
   goal.pose.position.x = 0.01;
   goal.pose.position.y = 0.01;
 
   nav_msgs::msg::Path plan = planner->createPlan(start, goal, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
+
+  auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
+    nodeSE2->get_node_base_interface(), nodeSE2->get_node_topics_interface(),
+    nodeSE2->get_node_graph_interface(),
+    nodeSE2->get_node_services_interface());
+
+  auto results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_iterations", 1),
+      rclcpp::Parameter("test.analytic_expansion_max_length", 1.0)});
+  executor.spin_until_future_complete(results);
+  goal.pose.position.x = 4.0;
+  goal.pose.position.y = 4.0;
+  EXPECT_THROW(planner->createPlan(start, goal, dummy_cancel_checker), std::runtime_error);
 
   planner->deactivate();
   planner->cleanup();
@@ -269,7 +321,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

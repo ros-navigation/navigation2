@@ -8,7 +8,7 @@ target_link_libraries(test_lifecycle_gtest
   rclcpp_lifecycle::rclcpp_lifecycle
 )
 
-ament_add_test(test_lifecycle
+nav2_add_test(test_lifecycle
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/launch_lifecycle_test.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -26,7 +26,7 @@ target_link_libraries(test_bond_gtest
   rclcpp::rclcpp
 )
 
-ament_add_test(test_bond
+nav2_add_test(test_bond
   GENERATE_RESULT_FOR_RETURN_CODE_ZERO
   COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/launch_bond_test.py"
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

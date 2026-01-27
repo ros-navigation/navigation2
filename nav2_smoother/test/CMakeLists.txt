@@ -1,4 +1,4 @@
-ament_add_gtest(test_smoother_server
+nav2_add_gtest(test_smoother_server
   test_smoother_server.cpp
 )
 target_link_libraries(test_smoother_server
@@ -19,7 +19,7 @@ target_include_directories(test_smoother_server
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
-ament_add_gtest(test_simple_smoother
+nav2_add_gtest(test_simple_smoother
   test_simple_smoother.cpp
 )
 target_link_libraries(test_simple_smoother
@@ -40,12 +40,11 @@ target_include_directories(test_simple_smoother
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
 
-ament_add_gtest(test_savitzky_golay_smoother
+nav2_add_gtest(test_savitzky_golay_smoother
   test_savitzky_golay_smoother.cpp
 )
 target_link_libraries(test_savitzky_golay_smoother
   savitzky_golay_smoother
-  ament_index_cpp::ament_index_cpp
   nav2_core::nav2_core
   nav2_costmap_2d::nav2_costmap_2d_client
   nav2_costmap_2d::nav2_costmap_2d_core

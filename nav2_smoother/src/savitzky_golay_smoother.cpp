@@ -50,7 +50,7 @@ void SavitzkyGolaySmoother::configure(
   node->get_parameter(name + ".poly_order", poly_order_);
   if (window_size_ % 2 == 0 || window_size_ <= 2) {
     throw nav2_core::SmootherException(
-      "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
+            "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
   }
   half_window_size_ = (window_size_ - 1) / 2;
   calculateCoefficients();
@@ -61,10 +61,11 @@ void SavitzkyGolaySmoother::configure(
 void SavitzkyGolaySmoother::calculateCoefficients()
 {
   // We construct the Vandermonde matrix here
-  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(window_size_, -half_window_size_,
-      half_window_size_);
+  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(
+    window_size_, -half_window_size_,
+    half_window_size_);
   Eigen::MatrixXd x = Eigen::MatrixXd::Ones(window_size_, poly_order_ + 1);
-  for(int i = 1; i <= poly_order_; i++) {
+  for (int i = 1; i <= poly_order_; i++) {
     x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
   }
   // Compute the pseudoinverse of X, (X^T * X)^-1 * X^T
@@ -146,7 +147,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
       for (unsigned int idx = 1; idx != path_size - 1; idx++) {
         Eigen::Vector2d accum(0.0, 0.0);
 
-        for(int j = -half_window_size_; j <= half_window_size_; j++) {
+        for (int j = -half_window_size_; j <= half_window_size_; j++) {
           int path_idx = std::clamp<int>(idx + j, 0, path_size - 1);
           accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[path_idx];
         }
@@ -156,16 +157,18 @@ bool SavitzkyGolaySmoother::smoothImpl(
     };
 
   std::vector<Eigen::Vector2d> initial_path_poses(path.poses.size());
-  std::transform(path.poses.begin(), path.poses.end(),
-               initial_path_poses.begin(), toEigenVec);
+  std::transform(
+    path.poses.begin(), path.poses.end(),
+    initial_path_poses.begin(), toEigenVec);
   applyFilterOverAxes(path.poses, initial_path_poses);
 
   // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   if (do_refinement_) {
     for (int i = 0; i < refinement_num_; i++) {
       std::vector<Eigen::Vector2d> reined_initial_path_poses(path.poses.size());
-      std::transform(path.poses.begin(), path.poses.end(),
-                       reined_initial_path_poses.begin(), toEigenVec);
+      std::transform(
+        path.poses.begin(), path.poses.end(),
+        reined_initial_path_poses.begin(), toEigenVec);
       applyFilterOverAxes(path.poses, reined_initial_path_poses);
     }
   }

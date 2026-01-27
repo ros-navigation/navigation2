@@ -404,10 +404,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   // Set starting point, in A* bin search coordinates
   float mx_start, my_start, mx_goal, my_goal;
   if (!costmap->worldToMapContinuous(
-    start.pose.position.x,
-    start.pose.position.y,
-    mx_start,
-    my_start))
+      start.pose.position.x,
+      start.pose.position.y,
+      mx_start,
+      my_start))
   {
     throw nav2_core::StartOutsideMapBounds(
             "Start Coordinates of(" + std::to_string(start.pose.position.x) + ", " +
@@ -428,10 +428,10 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Set goal point, in A* bin search coordinates
   if (!costmap->worldToMapContinuous(
-    goal.pose.position.x,
-    goal.pose.position.y,
-    mx_goal,
-    my_goal))
+      goal.pose.position.x,
+      goal.pose.position.y,
+      mx_goal,
+      my_goal))
   {
     throw nav2_core::GoalOutsideMapBounds(
             "Goal Coordinates of(" + std::to_string(goal.pose.position.x) + ", " +
@@ -447,7 +447,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
   unsigned int goal_orientation_bin_int =
     static_cast<unsigned int>(goal_orientation_bin);
-  _a_star->setGoal(mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
+  _a_star->setGoal(
+    mx_goal, my_goal, static_cast<unsigned int>(goal_orientation_bin_int),
     _goal_heading_mode, _coarse_search_resolution);
 
   // Setup message
@@ -473,7 +474,8 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -493,17 +495,17 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
       _tolerance / static_cast<float>(costmap->getResolution()), cancel_checker, expansions.get()))
   {
     if (_debug_visualizations) {
-      geometry_msgs::msg::PoseArray msg;
+      auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
       geometry_msgs::msg::Pose msg_pose;
-      msg.header.stamp = _clock->now();
-      msg.header.frame_id = _global_frame;
+      msg->header.stamp = _clock->now();
+      msg->header.frame_id = _global_frame;
       for (auto & e : *expansions) {
         msg_pose.position.x = std::get<0>(e);
         msg_pose.position.y = std::get<1>(e);
         msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-        msg.poses.push_back(msg_pose);
+        msg->poses.push_back(msg_pose);
       }
-      _expansions_publisher->publish(msg);
+      _expansions_publisher->publish(std::move(msg));
     }
 
     // Note: If the start is blocked only one iteration will occur before failure
@@ -528,23 +530,24 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   if (_debug_visualizations) {
     // Publish expansions for debug
     auto now = _clock->now();
-    geometry_msgs::msg::PoseArray msg;
+    auto msg = std::make_unique<geometry_msgs::msg::PoseArray>();
     geometry_msgs::msg::Pose msg_pose;
-    msg.header.stamp = now;
-    msg.header.frame_id = _global_frame;
+    msg->header.stamp = now;
+    msg->header.frame_id = _global_frame;
     for (auto & e : *expansions) {
       msg_pose.position.x = std::get<0>(e);
       msg_pose.position.y = std::get<1>(e);
       msg_pose.orientation = getWorldOrientation(std::get<2>(e));
-      msg.poses.push_back(msg_pose);
+      msg->poses.push_back(msg_pose);
     }
-    _expansions_publisher->publish(msg);
+    _expansions_publisher->publish(std::move(msg));
 
     if (_planned_footprints_publisher->get_subscription_count() > 0) {
       // Clear all markers first
@@ -625,7 +628,7 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(_name + ".") != 0 && param_name != "resolution") {
+    if (param_name.find(_name + ".") != 0 && param_name != "resolution") {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
@@ -756,8 +759,8 @@ SmacPlannerHybrid::dynamicParametersCallback(std::vector<rclcpp::Parameter> para
         if (_angle_quantizations % _coarse_search_resolution != 0) {
           RCLCPP_WARN(
             _logger,
-              "coarse iteration should be an increment of the "
-              "number of angular bins configured. Disabling course research!"
+            "coarse iteration should be an increment of the "
+            "number of angular bins configured. Disabling course research!"
           );
           _coarse_search_resolution = 1;
         }

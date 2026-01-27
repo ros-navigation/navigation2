@@ -1,5 +1,5 @@
 # Test test executors
-ament_add_gtest(test_task_executors
+nav2_add_gtest(test_task_executors
   test_task_executors.cpp
 )
 target_link_libraries(test_task_executors
@@ -15,7 +15,7 @@ target_link_libraries(test_task_executors
 )
 
 # Test dynamic parameters
-ament_add_gtest(test_dynamic_parameters
+nav2_add_gtest(test_dynamic_parameters
   test_dynamic_parameters.cpp
 )
 target_link_libraries(test_dynamic_parameters

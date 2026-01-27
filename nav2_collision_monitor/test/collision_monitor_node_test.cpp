@@ -194,9 +194,9 @@ public:
     const std::chrono::nanoseconds & timeout);
 
 protected:
-  void cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg);
-  void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg);
-  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg);
+  void cmdVelOutCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg);
+  void actionStateCallback(nav2_msgs::msg::CollisionMonitorState::ConstSharedPtr msg);
+  void collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg);
 
   // CollisionMonitor node
   std::shared_ptr<CollisionMonitorWrapper> cm_;
@@ -217,16 +217,16 @@ protected:
   nav2::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_pub_;
   nav2::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_sub_;
 
-  geometry_msgs::msg::Twist::SharedPtr cmd_vel_out_;
+  geometry_msgs::msg::Twist::ConstSharedPtr cmd_vel_out_;
 
   // CollisionMonitor Action state
   nav2::Subscription<nav2_msgs::msg::CollisionMonitorState>::SharedPtr action_state_sub_;
-  nav2_msgs::msg::CollisionMonitorState::SharedPtr action_state_;
+  nav2_msgs::msg::CollisionMonitorState::ConstSharedPtr action_state_;
 
   // CollisionMonitor collision points markers
   nav2::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr
     collision_points_marker_sub_;
-  visualization_msgs::msg::MarkerArray::SharedPtr collision_points_marker_msg_;
+  visualization_msgs::msg::MarkerArray::ConstSharedPtr collision_points_marker_msg_;
 
   // Service client for setting CollisionMonitor parameters
   nav2::ServiceClient<rcl_interfaces::srv::SetParameters>::SharedPtr parameters_client_;
@@ -786,17 +786,17 @@ bool Tester::waitCollisionPointsMarker(const std::chrono::nanoseconds & timeout)
   return false;
 }
 
-void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::SharedPtr msg)
+void Tester::cmdVelOutCallback(geometry_msgs::msg::Twist::ConstSharedPtr msg)
 {
   cmd_vel_out_ = msg;
 }
 
-void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::SharedPtr msg)
+void Tester::actionStateCallback(nav2_msgs::msg::CollisionMonitorState::ConstSharedPtr msg)
 {
   action_state_ = msg;
 }
 
-void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::SharedPtr msg)
+void Tester::collisionPointsMarkerCallback(visualization_msgs::msg::MarkerArray::ConstSharedPtr msg)
 {
   collision_points_marker_msg_ = msg;
 }
@@ -945,6 +945,7 @@ TEST_F(Tester, testPolygonSource)
   sendTransforms(curr_time);
 
   // 1. Obstacle is far away from robot
+  curr_time = cm_->now();
   publishPolygon(4.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -954,6 +955,7 @@ TEST_F(Tester, testPolygonSource)
   ASSERT_NEAR(cmd_vel_out_->angular.z, 0.1, EPSILON);
 
   // 2. Obstacle is in limit robot zone
+  curr_time = cm_->now();
   publishPolygon(3.0, curr_time);
   EXPECT_TRUE(waitData(std::hypot(1.0, 3.0), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -970,6 +972,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_EQ(action_state_->polygon_name, "Limit");
 
   // 3. Obstacle is in slowdown robot zone
+  curr_time = cm_->now();
   publishPolygon(1.5, curr_time);
   EXPECT_TRUE(waitData(std::hypot(1.0, 1.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);
@@ -995,6 +998,7 @@ TEST_F(Tester, testPolygonSource)
   EXPECT_EQ(action_state_->polygon_name, "Stop");
 
   // 5. Restoring back normal operation
+  curr_time = cm_->now();
   publishPolygon(4.5, curr_time);
   ASSERT_TRUE(waitData(std::hypot(1.0, 4.5), 500ms, curr_time));
   publishCmdVel(0.5, 0.2, 0.1);

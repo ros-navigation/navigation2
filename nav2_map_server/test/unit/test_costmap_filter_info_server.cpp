@@ -117,10 +117,10 @@ public:
 
 protected:
   std::shared_ptr<InfoServerWrapper> info_server_;
-  nav2_msgs::msg::CostmapFilterInfo::SharedPtr info_;
+  nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr info_;
 
 private:
-  void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr msg)
   {
     std::lock_guard<mutex_t> guard(*getMutex());
     info_ = msg;
@@ -173,7 +173,7 @@ TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
   EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

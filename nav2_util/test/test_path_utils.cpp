@@ -21,6 +21,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_util/path_utils.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 geometry_msgs::msg::PoseStamped createPoseStamped(double x, double y)
 {
@@ -50,9 +51,10 @@ void generateCirclePath(
   const double angle_step = (end_angle - start_angle) / (num_points - 1);
   for (int i = 0; i < num_points; ++i) {
     const double angle = start_angle + i * angle_step;
-    path.poses.push_back(createPoseStamped(
-      center_x + radius * std::cos(angle),
-      center_y + radius * std::sin(angle)));
+    path.poses.push_back(
+      createPoseStamped(
+        center_x + radius * std::cos(angle),
+        center_y + radius * std::sin(angle)));
   }
 }
 
@@ -64,9 +66,10 @@ void generateCircleTrajectory(
   const double angle_step = (end_angle - start_angle) / (num_points - 1);
   for (int i = 0; i < num_points; ++i) {
     const double angle = start_angle + i * angle_step;
-    path.push_back(createPose(
-      center_x + radius * std::cos(angle),
-      center_y + radius * std::sin(angle)));
+    path.push_back(
+      createPose(
+        center_x + radius * std::cos(angle),
+        center_y + radius * std::sin(angle)));
   }
 }
 class CloverleafPathTest : public ::testing::Test
@@ -263,7 +266,8 @@ TEST_F(CuttingCornerWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(std::abs(result.distance), expected_distances[i], 0.15);
@@ -280,7 +284,8 @@ TEST_F(RetracingPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_NEAR(std::abs(result.distance), expected_distance, 1e-6);
@@ -296,7 +301,8 @@ TEST_F(ZigZagPathWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(std::abs(result.distance), 1.0);
@@ -312,7 +318,8 @@ TEST_F(HairpinTurnWindowedTest, WindowedSearch)
 
   for (size_t i = 0; i < robot_trajectory.size(); ++i) {
     const auto & robot_pose = robot_trajectory[i];
-    auto result = nav2_util::distance_from_path(target_path, robot_pose, start_index,
+    auto result = nav2_util::distance_from_path(
+      target_path, robot_pose, start_index,
       search_window);
     start_index = result.closest_segment_index;
     EXPECT_LT(std::abs(result.distance), 1.5);
@@ -368,4 +375,255 @@ TEST(PathUtilsTest, FourArgThrowsOnStartIndexOutOfBounds)
   EXPECT_THROW(
     nav2_util::distance_from_path(path, robot_pose, 100, 5.0),  // 100 >= 3
     std::runtime_error);
+}
+
+TEST(TransformPathTest, SuccessfulTransform)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+  geometry_msgs::msg::TransformStamped tf;
+  tf.header.stamp = rclcpp::Time(0.0);
+  tf.header.frame_id = "map";
+  tf.child_frame_id = "base_link";
+  tf.transform.translation.x = 1.0;
+  tf.transform.translation.y = 2.0;
+  tf.transform.translation.z = 0.0;
+  tf.transform.rotation.w = 1.0;
+
+  tf_buffer_->setTransform(tf, "test_authority");
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "map";
+  input_path.header.stamp = rclcpp::Time(0.0);
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 3.0;
+  pose.pose.position.y = 4.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "base_link", 1.0));
+
+  EXPECT_EQ(transformed_path.header.frame_id, "base_link");
+  EXPECT_EQ(transformed_path.poses.size(), 1u);
+  EXPECT_NEAR(transformed_path.poses.front().pose.position.x, 2.0, 1e-3);
+  EXPECT_NEAR(transformed_path.poses.front().pose.position.y, 2.0, 1e-3);
+  rclcpp::shutdown();
+}
+
+TEST(TransformPathTest, PathAlreadyInTargetFrame)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "map";
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 2.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_TRUE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "map", 0.1));
+
+  EXPECT_EQ(transformed_path.header.frame_id, "map");
+  EXPECT_EQ(transformed_path.poses.size(), 1u);
+  rclcpp::shutdown();
+}
+
+TEST(TransformPathTest, MissingTransform)
+{
+  rclcpp::init(0, nullptr);
+  rclcpp::Node::SharedPtr node_ = std::make_shared<rclcpp::Node>("test_transform_path");
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_ =
+    std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_ =
+    std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  nav_msgs::msg::Path input_path, transformed_path;
+  input_path.header.frame_id = "odom";
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header = input_path.header;
+  pose.pose.position.x = 1.0;
+  pose.pose.position.y = 1.0;
+  input_path.poses.push_back(pose);
+
+  EXPECT_FALSE(nav2_util::transformPathInTargetFrame(
+    input_path, transformed_path, *tf_buffer_, "base_link", 0.1));
+  rclcpp::shutdown();
+}
+
+TEST(UtilsTests, FindPathInversionTest)
+{
+  // Straight path, no inversions to be found
+  nav_msgs::msg::Path path;
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.0), 10u);
+
+  // To short to process
+  path.poses.erase(path.poses.begin(), path.poses.begin() + 7);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.0), 3u);
+
+  // Has inversion at index 10, so should return 11 for the first point afterwards
+  // 0 1 2 3 4 5 6 7 8 9 10 **9** 8 7 6 5 4 3 2 1
+  path.poses.clear();
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 10 - i;
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.0), 11u);
+
+  // In place rotation
+  path.poses.clear();
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  geometry_msgs::msg::PoseStamped last_pose;
+  last_pose = path.poses.back();
+  tf2::Quaternion q;
+  q.setRPY(0, 0, M_PI_2);  // rotate 90 degrees
+  last_pose.pose.orientation.x = q.x();
+  last_pose.pose.orientation.y = q.y();
+  last_pose.pose.orientation.z = q.z();
+  last_pose.pose.orientation.w = q.w();
+  path.poses.push_back(last_pose);
+  last_pose.pose.position.x = 11.0;
+  path.poses.push_back(last_pose);
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 1.57), 10u);
+
+  // Rotation never exceeds threshold (total 0.25 rad)
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x = 4.0;
+    q.setRPY(0, 0, i * 0.05);
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.5), path.poses.size());
+  // Multiple in-place rotations exceeding threshold after several steps
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  // In-place rotation sequence: small rotation 3 times
+  for (unsigned int i = 0; i < 3; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x = 4.0;  // No translation
+    q.setRPY(0, 0, (i + 1) * (M_PI / 6.0));
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 1.5), 7u);
+  // Now combine rotation and inversion
+  path.poses.clear();
+  for (unsigned int i = 0; i < 5; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  // In place rotation
+  for (unsigned int i = 0; i < 2; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    q.setRPY(0, 0, (i + 1) * M_PI_4 / 2.0);  // small steps: 22.5°, 45° (total 0.78rad accumulated)
+    pose.pose.orientation = tf2::toMsg(q);
+    path.poses.push_back(pose);
+  }
+  // Inversion
+  for (unsigned int i = 0; i < 3; i++) {
+    geometry_msgs::msg::PoseStamped pose = path.poses.back();
+    pose.pose.position.x -= 1.0;  // reversing direction
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::findFirstPathConstraint(path, true, 0.7), 6u);
+}
+
+TEST(UtilsTests, RemovePosesAfterPathInversionTest)
+{
+  nav_msgs::msg::Path path;
+  // straight path
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, true, 0.0), 0u);
+
+  // try empty path
+  path.poses.clear();
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, true, 0.0), 0u);
+
+  // cusping path
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = i;
+    path.poses.push_back(pose);
+  }
+  for (unsigned int i = 0; i != 10; i++) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 10 - i;
+    path.poses.push_back(pose);
+  }
+  EXPECT_EQ(nav2_util::removePosesAfterFirstConstraint(path, true, 0.0), 11u);
+  // Check to see if removed
+  EXPECT_EQ(path.poses.size(), 11u);
+  EXPECT_EQ(path.poses.back().pose.position.x, 10);
+}
+
+TEST(UtilsTests, IsPathUpdatedTest)
+{
+  auto makePose = [](double x, double y) {
+      geometry_msgs::msg::PoseStamped pose;
+      pose.pose.position.x = x;
+      pose.pose.position.y = y;
+      pose.pose.position.z = 0.0;
+      return pose;
+    };
+
+  // Same end pose but different size
+  nav_msgs::msg::Path old_path, new_path;
+  old_path.poses.push_back(makePose(0.0, 0.0));
+  old_path.poses.push_back(makePose(1.0, 1.0));
+  new_path.poses.push_back(makePose(0.0, 0.0));
+  new_path.poses.push_back(makePose(0.5, 0.5));
+  new_path.poses.push_back(makePose(1.0, 1.0));
+  EXPECT_TRUE(nav2_util::isPathUpdated(old_path, new_path));
+
+  // Same size and same end pose
+  old_path.poses.clear();
+  new_path.poses.clear();
+  old_path.poses.push_back(makePose(0.0, 0.0));
+  old_path.poses.push_back(makePose(1.0, 1.0));
+  new_path.poses.push_back(makePose(0.0, 0.0));
+  new_path.poses.push_back(makePose(1.0, 1.0));
+  EXPECT_FALSE(nav2_util::isPathUpdated(old_path, new_path));
 }

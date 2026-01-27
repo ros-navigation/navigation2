@@ -64,7 +64,7 @@ void ConstraintCritic::score(CriticData & data)
     unsigned int n_rows = data.state.vx.rows();
     unsigned int n_cols = data.state.vx.cols();
     Eigen::ArrayXXf sgn(n_rows, n_cols);
-    sgn = vx.unaryExpr([](const float x){return copysignf(1.0f, x);});
+    sgn = vx.unaryExpr([](const float x) {return copysignf(1.0f, x);});
 
     auto vel_total = sgn * (data.state.vx.square() + data.state.vy.square()).sqrt();
     if (power_ > 1u) {

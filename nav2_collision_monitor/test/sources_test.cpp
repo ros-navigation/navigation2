@@ -39,6 +39,9 @@
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
 #include "nav2_collision_monitor/polygon_source.hpp"
+#include "nav2_collision_monitor/costmap.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 
 using namespace std::chrono_literals;
 
@@ -55,6 +58,9 @@ static const char RANGE_NAME[]{"Range"};
 static const char RANGE_TOPIC[]{"range"};
 static const char POLYGON_NAME[]{"Polygon"};
 static const char POLYGON_TOPIC[]{"polygon"};
+static const char COSTMAP_NAME[]{"Costmap"};
+static const char COSTMAP_TOPIC[]{"costmap"};
+static const char INVALID_FRAME_ID[]{"invalid_frame"};
 static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
@@ -72,6 +78,7 @@ public:
     pointcloud_pub_.reset();
     range_pub_.reset();
     polygon_pub_.reset();
+    costmap_pub_.reset();
   }
 
   void publishScan(const rclcpp::Time & stamp, const double range)
@@ -249,12 +256,49 @@ public:
     polygon_pub_->publish(std::move(msg));
   }
 
+  void publishCostmap(const rclcpp::Time & stamp, const std::string & frame_id)
+  {
+    costmap_pub_ = this->create_publisher<nav2_msgs::msg::Costmap>(
+      COSTMAP_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    costmap_pub_->on_activate();
+
+    std::unique_ptr<nav2_msgs::msg::Costmap> msg =
+      std::make_unique<nav2_msgs::msg::Costmap>();
+
+    msg->header.frame_id = frame_id;
+    msg->header.stamp = stamp;
+
+    // Set up metadata for a 10x10 costmap
+    msg->metadata.map_load_time = stamp;
+    msg->metadata.update_time = stamp;
+    msg->metadata.layer = "test_layer";
+    msg->metadata.resolution = 0.1;  // 10cm resolution
+    msg->metadata.size_x = 10;
+    msg->metadata.size_y = 10;
+    msg->metadata.origin.position.x = 0.0;
+    msg->metadata.origin.position.y = 0.0;
+    msg->metadata.origin.position.z = 0.0;
+    msg->metadata.origin.orientation.w = 1.0;
+
+    // Create a costmap with some obstacles (lethal cost = 254)
+    // Set center cells as obstacles
+    msg->data.resize(100, 0);  // 10x10 = 100 cells
+    // Set some cells to lethal cost (254)
+    msg->data[44] = nav2_costmap_2d::LETHAL_OBSTACLE;  // Center-ish cell
+    msg->data[45] = nav2_costmap_2d::LETHAL_OBSTACLE;
+    msg->data[54] = nav2_costmap_2d::LETHAL_OBSTACLE;
+    msg->data[55] = nav2_costmap_2d::LETHAL_OBSTACLE;
+
+    costmap_pub_->publish(std::move(msg));
+  }
+
 private:
   nav2::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
   nav2::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
   nav2::Publisher<sensor_msgs::msg::Range>::SharedPtr range_pub_;
   nav2::Publisher<geometry_msgs::msg::PolygonInstanceStamped>::SharedPtr
     polygon_pub_;
+  nav2::Publisher<nav2_msgs::msg::Costmap>::SharedPtr costmap_pub_;
 };  // TestNode
 
 class ScanWrapper : public nav2_collision_monitor::Scan
@@ -349,6 +393,29 @@ public:
   }
 };  // PolygonWrapper
 
+class CostmapWrapper : public nav2_collision_monitor::CostmapSource
+{
+public:
+  CostmapWrapper(
+    const nav2::LifecycleNode::WeakPtr & node,
+    const std::string & source_name,
+    const std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+    const std::string & base_frame_id,
+    const std::string & global_frame_id,
+    const tf2::Duration & transform_tolerance,
+    const rclcpp::Duration & data_timeout,
+    const bool base_shift_correction)
+  : nav2_collision_monitor::CostmapSource(
+      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      transform_tolerance, data_timeout, base_shift_correction)
+  {}
+
+  bool dataReceived() const
+  {
+    return hasData();
+  }
+};  // CostmapWrapper
+
 class Tester : public ::testing::Test
 {
 public:
@@ -369,6 +436,7 @@ protected:
   bool waitPointCloud(const std::chrono::nanoseconds & timeout);
   bool waitRange(const std::chrono::nanoseconds & timeout);
   bool waitPolygon(const std::chrono::nanoseconds & timeout);
+  bool waitCostmap(const std::chrono::nanoseconds & timeout);
   void checkScan(const std::vector<nav2_collision_monitor::Point> & data);
   void checkPointCloud(const std::vector<nav2_collision_monitor::Point> & data);
   void checkRange(const std::vector<nav2_collision_monitor::Point> & data);
@@ -380,6 +448,7 @@ protected:
   std::shared_ptr<PointCloudWrapper> pointcloud_;
   std::shared_ptr<RangeWrapper> range_;
   std::shared_ptr<PolygonWrapper> polygon_;
+  std::shared_ptr<CostmapWrapper> costmap_;
 };  // Tester
 
 Tester::Tester()
@@ -398,6 +467,8 @@ Tester::~Tester()
   scan_.reset();
   pointcloud_.reset();
   range_.reset();
+  polygon_.reset();
+  costmap_.reset();
 
   test_node_.reset();
 
@@ -456,6 +527,20 @@ void Tester::createSources(const bool base_shift_correction)
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   polygon_->configure();
+
+  // Create Costmap object
+  test_node_->declare_parameter(
+    std::string(COSTMAP_NAME) + ".topic", rclcpp::ParameterValue(COSTMAP_TOPIC));
+  test_node_->declare_parameter(
+    std::string(COSTMAP_NAME) + ".cost_threshold", rclcpp::ParameterValue(253));
+  test_node_->declare_parameter(
+    std::string(COSTMAP_NAME) + ".treat_unknown_as_obstacle", rclcpp::ParameterValue(true));
+
+  costmap_ = std::make_shared<CostmapWrapper>(
+    test_node_, COSTMAP_NAME, tf_buffer_,
+    BASE_FRAME_ID, GLOBAL_FRAME_ID,
+    TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
+  costmap_->configure();
 }
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
@@ -534,6 +619,19 @@ bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
   rclcpp::Time start_time = test_node_->now();
   while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
     if (polygon_->dataReceived()) {
+      return true;
+    }
+    executor_->spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  return false;
+}
+
+bool Tester::waitCostmap(const std::chrono::nanoseconds & timeout)
+{
+  rclcpp::Time start_time = test_node_->now();
+  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+    if (costmap_->dataReceived()) {
       return true;
     }
     executor_->spin_some();
@@ -834,6 +932,29 @@ TEST_F(Tester, testPointCloudMinRange)
   // Point 3: (0.5 + 0.1, 0.0 + 0.1) = (0.6, 0.1) - range ≈ 0.522, passes
   EXPECT_NEAR(data[2].x, 0.6, EPSILON);
   EXPECT_NEAR(data[2].y, 0.1, EPSILON);
+}
+
+TEST_F(Tester, testCostmapTransformFailure)
+{
+  rclcpp::Time curr_time = test_node_->now();
+
+  createSources();
+
+  // Don't send transforms - this will cause transform failure
+  // Publish costmap with invalid frame_id that has no transform to base_frame
+  test_node_->publishCostmap(curr_time, INVALID_FRAME_ID);
+
+  // Wait until costmap receives the data
+  ASSERT_TRUE(waitCostmap(500ms));
+
+  // Try to get data - should return false due to transform failure
+  std::vector<nav2_collision_monitor::Point> data;
+  bool result = costmap_->getData(curr_time, data);
+
+  // getData should return false when transform is unavailable
+  ASSERT_FALSE(result);
+  // Data should be empty
+  ASSERT_EQ(data.size(), 0u);
 }
 
 int main(int argc, char ** argv)

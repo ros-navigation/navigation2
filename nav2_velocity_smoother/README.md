@@ -20,6 +20,7 @@ This package was created to do the following:
 - Provide open loop and closed loop options
 - Component nodes for use in single-process systems and stand-alone node format
 - Dynamically reconfigurable parameters
+- Smooth command timestamps upon different planning and smoothing frequencies
 
 ## Design
 
@@ -30,7 +31,7 @@ Thusly, it takes in a command via the `cmd_vel` topic and produces a smoothed ou
 The node is designed on a regular timer running at a configurable rate.
 This is in contrast to simply computing a smoothed velocity command in the callback of each `cmd_vel` input from Nav2.
 This allows us to interpolate commands at a higher frequency than Nav2's local trajectory planners can provide.
-For example, if a local trajectory planner is running at 20hz, the velocity smoother can run at 100hz to provide approximately 5 messages to a robot controller which will be smoothed by kinematic limits at each timestep.
+For example, if a local trajectory planner is running at 20hz, the velocity smoother can run at 100hz to provide approximately 5 messages to a robot controller which will be smoothed by kinematic limits at each timestep. Furthermore, the timestamps of the command messages will also be smoothed according to the rule: `cmd_vel_timestamp = cmd_vel_timestamp_of_last_input_command + (now() - last_receive_time_of_input_command)`
 This provides a more regular stream of commands to a robot base and interpolates commands between the current velocity and the desired velocity more finely for smoother acceleration / motion profiles.
 While this is not required, it is a nice design feature.
 It is possible to also simply run the smoother at `cmd_vel` rate to smooth velocities alone without interpolation.

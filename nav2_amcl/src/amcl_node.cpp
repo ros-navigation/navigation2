@@ -23,6 +23,8 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <ctime>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -58,6 +60,12 @@ AmclNode::AmclNode(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("amcl", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
+  init_pose_[0] = 0.0;
+  init_pose_[1] = 0.0;
+  init_pose_[2] = 0.0;
+  init_cov_[0] = 0.0;
+  init_cov_[1] = 0.0;
+  init_cov_[2] = 0.0;
 }
 
 AmclNode::~AmclNode()
@@ -355,7 +363,8 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::initialPoseReceived(
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -391,7 +400,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(*msg);
+  handleInitialPose(last_published_pose_);
 }
 
 void
@@ -947,6 +956,9 @@ AmclNode::initParameters()
   scan_topic_ = this->declare_or_get_parameter("scan_topic", std::string{"scan"});
   map_topic_ = this->declare_or_get_parameter("map_topic", std::string{"map"});
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
+  allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
+    "allow_parameter_qos_overrides", true);
+  random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -993,47 +1005,53 @@ AmclNode::initParameters()
 }
 
 rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0 &&
+      if (parameter.as_double() <= 0.0 && param_name == "save_pose_rate") {
+        RCLCPP_WARN(
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0 &&  // NOLINT(readability/braces)
         (param_name != "laser_min_range" || param_name != "laser_max_range"))
       {
         RCLCPP_WARN(
-        get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (parameter.as_int() <= 0.0 && param_name == "resample_interval") {
         RCLCPP_WARN(
-        get_logger(), "The value of resample_interval is incorrectly set, "
-        "it should be >0. Ignoring parameter update.");
+          get_logger(), "The value of resample_interval is incorrectly set, "
+          "it should be >0. Ignoring parameter update.");
         result.successful = false;
       } else if (parameter.as_int() < 0.0) {
         RCLCPP_WARN(
-        get_logger(), "The value of parameter '%s' is incorrectly set to %ld, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_int());
+          get_logger(), "The value of parameter '%s' is incorrectly set to %ld, "
+          "it should be >=0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_int());
         result.successful = false;
       } else if (param_name == "max_particles" && parameter.as_int() < min_particles_) {
         RCLCPP_WARN(
-        get_logger(), "The value of max_particles is incorrectly set, "
-        "it should be larger than min_particles. Ignoring parameter update.");
+          get_logger(), "The value of max_particles is incorrectly set, "
+          "it should be larger than min_particles. Ignoring parameter update.");
         result.successful = false;
       } else if (param_name == "min_particles" && parameter.as_int() > max_particles_) {
         RCLCPP_WARN(
-        get_logger(), "The value of min_particles is incorrectly set, "
-        "it should be smaller than max particles. Ignoring parameter update.");
+          get_logger(), "The value of min_particles is incorrectly set, "
+          "it should be smaller than max particles. Ignoring parameter update.");
         result.successful = false;
       }
     }
@@ -1043,7 +1061,7 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
 
 void
 AmclNode::updateParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -1215,12 +1233,12 @@ AmclNode::updateParametersCallback(
     map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
       map_topic_,
       std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS());
+      nav2::qos::LatchedSubscriptionQoS(3));
   }
 }
 
 void
-AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (!nav2::validateMsg(*msg)) {
@@ -1343,8 +1361,8 @@ AmclNode::initTransforms()
 void
 AmclNode::initMessageFilters()
 {
-  auto sub_opt = rclcpp::SubscriptionOptions();
-  sub_opt.callback_group = callback_group_;
+  auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
@@ -1387,7 +1405,7 @@ AmclNode::initPubSub()
   map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     map_topic_,
     std::bind(&AmclNode::mapReceived, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS());
+    nav2::qos::LatchedSubscriptionQoS(3));
 
   RCLCPP_INFO(get_logger(), "Subscribed to map topic.");
 }
@@ -1397,17 +1415,20 @@ AmclNode::initServices()
 {
   global_loc_srv_ = create_service<std_srvs::srv::Empty>(
     "reinitialize_global_localization",
-    std::bind(&AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
+    std::bind(
+      &AmclNode::globalLocalizationCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
   initial_guess_srv_ = create_service<nav2_msgs::srv::SetInitialPose>(
     "set_initial_pose",
-    std::bind(&AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &AmclNode::initialPoseReceivedSrv, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   nomotion_update_srv_ = create_service<std_srvs::srv::Empty>(
     "request_nomotion_update",
-    std::bind(&AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &AmclNode::nomotionUpdateCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 }
 
@@ -1445,6 +1466,17 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
+
+  // Seed RNG used by PF resampling and pose generation.
+  // Keep legacy behavior (time-based) unless user explicitly sets a seed.
+  if (random_seed_ >= 0) {
+    // `srand48` expects a platform `long` seed. We avoid using `long` in our code and accept
+    // truncation when seeding.
+    srand48(static_cast<int>(random_seed_));
+  } else {
+    srand48(static_cast<int>(std::time(nullptr)));
+  }
+
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

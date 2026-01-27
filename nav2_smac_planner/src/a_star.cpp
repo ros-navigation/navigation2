@@ -232,7 +232,8 @@ void AStarAlgorithm<NodeT>::setGoal(
     }
 
     NodeT::resetObstacleHeuristic(
-      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my);
+      _collision_checker->getCostmapROS(), _start->pose.x, _start->pose.y, mx, my,
+        NodeT::motion_table.downsample_obstacle_heuristic);
   }
 
   _goal_manager.setRefGoalCoordinates(ref_goal_coord);
@@ -350,7 +351,8 @@ bool AStarAlgorithm<NodeT>::createPath(
   }
 
   NodeVector coarse_check_goals, fine_check_goals;
-  _goal_manager.prepareGoalsForAnalyticExpansion(coarse_check_goals, fine_check_goals,
+  _goal_manager.prepareGoalsForAnalyticExpansion(
+    coarse_check_goals, fine_check_goals,
     _coarse_search_resolution);
 
   // 0) Add starting point to the open set
