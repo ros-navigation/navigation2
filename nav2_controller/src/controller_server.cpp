@@ -736,7 +736,7 @@ void ControllerServer::computeAndPublishVelocity()
       current_path_, robot_pose_in_path_frame.pose, start_index_, params_->search_window);
 
     // Calculate heading error
-    double heading_error = 0.0;
+    double heading_tracking_error = 0.0;
     if (path_search_result.closest_segment_index <
       current_path_.poses.size() - 1)
     {
@@ -752,15 +752,15 @@ void ControllerServer::computeAndPublishVelocity()
         path_yaw = angles::normalize_angle(path_yaw + M_PI);
       }
       double robot_yaw = tf2::getYaw(robot_pose_in_path_frame.pose.orientation);
-      heading_error = angles::shortest_angular_distance(
+      heading_tracking_error = angles::shortest_angular_distance(
         robot_yaw, path_yaw);
     }
 
     // Create tracking error message
     auto tracking_feedback_msg = std::make_unique<nav2_msgs::msg::TrackingFeedback>();
     tracking_feedback_msg->header = pose.header;
-    tracking_feedback_msg->position_error = path_search_result.distance;
-    tracking_feedback_msg->heading_error = heading_error;
+    tracking_feedback_msg->position_tracking_error = path_search_result.distance;
+    tracking_feedback_msg->heading_tracking_error = heading_tracking_error;
     tracking_feedback_msg->current_path_index = path_search_result.closest_segment_index;
     tracking_feedback_msg->robot_pose = pose;
     tracking_feedback_msg->distance_to_goal = current_distance_to_goal;

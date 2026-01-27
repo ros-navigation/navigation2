@@ -23,7 +23,7 @@ builtin_interfaces/Duration navigation_time
 builtin_interfaces/Duration estimated_time_remaining
 int16 number_of_recoveries
 float32 distance_remaining
-float32 position_error
-float32 heading_error
+float32 position_tracking_error
+float32 heading_tracking_error
 int16 number_of_poses_remaining
 WaypointStatus[] waypoint_statuses

@@ -1627,9 +1627,9 @@ inline std::string Nav2Panel::toLabel(T & msg)
     "</td></tr><tr><td width=150>Distance remaining:</td><td>" +
     toString(msg.distance_remaining, 2) + " m"
     "</td></tr><tr><td width=150>Position error:</td><td>" +
-    toString(msg.position_error, 2) + " m"
+    toString(msg.position_tracking_error, 2) + " m"
     "</td></tr><tr><td width=150>Heading error:</td><td>" +
-    toString(msg.heading_error, 2) + " rad"
+    toString(msg.heading_tracking_error, 2) + " rad"
     "</td></tr><tr><td width=150>Time taken:</td><td>" +
     toString(rclcpp::Duration(msg.navigation_time).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Recoveries:</td><td>" +
