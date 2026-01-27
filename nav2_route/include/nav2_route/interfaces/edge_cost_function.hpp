@@ -80,6 +80,9 @@ public:
    * to use for all immediate requests, or otherwise prepare for scoring
    */
   virtual void prepare() {}
+
+  virtual void on_activate() {}
+  virtual void on_deactivate() {}
 };
 
 }  // namespace nav2_route

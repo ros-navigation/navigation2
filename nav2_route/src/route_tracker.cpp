@@ -140,15 +140,11 @@ void RouteTracker::publishFeedback(
 
 void RouteTracker::on_activate()
 {
-  if(operations_manager_) {
-    operations_manager_->on_activate();
-  }
+  operations_manager_->on_activate();
 }
 void RouteTracker::on_deactivate()
 {
-  if(operations_manager_) {
-    operations_manager_->on_deactivate();
-  }
+  operations_manager_->on_deactivate();
 }
 
 TrackerResult RouteTracker::trackRoute(

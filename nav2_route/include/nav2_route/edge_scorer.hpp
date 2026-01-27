@@ -77,6 +77,9 @@ public:
    */
   int numPlugins() const;
 
+  void on_activate();
+  void on_deactivate();
+
 protected:
   pluginlib::ClassLoader<EdgeCostFunction> plugin_loader_;
   std::vector<EdgeCostFunction::Ptr> plugins_;

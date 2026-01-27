@@ -83,6 +83,9 @@ public:
     const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,
     std::shared_ptr<nav2_msgs::srv::DynamicEdges::Response> response);
 
+  void on_activate();
+  void on_deactivate();
+
 protected:
   rclcpp::Logger logger_{rclcpp::get_logger("DynamicEdgesScorer")};
   std::string name_;

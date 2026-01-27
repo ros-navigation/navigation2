@@ -74,6 +74,9 @@ public:
     const std::vector<unsigned int> & blocked_ids,
     const RouteRequest & route_request);
 
+  virtual void on_activate();
+  virtual void on_deactivate();
+
 protected:
   /**
    * @brief Reset the search state of the graph nodes

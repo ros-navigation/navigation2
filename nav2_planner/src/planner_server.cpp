@@ -163,9 +163,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // is_path_valid_service_->initialize();
 
-  if(is_path_valid_service_) {
-    is_path_valid_service_->on_activate();
-  }
+  is_path_valid_service_->on_activate();
 
   // create bond connection
   createBond();
