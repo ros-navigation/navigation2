@@ -34,19 +34,19 @@ void CostmapScorer::configure(
   // Find whether to use average or maximum cost values
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".use_maximum", rclcpp::ParameterValue(true));
-  use_max_ = static_cast<float>(node->get_parameter(getName() + ".use_maximum").as_bool());
+  use_max_ = node->get_parameter(getName() + ".use_maximum").as_bool();
 
   // Edge is invalid if its in collision
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".invalid_on_collision", rclcpp::ParameterValue(true));
   invalid_on_collision_ =
-    static_cast<float>(node->get_parameter(getName() + ".invalid_on_collision").as_bool());
+    node->get_parameter(getName() + ".invalid_on_collision").as_bool();
 
   // Edge is invalid if edge is off the costmap
   nav2_util::declare_parameter_if_not_declared(
     node, getName() + ".invalid_off_map", rclcpp::ParameterValue(true));
   invalid_off_map_ =
-    static_cast<float>(node->get_parameter(getName() + ".invalid_off_map").as_bool());
+    node->get_parameter(getName() + ".invalid_off_map").as_bool();
 
   // Max cost to be considered valid
   nav2_util::declare_parameter_if_not_declared(
