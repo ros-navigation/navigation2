@@ -281,6 +281,9 @@ protected:
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
 
+  // Default timeout value when cancelling actions during node halt
+  std::chrono::milliseconds default_cancel_timeout_;
+
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
 

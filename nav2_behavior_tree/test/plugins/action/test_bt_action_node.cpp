@@ -147,7 +147,9 @@ public:
 
   BT::NodeStatus on_cancelled() override
   {
-    config().blackboard->set("sequence", result_.result->sequence);
+    if (result_.result) {
+      config().blackboard->set("sequence", result_.result->sequence);
+    }
     config().blackboard->set("on_cancelled_triggered", true);
     return BT::NodeStatus::SUCCESS;
   }
