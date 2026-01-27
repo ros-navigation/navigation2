@@ -95,10 +95,10 @@ protected:
   }
 };
 
-class DummyClearCostmapService : public DummyService<nav2_msgs::srv::ClearEntireCostmap>
+class DummyClearEntireCostmapService : public DummyService<nav2_msgs::srv::ClearEntireCostmap>
 {
 public:
-  explicit DummyClearCostmapService(
+  explicit DummyClearEntireCostmapService(
     const rclcpp::Node::SharedPtr & node,
     std::string service_name)
   : DummyService(node, service_name) {}
@@ -130,8 +130,8 @@ public:
   void reset() const;
 
 public:
-  std::unique_ptr<DummyClearCostmapService> clear_local_costmap_server;
-  std::unique_ptr<DummyClearCostmapService> clear_global_costmap_server;
+  std::unique_ptr<DummyClearEntireCostmapService> clear_local_costmap_server;
+  std::unique_ptr<DummyClearEntireCostmapService> clear_global_costmap_server;
   std::unique_ptr<DummyComputePathToPoseActionServer> compute_path_to_pose_server;
   std::unique_ptr<DummyFollowPathActionServer> follow_path_server;
   std::unique_ptr<DummyActionServer<nav2_msgs::action::Spin>> spin_server;
