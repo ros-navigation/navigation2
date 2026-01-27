@@ -188,9 +188,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   // is_path_valid_service_->initialize();
 
-  if(is_path_valid_service_) {
-    is_path_valid_service_->on_activate();
-  }
+  is_path_valid_service_->on_activate();
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = add_on_set_parameters_callback(

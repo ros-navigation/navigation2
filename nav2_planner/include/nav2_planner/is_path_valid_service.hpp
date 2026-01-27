@@ -47,7 +47,7 @@ public:
    * @param costmap_update_timeout Timeout for waiting for costmap updates
    */
   IsPathValidService(
-    nav2::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::WeakPtr node,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const rclcpp::Duration & costmap_update_timeout)
   : nav2::ServiceServer<nav2_msgs::srv::IsPathValid>(
@@ -59,7 +59,7 @@ public:
   ),
     costmap_ros_(costmap_ros),
     costmap_update_timeout_(costmap_update_timeout),
-    logger_(node->get_logger()) // <--- INITIALIZE LOGGER HERE
+    logger_(node.lock()->get_logger())  // <--- INITIALIZE LOGGER HERE
   {
     costmap_ = costmap_ros_->getCostmap();
   }
