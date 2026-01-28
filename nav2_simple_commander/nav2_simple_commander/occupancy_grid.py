@@ -94,7 +94,7 @@ class PyOccupancyGrid:
         """Get costmap timestamp."""
         return self.costmap_timestamp
 
-    def getCostXY(self, mx: int, my: int) -> np.uint8:
+    def getCostXY(self, mx: int, my: int) -> np.int8:
         """
         Get the cost of a cell in the costmap using map coordinate XY.
 
@@ -105,12 +105,12 @@ class PyOccupancyGrid:
 
         Returns
         -------
-            np.uint8: cost of a cell
+            np.int8: cost of a cell
 
         """
-        return np.uint8(self.costmap[self.getIndex(mx, my)])
+        return np.int8(self.costmap[self.getIndex(mx, my)])
 
-    def getCostIdx(self, index: int) -> np.uint8:
+    def getCostIdx(self, index: int) -> np.int8:
         """
         Get the cost of a cell in the costmap using Index.
 
@@ -120,10 +120,10 @@ class PyOccupancyGrid:
 
         Returns
         -------
-            np.uint8: cost of a cell
+            np.int8: cost of a cell
 
         """
-        return np.uint8(self.costmap[index])
+        return np.int8(self.costmap[index])
 
     def setCost(self, mx: int, my: int, cost: np.uint8) -> None:
         """
