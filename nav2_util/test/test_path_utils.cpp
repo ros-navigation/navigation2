@@ -599,7 +599,7 @@ TEST(UtilsTests, RemovePosesAfterPathInversionTest)
   EXPECT_EQ(path.poses.back().pose.position.x, 10);
 }
 
-TEST(UtilsTests, IsPathUpdatedTest)
+TEST(UtilsTests, IsPathOrGoalUpdatedTest)
 {
   auto makePose = [](double x, double y) {
       geometry_msgs::msg::PoseStamped pose;
@@ -617,6 +617,7 @@ TEST(UtilsTests, IsPathUpdatedTest)
   new_path.poses.push_back(makePose(0.5, 0.5));
   new_path.poses.push_back(makePose(1.0, 1.0));
   EXPECT_TRUE(nav2_util::isPathUpdated(old_path, new_path));
+  EXPECT_TRUE(nav2_util::isPathOrGoalUpdated(old_path, new_path));
 
   // Same size and same end pose
   old_path.poses.clear();
@@ -626,4 +627,15 @@ TEST(UtilsTests, IsPathUpdatedTest)
   new_path.poses.push_back(makePose(0.0, 0.0));
   new_path.poses.push_back(makePose(1.0, 1.0));
   EXPECT_FALSE(nav2_util::isPathUpdated(old_path, new_path));
+  EXPECT_FALSE(nav2_util::isPathOrGoalUpdated(old_path, new_path));
+
+  // Different end pose
+  old_path.poses.clear();
+  new_path.poses.clear();
+  old_path.poses.push_back(makePose(0.0, 0.0));
+  old_path.poses.push_back(makePose(1.0, 1.0));
+  new_path.poses.push_back(makePose(0.0, 0.0));
+  new_path.poses.push_back(makePose(2.0, 2.0));
+  EXPECT_FALSE(nav2_util::isPathUpdated(old_path, new_path));
+  EXPECT_TRUE(nav2_util::isPathOrGoalUpdated(old_path, new_path));
 }
