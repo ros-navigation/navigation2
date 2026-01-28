@@ -205,9 +205,6 @@ AmclNode::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   pf_ = nullptr;
 
   // Laser Scan
-  for (const auto & laser : lasers_) {
-    delete laser;
-  }
   lasers_.clear();
   lasers_update_.clear();
   frame_to_laser_.clear();
@@ -642,7 +639,7 @@ bool AmclNode::updateFilter(
   const pf_vector_t & pose)
 {
   nav2_amcl::LaserData ldata;
-  ldata.laser = lasers_[laser_index];
+  ldata.laser = lasers_[laser_index].get();
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
   // min, max, and increment angles of the laser in the base frame.
@@ -882,25 +879,25 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tf_broadcaster_->sendTransform(tmp_tf_stamped);
 }
 
-nav2_amcl::Laser *
+std::unique_ptr<nav2_amcl::Laser>
 AmclNode::createLaserObject()
 {
   RCLCPP_INFO(get_logger(), "createLaserObject");
 
   if (sensor_model_type_ == "beam") {
-    return new nav2_amcl::BeamModel(
+    return std::make_unique<nav2_amcl::BeamModel>(
       z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
       0.0, max_beams_, map_);
   }
 
   if (sensor_model_type_ == "likelihood_field_prob") {
-    return new nav2_amcl::LikelihoodFieldModelProb(
+    return std::make_unique<nav2_amcl::LikelihoodFieldModelProb>(
       z_hit_, z_rand_, sigma_hit_,
       laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
       beam_skip_error_threshold_, max_beams_, map_);
   }
 
-  return new nav2_amcl::LikelihoodFieldModel(
+  return std::make_unique<nav2_amcl::LikelihoodFieldModel>(
     z_hit_, z_rand_, sigma_hit_,
     laser_likelihood_max_dist_, max_beams_, map_);
 }
@@ -1220,9 +1217,6 @@ AmclNode::updateParametersCallback(
 
   // Re-initialize the lasers and it's filters
   if (reinit_laser) {
-    for(auto & laser : lasers_) {
-      delete laser;
-    }
     lasers_.clear();
     lasers_update_.clear();
     frame_to_laser_.clear();
@@ -1309,9 +1303,6 @@ AmclNode::freeMapDependentMemory()
 
   // Clear queued laser objects because they hold pointers to the existing
   // map, #5202.
-  for (auto & laser : lasers_) {
-    delete laser;
-  }
   lasers_.clear();
   lasers_update_.clear();
   frame_to_laser_.clear();
