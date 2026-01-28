@@ -73,7 +73,7 @@ ParameterHandler::ParameterHandler(
   params_.footprint_scaling_linear_vel = node->declare_or_get_parameter(
     plugin_name_ + ".footprint_scaling_linear_vel", 0.5);
   params_.footprint_scaling_factor = node->declare_or_get_parameter(
-    plugin_name_ + ".footprint_scaling_factor", 0.0);
+    plugin_name_ + ".footprint_scaling_factor", 0.25);
   params_.footprint_scaling_step = node->declare_or_get_parameter(
     plugin_name_ + ".footprint_scaling_step", 0.1);
   if (params_.initial_rotation && params_.allow_backward) {
