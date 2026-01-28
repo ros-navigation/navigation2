@@ -156,16 +156,13 @@ bool ClearCostmapService::clearAroundPose(
       "clear costmap around pose");
   } else {
     // Clear all clearable layers (default behavior)
-    bool any_plugin_cleared = false;
     for (auto & layer : *layers) {
       if (layer->isClearable()) {
         auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
         clearLayerRegion(costmap_layer, x, y, reset_distance, false);
-        any_plugin_cleared = true;
       }
     }
-
-    return any_plugin_cleared;
+    return true;
   }
 }
 
@@ -193,16 +190,13 @@ bool ClearCostmapService::clearRegion(
       "clear costmap region");
   } else {
     // Clear all clearable layers (default behavior)
-    bool any_plugin_cleared = false;
     for (auto & layer : *layers) {
       if (layer->isClearable()) {
         auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
         clearLayerRegion(costmap_layer, x, y, reset_distance, invert);
-        any_plugin_cleared = true;
       }
     }
-
-    return any_plugin_cleared;
+    return true;
   }
 }
 
@@ -260,13 +254,11 @@ bool ClearCostmapService::clearEntirely(const std::vector<std::string> & plugins
   }
 }
 
-void ClearCostmapService::validateAndCategorizePlugins(
+void ClearCostmapService::validatePlugins(
   const std::vector<std::string> & requested_plugins,
   const std::vector<std::shared_ptr<Layer>> * layers,
-  std::vector<std::string> & valid_plugins,
   std::vector<std::string> & invalid_plugins) const
 {
-  valid_plugins.clear();
   invalid_plugins.clear();
 
   for (const auto & requested_plugin : requested_plugins) {
@@ -285,8 +277,6 @@ void ClearCostmapService::validateAndCategorizePlugins(
       invalid_plugins.push_back(requested_plugin + " (not found)");
     } else if (!clearable) {
       invalid_plugins.push_back(requested_plugin + " (not clearable)");
-    } else {
-      valid_plugins.push_back(requested_plugin);
     }
   }
 }
@@ -298,12 +288,9 @@ bool ClearCostmapService::validateAndClearPlugins(
   const std::string & operation_name) const
 {
   std::vector<std::string> invalid_plugins;
-  std::vector<std::string> valid_plugins;
 
-  // Validate all requested plugins
-  validateAndCategorizePlugins(plugins, layers, valid_plugins, invalid_plugins);
+  validatePlugins(plugins, layers, invalid_plugins);
 
-  // Log validation errors
   if (!invalid_plugins.empty()) {
     std::string error_msg = "Invalid plugin(s) requested for clearing: ";
     for (size_t i = 0; i < invalid_plugins.size(); ++i) {
@@ -313,58 +300,23 @@ bool ClearCostmapService::validateAndClearPlugins(
       }
     }
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
-  }
-
-  // Clear all valid plugins using the provided callback
-  bool any_plugin_cleared = false;
-  for (auto & layer : *layers) {
-    if (std::find(valid_plugins.begin(), valid_plugins.end(),
-        layer->getName()) != valid_plugins.end())
-    {
-      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
-      clear_callback(costmap_layer);
-      any_plugin_cleared = true;
-    }
-  }
-
-  // Return failure if any requested plugin was invalid
-  if (!invalid_plugins.empty()) {
     RCLCPP_ERROR(
       logger_,
-      "Failed to %s: %zu invalid plugin(s) out of %zu requested",
+      "Failed to %s: %zu invalid plugin(s) out of %zu requested. No layers were cleared.",
       operation_name.c_str(), invalid_plugins.size(), plugins.size());
     return false;
   }
 
-  if (!any_plugin_cleared) {
-    RCLCPP_ERROR(logger_, "No plugins were cleared in %s", operation_name.c_str());
-    return false;
+  for (auto & layer : *layers) {
+    if (std::find(plugins.begin(), plugins.end(),
+        layer->getName()) != plugins.end())
+    {
+      auto costmap_layer = std::static_pointer_cast<CostmapLayer>(layer);
+      clear_callback(costmap_layer);
+    }
   }
 
   return true;
-}
-
-bool ClearCostmapService::shouldClearLayer(
-  const std::shared_ptr<Layer> & layer,
-  const std::vector<std::string> & plugins) const
-{
-  // If no specific plugins requested, use default behavior (clear all clearable layers)
-  if (plugins.empty()) {
-    return layer->isClearable();
-  }
-
-  // If specific plugins requested, check if this layer is in the list AND clearable
-  bool is_in_plugin_list = std::find(plugins.begin(), plugins.end(),
-    layer->getName()) != plugins.end();
-  if (is_in_plugin_list && !layer->isClearable()) {
-    RCLCPP_WARN(
-      logger_,
-      "Plugin '%s' was requested to be cleared but is not clearable. Skipping.",
-      layer->getName().c_str());
-    return false;
-  }
-
-  return is_in_plugin_list && layer->isClearable();
 }
 
 bool ClearCostmapService::getPosition(double & x, double & y) const
