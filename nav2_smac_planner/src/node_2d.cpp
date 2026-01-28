@@ -21,18 +21,15 @@
 namespace nav2_smac_planner
 {
 
-// defining static member for all instance to share
-std::vector<int> Node2D::_neighbors_grid_offsets;
-float Node2D::cost_travel_multiplier = 2.0;
-
-Node2D::Node2D(const uint64_t index)
+Node2D::Node2D(const uint64_t index, NodeContext * ctx)
 : parent(nullptr),
   _cell_cost(std::numeric_limits<float>::quiet_NaN()),
   _accumulated_cost(std::numeric_limits<float>::max()),
   _index(index),
   _was_visited(false),
   _is_queued(false),
-  _in_collision(false)
+  _in_collision(false),
+  _ctx(ctx)
 {
 }
 
@@ -76,11 +73,11 @@ float Node2D::getTraversalCost(const NodePtr & child)
 
   // If a diagonal move, travel cost is sqrt(2) not 1.0.
   if ((dx * dx + dy * dy) > 1.05) {
-    return sqrt_2 * (1.0 + cost_travel_multiplier * normalized_cost);
+    return sqrt_2 * (1.0 + _ctx->cost_travel_multiplier * normalized_cost);
   }
 
   // Length = 1.0
-  return 1.0 + cost_travel_multiplier * normalized_cost;
+  return 1.0 + _ctx->cost_travel_multiplier * normalized_cost;
 }
 
 float Node2D::getHeuristicCost(
@@ -95,6 +92,7 @@ float Node2D::getHeuristicCost(
 }
 
 void Node2D::initMotionModel(
+  NodeContext * ctx,
   const MotionModel & motion_model,
   unsigned int & x_size_uint,
   unsigned int & /*size_y*/,
@@ -106,8 +104,8 @@ void Node2D::initMotionModel(
   }
 
   int x_size = static_cast<int>(x_size_uint);
-  cost_travel_multiplier = search_info.cost_penalty;
-  _neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
+  ctx->cost_travel_multiplier = search_info.cost_penalty;
+  ctx->neighbors_grid_offsets = {-1, +1, -x_size, +x_size, -x_size - 1,
     -x_size + 1, +x_size - 1, +x_size + 1};
 }
 
@@ -135,8 +133,8 @@ void Node2D::getNeighbors(
   const Coordinates coord_parent = getCoords(this->getIndex());
   Coordinates child;
 
-  for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
-    index = node_i + _neighbors_grid_offsets[i];
+  for (unsigned int i = 0; i != _ctx->neighbors_grid_offsets.size(); ++i) {
+    index = node_i + _ctx->neighbors_grid_offsets[i];
 
     // Check for wrap around conditions
     child = getCoords(index);
