@@ -32,24 +32,6 @@ FollowingServer::FollowingServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("following_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
-
-  declare_parameter("controller_frequency", 50.0);
-  declare_parameter("detection_timeout", 2.0);
-  declare_parameter("rotate_to_object_timeout", 10.0);
-  declare_parameter("static_object_timeout", -1.0);
-  declare_parameter("linear_tolerance", 0.15);
-  declare_parameter("angular_tolerance", 0.15);
-  declare_parameter("max_retries", 3);
-  declare_parameter("base_frame", "base_link");
-  declare_parameter("fixed_frame", "odom");
-  declare_parameter("filter_coef", 0.1);
-  declare_parameter("desired_distance", 1.0);
-  declare_parameter("skip_orientation", true);
-  declare_parameter("search_by_rotating", false);
-  declare_parameter("search_angle", M_PI_2);
-  declare_parameter("odom_topic", "odom");
-  declare_parameter("odom_duration", 0.3);
-  declare_parameter("transform_tolerance", 0.1);
 }
 
 nav2::CallbackReturn
@@ -58,30 +40,43 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   RCLCPP_INFO(get_logger(), "Configuring %s", get_name());
   auto node = shared_from_this();
 
-  get_parameter("controller_frequency", controller_frequency_);
-  get_parameter("detection_timeout", detection_timeout_);
-  get_parameter("rotate_to_object_timeout", rotate_to_object_timeout_);
-  get_parameter("static_object_timeout", static_object_timeout_);
-  get_parameter("linear_tolerance", linear_tolerance_);
-  get_parameter("angular_tolerance", angular_tolerance_);
-  get_parameter("max_retries", max_retries_);
-  get_parameter("base_frame", base_frame_);
-  get_parameter("fixed_frame", fixed_frame_);
-  get_parameter("desired_distance", desired_distance_);
-  get_parameter("skip_orientation", skip_orientation_);
-  get_parameter("search_by_rotating", search_by_rotating_);
-  get_parameter("search_angle", search_angle_);
-  get_parameter("transform_tolerance", transform_tolerance_);
+  controller_frequency_ = node->declare_or_get_parameter(
+    "controller_frequency", 50.0);
+  detection_timeout_ = node->declare_or_get_parameter(
+    "detection_timeout", 2.0);
+  rotate_to_object_timeout_ = node->declare_or_get_parameter(
+    "rotate_to_object_timeout", 10.0);
+  static_object_timeout_ = node->declare_or_get_parameter(
+    "static_object_timeout", -1.0);
+  linear_tolerance_ = node->declare_or_get_parameter(
+    "linear_tolerance", 0.15);
+  angular_tolerance_ = node->declare_or_get_parameter(
+    "angular_tolerance", 0.15);
+  max_retries_ = node->declare_or_get_parameter("max_retries", 3);
+  base_frame_ = node->declare_or_get_parameter(
+    "base_frame", std::string("base_link"));
+  fixed_frame_ = node->declare_or_get_parameter(
+    "fixed_frame", std::string("odom"));
+  desired_distance_ = node->declare_or_get_parameter(
+    "desired_distance", 1.0);
+  skip_orientation_ = node->declare_or_get_parameter(
+    "skip_orientation", true);
+  search_by_rotating_ = node->declare_or_get_parameter(
+    "search_by_rotating", false);
+  search_angle_ = node->declare_or_get_parameter(
+    "search_angle", M_PI_2);
+  transform_tolerance_ = node->declare_or_get_parameter(
+    "transform_tolerance", 0.1);
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
   // Create odom subscriber for backward blind docking
-  std::string odom_topic;
-  get_parameter("odom_topic", odom_topic);
-  double odom_duration;
-  get_parameter("odom_duration", odom_duration);
+  std::string odom_topic = node->declare_or_get_parameter(
+    "odom_topic", std::string("odom"));
+  double odom_duration = node->declare_or_get_parameter(
+    "odom_duration", 0.3);
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
 
   // Create the action server for dynamic following
@@ -94,13 +89,12 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the controller
   // Note: Collision detection is not supported in following server so we force it off
   // and warn if the user has it enabled (from launch file or parameter file)
-  declare_parameter("controller.use_collision_detection", false);
+  auto use_collision_detection = node->declare_or_get_parameter(
+    "controller.use_collision_detection", false);
   controller_ =
     std::make_unique<opennav_docking::Controller>(node, tf2_buffer_, fixed_frame_, base_frame_);
 
-  auto get_use_collision_detection = false;
-  get_parameter("controller.use_collision_detection", get_use_collision_detection);
-  if (get_use_collision_detection) {
+  if (use_collision_detection) {
     RCLCPP_ERROR(
       get_logger(),
       "Collision detection is not supported in the following server. Please disable "
@@ -109,8 +103,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   }
 
   // Setup filter
-  double filter_coef;
-  get_parameter("filter_coef", filter_coef);
+  double filter_coef = node->declare_or_get_parameter("filter_coef", 0.1);
   filter_ = std::make_unique<opennav_docking::PoseFilter>(filter_coef, detection_timeout_);
 
   // And publish the filtered pose
