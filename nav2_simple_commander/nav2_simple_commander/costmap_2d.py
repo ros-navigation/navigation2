@@ -60,7 +60,7 @@ class PyCostmap2D:
             self.origin_y = occupancy_map.metadata.origin.position.y
             self.global_frame_id: str = occupancy_map.header.frame_id
             self.costmap_timestamp: Time = occupancy_map.header.stamp
-            self.costmap: NDArray[np.uint8] = occupancy_map.data
+            self.costmap: NDArray[np.uint8] = np.array(occupancy_map.data, dtype=np.uint8)
         else:
             self.size_x: int = occupancy_map.info.width
             self.size_y: int = occupancy_map.info.height
