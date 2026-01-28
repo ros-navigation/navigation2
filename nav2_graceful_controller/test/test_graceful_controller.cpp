@@ -250,10 +250,9 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.allow_backward", false),
       rclcpp::Parameter("test.use_collision_detection", false),
       rclcpp::Parameter("test.in_place_collision_resolution", 15.0),
-      rclcpp::Parameter("test.final_rotation_tolerance", 16.0),
-      rclcpp::Parameter("test.footprint_scaling_linear_vel", 17.0),
-      rclcpp::Parameter("test.footprint_scaling_factor", 18.0),
-      rclcpp::Parameter("test.footprint_scaling_step", 19.0)});
+      rclcpp::Parameter("test.footprint_scaling_linear_vel", 16.0),
+      rclcpp::Parameter("test.footprint_scaling_factor", 17.0),
+      rclcpp::Parameter("test.footprint_scaling_step", 18.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -277,10 +276,9 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_collision_detection").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.in_place_collision_resolution").as_double(), 15.0);
-  EXPECT_EQ(node->get_parameter("test.final_rotation_tolerance").as_double(), 16.0);
-  EXPECT_EQ(node->get_parameter("test.footprint_scaling_linear_vel").as_double(), 17.0);
-  EXPECT_EQ(node->get_parameter("test.footprint_scaling_factor").as_double(), 18.0);
-  EXPECT_EQ(node->get_parameter("test.footprint_scaling_step").as_double(), 19.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_linear_vel").as_double(), 16.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_factor").as_double(), 17.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_step").as_double(), 18.0);
 
   // Set allow backward to true
   results = params->set_parameters_atomically(
