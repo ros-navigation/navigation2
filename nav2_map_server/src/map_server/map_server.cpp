@@ -66,11 +66,6 @@ MapServer::MapServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("map_server", "", options), map_available_(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  // Declare the node parameters
-  declare_parameter("yaml_filename", rclcpp::PARAMETER_STRING);
-  declare_parameter("topic_name", "map");
-  declare_parameter("frame_id", "map");
 }
 
 MapServer::~MapServer()
@@ -82,10 +77,10 @@ MapServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  // Get the name of the YAML file to use (can be empty if no initial map should be used)
-  std::string yaml_filename = get_parameter("yaml_filename").as_string();
-  std::string topic_name = get_parameter("topic_name").as_string();
-  frame_id_ = get_parameter("frame_id").as_string();
+  // Declare and get the name of the YAML file to use (can be empty if no initial map should be used)
+  std::string yaml_filename = declare_or_get_parameter("yaml_filename", std::string(""));
+  std::string topic_name = declare_or_get_parameter("topic_name", std::string("map"));
+  frame_id_ = declare_or_get_parameter("frame_id", std::string("map"));
 
   // only try to load map if parameter was set
   if (!yaml_filename.empty()) {
