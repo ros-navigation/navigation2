@@ -27,11 +27,12 @@ namespace nav2_map_server
 CostmapFilterInfoServer::CostmapFilterInfoServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("costmap_filter_info_server", "", options)
 {
-  declare_parameter("filter_info_topic", "costmap_filter_info");
-  declare_parameter("type", 0);
-  declare_parameter("mask_topic", "filter_mask");
-  declare_parameter("base", 0.0);
-  declare_parameter("multiplier", 1.0);
+  // Declare parameters so they exist from construction (for test compatibility)
+  declare_or_get_parameter("filter_info_topic", std::string("costmap_filter_info"));
+  declare_or_get_parameter("type", 0);
+  declare_or_get_parameter("mask_topic", std::string("filter_mask"));
+  declare_or_get_parameter("base", 0.0);
+  declare_or_get_parameter("multiplier", 1.0);
 }
 
 CostmapFilterInfoServer::~CostmapFilterInfoServer()
@@ -43,7 +44,8 @@ CostmapFilterInfoServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  std::string filter_info_topic = get_parameter("filter_info_topic").as_string();
+  std::string filter_info_topic =
+    declare_or_get_parameter("filter_info_topic", std::string("costmap_filter_info"));
 
   publisher_ = this->create_publisher<nav2_msgs::msg::CostmapFilterInfo>(
     filter_info_topic, nav2::qos::LatchedPublisherQoS());
@@ -51,10 +53,10 @@ CostmapFilterInfoServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   msg_ = nav2_msgs::msg::CostmapFilterInfo();
   msg_.header.frame_id = "";
   msg_.header.stamp = now();
-  msg_.type = get_parameter("type").as_int();
-  msg_.filter_mask_topic = get_parameter("mask_topic").as_string();
-  msg_.base = static_cast<float>(get_parameter("base").as_double());
-  msg_.multiplier = static_cast<float>(get_parameter("multiplier").as_double());
+  msg_.type = declare_or_get_parameter("type", 0);
+  msg_.filter_mask_topic = declare_or_get_parameter("mask_topic", std::string("filter_mask"));
+  msg_.base = static_cast<float>(declare_or_get_parameter("base", 0.0));
+  msg_.multiplier = static_cast<float>(declare_or_get_parameter("multiplier", 1.0));
 
   return nav2::CallbackReturn::SUCCESS;
 }
