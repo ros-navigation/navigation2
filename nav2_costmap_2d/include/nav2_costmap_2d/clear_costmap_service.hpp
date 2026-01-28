@@ -141,16 +141,14 @@ private:
   bool getPosition(double & x, double & y) const;
 
   /**
-   * @brief Validates requested plugins and returns lists of valid and invalid plugins
+   * @brief Validates requested plugins and returns list of invalid plugins
    * @param requested_plugins List of plugin names to validate
    * @param layers Pointer to all available layers
-   * @param valid_plugins Output: list of valid plugin names
    * @param invalid_plugins Output: list of invalid plugins with reasons
    */
-  void validateAndCategorizePlugins(
+  void validatePlugins(
     const std::vector<std::string> & requested_plugins,
     const std::vector<std::shared_ptr<Layer>> * layers,
-    std::vector<std::string> & valid_plugins,
     std::vector<std::string> & invalid_plugins) const;
 
   /**
@@ -166,13 +164,6 @@ private:
     const std::vector<std::shared_ptr<Layer>> * layers,
     std::function<void(std::shared_ptr<CostmapLayer> &)> clear_callback,
     const std::string & operation_name) const;
-
-  /**
-   * @brief Determines whether a specific layer should be cleared based on plugin list and clearable status
-   */
-  bool shouldClearLayer(
-    const std::shared_ptr<Layer> & layer,
-    const std::vector<std::string> & plugins) const;
 };
 
 }  // namespace nav2_costmap_2d
