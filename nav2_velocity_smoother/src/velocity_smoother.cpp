@@ -47,28 +47,30 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Configuring velocity smoother");
   auto node = shared_from_this();
-  std::string feedback_type;
-  double velocity_timeout_dbl;
 
   // Smoothing metadata
-  smoothing_frequency_ = this->declare_or_get_parameter("smoothing_frequency", 20.0);
-  feedback_type = this->declare_or_get_parameter("feedback", std::string("OPEN_LOOP"));
-  scale_velocities_ = this->declare_or_get_parameter("scale_velocities", false);
+  smoothing_frequency_ = node->declare_or_get_parameter(
+    "smoothing_frequency", 20.0);
+  std::string feedback_type = node->declare_or_get_parameter(
+    "feedback", std::string("OPEN_LOOP"));
+  scale_velocities_ = node->declare_or_get_parameter("scale_velocities", false);
 
   // Kinematics
-  max_velocities_ = this->declare_or_get_parameter("max_velocity",
-      std::vector<double>{0.50, 0.0, 2.5});
-  min_velocities_ = this->declare_or_get_parameter("min_velocity",
-      std::vector<double>{-0.50, 0.0, -2.5});
-  max_accels_ = this->declare_or_get_parameter("max_accel", std::vector<double>{2.5, 0.0, 3.2});
-  max_decels_ = this->declare_or_get_parameter("max_decel", std::vector<double>{-2.5, 0.0, -3.2});
+  max_velocities_ = node->declare_or_get_parameter(
+    "max_velocity", std::vector<double>{0.50, 0.0, 2.5});
+  min_velocities_ = node->declare_or_get_parameter(
+    "min_velocity", std::vector<double>{-0.50, 0.0, -2.5});
+  max_accels_ = node->declare_or_get_parameter(
+    "max_accel", std::vector<double>{2.5, 0.0, 3.2});
+  max_decels_ = node->declare_or_get_parameter(
+    "max_decel", std::vector<double>{-2.5, 0.0, -3.2});
 
   // Get feature parameters
-  odom_topic_ = this->declare_or_get_parameter("odom_topic", std::string("odom"));
-  odom_duration_ = this->declare_or_get_parameter("odom_duration", 0.1);
-  deadband_velocities_ = this->declare_or_get_parameter("deadband_velocity",
-      std::vector<double>{0.0, 0.0, 0.0});
-  velocity_timeout_dbl = this->declare_or_get_parameter("velocity_timeout", 1.0);
+  odom_topic_ = node->declare_or_get_parameter("odom_topic", std::string("odom"));
+  odom_duration_ = node->declare_or_get_parameter("odom_duration", 0.1);
+  deadband_velocities_ = node->declare_or_get_parameter(
+    "deadband_velocity", std::vector<double>{0.0, 0.0, 0.0});
+  double velocity_timeout_dbl = node->declare_or_get_parameter("velocity_timeout", 1.0);
   velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
 
   // Check if parameters are properly set
@@ -145,7 +147,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(&VelocitySmoother::inputCommandCallback, this, std::placeholders::_1),
     std::bind(&VelocitySmoother::inputCommandStampedCallback, this, std::placeholders::_1));
 
-  bool use_realtime_priority = this->declare_or_get_parameter("use_realtime_priority", false);
+  bool use_realtime_priority = node->declare_or_get_parameter("use_realtime_priority", false);
   if (use_realtime_priority) {
     try {
       nav2::setSoftRealTimePriority();

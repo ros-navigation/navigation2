@@ -194,7 +194,7 @@ public:
     // Override defaults
     default_ids_.clear();
     default_ids_.resize(1, "SmoothPath");
-    set_parameter(rclcpp::Parameter("smoother_plugins", default_ids_));
+    declare_parameter("smoother_plugins", rclcpp::ParameterValue(default_ids_));
     default_types_.clear();
     default_types_.resize(1, "DummySmoother");
   }
@@ -239,9 +239,8 @@ public:
 
     smoother_server_ = std::make_shared<DummySmootherServer>();
     smoother_server_->set_parameter(
-      rclcpp::Parameter(
-        "smoother_plugins",
-        rclcpp::ParameterValue(std::vector<std::string>(1, "DummySmoothPath"))));
+        rclcpp::Parameter("smoother_plugins",
+        std::vector<std::string>(1, "DummySmoothPath")));
     smoother_server_->declare_parameter(
       "DummySmoothPath.plugin",
       rclcpp::ParameterValue(std::string("DummySmoother")));
