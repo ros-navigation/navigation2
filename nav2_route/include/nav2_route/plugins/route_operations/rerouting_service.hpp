@@ -95,6 +95,9 @@ public:
     const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response);
 
+  void on_activate() override;
+  void on_deactivate() override;
+
 protected:
   std::string name_;
   std::atomic_bool reroute_;
