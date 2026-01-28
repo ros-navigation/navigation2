@@ -300,9 +300,9 @@ protected:
   /*
    * @brief Create a laser object
    */
-  nav2_amcl::Laser * createLaserObject();
+  std::unique_ptr<nav2_amcl::Laser> createLaserObject();
   int scan_error_count_{0};
-  std::vector<nav2_amcl::Laser *> lasers_;
+  std::vector<std::unique_ptr<nav2_amcl::Laser>> lasers_;
   std::vector<bool> lasers_update_;
   std::map<std::string, int> frame_to_laser_;
   rclcpp::Time last_laser_received_ts_;
