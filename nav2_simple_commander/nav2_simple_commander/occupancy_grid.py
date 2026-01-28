@@ -125,7 +125,7 @@ class PyOccupancyGrid:
         """
         return np.int8(self.costmap[index])
 
-    def setCost(self, mx: int, my: int, cost: np.uint8) -> None:
+    def setCost(self, mx: int, my: int, cost: np.int8) -> None:
         """
         Set the cost of a cell in the costmap using map coordinate XY.
 
@@ -133,7 +133,7 @@ class PyOccupancyGrid:
         ----
             mx (int): map coordinate X to get cost
             my (int): map coordinate Y to get cost
-            cost (np.uint8): The cost to set the cell
+            cost (np.int8): The cost to set the cell
 
         Returns
         -------
