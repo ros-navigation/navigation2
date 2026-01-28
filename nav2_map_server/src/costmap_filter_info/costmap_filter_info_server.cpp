@@ -27,12 +27,6 @@ namespace nav2_map_server
 CostmapFilterInfoServer::CostmapFilterInfoServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("costmap_filter_info_server", "", options)
 {
-  // Declare parameters so they exist from construction (for test compatibility)
-  declare_or_get_parameter("filter_info_topic", std::string("costmap_filter_info"));
-  declare_or_get_parameter("type", 0);
-  declare_or_get_parameter("mask_topic", std::string("filter_mask"));
-  declare_or_get_parameter("base", 0.0);
-  declare_or_get_parameter("multiplier", 1.0);
 }
 
 CostmapFilterInfoServer::~CostmapFilterInfoServer()

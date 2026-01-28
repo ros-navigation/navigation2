@@ -39,6 +39,11 @@ static const double EPSILON = std::numeric_limits<float>::epsilon();
 class InfoServerWrapper : public nav2_map_server::CostmapFilterInfoServer
 {
 public:
+  explicit InfoServerWrapper(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+  : nav2_map_server::CostmapFilterInfoServer(options)
+  {
+  }
+
   void start()
   {
     on_configure(get_current_state());
@@ -71,20 +76,17 @@ public:
   {
     access_ = new mutex_t();
 
-    info_server_ = std::make_shared<InfoServerWrapper>();
-    try {
-      info_server_->set_parameter(rclcpp::Parameter("filter_info_topic", FILTER_INFO_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("type", TYPE));
-      info_server_->set_parameter(rclcpp::Parameter("mask_topic", MASK_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("base", BASE));
-      info_server_->set_parameter(rclcpp::Parameter("multiplier", MULTIPLIER));
-    } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-      RCLCPP_ERROR(
-        info_server_->get_logger(),
-        "Error while setting parameters for CostmapFilterInfoServer: %s", ex.what());
-      throw;
-    }
+    // Pass parameters via NodeOptions parameter_overrides
+    rclcpp::NodeOptions options;
+    options.parameter_overrides({
+      rclcpp::Parameter("filter_info_topic", FILTER_INFO_TOPIC),
+      rclcpp::Parameter("type", TYPE),
+      rclcpp::Parameter("mask_topic", MASK_TOPIC),
+      rclcpp::Parameter("base", BASE),
+      rclcpp::Parameter("multiplier", MULTIPLIER)
+    });
 
+    info_server_ = std::make_shared<InfoServerWrapper>(options);
     info_server_->start();
 
     subscription_ = info_server_->create_subscription<nav2_msgs::msg::CostmapFilterInfo>(

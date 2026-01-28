@@ -45,12 +45,6 @@ MapSaver::MapSaver(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("map_saver", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  // Declare parameters so they exist from construction (for test compatibility)
-  declare_or_get_parameter("save_map_timeout", 2.0);
-  declare_or_get_parameter("free_thresh_default", 0.25);
-  declare_or_get_parameter("occupied_thresh_default", 0.65);
-  declare_or_get_parameter("map_subscribe_transient_local", true);
 }
 
 MapSaver::~MapSaver()

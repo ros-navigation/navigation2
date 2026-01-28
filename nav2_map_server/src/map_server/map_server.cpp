@@ -66,11 +66,6 @@ MapServer::MapServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("map_server", "", options), map_available_(false)
 {
   RCLCPP_INFO(get_logger(), "Creating");
-
-  // Declare parameters so they exist from construction (for test compatibility)
-  declare_or_get_parameter("yaml_filename", std::string());
-  declare_or_get_parameter("topic_name", std::string("map"));
-  declare_or_get_parameter("frame_id", std::string("map"));
 }
 
 MapServer::~MapServer()
