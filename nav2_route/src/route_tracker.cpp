@@ -32,18 +32,12 @@ void RouteTracker::configure(
   action_server_ = action_server;
   tf_buffer_ = tf_buffer;
 
-  nav2::declare_parameter_if_not_declared(
-    node, "radius_to_achieve_node", rclcpp::ParameterValue(2.0));
-  radius_threshold_ = node->get_parameter("radius_to_achieve_node").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, "boundary_radius_to_achieve_node", rclcpp::ParameterValue(1.0));
-  boundary_radius_threshold_ = node->get_parameter("boundary_radius_to_achieve_node").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, "tracker_update_rate", rclcpp::ParameterValue(50.0));
-  tracker_update_rate_ = node->get_parameter("tracker_update_rate").as_double();
-  nav2::declare_parameter_if_not_declared(
-    node, "aggregate_blocked_ids", rclcpp::ParameterValue(false));
-  aggregate_blocked_ids_ = node->get_parameter("aggregate_blocked_ids").as_bool();
+  radius_threshold_ = node->declare_or_get_parameter("radius_to_achieve_node", 2.0);
+  boundary_radius_threshold_ = node->declare_or_get_parameter(
+    "boundary_radius_to_achieve_node", 1.0);
+  tracker_update_rate_ = node->declare_or_get_parameter("tracker_update_rate", 50.0);
+  aggregate_blocked_ids_ = node->declare_or_get_parameter(
+    "aggregate_blocked_ids", false);
 
   operations_manager_ = std::make_unique<OperationsManager>(node, costmap_subscriber);
 }

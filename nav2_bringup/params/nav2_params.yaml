@@ -48,6 +48,7 @@ bt_navigator:
     bt_loop_duration: 10
     filter_duration: 0.3
     default_server_timeout: 20
+    default_cancel_timeout: 50
     wait_for_service_timeout: 1000
     introspection_mode: "disabled"
     navigators: ["navigate_to_pose", "navigate_through_poses"]
