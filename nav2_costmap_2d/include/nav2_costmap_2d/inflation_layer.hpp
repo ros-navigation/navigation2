@@ -141,6 +141,7 @@ public:
   {
     matchSize();
     current_ = false;
+    need_reinflation_ = true;
   }
 
   /** @brief  Given a distance, compute a cost.
