@@ -223,8 +223,7 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
 
     // Compute velocity at this moment if valid target pose is found
     if (validateTargetPose(
-        target_pose, dist_to_target, dist_to_goal,
-        local_plan, transformed_plan, costmap_transform, cmd_vel))
+        target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel))
     {
       // Publish the selected target_pose
       motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
@@ -278,7 +277,6 @@ bool GracefulController::validateTargetPose(
   double dist_to_target,
   double dist_to_goal,
   nav_msgs::msg::Path & trajectory,
-  const nav_msgs::msg::Path & transformed_plan,
   geometry_msgs::msg::TransformStamped & costmap_transform,
   geometry_msgs::msg::TwistStamped & cmd_vel)
 {
@@ -291,19 +289,8 @@ bool GracefulController::validateTargetPose(
     if (params_->prefer_final_rotation) {
       // Avoid instability and big sweeping turns at the end of paths by
       // ignoring final heading
-      std::size_t last_index = transformed_plan.poses.size() - 1;
-      double path_heading_at_goal = std::atan2(
-        transformed_plan.poses[last_index].pose.position.y -
-          transformed_plan.poses[last_index - 1].pose.position.y,
-        transformed_plan.poses[last_index].pose.position.x -
-          transformed_plan.poses[last_index - 1].pose.position.x);
-      double target_yaw = tf2::getYaw(transformed_plan.poses.back().pose.orientation);
-      if (std::fabs(angles::shortest_angular_distance(path_heading_at_goal, target_yaw)) >
-        params_->final_rotation_tolerance)
-      {
-        double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-        target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
-      }
+      double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
+      target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
     }
   } else if (dist_to_target < params_->min_lookahead) {
     // Make sure target is far enough away to avoid instability
