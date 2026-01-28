@@ -1,8 +1,5 @@
 #! /usr/bin/env python3
-# Copyright 2021 Samsung Research America
-# Copyright 2022 Stevedan Ogochukwu Omodolor
-# Copyright 2022 Jaehun Jackson Kim
-# Copyright 2022 Afif Swaidan
+# Copyright 2025 Arjo Chakravarty
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,39 +23,40 @@ and handling semantics found in the costmap 2d C++ API.
 from typing import Optional
 
 from builtin_interfaces.msg import Time
-from nav2_msgs.msg import Costmap
+from nav_msgs.msg import OccupancyGrid
 import numpy as np
 from numpy.typing import NDArray
 
 
-class PyCostmap2D:
+class PyOccupancyGrid:
     """
-    PyCostmap2D.
+    PyOccupancyGrid.
 
-    Costmap Python3 API for Costmaps to populate from published messages
+    Occupancy grid Python3 API for OccupancyGrids to populate from published messages
     """
 
-    def __init__(self, occupancy_map: Costmap) -> None:
+    def __init__(self, occupancy_map: OccupancyGrid) -> None:
         """
         Initialize costmap2D.
 
         Args
         ----
-            occupancy_map (Costmap): 2D OccupancyGrid Map
+            occupancy_map (OccupancyGrid): 2D OccupancyGrid Map
 
         Returns
         -------
             None
 
         """
-        self.size_x: int = occupancy_map.metadata.size_x
-        self.size_y: int = occupancy_map.metadata.size_y
-        self.resolution: float = occupancy_map.metadata.resolution
-        self.origin_x: float = occupancy_map.metadata.origin.position.x
-        self.origin_y: float = occupancy_map.metadata.origin.position.y
+        self.size_x: int = occupancy_map.info.width
+        self.size_y: int = occupancy_map.info.height
+        self.resolution: float = occupancy_map.info.resolution
+        self.origin_x: float = occupancy_map.info.origin.position.x
+        self.origin_y: float = occupancy_map.info.origin.position.y
         self.global_frame_id: str = occupancy_map.header.frame_id
         self.costmap_timestamp: Time = occupancy_map.header.stamp
-        self.costmap: NDArray[np.uint8] = np.array(occupancy_map.data, dtype=np.uint8)
+        # Extract costmap
+        self.costmap: NDArray[np.int8] = np.array(occupancy_map.data, dtype=np.int8)
 
     def getSizeInCellsX(self) -> int:
         """Get map width in cells."""
