@@ -27,7 +27,7 @@ TEST(UtilsTests, parseDockParams1)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   DockMap db;
-  std::vector<std::string> dock_str = {"dockA", "dockB"};
+  std::vector<std::string> dock_str = {"dock_a", "dock_b"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
 
   std::vector<std::string> docks_param;
@@ -41,50 +41,50 @@ TEST(UtilsTests, parseDockParams2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test2");
   DockMap db;
-  std::vector<std::string> dock_str = {"dockC", "dockD"};
+  std::vector<std::string> dock_str = {"dock_c", "dock_d"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
 
-  // Don't declare B, check if "map" default
-  node->declare_parameter("dockC.frame", rclcpp::ParameterValue(std::string("mapA")));
+  // Don't declare dock_d.frame, check if "map" default
+  node->declare_parameter("dock_c.frame", rclcpp::ParameterValue(std::string("map_a")));
 
-  node->declare_parameter("dockC.type", rclcpp::ParameterValue(std::string("typeA")));
-  node->declare_parameter("dockD.type", rclcpp::ParameterValue(std::string("typeB")));
+  node->declare_parameter("dock_c.type", rclcpp::ParameterValue(std::string("type_a")));
+  node->declare_parameter("dock_d.type", rclcpp::ParameterValue(std::string("type_b")));
   std::vector<double> dock_pose = {0.3, 0.3, 0.3};
-  node->declare_parameter("dockC.pose", rclcpp::ParameterValue(dock_pose));
-  node->declare_parameter("dockD.pose", rclcpp::ParameterValue(dock_pose));
+  node->declare_parameter("dock_c.pose", rclcpp::ParameterValue(dock_pose));
+  node->declare_parameter("dock_d.pose", rclcpp::ParameterValue(dock_pose));
 
-  // Don't declare C, check if empty string default
-  node->declare_parameter("dockD.id", rclcpp::ParameterValue("D"));
+  // Don't declare dock_c.id, check if empty string default
+  node->declare_parameter("dock_d.id", rclcpp::ParameterValue("d"));
 
   std::vector<std::string> docks_param;
   node->get_parameter("docks", docks_param);
 
   EXPECT_TRUE(utils::parseDockParams(docks_param, node, db));
-  EXPECT_EQ(db["dockC"].frame, std::string("mapA"));
-  EXPECT_EQ(db["dockD"].frame, std::string("map"));
-  EXPECT_EQ(db["dockC"].type, std::string("typeA"));
-  EXPECT_EQ(db["dockC"].pose.position.x, 0.3);
-  EXPECT_EQ(db["dockC"].pose.position.y, 0.3);
-  EXPECT_EQ(db["dockC"].id, std::string(""));
-  EXPECT_EQ(db["dockD"].id, std::string("D"));
+  EXPECT_EQ(db["dock_c"].frame, std::string("map_a"));
+  EXPECT_EQ(db["dock_d"].frame, std::string("map"));
+  EXPECT_EQ(db["dock_c"].type, std::string("type_a"));
+  EXPECT_EQ(db["dock_c"].pose.position.x, 0.3);
+  EXPECT_EQ(db["dock_c"].pose.position.y, 0.3);
+  EXPECT_EQ(db["dock_c"].id, std::string(""));
+  EXPECT_EQ(db["dock_d"].id, std::string("d"));
 }
 
 TEST(UtilsTests, parseDockParams3)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test3");
   DockMap db;
-  std::vector<std::string> dock_str = {"dockE", "dockF"};
+  std::vector<std::string> dock_str = {"dock_e", "dock_f"};
   node->declare_parameter("docks", rclcpp::ParameterValue(dock_str));
 
-  node->declare_parameter("dockE.type", rclcpp::ParameterValue(std::string("typeA")));
-  node->declare_parameter("dockF.type", rclcpp::ParameterValue(std::string("typeB")));
+  node->declare_parameter("dock_e.type", rclcpp::ParameterValue(std::string("type_a")));
+  node->declare_parameter("dock_f.type", rclcpp::ParameterValue(std::string("type_b")));
 
   std::vector<std::string> docks_param;
   node->get_parameter("docks", docks_param);
 
   // Incorrect pose size
   std::vector<double> dock_pose_err = {0.3, 0.3};
-  node->declare_parameter("dockE.pose", rclcpp::ParameterValue(dock_pose_err));
+  node->declare_parameter("dock_e.pose", rclcpp::ParameterValue(dock_pose_err));
   EXPECT_FALSE(utils::parseDockParams(docks_param, node, db));
 }
 
@@ -96,7 +96,7 @@ TEST(UtilsTests, parseDockFile)
     "/dock_files/test_dock_file.yaml";
   EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
   EXPECT_EQ(db.size(), 2u);
-  EXPECT_EQ(db["dock1"].frame, std::string("mapA"));
+  EXPECT_EQ(db["dock1"].frame, std::string("map_a"));
   EXPECT_EQ(db["dock2"].frame, std::string("map"));
   EXPECT_EQ(db["dock1"].type, std::string("dockv3"));
   EXPECT_EQ(db["dock2"].type, std::string("dockv1"));

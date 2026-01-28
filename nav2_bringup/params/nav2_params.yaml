@@ -99,8 +99,8 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    controller_plugins: ["FollowPath"]
-    path_handler_plugins: ["PathHandler"]
+    controller_plugins: ["follow_path"]
+    path_handler_plugins: ["path_handler"]
     use_realtime_priority: false
     speed_limit_topic: "speed_limit"
 
@@ -121,7 +121,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
-    PathHandler:
+    path_handler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: false
@@ -130,7 +130,7 @@ controller_server:
       inversion_yaw_tolerance: 0.4
       minimum_rotation_angle: 0.785
       reject_unit_path: false
-    FollowPath:
+    follow_path:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
       model_dt: 0.05
@@ -387,10 +387,10 @@ planner_server:
   ros__parameters:
     allow_partial_planning: false
     expected_planner_frequency: 20.0
-    planner_plugins: ["GridBased"]
+    planner_plugins: ["grid_based"]
     costmap_update_timeout: 1.0
     introspection_mode: "disabled"
-    GridBased:
+    grid_based:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
       use_astar: false
@@ -470,18 +470,18 @@ route_server:
     boundary_radius_to_achieve_node: 1.0
     radius_to_achieve_node: 2.0
     smooth_corners: true
-    operations: ["AdjustSpeedLimit", "ReroutingService", "CollisionMonitor"]
-    ReroutingService:
+    operations: ["adjust_speed_limit", "rerouting_service", "collision_monitor"]
+    rerouting_service:
       plugin: "nav2_route::ReroutingService"
-    AdjustSpeedLimit:
+    adjust_speed_limit:
       plugin: "nav2_route::AdjustSpeedLimit"
-    CollisionMonitor:
+    collision_monitor:
       plugin: "nav2_route::CollisionMonitor"
       max_collision_dist: 3.0
-    edge_cost_functions: ["DistanceScorer", "CostmapScorer"]
-    DistanceScorer:
+    edge_cost_functions: ["distance_scorer", "costmap_scorer"]
+    distance_scorer:
       plugin: "nav2_route::DistanceScorer"
-    CostmapScorer:
+    costmap_scorer:
       plugin: "nav2_route::CostmapScorer"
 
 velocity_smoother:
@@ -512,8 +512,8 @@ collision_monitor:
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-    polygons: ["FootprintApproach"]
-    FootprintApproach:
+    polygons: ["footprint_approach"]
+    footprint_approach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "local_costmap/published_footprint"

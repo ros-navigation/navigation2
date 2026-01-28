@@ -31,7 +31,7 @@ namespace nav2_behavior_tree
 /**
  * @brief The ProgressCheckerSelector behavior is used to switch the progress checker
  * of the controller server. It subscribes to a topic "progress_checker_selector"
- * to get the decision about what progress_checker must be used. It is usually used before of
+ * to get the decision about what progress checker must be used. It is usually used before of
  * the FollowPath. The selected_progress_checker output port is passed to progress_checker_id
  * input port of the FollowPath
  * @note It will re-initialize when halted.
@@ -58,16 +58,16 @@ public:
     return {
       BT::InputPort<std::string>(
         "default_progress_checker",
-        "the default progress_checker to use if there is not any external topic message received."),
+        "the default progress checker to use if there is not any external topic message received."),
 
       BT::InputPort<std::string>(
         "topic_name",
         "progress_checker_selector",
-        "the input topic name to select the progress_checker"),
+        "the input topic name to select the progress checker"),
 
       BT::OutputPort<std::string>(
         "selected_progress_checker",
-        "Selected progress_checker by subscription")
+        "Selected progress checker by subscription")
     };
   }
 

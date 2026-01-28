@@ -87,13 +87,13 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
     waypoint_task_executor_ = waypoint_task_executor_loader_.createUniqueInstance(
       waypoint_task_executor_type_);
     RCLCPP_INFO(
-      get_logger(), "Created waypoint_task_executor : %s of type %s",
+      get_logger(), "Created waypoint task executor : %s of type %s",
       waypoint_task_executor_id_.c_str(), waypoint_task_executor_type_.c_str());
     waypoint_task_executor_->initialize(node, waypoint_task_executor_id_);
   } catch (const std::exception & e) {
     RCLCPP_FATAL(
       get_logger(),
-      "Failed to create waypoint_task_executor. Exception: %s", e.what());
+      "Failed to create waypoint task executor. Exception: %s", e.what());
     on_cleanup(state);
   }
 

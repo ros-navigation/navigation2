@@ -48,11 +48,11 @@ static constexpr double EPSILON = 1e-5;
 static const char BASE_FRAME_ID[]{"base_link"};
 static const char SOURCE_FRAME_ID[]{"base_source"};
 static const char ODOM_FRAME_ID[]{"odom"};
-static const char SCAN_NAME[]{"Scan"};
-static const char POINTCLOUD_NAME[]{"PointCloud"};
-static const char RANGE_NAME[]{"Range"};
-static const char POLYGON_NAME[]{"Polygon"};
-static const char COSTMAP_NAME[]{"Costmap"};
+static const char SCAN_NAME[]{"scan"};
+static const char POINTCLOUD_NAME[]{"pointcloud"};
+static const char RANGE_NAME[]{"range"};
+static const char POLYGON_NAME[]{"polygon"};
+static const char COSTMAP_NAME[]{"costmap"};
 static const char STATE_TOPIC[]{"collision_detector_state"};
 static const char COLLISION_POINTS_MARKERS_TOPIC[]{"/collision_detector/collision_points_marker"};
 static const int MIN_POINTS{1};
@@ -559,9 +559,9 @@ bool Tester::waitData(
 TEST_F(Tester, testIncorrectPolygonType)
 {
   setCommonParameters();
-  addPolygon("UnknownShape", POLYGON_UNKNOWN, 1.0, "none");
+  addPolygon("unknown_shape", POLYGON_UNKNOWN, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"UnknownShape"}, {SCAN_NAME});
+  setVectors({"unknown_shape"}, {SCAN_NAME});
 
   // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
@@ -570,9 +570,9 @@ TEST_F(Tester, testIncorrectPolygonType)
 TEST_F(Tester, testIncorrectActionType)
 {
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "approach");
+  addPolygon("detection_region", POLYGON, 1.0, "approach");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  setVectors({"detection_region"}, {SCAN_NAME});
 
   // Check that Collision Detector node can not be configured for this action type
   cd_->cant_configure();
@@ -581,9 +581,9 @@ TEST_F(Tester, testIncorrectActionType)
 TEST_F(Tester, testIncorrectSourceType)
 {
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
-  addSource("UnknownSource", SOURCE_UNKNOWN);
-  setVectors({"DetectionRegion"}, {"UnknownSource"});
+  addPolygon("detection_region", POLYGON, 1.0, "none");
+  addSource("unknown_source", SOURCE_UNKNOWN);
+  setVectors({"detection_region"}, {"unknown_source"});
 
   // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
@@ -592,7 +592,7 @@ TEST_F(Tester, testIncorrectSourceType)
 TEST_F(Tester, testPolygonsNotSet)
 {
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addPolygon("detection_region", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
 
   // Check that Collision Detector node can not be configured for this parameters set
@@ -602,11 +602,11 @@ TEST_F(Tester, testPolygonsNotSet)
 TEST_F(Tester, testSourcesNotSet)
 {
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addPolygon("detection_region", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
   cd_->declare_parameter(
     "polygons",
-    rclcpp::ParameterValue(std::vector<std::string>{"DetectionRegion"}));
+    rclcpp::ParameterValue(std::vector<std::string>{"detection_region"}));
 
   // Check that Collision Detector node can not be configured for this parameters set
   cd_->cant_configure();
@@ -615,9 +615,9 @@ TEST_F(Tester, testSourcesNotSet)
 TEST_F(Tester, testSuccessfulConfigure)
 {
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addPolygon("detection_region", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  setVectors({"detection_region"}, {SCAN_NAME});
 
   // Check that Collision Detector node can be configured successfully for this parameters set
   cd_->configure();
@@ -628,9 +628,9 @@ TEST_F(Tester, testProcessNonActive)
   rclcpp::Time curr_time = cd_->now();
 
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addPolygon("detection_region", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  setVectors({"detection_region"}, {SCAN_NAME});
 
   // Configure Collision Detector node, but not activate
   cd_->configure();
@@ -647,9 +647,9 @@ TEST_F(Tester, testProcessActive)
   rclcpp::Time curr_time = cd_->now();
 
   setCommonParameters();
-  addPolygon("DetectionRegion", POLYGON, 1.0, "none");
+  addPolygon("detection_region", POLYGON, 1.0, "none");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  setVectors({"detection_region"}, {SCAN_NAME});
 
   // Configure and activate Collision Detector node
   cd_->start();
@@ -667,9 +667,9 @@ TEST_F(Tester, testPolygonDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
-  addPolygon("DetectionRegion", POLYGON, 2.0, "none");
+  addPolygon("detection_region", POLYGON, 2.0, "none");
   addSource(RANGE_NAME, RANGE);
-  setVectors({"DetectionRegion"}, {RANGE_NAME});
+  setVectors({"detection_region"}, {RANGE_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -677,7 +677,7 @@ TEST_F(Tester, testPolygonDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishRange(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
@@ -696,9 +696,9 @@ TEST_F(Tester, testCircleDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create Circle
-  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addPolygon("detection_region", CIRCLE, 3.0, "none");
   addSource(RANGE_NAME, RANGE);
-  setVectors({"DetectionRegion"}, {RANGE_NAME});
+  setVectors({"detection_region"}, {RANGE_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -706,7 +706,7 @@ TEST_F(Tester, testCircleDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishRange(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
@@ -725,9 +725,9 @@ TEST_F(Tester, testScanDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
-  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addPolygon("detection_region", CIRCLE, 3.0, "none");
   addSource(SCAN_NAME, SCAN);
-  setVectors({"DetectionRegion"}, {SCAN_NAME});
+  setVectors({"detection_region"}, {SCAN_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -735,7 +735,7 @@ TEST_F(Tester, testScanDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishScan(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 300ms, curr_time));
@@ -754,9 +754,9 @@ TEST_F(Tester, testPointcloudDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
-  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addPolygon("detection_region", CIRCLE, 3.0, "none");
   addSource(POINTCLOUD_NAME, POINTCLOUD);
-  setVectors({"DetectionRegion"}, {POINTCLOUD_NAME});
+  setVectors({"detection_region"}, {POINTCLOUD_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -764,7 +764,7 @@ TEST_F(Tester, testPointcloudDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishPointCloud(2.5, curr_time);
 
   ASSERT_TRUE(waitData(std::hypot(2.5, 0.01), 500ms, curr_time));
@@ -783,9 +783,9 @@ TEST_F(Tester, testPolygonSourceDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
-  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addPolygon("detection_region", CIRCLE, 3.0, "none");
   addSource(POLYGON_NAME, POLYGON_SOURCE);
-  setVectors({"DetectionRegion"}, {POLYGON_NAME});
+  setVectors({"detection_region"}, {POLYGON_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -793,7 +793,7 @@ TEST_F(Tester, testPolygonSourceDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishPolygon(2.5, curr_time);
 
   ASSERT_TRUE(waitData(std::hypot(2.5, 1.0), 500ms, curr_time));
@@ -812,9 +812,9 @@ TEST_F(Tester, testCostmapDetection)
   // Set Collision Detector parameters.
   setCommonParameters();
   // Create polygon
-  addPolygon("DetectionRegion", CIRCLE, 3.0, "none");
+  addPolygon("detection_region", CIRCLE, 3.0, "none");
   addSource(COSTMAP_NAME, COSTMAP);
-  setVectors({"DetectionRegion"}, {COSTMAP_NAME});
+  setVectors({"detection_region"}, {COSTMAP_NAME});
 
   // Start Collision Detector node
   cd_->start();
@@ -822,7 +822,7 @@ TEST_F(Tester, testCostmapDetection)
   // Share TF
   sendTransforms(curr_time);
 
-  // Obstacle is in DetectionRegion
+  // Obstacle is in detection_region
   publishCostmap(1.5, curr_time);
 
   ASSERT_TRUE(waitData(1.5, 500ms, curr_time));

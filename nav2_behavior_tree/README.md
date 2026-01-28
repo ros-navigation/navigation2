@@ -45,7 +45,7 @@ Once a new node is registered with the factory, it is now available to the Behav
   <BehaviorTree ID="MainTree">
     <Sequence name="root">
       <ComputePathToPose goal="${goal}"/>
-      <FollowPath path="${path}" controller_property="FollowPath"/>
+      <FollowPath path="${path}" controller_id="follow_path"/>
     </Sequence>
   </BehaviorTree>
 </root>

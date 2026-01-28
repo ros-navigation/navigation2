@@ -85,7 +85,7 @@ public:
 TEST(RegulatedPurePursuitTest, basicAPI)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
 
@@ -130,7 +130,7 @@ TEST(RegulatedPurePursuitTest, lookaheadAPI)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
@@ -172,9 +172,9 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
   nav2::declare_parameter_if_not_declared(
-    node, "PathFollower.stateful", rclcpp::ParameterValue(false));
+    node, "path_follower.stateful", rclcpp::ParameterValue(false));
 
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
@@ -244,7 +244,7 @@ TEST(RegulatedPurePursuitTest, rotateTests)
   // Stateful Configuration
   // -----------------------
   node->set_parameter(
-    rclcpp::Parameter("PathFollower.stateful", true));
+    rclcpp::Parameter("path_follower.stateful", true));
 
   ctrl->configure(node, name, tf, costmap);
 
@@ -266,7 +266,7 @@ TEST(RegulatedPurePursuitTest, applyConstraints)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPP");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;

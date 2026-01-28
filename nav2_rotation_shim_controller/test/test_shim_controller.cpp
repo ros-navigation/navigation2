@@ -70,7 +70,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
 {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
@@ -87,7 +87,7 @@ TEST(RotationShimControllerTest, lifecycleTransitions)
     node->get_node_services_interface());
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter(
-        "PathFollower.primary_controller.plugin",
+        "path_follower.primary_controller.plugin",
         std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"))});
   rclcpp::spin_until_future_complete(
     node->get_node_base_interface(),
@@ -108,7 +108,7 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
 {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   rclcpp_lifecycle::State state;
@@ -116,10 +116,10 @@ TEST(RotationShimControllerTest, setPlanAndSampledPointsTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   // disable collision check
-  node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
+  node->declare_parameter("path_follower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -155,14 +155,14 @@ TEST(RotationShimControllerTest, rotationAndTransformTests)
 {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap", "/", false);
   costmap->configure();
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
 
   node->declare_parameter("controller_frequency", 1.0);
@@ -215,7 +215,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -235,7 +235,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter("controller_frequency", 1.0);
 
@@ -280,7 +280,7 @@ TEST(RotationShimControllerTest, computeVelocityTests)
 TEST(RotationShimControllerTest, openLoopRotationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -299,16 +299,16 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
     20.0);
   node->declare_parameter(
-    "PathFollower.rotate_to_goal_heading",
+    "path_follower.rotate_to_goal_heading",
     true);
   node->declare_parameter(
-    "PathFollower.closed_loop",
+    "path_follower.closed_loop",
     false);
 
   auto controller = std::make_shared<RotationShimShim>();
@@ -367,7 +367,7 @@ TEST(RotationShimControllerTest, openLoopRotationTests) {
 TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -386,13 +386,13 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
-    "PathFollower.rotate_to_goal_heading",
+    "path_follower.rotate_to_goal_heading",
     true);
   node->declare_parameter("controller_frequency", 1.0);
-  node->declare_parameter("PathFollower.primary_controller.use_collision_detection", false);
+  node->declare_parameter("path_follower.primary_controller.use_collision_detection", false);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);
@@ -450,7 +450,7 @@ TEST(RotationShimControllerTest, computeVelocityGoalRotationTests) {
 TEST(RotationShimControllerTest, accelerationTests) {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -469,16 +469,16 @@ TEST(RotationShimControllerTest, accelerationTests) {
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
     "controller_frequency",
     20.0);
   node->declare_parameter(
-    "PathFollower.rotate_to_goal_heading",
+    "path_follower.rotate_to_goal_heading",
     true);
   node->declare_parameter(
-    "PathFollower.max_angular_accel",
+    "path_follower.max_angular_accel",
     0.5);
 
   auto controller = std::make_shared<RotationShimShim>();
@@ -538,7 +538,7 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
 {
   auto ctrl = std::make_shared<RotationShimShim>();
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
-  std::string name = "PathFollower";
+  std::string name = "path_follower";
   auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_shared<tf2_ros::TransformListener>(*tf, node, true);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
@@ -560,13 +560,13 @@ TEST(RotationShimControllerTest, isGoalChangedTest)
 
   // set a valid primary controller so we can do lifecycle
   node->declare_parameter(
-    "PathFollower.primary_controller.plugin",
+    "path_follower.primary_controller.plugin",
     std::string("nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"));
   node->declare_parameter(
-    "PathFollower.rotate_to_heading_once",
+    "path_follower.rotate_to_heading_once",
     true);
   // disable collision check
-  node->declare_parameter("PathFollower.simulate_ahead_time", 0.0);
+  node->declare_parameter("path_follower.simulate_ahead_time", 0.0);
 
   auto controller = std::make_shared<RotationShimShim>();
   controller->configure(node, name, tf, costmap);

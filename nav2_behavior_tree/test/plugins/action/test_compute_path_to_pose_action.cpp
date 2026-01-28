@@ -127,7 +127,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="grid_based"/>
         </BehaviorTree>
       </root>)";
 
@@ -146,10 +146,10 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick)
 
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("grid_based"));
   EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
   EXPECT_FALSE(action_server_->getCurrentGoal()->use_start);
-  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("grid_based"));
 
   // check if returned path is correct
   nav_msgs::msg::Path path;
@@ -186,7 +186,7 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ComputePathToPose goal="{goal}" start="{start}" path="{path}" planner_id="GridBased"/>
+            <ComputePathToPose goal="{goal}" start="{start}" path="{path}" planner_id="grid_based"/>
         </BehaviorTree>
       </root>)";
 
@@ -211,11 +211,11 @@ TEST_F(ComputePathToPoseActionTestFixture, test_tick_use_start)
 
   // the goal should have reached our server
   EXPECT_EQ(tree_->rootNode()->status(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("GridBased"));
+  EXPECT_EQ(tree_->rootNode()->getInput<std::string>("planner_id"), std::string("grid_based"));
   EXPECT_EQ(action_server_->getCurrentGoal()->goal.pose.position.x, 1.0);
   EXPECT_EQ(action_server_->getCurrentGoal()->start.pose.position.x, 2.0);
   EXPECT_TRUE(action_server_->getCurrentGoal()->use_start);
-  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("GridBased"));
+  EXPECT_EQ(action_server_->getCurrentGoal()->planner_id, std::string("grid_based"));
 
   // check if returned path is correct
   nav_msgs::msg::Path path;

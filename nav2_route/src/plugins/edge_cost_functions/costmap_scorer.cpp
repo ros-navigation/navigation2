@@ -59,7 +59,7 @@ void CostmapScorer::configure(
       node, costmap_topic);
     RCLCPP_INFO(
       node->get_logger(),
-      "Using costmap topic: %s instead of server costmap topic: %s for CostmapScorer.",
+      "Using costmap topic: %s instead of server costmap topic: %s for costmap scorer.",
       costmap_topic.c_str(), server_costmap_topic.c_str());
   } else {
     costmap_subscriber_ = costmap_subscriber;

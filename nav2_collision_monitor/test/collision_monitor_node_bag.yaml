@@ -17,8 +17,8 @@ collision_monitor:
       cost_threshold: 253
       enabled: true
 
-    polygons: [Detection]
-    Detection:
+    polygons: [detection]
+    detection:
       type: circle
       action_type: stop
       min_points: 1

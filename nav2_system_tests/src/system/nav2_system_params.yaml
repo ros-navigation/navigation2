@@ -78,8 +78,8 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    path_handler_plugins: ["PathHandler"]
-    controller_plugins: ["FollowPath"]
+    path_handler_plugins: ["path_handler"]
+    controller_plugins: ["follow_path"]
     use_realtime_priority: false
 
     # Progress checker parameters
@@ -99,7 +99,7 @@ controller_server:
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.25
       path_length_tolerance: 1.0
-    PathHandler:
+    path_handler:
       plugin: "nav2_controller::FeasiblePathHandler"
       prune_distance: 2.0
       enforce_path_inversion: false
@@ -109,7 +109,7 @@ controller_server:
       minimum_rotation_angle: 0.785
       reject_unit_path: false
     # DWB parameters
-    FollowPath:
+    follow_path:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: true
       min_vel_x: 0.0
@@ -254,8 +254,8 @@ map_saver:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    planner_plugins: ["GridBased"]
-    GridBased:
+    planner_plugins: ["grid_based"]
+    grid_based:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
       use_astar: false
@@ -335,8 +335,8 @@ collision_monitor:
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-    polygons: ["FootprintApproach"]
-    FootprintApproach:
+    polygons: ["footprint_approach"]
+    footprint_approach:
       type: "polygon"
       action_type: "approach"
       footprint_topic: "/local_costmap/published_footprint"

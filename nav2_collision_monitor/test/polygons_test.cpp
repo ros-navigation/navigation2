@@ -44,8 +44,8 @@ static const char BASE2_FRAME_ID[]{"base2_link"};
 static const char FOOTPRINT_TOPIC[]{"footprint"};
 static const char POLYGON_SUB_TOPIC[]{"polygon_sub"};
 static const char POLYGON_PUB_TOPIC[]{"polygon_pub"};
-static const char POLYGON_NAME[]{"TestPolygon"};
-static const char CIRCLE_NAME[]{"TestCircle"};
+static const char POLYGON_NAME[]{"test_polygon"};
+static const char CIRCLE_NAME[]{"test_circle"};
 static const char OBSERVATION_SOURCE_NAME[]{"source"};
 static const std::vector<double> SQUARE_POLYGON {
   0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5};

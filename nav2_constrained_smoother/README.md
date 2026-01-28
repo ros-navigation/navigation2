@@ -10,9 +10,9 @@ Example of configuration (see indoor_navigation package of this repo for a full 
 ```
 smoother_server:
   ros__parameters:
-    smoother_plugins: ["SmoothPath"]
+    smoother_plugins: ["smooth_path"]
 
-    SmoothPath:
+    smooth_path:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
       reversing_enabled: true       # whether to detect forward/reverse direction and cusps. Should be set to false for paths without orientations assigned
       path_downsampling_factor: 3   # every n-th node of the path is taken. Useful for speed-up
