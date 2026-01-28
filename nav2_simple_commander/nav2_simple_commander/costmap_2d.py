@@ -53,24 +53,24 @@ class PyCostmap2D:
 
         """
         if isinstance(occupancy_map, Costmap):
-            self.size_x = occupancy_map.metadata.size_x
-            self.size_y = occupancy_map.metadata.size_y
-            self.resolution = occupancy_map.metadata.resolution
-            self.origin_x = occupancy_map.metadata.origin.position.x
-            self.origin_y = occupancy_map.metadata.origin.position.y
+            self.size_x: int = occupancy_map.metadata.size_x
+            self.size_y: int = occupancy_map.metadata.size_y
+            self.resolution: float = occupancy_map.metadata.resolution
+            self.origin_x: float = occupancy_map.metadata.origin.position.x
+            self.origin_y: float = occupancy_map.metadata.origin.position.y
             self.global_frame_id: str = occupancy_map.header.frame_id
             self.costmap_timestamp: Time = occupancy_map.header.stamp
             self.costmap: NDArray[np.uint8] = np.array(occupancy_map.data, dtype=np.uint8)
         else:
-            self.size_x: int = occupancy_map.info.width
-            self.size_y: int = occupancy_map.info.height
-            self.resolution: float = occupancy_map.info.resolution
-            self.origin_x: float = occupancy_map.info.origin.position.x
-            self.origin_y: float = occupancy_map.info.origin.position.y
-            self.global_frame_id: str = occupancy_map.header.frame_id
-            self.costmap_timestamp: Time = occupancy_map.header.stamp
+            self.size_x = occupancy_map.info.width
+            self.size_y = occupancy_map.info.height
+            self.resolution = occupancy_map.info.resolution
+            self.origin_x = occupancy_map.info.origin.position.x
+            self.origin_y = occupancy_map.info.origin.position.y
+            self.global_frame_id = occupancy_map.header.frame_id
+            self.costmap_timestamp = occupancy_map.header.stamp
             # Extract costmap
-            self.costmap: NDArray[np.uint8] = np.array(occupancy_map.data, dtype=np.uint8)
+            self.costmap = np.array(occupancy_map.data, dtype=np.uint8)
 
     def getSizeInCellsX(self) -> int:
         """Get map width in cells."""
