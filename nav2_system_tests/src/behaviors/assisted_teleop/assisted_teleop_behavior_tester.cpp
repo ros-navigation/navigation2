@@ -24,6 +24,7 @@
 
 #include "assisted_teleop_behavior_tester.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_ros_common/interface_factories.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;  // NOLINT
@@ -56,15 +57,18 @@ AssistedTeleopBehaviorTester::AssistedTeleopBehaviorTester()
   cmd_vel_pub_ =
     node_->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel_teleop", 10);
 
-  subscription_ = node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "amcl_pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable(),
-    std::bind(&AssistedTeleopBehaviorTester::amclPoseCallback, this, std::placeholders::_1));
+  subscription_ = nav2::interfaces::create_subscription<
+    geometry_msgs::msg::PoseWithCovarianceStamped>(
+    node_,
+    "amcl_pose",
+    std::bind(&AssistedTeleopBehaviorTester::amclPoseCallback, this, std::placeholders::_1),
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
-  filtered_vel_sub_ = node_->create_subscription<geometry_msgs::msg::TwistStamped>(
+  filtered_vel_sub_ = nav2::interfaces::create_subscription<geometry_msgs::msg::TwistStamped>(
+    node_,
     "cmd_vel",
-    rclcpp::SystemDefaultsQoS(),
-    std::bind(&AssistedTeleopBehaviorTester::filteredVelCallback, this, std::placeholders::_1));
-
+    std::bind(&AssistedTeleopBehaviorTester::filteredVelCallback, this, std::placeholders::_1),
+    rclcpp::SystemDefaultsQoS());
   std::string costmap_topic = "/local_costmap/costmap_raw";
   std::string footprint_topic = "/local_costmap/published_footprint";
 
