@@ -54,7 +54,7 @@ void InputAtWaypoint::initialize(
   is_enabled_ = node->declare_or_get_parameter(
     plugin_name + ".enabled", true);
   input_topic = node->declare_or_get_parameter(
-    plugin_name + ".input_topic", "input_at_waypoint/input");
+    plugin_name + ".input_topic", std::string("input_at_waypoint/input"));
   timeout = node->declare_or_get_parameter(
     plugin_name + ".timeout", 10.0);
   timeout_ = rclcpp::Duration(timeout, 0.0);
