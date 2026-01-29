@@ -23,6 +23,8 @@ void PathAlignCritic::initialize()
   auto getParam = parameters_handler_->getParamGetter(name_);
   getParam(power_, "cost_power", 1);
   getParam(weight_, "cost_weight", 10.0f);
+  getParam(arc_length_weight_, "arc_length_weight", weight_);
+  getParam(geometric_weight_, "geometric_weight", weight_);
   getParam(max_path_occupancy_ratio_, "max_path_occupancy_ratio", 0.07f);
   getParam(offset_from_furthest_, "offset_from_furthest", 20);
   getParam(trajectory_point_step_, "trajectory_point_step", 4);
@@ -44,8 +46,8 @@ void PathAlignCritic::initialize()
 
   RCLCPP_INFO(
     logger_,
-    "PathAlignCritic instantiated with %d power, %f weight, mode: %s",
-    power_, weight_, mode.c_str());
+    "PathAlignCritic instantiated with %d power, arc_length_weight: %f, geometric_weight: %f, mode: %s",
+    power_, arc_length_weight_, geometric_weight_, mode.c_str());
 }
 
 void PathAlignCritic::score(CriticData & data)
@@ -170,9 +172,9 @@ void PathAlignCritic::scoreArcLength(CriticData & data, std::vector<bool> & path
   }
 
   if (power_ > 1u) {
-    data.costs += (cost * weight_).pow(power_);
+    data.costs += (cost * arc_length_weight_).pow(power_);
   } else {
-    data.costs += cost * weight_;
+    data.costs += cost * arc_length_weight_;
   }
 }
 
@@ -270,19 +272,18 @@ void PathAlignCritic::scoreGeometric(CriticData & data, std::vector<bool> & path
     }
   }
 
-  // Normalize by sampled trajectory length to make cost independent of sampling rate
+  // Normalize by number of samples to get average deviation per sample
   for (Eigen::Index i = 0; i < batch_size; ++i) {
     if (valid_sample_count(i) > 0) {
-      const float sampled_length = static_cast<float>(valid_sample_count(i) * effective_stride);
-      cost_array(i) /= sampled_length;
+      cost_array(i) /= static_cast<float>(valid_sample_count(i));
     }
   }
 
   // Apply weight and power, then add to total costs
   if (power_ > 1u) {
-    data.costs += (cost_array * weight_).pow(power_);
+    data.costs += (cost_array * geometric_weight_).pow(power_);
   } else {
-    data.costs += cost_array * weight_;
+    data.costs += cost_array * geometric_weight_;
   }
 }
 
@@ -310,7 +311,7 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
     path_x_cache_.size() == path_points_idx &&
     (path.x.head(path_points_idx).array() == path_x_cache_.head(path_points_idx).array()).all())
   {
-    return;  // Path unchanged, use cached values
+    return;
   }
 
   path_size_cache_ = path_points_count;

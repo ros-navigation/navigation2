@@ -124,6 +124,8 @@ protected:
 
   unsigned int power_{0};
   float weight_{0};
+  float arc_length_weight_{0};
+  float geometric_weight_{0};
 
   // Caching variables
   size_t path_size_cache_{0};
