@@ -83,6 +83,7 @@ nav2::CallbackReturn
 MapSaver::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+  save_map_service_->on_activate();
 
   // create bond connection
   createBond();
@@ -94,6 +95,7 @@ nav2::CallbackReturn
 MapSaver::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  save_map_service_->on_deactivate();
 
   // destroy bond connection
   destroyBond();
