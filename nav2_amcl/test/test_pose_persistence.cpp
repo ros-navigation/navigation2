@@ -155,7 +155,8 @@ TEST_F(PosePersistenceTest, test_default_filepath)
     amcl->get_parameter("saved_pose_filepath").as_string(),
     "/tmp/amcl_saved_pose");
 
-  amcl->cleanup();
+  // No need to call cleanup - node destructor handles it
+  // Calling cleanup without deactivate after configure can cause issues
 }
 
 int main(int argc, char ** argv)
