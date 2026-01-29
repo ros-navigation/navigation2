@@ -1523,8 +1523,18 @@ AmclNode::initTransforms()
 void
 AmclNode::initMessageFilters()
 {
+<<<<<<< HEAD
   auto sub_opt = rclcpp::SubscriptionOptions();
   sub_opt.callback_group = callback_group_;
+=======
+  auto sub_opt = nav2::interfaces::createSubscriptionOptions(
+    scan_topic_, allow_parameter_qos_overrides_);
+
+  #if RCLCPP_VERSION_GTE(29, 6, 0)
+  laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    shared_from_this(), scan_topic_, nav2::qos::SensorDataQoS(), sub_opt);
+  #else
+>>>>>>> 0b93eeb3 ([DEX] [AMCL] use main thread for laser callback (#5852))
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
       rclcpp_lifecycle::LifecycleNode>>(
     shared_from_this(), scan_topic_, rmw_qos_profile_sensor_data, sub_opt);
