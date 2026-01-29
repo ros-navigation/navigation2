@@ -812,16 +812,13 @@ TEST(GracefulControllerTest, slowDownForObstacle) {
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
-  auto results = costmap_ros->set_parameters(
-    {rclcpp::Parameter("global_frame", "test_global_frame"),
-      rclcpp::Parameter("robot_base_frame", "test_robot_frame"),
-      rclcpp::Parameter("width", 10),
-      rclcpp::Parameter("height", 10),
-      rclcpp::Parameter("resolution", 0.1),
-      rclcpp::Parameter("footprint", "[[-0.2, -0.2], [0.2, -0.2], [0.2, 0.2], [-0.2, 0.2]]")});
-  for (const auto & result : results) {
-    EXPECT_TRUE(result.successful) << result.reason;
-  }
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  costmap_ros->declare_parameter(
+    "footprint", rclcpp::ParameterValue("[[-0.2, -0.2], [0.2, -0.2], [0.2, 0.2], [-0.2, 0.2]]"));
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   // Create controller
