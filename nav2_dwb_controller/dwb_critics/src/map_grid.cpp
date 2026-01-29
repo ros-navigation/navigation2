@@ -41,7 +41,6 @@
 #include <memory>
 #include "dwb_core/exceptions.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 
 using std::abs;
 using costmap_queue::CellData;
@@ -68,13 +67,9 @@ void MapGridCritic::onInit()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  nav2::declare_parameter_if_not_declared(
-    node,
+  std::string aggro_str = node->declare_or_get_parameter(
     dwb_plugin_name_ + "." + name_ + ".aggregation_type",
-    rclcpp::ParameterValue(std::string("last")));
-
-  std::string aggro_str;
-  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".aggregation_type", aggro_str);
+    std::string("last"));
   std::transform(aggro_str.begin(), aggro_str.end(), aggro_str.begin(), ::tolower);
   if (aggro_str == "last") {
     aggregationType_ = ScoreAggregationType::Last;

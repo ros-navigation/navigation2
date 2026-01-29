@@ -40,7 +40,7 @@ TEST(GraphLoader, test_invalid_plugin)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   // Set dummy parameter
@@ -59,7 +59,7 @@ TEST(GraphLoader, test_api)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -85,7 +85,7 @@ TEST(GraphLoader, test_transformation_api)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -95,7 +95,7 @@ TEST(GraphLoader, test_transformation_api)
   GraphToIDMap graph_to_id_map;
   std::string filepath;
   filepath =
-    ament_index_cpp::get_package_share_directory("nav2_route") +
+    nav2::get_package_share_directory("nav2_route") +
     "/graphs/aws_graph.geojson";
   EXPECT_TRUE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
 
@@ -137,7 +137,7 @@ TEST(GraphLoader, test_transformation_api2)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/test/test_graphs/no_frame.json"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -146,7 +146,7 @@ TEST(GraphLoader, test_transformation_api2)
   Graph graph;
   GraphToIDMap graph_to_id_map;
   EXPECT_FALSE(graph_loader.loadGraphFromParameter(graph, graph_to_id_map));
-  std::string filepath = ament_index_cpp::get_package_share_directory("nav2_route") +
+  std::string filepath = nav2::get_package_share_directory("nav2_route") +
     "/test/test_graphs/no_frame.json";
   EXPECT_FALSE(graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath));
 }

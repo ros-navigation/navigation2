@@ -89,6 +89,18 @@ def main() -> None:
                 + ' seconds.'
             )
 
+            print(
+                'Distance remaining: '
+                + '{:.2f}'.format(feedback.distance_remaining)
+                + ' meters.'
+            )
+
+            print(
+                'Tracking error: '
+                + '{:.2f}'.format(feedback.tracking_error)
+                + ' meters.'
+            )
+
             # Some navigation timeout to demo cancellation
             if Duration.from_msg(feedback.navigation_time) > Duration(seconds=600.0):
                 navigator.cancelTask()

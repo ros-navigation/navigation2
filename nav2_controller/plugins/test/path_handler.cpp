@@ -109,11 +109,11 @@ TEST(PathHandlerTests, TestBounds)
   node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
-  rclcpp_lifecycle::State state;
-  costmap_ros->on_configure(state);
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
@@ -160,11 +160,11 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
   node->declare_parameter("dummy.enforce_path_rotation", true);
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
     "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
   auto results = costmap_ros->set_parameters_atomically(
     {rclcpp::Parameter("global_frame", "odom"),
       rclcpp::Parameter("robot_base_frame", "base_link")});
-  rclcpp_lifecycle::State state;
-  costmap_ros->on_configure(state);
 
   // Test initialization and getting costmap basic metadata
   handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());

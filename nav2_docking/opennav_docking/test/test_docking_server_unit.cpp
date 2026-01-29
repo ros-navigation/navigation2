@@ -89,11 +89,11 @@ TEST(DockingServerTests, testErrorExceptions)
     "dock_plugin.plugin",
     rclcpp::ParameterValue(std::string{"opennav_docking::TestFailureDock"}));
 
-  node->on_configure(rclcpp_lifecycle::State());
-  node->on_activate(rclcpp_lifecycle::State());
-
   node->declare_parameter("exception_to_throw", rclcpp::ParameterValue(""));
   node->declare_parameter("dock_action_called", rclcpp::ParameterValue(false));
+
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
 
   // Error codes docking
   std::vector<std::string> error_ids{
@@ -388,7 +388,7 @@ TEST(DockingServerTests, StopDetectionOnSuccess)
   node->declare_parameter("dock_action_called", true);
   // Note: isCharging() in TestFailureDock returns false, so it will wait for charge
   // which will succeed because the plugin is a charger. We'll set the timeout low.
-  node->set_parameter(rclcpp::Parameter("wait_charge_timeout", 0.1));
+  node->declare_parameter("wait_charge_timeout", rclcpp::ParameterValue(0.1));
 
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());

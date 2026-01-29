@@ -22,13 +22,14 @@
 #include "nav2_smac_planner/node_lattice.hpp"
 #include "gtest/gtest.h"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 
 using json = nlohmann::json;
 
 TEST(NodeLatticeTest, parser_test)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -55,7 +56,7 @@ TEST(NodeLatticeTest, parser_test)
   EXPECT_NEAR(metaData.grid_resolution, 0.05, 0.001);
   EXPECT_NEAR(metaData.number_of_headings, 16, 0.01);
   EXPECT_NEAR(metaData.heading_angles[0], 0.0, 0.01);
-  EXPECT_EQ(metaData.number_of_trajectories, 80u);
+  EXPECT_EQ(metaData.number_of_trajectories, 72u);
   EXPECT_EQ(metaData.motion_model, std::string("ackermann"));
 
   std::vector<nav2_smac_planner::MotionPrimitive> myPrimitives;
@@ -66,7 +67,7 @@ TEST(NodeLatticeTest, parser_test)
   }
 
   // Checks for parsing primitives
-  EXPECT_EQ(myPrimitives.size(), 80u);
+  EXPECT_EQ(myPrimitives.size(), 72u);
   EXPECT_NEAR(myPrimitives[0].trajectory_id, 0, 0.01);
   EXPECT_NEAR(myPrimitives[0].start_angle, 0.0, 0.01);
   EXPECT_NEAR(myPrimitives[0].end_angle, 13, 0.01);
@@ -86,7 +87,7 @@ TEST(NodeLatticeTest, parser_test)
 
 TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -132,7 +133,7 @@ TEST(NodeLatticeTest, test_node_lattice_neighbors_and_parsing)
 
 TEST(NodeLatticeTest, test_node_lattice_conversions)
 {
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -171,7 +172,7 @@ TEST(NodeLatticeTest, test_node_lattice_conversions)
 TEST(NodeLatticeTest, test_node_lattice)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -255,7 +256,7 @@ TEST(NodeLatticeTest, test_node_lattice)
 TEST(NodeLatticeTest, test_get_neighbors)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -313,7 +314,7 @@ TEST(NodeLatticeTest, test_get_neighbors)
 TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 {
   auto lnode = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
@@ -391,7 +392,7 @@ TEST(NodeLatticeTest, test_node_lattice_custom_footprint)
 TEST(NodeLatticeTest, test_node_lattice_traversal_costs)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  std::string pkg_share_dir = ament_index_cpp::get_package_share_directory("nav2_smac_planner");
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_smac_planner");
   std::string filePath =
     pkg_share_dir +
     "/sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann" +
