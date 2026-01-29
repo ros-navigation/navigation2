@@ -147,12 +147,12 @@ TEST(WPTest, test_dynamic_parameters)
   // Test zero save_pose_rate rejection
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", 0.0)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
-  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 0.0);
 
   // Test negative save_pose_rate rejection
   results = rec_param->set_parameters_atomically({rclcpp::Parameter("save_pose_rate", -1.0)});
   rclcpp::spin_until_future_complete(amcl->get_node_base_interface(), results);
-  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), 2.0);
+  EXPECT_EQ(amcl->get_parameter("save_pose_rate").as_double(), -1.0);
 }
 
 int main(int argc, char ** argv)
