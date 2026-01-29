@@ -208,11 +208,17 @@ controller_server:
         enabled: true
         cost_power: 1
         cost_weight: 14.0
+        arc_length_weight: 10.0
+        geometric_weight: 30.0
         max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 4
+        trajectory_point_step: 2
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
+        use_geometric_alignment: false
+        search_window: 1.0
+        score_arc_length: true
+        lookahead_distance: 2.0
       PathFollowCritic:
         enabled: true
         cost_power: 1
