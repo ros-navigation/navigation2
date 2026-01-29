@@ -159,6 +159,75 @@ TEST_F(PosePersistenceTest, test_default_filepath)
   // Calling cleanup without deactivate after configure can cause issues
 }
 
+TEST_F(PosePersistenceTest, test_load_saved_pose_file)
+{
+  // Create a pose file to load
+  {
+    std::ofstream file(test_filepath_);
+    file << "x: 1.5\n";
+    file << "y: 2.5\n";
+    file << "z: 0.0\n";
+    file << "yaw: 1.57\n";
+    file.close();
+  }
+
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {{"random_seed", 42},
+      {"initialize_at_saved_pose", true},
+      {"saved_pose_filepath", test_filepath_}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  amcl->configure();
+  amcl->activate();
+
+  // Verify parameters were set correctly
+  EXPECT_EQ(amcl->get_parameter("initialize_at_saved_pose").as_bool(), true);
+  EXPECT_EQ(amcl->get_parameter("saved_pose_filepath").as_string(), test_filepath_);
+
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
+TEST_F(PosePersistenceTest, test_ros_params_priority_over_saved_pose)
+{
+  // Create a pose file with different values than ROS params
+  {
+    std::ofstream file(test_filepath_);
+    file << "x: 10.0\n";
+    file << "y: 20.0\n";
+    file << "z: 0.0\n";
+    file << "yaw: 3.14\n";
+    file.close();
+  }
+
+  // Set both set_initial_pose and initialize_at_saved_pose to true
+  // ROS parameters should take priority
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {{"random_seed", 42},
+      {"set_initial_pose", true},
+      {"initial_pose.x", 1.0},
+      {"initial_pose.y", 2.0},
+      {"initial_pose.z", 0.0},
+      {"initial_pose.yaw", 0.5},
+      {"initialize_at_saved_pose", true},
+      {"saved_pose_filepath", test_filepath_}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  amcl->configure();
+  amcl->activate();
+
+  // Verify that ROS parameters were used (not the file values)
+  // The initial_pose parameters should reflect what was set, not the file
+  EXPECT_EQ(amcl->get_parameter("initial_pose.x").as_double(), 1.0);
+  EXPECT_EQ(amcl->get_parameter("initial_pose.y").as_double(), 2.0);
+  EXPECT_EQ(amcl->get_parameter("initial_pose.yaw").as_double(), 0.5);
+
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
