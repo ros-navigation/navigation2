@@ -32,7 +32,6 @@ NavigateThroughPosesNavigator::configure(
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
 {
   start_time_ = rclcpp::Time(0);
-  previous_path_ = nav_msgs::msg::Path();
   auto node = parent_node.lock();
 
   goals_blackboard_id_ =
@@ -167,8 +166,8 @@ NavigateThroughPosesNavigator::onLoop()
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
     // Reset start index if path is updated
-    if (nav2_util::isPathOrGoalUpdated(current_path,
-        previous_path_))
+    if (nav2_util::isPathUpdated(current_path,
+        previous_path_) || previous_path_.poses.size() == 0u)
     {
       start_index_ = 0;
       previous_path_ = current_path;
@@ -290,11 +289,15 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set("number_recoveries", 0);  // NOLINT
+  previous_path_ = nav_msgs::msg::Path();
 
-  // Update the goal pose on the blackboard
+  // Update the goal pose and path on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
     goals_blackboard_id_,
     std::move(goals_array));
+  blackboard->set<nav_msgs::msg::Path>(
+    path_blackboard_id_,
+    nav_msgs::msg::Path());
 
   // Reset the waypoint states vector in the blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());
