@@ -58,7 +58,7 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::bind(
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  this->add_managed_entity(set_graph_service_);
+  // this->add_managed_entity(set_graph_service_);
 
   route_frame_ = this->declare_or_get_parameter(
     "route_frame", std::string("map"));
