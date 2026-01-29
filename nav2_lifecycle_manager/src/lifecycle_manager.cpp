@@ -224,6 +224,9 @@ LifecycleManager::createLifecycleServiceServers()
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
     callback_group_);
+
+  manager_srv_->on_activate();
+  is_active_srv_->on_activate();
 }
 
 void
