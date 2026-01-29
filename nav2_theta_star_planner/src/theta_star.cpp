@@ -181,28 +181,31 @@ void ThetaStar::backtrace(std::vector<coordsW> & raw_points, const tree_node * c
   }
 }
 
-bool ThetaStar::losCheck(const int & x0, const int & y0, const int & x1, const int & y1, double & sl_cost) const {
+bool ThetaStar::losCheck(
+  const int & x0, const int & y0, const int & x1, const int & y1,
+  double & sl_cost) const
+{
   sl_cost = 0;
-  
+
   int dx = abs(x1 - x0), sx = (x0 < x1) ? 1 : -1;
   int dy = abs(y1 - y0), sy = (y0 < y1) ? 1 : -1;
-  int cx = x0, cy = y0, f = (dx >= dy) ? - dx / 2 : - dy / 2;
+  int cx = x0, cy = y0, f = (dx >= dy) ? -dx / 2 : -dy / 2;
 
   if (!isSafe(cx, cy)) {
     return false;
   }
-  
+
   if (dx >= dy) {
-    for (int i = 0; i <= dx; i++) {
+    for (int i = 0; i < dx; i++) {
       f += dy;
-      if (f > 0) {        
+      if (f > 0) {
         if (!isSafe(cx + sx, cy)) {
           return false;
         }
         if (!isSafe(cx, cy + sy)) {
           return false;
         }
-        
+
         cx += sx;
         cy += sy;
         f -= dx;
@@ -215,7 +218,7 @@ bool ThetaStar::losCheck(const int & x0, const int & y0, const int & x1, const i
       }
     }
   } else {
-    for (int i = 0; i <= dy; i++) {
+    for (int i = 0; i < dy; i++) {
       f += dx;
       if (f > 0) {
         if (!isSafe(cx + sx, cy)) {
@@ -224,7 +227,7 @@ bool ThetaStar::losCheck(const int & x0, const int & y0, const int & x1, const i
         if (!isSafe(cx, cy + sy)) {
           return false;
         }
-        
+
         cx += sx;
         cy += sy;
         f -= dy;
@@ -240,7 +243,6 @@ bool ThetaStar::losCheck(const int & x0, const int & y0, const int & x1, const i
 
   return true;
 }
-
 
 void ThetaStar::resetContainers()
 {
