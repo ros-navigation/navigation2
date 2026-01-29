@@ -301,6 +301,7 @@ void
 FeasiblePathHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   rcl_interfaces::msg::SetParametersResult result;
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();

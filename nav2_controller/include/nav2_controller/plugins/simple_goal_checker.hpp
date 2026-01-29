@@ -61,7 +61,7 @@ public:
    * @brief Construct a new Simple Goal Checker object
    */
   SimpleGoalChecker();
-  
+
   /**
    * @brief Initialize the goal checker
    * @param parent Weak pointer to the lifecycle node

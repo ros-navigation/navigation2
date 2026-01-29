@@ -40,7 +40,7 @@ public:
   void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
-  
+
   /**
    * @brief Checks if the robot has moved compare to previous
    * @param current_pose Current pose of the robot

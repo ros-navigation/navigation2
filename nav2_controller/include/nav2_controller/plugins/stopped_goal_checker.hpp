@@ -90,7 +90,7 @@ public:
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity,
     const nav_msgs::msg::Path & transformed_global_plan) override;
-  
+
   /**
    * @brief Get the position and velocity tolerances
    * @param pose_tolerance Output parameter for pose tolerance

@@ -33,7 +33,7 @@ namespace nav2_controller
 class PositionGoalChecker : public nav2_core::GoalChecker
 {
 public:
-  /** 
+  /**
    * @brief Construct a new Position Goal Checker object
    */
   PositionGoalChecker();
