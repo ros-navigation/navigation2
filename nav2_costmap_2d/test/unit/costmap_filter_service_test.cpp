@@ -104,12 +104,12 @@ protected:
 TEST_F(TestNode, testEnableService)
 {
   costmap_filter_->onInitialize();
+  costmap_filter_->activate();
 
   RCLCPP_INFO(node_->get_logger(), "Testing enabling service");
   auto req = std::make_shared<std_srvs::srv::SetBool::Request>();
   auto client = node_->create_client<std_srvs::srv::SetBool>(
     std::string(FILTER_NAME) + "/toggle_filter");
-
   RCLCPP_INFO(node_->get_logger(), "Waiting for enabling service");
   ASSERT_TRUE(client->wait_for_service());
 
