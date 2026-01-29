@@ -210,51 +210,7 @@ protected:
   void onFootprintChanged() override;
 
   /**
-   * @brief  Lookup pre-computed distances
-   * @param mx The x coordinate of the current cell
-   * @param my The y coordinate of the current cell
-   * @param src_x The x coordinate of the source cell
-   * @param src_y The y coordinate of the source cell
-   * @return
-   */
-  inline double distanceLookup(
-    unsigned int mx, unsigned int my, unsigned int src_x,
-    unsigned int src_y)
-  {
-    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
-    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
-    return cached_distances_[dx * cache_length_ + dy];
-  }
-
-  /**
-   * @brief  Lookup pre-computed costs
-   * @param mx The x coordinate of the current cell
-   * @param my The y coordinate of the current cell
-   * @param src_x The x coordinate of the source cell
-   * @param src_y The y coordinate of the source cell
-   * @return
-   */
-  inline unsigned char costLookup(
-    unsigned int mx, unsigned int my, unsigned int src_x,
-    unsigned int src_y)
-  {
-    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
-    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
-    return cached_costs_[dx * cache_length_ + dy];
-  }
-
-  /**
-   * @brief Compute cached dsitances
-   */
-  void computeCaches();
-
-  /**
-   * @brief Compute cached dsitances
-   */
-  int generateIntegerDistances();
-
-  /**
-   * @brief Compute cached dsitances
+   * @brief Convert world distance to cell distance
    */
   unsigned int cellDistance(double world_dist)
   {
@@ -262,11 +218,9 @@ protected:
   }
 
   /**
-   * @brief Enqueue new cells in cache distance update search
+   * @brief Generate cost lookup table for distance to cost mapping
    */
-  inline void enqueue(
-    unsigned int index, unsigned int mx, unsigned int my,
-    unsigned int src_x, unsigned int src_y);
+  void computeCaches();
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -278,17 +232,9 @@ protected:
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
-  unsigned int cached_cell_inflation_radius_;
-  std::vector<std::vector<CellData>> inflation_cells_;
-
+  unsigned int cost_lut_precision_;
   double resolution_;
-
-  std::vector<bool> seen_;
-
-  std::vector<unsigned char> cached_costs_;
-  std::vector<double> cached_distances_;
-  std::vector<std::vector<int>> distance_matrix_;
-  unsigned int cache_length_;
+  std::vector<unsigned char> cost_lut_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   // Indicates that the entire costmap should be reinflated next time around.
