@@ -1362,7 +1362,7 @@ void
 AmclNode::initMessageFilters()
 {
   auto sub_opt = nav2::interfaces::createSubscriptionOptions(
-    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
+    scan_topic_, allow_parameter_qos_overrides_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
