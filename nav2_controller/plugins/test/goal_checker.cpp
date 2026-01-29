@@ -202,6 +202,9 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   sgc.initialize(x, "test", costmap);
   gc.initialize(x, "test2", costmap);
   pgc.initialize(x, "test3", costmap);
+  sgc.activate();
+  gc.activate();
+  pgc.activate();
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
 
@@ -273,6 +276,10 @@ TEST(StoppedGoalChecker, get_tol_and_dynamic_params)
   EXPECT_TRUE(pgc.getTolerances(pose_tol, vel_tol));
   EXPECT_EQ(pose_tol.position.x, 200.0);
   EXPECT_EQ(pose_tol.position.y, 200.0);
+
+  sgc.deactivate();
+  gc.deactivate();
+  pgc.deactivate();
 }
 
 TEST(StoppedGoalChecker, is_reached)
@@ -287,6 +294,9 @@ TEST(StoppedGoalChecker, is_reached)
   sgc.initialize(x, "test", costmap);
   gc.initialize(x, "test2", costmap);
   pgc.initialize(x, "test3", costmap);
+  sgc.activate();
+  gc.activate();
+  pgc.activate();
   geometry_msgs::msg::Pose goal_pose;
   geometry_msgs::msg::Twist velocity;
   geometry_msgs::msg::Pose current_pose;
@@ -426,6 +436,10 @@ TEST(StoppedGoalChecker, is_reached)
   EXPECT_TRUE(sgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
   EXPECT_TRUE(gc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
   EXPECT_TRUE(pgc.isGoalReached(current_pose, goal_pose, velocity, transformed_global_plan));
+
+  sgc.deactivate();
+  gc.deactivate();
+  pgc.deactivate();
 }
 
 int main(int argc, char ** argv)

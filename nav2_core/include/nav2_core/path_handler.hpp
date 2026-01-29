@@ -62,6 +62,16 @@ public:
     std::shared_ptr<tf2_ros::Buffer> tf) = 0;
 
   /**
+  * @brief Registers callbacks for dynamic parameter handling.
+  */
+  virtual void activate() = 0;
+
+  /**
+  * @brief Resets callbacks for dynamic parameter handling.
+  */
+  virtual void deactivate() = 0;
+
+  /**
    * @brief Set new reference plan
    * @param Path Path to use
    */

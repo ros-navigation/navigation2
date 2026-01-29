@@ -237,7 +237,16 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   tracking_feedback_pub_->on_activate();
   action_server_->activate();
   param_handler_->activate();
-  auto node = shared_from_this();
+  // activate all the checkers and path handler
+  for (auto & pc : progress_checkers_) {
+    pc.second->activate();
+  }
+  for (auto & gc : goal_checkers_) {
+    gc.second->activate();
+  }
+  for (auto & ph : path_handlers_) {
+    ph.second->activate();
+  }
 
   // create bond connection
   createBond();
@@ -270,6 +279,15 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   transformed_plan_pub_->on_deactivate();
   tracking_feedback_pub_->on_deactivate();
   param_handler_->deactivate();
+  for (auto & pc : progress_checkers_) {
+    pc.second->deactivate();
+  }
+  for (auto & gc : goal_checkers_) {
+    gc.second->deactivate();
+  }
+  for (auto & ph : path_handlers_) {
+    ph.second->deactivate();
+  }
 
   // destroy bond connection
   destroyBond();

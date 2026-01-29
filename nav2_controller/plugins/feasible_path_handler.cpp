@@ -39,7 +39,8 @@ void FeasiblePathHandler::initialize(
 {
   logger_ = logger;
   plugin_name_ = plugin_name;
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
   costmap_ros_ = costmap_ros;
   tf_ = tf;
   transform_tolerance_ = costmap_ros_->getTransformTolerance();
@@ -69,10 +70,32 @@ void FeasiblePathHandler::initialize(
   if (!enforce_path_rotation_) {
     minimum_rotation_angle_ = 0.0f;
   }
+}
 
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&FeasiblePathHandler::dynamicParametersCallback, this, _1));
+void FeasiblePathHandler::activate()
+{
+  auto node = node_.lock();
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &FeasiblePathHandler::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &FeasiblePathHandler::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void FeasiblePathHandler::deactivate()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 double FeasiblePathHandler::getCostmapMaxExtent() const
@@ -141,6 +164,7 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::transformToGlobalPlanFrame(
 nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
   const geometry_msgs::msg::PoseStamped & pose)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   global_pose_ = transformToGlobalPlanFrame(pose);
 
   // Limit the search for the closest pose up to max_robot_pose_search_dist on the path
@@ -181,6 +205,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   const nav2_core::PathIterator & closest_point,
   const nav2_core::PathIterator & pruned_plan_end)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   nav_msgs::msg::Path transformed_plan;
   transformed_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
   transformed_plan.header.stamp = global_pose_.header.stamp;
@@ -248,16 +273,41 @@ geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
 }
 
 rcl_interfaces::msg::SetParametersResult
-FeasiblePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+FeasiblePathHandler::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  for (auto parameter : parameters) {
+  result.successful = true;
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
 
+void
+FeasiblePathHandler::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == plugin_name_ + ".max_robot_pose_search_dist") {
         max_robot_pose_search_dist_ = parameter.as_double();
@@ -281,8 +331,6 @@ FeasiblePathHandler::dynamicParametersCallback(std::vector<rclcpp::Parameter> pa
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller

@@ -37,18 +37,45 @@ void PoseProgressChecker::initialize(
 {
   plugin_name_ = plugin_name;
   SimpleProgressChecker::initialize(parent, plugin_name);
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
+  logger_ = node->get_logger();
 
   required_movement_angle_ = node->declare_or_get_parameter(
     plugin_name + ".required_movement_angle", 0.5);
+}
 
-  // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&PoseProgressChecker::dynamicParametersCallback, this, _1));
+void PoseProgressChecker::activate()
+{
+  SimpleProgressChecker::activate();
+  auto node = node_.lock();
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &PoseProgressChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PoseProgressChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
+}
+
+void PoseProgressChecker::deactivate()
+{
+  SimpleProgressChecker::deactivate();
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   // relies on short circuit evaluation to not call is_robot_moved_enough if
   // baseline_pose is not set.
   if (!baseline_pose_set_ || PoseProgressChecker::isRobotMovedEnough(current_pose.pose)) {
@@ -74,24 +101,51 @@ double PoseProgressChecker::poseAngleDistance(
 }
 
 rcl_interfaces::msg::SetParametersResult
-PoseProgressChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+PoseProgressChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
       continue;
     }
-
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".required_movement_angle") {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+PoseProgressChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (param_name == plugin_name_ + ".required_movement_radius") {
+        radius_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".movement_time_allowance") {
+        time_allowance_ = rclcpp::Duration::from_seconds(parameter.as_double());
+      } else if (param_name == plugin_name_ + ".required_movement_angle") {
         required_movement_angle_ = parameter.as_double();
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller

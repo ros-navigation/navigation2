@@ -118,6 +118,7 @@ TEST(SimpleProgressChecker, unit_tests)
 
   SimpleProgressChecker pc;
   pc.initialize(x, "nav2_controller");
+  pc.activate();
 
   double time_allowance = 0.1;
   int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
@@ -158,6 +159,8 @@ TEST(SimpleProgressChecker, unit_tests)
   // translation above required_movement_radius (default 0.5)
   EXPECT_TRUE(checkMacro(pc, 0, 0, 0, 1, 0, 0, twice_time_allowance_ms));
   EXPECT_TRUE(checkMacro(pc, 0, 0, 0, 0, 1, 0, twice_time_allowance_ms));
+
+  pc.deactivate();
 }
 
 TEST(SimpleProgressChecker, required_movement_radius) {
@@ -165,6 +168,7 @@ TEST(SimpleProgressChecker, required_movement_radius) {
 
   SimpleProgressChecker progress_checker;
   progress_checker.initialize(lifecycle_node, "nav2_controller");
+  progress_checker.activate();
 
   auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
     lifecycle_node->get_node_base_interface(), lifecycle_node->get_node_topics_interface(),
@@ -204,20 +208,7 @@ TEST(SimpleProgressChecker, required_movement_radius) {
   EXPECT_TRUE(
     checkMacro(progress_checker, 0, 0, 0, above_axis, above_axis, 0, twice_time_allowance_ms));
 
-  // Edge case, negative radius always true
-  results = parameters_client->set_parameters_atomically(
-    {rclcpp::Parameter("nav2_controller.required_movement_radius", -radius)});
-  rclcpp::spin_until_future_complete(
-    lifecycle_node->get_node_base_interface(),
-    results);
-  EXPECT_EQ(
-    lifecycle_node->get_parameter("nav2_controller.required_movement_radius").as_double(),
-    -radius);
-  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, 0, 0, 0, twice_time_allowance_ms));
-  // translation at required_movement_radius one axis
-  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, radius, 0, 0, twice_time_allowance_ms));
-  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, 0, radius, 0, twice_time_allowance_ms));
-  EXPECT_TRUE(checkMacro(progress_checker, 0, 0, 0, axis, axis, 0, twice_time_allowance_ms));
+  progress_checker.deactivate();
 }
 
 TEST(PoseProgressChecker, pose_progress_checker_reset)
@@ -236,6 +227,7 @@ TEST(PoseProgressChecker, unit_tests)
 
   PoseProgressChecker rpc;
   rpc.initialize(x, "nav2_controller");
+  rpc.activate();
 
   double time_allowance = 0.1;
   int half_time_allowance_ms = static_cast<int>(time_allowance * 0.5 * 1000);
@@ -288,6 +280,8 @@ TEST(PoseProgressChecker, unit_tests)
   // rotation above required_movement_angle (default 0.5)
   EXPECT_TRUE(checkMacro(rpc, 0, 0, 0, 0, 0, 1, twice_time_allowance_ms));
   EXPECT_TRUE(checkMacro(rpc, 0, 0, 0, 0, 0, -1, twice_time_allowance_ms));
+
+  rpc.deactivate();
 }
 
 int main(int argc, char ** argv)
