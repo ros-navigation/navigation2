@@ -206,6 +206,10 @@ public:
    */
   GoalManagerT getGoalManager();
 
+  /**
+   * @brief Get pointer to shared node context
+   * @return Node context pointer
+   */
   NodeContext * getContext();
 
 protected:
@@ -258,6 +262,13 @@ protected:
    */
   inline void clearGraph();
 
+  /**
+   * @brief Get index at coordinates
+   * @param x X coordinate of point
+   * @param y Y coordinate of point
+   * @param dim3 Z coordinate / theta bin of point
+   * @return Index
+   */
   inline uint64_t getIndex(
     const unsigned int & x, const unsigned int & y, const unsigned int & dim3);
 

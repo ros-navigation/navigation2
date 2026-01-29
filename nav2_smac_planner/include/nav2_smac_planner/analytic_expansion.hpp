@@ -109,6 +109,10 @@ public:
    */
   void setCollisionChecker(GridCollisionChecker * collision_checker);
 
+  /**
+   * @brief Sets the shared context to use
+   * @param ctx Shared context pointer
+   */
   void setContext(NodeContext * ctx);
 
   /**

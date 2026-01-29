@@ -74,7 +74,6 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
     closest_distance = std::min(
       closest_distance,
       static_cast<int>(current_node->getHeuristicCost(node_coords, goals_coords)));
-
     // We want to expand at a rate of d/expansion_ratio,
     // but check to see if we are so close that we would be expanding every iteration
     // If so, limit it to the expansion ratio (rounded up)

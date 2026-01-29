@@ -65,6 +65,10 @@ public:
    */
   ~GoalManager() = default;
 
+  /**
+   * @brief Sets the node context for goal nodes
+   * @param ctx Pointer to the NodeContext
+   */
   void setContext(NodeContext * ctx)
   {
     _ctx = ctx;

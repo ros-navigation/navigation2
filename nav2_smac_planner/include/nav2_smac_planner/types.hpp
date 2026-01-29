@@ -29,8 +29,6 @@ namespace nav2_smac_planner
 typedef std::pair<float, uint64_t> NodeHeuristicPair;
 typedef std::vector<float> LookupTable;
 typedef std::pair<double, double> TrigValues;
-class Node2D;
-class NodeHybrid;
 
 /**
  * @struct nav2_smac_planner::SearchInfo
