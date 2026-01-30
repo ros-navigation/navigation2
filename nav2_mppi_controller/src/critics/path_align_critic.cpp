@@ -298,18 +298,15 @@ void PathAlignCritic::updatePathCache(const models::Path & path, size_t path_seg
   // path_segments_count is the number of segments, so number of points is segments + 1
   const size_t path_points_count = path_segments_count + 1;
 
-  // Only update cache if path changed
-  // TODO(@silanus23): Optimize path change detection. Current element-wise comparison is expensive.
-  // Possible approaches:
-  //   1. Add hash field to models::Path (cleanest, needs controller-level change)
-  //   2. Compute local hash here (self-contained, small overhead)
-  //   3. Size-only check (fast but may miss updates when path replanned with same length)
-  //   4. Spot-check key points (middle, endpoints - may still miss changes)
-  // Seeking feedback on preferred approach.
+  // Only update cache if path changed by checking size, first, and middle positions
   const Eigen::Index path_points_idx = static_cast<Eigen::Index>(path_points_count);
+  const Eigen::Index mid_idx = path_points_idx / 2;
   if (path_points_idx == static_cast<Eigen::Index>(path_size_cache_) &&
     path_x_cache_.size() == path_points_idx &&
-    (path.x.head(path_points_idx).array() == path_x_cache_.head(path_points_idx).array()).all())
+    path.x(0) == path_x_cache_(0) &&
+    path.y(0) == path_y_cache_(0) &&
+    path.x(mid_idx) == path_x_cache_(mid_idx) &&
+    path.y(mid_idx) == path_y_cache_(mid_idx))
   {
     return;
   }
