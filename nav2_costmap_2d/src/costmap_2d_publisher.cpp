@@ -70,10 +70,12 @@ Costmap2DPublisher::Costmap2DPublisher(
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    nav2::qos::LatchedPublisherQoS());
-  costmap_raw_pub_ = node->create_publisher<nav2_msgs::msg::Costmap>(
+    custom_qos);
+
+  costmap_raw_pub_ = node->create_publisher<nav2_costmap_2d::Costmap2DStamped>(
     topic_name + "_raw",
-    nav2::qos::LatchedPublisherQoS());
+    custom_qos);
+
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", nav2::qos::LatchedPublisherQoS());
   costmap_raw_update_pub_ = node->create_publisher<nav2_msgs::msg::CostmapUpdate>(
@@ -162,7 +164,7 @@ void Costmap2DPublisher::prepareCostmap()
   std::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   double resolution = costmap_->getResolution();
 
-  costmap_raw_ = std::make_unique<nav2_msgs::msg::Costmap>();
+  costmap_raw_ = std::make_unique<nav2_costmap_2d::Costmap2DStamped>();
 
   costmap_raw_->header.frame_id = global_frame_;
   costmap_raw_->header.stamp = clock_->now();
@@ -180,58 +182,7 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_->metadata.origin.position.z = 0.0;
   costmap_raw_->metadata.origin.orientation.w = 1.0;
 
-  costmap_raw_->data.resize(costmap_raw_->metadata.size_x * costmap_raw_->metadata.size_y);
-
-  unsigned char * data = costmap_->getCharMap();
-  memcpy(costmap_raw_->data.data(), data, costmap_raw_->data.size());
-}
-
-std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
-{
-  auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
-
-  update->header.stamp = clock_->now();
-  update->header.frame_id = global_frame_;
-  update->x = x0_;
-  update->y = y0_;
-  update->width = xn_ - x0_;
-  update->height = yn_ - y0_;
-  update->data.resize(update->width * update->height);
-  const std::uint32_t map_width = costmap_->getSizeInCellsX();
-  unsigned char * costmap_data = costmap_->getCharMap();
-  std::uint32_t i = 0;
-  for (std::uint32_t y = y0_; y < yn_; y++) {
-    std::uint32_t row_start = y * map_width + x0_;
-    std::transform(
-      costmap_data + row_start, costmap_data + row_start + update->width,
-      update->data.begin() + i,
-      [](unsigned char c) {return cost_translation_table_[c];});
-    i += update->width;
-  }
-  return update;
-}
-
-std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmapUpdateMsg()
-{
-  auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
-
-  msg->header.stamp = clock_->now();
-  msg->header.frame_id = global_frame_;
-  msg->x = x0_;
-  msg->y = y0_;
-  msg->size_x = xn_ - x0_;
-  msg->size_y = yn_ - y0_;
-  msg->data.resize(msg->size_x * msg->size_y);
-  const std::uint32_t map_width = costmap_->getSizeInCellsX();
-  unsigned char * costmap_data = costmap_->getCharMap();
-
-  std::uint32_t i = 0;
-  for (std::uint32_t y = y0_; y < yn_; y++) {
-    std::uint32_t row_start = y * map_width + x0_;
-    std::copy_n(costmap_data + row_start, msg->size_x, msg->data.begin() + i);
-    i += msg->size_x;
-  }
-  return msg;
+  costmap_raw_->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*costmap_);
 }
 
 void Costmap2DPublisher::publishCostmap()
