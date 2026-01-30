@@ -38,10 +38,6 @@ public:
 
   virtual void reset() {}
 
-  virtual void activate() {}
-
-  virtual void deactivate() {}
-
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & /*query_pose*/,
     const geometry_msgs::msg::Pose & /*goal_pose*/,

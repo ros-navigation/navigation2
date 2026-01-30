@@ -35,6 +35,19 @@ AxisGoalChecker::AxisGoalChecker()
 {
 }
 
+AxisGoalChecker::~AxisGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void AxisGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
@@ -53,11 +66,8 @@ void AxisGoalChecker::initialize(
     plugin_name + ".path_length_tolerance", 1.0);
   is_overshoot_valid_ = node->declare_or_get_parameter(
     plugin_name + ".is_overshoot_valid", false);
-}
 
-void AxisGoalChecker::activate()
-{
-  auto node = node_.lock();
+  // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &AxisGoalChecker::updateParametersCallback,
@@ -66,19 +76,6 @@ void AxisGoalChecker::activate()
     std::bind(
       &AxisGoalChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void AxisGoalChecker::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 void AxisGoalChecker::reset()

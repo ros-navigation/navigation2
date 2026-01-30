@@ -35,6 +35,16 @@ class SimpleProgressChecker : public nav2_core::ProgressChecker
 {
 public:
   /**
+   * @brief Construct a new Simple Progress Checker object
+   */
+  SimpleProgressChecker() = default;
+
+  /**
+   * @brief Destroy the Simple Progress Checker object
+   */
+  ~SimpleProgressChecker();
+
+  /**
    * @brief Initialize the goal checker
    * @param parent Weak pointer to the lifecycle node
    * @param plugin_name Name of the plugin
@@ -42,15 +52,6 @@ public:
   void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
-  /**
-   * @brief Registers callbacks for dynamic parameter handling.
-   */
-  void activate() override;
-
-  /**
-   * @brief Resets callbacks for dynamic parameter handling.
-   */
-  void deactivate() override;
 
   /**
    * @brief Checks if the robot has moved compare to previous

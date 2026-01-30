@@ -41,7 +41,7 @@ public:
   /**
    * @brief Destroy the Position Goal Checker object
    */
-  ~PositionGoalChecker() override = default;
+  ~PositionGoalChecker();
 
   /**
    * @brief Initialize the goal checker
@@ -53,16 +53,6 @@ public:
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
-
-  /**
-   * @brief Registers callbacks for dynamic parameter handling.
-   */
-  void activate() override;
-
-  /**
-   * @brief Resets callbacks for dynamic parameter handling.
-   */
-  void deactivate() override;
 
   /**
    * @brief Reset the goal checker state

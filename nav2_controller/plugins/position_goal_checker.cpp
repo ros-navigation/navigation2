@@ -35,6 +35,19 @@ PositionGoalChecker::PositionGoalChecker()
 {
 }
 
+PositionGoalChecker::~PositionGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void PositionGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
@@ -51,11 +64,8 @@ void PositionGoalChecker::initialize(
   stateful_ = node->declare_or_get_parameter(plugin_name + ".stateful", true);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-}
 
-void PositionGoalChecker::activate()
-{
-  auto node = node_.lock();
+   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &PositionGoalChecker::updateParametersCallback,
@@ -64,19 +74,6 @@ void PositionGoalChecker::activate()
     std::bind(
       &PositionGoalChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void PositionGoalChecker::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 void PositionGoalChecker::reset()

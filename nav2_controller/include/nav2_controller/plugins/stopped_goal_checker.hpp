@@ -59,6 +59,11 @@ public:
   StoppedGoalChecker();
 
   /**
+   * @brief Destroy the Stopped Goal Checker object
+   */
+  ~StoppedGoalChecker();
+
+  /**
    * @brief Initialize the goal checker
    * @param parent Weak pointer to the lifecycle node
    * @param plugin_name Name of the plugin
@@ -68,15 +73,6 @@ public:
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
-  /**
-   * @brief Registers callbacks for dynamic parameter handling.
-   */
-  void activate() override;
-
-  /**
-   * @brief Resets callbacks for dynamic parameter handling.
-   */
-  void deactivate() override;
 
   /**
    * @brief Check if the goal is reached

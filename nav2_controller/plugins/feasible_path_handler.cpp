@@ -30,6 +30,19 @@ namespace nav2_controller
 {
 using nav2_util::geometry_utils::euclidean_distance;
 
+FeasiblePathHandler::~FeasiblePathHandler()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void FeasiblePathHandler::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const rclcpp::Logger & logger,
@@ -70,11 +83,8 @@ void FeasiblePathHandler::initialize(
   if (!enforce_path_rotation_) {
     minimum_rotation_angle_ = 0.0f;
   }
-}
 
-void FeasiblePathHandler::activate()
-{
-  auto node = node_.lock();
+  // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &FeasiblePathHandler::updateParametersCallback,
@@ -83,19 +93,6 @@ void FeasiblePathHandler::activate()
     std::bind(
       &FeasiblePathHandler::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void FeasiblePathHandler::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 double FeasiblePathHandler::getCostmapMaxExtent() const

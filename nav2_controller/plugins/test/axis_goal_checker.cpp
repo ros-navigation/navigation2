@@ -93,7 +93,6 @@ TEST(AxisGoalChecker, initialize_and_tolerances)
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   agc.initialize(node, "test", costmap);
-  agc.activate();
 
   geometry_msgs::msg::Pose pose_tol;
   geometry_msgs::msg::Twist vel_tol;
@@ -103,8 +102,6 @@ TEST(AxisGoalChecker, initialize_and_tolerances)
   // Default tolerances should be 0.25
   EXPECT_EQ(pose_tol.position.x, 0.25);
   EXPECT_EQ(pose_tol.position.y, 0.25);
-
-  agc.deactivate();
 }
 
 TEST(AxisGoalChecker, dynamic_parameters)
@@ -114,7 +111,6 @@ TEST(AxisGoalChecker, dynamic_parameters)
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   agc.initialize(node, "test", costmap);
-  agc.activate();
 
   // Test dynamic parameters
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -143,8 +139,6 @@ TEST(AxisGoalChecker, dynamic_parameters)
   EXPECT_TRUE(agc.getTolerances(pose_tol, vel_tol));
   EXPECT_EQ(pose_tol.position.x, 0.3);  // min of along_path and cross_track
   EXPECT_EQ(pose_tol.position.y, 0.3);
-
-  agc.deactivate();
 }
 
 TEST(AxisGoalChecker, single_point_path)
@@ -322,7 +316,6 @@ TEST(AxisGoalChecker, overshoot_valid)
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
   agc.initialize(node, "test", costmap);
-  agc.activate();
 
   // Enable overshoot
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -363,8 +356,6 @@ TEST(AxisGoalChecker, overshoot_valid)
   query_pose.position.x = 1.8;
   query_pose.position.y = 0.0;
   EXPECT_TRUE(agc.isGoalReached(query_pose, goal_pose, velocity, short_path));
-
-  agc.deactivate();
 }
 
 TEST(AxisGoalChecker, path_length_tolerance)

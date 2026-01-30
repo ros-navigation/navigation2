@@ -47,16 +47,6 @@ public:
     const std::string & plugin_name) = 0;
 
   /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  virtual void activate() = 0;
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  virtual void deactivate() = 0;
-
-  /**
    * @brief Checks if the robot has moved compare to previous
    * pose
    * @param current_pose Current pose of the robot

@@ -77,16 +77,6 @@ public:
   virtual void reset() = 0;
 
   /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  virtual void activate() = 0;
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  virtual void deactivate() = 0;
-
-  /**
    * @brief Check whether the goal should be considered reached
    * @param query_pose The pose to check
    * @param goal_pose The pose to check against

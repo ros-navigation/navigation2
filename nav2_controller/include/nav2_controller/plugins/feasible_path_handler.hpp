@@ -37,6 +37,16 @@ class FeasiblePathHandler : public nav2_core::PathHandler
 {
 public:
   /**
+   * @brief Construct a new Feasible Path Handler object
+   */
+  FeasiblePathHandler() = default;
+
+  /**
+   * @brief Destroy the Feasible Path Handler object
+   */
+  ~FeasiblePathHandler();
+
+  /**
    * @brief Initialize parameters
    * @param parent Lifecycle node pointer
    * @param logger Node logging interface
@@ -50,16 +60,6 @@ public:
     const std::string & plugin_name,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     std::shared_ptr<tf2_ros::Buffer> tf) override;
-
-  /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  void activate() override;
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  void deactivate() override;
 
   /**
    * @brief Set new reference plan

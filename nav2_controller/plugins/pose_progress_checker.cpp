@@ -31,6 +31,19 @@ using std::placeholders::_1;
 namespace nav2_controller
 {
 
+PoseProgressChecker::~PoseProgressChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void PoseProgressChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
@@ -43,12 +56,8 @@ void PoseProgressChecker::initialize(
 
   required_movement_angle_ = node->declare_or_get_parameter(
     plugin_name + ".required_movement_angle", 0.5);
-}
 
-void PoseProgressChecker::activate()
-{
-  SimpleProgressChecker::activate();
-  auto node = node_.lock();
+  // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &PoseProgressChecker::updateParametersCallback,
@@ -57,20 +66,6 @@ void PoseProgressChecker::activate()
     std::bind(
       &PoseProgressChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void PoseProgressChecker::deactivate()
-{
-  SimpleProgressChecker::deactivate();
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 bool PoseProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)

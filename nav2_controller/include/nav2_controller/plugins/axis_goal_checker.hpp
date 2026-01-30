@@ -43,6 +43,11 @@ public:
    */
   AxisGoalChecker();
 
+  /**
+   * @brief Destroy the Axis Goal Checker object
+   */
+  ~AxisGoalChecker();
+
   // Standard GoalChecker Interface
   /**
    * @brief Initialize the goal checker
@@ -59,16 +64,6 @@ public:
    * @brief Reset the goal checker state
    */
   void reset() override;
-
-  /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  void activate() override;
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  void deactivate() override;
 
   /**
    * @brief Check if the goal is reached

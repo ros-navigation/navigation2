@@ -33,6 +33,16 @@ class PoseProgressChecker : public SimpleProgressChecker
 {
 public:
   /**
+   * @brief Construct a new Pose Progress Checker object
+   */
+  PoseProgressChecker() = default;
+
+  /**
+   * @brief Destroy the Pose Progress Checker object
+   */
+  ~PoseProgressChecker();
+
+  /**
    * @brief Initialize the goal checker
    * @param parent Weak pointer to the lifecycle node
    * @param plugin_name Name of the plugin
@@ -47,16 +57,6 @@ public:
    * @return true, if the robot has moved enough, false otherwise
    */
   bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
-
-  /**
-  * @brief Registers callbacks for dynamic parameter handling.
-  */
-  void activate() override;
-
-  /**
-  * @brief Resets callbacks for dynamic parameter handling.
-  */
-  void deactivate() override;
 
 protected:
   /**

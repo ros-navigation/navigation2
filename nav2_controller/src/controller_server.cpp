@@ -87,7 +87,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created progress_checker : %s of type %s",
         params_->progress_checker_ids[i].c_str(), params_->progress_checker_types[i].c_str());
-      progress_checker->initialize(node, params_->progress_checker_ids[i]);
       progress_checkers_.insert({params_->progress_checker_ids[i], progress_checker});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
@@ -116,7 +115,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created goal checker : %s of type %s",
         params_->goal_checker_ids[i].c_str(), params_->goal_checker_types[i].c_str());
-      goal_checker->initialize(node, params_->goal_checker_ids[i], costmap_ros_);
       goal_checkers_.insert({params_->goal_checker_ids[i], goal_checker});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -142,8 +140,6 @@ ControllerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created path handler : %s of type %s",
         params_->path_handler_ids[i].c_str(), params_->path_handler_types[i].c_str());
-      path_handler->initialize(node, get_logger(), params_->path_handler_ids[i], costmap_ros_,
-        costmap_ros_->getTfBuffer());
       path_handlers_.insert({params_->path_handler_ids[i], path_handler});
     } catch (const pluginlib::PluginlibException & ex) {
       RCLCPP_FATAL(
@@ -237,15 +233,19 @@ ControllerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   tracking_feedback_pub_->on_activate();
   action_server_->activate();
   param_handler_->activate();
-  // activate all the checkers and path handler
+
+  // activate goal checker, progress checker and path handler
+  auto node = shared_from_this();
   for (auto & pc : progress_checkers_) {
-    pc.second->activate();
+    pc.second->initialize(node, pc.first);
   }
   for (auto & gc : goal_checkers_) {
-    gc.second->activate();
+    gc.second->initialize(node, gc.first, costmap_ros_);
   }
   for (auto & ph : path_handlers_) {
-    ph.second->activate();
+    ph.second->initialize(
+      node, get_logger(), ph.first, costmap_ros_,
+      costmap_ros_->getTfBuffer());
   }
 
   // create bond connection
@@ -279,15 +279,6 @@ ControllerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   transformed_plan_pub_->on_deactivate();
   tracking_feedback_pub_->on_deactivate();
   param_handler_->deactivate();
-  for (auto & pc : progress_checkers_) {
-    pc.second->deactivate();
-  }
-  for (auto & gc : goal_checkers_) {
-    gc.second->deactivate();
-  }
-  for (auto & ph : path_handlers_) {
-    ph.second->deactivate();
-  }
 
   // destroy bond connection
   destroyBond();

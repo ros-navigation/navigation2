@@ -27,6 +27,19 @@ using std::placeholders::_1;
 
 namespace nav2_controller
 {
+SimpleProgressChecker::~SimpleProgressChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void SimpleProgressChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name)
@@ -42,11 +55,8 @@ void SimpleProgressChecker::initialize(
   double time_allowance_param = node->declare_or_get_parameter(
     plugin_name + ".movement_time_allowance", 10.0);
   time_allowance_ = rclcpp::Duration::from_seconds(time_allowance_param);
-}
 
-void SimpleProgressChecker::activate()
-{
-  auto node = node_.lock();
+  // Add callback for dynamic parameter updates
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &SimpleProgressChecker::updateParametersCallback,
@@ -55,19 +65,6 @@ void SimpleProgressChecker::activate()
     std::bind(
       &SimpleProgressChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void SimpleProgressChecker::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 bool SimpleProgressChecker::check(geometry_msgs::msg::PoseStamped & current_pose)

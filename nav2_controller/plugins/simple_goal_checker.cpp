@@ -60,6 +60,19 @@ SimpleGoalChecker::SimpleGoalChecker()
 {
 }
 
+SimpleGoalChecker::~SimpleGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void SimpleGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
@@ -79,11 +92,8 @@ void SimpleGoalChecker::initialize(
     plugin_name + ".symmetric_yaw_tolerance", false);
 
   xy_goal_tolerance_sq_ = xy_goal_tolerance_ * xy_goal_tolerance_;
-}
 
-void SimpleGoalChecker::activate()
-{
-  auto node = node_.lock();
+  // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &SimpleGoalChecker::updateParametersCallback,
@@ -92,19 +102,6 @@ void SimpleGoalChecker::activate()
     std::bind(
       &SimpleGoalChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void SimpleGoalChecker::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 void SimpleGoalChecker::reset()

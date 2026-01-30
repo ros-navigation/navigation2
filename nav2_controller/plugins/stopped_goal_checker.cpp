@@ -55,6 +55,19 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
+StoppedGoalChecker::~StoppedGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void StoppedGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
@@ -71,12 +84,8 @@ void StoppedGoalChecker::initialize(
     plugin_name + ".rot_stopped_velocity", 0.25);
   trans_stopped_velocity_ = node->declare_or_get_parameter(
     plugin_name + ".trans_stopped_velocity", 0.25);
-}
 
-void StoppedGoalChecker::activate()
-{
-  SimpleGoalChecker::activate();
-  auto node = node_.lock();
+  // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
       &StoppedGoalChecker::updateParametersCallback,
@@ -85,20 +94,6 @@ void StoppedGoalChecker::activate()
     std::bind(
       &StoppedGoalChecker::validateParameterUpdatesCallback,
       this, std::placeholders::_1));
-}
-
-void StoppedGoalChecker::deactivate()
-{
-  SimpleGoalChecker::deactivate();
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
 }
 
 bool StoppedGoalChecker::isGoalReached(
