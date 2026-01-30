@@ -36,29 +36,23 @@ void BoundedTrackingErrorLayer::onInitialize()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  declareParameter("tracking_feedback_topic", rclcpp::ParameterValue("tracking_feedback"));
-  node->get_parameter(name_ + "." + "tracking_feedback_topic", tracking_feedback_topic_);
+  tracking_feedback_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "tracking_feedback_topic", std::string("tracking_feedback"));
 
-  declareParameter("path_topic", rclcpp::ParameterValue("plan"));
-  node->get_parameter(name_ + "." + "path_topic", path_topic_);
+  path_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "path_topic", std::string("plan"));
 
   // Declare and get parameters
-  declareParameter("look_ahead", rclcpp::ParameterValue(5.0));
-  node->get_parameter(name_ + "." + "look_ahead", look_ahead_);
+  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 5.0);
 
-  declareParameter("step", rclcpp::ParameterValue(5));
-  node->get_parameter(name_ + "." + "step", step_);
+  step_ = node->declare_or_get_parameter(name_ + "." + "step", 5);
   step_size_ = static_cast<size_t>(step_);
 
-  declareParameter("corridor_width", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name_ + "." + "corridor_width", corridor_width_);
+  corridor_width_ = node->declare_or_get_parameter(name_ + "." + "corridor_width", 2.0);
 
-  declareParameter("wall_thickness", rclcpp::ParameterValue(1));
-  node->get_parameter(name_ + "." + "wall_thickness", wall_thickness_);
+  wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
 
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  bool enabled_param;
-  node->get_parameter(name_ + "." + "enabled", enabled_param);
+  bool enabled_param = node->declare_or_get_parameter(name_ + "." + "enabled", true);
   enabled_.store(enabled_param);
 
   if (wall_thickness_ <= 0) {
