@@ -42,8 +42,7 @@ void BoundedTrackingErrorLayer::onInitialize()
   path_topic_ = node->declare_or_get_parameter(
     name_ + "." + "path_topic", std::string("plan"));
 
-  // Declare and get parameters
-  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 5.0);
+  look_ahead_ = node->declare_or_get_parameter(name_ + "." + "look_ahead", 3.0);
 
   step_ = node->declare_or_get_parameter(name_ + "." + "step", 5);
   step_size_ = static_cast<size_t>(step_);
@@ -52,15 +51,17 @@ void BoundedTrackingErrorLayer::onInitialize()
 
   wall_thickness_ = node->declare_or_get_parameter(name_ + "." + "wall_thickness", 1);
 
+  int corridor_cost_param = node->declare_or_get_parameter(name_ + "." + "corridor_cost", 250);
+  corridor_cost_ = static_cast<unsigned char>(std::clamp(corridor_cost_param, 1, 254));
+
   bool enabled_param = node->declare_or_get_parameter(name_ + "." + "enabled", true);
   enabled_.store(enabled_param);
 
   if (wall_thickness_ <= 0) {
     throw std::runtime_error{"wall_thickness must be greater than zero"};
   }
-
-  if (look_ahead_ <= 0.0) {
-    throw std::runtime_error{"look_ahead must be positive"};
+  if (look_ahead_ <= 0.0 || look_ahead_ > 3.0) {
+    throw std::runtime_error{"look_ahead must be positive and <= 3.0 meters"};
   }
   if (corridor_width_ <= 0.0) {
     throw std::runtime_error{"corridor_width must be positive"};
@@ -86,12 +87,13 @@ void BoundedTrackingErrorLayer::pathCallback(const nav_msgs::msg::Path::SharedPt
   auto msg_time = rclcpp::Time(msg->header.stamp);
   auto age = (now - msg_time).seconds();
 
-  if (age > 1.0) {
+  if (age > 2.0) {
     RCLCPP_WARN_THROTTLE(
       node->get_logger(),
       *node->get_clock(),
       5000,
-      "Path is %.2f seconds old", age);
+      "Path is %.2f seconds old, clearing corridor", age);
+    last_path_ = nav_msgs::msg::Path();
     return;
   }
   last_path_ = *msg;
@@ -108,7 +110,6 @@ void BoundedTrackingErrorLayer::trackingCallback(
 
   std::lock_guard<std::mutex> lock(data_mutex_);
 
-  // Check if timestamp is sufficiently current
   auto now = node->now();
   auto msg_time = rclcpp::Time(msg->header.stamp);
   auto age = (now - msg_time).seconds();
@@ -138,19 +139,27 @@ void BoundedTrackingErrorLayer::updateBounds(
   *max_y = std::max(*max_y, robot_y + look_ahead_);
 }
 
-std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
+WallPolygons BoundedTrackingErrorLayer::getWallPolygons(
   const nav_msgs::msg::Path & segment)
 {
-  std::vector<std::vector<double>> point_list;
+  WallPolygons walls;
 
-  // Early return checks
   if (segment.poses.empty() || step_size_ == 0) {
-    return point_list;
+    return walls;
   }
 
-  // Reserve space for better performance (estimate 2 points per step)
-  size_t estimated_points = (segment.poses.size() / step_size_) * 2;
-  point_list.reserve(estimated_points);
+  // Get the costmap resolution for calculating inner width
+  double resolution = layered_costmap_->getCostmap()->getResolution();
+
+  double outer_half_width = corridor_width_ * 0.5;
+  double inner_half_width = (corridor_width_ - (wall_thickness_ * resolution * 2.0)) * 0.5;
+
+  // Reserve space for efficiency
+  size_t estimated_points = (segment.poses.size() / step_size_) + 1;
+  walls.left_outer.reserve(estimated_points);
+  walls.left_inner.reserve(estimated_points);
+  walls.right_outer.reserve(estimated_points);
+  walls.right_inner.reserve(estimated_points);
 
   // Process path points with step size
   for (size_t current_index = 0; current_index < segment.poses.size();
@@ -160,29 +169,14 @@ std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
     double px = current_pose.pose.position.x;
     double py = current_pose.pose.position.y;
 
-    // Calculate direction vector to next point
-    double dx = 0.0, dy = 0.0;
-
-    if (current_index + step_size_ < segment.poses.size()) {
-      // Use next point at step distance
-      const auto & next_pose = segment.poses[current_index + step_size_];
-      dx = next_pose.pose.position.x - px;
-      dy = next_pose.pose.position.y - py;
-    } else if (current_index + 1 < segment.poses.size()) {
-      // Use immediate next point if step would go out of bounds
-      const auto & next_pose = segment.poses[current_index + 1];
-      dx = next_pose.pose.position.x - px;
-      dy = next_pose.pose.position.y - py;
-    } else {
-      // Last point - use previous direction if available
-      if (current_index > 0) {
-        const auto & prev_pose = segment.poses[current_index - 1];
-        dx = px - prev_pose.pose.position.x;
-        dy = py - prev_pose.pose.position.y;
-      } else {
-        continue;
-      }
+    // Only draw corridor if we have enough lookahead distance
+    if (current_index + step_size_ >= segment.poses.size()) {
+      break;
     }
+
+    const auto & next_pose = segment.poses[current_index + step_size_];
+    double dx = next_pose.pose.position.x - px;
+    double dy = next_pose.pose.position.y - py;
 
     // Calculate perpendicular direction for wall points
     double norm = std::hypot(dx, dy);
@@ -193,19 +187,18 @@ std::vector<std::vector<double>> BoundedTrackingErrorLayer::getWallPoints(
     double perp_x = -dy / norm;
     double perp_y = dx / norm;
 
-    // Multiply by 0.5 to get half the width, creating symmetric boundaries on both sides of the path
-    double half_width = corridor_width_ * 0.5;
-
-    point_list.push_back({px + perp_x * half_width, py + perp_y * half_width});
-    point_list.push_back({px - perp_x * half_width, py - perp_y * half_width});
+    // Calculate all 4 points at this location
+    walls.left_outer.push_back({px + perp_x * outer_half_width, py + perp_y * outer_half_width});
+    walls.left_inner.push_back({px + perp_x * inner_half_width, py + perp_y * inner_half_width});
+    walls.right_outer.push_back({px - perp_x * outer_half_width, py - perp_y * outer_half_width});
+    walls.right_inner.push_back({px - perp_x * inner_half_width, py - perp_y * inner_half_width});
   }
 
-  return point_list;
+  return walls;
 }
 
 nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
 {
-  // NOTE: Caller must hold data_mutex_ before calling this method
   nav_msgs::msg::Path segment;
   if (last_path_.poses.empty() ||
     last_tracking_feedback_.current_path_index >= last_path_.poses.size())
@@ -217,7 +210,6 @@ nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
   size_t end_index = start_index;
   double dist_traversed = 0.0;
 
-  // Limit the corridor with look_ahead_
   for (size_t i = start_index; i < last_path_.poses.size() - 1; ++i) {
     dist_traversed += nav2_util::geometry_utils::euclidean_distance(
       last_path_.poses[i], last_path_.poses[i + 1]);
@@ -227,7 +219,6 @@ nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
     }
   }
 
-  // Create the forward corridor segment
   if (start_index < end_index && end_index <= last_path_.poses.size()) {
     segment.header = last_path_.header;
     segment.poses.assign(
@@ -242,62 +233,7 @@ nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
   return segment;
 }
 
-void BoundedTrackingErrorLayer::drawWallLine(
-  nav2_costmap_2d::Costmap2D & master_grid,
-  unsigned int x0, unsigned int y0,
-  unsigned int x1, unsigned int y1,
-  unsigned int map_size_x, unsigned int map_size_y)
-{
-  // Calculate perpendicular direction for wall thickness
-  int dx = static_cast<int>(x1) - static_cast<int>(x0);
-  int dy = static_cast<int>(y1) - static_cast<int>(y0);
-  double norm = std::hypot(dx, dy);
 
-  if (norm < 1e-6) {
-    return;
-  }
-
-  double perp_x = -dy / norm;
-  double perp_y = dx / norm;
-
-  // Draw parallel lines for thickness
-  for (int t = 0; t < wall_thickness_; ++t) {
-    int offset_x = static_cast<int>(std::round(perp_x * t));
-    int offset_y = static_cast<int>(std::round(perp_y * t));
-
-    // Use signed arithmetic to avoid unsigned underflow
-    int thick_x0_signed = static_cast<int>(x0) + offset_x;
-    int thick_y0_signed = static_cast<int>(y0) + offset_y;
-    int thick_x1_signed = static_cast<int>(x1) + offset_x;
-    int thick_y1_signed = static_cast<int>(y1) + offset_y;
-
-    // Skip if any coordinate is negative (would underflow as unsigned)
-    if (thick_x0_signed < 0 || thick_y0_signed < 0 ||
-      thick_x1_signed < 0 || thick_y1_signed < 0)
-    {
-      continue;
-    }
-
-    unsigned int thick_x0 = static_cast<unsigned int>(thick_x0_signed);
-    unsigned int thick_y0 = static_cast<unsigned int>(thick_y0_signed);
-    unsigned int thick_x1 = static_cast<unsigned int>(thick_x1_signed);
-    unsigned int thick_y1 = static_cast<unsigned int>(thick_y1_signed);
-
-    // Skip if coordinates are outside map bounds
-    if (thick_x0 >= map_size_x || thick_y0 >= map_size_y ||
-      thick_x1 >= map_size_x || thick_y1 >= map_size_y)
-    {
-      continue;
-    }
-
-    auto cells = nav2_util::geometry_utils::bresenham(thick_x0, thick_y0, thick_x1, thick_y1);
-    for (const auto & cell : cells) {
-      if (cell[0] < map_size_x && cell[1] < map_size_y) {
-        master_grid.setCost(cell[0], cell[1], nav2_costmap_2d::LETHAL_OBSTACLE);
-      }
-    }
-  }
-}
 
 void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
@@ -309,7 +245,6 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   auto node = node_.lock();
 
-  // Quickly copy the data we need under lock, then release
   nav_msgs::msg::Path segment;
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
@@ -356,32 +291,59 @@ void BoundedTrackingErrorLayer::updateCosts(
     }
   }
 
-  auto wall_points = getWallPoints(transformed_segment);
+  auto walls = getWallPolygons(transformed_segment);
 
-  // Get map dimensions for bounds checking
-  unsigned int map_size_x = master_grid.getSizeInCellsX();
-  unsigned int map_size_y = master_grid.getSizeInCellsY();
-
-  // Draw lines between consecutive wall points using Bresenham
-  for (size_t i = 0; i < wall_points.size(); i += 2) {
-    if (i + 2 < wall_points.size()) {
-      unsigned int x0, y0, x1, y1;
-
-      // Line on left side of path
-      if (master_grid.worldToMap(wall_points[i][0], wall_points[i][1], x0, y0) &&
-        master_grid.worldToMap(wall_points[i + 2][0], wall_points[i + 2][1], x1, y1))
-      {
-        drawWallLine(master_grid, x0, y0, x1, y1, map_size_x, map_size_y);
-      }
-
-      // Line on right side of path
-      if (master_grid.worldToMap(wall_points[i + 1][0], wall_points[i + 1][1], x0, y0) &&
-        master_grid.worldToMap(wall_points[i + 3][0], wall_points[i + 3][1], x1, y1))
-      {
-        drawWallLine(master_grid, x0, y0, x1, y1, map_size_x, map_size_y);
-      }
+  if (walls.left_outer.empty() || walls.right_outer.empty()) {
+    if (node) {
+      RCLCPP_DEBUG_THROTTLE(
+        node->get_logger(),
+        *node->get_clock(),
+        5000,
+        "Not enough wall points to form polygons");
     }
+    return;
   }
+
+  std::vector<geometry_msgs::msg::Point> left_wall_polygon;
+  left_wall_polygon.reserve(walls.left_outer.size() + walls.left_inner.size());
+  
+  for (const auto & pt : walls.left_outer) {
+    geometry_msgs::msg::Point point;
+    point.x = pt[0];
+    point.y = pt[1];
+    point.z = 0.0;
+    left_wall_polygon.push_back(point);
+  }
+  
+  for (auto it = walls.left_inner.rbegin(); it != walls.left_inner.rend(); ++it) {
+    geometry_msgs::msg::Point point;
+    point.x = (*it)[0];
+    point.y = (*it)[1];
+    point.z = 0.0;
+    left_wall_polygon.push_back(point);
+  }
+
+  std::vector<geometry_msgs::msg::Point> right_wall_polygon;
+  right_wall_polygon.reserve(walls.right_outer.size() + walls.right_inner.size());
+  
+  for (const auto & pt : walls.right_outer) {
+    geometry_msgs::msg::Point point;
+    point.x = pt[0];
+    point.y = pt[1];
+    point.z = 0.0;
+    right_wall_polygon.push_back(point);
+  }
+  
+  for (auto it = walls.right_inner.rbegin(); it != walls.right_inner.rend(); ++it) {
+    geometry_msgs::msg::Point point;
+    point.x = (*it)[0];
+    point.y = (*it)[1];
+    point.z = 0.0;
+    right_wall_polygon.push_back(point);
+  }
+
+  master_grid.setConvexPolygonCost(left_wall_polygon, corridor_cost_);
+  master_grid.setConvexPolygonCost(right_wall_polygon, corridor_cost_);
 }
 
 
@@ -396,7 +358,6 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
 
-    // Only process parameters for this layer
     if (param_name.find(name_ + ".") != 0) {
       continue;
     }
@@ -404,9 +365,9 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead") {
         double new_value = parameter.as_double();
-        if (new_value <= 0.0) {
+        if (new_value <= 0.0 || new_value > 3.0) {
           result.successful = false;
-          result.reason = "look_ahead must be positive";
+          result.reason = "look_ahead must be positive and <= 3.0 meters";
           return result;
         }
         look_ahead_ = new_value;
@@ -433,6 +394,14 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
         }
         step_ = new_value;
         step_size_ = static_cast<size_t>(step_);
+      } else if (param_name == name_ + "." + "corridor_cost") {
+        int new_value = parameter.as_int();
+        if (new_value <= 0 || new_value > 254) {
+          result.successful = false;
+          result.reason = "corridor_cost must be between 1 and 254";
+          return result;
+        }
+        corridor_cost_ = static_cast<unsigned char>(new_value);
       } else if (param_name == name_ + "." + "wall_thickness") {
         int new_value = parameter.as_int();
         if (new_value <= 0) {
@@ -455,7 +424,6 @@ void BoundedTrackingErrorLayer::activate()
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  // Create subscriptions when layer is activated
   // Join topics with parent namespace for proper namespacing
   std::string path_topic = joinWithParentNamespace(path_topic_);
   std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
@@ -476,11 +444,9 @@ void BoundedTrackingErrorLayer::activate()
 
 void BoundedTrackingErrorLayer::deactivate()
 {
-  // Destroy subscriptions when layer is deactivated
   path_sub_.reset();
   tracking_feedback_sub_.reset();
 
-  // Clear cached data
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
     last_path_ = nav_msgs::msg::Path();
