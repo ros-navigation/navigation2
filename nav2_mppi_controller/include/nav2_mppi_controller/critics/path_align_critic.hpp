@@ -15,6 +15,7 @@
 #ifndef NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
 #define NAV2_MPPI_CONTROLLER__CRITICS__PATH_ALIGN_CRITIC_HPP_
 
+#include <algorithm>
 #include <vector>
 
 #include "nav2_mppi_controller/critic_function.hpp"
@@ -48,26 +49,54 @@ public:
 
 protected:
   /**
-   * @brief Score trajectories using arc-length matching
+   * @brief Update cached path data when path changes
+   *
+   * Precomputes and caches path segment geometry including segment vectors,
+   * lengths, and cumulative arc-length distances. Only recomputes when the path
+   * actually changes (detected via size and key point checks).
+   *
+   * @param path Reference path to cache
+   * @param path_segments_count Number of segments to consider from path start
+   */
+  void updatePathCache(const models::Path & path, size_t path_segments_count);
+
+  /**
+   * @brief Score trajectories using arc-length matching along path
+   *
+   * Integrates distance traveled along each trajectory and matches it to equivalent
+   * arc-length positions on the reference path. Penalizes Euclidean distance between
+   * trajectory points and their corresponding path points. Optionally includes
+   * orientation difference when use_path_orientations_ is enabled.
+   *
+   * @param data Critic data containing trajectories and path information
+   * @param path_pts_valid Validity flags for each path point (collision-free or not)
    */
   void scoreArcLength(CriticData & data, std::vector<bool> & path_pts_valid);
 
   /**
    * @brief Score trajectories using geometric distance to path segments
+   *
+   * Samples points along each trajectory and computes their perpendicular distance
+   * to the nearest path segment. Uses a hint-based search within a configurable
+   * window for efficiency. Only scores points within lookahead_distance_ of the
+   * trajectory start.
+   *
+   * @param data Critic data containing trajectories and path information
+   * @param path_pts_valid Validity flags for each path point (collision-free or not)
    */
   void scoreGeometric(CriticData & data, std::vector<bool> & path_pts_valid);
 
   /**
-   * @brief Update cached path data when path changes
-   */
-  void updatePathCache(const models::Path & path, size_t path_segments_count);
-
-  /**
    * @brief Compute minimum distance from point to any path segment
+   *
+   * Uses a search window around the hint index to find the nearest segment,
+   * exploiting path locality. The window is defined in arc-length distance
+   * along the path. Updates the hint for subsequent calls.
+   *
    * @param px Point x coordinate
    * @param py Point y coordinate
-   * @param closest_seg_idx In/out: hint for search, updated to closest segment
-   * @return Distance to closest segment
+   * @param closest_seg_idx [in/out] Search hint, updated to closest segment found
+   * @return Euclidean distance to closest segment
    */
   float computeMinDistanceToPath(float px, float py, Eigen::Index & closest_seg_idx);
 
