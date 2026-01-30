@@ -205,29 +205,43 @@ InflationLayer::updateCosts(
   max_i = std::min(static_cast<int>(size_x), max_i);
   max_j = std::min(static_cast<int>(size_y), max_j);
 
+  // Compute padded ROI bounds for distance transform
+  const int padding = static_cast<int>(cell_inflation_radius_);
+  int roi_min_i = std::max(0, min_i - padding);
+  int roi_min_j = std::max(0, min_j - padding);
+  int roi_max_i = std::min(static_cast<int>(size_x), max_i + padding);
+  int roi_max_j = std::min(static_cast<int>(size_y), max_j + padding);
+
+  const int roi_width = roi_max_i - roi_min_i;
+  const int roi_height = roi_max_j - roi_min_j;
+
   cv::Mat master_mat(size_y, size_x, CV_8UC1, master_array);
+  cv::Mat distance_map;
+
+  // Create ROI for mask creation and distance transform
+  cv::Mat processing_region = master_mat(cv::Rect(roi_min_i, roi_min_j, roi_width, roi_height));
+
+  // Create mask
   cv::Mat mask;
   if (inflate_around_unknown_) {
     cv::Mat not_lethal, not_unknown;
-    cv::compare(master_mat, LETHAL_OBSTACLE, not_lethal, cv::CMP_NE);
-    cv::compare(master_mat, NO_INFORMATION, not_unknown, cv::CMP_NE);
+    cv::compare(processing_region, LETHAL_OBSTACLE, not_lethal, cv::CMP_NE);
+    cv::compare(processing_region, NO_INFORMATION, not_unknown, cv::CMP_NE);
     cv::bitwise_and(not_lethal, not_unknown, mask);
   } else {
-    cv::compare(master_mat, LETHAL_OBSTACLE, mask, cv::CMP_NE);
+    cv::compare(processing_region, LETHAL_OBSTACLE, mask, cv::CMP_NE);
   }
 
-  cv::Mat distance_map;
   cv::distanceTransform(mask, distance_map, cv::DIST_L2, cv::DIST_MASK_PRECISE);
-
   const float cell_inflation_radius_f = static_cast<float>(cell_inflation_radius_);
   const unsigned int lut_max = static_cast<unsigned int>(cost_lut_.size() - 1);
 
   for (int j = min_j; j < max_j; ++j) {
-    const float * dist_row = distance_map.ptr<float>(j);
+    const float * dist_row = distance_map.ptr<float>(j - roi_min_j);
     const int row_offset = j * size_x;
 
     for (int i = min_i; i < max_i; ++i) {
-      const float distance_cells = dist_row[i];
+      const float distance_cells = dist_row[i - roi_min_i];
       if (distance_cells > cell_inflation_radius_f) {
         continue;
       }
