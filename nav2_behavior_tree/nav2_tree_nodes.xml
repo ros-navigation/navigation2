@@ -409,6 +409,11 @@
       <input_port name="battery_topic">Topic for battery info</input_port>
     </Condition>
 
+    <Condition ID="IsWithinPathTrackingBounds">
+      <input_port name="max_error_left">Maximum distance the robot can deviate from the path in meters on the left side</input_port>
+      <input_port name="max_error_right">Maximum distance the robot can deviate from the path in meters on the right side</input_port>
+    </Condition>
+
     <Condition ID="DistanceTraveled">
       <input_port name="distance">Distance to check if passed</input_port>
       <input_port name="global_frame">reference frame to check in</input_port>
