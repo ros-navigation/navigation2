@@ -37,6 +37,18 @@
 
 namespace nav2_costmap_2d
 {
+
+/**
+ * @brief Structure holding separate wall polygon components for left and right walls.
+ */
+struct WallPolygons
+{
+  std::vector<std::vector<double>> left_outer;
+  std::vector<std::vector<double>> left_inner;
+  std::vector<std::vector<double>> right_outer;
+  std::vector<std::vector<double>> right_inner;
+};
+
 /**
  * @class nav2_costmap_2d::BoundedTrackingErrorLayer
  * @brief A costmap layer that creates a dynamic corridor (tracking bounds) around the planned path
@@ -113,11 +125,11 @@ public:
   virtual void deactivate();
 
   /**
-   * @brief Computes wall points for creating corridor boundaries from a path segment.
-   * @param segment Path segment to generate wall points from.
-   * @return Vector of wall point coordinates [x, y].
+   * @brief Computes separate wall polygons for left and right corridor boundaries.
+   * @param segment Path segment to generate wall polygons from.
+   * @return WallPolygons structure containing outer and inner edges for both walls.
    */
-  std::vector<std::vector<double>> getWallPoints(const nav_msgs::msg::Path & segment);
+  WallPolygons getWallPolygons(const nav_msgs::msg::Path & segment);
 
   /**
    * @brief Creates segment from current path. Length is decided by look_ahead parameter.
@@ -147,22 +159,6 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
 
-  /**
-   * @brief Draws a wall line on the costmap using Bresenham's algorithm with thickness.
-   * @param master_grid Reference to the costmap to draw on.
-   * @param x0 Start x coordinate in map cells.
-   * @param y0 Start y coordinate in map cells.
-   * @param x1 End x coordinate in map cells.
-   * @param y1 End y coordinate in map cells.
-   * @param map_size_x Width of the map in cells.
-   * @param map_size_y Height of the map in cells.
-   */
-  void drawWallLine(
-    nav2_costmap_2d::Costmap2D & master_grid,
-    unsigned int x0, unsigned int y0,
-    unsigned int x1, unsigned int y1,
-    unsigned int map_size_x, unsigned int map_size_y);
-
   nav2_msgs::msg::TrackingFeedback last_tracking_feedback_;
 
 private:
@@ -179,6 +175,7 @@ private:
   std::atomic<bool> enabled_;
   std::string path_topic_;
   std::string tracking_feedback_topic_;
+  unsigned char corridor_cost_;
   int wall_thickness_;
 };
 
