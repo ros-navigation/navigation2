@@ -243,6 +243,109 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
   delete costmapA;
 }
 
+TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // 0.4m/5cm resolution costmap
+  info.cost_penalty = 1.7;
+  info.retrospective_penalty = 0.0;
+  info.use_quadratic_cost_penalty = true;
+  info.downsample_obstacle_heuristic = false;
+  unsigned int size_theta = 72;
+
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+
+  int max_iterations = 10000;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    100, 100, 0.1, 0.0, 0.0, 0);
+  // island in the middle of lethal cost to cross
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 40; j <= 60; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+  // path on the right is narrow and thus with high cost
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 61; j <= 70; ++j) {
+      costmapA->setCost(i, j, 250);
+    }
+  }
+  for (unsigned int i = 20; i <= 80; ++i) {
+    for (unsigned int j = 71; j < 100; ++j) {
+      costmapA->setCost(i, j, 254);
+    }
+  }
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  nav2_smac_planner::NodeHybrid testA(0, ctx);
+  testA.pose.x = 10;
+  testA.pose.y = 50;
+  testA.pose.theta = 0;
+
+  nav2_smac_planner::NodeHybrid testB(1, ctx);
+  testB.pose.x = 90;
+  testB.pose.y = 51;  // goal is a bit closer to the high-cost passage
+  testB.pose.theta = 0;
+
+  // first block the high-cost passage to make sure the cost spreads through the better path
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmap->setCost(50, j, 254);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic);
+  float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_NEAR(wide_passage_cost, 91.28f, 0.1f);
+
+  // then unblock it to check if cost remains the same
+  // (it should, since the unblocked narrow path will have higher cost than the wide one
+  //  and thus lower bound of the path cost should be unchanged)
+  for (unsigned int j = 61; j <= 70; ++j) {
+    costmap->setCost(50, j, 250);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    costmap_ros,
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+  float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_EQ(wide_passage_cost, two_passages_cost);
+
+  delete costmapA;
+}
+
 TEST(NodeHybridTest, test_node_debin_neighbors)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");

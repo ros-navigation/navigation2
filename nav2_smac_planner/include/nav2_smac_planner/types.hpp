@@ -205,8 +205,8 @@ typedef std::vector<MotionPrimitive> MotionPrimitives;
 typedef std::vector<MotionPrimitive *> MotionPrimitivePtrs;
 
 /**
- * @class nav2_smac_planner::Node2D::Coordinates
- * @brief Node2D implementation of coordinate structure
+ * @class nav2_smac_planner::Coordinates
+ * @brief Implementation of coordinate2d structure
  */
 struct Coordinates2D
 {
@@ -229,10 +229,9 @@ struct Coordinates2D
 };
 
 /**
- * @class nav2_smac_planner::NodeHybrid::Coordinates
- * @brief NodeHybrid implementation of coordinate structure
+ * @class nav2_smac_planner::Coordinates
+ * @brief Implementation of coordinate structure
  */
-
 struct Coordinates
 {
   /**
