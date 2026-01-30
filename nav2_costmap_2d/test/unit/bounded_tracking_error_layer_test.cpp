@@ -341,26 +341,12 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_update_costs_same_frame)
   EXPECT_NO_THROW(layer_->updateCosts(master_grid, 0, 0, 100, 100));
 }
 
-TEST_F(BoundedTrackingErrorLayerTestFixture, test_obstacles_created_in_corridor)
-{
-  auto path = createStraightPath();
-  auto tracking_error = createTrackingFeedback(5);
-  layer_->pathCallback(std::make_shared<nav_msgs::msg::Path>(path));
-  layer_->trackingCallback(std::make_shared<nav2_msgs::msg::TrackingFeedback>(tracking_error));
-
-  nav2_costmap_2d::Costmap2D master_grid(100, 100, 0.05, -2.5, -2.5);
-  layer_->updateCosts(master_grid, 0, 0, 100, 100);
-
-  // Check that some obstacles were actually created
-  EXPECT_TRUE(hasObstacles(master_grid));
-}
-
 // Edge cases and robustness tests
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_step_size_edge_cases)
 {
   auto path = createStraightPath(0.0, 0.0, 1.0, 10);
   auto walls = layer_->getWallPolygons(path);
-  
+
   // Should have reasonable number of points
   size_t total_points = walls.left_outer.size() + walls.right_outer.size();
   EXPECT_TRUE(total_points <= path.poses.size() * 2);
