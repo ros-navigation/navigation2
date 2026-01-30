@@ -69,6 +69,24 @@ void BoundedTrackingErrorLayer::onInitialize()
   if (step_size_ == 0) {
     throw std::runtime_error{"step must be greater than zero"};
   }
+
+  // Join topics with parent namespace for proper namespacing
+  std::string path_topic = joinWithParentNamespace(path_topic_);
+  std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
+
+  // Create subscriptions in onInitialize like other layers
+  path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
+    path_topic,
+    std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1),
+    nav2::qos::StandardTopicQoS()
+  );
+
+  tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
+    tracking_feedback_topic,
+    std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1),
+    nav2::qos::StandardTopicQoS()
+  );
+
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(
       &BoundedTrackingErrorLayer::dynamicParametersCallback,
@@ -233,8 +251,6 @@ nav_msgs::msg::Path BoundedTrackingErrorLayer::getPathSegment()
   return segment;
 }
 
-
-
 void BoundedTrackingErrorLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid,
   int /*min_i*/, int /*min_j*/, int /*max_i*/, int /*max_j*/)
@@ -306,7 +322,7 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   std::vector<geometry_msgs::msg::Point> left_wall_polygon;
   left_wall_polygon.reserve(walls.left_outer.size() + walls.left_inner.size());
-  
+
   for (const auto & pt : walls.left_outer) {
     geometry_msgs::msg::Point point;
     point.x = pt[0];
@@ -314,7 +330,7 @@ void BoundedTrackingErrorLayer::updateCosts(
     point.z = 0.0;
     left_wall_polygon.push_back(point);
   }
-  
+
   for (auto it = walls.left_inner.rbegin(); it != walls.left_inner.rend(); ++it) {
     geometry_msgs::msg::Point point;
     point.x = (*it)[0];
@@ -325,7 +341,7 @@ void BoundedTrackingErrorLayer::updateCosts(
 
   std::vector<geometry_msgs::msg::Point> right_wall_polygon;
   right_wall_polygon.reserve(walls.right_outer.size() + walls.right_inner.size());
-  
+
   for (const auto & pt : walls.right_outer) {
     geometry_msgs::msg::Point point;
     point.x = pt[0];
@@ -333,7 +349,7 @@ void BoundedTrackingErrorLayer::updateCosts(
     point.z = 0.0;
     right_wall_polygon.push_back(point);
   }
-  
+
   for (auto it = walls.right_inner.rbegin(); it != walls.right_inner.rend(); ++it) {
     geometry_msgs::msg::Point point;
     point.x = (*it)[0];
@@ -365,9 +381,9 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "look_ahead") {
         double new_value = parameter.as_double();
-        if (new_value <= 0.0 || new_value > 3.0) {
+        if (new_value < 0.0) {
           result.successful = false;
-          result.reason = "look_ahead must be positive and <= 3.0 meters";
+          result.reason = "look_ahead must be positive";
           return result;
         }
         look_ahead_ = new_value;
@@ -419,33 +435,17 @@ rcl_interfaces::msg::SetParametersResult BoundedTrackingErrorLayer::dynamicParam
 
 void BoundedTrackingErrorLayer::activate()
 {
-  auto node = node_.lock();
-  if (!node) {
-    throw std::runtime_error{"Failed to lock node"};
-  }
-
-  // Join topics with parent namespace for proper namespacing
-  std::string path_topic = joinWithParentNamespace(path_topic_);
-  std::string tracking_feedback_topic = joinWithParentNamespace(tracking_feedback_topic_);
-
-  path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-    path_topic,
-    std::bind(&BoundedTrackingErrorLayer::pathCallback, this, std::placeholders::_1)
-  );
-
-  tracking_feedback_sub_ = node->create_subscription<nav2_msgs::msg::TrackingFeedback>(
-    tracking_feedback_topic,
-    std::bind(&BoundedTrackingErrorLayer::trackingCallback, this, std::placeholders::_1)
-  );
-
   enabled_.store(true);
   current_ = true;
 }
 
 void BoundedTrackingErrorLayer::deactivate()
 {
-  path_sub_.reset();
-  tracking_feedback_sub_.reset();
+  auto node = node_.lock();
+  if (dyn_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
+  }
+  dyn_params_handler_.reset();
 
   {
     std::lock_guard<std::mutex> lock(data_mutex_);
