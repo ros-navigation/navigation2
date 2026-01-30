@@ -63,7 +63,7 @@ TEST(DynParamTestNode, testDynParamsSet)
     rclcpp::Parameter("footprint_padding", 2.345),
     rclcpp::Parameter("transform_tolerance", 3.456),
     rclcpp::Parameter("publish_frequency", 4.567),
-    rclcpp::Parameter("resolution", 5.678),
+    rclcpp::Parameter("resolution", 1.234),
     rclcpp::Parameter("origin_x", 6.789),
     rclcpp::Parameter("origin_y", 7.891),
     rclcpp::Parameter("width", 2),
@@ -87,7 +87,7 @@ TEST(DynParamTestNode, testDynParamsSet)
   EXPECT_EQ(costmap->get_parameter("footprint_padding").as_double(), 2.345);
   EXPECT_EQ(costmap->get_parameter("transform_tolerance").as_double(), 3.456);
   EXPECT_EQ(costmap->get_parameter("publish_frequency").as_double(), 4.567);
-  EXPECT_EQ(costmap->get_parameter("resolution").as_double(), 5.678);
+  EXPECT_EQ(costmap->get_parameter("resolution").as_double(), 1.234);
   EXPECT_EQ(costmap->get_parameter("origin_x").as_double(), 6.789);
   EXPECT_EQ(costmap->get_parameter("origin_y").as_double(), 7.891);
   EXPECT_EQ(costmap->get_parameter("width").as_int(), 2);
