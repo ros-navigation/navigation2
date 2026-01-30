@@ -91,7 +91,8 @@ target_link_libraries(layers PUBLIC
   tf2::tf2
   nav2_ros_common::nav2_ros_common
   point_cloud_transport::point_cloud_transport
-  ${OpenCV_LIBS}
+  opencv_core
+  opencv_imgproc
 )
 target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
@@ -227,6 +228,7 @@ ament_export_dependencies(
   tf2_sensor_msgs
   nav2_ros_common
   point_cloud_transport
+  OpenCV
 )
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()
