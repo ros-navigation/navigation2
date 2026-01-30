@@ -58,7 +58,7 @@ void IsWithinPathTrackingBoundsCondition::initialize()
 }
 
 void IsWithinPathTrackingBoundsCondition::trackingFeedbackCallback(
-  const nav2_msgs::msg::TrackingFeedback::SharedPtr msg)
+  const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg)
 {
   double tracking_error = msg->tracking_error;
   // Check if error is within bounds
@@ -79,7 +79,7 @@ BT::NodeStatus IsWithinPathTrackingBoundsCondition::tick()
     RCLCPP_WARN_THROTTLE(
       logger_,
       *clock_,
-      1000,  // 1000ms = 1 second throttle
+      1000,
       "Robot is out of path tracking bounds!"
     );
     return BT::NodeStatus::FAILURE;

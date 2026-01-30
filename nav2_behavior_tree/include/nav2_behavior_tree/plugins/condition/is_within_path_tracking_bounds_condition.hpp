@@ -65,7 +65,7 @@ protected:
    * @brief Callback function for tracking feedback topic
    * @param msg Shared pointer to nav2_msgs::msg::TrackingFeedback message
    */
-  void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::SharedPtr msg);
+  void trackingFeedbackCallback(const nav2_msgs::msg::TrackingFeedback::ConstSharedPtr msg);
 
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;

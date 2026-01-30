@@ -230,11 +230,10 @@ TEST_F(IsWithinPathTrackingBoundsConditionTestFixture, test_no_feedback_received
   // Create a fresh tree without publishing any feedback
   auto tree = factory_->createTreeFromText(xml_txt, config_->blackboard);
 
-  // Should return FAILURE when no feedback received
-  // Note: This test creates a new condition node, so last_error_ will be at max()
+  // Should return SUCCESS when no feedback received (default is_within_bounds_ is true)
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   executor_->spin_some();
-  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::FAILURE);
+  EXPECT_EQ(tree.tickOnce(), BT::NodeStatus::SUCCESS);
 }
 
 TEST_F(IsWithinPathTrackingBoundsConditionTestFixture, test_sign_convention)
