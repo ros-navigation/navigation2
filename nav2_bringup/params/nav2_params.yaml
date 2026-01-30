@@ -215,7 +215,7 @@ controller_server:
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
-        use_geometric_alignment: false
+        use_geometric_alignment: true
         search_window: 1.0
         score_arc_length: true
         lookahead_distance: 2.0
