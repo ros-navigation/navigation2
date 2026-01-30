@@ -22,8 +22,10 @@
 #define NAV2_AMCL__AMCL_NODE_HPP_
 
 #include <atomic>
+#include <fstream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -362,7 +364,22 @@ protected:
    * @brief Handle a new pose estimate callback
    */
   void handleInitialPose(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
+  /*
+   * @brief Save current pose to file for persistence
+   */
+  void savePoseToFile();
+  /*
+   * @brief Load pose from file for initialization
+   * @param pose Output pose loaded from file
+   * @return true if pose was successfully loaded
+   */
+  bool loadPoseFromFile(geometry_msgs::msg::PoseWithCovarianceStamped & pose);
+  /*
+   * @brief Timer callback for periodic pose saving
+   */
+  void savePoseTimerCallback();
   bool init_pose_received_on_inactive{false};
+  double save_pose_rate_{0.5};  // Hz
   bool initial_pose_is_known_{false};
   bool set_initial_pose_{false};
   bool always_reset_initial_pose_;
@@ -401,7 +418,9 @@ protected:
   double alpha_slow_;
   int resample_interval_;
   std::string robot_model_type_;
-  tf2::Duration save_pose_period_;
+  bool initialize_at_saved_pose_;
+  std::string saved_pose_filepath_;
+  rclcpp::TimerBase::SharedPtr save_pose_timer_;
   double sigma_hit_;
   bool tf_broadcast_;
   tf2::Duration transform_tolerance_;

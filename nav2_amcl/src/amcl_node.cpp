@@ -23,8 +23,10 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <ctime>
 #include <cstdint>
+#include <iomanip>
 #include <memory>
 #include <string>
 #include <utility>
@@ -108,6 +110,16 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
   active_ = true;
 
   if (set_initial_pose_) {
+    // ROS parameters take priority over saved pose file
+    if (initialize_at_saved_pose_) {
+      std::ifstream file(saved_pose_filepath_);
+      if (file.is_open()) {
+        RCLCPP_WARN(
+          get_logger(),
+          "Both initial_pose parameters and saved pose file exist. Using ROS parameters.");
+        file.close();
+      }
+    }
     auto msg = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>();
 
     msg->header.stamp = now();
@@ -118,8 +130,27 @@ AmclNode::on_activate(const rclcpp_lifecycle::State & /*state*/)
     msg->pose.pose.orientation = orientationAroundZAxis(initial_pose_yaw_);
 
     initialPoseReceived(msg);
+  } else if (initialize_at_saved_pose_) {
+    geometry_msgs::msg::PoseWithCovarianceStamped saved_pose;
+    if (loadPoseFromFile(saved_pose)) {
+      auto msg = std::make_shared<geometry_msgs::msg::PoseWithCovarianceStamped>(saved_pose);
+      initialPoseReceived(msg);
+    } else {
+      RCLCPP_WARN(
+        get_logger(),
+        "initialize_at_saved_pose is true but no saved pose file found at: %s",
+        saved_pose_filepath_.c_str());
+      return nav2::CallbackReturn::FAILURE;
+    }
   } else if (init_pose_received_on_inactive) {
     handleInitialPose(last_published_pose_);
+  }
+
+  // Create pose save timer if save_pose_rate > 0
+  if (save_pose_rate_ > 0.0) {
+    save_pose_timer_ = create_wall_timer(
+      std::chrono::duration<double>(1.0 / save_pose_rate_),
+      std::bind(&AmclNode::savePoseTimerCallback, this));
   }
 
   auto node = shared_from_this();
@@ -149,6 +180,12 @@ AmclNode::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   // Lifecycle publishers must be explicitly deactivated
   pose_pub_->on_deactivate();
   particle_cloud_pub_->on_deactivate();
+
+  // Stop pose save timer
+  if (save_pose_timer_) {
+    save_pose_timer_->cancel();
+    save_pose_timer_.reset();
+  }
 
   // shutdown and reset dynamic parameter handler
   remove_post_set_parameters_callback(post_set_params_handler_.get());
@@ -905,7 +942,6 @@ AmclNode::createLaserObject()
 void
 AmclNode::initParameters()
 {
-  double save_pose_rate;
   double tmp_tol;
 
   alpha1_ = this->declare_or_get_parameter("alpha1", 0.2);
@@ -941,7 +977,10 @@ AmclNode::initParameters()
   resample_interval_ = this->declare_or_get_parameter("resample_interval", 1);
   robot_model_type_ = this->declare_or_get_parameter(
     "robot_model_type", std::string{"nav2_amcl::DifferentialMotionModel"});
-  save_pose_rate = this->declare_or_get_parameter("save_pose_rate", 0.5);
+  save_pose_rate_ = this->declare_or_get_parameter("save_pose_rate", 0.5);
+  initialize_at_saved_pose_ = this->declare_or_get_parameter("initialize_at_saved_pose", false);
+  saved_pose_filepath_ = this->declare_or_get_parameter(
+    "saved_pose_filepath", std::string("/tmp/amcl_saved_pose"));
   sigma_hit_ = this->declare_or_get_parameter("sigma_hit", 0.2);
   tf_broadcast_ = this->declare_or_get_parameter("tf_broadcast", true);
   tmp_tol = this->declare_or_get_parameter("transform_tolerance", 1.0);
@@ -960,7 +999,6 @@ AmclNode::initParameters()
     "allow_parameter_qos_overrides", true);
   random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
-  save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
   last_time_printed_msg_ = now();
 
@@ -1016,12 +1054,9 @@ rcl_interfaces::msg::SetParametersResult AmclNode::validateParameterUpdatesCallb
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() <= 0.0 && param_name == "save_pose_rate") {
-        RCLCPP_WARN(
-          get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
-          "it should be >0. Ignoring parameter update.",
-          param_name.c_str(), parameter.as_double());
-        result.successful = false;
+      if (param_name == "save_pose_rate") {
+        // All values are valid
+        continue;
       } else if (parameter.as_double() < 0.0 &&  // NOLINT(readability/braces)
         (param_name != "laser_min_range" || param_name != "laser_max_range"))
       {
@@ -1126,8 +1161,7 @@ AmclNode::updateParametersCallback(
         alpha_slow_ = parameter.as_double();
         reinit_pf = true;
       } else if (param_name == "save_pose_rate") {
-        double save_pose_rate = parameter.as_double();
-        save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
+        save_pose_rate_ = parameter.as_double();
       } else if (param_name == "sigma_hit") {
         sigma_hit_ = parameter.as_double();
         reinit_laser = true;
@@ -1172,6 +1206,8 @@ AmclNode::updateParametersCallback(
       } else if (param_name == "robot_model_type") {
         robot_model_type_ = parameter.as_string();
         reinit_odom = true;
+      } else if (param_name == "saved_pose_filepath") {
+        saved_pose_filepath_ = parameter.as_string();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == "do_beamskip") {
@@ -1183,6 +1219,8 @@ AmclNode::updateParametersCallback(
         set_initial_pose_ = parameter.as_bool();
       } else if (param_name == "first_map_only") {
         first_map_only_ = parameter.as_bool();
+      } else if (param_name == "initialize_at_saved_pose") {
+        initialize_at_saved_pose_ = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == "max_beams") {
@@ -1503,6 +1541,99 @@ AmclNode::initLaserScan()
 {
   scan_error_count_ = 0;
   last_laser_received_ts_ = rclcpp::Time(0);
+}
+
+void
+AmclNode::savePoseTimerCallback()
+{
+  if (!active_ || !first_pose_sent_) {
+    return;
+  }
+  savePoseToFile();
+}
+
+void
+AmclNode::savePoseToFile()
+{
+  std::string tmp_path = saved_pose_filepath_ + ".tmp";
+  try {
+    std::ofstream file(tmp_path);
+    if (!file.is_open()) {
+      RCLCPP_WARN(
+        get_logger(), "Failed to open pose file for writing: %s",
+        tmp_path.c_str());
+      return;
+    }
+
+    auto & pose = last_published_pose_;
+    file << std::fixed << std::setprecision(6);
+    file << "x: " << pose.pose.pose.position.x << "\n";
+    file << "y: " << pose.pose.pose.position.y << "\n";
+    file << "z: " << pose.pose.pose.position.z << "\n";
+    file << "yaw: " << tf2::getYaw(pose.pose.pose.orientation) << "\n";
+    file.close();
+
+    // Atomic rename
+    if (std::rename(tmp_path.c_str(), saved_pose_filepath_.c_str()) != 0) {
+      RCLCPP_WARN(
+        get_logger(), "Failed to rename pose file from %s to %s",
+        tmp_path.c_str(), saved_pose_filepath_.c_str());
+    }
+  } catch (const std::exception & e) {
+    RCLCPP_WARN(get_logger(), "Failed to save pose to file: %s", e.what());
+  }
+}
+
+bool
+AmclNode::loadPoseFromFile(geometry_msgs::msg::PoseWithCovarianceStamped & pose)
+{
+  std::ifstream file(saved_pose_filepath_);
+  if (!file.is_open()) {
+    return false;
+  }
+
+  try {
+    std::string line;
+    double x = 0.0, y = 0.0, z = 0.0, yaw = 0.0;
+
+    while (std::getline(file, line)) {
+      if (line.empty() || line[0] == '#') {
+        continue;
+      }
+      std::istringstream iss(line);
+      std::string key;
+      if (std::getline(iss, key, ':')) {
+        double value;
+        iss >> value;
+        if (key == "x") {
+          x = value;
+        } else if (key == "y") {
+          y = value;
+        } else if (key == "z") {
+          z = value;
+        } else if (key == "yaw") {
+          yaw = value;
+        }
+      }
+    }
+
+    pose.header.frame_id = global_frame_id_;
+    pose.header.stamp = now();
+    pose.pose.pose.position.x = x;
+    pose.pose.pose.position.y = y;
+    pose.pose.pose.position.z = z;
+    pose.pose.pose.orientation = orientationAroundZAxis(yaw);
+
+    RCLCPP_INFO(
+      get_logger(),
+      "Loaded saved pose from file: x=%.3f, y=%.3f, z=%.3f, yaw=%.3f",
+      x, y, z, yaw);
+
+    return true;
+  } catch (const std::exception & e) {
+    RCLCPP_WARN(get_logger(), "Failed to parse saved pose file: %s", e.what());
+    return false;
+  }
 }
 
 }  // namespace nav2_amcl
