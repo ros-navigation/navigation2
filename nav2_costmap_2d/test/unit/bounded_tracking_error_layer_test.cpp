@@ -40,7 +40,7 @@ public:
   using BoundedTrackingErrorLayer::pathCallback;
   using BoundedTrackingErrorLayer::trackingCallback;
   using BoundedTrackingErrorLayer::getPathSegment;
-  using BoundedTrackingErrorLayer::getWallPoints;
+  using BoundedTrackingErrorLayer::getWallPolygons;
 };
 
 class BoundedTrackingErrorLayerTestFixture : public ::testing::Test
@@ -146,7 +146,9 @@ protected:
   {
     for (unsigned int i = 0; i < costmap.getSizeInCellsX(); ++i) {
       for (unsigned int j = 0; j < costmap.getSizeInCellsY(); ++j) {
-        if (costmap.getCost(i, j) == nav2_costmap_2d::LETHAL_OBSTACLE) {
+        unsigned char cost = costmap.getCost(i, j);
+        // Check for any non-free cost (corridor walls have cost 250 by default)
+        if (cost > nav2_costmap_2d::FREE_SPACE && cost != nav2_costmap_2d::NO_INFORMATION) {
           return true;
         }
       }
@@ -272,19 +274,23 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_invalid_path_index)
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_wall_points_straight_path)
 {
   auto path = createStraightPath();
-  auto wall_points = layer_->getWallPoints(path);
-  EXPECT_FALSE(wall_points.empty());
-  EXPECT_EQ(wall_points.size() % 2, 0u);  // Should be pairs (left/right)
+  auto walls = layer_->getWallPolygons(path);
+  EXPECT_FALSE(walls.left_outer.empty());
+  EXPECT_FALSE(walls.right_outer.empty());
+  EXPECT_EQ(walls.left_outer.size(), walls.left_inner.size());
+  EXPECT_EQ(walls.right_outer.size(), walls.right_inner.size());
 
-  for (const auto & point : wall_points) {
+  // Check that all points are valid
+  for (const auto & point : walls.left_outer) {
     EXPECT_EQ(point.size(), 2u);  // [x, y]
     EXPECT_TRUE(std::isfinite(point[0]));
     EXPECT_TRUE(std::isfinite(point[1]));
   }
 
-  if (wall_points.size() >= 2) {
-    double left_y = wall_points[0][1];
-    double right_y = wall_points[1][1];
+  // Left and right should be on opposite sides for straight path
+  if (!walls.left_outer.empty() && !walls.right_outer.empty()) {
+    double left_y = walls.left_outer[0][1];
+    double right_y = walls.right_outer[0][1];
     EXPECT_TRUE((left_y > 0 && right_y < 0) || (left_y < 0 && right_y > 0));
   }
 }
@@ -292,13 +298,16 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_wall_points_straight_path)
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_wall_points_curved_path)
 {
   auto curved_path = createCurvedPath();
-  auto wall_points = layer_->getWallPoints(curved_path);
-  EXPECT_FALSE(wall_points.empty());
-  EXPECT_EQ(wall_points.size() % 2, 0u);
+  auto walls = layer_->getWallPolygons(curved_path);
+  EXPECT_FALSE(walls.left_outer.empty());
+  EXPECT_FALSE(walls.right_outer.empty());
+  EXPECT_EQ(walls.left_outer.size(), walls.left_inner.size());
+  EXPECT_EQ(walls.right_outer.size(), walls.right_inner.size());
 
-  if (wall_points.size() >= 4) {
-    double first_left_x = wall_points[0][0];
-    double second_left_x = wall_points[2][0];
+  // Points should change along the curve
+  if (walls.left_outer.size() >= 2) {
+    double first_left_x = walls.left_outer[0][0];
+    double second_left_x = walls.left_outer[1][0];
     EXPECT_NE(first_left_x, second_left_x);
   }
 }
@@ -316,8 +325,9 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_single_point_path)
   single_pose.pose.orientation.w = 1.0;
   single_point_path.poses.push_back(single_pose);
 
-  auto wall_points = layer_->getWallPoints(single_point_path);
-  EXPECT_TRUE(wall_points.empty());
+  auto walls = layer_->getWallPolygons(single_point_path);
+  EXPECT_TRUE(walls.left_outer.empty());
+  EXPECT_TRUE(walls.right_outer.empty());
 }
 
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_update_costs_same_frame)
@@ -349,8 +359,11 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_obstacles_created_in_corridor)
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_step_size_edge_cases)
 {
   auto path = createStraightPath(0.0, 0.0, 1.0, 10);
-  auto wall_points = layer_->getWallPoints(path);
-  EXPECT_TRUE(wall_points.size() <= path.poses.size() * 2);
+  auto walls = layer_->getWallPolygons(path);
+  
+  // Should have reasonable number of points
+  size_t total_points = walls.left_outer.size() + walls.right_outer.size();
+  EXPECT_TRUE(total_points <= path.poses.size() * 2);
 }
 
 TEST_F(BoundedTrackingErrorLayerTestFixture, test_malformed_data)
@@ -367,7 +380,7 @@ TEST_F(BoundedTrackingErrorLayerTestFixture, test_malformed_data)
   nan_pose.pose.orientation.w = 1.0;
   nan_path.poses.push_back(nan_pose);
 
-  EXPECT_NO_THROW(layer_->getWallPoints(nan_path));
+  EXPECT_NO_THROW(layer_->getWallPolygons(nan_path));
 }
 
 int main(int argc, char ** argv)
