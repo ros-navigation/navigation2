@@ -32,51 +32,34 @@ Controller::Controller(
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.k_phi", rclcpp::ParameterValue(3.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.k_delta", rclcpp::ParameterValue(2.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.beta", rclcpp::ParameterValue(0.4));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.lambda", rclcpp::ParameterValue(2.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_linear_min", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_linear_max", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.v_angular_max", rclcpp::ParameterValue(0.75));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.slowdown_radius", rclcpp::ParameterValue(0.25));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.rotate_to_heading_angular_vel", rclcpp::ParameterValue(1.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.rotate_to_heading_max_angular_accel", rclcpp::ParameterValue(3.2));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.use_collision_detection", rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.costmap_topic",
-    rclcpp::ParameterValue(std::string("local_costmap/costmap_raw")));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.footprint_topic", rclcpp::ParameterValue(
-      std::string("local_costmap/published_footprint")));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.transform_tolerance", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.projection_time", rclcpp::ParameterValue(5.0));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.simulation_time_step", rclcpp::ParameterValue(0.1));
-  nav2::declare_parameter_if_not_declared(
-    node, "controller.dock_collision_threshold", rclcpp::ParameterValue(0.3));
+  std::string costmap_topic, footprint_topic;
+  k_phi_ = node->declare_or_get_parameter("controller.k_phi", 3.0);
+  k_delta_ = node->declare_or_get_parameter("controller.k_delta", 2.0);
+  beta_ = node->declare_or_get_parameter("controller.beta", 0.4);
+  lambda_ = node->declare_or_get_parameter("controller.lambda", 2.0);
+  v_linear_min_ = node->declare_or_get_parameter("controller.v_linear_min", 0.1);
+  v_linear_max_ = node->declare_or_get_parameter("controller.v_linear_max", 0.25);
+  v_angular_max_ = node->declare_or_get_parameter("controller.v_angular_max", 0.75);
+  slowdown_radius_ = node->declare_or_get_parameter("controller.slowdown_radius", 0.25);
+  rotate_to_heading_angular_vel_ = node->declare_or_get_parameter(
+    "controller.rotate_to_heading_angular_vel", 1.0);
+  rotate_to_heading_max_angular_accel_ = node->declare_or_get_parameter(
+    "controller.rotate_to_heading_max_angular_accel", 3.2);
+  use_collision_detection_ = node->declare_or_get_parameter(
+    "controller.use_collision_detection", true);
+  costmap_topic = node->declare_or_get_parameter("controller.costmap_topic",
+    std::string("local_costmap/costmap_raw"));
+  footprint_topic = node->declare_or_get_parameter("controller.footprint_topic",
+    std::string("local_costmap/published_footprint"));
+  transform_tolerance_ = node->declare_or_get_parameter(
+    "controller.transform_tolerance", 0.1);
+  projection_time_ = node->declare_or_get_parameter(
+    "controller.projection_time", 5.0);
+  simulation_time_step_ = node->declare_or_get_parameter(
+    "controller.simulation_time_step", 0.1);
+  dock_collision_threshold_ = node->declare_or_get_parameter(
+    "controller.dock_collision_threshold", 0.3);
 
-  node->get_parameter("controller.k_phi", k_phi_);
-  node->get_parameter("controller.k_delta", k_delta_);
-  node->get_parameter("controller.beta", beta_);
-  node->get_parameter("controller.lambda", lambda_);
-  node->get_parameter("controller.v_linear_min", v_linear_min_);
-  node->get_parameter("controller.v_linear_max", v_linear_max_);
-  node->get_parameter("controller.v_angular_max", v_angular_max_);
-  node->get_parameter("controller.slowdown_radius", slowdown_radius_);
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi_, k_delta_, beta_, lambda_, slowdown_radius_, v_linear_min_, v_linear_max_,
     v_angular_max_);
@@ -85,23 +68,9 @@ Controller::Controller(
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&Controller::dynamicParametersCallback, this, std::placeholders::_1));
 
-  node->get_parameter("controller.use_collision_detection", use_collision_detection_);
-  node->get_parameter("controller.projection_time", projection_time_);
-  node->get_parameter("controller.simulation_time_step", simulation_time_step_);
-  node->get_parameter("controller.transform_tolerance", transform_tolerance_);
-
   if (use_collision_detection_) {
-    std::string costmap_topic, footprint_topic;
-    node->get_parameter("controller.costmap_topic", costmap_topic);
-    node->get_parameter("controller.footprint_topic", footprint_topic);
-    node->get_parameter("controller.dock_collision_threshold", dock_collision_threshold_);
     configureCollisionChecker(node, costmap_topic, footprint_topic, transform_tolerance_);
   }
-
-  node->get_parameter("controller.rotate_to_heading_angular_vel", rotate_to_heading_angular_vel_);
-  node->get_parameter(
-    "controller.rotate_to_heading_max_angular_accel",
-    rotate_to_heading_max_angular_accel_);
 
   trajectory_pub_ =
     node->create_publisher<nav_msgs::msg::Path>("docking_trajectory");
@@ -154,20 +123,20 @@ bool Controller::isTrajectoryCollisionFree(
   const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
 {
   // Visualization of the trajectory
-  nav_msgs::msg::Path trajectory;
-  trajectory.header.frame_id = base_frame_;
-  trajectory.header.stamp = clock_->now();
+  auto trajectory = std::make_unique<nav_msgs::msg::Path>();
+  trajectory->header.frame_id = base_frame_;
+  trajectory->header.stamp = clock_->now();
 
   // First pose
   geometry_msgs::msg::PoseStamped next_pose;
   next_pose.header.frame_id = base_frame_;
-  trajectory.poses.push_back(next_pose);
+  trajectory->poses.push_back(next_pose);
 
   // Get the transform from base_frame to fixed_frame
   geometry_msgs::msg::TransformStamped base_to_fixed_transform;
   try {
     base_to_fixed_transform = tf2_buffer_->lookupTransform(
-      fixed_frame_, base_frame_, trajectory.header.stamp,
+      fixed_frame_, base_frame_, trajectory->header.stamp,
       tf2::durationFromSec(transform_tolerance_));
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
@@ -186,11 +155,11 @@ bool Controller::isTrajectoryCollisionFree(
       simulation_time_step_, target_pose, next_pose.pose, backward);
 
     // Add the pose to the trajectory for visualization
-    trajectory.poses.push_back(next_pose);
+    trajectory->poses.push_back(next_pose);
 
     // Transform pose from base_frame into fixed_frame
     geometry_msgs::msg::PoseStamped local_pose = next_pose;
-    local_pose.header.stamp = trajectory.header.stamp;
+    local_pose.header.stamp = trajectory->header.stamp;
     tf2::doTransform(local_pose, local_pose, base_to_fixed_transform);
 
     // Determine the distance at which to check for collisions
@@ -210,15 +179,15 @@ bool Controller::isTrajectoryCollisionFree(
         logger_, "Collision detected at pose: (%.2f, %.2f, %.2f) in frame %s",
         local_pose.pose.position.x, local_pose.pose.position.y, local_pose.pose.position.z,
         local_pose.header.frame_id.c_str());
-      trajectory_pub_->publish(trajectory);
+      trajectory_pub_->publish(std::move(trajectory));
       return false;
     }
 
     // Check if we reach the goal
     distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
-  }while(distance > 1e-2 && trajectory.poses.size() < max_iter);
+  }while(distance > 1e-2 && trajectory->poses.size() < max_iter);
 
-  trajectory_pub_->publish(trajectory);
+  trajectory_pub_->publish(std::move(trajectory));
 
   return true;
 }

@@ -226,14 +226,14 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
         target_pose, dist_to_target, dist_to_goal, local_plan, costmap_transform, cmd_vel))
     {
       // Publish the selected target_pose
-      motion_target_pub_->publish(target_pose);
+      motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
       // Publish marker for slowdown radius around motion target for debugging / visualization
       auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(
         target_pose, params_->slowdown_radius);
-      slowdown_pub_->publish(slowdown_marker);
+      slowdown_pub_->publish(std::make_unique<visualization_msgs::msg::Marker>(slowdown_marker));
       // Publish the local plan
       local_plan.header = transformed_plan.header;
-      local_plan_pub_->publish(local_plan);
+      local_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(local_plan));
       // Successfully found velocity command
       return cmd_vel;
     }
@@ -306,10 +306,17 @@ bool GracefulController::validateTargetPose(
   }
 
   // Actually simulate the path
-  if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
-    // Successfully simulated to target_pose
-    return true;
-  }
+  double sim_linear_velocity = params_->v_linear_max;
+  do {
+    control_law_->setSpeedLimit(params_->v_linear_min, sim_linear_velocity,
+      params_->v_angular_max);
+    if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
+      // Successfully simulated to target_pose
+      return true;
+    }
+    // Reduce velocity and try again for same target_pose
+    sim_linear_velocity -= params_->footprint_scaling_step;
+  } while (sim_linear_velocity >= params_->footprint_scaling_linear_vel);
 
   // Validation not successful
   return false;
@@ -379,12 +386,24 @@ bool GracefulController::simulateTrajectory(
     // Add the pose to the trajectory for visualization
     trajectory.poses.push_back(next_pose);
 
+    // Compute footprint scaling
+    double footprint_scaling = 1.0;
+    if (cmd_vel.twist.linear.x > params_->footprint_scaling_linear_vel) {
+      // Scaling = (vel_x - scaling_vel_x) / (max_vel_x - scaling_vel_x)
+      double ratio = params_->v_linear_max - params_->footprint_scaling_linear_vel;
+      // Avoid divide by zero
+      if (ratio > 0) {
+        ratio = (cmd_vel.twist.linear.x - params_->footprint_scaling_linear_vel) / ratio;
+        footprint_scaling += ratio * params_->footprint_scaling_factor;
+      }
+    }
+
     // Check for collision
     geometry_msgs::msg::PoseStamped global_pose;
     tf2::doTransform(next_pose, global_pose, costmap_transform);
     if (params_->use_collision_detection && inCollision(
         global_pose.pose.position.x, global_pose.pose.position.y,
-        tf2::getYaw(global_pose.pose.orientation)))
+        tf2::getYaw(global_pose.pose.orientation), footprint_scaling))
     {
       return false;
     }
@@ -407,7 +426,9 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   return vel;
 }
 
-bool GracefulController::inCollision(const double & x, const double & y, const double & theta)
+bool GracefulController::inCollision(
+  const double & x, const double & y, const double & theta,
+  double inflation_scale)
 {
   unsigned int mx, my;
   if (!costmap_ros_->getCostmap()->worldToMap(x, y, mx, my)) {
@@ -415,6 +436,11 @@ bool GracefulController::inCollision(const double & x, const double & y, const d
       logger_, "The path is not in the costmap. Cannot check for collisions. "
       "Proceed at your own risk, slow the robot, or increase your costmap size.");
     return false;
+  }
+
+  if (inflation_scale < 1.0) {
+    RCLCPP_WARN(logger_, "Inflation ratio cannot be less than 1.0");
+    throw nav2_core::NoValidControl("Inflation ratio less than 1.0");
   }
 
   // Calculate the cost of the footprint at the robot's current position depending
@@ -425,8 +451,14 @@ bool GracefulController::inCollision(const double & x, const double & y, const d
 
   double footprint_cost;
   if (consider_footprint) {
-    footprint_cost = collision_checker_->footprintCostAtPose(
-      x, y, theta, costmap_ros_->getRobotFootprint());
+    std::vector<geometry_msgs::msg::Point> spec = costmap_ros_->getRobotFootprint();
+    if (spec.size() > 3) {
+      for (auto & point : spec) {
+        point.x *= inflation_scale;
+        point.y *= inflation_scale;
+      }
+    }
+    footprint_cost = collision_checker_->footprintCostAtPose(x, y, theta, spec);
   } else {
     footprint_cost = collision_checker_->pointCost(mx, my);
   }

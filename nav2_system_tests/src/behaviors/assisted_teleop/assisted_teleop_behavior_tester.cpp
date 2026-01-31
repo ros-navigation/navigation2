@@ -255,13 +255,13 @@ void AssistedTeleopBehaviorTester::sendInitialPose()
 }
 
 void AssistedTeleopBehaviorTester::amclPoseCallback(
-  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr)
 {
   initial_pose_received_ = true;
 }
 
 void AssistedTeleopBehaviorTester::filteredVelCallback(
-  geometry_msgs::msg::TwistStamped::SharedPtr msg)
+  geometry_msgs::msg::TwistStamped::ConstSharedPtr msg)
 {
   if (msg->twist.linear.x == 0.0f) {
     counter_++;

@@ -66,9 +66,8 @@ void SpeedFilter::initializeFilter(
   }
 
   // Declare "speed_limit_topic" parameter specific to SpeedFilter only
-  std::string speed_limit_topic;
-  declareParameter("speed_limit_topic", rclcpp::ParameterValue("speed_limit"));
-  node->get_parameter(name_ + "." + "speed_limit_topic", speed_limit_topic);
+  std::string speed_limit_topic = node->declare_or_get_parameter(name_ + "." + "speed_limit_topic",
+    std::string("speed_limit"));
   speed_limit_topic = joinWithParentNamespace(speed_limit_topic);
 
   filter_info_topic_ = joinWithParentNamespace(filter_info_topic);
@@ -97,7 +96,7 @@ void SpeedFilter::initializeFilter(
 }
 
 void SpeedFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -156,7 +155,7 @@ void SpeedFilter::filterInfoCallback(
 }
 
 void SpeedFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 

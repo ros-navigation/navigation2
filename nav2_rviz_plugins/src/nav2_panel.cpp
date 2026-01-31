@@ -32,7 +32,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/display_context.hpp"
 #include "rviz_common/load_resource.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 #include "yaml-cpp/yaml.h"
 #include "geometry_msgs/msg/pose.hpp"
 
@@ -898,7 +897,7 @@ Nav2Panel::onInitialize()
     node->create_subscription<nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage>(
     "navigate_to_pose/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::SharedPtr msg) {
+    [this](const nav2_msgs::action::NavigateToPose::Impl::FeedbackMessage::ConstSharedPtr & msg) {
       if (stoi(nr_of_loops_->displayText().toStdString()) > 0) {
         if (goal_index_ == 0 && !loop_counter_stop_) {
           loop_count_++;
@@ -923,7 +922,8 @@ Nav2Panel::onInitialize()
     node->create_subscription<nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage>(
     "navigate_through_poses/_action/feedback",
     rclcpp::SystemDefaultsQoS(),
-    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::SharedPtr msg) {
+    [this](const nav2_msgs::action::NavigateThroughPoses::Impl::FeedbackMessage::ConstSharedPtr &
+    msg) {
       navigation_feedback_indicator_->setText(getNavThroughPosesFeedbackLabel(msg->feedback));
     });
 
@@ -931,7 +931,7 @@ Nav2Panel::onInitialize()
   navigation_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "navigate_to_pose/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       // Clearing all the stored values once reaching the final goal
@@ -950,7 +950,7 @@ Nav2Panel::onInitialize()
   nav_through_poses_goal_status_sub_ = node->create_subscription<action_msgs::msg::GoalStatusArray>(
     "navigate_through_poses/_action/status",
     rclcpp::SystemDefaultsQoS(),
-    [this](const action_msgs::msg::GoalStatusArray::SharedPtr msg) {
+    [this](const action_msgs::msg::GoalStatusArray::ConstSharedPtr & msg) {
       navigation_goal_status_indicator_->setText(
         nav2_rviz_plugins::getGoalStatusLabel("Feedback", msg->status_list.back().status));
       if (msg->status_list.back().status != action_msgs::msg::GoalStatus::STATUS_EXECUTING) {
@@ -1083,6 +1083,9 @@ Nav2Panel::onNewGoal(double x, double y, double theta, QString frame)
       syncTabsWithAccumulatedPoses();  // Sync tabs with new pose
     } else {
       acummulated_poses_ = nav_msgs::msg::Goals();
+      // Reset goal index for single goal navigation
+      goal_index_ = 0;
+      store_poses_.goals.push_back(pose);
       updateWpNavigationMarkers();
       std::cout << "Start navigation" << std::endl;
       startNavigation(pose);
@@ -1626,6 +1629,8 @@ inline std::string Nav2Panel::toLabel(T & msg)
     toString(rclcpp::Duration(msg.estimated_time_remaining).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Distance remaining:</td><td>" +
     toString(msg.distance_remaining, 2) + " m"
+    "</td></tr><tr><td width=150>Tracking error:</td><td>" +
+    toString(msg.tracking_error, 2) + " m"
     "</td></tr><tr><td width=150>Time taken:</td><td>" +
     toString(rclcpp::Duration(msg.navigation_time).seconds(), 0) + " s"
     "</td></tr><tr><td width=150>Recoveries:</td><td>" +

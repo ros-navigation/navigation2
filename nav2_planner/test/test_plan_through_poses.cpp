@@ -151,22 +151,24 @@ Tester::~Tester()
 
 void Tester::setParameters()
 {
-  planner_->set_parameter(rclcpp::Parameter("expected_planner_frequency", EXPECTED_PLANNER_FREQ));
-  planner_->set_parameter(rclcpp::Parameter("planner_plugins", PLANNER_PLUGINS));
-  planner_->set_parameter(rclcpp::Parameter("costmap_update_timeout", COSTMAP_UPDATE_TIMEOUT));
-  planner_->set_parameter(rclcpp::Parameter("allow_partial_planning", true));
+  planner_->declare_parameter(
+    "expected_planner_frequency", rclcpp::ParameterValue(EXPECTED_PLANNER_FREQ));
+  planner_->declare_parameter("planner_plugins", rclcpp::ParameterValue(PLANNER_PLUGINS));
+  planner_->declare_parameter(
+    "costmap_update_timeout", rclcpp::ParameterValue(COSTMAP_UPDATE_TIMEOUT));
+  planner_->declare_parameter("allow_partial_planning", rclcpp::ParameterValue(true));
 
-  planner_->set_parameter(
-    rclcpp::Parameter(PLANNER_PLUGINS.front() + ".plugin", PLANNER_PLUGIN_NAME));
+  planner_->declare_parameter(
+    PLANNER_PLUGINS.front() + ".plugin", rclcpp::ParameterValue(PLANNER_PLUGIN_NAME));
 
   planner_->declare_parameter(
     PLANNER_PLUGINS.front() + ".tolerance", rclcpp::ParameterValue(PLANNER_TOLERANCE));
 
   auto costmap = planner_->getCostmapROS();
-  costmap->set_parameter(rclcpp::Parameter("height", COSTMAP_HEIGHT_METERS));
-  costmap->set_parameter(rclcpp::Parameter("width", COSTMAP_WIDTH_METERS));
-  costmap->set_parameter(rclcpp::Parameter("resolution", COSTMAP_RESOLUTION));
-  costmap->set_parameter(rclcpp::Parameter("plugins", COSTMAP_PLUGINS));
+  costmap->declare_parameter("height", COSTMAP_HEIGHT_METERS);
+  costmap->declare_parameter("width", COSTMAP_WIDTH_METERS);
+  costmap->declare_parameter("resolution", COSTMAP_RESOLUTION);
+  costmap->declare_parameter("plugins", COSTMAP_PLUGINS);
 
   costmap->declare_parameter("static_layer.plugin", rclcpp::ParameterValue(COSTMAP_LAYER_NAME));
   costmap->declare_parameter("static_layer.lethal_cost_threshold", rclcpp::ParameterValue(100));

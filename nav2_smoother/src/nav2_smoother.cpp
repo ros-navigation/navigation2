@@ -37,20 +37,6 @@ SmootherServer::SmootherServer(const rclcpp::NodeOptions & options)
   default_types_{"nav2_smoother::SimpleSmoother"}
 {
   RCLCPP_INFO(get_logger(), "Creating smoother server");
-
-  declare_parameter(
-    "costmap_topic", rclcpp::ParameterValue(
-      std::string(
-        "global_costmap/costmap_raw")));
-  declare_parameter(
-    "footprint_topic",
-    rclcpp::ParameterValue(
-      std::string("global_costmap/published_footprint")));
-  declare_parameter(
-    "robot_base_frame",
-    rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.1));
-  declare_parameter("smoother_plugins", default_ids_);
 }
 
 SmootherServer::~SmootherServer()
@@ -65,7 +51,17 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  get_parameter("smoother_plugins", smoother_ids_);
+  std::string costmap_topic, footprint_topic, robot_base_frame;
+  double transform_tolerance = 0.1;
+  costmap_topic = node->declare_or_get_parameter(
+    "costmap_topic", std::string("global_costmap/costmap_raw"));
+  footprint_topic = node->declare_or_get_parameter(
+    "footprint_topic", std::string("global_costmap/published_footprint"));
+  robot_base_frame = node->declare_or_get_parameter(
+    "robot_base_frame", std::string("base_link"));
+  transform_tolerance = node->declare_or_get_parameter("transform_tolerance", 0.1);
+  smoother_ids_ = node->declare_or_get_parameter("smoother_plugins", default_ids_);
+
   if (smoother_ids_ == default_ids_) {
     for (size_t i = 0; i < default_ids_.size(); ++i) {
       nav2::declare_parameter_if_not_declared(
@@ -80,12 +76,6 @@ SmootherServer::on_configure(const rclcpp_lifecycle::State & state)
   tf_->setCreateTimerInterface(timer_interface);
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, true);
 
-  std::string costmap_topic, footprint_topic, robot_base_frame;
-  double transform_tolerance = 0.1;
-  this->get_parameter("costmap_topic", costmap_topic);
-  this->get_parameter("footprint_topic", footprint_topic);
-  this->get_parameter("transform_tolerance", transform_tolerance);
-  this->get_parameter("robot_base_frame", robot_base_frame);
   costmap_sub_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
     shared_from_this(), costmap_topic);
   footprint_sub_ = std::make_shared<nav2_costmap_2d::FootprintSubscriber>(
@@ -289,8 +279,8 @@ void SmootherServer::smoothPlan()
         rclcpp::Duration(goal->max_smoothing_duration).seconds(),
         rclcpp::Duration(result->smoothing_duration).seconds());
     }
-
-    plan_publisher_->publish(result->path);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(result->path);
+    plan_publisher_->publish(std::move(msg));
 
     // Check for collisions
     if (goal->check_for_collisions) {

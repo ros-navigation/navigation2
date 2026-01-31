@@ -61,42 +61,22 @@ void SmacPlanner2D::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlanner2D", name.c_str());
 
   // General planner params
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".tolerance", rclcpp::ParameterValue(0.125));
-  _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsample_costmap", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".downsample_costmap", _downsample_costmap);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".downsampling_factor", rclcpp::ParameterValue(1));
-  node->get_parameter(name + ".downsampling_factor", _downsampling_factor);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".cost_travel_multiplier", rclcpp::ParameterValue(1.0));
-  node->get_parameter(name + ".cost_travel_multiplier", _search_info.cost_penalty);
+  _tolerance = static_cast<float>(node->declare_or_get_parameter(name + ".tolerance", 0.125));
+  _downsample_costmap = node->declare_or_get_parameter(name + ".downsample_costmap", false);
+  _downsampling_factor = node->declare_or_get_parameter(name + ".downsampling_factor", 1);
+  _search_info.cost_penalty =
+    node->declare_or_get_parameter(name + ".cost_travel_multiplier", 1.0);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".allow_unknown", rclcpp::ParameterValue(true));
-  node->get_parameter(name + ".allow_unknown", _allow_unknown);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_iterations", rclcpp::ParameterValue(1000000));
-  node->get_parameter(name + ".max_iterations", _max_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_on_approach_iterations", rclcpp::ParameterValue(1000));
-  node->get_parameter(name + ".max_on_approach_iterations", _max_on_approach_iterations);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".terminal_checking_interval", rclcpp::ParameterValue(5000));
-  node->get_parameter(name + ".terminal_checking_interval", _terminal_checking_interval);
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".use_final_approach_orientation", rclcpp::ParameterValue(false));
-  node->get_parameter(name + ".use_final_approach_orientation", _use_final_approach_orientation);
+  _allow_unknown = node->declare_or_get_parameter(name + ".allow_unknown", true);
+  _max_iterations = node->declare_or_get_parameter(name + ".max_iterations", 1000000);
+  _max_on_approach_iterations =
+    node->declare_or_get_parameter(name + ".max_on_approach_iterations", 1000);
+  _terminal_checking_interval =
+    node->declare_or_get_parameter(name + ".terminal_checking_interval", 5000);
+  _use_final_approach_orientation =
+    node->declare_or_get_parameter(name + ".use_final_approach_orientation", false);
 
-  nav2::declare_parameter_if_not_declared(
-    node, name + ".max_planning_time", rclcpp::ParameterValue(2.0));
-  node->get_parameter(name + ".max_planning_time", _max_planning_time);
-  // Note that we need to declare it here to prevent the parameter from being declared in the
-  // dynamic reconfigure callback
-  nav2::declare_parameter_if_not_declared(
-    node, "introspection_mode", rclcpp::ParameterValue("disabled"));
+  _max_planning_time = node->declare_or_get_parameter(name + ".max_planning_time", 2.0);
 
   _motion_model = MotionModel::TWOD;
 
@@ -273,7 +253,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
     // Publish raw path for debug
     if (_raw_plan_publisher->get_subscription_count() > 0) {
-      _raw_plan_publisher->publish(plan);
+      auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+      _raw_plan_publisher->publish(std::move(msg));
     }
 
     return plan;
@@ -308,7 +289,8 @@ nav_msgs::msg::Path SmacPlanner2D::createPlan(
 
   // Publish raw path for debug
   if (_raw_plan_publisher->get_subscription_count() > 0) {
-    _raw_plan_publisher->publish(plan);
+    auto msg = std::make_unique<nav_msgs::msg::Path>(plan);
+    _raw_plan_publisher->publish(std::move(msg));
   }
 
   // Find how much time we have left to do smoothing

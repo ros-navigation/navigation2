@@ -106,7 +106,10 @@ def generate_launch_description() -> LaunchDescription:
                 name='lifecycle_manager_slam',
                 output='screen',
                 arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+                parameters=[
+                    configured_params,
+                    {'autostart': autostart}, {'node_names': lifecycle_nodes}
+                ],
             ),
         ]
     )

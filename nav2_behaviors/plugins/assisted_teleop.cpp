@@ -41,9 +41,9 @@ void AssistedTeleop::onConfigure()
   vel_sub_ = std::make_unique<nav2_util::TwistSubscriber>(
     node,
     cmd_vel_teleop,
-    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+    [&](const geometry_msgs::msg::Twist::ConstSharedPtr & msg) {
       teleop_twist_.twist = *msg;
-    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    }, [&](const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg) {
       teleop_twist_ = *msg;
     });
 
@@ -159,7 +159,7 @@ geometry_msgs::msg::Pose AssistedTeleop::projectPose(
   return projected_pose;
 }
 
-void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::SharedPtr)
+void AssistedTeleop::preemptTeleopCallback(const std_msgs::msg::Empty::ConstSharedPtr &)
 {
   preempt_teleop_ = true;
 }

@@ -67,13 +67,10 @@ void BinaryFilter::initializeFilter(
   }
 
   // Declare parameters specific to BinaryFilter only
-  std::string binary_state_topic;
-  declareParameter("default_state", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "default_state", default_state_);
-  declareParameter("binary_state_topic", rclcpp::ParameterValue("binary_state"));
-  node->get_parameter(name_ + "." + "binary_state_topic", binary_state_topic);
-  declareParameter("flip_threshold", rclcpp::ParameterValue(50.0));
-  node->get_parameter(name_ + "." + "flip_threshold", flip_threshold_);
+  default_state_ = node->declare_or_get_parameter(name_ + "." + "default_state", false);
+  std::string binary_state_topic = node->declare_or_get_parameter(name_ + "." +
+    "binary_state_topic", std::string("binary_state"));
+  flip_threshold_ = node->declare_or_get_parameter(name_ + "." + "flip_threshold", 50.0);
 
   filter_info_topic_ = filter_info_topic;
   // Setting new costmap filter info subscriber
@@ -103,7 +100,7 @@ void BinaryFilter::initializeFilter(
 }
 
 void BinaryFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -148,7 +145,7 @@ void BinaryFilter::filterInfoCallback(
 }
 
 void BinaryFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 

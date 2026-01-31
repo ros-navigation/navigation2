@@ -273,7 +273,7 @@ void WaitBehaviorTester::sendInitialPose()
 }
 
 void WaitBehaviorTester::amclPoseCallback(
-  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr)
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr)
 {
   initial_pose_received_ = true;
 }

@@ -69,7 +69,7 @@ protected:
    * @brief Processor callback
    * @param msg Empty message
    */
-  void Cb(const std_msgs::msg::Empty::SharedPtr msg);
+  void Cb(const std_msgs::msg::Empty::ConstSharedPtr & msg);
 
   bool input_received_;
   bool is_enabled_;

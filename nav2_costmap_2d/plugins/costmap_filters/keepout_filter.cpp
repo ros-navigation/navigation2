@@ -79,10 +79,10 @@ void KeepoutFilter::initializeFilter(
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  declareParameter("override_lethal_cost", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
-  declareParameter("lethal_override_cost", rclcpp::ParameterValue(MAX_NON_OBSTACLE));
-  node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
+  override_lethal_cost_ = node->declare_or_get_parameter(name_ + "." + "override_lethal_cost",
+    false);
+  lethal_override_cost_ = node->declare_or_get_parameter(name_ + "." + "lethal_override_cost",
+    MAX_NON_OBSTACLE);
 
   // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
   lethal_override_cost_ = \
@@ -92,7 +92,7 @@ void KeepoutFilter::initializeFilter(
 }
 
 void KeepoutFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -137,7 +137,7 @@ void KeepoutFilter::filterInfoCallback(
 }
 
 void KeepoutFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 

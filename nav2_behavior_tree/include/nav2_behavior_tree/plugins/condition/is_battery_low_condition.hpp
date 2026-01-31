@@ -83,7 +83,7 @@ private:
    * @brief Callback function for battery topic
    * @param msg Shared pointer to sensor_msgs::msg::BatteryState message
    */
-  void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
+  void batteryCallback(const sensor_msgs::msg::BatteryState::ConstSharedPtr & msg);
 
   nav2::LifecycleNode::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;

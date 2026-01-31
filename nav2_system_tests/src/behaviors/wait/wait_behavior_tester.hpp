@@ -66,7 +66,7 @@ public:
 private:
   void sendInitialPose();
 
-  void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr);
+  void amclPoseCallback(geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr);
 
   bool is_active_;
   bool initial_pose_received_;

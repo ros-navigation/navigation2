@@ -41,6 +41,7 @@ def generate_launch_description() -> LaunchDescription:
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfigAsBool('autostart')
     use_composition = LaunchConfigAsBool('use_composition')
+    use_intra_process_comms = LaunchConfigAsBool('use_intra_process_comms')
     use_respawn = LaunchConfigAsBool('use_respawn')
 
     # Launch configuration variables specific to simulation
@@ -83,6 +84,12 @@ def generate_launch_description() -> LaunchDescription:
         'use_composition',
         default_value='True',
         description='Whether to use composed bringup',
+    )
+
+    declare_use_intra_process_comms_cmd = DeclareLaunchArgument(
+        'use_intra_process_comms',
+        default_value='False',
+        description='Whether to use intra process communication',
     )
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
@@ -141,6 +148,7 @@ def generate_launch_description() -> LaunchDescription:
             'params_file': params_file,
             'autostart': autostart,
             'use_composition': use_composition,
+            'use_intra_process_comms': use_intra_process_comms,
             'use_respawn': use_respawn,
             'use_keepout_zones': 'False',  # Keepout zones not used in loopback simulation
             'use_speed_zones': 'False',  # Speed zones not used in loopback simulation
@@ -223,7 +231,9 @@ def generate_launch_description() -> LaunchDescription:
                         name='lifecycle_manager_map_server',
                         parameters=[
                             configured_params,
-                            {'autostart': autostart}, {'node_names': ['map_server']}],
+                            {'autostart': autostart}, {'node_names': ['map_server']}
+                        ],
+                        extra_arguments=[{'use_intra_process_comms': use_intra_process_comms}]
                     ),
                 ],
             ),
@@ -240,6 +250,7 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
+    ld.add_action(declare_use_intra_process_comms_cmd)
 
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)

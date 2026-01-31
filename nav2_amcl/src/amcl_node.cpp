@@ -23,6 +23,8 @@
 #include "nav2_amcl/amcl_node.hpp"
 
 #include <algorithm>
+#include <ctime>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -361,7 +363,8 @@ AmclNode::nomotionUpdateCallback(
 }
 
 void
-AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+AmclNode::initialPoseReceived(
+  const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr & msg)
 {
   std::lock_guard<std::recursive_mutex> cfl(mutex_);
 
@@ -397,7 +400,7 @@ AmclNode::initialPoseReceived(geometry_msgs::msg::PoseWithCovarianceStamped::Sha
       "but AMCL is not yet in the active state");
     return;
   }
-  handleInitialPose(*msg);
+  handleInitialPose(last_published_pose_);
 }
 
 void
@@ -636,7 +639,7 @@ bool AmclNode::updateFilter(
   const pf_vector_t & pose)
 {
   nav2_amcl::LaserData ldata;
-  ldata.laser = lasers_[laser_index];
+  ldata.laser = lasers_[laser_index].get();
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
   // min, max, and increment angles of the laser in the base frame.
@@ -876,25 +879,25 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tf_broadcaster_->sendTransform(tmp_tf_stamped);
 }
 
-nav2_amcl::Laser *
+std::unique_ptr<nav2_amcl::Laser>
 AmclNode::createLaserObject()
 {
   RCLCPP_INFO(get_logger(), "createLaserObject");
 
   if (sensor_model_type_ == "beam") {
-    return new nav2_amcl::BeamModel(
+    return std::make_unique<nav2_amcl::BeamModel>(
       z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
       0.0, max_beams_, map_);
   }
 
   if (sensor_model_type_ == "likelihood_field_prob") {
-    return new nav2_amcl::LikelihoodFieldModelProb(
+    return std::make_unique<nav2_amcl::LikelihoodFieldModelProb>(
       z_hit_, z_rand_, sigma_hit_,
       laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
       beam_skip_error_threshold_, max_beams_, map_);
   }
 
-  return new nav2_amcl::LikelihoodFieldModel(
+  return std::make_unique<nav2_amcl::LikelihoodFieldModel>(
     z_hit_, z_rand_, sigma_hit_,
     laser_likelihood_max_dist_, max_beams_, map_);
 }
@@ -955,6 +958,7 @@ AmclNode::initParameters()
   freespace_downsampling_ = this->declare_or_get_parameter("freespace_downsampling", false);
   allow_parameter_qos_overrides_ = this->declare_or_get_parameter(
     "allow_parameter_qos_overrides", true);
+  random_seed_ = this->declare_or_get_parameter("random_seed", -1);
 
   save_pose_period_ = tf2::durationFromSec(1.0 / save_pose_rate);
   transform_tolerance_ = tf2::durationFromSec(tmp_tol);
@@ -1234,7 +1238,7 @@ AmclNode::updateParametersCallback(
 }
 
 void
-AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+AmclNode::mapReceived(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   RCLCPP_DEBUG(get_logger(), "AmclNode: A new map was received.");
   if (!nav2::validateMsg(*msg)) {
@@ -1358,7 +1362,7 @@ void
 AmclNode::initMessageFilters()
 {
   auto sub_opt = nav2::interfaces::createSubscriptionOptions(
-    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
+    scan_topic_, allow_parameter_qos_overrides_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
@@ -1462,6 +1466,17 @@ AmclNode::initParticleFilter()
   pf_ = pf_alloc(
     min_particles_, max_particles_, alpha_slow_, alpha_fast_,
     (pf_init_model_fn_t)AmclNode::uniformPoseGenerator);
+
+  // Seed RNG used by PF resampling and pose generation.
+  // Keep legacy behavior (time-based) unless user explicitly sets a seed.
+  if (random_seed_ >= 0) {
+    // `srand48` expects a platform `long` seed. We avoid using `long` in our code and accept
+    // truncation when seeding.
+    srand48(static_cast<int>(random_seed_));
+  } else {
+    srand48(static_cast<int>(std::time(nullptr)));
+  }
+
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 

@@ -190,6 +190,13 @@ public:
   }
 
   /**
+   * @brief Wait for the costmap to become current after updates or parameter changes
+   * @param timeout Maximum time to wait for costmap to become current
+   * @throws std::runtime_error if timeout is exceeded
+   */
+  void waitUntilCurrent(const rclcpp::Duration & timeout);
+
+  /**
    * @brief Get the pose of the robot in the global frame of the costmap
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise

@@ -31,6 +31,11 @@ public:
   {
   }
 
+  void config()
+  {
+    on_configure(rclcpp_lifecycle::State());
+  }
+
   // Since we cannot call configure/activate due to costmaps
   // requiring TF
   void setDynamicCallback()
@@ -54,6 +59,7 @@ public:
 TEST(WPTest, test_dynamic_parameters)
 {
   auto planner = std::make_shared<PlannerShim>();
+  planner->config();
   planner->setDynamicCallback();
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(

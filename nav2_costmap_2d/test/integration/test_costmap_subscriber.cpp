@@ -79,7 +79,7 @@ public:
     costmapSubscriber.reset();
     costmapToSend.reset();
   }
-  void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  void costmapCallback(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr msg)
   {
     this->fullCostmapMsgCount++;
     std::vector<uint8_t> data;
@@ -88,11 +88,11 @@ public:
     }
     receivedGrids.push_back(data);
   }
-  void costmapRawCallback(const nav2_msgs::msg::Costmap::SharedPtr)
+  void costmapRawCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr)
   {
     this->fullCostmapRawMsgCount++;
   }
-  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::SharedPtr update_msg)
+  void costmapUpdateCallback(const map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update_msg)
   {
     this->updateCostmapMsgCount++;
     std::vector<uint8_t> data;
@@ -101,7 +101,7 @@ public:
     }
     receivedGrids.push_back(data);
   }
-  void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::SharedPtr)
+  void costmapRawUpdateCallback(const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr)
   {
     this->updateCostmapRawMsgCount++;
   }
