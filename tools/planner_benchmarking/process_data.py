@@ -26,7 +26,7 @@ import seaborn as sns
 from tabulate import tabulate
 
 
-def getPaths(results: list[ComputePathToPose.Result]) -> list[Path]:
+def getPaths(results: list[list[ComputePathToPose.Result]]) -> list[Path]:
     paths = []
     for result in results:
         for path in result:
@@ -34,7 +34,7 @@ def getPaths(results: list[ComputePathToPose.Result]) -> list[Path]:
     return paths
 
 
-def getTimes(results: list[ComputePathToPose.Result]) -> list[float]:
+def getTimes(results: list[list[ComputePathToPose.Result]]) -> list[float]:
     times = []
     for result in results:
         for time in result:
