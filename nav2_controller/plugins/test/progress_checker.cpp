@@ -242,6 +242,17 @@ TEST(PoseProgressChecker, unit_tests)
     x->get_parameter("nav2_controller.movement_time_allowance").as_double(),
     time_allowance);
 
+  // Test setting invalid values
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("nav2_controller.required_movement_angle", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    x->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(x->get_parameter("nav2_controller.required_movement_angle").as_double(),
+    0.5);
+
   // BELOW time allowance (set to time_allowance)
   // no movement
   EXPECT_TRUE(checkMacro(rpc, 0, 0, 0, 0, 0, 0, half_time_allowance_ms));

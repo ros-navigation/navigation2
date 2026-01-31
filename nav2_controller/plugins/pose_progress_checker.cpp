@@ -132,11 +132,7 @@ PoseProgressChecker::updateParametersCallback(
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == plugin_name_ + ".required_movement_radius") {
-        radius_ = parameter.as_double();
-      } else if (param_name == plugin_name_ + ".movement_time_allowance") {
-        time_allowance_ = rclcpp::Duration::from_seconds(parameter.as_double());
-      } else if (param_name == plugin_name_ + ".required_movement_angle") {
+      if (param_name == plugin_name_ + ".required_movement_angle") {
         required_movement_angle_ = parameter.as_double();
       }
     }
