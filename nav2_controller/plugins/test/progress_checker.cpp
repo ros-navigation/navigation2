@@ -185,6 +185,17 @@ TEST(SimpleProgressChecker, required_movement_radius) {
     lifecycle_node->get_parameter("nav2_controller.required_movement_radius").as_double(),
     radius);
 
+  // Test setting invalid values
+  results = parameters_client->set_parameters_atomically(
+    {rclcpp::Parameter("nav2_controller.required_movement_radius", -1.0)}
+  );
+  rclcpp::spin_until_future_complete(
+    lifecycle_node->get_node_base_interface(),
+    results);
+  // Value should remain unchanged
+  EXPECT_EQ(lifecycle_node->get_parameter("nav2_controller.required_movement_radius").as_double(),
+    radius);
+
   // ABOVE time allowance (set to time_allowance)
   // no movement
   EXPECT_FALSE(checkMacro(progress_checker, 0, 0, 0, 0, 0, 0, twice_time_allowance_ms));
