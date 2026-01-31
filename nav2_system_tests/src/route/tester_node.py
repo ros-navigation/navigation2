@@ -302,7 +302,6 @@ class RouteTester(Node):
         if int(last_feedback_msg.current_edge_id) != 0:
             self.error_msg('Terminal feedback state of edges is not correct!')
             return False
-        assert isinstance(last_feedback_msg.route.nodes, list)
         if int(last_feedback_msg.route.nodes[-1].nodeid) != 13:
             self.error_msg('Final route node is not correct!')
             return False

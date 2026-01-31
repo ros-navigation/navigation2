@@ -16,9 +16,9 @@
 import math
 import os
 import pickle
-from typing import Any
 
 import matplotlib.pylab as plt
+from nav2_msgs.action import ComputePathToPose
 from nav2_msgs.msg import Costmap
 from nav_msgs.msg import Path
 import numpy as np
@@ -26,7 +26,7 @@ import seaborn as sns
 from tabulate import tabulate
 
 
-def getPaths(results: Any) -> list[Path]:
+def getPaths(results: list[ComputePathToPose.Result]) -> list[Path]:
     paths = []
     for result in results:
         for path in result:
@@ -34,7 +34,7 @@ def getPaths(results: Any) -> list[Path]:
     return paths
 
 
-def getTimes(results: Any) -> list[float]:
+def getTimes(results: list[ComputePathToPose.Result]) -> list[float]:
     times = []
     for result in results:
         for time in result:
@@ -57,7 +57,6 @@ def getMapCoordsFromPaths(paths: list[Path], resolution: float) -> list[list[flo
 
 def getPathLength(path: Path) -> float:
     path_length = 0.0
-    assert isinstance(path.poses, list)
     x_prev = path.poses[0].pose.position.x
     y_prev = path.poses[0].pose.position.y
     for i in range(1, len(path.poses)):

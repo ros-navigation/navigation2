@@ -18,9 +18,9 @@
 import math
 import os
 import pickle
-from typing import Any
 
 import matplotlib.pylab as plt
+from nav2_msgs.action import ComputePathToPose, SmoothPath
 from nav2_msgs.msg import Costmap
 from nav_msgs.msg import Path
 import numpy as np
@@ -29,7 +29,7 @@ import seaborn as sns
 from tabulate import tabulate
 
 
-def getPaths(results: Any) -> list[Path]:
+def getPaths(results: list[ComputePathToPose.Result | SmoothPath.Result]) -> list[Path]:
     paths = []
     for i in range(len(results)):
         if (i % 2) == 0:
@@ -42,7 +42,7 @@ def getPaths(results: Any) -> list[Path]:
     return paths
 
 
-def getTimes(results: Any) -> list[float]:
+def getTimes(results: list[ComputePathToPose.Result | SmoothPath.Result]) -> list[float]:
     times = []
     for i in range(len(results)):
         if (i % 2) == 0:
@@ -75,7 +75,6 @@ def getMapCoordsFromPaths(paths: list[Path], resolution: float) -> list[list[flo
 
 def getPathLength(path: Path) -> float:
     path_length = 0.0
-    assert isinstance(path.poses, list)
     x_prev = path.poses[0].pose.position.x
     y_prev = path.poses[0].pose.position.y
     for i in range(1, len(path.poses)):
@@ -107,7 +106,6 @@ def getPathSmoothnesses(paths: list[Path]) -> list[float]:
     for path in paths:
         smoothness = 0.0
         for i in range(2, len(path.poses)):
-            assert isinstance(path.poses, list)
             pm0[0] = path.poses[i].pose.position.x
             pm0[1] = path.poses[i].pose.position.y
             pm1[0] = path.poses[i - 1].pose.position.x
@@ -162,7 +160,6 @@ def getPathCurvatures(paths: list[Path]) -> list[float]:
     pm1 = np.array([0.0, 0.0])
     pm2 = np.array([0.0, 0.0])
     for path in paths:
-        assert isinstance(path.poses, list)
         radiuses = []
         for i in range(2, len(path.poses)):
             pm0[0] = path.poses[i].pose.position.x

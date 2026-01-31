@@ -194,7 +194,6 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     result = test.run(True, False)
     assert not result
     result = not result
-    assert isinstance(test.action_result.missed_waypoints, list)
     assert (
         test.action_result.missed_waypoints[0].error_code
         == ComputePathToPose.Result.GOAL_OUTSIDE_MAP

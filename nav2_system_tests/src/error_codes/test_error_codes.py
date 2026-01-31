@@ -49,7 +49,6 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     goal_pose1 = goal_pose
     goal_pose1.pose.position.x += 0.25
 
-    assert isinstance(path.poses, list)
     path.header.frame_id = 'map'
     path.poses.append(initial_pose)
     path.poses.append(goal_pose)
@@ -172,7 +171,6 @@ def main(argv: list[str] = sys.argv[1:]):  # type: ignore[no-untyped-def]
     pose1.pose.position.x = -0.5
 
     a_path = Path()
-    assert isinstance(a_path.poses, list)
     a_path.poses.append(pose)
     a_path.poses.append(pose1)
 
