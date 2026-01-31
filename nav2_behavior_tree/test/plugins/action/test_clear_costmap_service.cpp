@@ -112,6 +112,47 @@ TEST_F(ClearEntireCostmapServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 }
 
+TEST_F(ClearEntireCostmapServiceTestFixture, test_tick_with_plugins)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearEntireCostmap service_name="clear_entire_costmap" plugins="obstacle_layer;inflation_layer"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+  EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_EQ(request->plugins.size(), 2u);
+  EXPECT_EQ(request->plugins[0], "obstacle_layer");
+  EXPECT_EQ(request->plugins[1], "inflation_layer");
+}
+
+TEST_F(ClearEntireCostmapServiceTestFixture, test_tick_with_single_plugin)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearEntireCostmap service_name="clear_entire_costmap" plugins="obstacle_layer"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_EQ(request->plugins.size(), 1u);
+  EXPECT_EQ(request->plugins[0], "obstacle_layer");
+}
+
 class ClearCostmapExceptRegionService : public TestService<nav2_msgs::srv::ClearCostmapExceptRegion>
 {
 public:
@@ -205,6 +246,27 @@ TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+}
+
+TEST_F(ClearCostmapExceptRegionServiceTestFixture, test_tick_with_plugins)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearCostmapExceptRegion service_name="clear_costmap_except_region"
+              reset_distance="2.0" plugins="obstacle_layer"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_EQ(request->plugins.size(), 1u);
+  EXPECT_EQ(request->plugins[0], "obstacle_layer");
+  EXPECT_DOUBLE_EQ(request->reset_distance, 2.0);
 }
 //******************************************
 class ClearCostmapAroundRobotService : public TestService<nav2_msgs::srv::ClearCostmapAroundRobot>
@@ -302,6 +364,28 @@ TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
 }
 
+TEST_F(ClearCostmapAroundRobotServiceTestFixture, test_tick_with_plugins)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearCostmapAroundRobot service_name="clear_costmap_around_robot"
+              reset_distance="1.5" plugins="obstacle_layer;voxel_layer"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_EQ(request->plugins.size(), 2u);
+  EXPECT_EQ(request->plugins[0], "obstacle_layer");
+  EXPECT_EQ(request->plugins[1], "voxel_layer");
+  EXPECT_DOUBLE_EQ(request->reset_distance, 1.5);
+}
+
 class ClearCostmapAroundPoseService : public TestService<nav2_msgs::srv::ClearCostmapAroundPose>
 {
 public:
@@ -395,6 +479,27 @@ TEST_F(ClearCostmapAroundPoseServiceTestFixture, test_tick)
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 0);
   EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
   EXPECT_EQ(config_->blackboard->get<int>("number_recoveries"), 1);
+}
+
+TEST_F(ClearCostmapAroundPoseServiceTestFixture, test_tick_with_plugins)
+{
+  std::string xml_txt =
+    R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+            <ClearCostmapAroundPose service_name="clear_costmap_around_pose"
+              reset_distance="2.5" plugins="obstacle_layer"/>
+        </BehaviorTree>
+      </root>)";
+
+  tree_ = std::make_shared<BT::Tree>(factory_->createTreeFromText(xml_txt, config_->blackboard));
+  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
+
+  auto request = server_->getCurrentRequest();
+  ASSERT_NE(request, nullptr);
+  EXPECT_EQ(request->plugins.size(), 1u);
+  EXPECT_EQ(request->plugins[0], "obstacle_layer");
+  EXPECT_DOUBLE_EQ(request->reset_distance, 2.5);
 }
 
 int main(int argc, char ** argv)
