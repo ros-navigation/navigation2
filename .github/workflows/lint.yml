@@ -30,7 +30,5 @@ jobs:
           source .venv/bin/activate
           source /opt/ros/rolling/setup.bash
           cd ${{ env.path }}
-          pwd
-          ls
           pre-commit run --show-diff-on-failure --color=always --all-files
         shell: bash
