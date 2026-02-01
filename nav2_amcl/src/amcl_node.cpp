@@ -639,7 +639,7 @@ bool AmclNode::updateFilter(
   const pf_vector_t & pose)
 {
   nav2_amcl::LaserData ldata;
-  ldata.laser = lasers_[laser_index];
+  ldata.laser = lasers_[laser_index].get();
   ldata.range_count = laser_scan->ranges.size();
   // To account for lasers that are mounted upside-down, we determine the
   // min, max, and increment angles of the laser in the base frame.
@@ -879,25 +879,25 @@ AmclNode::sendMapToOdomTransform(const tf2::TimePoint & transform_expiration)
   tf_broadcaster_->sendTransform(tmp_tf_stamped);
 }
 
-nav2_amcl::Laser *
+std::unique_ptr<nav2_amcl::Laser>
 AmclNode::createLaserObject()
 {
   RCLCPP_INFO(get_logger(), "createLaserObject");
 
   if (sensor_model_type_ == "beam") {
-    return new nav2_amcl::BeamModel(
+    return std::make_unique<nav2_amcl::BeamModel>(
       z_hit_, z_short_, z_max_, z_rand_, sigma_hit_, lambda_short_,
       0.0, max_beams_, map_);
   }
 
   if (sensor_model_type_ == "likelihood_field_prob") {
-    return new nav2_amcl::LikelihoodFieldModelProb(
+    return std::make_unique<nav2_amcl::LikelihoodFieldModelProb>(
       z_hit_, z_rand_, sigma_hit_,
       laser_likelihood_max_dist_, do_beamskip_, beam_skip_distance_, beam_skip_threshold_,
       beam_skip_error_threshold_, max_beams_, map_);
   }
 
-  return new nav2_amcl::LikelihoodFieldModel(
+  return std::make_unique<nav2_amcl::LikelihoodFieldModel>(
     z_hit_, z_rand_, sigma_hit_,
     laser_likelihood_max_dist_, max_beams_, map_);
 }
@@ -1362,7 +1362,7 @@ void
 AmclNode::initMessageFilters()
 {
   auto sub_opt = nav2::interfaces::createSubscriptionOptions(
-    scan_topic_, allow_parameter_qos_overrides_, callback_group_);
+    scan_topic_, allow_parameter_qos_overrides_);
 
   #if RCLCPP_VERSION_GTE(29, 6, 0)
   laser_scan_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(

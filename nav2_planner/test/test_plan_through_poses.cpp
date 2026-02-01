@@ -151,13 +151,15 @@ Tester::~Tester()
 
 void Tester::setParameters()
 {
-  planner_->set_parameter(rclcpp::Parameter("expected_planner_frequency", EXPECTED_PLANNER_FREQ));
-  planner_->set_parameter(rclcpp::Parameter("planner_plugins", PLANNER_PLUGINS));
-  planner_->set_parameter(rclcpp::Parameter("costmap_update_timeout", COSTMAP_UPDATE_TIMEOUT));
-  planner_->set_parameter(rclcpp::Parameter("allow_partial_planning", true));
+  planner_->declare_parameter(
+    "expected_planner_frequency", rclcpp::ParameterValue(EXPECTED_PLANNER_FREQ));
+  planner_->declare_parameter("planner_plugins", rclcpp::ParameterValue(PLANNER_PLUGINS));
+  planner_->declare_parameter(
+    "costmap_update_timeout", rclcpp::ParameterValue(COSTMAP_UPDATE_TIMEOUT));
+  planner_->declare_parameter("allow_partial_planning", rclcpp::ParameterValue(true));
 
-  planner_->set_parameter(
-    rclcpp::Parameter(PLANNER_PLUGINS.front() + ".plugin", PLANNER_PLUGIN_NAME));
+  planner_->declare_parameter(
+    PLANNER_PLUGINS.front() + ".plugin", rclcpp::ParameterValue(PLANNER_PLUGIN_NAME));
 
   planner_->declare_parameter(
     PLANNER_PLUGINS.front() + ".tolerance", rclcpp::ParameterValue(PLANNER_TOLERANCE));

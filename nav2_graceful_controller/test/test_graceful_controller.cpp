@@ -22,6 +22,7 @@
 #include "nav2_graceful_controller/ego_polar_coords.hpp"
 #include "nav2_graceful_controller/smooth_control_law.hpp"
 #include "nav2_graceful_controller/graceful_controller.hpp"
+#include "nav2_util/path_utils.hpp"
 
 class SCLFixture : public nav2_graceful_controller::SmoothControlLaw
 {
@@ -248,7 +249,10 @@ TEST(GracefulControllerTest, dynamicParameters) {
       rclcpp::Parameter("test.rotation_scaling_factor", 13.0),
       rclcpp::Parameter("test.allow_backward", false),
       rclcpp::Parameter("test.use_collision_detection", false),
-      rclcpp::Parameter("test.in_place_collision_resolution", 15.0)});
+      rclcpp::Parameter("test.in_place_collision_resolution", 15.0),
+      rclcpp::Parameter("test.footprint_scaling_linear_vel", 16.0),
+      rclcpp::Parameter("test.footprint_scaling_factor", 17.0),
+      rclcpp::Parameter("test.footprint_scaling_step", 18.0)});
 
   // Spin
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
@@ -272,6 +276,9 @@ TEST(GracefulControllerTest, dynamicParameters) {
   EXPECT_EQ(node->get_parameter("test.allow_backward").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.use_collision_detection").as_bool(), false);
   EXPECT_EQ(node->get_parameter("test.in_place_collision_resolution").as_double(), 15.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_linear_vel").as_double(), 16.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_factor").as_double(), 17.0);
+  EXPECT_EQ(node->get_parameter("test.footprint_scaling_step").as_double(), 18.0);
 
   // Set allow backward to true
   results = params->set_parameters_atomically(
@@ -797,6 +804,113 @@ TEST(GracefulControllerTest, computeVelocityCommandFinal) {
   EXPECT_EQ(cmd_vel.twist.linear.x, 0.0);
   EXPECT_GE(cmd_vel.twist.angular.z, 0.0);
   EXPECT_LE(cmd_vel.twist.angular.z, 0.5);
+}
+
+TEST(GracefulControllerTest, slowDownForObstacle) {
+  auto node = std::make_shared<nav2::LifecycleNode>("testGraceful");
+  auto tf = std::make_shared<tf2_ros::Buffer>(node->get_clock());
+
+  // Create a costmap of 10x10 meters
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
+  costmap_ros->declare_parameter("global_frame", rclcpp::ParameterValue("test_global_frame"));
+  costmap_ros->declare_parameter("robot_base_frame", rclcpp::ParameterValue("test_robot_frame"));
+  costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
+  costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  costmap_ros->declare_parameter(
+    "footprint", rclcpp::ParameterValue("[[-0.2, -0.2], [0.2, -0.2], [0.2, 0.2], [-0.2, 0.2]]"));
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+
+  // Create controller
+  auto controller = std::make_shared<GMControllerFixture>();
+  controller->configure(node, "test", tf, costmap_ros);
+  controller->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap_ros, tf);
+
+  // Place an obstacle near the path
+  auto costmap = costmap_ros->getCostmap();
+  unsigned int mx, my;
+  bool ok = costmap->worldToMap(5.5, 5.3, mx, my);
+  ASSERT_TRUE(ok);
+  costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Set parameters to enable footprint scaling logic
+  auto params = std::make_shared<rclcpp::AsyncParametersClient>(
+    node->get_node_base_interface(), node->get_node_topics_interface(),
+    node->get_node_graph_interface(), node->get_node_services_interface());
+  double max_vel = 1.0;
+  auto fut = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.v_linear_max", max_vel),
+      rclcpp::Parameter("test.footprint_scaling_linear_vel", 0.2),
+      rclcpp::Parameter("test.footprint_scaling_factor", 1.0),
+      rclcpp::Parameter("test.footprint_scaling_step", 0.1),
+      rclcpp::Parameter("test.slowdown_radius", 0.1)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), fut);
+
+  // Create the robot pose
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "test_robot_frame";
+  robot_pose.pose.position.x = 0.0;
+  robot_pose.pose.position.y = 0.0;
+  robot_pose.pose.position.z = 0.0;
+  robot_pose.pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+
+  // Set transform between global and robot frame
+  geometry_msgs::msg::TransformStamped global_to_robot;
+  global_to_robot.header.frame_id = "test_global_frame";
+  global_to_robot.header.stamp = node->get_clock()->now();
+  global_to_robot.child_frame_id = "test_robot_frame";
+  global_to_robot.transform.translation.x = 5.0;
+  global_to_robot.transform.translation.y = 5.0;
+  global_to_robot.transform.translation.z = 0.0;
+  tf->setTransform(global_to_robot, "test", false);
+
+  // Set a plan in a straight line from the robot
+  nav_msgs::msg::Path plan;
+  plan.header.frame_id = "test_global_frame";
+  plan.poses.resize(5);
+  plan.poses[0].header.frame_id = "test_global_frame";
+  plan.poses[0].pose.position.x = 5.0;
+  plan.poses[0].pose.position.y = 5.0;
+  plan.poses[0].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[1].header.frame_id = "test_global_frame";
+  plan.poses[1].pose.position.x = 5.25;
+  plan.poses[1].pose.position.y = 5.0;
+  plan.poses[1].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[2].header.frame_id = "test_global_frame";
+  plan.poses[2].pose.position.x = 5.5;
+  plan.poses[2].pose.position.y = 5.0;
+  plan.poses[2].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[3].header.frame_id = "test_global_frame";
+  plan.poses[3].pose.position.x = 5.75;
+  plan.poses[3].pose.position.y = 5.0;
+  plan.poses[3].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  plan.poses[4].header.frame_id = "test_global_frame";
+  plan.poses[4].pose.position.x = 6.0;
+  plan.poses[4].pose.position.y = 5.0;
+  plan.poses[4].pose.orientation = tf2::toMsg(tf2::Quaternion({0, 0, 1}, 0.0));
+  path_handler.setPlan(plan);
+
+  // Set velocity
+  geometry_msgs::msg::Twist robot_velocity;
+  robot_velocity.linear.x = 0.0;
+  robot_velocity.linear.y = 0.0;
+
+  // Set the goal checker
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap_ros);
+
+  auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+  nav_msgs::msg::Path transformed_global_plan = path_handler.transformLocalPlan(closest_point,
+    pruned_plan_end);
+  geometry_msgs::msg::PoseStamped goal;
+  auto cmd_vel =
+    controller->computeVelocityCommands(robot_pose, robot_velocity, &checker,
+      transformed_global_plan, goal);
+
+  // And the produced command velocity should be <= configured max
+  EXPECT_LT(cmd_vel.twist.linear.x, max_vel);
 }
 
 int main(int argc, char ** argv)

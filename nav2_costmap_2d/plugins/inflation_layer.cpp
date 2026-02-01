@@ -135,10 +135,10 @@ InflationLayer::updateBounds(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (need_reinflation_) {
-    last_min_x_ = *min_x;
-    last_min_y_ = *min_y;
-    last_max_x_ = *max_x;
-    last_max_y_ = *max_y;
+    // Reset last_* to "no expansion" values so the next cycle won't
+    // merge with these full-map bounds (avoids double full-map update after reset)
+    last_min_x_ = last_min_y_ = std::numeric_limits<double>::max();
+    last_max_x_ = last_max_y_ = std::numeric_limits<double>::lowest();
 
     *min_x = std::numeric_limits<double>::lowest();
     *min_y = std::numeric_limits<double>::lowest();
