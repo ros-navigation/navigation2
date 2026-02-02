@@ -27,7 +27,18 @@ find_package(nav2_ros_common REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
-find_package(OpenCV REQUIRED)
+# Force OpenCV 4.13+ from /usr/local to avoid system version.
+# This is needed for a bug fix for large maps with cv::disttransform
+set(OpenCV_DIR "/usr/local/lib/cmake/opencv4" CACHE PATH "Path to OpenCV config")
+set(CMAKE_PREFIX_PATH "/usr/local" ${CMAKE_PREFIX_PATH})
+
+find_package(OpenCV 4.13 REQUIRED COMPONENTS core imgproc)
+
+if(OpenCV_VERSION VERSION_LESS "4.13")
+  message(FATAL_ERROR "OpenCV ${OpenCV_VERSION} found, but 4.13+ required. Found at: ${OpenCV_DIR}")
+endif()
+
+message(STATUS "✓ Using OpenCV ${OpenCV_VERSION} from ${OpenCV_DIR}")
 
 nav2_package()
 

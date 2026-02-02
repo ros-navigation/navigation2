@@ -68,7 +68,7 @@ InflationLayer::InflationLayer()
   inflate_unknown_(false),
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
-  cost_lut_precision_(10),
+  cost_lut_precision_(100),
   resolution_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
@@ -91,20 +91,24 @@ InflationLayer::~InflationLayer()
 void
 InflationLayer::onInitialize()
 {
+  declareParameter("enabled", rclcpp::ParameterValue(true));
+  declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
+  declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
+  declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
+  declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
+  declareParameter("cost_lut_precision", rclcpp::ParameterValue(100));
+
   {
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
     }
-    enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
-    inflation_radius_ = node->declare_or_get_parameter(name_ + "." + "inflation_radius", 0.55);
-    cost_scaling_factor_ = node->declare_or_get_parameter(
-      name_ + "." + "cost_scaling_factor", 10.0);
-    inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
-    inflate_around_unknown_ = node->declare_or_get_parameter(
-      name_ + "." + "inflate_around_unknown", false);
-    cost_lut_precision_ = node->declare_or_get_parameter(
-      name_ + "." + "cost_lut_precision", 10);
+    node->get_parameter(name_ + "." + "enabled", enabled_);
+    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
+    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
+    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
+    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+    node->get_parameter(name_ + "." + "cost_lut_precision", cost_lut_precision_);
 
     dyn_params_handler_ = node->add_on_set_parameters_callback(
       std::bind(
@@ -321,9 +325,9 @@ InflationLayer::dynamicParametersCallback(
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == name_ + "." + "cost_lut_precision" &&
-        cost_lut_precision_ != static_cast<unsigned int>(parameter.as_int()))
+        cost_lut_precision_ != parameter.as_int())
       {
-        cost_lut_precision_ = static_cast<unsigned int>(parameter.as_int());
+        cost_lut_precision_ = parameter.as_int();
         need_reinflation_ = true;
         need_cache_recompute = true;
       }
