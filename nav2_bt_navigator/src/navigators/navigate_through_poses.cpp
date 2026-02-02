@@ -209,7 +209,8 @@ NavigateThroughPosesNavigator::onLoop()
   res = blackboard->get(
     tracking_feedback_blackboard_id_,
     tracking_feedback);
-  feedback_msg->tracking_error = tracking_feedback.tracking_error;
+  feedback_msg->position_tracking_error = tracking_feedback.position_tracking_error;
+  feedback_msg->heading_tracking_error = tracking_feedback.heading_tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -290,10 +291,13 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
   previous_path_ = nav_msgs::msg::Path();
 
-  // Update the goal pose on the blackboard
+  // Update the goal pose and path on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
     goals_blackboard_id_,
     std::move(goals_array));
+  blackboard->set<nav_msgs::msg::Path>(
+    path_blackboard_id_,
+    nav_msgs::msg::Path());
 
   // Reset the waypoint states vector in the blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());
