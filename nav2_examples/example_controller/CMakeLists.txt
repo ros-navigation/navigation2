@@ -21,6 +21,21 @@ nav2_package()
 
 set(library_name ${PROJECT_NAME}_plugin)
 
+set(dependencies
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  pluginlib
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_geometry_msgs
+  tf2_ros
+  visualization_msgs
+)
+
 add_library(${library_name} SHARED
   src/pure_pursuit_controller.cpp
 )
@@ -29,22 +44,7 @@ target_include_directories(${library_name}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
-target_link_libraries(${library_name} PUBLIC
-  ${geometry_msgs_TARGETS}
-  nav2_core::nav2_core
-  nav2_costmap_2d::nav2_costmap_2d_core
-  nav2_util::nav2_util_core
-  ${nav_msgs_TARGETS}
-  rclcpp::rclcpp
-  rclcpp_lifecycle::rclcpp_lifecycle
-  tf2::tf2
-  tf2_ros::tf2_ros
-  ${visualization_msgs_TARGETS}
-)
-target_link_libraries(${library_name} PRIVATE
-  pluginlib::pluginlib
-  tf2_geometry_msgs::tf2_geometry_msgs
-)
+ament_target_dependencies(${library_name} PUBLIC ${dependencies})
 
 pluginlib_export_plugin_description_file(nav2_core example_controller_plugin.xml)
 
