@@ -184,6 +184,15 @@ public:
   }
 
   /**
+   * @brief Function to perform some user-defined operation when the action server fails to respond.
+   * @return BT::NodeStatus Returns FAILURE by default, user may override return another value
+   */
+  virtual BT::NodeStatus on_server_failure()
+  {
+    return BT::NodeStatus::FAILURE;
+  }
+
+  /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
@@ -223,7 +232,7 @@ public:
             "Timed out while waiting for action server to acknowledge goal request for %s",
             action_name_.c_str());
           future_goal_handle_.reset();
-          return BT::NodeStatus::FAILURE;
+          return on_server_failure();
         }
       }
 
@@ -253,7 +262,7 @@ public:
               "Timed out while waiting for action server to acknowledge goal request for %s",
               action_name_.c_str());
             future_goal_handle_.reset();
-            return BT::NodeStatus::FAILURE;
+            return on_server_failure();
           }
         }
 
@@ -270,7 +279,7 @@ public:
         e.what() == std::string("Goal was rejected by the action server"))
       {
         // Action related failure that should not fail the tree, but the node
-        return BT::NodeStatus::FAILURE;
+        return on_server_failure();
       } else {
         // Internal exception to propagate to the tree
         throw e;
