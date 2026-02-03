@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(example_controller)
 
 find_package(ament_cmake REQUIRED)
+find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -18,8 +19,8 @@ find_package(visualization_msgs REQUIRED)
 
 nav2_package()
 
-# Create shared library
 set(library_name ${PROJECT_NAME}_plugin)
+
 add_library(${library_name} SHARED
   src/pure_pursuit_controller.cpp
 )
@@ -34,7 +35,6 @@ target_link_libraries(${library_name} PUBLIC
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_util::nav2_util_core
   ${nav_msgs_TARGETS}
-  pluginlib::pluginlib
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
   tf2::tf2
@@ -42,53 +42,46 @@ target_link_libraries(${library_name} PUBLIC
   ${visualization_msgs_TARGETS}
 )
 target_link_libraries(${library_name} PRIVATE
+  pluginlib::pluginlib
   tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-# Install library
+pluginlib_export_plugin_description_file(nav2_core example_controller_plugin.xml)
+
 install(TARGETS ${library_name}
-  EXPORT ${PROJECT_NAME}
+  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-# Install header files
 install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-# Install plugin descriptor XML
 install(FILES example_controller_plugin.xml
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Export plugin
-pluginlib_export_plugin_description_file(nav2_core example_controller_plugin.xml)
-
-# Export package information
-ament_export_include_directories(include/${PROJECT_NAME})
-ament_export_libraries(${library_name})
-ament_export_targets(${PROJECT_NAME})
-ament_export_dependencies(
-  geometry_msgs
-  nav2_core
-  nav2_costmap_2d
-  nav2_util
-  nav_msgs
-  pluginlib
-  rclcpp
-  rclcpp_lifecycle
-  tf2
-  tf2_ros
-  visualization_msgs
-)
-
-# Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_include_directories(include/${PROJECT_NAME})
+ament_export_libraries(${library_name})
+ament_export_dependencies(
+  geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  rclcpp
+  rclcpp_lifecycle
+  tf2
+  tf2_ros
+  visualization_msgs
+)
+ament_export_targets(${library_name})
 ament_package()
