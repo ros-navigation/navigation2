@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -15,6 +16,7 @@ set(library_name ${PROJECT_NAME}_plugin)
 
 set(dependencies
   nav2_costmap_2d
+  nav2_ros_common
   nav2_util
   pluginlib
   rclcpp
@@ -57,6 +59,7 @@ ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
   nav2_costmap_2d
+  nav2_ros_common
   nav2_util
   rclcpp
 )
