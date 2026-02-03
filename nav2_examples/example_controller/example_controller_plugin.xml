@@ -1,0 +1,9 @@
+<library path="example_controller_plugin">
+  <class type="example_controller::PurePursuitController" base_class_type="nav2_core::Controller">
+    <description>
+      An example Pure Pursuit path following controller for Nav2.
+      Implements the classic Pure Pursuit algorithm with velocity-scaled lookahead,
+      collision detection, and rotate-to-heading functionality.
+    </description>
+  </class>
+</library>

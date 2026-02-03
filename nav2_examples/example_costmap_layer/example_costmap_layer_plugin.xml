@@ -1,0 +1,8 @@
+<library path="example_costmap_layer_plugin">
+  <class type="example_costmap_layer::GradientLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>
+      An example costmap layer that creates a cost gradient around a configurable center point.
+      Useful for implementing soft keep-out zones, preferred paths, or other cost-based behaviors.
+    </description>
+  </class>
+</library>

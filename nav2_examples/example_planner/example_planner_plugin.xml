@@ -1,0 +1,8 @@
+<library path="example_planner_plugin">
+  <class type="example_planner::AStarPlanner" base_class_type="nav2_core::GlobalPlanner">
+    <description>
+      An example A* global planner implementation demonstrating the Nav2 plugin interface.
+      Supports 8-connected grid search with configurable cost weighting and goal tolerance.
+    </description>
+  </class>
+</library>
