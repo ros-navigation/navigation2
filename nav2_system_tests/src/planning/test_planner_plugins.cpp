@@ -40,7 +40,7 @@ void testSmallPathValidityAndOrientation(std::string plugin, double length)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
-  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
+  obj->declare_parameter("GridBased.plugin", rclcpp::ParameterValue(plugin));
   obj->declare_parameter(
     "GridBased.use_final_approach_orientation", rclcpp::ParameterValue(false));
   obj->onConfigure(state);
@@ -73,14 +73,13 @@ void testSmallPathValidityAndNoOrientation(std::string plugin, double length)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
-  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
+  obj->declare_parameter("GridBased.plugin", rclcpp::ParameterValue(plugin));
 
   // Test WITH use_final_approach_orientation
   // expecting end path pose orientation to be equal to approach orientation
   // which in the one pose corner case should be the start pose orientation
   obj->declare_parameter(
     "GridBased.use_final_approach_orientation", rclcpp::ParameterValue(true));
-  obj->set_parameter(rclcpp::Parameter("GridBased.use_final_approach_orientation", true));
   obj->onConfigure(state);
 
   geometry_msgs::msg::PoseStamped start;
@@ -123,7 +122,7 @@ void testCancel(std::string plugin)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
-  obj->set_parameter(rclcpp::Parameter("GridBased.plugin", plugin));
+  obj->declare_parameter("GridBased.plugin", rclcpp::ParameterValue(plugin));
   obj->declare_parameter("GridBased.terminal_checking_interval", rclcpp::ParameterValue(1));
   obj->onConfigure(state);
 
@@ -153,7 +152,7 @@ TEST(testPluginMap, Failures)
 {
   auto obj = std::make_shared<nav2_system_tests::NavFnPlannerTester>();
   rclcpp_lifecycle::State state;
-  obj->set_parameter(rclcpp::Parameter("expected_planner_frequency", 100000.0));
+  obj->declare_parameter("expected_planner_frequency", rclcpp::ParameterValue(100000.0));
   obj->onConfigure(state);
   obj->create_subscription<nav_msgs::msg::Path>(
     "plan", callback);

@@ -18,7 +18,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "opennav_docking/navigator.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 // Test navigator
 

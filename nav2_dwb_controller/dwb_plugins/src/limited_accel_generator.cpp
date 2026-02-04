@@ -38,7 +38,6 @@
 #include <string>
 #include "pluginlib/class_list_macros.hpp"
 #include "dwb_core/exceptions.hpp"
-#include "nav2_ros_common/node_utils.hpp"
 
 namespace dwb_plugins
 {
@@ -51,15 +50,8 @@ void LimitedAccelGenerator::initialize(
   StandardTrajectoryGenerator::initialize(nh, plugin_name_);
 
   try {
-    nav2::declare_parameter_if_not_declared(
-      nh, plugin_name + ".sim_period", rclcpp::PARAMETER_DOUBLE);
-    if (!nh->get_parameter(plugin_name + ".sim_period", acceleration_time_)) {
-      // This actually should never appear, since declare_parameter_if_not_declared()
-      // completed w/o exceptions guarantee that static parameter will be initialized
-      // with some value. However for reliability we should also process the case
-      // when get_parameter() will return a failure for some other reasons.
-      throw std::runtime_error("Failed to get 'sim_period' value");
-    }
+    acceleration_time_ = nh->declare_or_get_parameter<double>(
+      plugin_name + ".sim_period");
   } catch (std::exception &) {
     RCLCPP_WARN(
       rclcpp::get_logger("LimitedAccelGenerator"),

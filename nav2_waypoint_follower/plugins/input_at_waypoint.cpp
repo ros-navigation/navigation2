@@ -51,19 +51,12 @@ void InputAtWaypoint::initialize(
 
   double timeout;
   std::string input_topic;
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".timeout",
-    rclcpp::ParameterValue(10.0));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".enabled",
-    rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".input_topic",
-    rclcpp::ParameterValue("input_at_waypoint/input"));
-  timeout = node->get_parameter(plugin_name + ".timeout").as_double();
-  node->get_parameter(plugin_name + ".enabled", is_enabled_);
-  node->get_parameter(plugin_name + ".input_topic", input_topic);
-
+  is_enabled_ = node->declare_or_get_parameter(
+    plugin_name + ".enabled", true);
+  input_topic = node->declare_or_get_parameter(
+    plugin_name + ".input_topic", std::string("input_at_waypoint/input"));
+  timeout = node->declare_or_get_parameter(
+    plugin_name + ".timeout", 10.0);
   timeout_ = rclcpp::Duration(timeout, 0.0);
 
   RCLCPP_INFO(
