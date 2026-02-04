@@ -74,19 +74,17 @@ inline visualization_msgs::msg::MarkerArray::UniquePtr toMsg(
   nodes_marker.color.a = 1.0;
   nodes_marker.points.reserve(graph.size());
 
-  visualization_msgs::msg::Marker edges_marker;
-  edges_marker.header.frame_id = frame;
-  edges_marker.header.stamp = now;
-  edges_marker.action = 0;
-  edges_marker.ns = "route_graph_edges";
-  edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
-  edges_marker.scale.x = 0.05;  // Line width
-  edges_marker.color.g = 1.0;
-  edges_marker.color.a = 0.5;  // Semi-transparent green so bidirectional connections stand out
-  constexpr size_t points_per_edge = 2;
-  // This probably under-reserves but saves some initial reallocations
-  constexpr size_t likely_min_edges_per_node = 2;
-  edges_marker.points.reserve(graph.size() * points_per_edge * likely_min_edges_per_node);
+  visualization_msgs::msg::Marker edge_marker;
+  edge_marker.header.frame_id = frame;
+  edge_marker.header.stamp = now;
+  edge_marker.action = 0;
+  edge_marker.ns = "route_graph_edges";
+  edge_marker.type = visualization_msgs::msg::Marker::ARROW;
+  edge_marker.scale.x = 0.05;  // Shaft diameter
+  edge_marker.scale.y = 0.1;   // Head diameter
+  edge_marker.scale.z = 0.1;   // Head length
+  edge_marker.color.g = 1.0;
+  edge_marker.color.a = 0.5;  // Semi-transparent green so bidirectional connections stand out
 
   geometry_msgs::msg::Point node_pos;
   geometry_msgs::msg::Point edge_start;
@@ -133,8 +131,11 @@ inline visualization_msgs::msg::MarkerArray::UniquePtr toMsg(
       edge_start.y = node.coords.y;
       edge_end.x = neighbor.end->coords.x;
       edge_end.y = neighbor.end->coords.y;
-      edges_marker.points.push_back(edge_start);
-      edges_marker.points.push_back(edge_end);
+      edge_marker.id++;
+      edge_marker.points.clear();
+      edge_marker.points.push_back(edge_start);
+      edge_marker.points.push_back(edge_end);
+      msg->markers.push_back(edge_marker);
 
       // Deal with overlapping bi-directional text markers by offsetting locations
       float y_offset = 0.0;
@@ -156,7 +157,6 @@ inline visualization_msgs::msg::MarkerArray::UniquePtr toMsg(
     }
   }
 
-  msg->markers.push_back(edges_marker);
   msg->markers.push_back(nodes_marker);
   return msg;
 }
