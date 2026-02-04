@@ -46,6 +46,10 @@ RouteTool::RouteTool(QWidget * parent)
   ui_->make_bidirectional_button->setVisible(false);
   ui_->reverse_edge_label->setVisible(false);
   ui_->reverse_edge_id->setVisible(false);
+  ui_->remove_reverse_edge_label->setVisible(false);
+  ui_->remove_reverse_edge_id->setVisible(false);
+  ui_->remove_bidirectional_checkbox->setVisible(false);
+  ui_->remove_bidirectional_checkbox->setEnabled(false);
   // Needed to prevent memory addresses moving from resizing
   // when adding nodes and edges
   graph_.reserve(1000);
@@ -68,10 +72,11 @@ void RouteTool::onInitialize(void)
 
 void RouteTool::on_clicked_point(const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg)
 {
-  // Check if we're on the Edit tab with Edge selected
   constexpr int kEditTabIndex = 1;
+  constexpr int kRemoveTabIndex = 2;
   constexpr float kEdgeSelectionDistance = 0.3f;  // Max distance to select an edge
 
+  // Check if we're on the Edit tab with Edge selected
   if (ui_->tabWidget->currentIndex() == kEditTabIndex && ui_->edit_edge_button->isChecked()) {
     auto edge_info = find_nearest_edge(msg->point.x, msg->point.y, kEdgeSelectionDistance);
     if (edge_info.has_value()) {
@@ -94,6 +99,31 @@ void RouteTool::on_clicked_point(const geometry_msgs::msg::PointStamped::ConstSh
         RCLCPP_INFO(
           node_->get_logger(), "Selected edge %d (from node %d to node %d), no reverse edge",
           edge_info->first, edge_info->second.first, edge_info->second.second);
+      }
+      return;
+    }
+  }
+
+  // Check if we're on the Remove tab with Edge selected
+  if (ui_->tabWidget->currentIndex() == kRemoveTabIndex && ui_->remove_edge_button->isChecked()) {
+    auto edge_info = find_nearest_edge(msg->point.x, msg->point.y, kEdgeSelectionDistance);
+    if (edge_info.has_value()) {
+      ui_->remove_id->setText(std::to_string(edge_info->first).c_str());
+
+      // Check for reverse edge and update the label
+      auto reverse_edge = find_reverse_edge(edge_info->second.first, edge_info->second.second);
+      if (reverse_edge.has_value()) {
+        ui_->remove_reverse_edge_id->setText(std::to_string(reverse_edge.value()).c_str());
+        ui_->remove_bidirectional_checkbox->setEnabled(true);
+        RCLCPP_INFO(
+          node_->get_logger(), "Selected edge %d for removal, reverse edge: %d",
+          edge_info->first, reverse_edge.value());
+      } else {
+        ui_->remove_reverse_edge_id->setText("None");
+        ui_->remove_bidirectional_checkbox->setEnabled(false);
+        RCLCPP_INFO(
+          node_->get_logger(), "Selected edge %d for removal, no reverse edge",
+          edge_info->first);
       }
       return;
     }
@@ -351,18 +381,55 @@ void RouteTool::on_delete_button_clicked(void)
     update_route_graph();
   } else if (ui_->remove_edge_button->isChecked()) {
     auto edge_id = (unsigned int) ui_->remove_id->toPlainText().toInt();
-    auto start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
-    for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
-      if (itr->edgeid == edge_id) {
-        RCLCPP_INFO(node_->get_logger(), "Removed edge %d", edge_id);
-        start_node->neighbors.erase(itr);
-        edge_to_node_map_.erase(edge_id);
+
+    // Find edge endpoints before removing
+    auto edge_start_node_id = edge_to_node_map_[edge_id];
+    unsigned int edge_end_node_id = 0;
+    auto start_node = &graph_[graph_to_id_map_[edge_start_node_id]];
+    for (const auto & edge : start_node->neighbors) {
+      if (edge.edgeid == edge_id) {
+        edge_end_node_id = edge.end->nodeid;
         break;
       }
     }
+
+    // Find reverse edge if checkbox is checked
+    std::optional<unsigned int> reverse_edge_id;
+    if (ui_->remove_bidirectional_checkbox->isChecked()) {
+      reverse_edge_id = find_reverse_edge(edge_start_node_id, edge_end_node_id);
+    }
+
+    // Remove the main edge
+    for (auto itr = start_node->neighbors.begin(); itr != start_node->neighbors.end(); itr++) {
+      if (itr->edgeid == edge_id) {
+        start_node->neighbors.erase(itr);
+        edge_to_node_map_.erase(edge_id);
+        RCLCPP_INFO(node_->get_logger(), "Removed edge %d", edge_id);
+        break;
+      }
+    }
+
+    // Remove reverse edge if found and checkbox is checked
+    if (reverse_edge_id.has_value()) {
+      auto rev_edge_id = reverse_edge_id.value();
+      auto rev_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[rev_edge_id]]];
+      for (auto itr = rev_start_node->neighbors.begin();
+        itr != rev_start_node->neighbors.end(); itr++)
+      {
+        if (itr->edgeid == rev_edge_id) {
+          rev_start_node->neighbors.erase(itr);
+          edge_to_node_map_.erase(rev_edge_id);
+          RCLCPP_INFO(node_->get_logger(), "Removed reverse edge %d", rev_edge_id);
+          break;
+        }
+      }
+    }
+
     update_route_graph();
   }
   ui_->remove_id->setText("");
+  ui_->remove_reverse_edge_id->setText("None");
+  ui_->remove_bidirectional_checkbox->setEnabled(false);
 }
 
 void RouteTool::on_add_node_button_toggled(void)
@@ -394,6 +461,19 @@ void RouteTool::on_edit_node_button_toggled(void)
     ui_->make_bidirectional_button->setVisible(true);
     ui_->reverse_edge_label->setVisible(true);
     ui_->reverse_edge_id->setVisible(true);
+  }
+}
+
+void RouteTool::on_remove_node_button_toggled(void)
+{
+  if (ui_->remove_node_button->isChecked()) {
+    ui_->remove_reverse_edge_label->setVisible(false);
+    ui_->remove_reverse_edge_id->setVisible(false);
+    ui_->remove_bidirectional_checkbox->setVisible(false);
+  } else {
+    ui_->remove_reverse_edge_label->setVisible(true);
+    ui_->remove_reverse_edge_id->setVisible(true);
+    ui_->remove_bidirectional_checkbox->setVisible(true);
   }
 }
 

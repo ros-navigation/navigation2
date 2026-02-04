@@ -363,6 +363,34 @@
                </item>
               </layout>
              </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_remove_reverse">
+               <item>
+                <widget class="QLabel" name="remove_reverse_edge_label">
+                 <property name="text">
+                  <string>Reverse Edge:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="remove_reverse_edge_id">
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="remove_bidirectional_checkbox">
+                 <property name="text">
+                  <string>Also remove reverse</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
              <item alignment="Qt::AlignVCenter">
               <widget class="QPushButton" name="delete_button">
                <property name="text">
