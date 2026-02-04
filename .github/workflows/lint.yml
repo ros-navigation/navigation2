@@ -3,42 +3,32 @@ on:
   pull_request:
 
 jobs:
-  ament_lint_general:
-    name: ament_${{ matrix.linter }}
-    runs-on: ubuntu-latest
-    container:
-      image: rostooling/setup-ros-docker:ubuntu-noble-ros-rolling-ros-base-latest
-    strategy:
-      fail-fast: false
-      matrix:
-          linter: [xmllint, cpplint, uncrustify, pep257, flake8, mypy]
-    steps:
-    - uses: actions/checkout@v6
-
-    - name: Install typeshed for mypy
-      if: matrix.linter == 'mypy'
-      run: sudo apt update && sudo apt install -y python3-typeshed
-
-    - uses: ros-tooling/action-ros-lint@0.1.4
-      with:
-        linter: ${{ matrix.linter }}
-        distribution: rolling
-        package-name: "*"
-        arguments: ${{ matrix.linter == 'mypy' && '--config tools/pyproject.toml' || '' }}
-
   pre-commit:
     name: pre-commit
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ros-navigation/navigation2:main
+    env:
+        path: src/${{ github.repository }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-      - uses: pre-commit/action@v3.0.1
-        env:
-          SKIP: >-
-            ament_lint_cmake,
-            ament_cpplint,
-            ament_uncrustify,
-            ament_xmllint,
-            ament_flake8,
-            ament_pep257,
-            ament_mypy
+        with:
+          path: ${{ env.path }}
+      - name: Install pre-commit
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python3 -m pip install pre-commit
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.path }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: |
+          source .venv/bin/activate
+          source /opt/ros/rolling/setup.bash
+          cd ${{ env.path }}
+          pre-commit run --show-diff-on-failure --color=always --all-files
+        shell: bash
