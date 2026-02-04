@@ -128,6 +128,8 @@ nav2::CallbackReturn
 MapServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+  occ_service_->on_activate();
+  load_map_service_->on_activate();
 
   // Publish the map using the latched topic
   occ_pub_->on_activate();
@@ -146,6 +148,8 @@ nav2::CallbackReturn
 MapServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  occ_service_->on_deactivate();
+  load_map_service_->on_deactivate();
 
   occ_pub_->on_deactivate();
 
