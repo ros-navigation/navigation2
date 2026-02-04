@@ -213,6 +213,31 @@
               </layout>
              </item>
              <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_reverse_edge">
+               <item>
+                <widget class="QLabel" name="reverse_edge_label">
+                 <property name="text">
+                  <string>Reverse Edge:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="reverse_edge_id">
+                 <property name="text">
+                  <string>None</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="make_bidirectional_button">
+                 <property name="text">
+                  <string>Make it bi-directional</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
               <layout class="QHBoxLayout" name="horizontalLayout_7">
                <item alignment="Qt::AlignLeft|Qt::AlignVCenter">
                 <widget class="QLabel" name="edit_text">

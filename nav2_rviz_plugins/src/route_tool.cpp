@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "nav2_rviz_plugins/route_tool.hpp"
+#include <cmath>
+#include <functional>
 #include <QDesktopServices>
 #include <QUrl>
 #include <sys/types.h>
@@ -39,6 +41,11 @@ RouteTool::RouteTool(QWidget * parent)
   ui_->add_node_button->setChecked(true);
   ui_->edit_node_button->setChecked(true);
   ui_->remove_node_button->setChecked(true);
+  ui_->tabWidget->setCurrentIndex(0);  // Start on Add tab
+  // Hide bi-directional controls initially (Node mode is default)
+  ui_->make_bidirectional_button->setVisible(false);
+  ui_->reverse_edge_label->setVisible(false);
+  ui_->reverse_edge_id->setVisible(false);
   // Needed to prevent memory addresses moving from resizing
   // when adding nodes and edges
   graph_.reserve(1000);
@@ -55,12 +62,143 @@ void RouteTool::onInitialize(void)
   auto node = ros_node_abstraction->get_raw_node();
 
   clicked_point_subscription_ = node->create_subscription<geometry_msgs::msg::PointStamped>(
-    "clicked_point", 1, [this](const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg) {
-      ui_->add_field_1->setText(std::to_string(msg->point.x).c_str());
-      ui_->add_field_2->setText(std::to_string(msg->point.y).c_str());
-      ui_->edit_field_1->setText(std::to_string(msg->point.x).c_str());
-      ui_->edit_field_2->setText(std::to_string(msg->point.y).c_str());
-    });
+    "clicked_point", 1,
+    std::bind(&RouteTool::on_clicked_point, this, std::placeholders::_1));
+}
+
+void RouteTool::on_clicked_point(const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg)
+{
+  // Check if we're on the Edit tab with Edge selected
+  constexpr int kEditTabIndex = 1;
+  constexpr float kEdgeSelectionDistance = 0.3f;  // Max distance to select an edge
+
+  if (ui_->tabWidget->currentIndex() == kEditTabIndex && ui_->edit_edge_button->isChecked()) {
+    auto edge_info = find_nearest_edge(msg->point.x, msg->point.y, kEdgeSelectionDistance);
+    if (edge_info.has_value()) {
+      ui_->edit_id->setText(std::to_string(edge_info->first).c_str());
+      ui_->edit_field_1->setText(std::to_string(edge_info->second.first).c_str());
+      ui_->edit_field_2->setText(std::to_string(edge_info->second.second).c_str());
+
+      // Check for reverse edge and update the label and button state
+      auto reverse_edge = find_reverse_edge(edge_info->second.first, edge_info->second.second);
+      if (reverse_edge.has_value()) {
+        ui_->reverse_edge_id->setText(std::to_string(reverse_edge.value()).c_str());
+        ui_->make_bidirectional_button->setEnabled(false);
+        RCLCPP_INFO(
+          node_->get_logger(), "Selected edge %d (from node %d to node %d), reverse edge: %d",
+          edge_info->first, edge_info->second.first, edge_info->second.second,
+          reverse_edge.value());
+      } else {
+        ui_->reverse_edge_id->setText("None");
+        ui_->make_bidirectional_button->setEnabled(true);
+        RCLCPP_INFO(
+          node_->get_logger(), "Selected edge %d (from node %d to node %d), no reverse edge",
+          edge_info->first, edge_info->second.first, edge_info->second.second);
+      }
+      return;
+    }
+  }
+
+  // Default behavior: fill position fields
+  ui_->add_field_1->setText(std::to_string(msg->point.x).c_str());
+  ui_->add_field_2->setText(std::to_string(msg->point.y).c_str());
+  ui_->edit_field_1->setText(std::to_string(msg->point.x).c_str());
+  ui_->edit_field_2->setText(std::to_string(msg->point.y).c_str());
+}
+
+float RouteTool::point_to_segment_distance(
+  float px, float py,
+  float x1, float y1,
+  float x2, float y2) const
+{
+  float dx = x2 - x1;
+  float dy = y2 - y1;
+  float length_sq = dx * dx + dy * dy;
+
+  if (length_sq < 1e-6f) {
+    // Segment is a point
+    return std::hypotf(px - x1, py - y1);
+  }
+
+  // Project point onto line, clamped to segment
+  float t = std::max(0.0f, std::min(1.0f, ((px - x1) * dx + (py - y1) * dy) / length_sq));
+  float proj_x = x1 + t * dx;
+  float proj_y = y1 + t * dy;
+
+  return std::hypotf(px - proj_x, py - proj_y);
+}
+
+std::optional<std::pair<unsigned int, std::pair<unsigned int, unsigned int>>>
+RouteTool::find_nearest_edge(float x, float y, float max_distance) const
+{
+  std::optional<std::pair<unsigned int, std::pair<unsigned int, unsigned int>>> result;
+  float best_score = std::numeric_limits<float>::max();
+
+  for (const auto & node : graph_) {
+    if (node.nodeid == static_cast<unsigned int>(std::numeric_limits<int>::max())) {
+      continue;  // Skip deleted nodes
+    }
+    for (const auto & edge : node.neighbors) {
+      float x1 = node.coords.x;
+      float y1 = node.coords.y;
+      float x2 = edge.end->coords.x;
+      float y2 = edge.end->coords.y;
+
+      float dx = x2 - x1;
+      float dy = y2 - y1;
+      float length_sq = dx * dx + dy * dy;
+
+      float dist, t;
+      if (length_sq < 1e-6f) {
+        // Segment is a point
+        dist = std::hypotf(x - x1, y - y1);
+        t = 0.5f;
+      } else {
+        // Calculate t parameter (0=start, 1=end) and distance
+        t = std::max(0.0f, std::min(1.0f, ((x - x1) * dx + (y - y1) * dy) / length_sq));
+        float proj_x = x1 + t * dx;
+        float proj_y = y1 + t * dy;
+        dist = std::hypotf(x - proj_x, y - proj_y);
+      }
+
+      if (dist > max_distance) {
+        continue;
+      }
+
+      // Score: prefer edges where click is near the arrow head (t > 0.5)
+      // For bi-directional edges, this helps select the correct direction
+      // Lower score is better: distance + penalty for being near the tail
+      float direction_penalty = (t < 0.5f) ? (0.5f - t) * max_distance : 0.0f;
+      float score = dist + direction_penalty;
+
+      if (score < best_score) {
+        best_score = score;
+        result = std::make_pair(
+          edge.edgeid,
+          std::make_pair(node.nodeid, edge.end->nodeid));
+      }
+    }
+  }
+
+  return result;
+}
+
+std::optional<unsigned int> RouteTool::find_reverse_edge(
+  unsigned int start_node_id, unsigned int end_node_id) const
+{
+  // Look for an edge going from end_node_id to start_node_id
+  if (graph_to_id_map_.find(end_node_id) == graph_to_id_map_.end()) {
+    return std::nullopt;
+  }
+
+  const auto & end_node = graph_[graph_to_id_map_.at(end_node_id)];
+  for (const auto & edge : end_node.neighbors) {
+    if (edge.end->nodeid == start_node_id) {
+      return edge.edgeid;
+    }
+  }
+
+  return std::nullopt;
 }
 
 void RouteTool::on_load_button_clicked(void)
@@ -154,6 +292,7 @@ void RouteTool::on_confirm_button_clicked(void)
     auto edge_id = (unsigned int) ui_->edit_id->toPlainText().toInt();
     auto new_start = ui_->edit_field_1->toPlainText().toInt();
     auto new_end = ui_->edit_field_2->toPlainText().toInt();
+
     // Find and remove current edge
     auto current_start_node = &graph_[graph_to_id_map_[edge_to_node_map_[edge_id]]];
     for (auto itr = current_start_node->neighbors.begin();
@@ -164,6 +303,7 @@ void RouteTool::on_confirm_button_clicked(void)
         break;
       }
     }
+
     // Create new edge with same ID using new start and stop nodes
     nav2_route::EdgeCost edge_cost;
     graph_[graph_to_id_map_[new_start]].addEdge(
@@ -175,11 +315,14 @@ void RouteTool::on_confirm_button_clicked(void)
     } else {
       graph_to_incoming_edges_map_[new_end] = std::vector<unsigned int> {edge_id};
     }
+
     update_route_graph();
   }
   ui_->edit_id->setText("");
   ui_->edit_field_1->setText("");
   ui_->edit_field_2->setText("");
+  ui_->reverse_edge_id->setText("None");
+  ui_->make_bidirectional_button->setEnabled(false);
 }
 
 void RouteTool::on_delete_button_clicked(void)
@@ -241,11 +384,60 @@ void RouteTool::on_edit_node_button_toggled(void)
     ui_->edit_text->setText("Position:");
     ui_->edit_label_1->setText("X:");
     ui_->edit_label_2->setText("Y:");
+    ui_->make_bidirectional_button->setVisible(false);
+    ui_->reverse_edge_label->setVisible(false);
+    ui_->reverse_edge_id->setVisible(false);
   } else {
     ui_->edit_text->setText("Connections:");
     ui_->edit_label_1->setText("Start Node ID:");
     ui_->edit_label_2->setText("End Node ID:");
+    ui_->make_bidirectional_button->setVisible(true);
+    ui_->reverse_edge_label->setVisible(true);
+    ui_->reverse_edge_id->setVisible(true);
   }
+}
+
+void RouteTool::on_make_bidirectional_button_clicked(void)
+{
+  if (ui_->edit_id->toPlainText() == "" || ui_->edit_field_1->toPlainText() == "" ||
+    ui_->edit_field_2->toPlainText() == "")
+  {
+    return;
+  }
+
+  auto start_node = ui_->edit_field_1->toPlainText().toInt();
+  auto end_node = ui_->edit_field_2->toPlainText().toInt();
+
+  // Check if reverse edge already exists
+  auto reverse_edge = find_reverse_edge(start_node, end_node);
+  if (reverse_edge.has_value()) {
+    RCLCPP_INFO(
+      node_->get_logger(), "Reverse edge already exists with ID %d", reverse_edge.value());
+    return;
+  }
+
+  // Create the reverse edge with the next available ID
+  nav2_route::EdgeCost edge_cost;
+  graph_[graph_to_id_map_[end_node]].addEdge(
+    edge_cost, &(graph_[graph_to_id_map_[start_node]]),
+    next_node_id_);
+
+  if (graph_to_incoming_edges_map_.find(start_node) != graph_to_incoming_edges_map_.end()) {
+    graph_to_incoming_edges_map_[start_node].push_back(next_node_id_);
+  } else {
+    graph_to_incoming_edges_map_[start_node] = std::vector<unsigned int>{next_node_id_};
+  }
+  edge_to_node_map_[next_node_id_] = end_node;
+
+  RCLCPP_INFO(
+    node_->get_logger(), "Created reverse edge %d from node %d to node %d",
+    next_node_id_, end_node, start_node);
+
+  // Update the UI to show the new reverse edge ID
+  ui_->reverse_edge_id->setText(std::to_string(next_node_id_).c_str());
+
+  next_node_id_++;
+  update_route_graph();
 }
 
 void RouteTool::update_route_graph(void)

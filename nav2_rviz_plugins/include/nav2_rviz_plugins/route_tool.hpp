@@ -18,7 +18,9 @@
 #include <ui_route_tool.h>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -89,6 +91,8 @@ private Q_SLOTS:
 
   void on_edit_node_button_toggled(void);
 
+  void on_make_bidirectional_button_clicked(void);
+
   /**
        *  Finally, we close up with protected member variables
        */
@@ -99,6 +103,16 @@ protected:
 
 private:
   void update_route_graph(void);
+  void on_clicked_point(const geometry_msgs::msg::PointStamped::ConstSharedPtr & msg);
+  std::optional<std::pair<unsigned int, std::pair<unsigned int, unsigned int>>>
+  find_nearest_edge(float x, float y, float max_distance) const;
+  std::optional<unsigned int> find_reverse_edge(
+    unsigned int start_node_id, unsigned int end_node_id) const;
+  float point_to_segment_distance(
+    float px, float py,
+    float x1, float y1,
+    float x2, float y2) const;
+
   nav2::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_route::GraphLoader> graph_loader_;
   std::shared_ptr<nav2_route::GraphSaver> graph_saver_;
