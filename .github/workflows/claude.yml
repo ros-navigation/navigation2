@@ -39,10 +39,8 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Pre-install latest Claude Code
-        run: |
-          curl -fsSL https://claude.ai/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install latest Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
 
       - name: Run Claude PR Action
         uses: grll/claude-code-action@beta
