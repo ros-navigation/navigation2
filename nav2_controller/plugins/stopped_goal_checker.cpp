@@ -55,6 +55,19 @@ StoppedGoalChecker::StoppedGoalChecker()
 {
 }
 
+StoppedGoalChecker::~StoppedGoalChecker()
+{
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
+}
+
 void StoppedGoalChecker::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   const std::string & plugin_name,
@@ -63,7 +76,9 @@ void StoppedGoalChecker::initialize(
   plugin_name_ = plugin_name;
   SimpleGoalChecker::initialize(parent, plugin_name, costmap_ros);
 
-  auto node = parent.lock();
+  node_ = parent;
+  auto node = node_.lock();
+  logger_ = node->get_logger();
 
   rot_stopped_velocity_ = node->declare_or_get_parameter(
     plugin_name + ".rot_stopped_velocity", 0.25);
@@ -71,14 +86,21 @@ void StoppedGoalChecker::initialize(
     plugin_name + ".trans_stopped_velocity", 0.25);
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&StoppedGoalChecker::dynamicParametersCallback, this, _1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &StoppedGoalChecker::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &StoppedGoalChecker::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 bool StoppedGoalChecker::isGoalReached(
   const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
   const geometry_msgs::msg::Twist & velocity, const nav_msgs::msg::Path & transformed_global_plan)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   bool ret = SimpleGoalChecker::isGoalReached(query_pose, goal_pose, velocity,
       transformed_global_plan);
   if (!ret) {
@@ -93,6 +115,7 @@ bool StoppedGoalChecker::getTolerances(
   geometry_msgs::msg::Pose & pose_tolerance,
   geometry_msgs::msg::Twist & vel_tolerance)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   double invalid_field = std::numeric_limits<double>::lowest();
 
   // populate the poses
@@ -111,10 +134,37 @@ bool StoppedGoalChecker::getTolerances(
 }
 
 rcl_interfaces::msg::SetParametersResult
-StoppedGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+StoppedGoalChecker::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  for (auto parameter : parameters) {
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(plugin_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void
+StoppedGoalChecker::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  rcl_interfaces::msg::SetParametersResult result;
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -129,8 +179,6 @@ StoppedGoalChecker::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_controller
