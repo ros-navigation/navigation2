@@ -1566,7 +1566,12 @@ AmclNode::savePoseToFile()
     }
 
     auto & pose = last_published_pose_;
-    file << std::fixed << std::setprecision(6);
+    double timestamp = pose.header.stamp.sec +
+      static_cast<double>(pose.header.stamp.nanosec) / 1e9;
+    file << std::fixed << std::setprecision(9);
+    file << "timestamp: " << timestamp << "\n";
+    file << "frame_id: " << pose.header.frame_id << "\n";
+    file << std::setprecision(6);
     file << "x: " << pose.pose.pose.position.x << "\n";
     file << "y: " << pose.pose.pose.position.y << "\n";
     file << "z: " << pose.pose.pose.position.z << "\n";
@@ -1595,6 +1600,8 @@ AmclNode::loadPoseFromFile(geometry_msgs::msg::PoseWithCovarianceStamped & pose)
   try {
     std::string line;
     double x = 0.0, y = 0.0, z = 0.0, yaw = 0.0;
+    double timestamp = 0.0;
+    std::string frame_id;
 
     while (std::getline(file, line)) {
       if (line.empty() || line[0] == '#') {
@@ -1603,22 +1610,29 @@ AmclNode::loadPoseFromFile(geometry_msgs::msg::PoseWithCovarianceStamped & pose)
       std::istringstream iss(line);
       std::string key;
       if (std::getline(iss, key, ':')) {
-        double value;
-        iss >> value;
-        if (key == "x") {
-          x = value;
-        } else if (key == "y") {
-          y = value;
-        } else if (key == "z") {
-          z = value;
-        } else if (key == "yaw") {
-          yaw = value;
+        if (key == "frame_id") {
+          iss >> std::ws;
+          std::getline(iss, frame_id);
+        } else {
+          double value;
+          iss >> value;
+          if (key == "x") {
+            x = value;
+          } else if (key == "y") {
+            y = value;
+          } else if (key == "z") {
+            z = value;
+          } else if (key == "yaw") {
+            yaw = value;
+          } else if (key == "timestamp") {
+            timestamp = value;
+          }
         }
       }
     }
 
-    pose.header.frame_id = global_frame_id_;
-    pose.header.stamp = now();
+    pose.header.frame_id = frame_id.empty() ? global_frame_id_ : frame_id;
+    pose.header.stamp = now();  // Always use current time for relocalization
     pose.pose.pose.position.x = x;
     pose.pose.pose.position.y = y;
     pose.pose.pose.position.z = z;
@@ -1626,8 +1640,9 @@ AmclNode::loadPoseFromFile(geometry_msgs::msg::PoseWithCovarianceStamped & pose)
 
     RCLCPP_INFO(
       get_logger(),
-      "Loaded saved pose from file: x=%.3f, y=%.3f, z=%.3f, yaw=%.3f",
-      x, y, z, yaw);
+      "Loaded saved pose from file: x=%.3f, y=%.3f, z=%.3f, yaw=%.3f, "
+      "originally saved at timestamp=%.3f, frame=%s",
+      x, y, z, yaw, timestamp, pose.header.frame_id.c_str());
 
     return true;
   } catch (const std::exception & e) {

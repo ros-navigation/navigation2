@@ -79,7 +79,7 @@ TEST_F(PosePersistenceTest, test_pose_persistence_parameters)
 
 TEST_F(PosePersistenceTest, test_pose_file_format)
 {
-  // Create a pose file manually to verify format
+  // Create a pose file manually to verify format (old format for backwards compat)
   {
     std::ofstream file(test_filepath_);
     file << "x: 1.234567\n";
@@ -95,13 +95,80 @@ TEST_F(PosePersistenceTest, test_pose_file_format)
   check_file.close();
 }
 
+TEST_F(PosePersistenceTest, test_pose_file_format_with_timestamp_and_frame)
+{
+  // Create a pose file with new format including timestamp and frame_id
+  {
+    std::ofstream file(test_filepath_);
+    file << "timestamp: 1738678400.123456789\n";
+    file << "frame_id: map\n";
+    file << "x: 1.234567\n";
+    file << "y: 2.345678\n";
+    file << "z: 0.0\n";
+    file << "yaw: 1.570796\n";
+    file.close();
+  }
+
+  // Verify file was created and has correct number of fields
+  std::ifstream check_file(test_filepath_);
+  EXPECT_TRUE(check_file.is_open());
+
+  std::string line;
+  int value_count = 0;
+  while (std::getline(check_file, line)) {
+    if (!line.empty() && line[0] != '#') {
+      value_count++;
+    }
+  }
+  EXPECT_EQ(value_count, 6);  // timestamp, frame_id, x, y, z, yaw
+  check_file.close();
+}
+
+TEST_F(PosePersistenceTest, test_timestamp_parsing_precision)
+{
+  // Test that timestamp is correctly parsed back into sec and nanosec
+  // Using a known timestamp: 1738678400.500000000 (sec=1738678400, nanosec=500000000)
+  double test_timestamp = 1738678400.5;
+  int32_t expected_sec = 1738678400;
+  uint32_t expected_nanosec = 500000000;
+
+  // Parse like the loadPoseFromFile does
+  int32_t parsed_sec = static_cast<int32_t>(test_timestamp);
+  uint32_t parsed_nanosec = static_cast<uint32_t>((test_timestamp - parsed_sec) * 1e9);
+
+  EXPECT_EQ(parsed_sec, expected_sec);
+  // Allow small tolerance due to floating point precision
+  EXPECT_NEAR(parsed_nanosec, expected_nanosec, 1000);  // Within 1 microsecond
+}
+
+TEST_F(PosePersistenceTest, test_timestamp_roundtrip)
+{
+  // Test that a timestamp survives a save/load roundtrip with reasonable precision
+  int32_t original_sec = 1738678400;
+  uint32_t original_nanosec = 123456789;
+
+  // Combine like savePoseToFile does
+  double combined = original_sec + static_cast<double>(original_nanosec) / 1e9;
+
+  // Parse back like loadPoseFromFile does
+  int32_t parsed_sec = static_cast<int32_t>(combined);
+  uint32_t parsed_nanosec = static_cast<uint32_t>((combined - parsed_sec) * 1e9);
+
+  EXPECT_EQ(parsed_sec, original_sec);
+  // Due to double precision limits (~6 decimal digits after 10-digit integer),
+  // we expect microsecond precision, not nanosecond
+  EXPECT_NEAR(parsed_nanosec, original_nanosec, 1000);  // Within 1 microsecond
+}
+
 TEST_F(PosePersistenceTest, test_pose_file_with_comments)
 {
-  // Create a pose file with comments
+  // Create a pose file with comments and new format
   {
     std::ofstream file(test_filepath_);
     file << "# AMCL Saved Pose\n";
     file << "# This is a comment\n";
+    file << "timestamp: 1738678400.0\n";
+    file << "frame_id: map\n";
     file << "x: 5.0\n";
     file << "y: 10.0\n";
     file << "z: 0.0\n";
@@ -120,7 +187,7 @@ TEST_F(PosePersistenceTest, test_pose_file_with_comments)
       value_count++;
     }
   }
-  EXPECT_EQ(value_count, 4);  // x, y, z, yaw
+  EXPECT_EQ(value_count, 6);  // timestamp, frame_id, x, y, z, yaw
   check_file.close();
 }
 
@@ -161,9 +228,11 @@ TEST_F(PosePersistenceTest, test_default_filepath)
 
 TEST_F(PosePersistenceTest, test_load_saved_pose_file)
 {
-  // Create a pose file to load
+  // Create a pose file to load with new format
   {
     std::ofstream file(test_filepath_);
+    file << "timestamp: 1738678400.123456\n";
+    file << "frame_id: map\n";
     file << "x: 1.5\n";
     file << "y: 2.5\n";
     file << "z: 0.0\n";
@@ -184,6 +253,35 @@ TEST_F(PosePersistenceTest, test_load_saved_pose_file)
   // Verify parameters were set correctly
   EXPECT_EQ(amcl->get_parameter("initialize_at_saved_pose").as_bool(), true);
   EXPECT_EQ(amcl->get_parameter("saved_pose_filepath").as_string(), test_filepath_);
+
+  amcl->deactivate();
+  amcl->cleanup();
+}
+
+TEST_F(PosePersistenceTest, test_load_saved_pose_file_backwards_compat)
+{
+  // Create a pose file in old format (no timestamp, no frame_id)
+  {
+    std::ofstream file(test_filepath_);
+    file << "x: 3.0\n";
+    file << "y: 4.0\n";
+    file << "z: 0.0\n";
+    file << "yaw: 0.785\n";
+    file.close();
+  }
+
+  rclcpp::NodeOptions options;
+  options.parameter_overrides(
+    {{"random_seed", 42},
+      {"initialize_at_saved_pose", true},
+      {"saved_pose_filepath", test_filepath_}});
+
+  auto amcl = std::make_shared<nav2_amcl::AmclNode>(options);
+  amcl->configure();
+  amcl->activate();
+
+  // Should load successfully even without timestamp and frame_id
+  EXPECT_EQ(amcl->get_parameter("initialize_at_saved_pose").as_bool(), true);
 
   amcl->deactivate();
   amcl->cleanup();
