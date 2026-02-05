@@ -11,8 +11,8 @@ target_link_libraries(inflation_layer_updatecosts_benchmark
   layers
 )
 
-# Enable OpenMP for benchmark if available and not disabled
-if(NOT DISABLE_OPENMP AND OpenMP_CXX_FOUND)
+# Enable OpenMP for benchmark if enabled
+if(ENABLE_OPENMP)
   target_compile_options(inflation_layer_updatecosts_benchmark PRIVATE -fopenmp)
   target_link_libraries(inflation_layer_updatecosts_benchmark OpenMP::OpenMP_CXX)
 endif()
