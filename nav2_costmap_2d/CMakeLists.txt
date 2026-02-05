@@ -29,10 +29,8 @@ find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-# OpenMP is disabled by default but can be enabled with ENABLE_OPENMP
-if(NOT DEFINED ENABLE_OPENMP)
-  set(ENABLE_OPENMP OFF)
-endif()
+# OpenMP enabled for testing
+set(ENABLE_OPENMP ON)
 
 if(ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
