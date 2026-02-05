@@ -31,7 +31,7 @@ find_package(Eigen3 REQUIRED)
 
 # OpenMP is optional but enabled by default if available
 if(NOT DEFINED DISABLE_OPENMP)
-  set(DISABLE_OPENMP OFF)
+  set(DISABLE_OPENMP ON)
 endif()
 
 if(NOT DISABLE_OPENMP)
