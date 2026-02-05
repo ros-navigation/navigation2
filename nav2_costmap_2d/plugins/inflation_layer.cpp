@@ -146,13 +146,8 @@ InflationLayer::getOptimalThreadCount()
 #ifdef _OPENMP
   // Use half the available cores for memory-bound algorithms
   // Balances performance with memory bandwidth and safety on constrained systems
-  int cpu_cores = std::thread::hardware_concurrency();
-
-  // Respect Docker/cgroup CPU limits if present
-  if (cpu_cores == 0) {
-    cpu_cores = omp_get_max_threads();
-  }
-
+  // Respects OMP_NUM_THREADS environment variable
+  int cpu_cores = omp_get_max_threads();
   int optimal = std::max(1, cpu_cores / 2);
 
   RCLCPP_INFO_ONCE(
