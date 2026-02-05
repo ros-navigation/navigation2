@@ -28,6 +28,7 @@
 #include "../testing_helper.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
@@ -48,7 +49,7 @@ class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
 {
 public:
   DummyCostmapSubscriber(
-    nav2_util::LifecycleNode::SharedPtr node,
+    nav2::LifecycleNode::SharedPtr node,
     const std::string & topic_name)
   : CostmapSubscriber(node, topic_name)
   {}
