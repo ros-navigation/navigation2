@@ -21,6 +21,10 @@
 #include <utility>
 #include <cmath>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
 #include "nav2_costmap_2d/distance_transform.hpp"
@@ -136,6 +140,26 @@ InflationLayer::updateBounds(
   }
 }
 
+int
+InflationLayer::getOptimalThreadCount()
+{
+#ifdef _OPENMP
+  // Use half the available cores for memory-bound algorithms
+  // Balances performance with memory bandwidth and safety on constrained systems
+  int cpu_cores = omp_get_max_threads();
+  int optimal = std::max(1, cpu_cores / 2);
+
+  RCLCPP_INFO_ONCE(
+    logger_,
+    "OpenMP: %d cores available, using %d threads",
+    cpu_cores, optimal);
+
+  return optimal;
+#else
+  return 1;
+#endif
+}
+
 void
 InflationLayer::onFootprintChanged()
 {
@@ -176,7 +200,8 @@ InflationLayer::applyInflation(
   const bool inflate_unk = inflate_unknown_;
 
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(dynamic, 16)
+  const int num_threads = getOptimalThreadCount();
+  #pragma omp parallel for num_threads(num_threads) schedule(dynamic, 16)
 #endif
   for (int j = min_j; j < max_j; ++j) {
     const int row_offset = j * static_cast<int>(size_x);
@@ -241,7 +266,8 @@ InflationLayer::updateCosts(
 
   // Initialize mask (parallelized)
 #ifdef _OPENMP
-  #pragma omp parallel for schedule(dynamic, 16)
+  const int num_threads = getOptimalThreadCount();
+  #pragma omp parallel for num_threads(num_threads) schedule(dynamic, 16)
 #endif
   for (int y = 0; y < roi_height; y++) {
     const int src_y = y + roi_min_j;

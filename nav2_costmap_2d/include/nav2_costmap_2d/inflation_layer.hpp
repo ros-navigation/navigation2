@@ -205,6 +205,12 @@ protected:
   void computeCaches();
 
   /**
+   * @brief Determine optimal thread count based on system resources
+   * @return Optimal number of OpenMP threads to use
+   */
+  int getOptimalThreadCount();
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
