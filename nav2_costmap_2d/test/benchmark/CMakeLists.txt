@@ -4,3 +4,15 @@ target_link_libraries(observation_buffer_benchmark
   nav2_costmap_2d_core
   layers
 )
+
+ament_add_google_benchmark(inflation_layer_updatecosts_benchmark inflation_layer_updatecosts_benchmark.cpp)
+target_link_libraries(inflation_layer_updatecosts_benchmark
+  nav2_costmap_2d_core
+  layers
+)
+
+# Enable OpenMP for benchmark if available and not disabled
+if(NOT DISABLE_OPENMP AND OpenMP_CXX_FOUND)
+  target_compile_options(inflation_layer_updatecosts_benchmark PRIVATE -fopenmp)
+  target_link_libraries(inflation_layer_updatecosts_benchmark OpenMP::OpenMP_CXX)
+endif()

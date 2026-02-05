@@ -1,40 +1,17 @@
-/*********************************************************************
- *
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2008, 2013, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Eitan Marder-Eppstein
- *         David V. Lu!!
- *********************************************************************/
+// Copyright (c) 2026, Dexory (Tony Najjar)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
 #include <limits>
@@ -42,9 +19,11 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <cmath>
 
 #include "nav2_costmap_2d/costmap_math.hpp"
 #include "nav2_costmap_2d/footprint.hpp"
+#include "nav2_costmap_2d/distance_transform.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "rclcpp/parameter_events_filter.hpp"
 
@@ -65,9 +44,8 @@ InflationLayer::InflationLayer()
   inflate_unknown_(false),
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
-  cached_cell_inflation_radius_(0),
+  cost_lut_precision_(100),
   resolution_(0),
-  cache_length_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
   last_max_x_(std::numeric_limits<double>::max()),
@@ -101,6 +79,8 @@ InflationLayer::onInitialize()
     inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
+    cost_lut_precision_ = node->declare_or_get_parameter(
+      name_ + "." + "cost_lut_precision", 100);
 
     dyn_params_handler_ = node->add_on_set_parameters_callback(
       std::bind(
@@ -109,11 +89,7 @@ InflationLayer::onInitialize()
   }
 
   current_ = true;
-  seen_.clear();
-  cached_distances_.clear();
-  cached_costs_.clear();
   need_reinflation_ = false;
-  cell_inflation_radius_ = cellDistance(inflation_radius_);
   matchSize();
 }
 
@@ -125,7 +101,6 @@ InflationLayer::matchSize()
   resolution_ = costmap->getResolution();
   cell_inflation_radius_ = cellDistance(inflation_radius_);
   computeCaches();
-  seen_ = std::vector<bool>(costmap->getSizeInCellsX() * costmap->getSizeInCellsY(), false);
 }
 
 void
@@ -187,6 +162,51 @@ InflationLayer::onFootprintChanged()
 }
 
 void
+InflationLayer::applyInflation(
+  unsigned char * master_array,
+  const MatrixXfRM & distance_map,
+  int min_i, int min_j, int max_i, int max_j,
+  int roi_min_i, int roi_min_j,
+  unsigned int size_x)
+{
+  const float cell_inflation_radius_f = static_cast<float>(cell_inflation_radius_);
+  const int lut_max = static_cast<int>(cost_lut_.size() - 1);
+  const unsigned char * lut_data = cost_lut_.data();
+  const int lut_precision = cost_lut_precision_;
+  const bool inflate_unk = inflate_unknown_;
+
+#ifdef _OPENMP
+  #pragma omp parallel for schedule(dynamic, 16)
+#endif
+  for (int j = min_j; j < max_j; ++j) {
+    const int row_offset = j * static_cast<int>(size_x);
+    const int dist_row = j - roi_min_j;
+
+    for (int i = min_i; i < max_i; ++i) {
+      const float distance_cells = distance_map(dist_row, i - roi_min_i);
+      if (distance_cells > cell_inflation_radius_f) {
+        continue;
+      }
+
+      const unsigned int index = row_offset + i;
+      const unsigned char old_cost = master_array[index];
+      const unsigned int d_scaled = std::min(
+        static_cast<unsigned int>(lut_max),
+        static_cast<unsigned int>(distance_cells * lut_precision + 0.5f));
+      const unsigned char cost = lut_data[d_scaled];
+
+      if (old_cost == NO_INFORMATION &&
+        (inflate_unk ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
+      {
+        master_array[index] = cost;
+      } else {
+        master_array[index] = std::max(old_cost, cost);
+      }
+    }
+  }
+}
+
+void
 InflationLayer::updateCosts(
   nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j,
   int max_i,
@@ -197,157 +217,62 @@ InflationLayer::updateCosts(
     return;
   }
 
-  // make sure the inflation list is empty at the beginning of the cycle (should always be true)
-  for (auto & dist : inflation_cells_) {
-    RCLCPP_FATAL_EXPRESSION(
-      logger_,
-      !dist.empty(), "The inflation list must be empty at the beginning of inflation");
-  }
-
   unsigned char * master_array = master_grid.getCharMap();
-  unsigned int size_x = master_grid.getSizeInCellsX(), size_y = master_grid.getSizeInCellsY();
-
-  if (seen_.size() != size_x * size_y) {
-    RCLCPP_WARN(
-      logger_, "InflationLayer::updateCosts(): seen_ vector size is wrong");
-    seen_ = std::vector<bool>(size_x * size_y, false);
-  }
-
-  std::fill(begin(seen_), end(seen_), false);
-
-  // We need to include in the inflation cells outside the bounding
-  // box min_i...max_j, by the amount cell_inflation_radius_.  Cells
-  // up to that distance outside the box can still influence the costs
-  // stored in cells inside the box.
-  const int base_min_i = min_i;
-  const int base_min_j = min_j;
-  const int base_max_i = max_i;
-  const int base_max_j = max_j;
-  min_i -= static_cast<int>(cell_inflation_radius_);
-  min_j -= static_cast<int>(cell_inflation_radius_);
-  max_i += static_cast<int>(cell_inflation_radius_);
-  max_j += static_cast<int>(cell_inflation_radius_);
+  const unsigned int size_x = master_grid.getSizeInCellsX();
+  const unsigned int size_y = master_grid.getSizeInCellsY();
 
   min_i = std::max(0, min_i);
   min_j = std::max(0, min_j);
   max_i = std::min(static_cast<int>(size_x), max_i);
   max_j = std::min(static_cast<int>(size_y), max_j);
 
-  // Inflation list; we append cells to visit in a list associated with
-  // its distance to the nearest obstacle
-  // We use a map<distance, list> to emulate the priority queue used before,
-  // with a notable performance boost
+  // Compute padded ROI bounds for distance transform
+  const int padding = static_cast<int>(cell_inflation_radius_);
+  int roi_min_i = std::max(0, min_i - padding);
+  int roi_min_j = std::max(0, min_j - padding);
+  int roi_max_i = std::min(static_cast<int>(size_x), max_i + padding);
+  int roi_max_j = std::min(static_cast<int>(size_y), max_j + padding);
 
-  // Start with lethal obstacles: by definition distance is 0.0
-  auto & obs_bin = inflation_cells_[0];
-  obs_bin.reserve(200);
-  for (int j = min_j; j < max_j; j++) {
-    for (int i = min_i; i < max_i; i++) {
-      int index = static_cast<int>(master_grid.getIndex(i, j));
-      unsigned char cost = master_array[index];
-      if (cost == LETHAL_OBSTACLE || (inflate_around_unknown_ && cost == NO_INFORMATION)) {
-        obs_bin.emplace_back(i, j, i, j);
+  const int roi_width = roi_max_i - roi_min_i;
+  const int roi_height = roi_max_j - roi_min_j;
+
+  // Create distance map: obstacles = 0, free space = INF
+  MatrixXfRM distance_map(roi_height, roi_width);
+
+  // Initialize mask (parallelized)
+#ifdef _OPENMP
+  #pragma omp parallel for schedule(dynamic, 16)
+#endif
+  for (int y = 0; y < roi_height; y++) {
+    const int src_y = y + roi_min_j;
+    for (int x = 0; x < roi_width; x++) {
+      const int src_x = x + roi_min_i;
+      const unsigned char cell = master_array[src_y * size_x + src_x];
+
+      if (inflate_around_unknown_) {
+        // Treat both LETHAL_OBSTACLE and NO_INFORMATION as obstacles
+        distance_map(y,
+            x) = (cell != LETHAL_OBSTACLE &&
+          cell != NO_INFORMATION) ? DistanceTransform::DT_INF : 0.0f;
+      } else {
+        // Only LETHAL_OBSTACLE is treated as obstacle
+        distance_map(y, x) = (cell != LETHAL_OBSTACLE) ? DistanceTransform::DT_INF : 0.0f;
       }
     }
   }
 
-  // Process cells by increasing distance; new cells are appended to the
-  // corresponding distance bin, so they
-  // can overtake previously inserted but farther away cells
-  for (auto & dist_bin : inflation_cells_) {
-    dist_bin.reserve(200);
-    for (std::size_t i = 0; i < dist_bin.size(); ++i) {
-      // Do not use iterator or for-range based loops to
-      // iterate though dist_bin, since it's size might
-      // change when a new cell is enqueued, invalidating all iterators
-      const CellData & cell = dist_bin[i];
-      unsigned int mx = cell.x_;
-      unsigned int my = cell.y_;
-      unsigned int sx = cell.src_x_;
-      unsigned int sy = cell.src_y_;
-      unsigned int index = master_grid.getIndex(mx, my);
+  // Perform Felzenszwalb-Huttenlocher distance transform
+  DistanceTransform::distanceTransform2D(distance_map, roi_height, roi_width);
 
-      // ignore if already visited
-      if (seen_[index]) {
-        continue;
-      }
-
-      seen_[index] = true;
-
-      // assign the cost associated with the distance from an obstacle to the cell
-      unsigned char cost = costLookup(mx, my, sx, sy);
-      unsigned char old_cost = master_array[index];
-      // In order to avoid artifacts appeared out of boundary areas
-      // when some layer is going after inflation_layer,
-      // we need to apply inflation_layer only to inside of given bounds
-      if (static_cast<int>(mx) >= base_min_i &&
-        static_cast<int>(my) >= base_min_j &&
-        static_cast<int>(mx) < base_max_i &&
-        static_cast<int>(my) < base_max_j)
-      {
-        if (old_cost == NO_INFORMATION &&
-          (inflate_unknown_ ? (cost > FREE_SPACE) : (cost >= INSCRIBED_INFLATED_OBSTACLE)))
-        {
-          master_array[index] = cost;
-        } else {
-          master_array[index] = std::max(old_cost, cost);
-        }
-      }
-
-      // attempt to put the neighbors of the current cell onto the inflation list
-      if (mx > 0) {
-        enqueue(index - 1, mx - 1, my, sx, sy);
-      }
-      if (my > 0) {
-        enqueue(index - size_x, mx, my - 1, sx, sy);
-      }
-      if (mx < size_x - 1) {
-        enqueue(index + 1, mx + 1, my, sx, sy);
-      }
-      if (my < size_y - 1) {
-        enqueue(index + size_x, mx, my + 1, sx, sy);
-      }
-    }
-    // This level of inflation_cells_ is not needed anymore. We can free the memory
-    // Note that dist_bin.clear() is not enough, because it won't free the memory
-    dist_bin = std::vector<CellData>();
-  }
+  // Apply inflation costs
+  applyInflation(
+    master_array, distance_map,
+    min_i, min_j, max_i, max_j,
+    roi_min_i, roi_min_j, size_x);
 
   current_ = true;
 }
 
-/**
- * @brief  Given an index of a cell in the costmap, place it into a list pending for obstacle inflation
- * @param  grid The costmap
- * @param  index The index of the cell
- * @param  mx The x coordinate of the cell (can be computed from the index, but saves time to store it)
- * @param  my The y coordinate of the cell (can be computed from the index, but saves time to store it)
- * @param  src_x The x index of the obstacle point inflation started at
- * @param  src_y The y index of the obstacle point inflation started at
- */
-void
-InflationLayer::enqueue(
-  unsigned int index, unsigned int mx, unsigned int my,
-  unsigned int src_x, unsigned int src_y)
-{
-  if (!seen_[index]) {
-    // we compute our distance table one cell further than the
-    // inflation radius dictates so we can make the check below
-    double distance = distanceLookup(mx, my, src_x, src_y);
-
-    // we only want to put the cell in the list if it is within
-    // the inflation radius of the obstacle point
-    if (distance > cell_inflation_radius_) {
-      return;
-    }
-
-    const unsigned int r = cell_inflation_radius_ + 2;
-
-    // push the cell data onto the inflation list and mark
-    const auto dist = distance_matrix_[mx - src_x + r][my - src_y + r];
-    inflation_cells_[dist].emplace_back(mx, my, src_x, src_y);
-  }
-}
 
 void
 InflationLayer::computeCaches()
@@ -357,72 +282,15 @@ InflationLayer::computeCaches()
     return;
   }
 
-  cache_length_ = cell_inflation_radius_ + 2;
-
-  // based on the inflation radius... compute distance and cost caches
-  if (cell_inflation_radius_ != cached_cell_inflation_radius_) {
-    cached_costs_.resize(cache_length_ * cache_length_);
-    cached_distances_.resize(cache_length_ * cache_length_);
-
-    for (unsigned int i = 0; i < cache_length_; ++i) {
-      for (unsigned int j = 0; j < cache_length_; ++j) {
-        cached_distances_[i * cache_length_ + j] = hypot(i, j);
-      }
-    }
-
-    cached_cell_inflation_radius_ = cell_inflation_radius_;
+  // Generate cost lookup table for distance -> cost mapping
+  const unsigned int max_dist_scaled = cell_inflation_radius_ * cost_lut_precision_ + 1;
+  cost_lut_.resize(max_dist_scaled + 1);
+  for (unsigned int d_scaled = 0; d_scaled <= max_dist_scaled; ++d_scaled) {
+    const double distance = static_cast<double>(d_scaled) / cost_lut_precision_;
+    cost_lut_[d_scaled] = computeCost(distance);
   }
-
-  for (unsigned int i = 0; i < cache_length_; ++i) {
-    for (unsigned int j = 0; j < cache_length_; ++j) {
-      cached_costs_[i * cache_length_ + j] = computeCost(cached_distances_[i * cache_length_ + j]);
-    }
-  }
-
-  int max_dist = generateIntegerDistances();
-  inflation_cells_.clear();
-  inflation_cells_.resize(max_dist + 1);
 }
 
-int
-InflationLayer::generateIntegerDistances()
-{
-  const int r = cell_inflation_radius_ + 2;
-  const int size = r * 2 + 1;
-
-  std::vector<std::pair<int, int>> points;
-
-  for (int y = -r; y <= r; y++) {
-    for (int x = -r; x <= r; x++) {
-      if (x * x + y * y <= r * r) {
-        points.emplace_back(x, y);
-      }
-    }
-  }
-
-  std::sort(
-    points.begin(), points.end(),
-    [](const std::pair<int, int> & a, const std::pair<int, int> & b) -> bool {
-      return a.first * a.first + a.second * a.second < b.first * b.first + b.second * b.second;
-    }
-  );
-
-  std::vector<std::vector<int>> distance_matrix(size, std::vector<int>(size, 0));
-  std::pair<int, int> last = {0, 0};
-  int level = 0;
-  for (auto const & p : points) {
-    if (p.first * p.first + p.second * p.second !=
-      last.first * last.first + last.second * last.second)
-    {
-      level++;
-    }
-    distance_matrix[p.first + r][p.second + r] = level;
-    last = p;
-  }
-
-  distance_matrix_ = distance_matrix;
-  return level;
-}
 
 /**
   * @brief Callback executed when a parameter change is detected
@@ -455,6 +323,14 @@ InflationLayer::dynamicParametersCallback(
         getCostScalingFactor() != parameter.as_double())
       {
         cost_scaling_factor_ = parameter.as_double();
+        need_reinflation_ = true;
+        need_cache_recompute = true;
+      }
+    } else if (param_type == ParameterType::PARAMETER_INTEGER) {
+      if (param_name == name_ + "." + "cost_lut_precision" &&
+        cost_lut_precision_ != parameter.as_int())
+      {
+        cost_lut_precision_ = parameter.as_int();
         need_reinflation_ = true;
         need_cache_recompute = true;
       }

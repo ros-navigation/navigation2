@@ -27,6 +27,16 @@ find_package(nav2_ros_common REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+# OpenMP is optional but enabled by default if available
+if(NOT DEFINED DISABLE_OPENMP)
+  set(DISABLE_OPENMP OFF)
+endif()
+
+if(NOT DISABLE_OPENMP)
+  find_package(OpenMP)
+endif()
 
 nav2_package()
 
@@ -90,7 +100,23 @@ target_link_libraries(layers PUBLIC
   tf2::tf2
   nav2_ros_common::nav2_ros_common
   point_cloud_transport::point_cloud_transport
+  Eigen3::Eigen
 )
+
+# Link OpenMP if available and not disabled
+if(NOT DISABLE_OPENMP AND OpenMP_CXX_FOUND)
+  message(STATUS "OpenMP ENABLED for nav2_costmap_2d layers (${OpenMP_CXX_VERSION})")
+  target_link_libraries(layers PRIVATE OpenMP::OpenMP_CXX)
+  target_compile_options(layers PRIVATE -fopenmp)
+else()
+  if(DISABLE_OPENMP)
+    message(STATUS "OpenMP DISABLED for nav2_costmap_2d layers (explicitly disabled via DISABLE_OPENMP)")
+  else()
+    message(STATUS "OpenMP DISABLED for nav2_costmap_2d layers (not found)")
+  endif()
+  target_compile_options(layers PRIVATE -Wno-unknown-pragmas)
+endif()
+
 target_link_libraries(layers PRIVATE
   pluginlib::pluginlib
 )
@@ -226,5 +252,8 @@ ament_export_dependencies(
   nav2_ros_common
   point_cloud_transport
 )
+
+ament_export_dependencies(Eigen3)
+
 pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

@@ -1,83 +1,45 @@
-/*********************************************************************
- *
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2008, 2013, Willow Garage, Inc.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *
- * Author: Eitan Marder-Eppstein
- *         David V. Lu!!
- *********************************************************************/
+// Copyright (c) 2026, Dexory (Tony Najjar)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
 #ifndef NAV2_COSTMAP_2D__INFLATION_LAYER_HPP_
 #define NAV2_COSTMAP_2D__INFLATION_LAYER_HPP_
 
+#include <limits>
 #include <map>
-#include <vector>
-#include <mutex>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#include <Eigen/Core>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/distance_transform.hpp"
 
 namespace nav2_costmap_2d
 {
-/**
- * @class CellData
- * @brief Storage for cell information used during obstacle inflation
- */
-class CellData
-{
-public:
-  /**
-   * @brief  Constructor for a CellData objects
-   * @param  x The x coordinate of the cell in the cost map
-   * @param  y The y coordinate of the cell in the cost map
-   * @param  sx The x coordinate of the closest obstacle cell in the costmap
-   * @param  sy The y coordinate of the closest obstacle cell in the costmap
-   * @return
-   */
-  CellData(unsigned int x, unsigned int y, unsigned int sx, unsigned int sy)
-  : x_(x), y_(y), src_x_(sx), src_y_(sy)
-  {
-  }
-  unsigned int x_, y_;
-  unsigned int src_x_, src_y_;
-};
 
 /**
  * @class InflationLayer
- * @brief Layer to convolve costmap by robot's radius or footprint to prevent
- * collisions and largely simply collision checking
+ * @brief Layer to convolve costmap by robot's radius or footprint using Eigen-based
+ * Felzenszwalb-Huttenlocher O(n) distance transform for improved performance.
  */
 class InflationLayer : public Layer
 {
@@ -172,7 +134,8 @@ public:
       layer != layered_costmap->getPlugins()->end();
       ++layer)
     {
-      auto inflation_layer = std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
+      auto inflation_layer =
+        std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
       if (inflation_layer) {
         if (layer_name.empty() || inflation_layer->getName() == layer_name) {
           return inflation_layer;
@@ -205,56 +168,31 @@ public:
 
 protected:
   /**
+   * @brief Apply inflation costs from distance map to costmap
+   * @param master_array Pointer to the costmap data
+   * @param distance_map Distance transform result
+   * @param min_i Minimum x index of update region
+   * @param min_j Minimum y index of update region
+   * @param max_i Maximum x index of update region
+   * @param max_j Maximum y index of update region
+   * @param roi_min_i ROI minimum x offset
+   * @param roi_min_j ROI minimum y offset
+   * @param size_x Width of the costmap
+   */
+  void applyInflation(
+    unsigned char * master_array,
+    const MatrixXfRM & distance_map,
+    int min_i, int min_j, int max_i, int max_j,
+    int roi_min_i, int roi_min_j,
+    unsigned int size_x);
+
+  /**
    * @brief Process updates on footprint changes to the inflation layer
    */
   void onFootprintChanged() override;
 
   /**
-   * @brief  Lookup pre-computed distances
-   * @param mx The x coordinate of the current cell
-   * @param my The y coordinate of the current cell
-   * @param src_x The x coordinate of the source cell
-   * @param src_y The y coordinate of the source cell
-   * @return
-   */
-  inline double distanceLookup(
-    unsigned int mx, unsigned int my, unsigned int src_x,
-    unsigned int src_y)
-  {
-    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
-    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
-    return cached_distances_[dx * cache_length_ + dy];
-  }
-
-  /**
-   * @brief  Lookup pre-computed costs
-   * @param mx The x coordinate of the current cell
-   * @param my The y coordinate of the current cell
-   * @param src_x The x coordinate of the source cell
-   * @param src_y The y coordinate of the source cell
-   * @return
-   */
-  inline unsigned char costLookup(
-    unsigned int mx, unsigned int my, unsigned int src_x,
-    unsigned int src_y)
-  {
-    unsigned int dx = (mx > src_x) ? mx - src_x : src_x - mx;
-    unsigned int dy = (my > src_y) ? my - src_y : src_y - my;
-    return cached_costs_[dx * cache_length_ + dy];
-  }
-
-  /**
-   * @brief Compute cached dsitances
-   */
-  void computeCaches();
-
-  /**
-   * @brief Compute cached dsitances
-   */
-  int generateIntegerDistances();
-
-  /**
-   * @brief Compute cached dsitances
+   * @brief Convert world distance to cell distance
    */
   unsigned int cellDistance(double world_dist)
   {
@@ -262,11 +200,9 @@ protected:
   }
 
   /**
-   * @brief Enqueue new cells in cache distance update search
+   * @brief Generate cost lookup table for distance to cost mapping
    */
-  inline void enqueue(
-    unsigned int index, unsigned int mx, unsigned int my,
-    unsigned int src_x, unsigned int src_y);
+  void computeCaches();
 
   /**
    * @brief Callback executed when a parameter change is detected
@@ -278,17 +214,9 @@ protected:
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
-  unsigned int cached_cell_inflation_radius_;
-  std::vector<std::vector<CellData>> inflation_cells_;
-
+  int cost_lut_precision_;
   double resolution_;
-
-  std::vector<bool> seen_;
-
-  std::vector<unsigned char> cached_costs_;
-  std::vector<double> cached_distances_;
-  std::vector<std::vector<int>> distance_matrix_;
-  unsigned int cache_length_;
+  std::vector<unsigned char> cost_lut_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
   // Indicates that the entire costmap should be reinflated next time around.
