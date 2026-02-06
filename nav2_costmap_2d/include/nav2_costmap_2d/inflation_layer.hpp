@@ -223,8 +223,8 @@ protected:
   int num_threads_;  // Number of OpenMP threads (-1 = auto)
   double resolution_;
 
-  // Cost LUT precision: 10 samples per cell provides smooth gradients
-  static constexpr int COST_LUT_PRECISION = 10;
+  // Cost LUT precision: 100 samples per cell provides smooth gradients
+  static constexpr int COST_LUT_PRECISION = 100;
   std::vector<unsigned char> cost_lut_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 
