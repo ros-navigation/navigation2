@@ -44,6 +44,12 @@ The data may be obtained from different data sources:
 * Laser scanners (`sensor_msgs::msg::LaserScan` messages)
 * PointClouds (`sensor_msgs::msg::PointCloud2` messages)
 * IR/Sonars (`sensor_msgs::msg::Range` messages)
+* Costmap (`nav2_msgs::msg::Costmap` messages)
+
+> **⚠️ when using CostmapSource**
+> Collision Monitor normally **bypasses the costmap** to minimize reaction latency using fresh sensor data.
+> Use at your own caution or when using external costmap sources from derived sources.
+
 
 ### Design
 
