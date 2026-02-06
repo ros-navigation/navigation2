@@ -49,6 +49,7 @@ InflationLayer::InflationLayer()
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
   cost_lut_precision_(100),
+  num_threads_(-1),
   resolution_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
   last_min_y_(std::numeric_limits<double>::lowest()),
@@ -85,6 +86,8 @@ InflationLayer::onInitialize()
       name_ + "." + "inflate_around_unknown", false);
     cost_lut_precision_ = node->declare_or_get_parameter(
       name_ + "." + "cost_lut_precision", 100);
+    num_threads_ = node->declare_or_get_parameter(
+      name_ + "." + "num_threads", -1);
 
     dyn_params_handler_ = node->add_on_set_parameters_callback(
       std::bind(
@@ -144,7 +147,16 @@ int
 InflationLayer::getOptimalThreadCount()
 {
 #ifdef _OPENMP
-  // Use half the available cores for memory-bound algorithms
+  // If num_threads parameter is explicitly set (> 0), use it
+  if (num_threads_ > 0) {
+    RCLCPP_INFO_ONCE(
+      logger_,
+      "OpenMP: Using configured num_threads: %d",
+      num_threads_);
+    return num_threads_;
+  }
+
+  // Otherwise use auto-detection: half the available cores for memory-bound algorithms
   // Balances performance with memory bandwidth and safety on constrained systems
   // Respects OMP_NUM_THREADS environment variable
   int cpu_cores = omp_get_max_threads();
@@ -152,7 +164,7 @@ InflationLayer::getOptimalThreadCount()
 
   RCLCPP_INFO_ONCE(
     logger_,
-    "OpenMP: %d cores available, using %d threads",
+    "OpenMP: %d cores available, using %d threads (auto)",
     cpu_cores, optimal);
 
   return optimal;
@@ -360,6 +372,43 @@ InflationLayer::dynamicParametersCallback(
         cost_lut_precision_ = parameter.as_int();
         need_reinflation_ = true;
         need_cache_recompute = true;
+      } else if (param_name == name_ + "." + "num_threads" && // NOLINT
+        num_threads_ != parameter.as_int())
+      {
+        int new_value = parameter.as_int();
+#ifdef _OPENMP
+        if (new_value < -1) {
+          RCLCPP_WARN(
+            logger_,
+            "Invalid num_threads value %d, must be -1 (auto) or > 0. Ignoring.",
+            new_value);
+          result.successful = false;
+          result.reason = "num_threads must be -1 (auto) or > 0";
+          return result;
+        }
+        int available_cores = omp_get_max_threads();
+        if (new_value > available_cores) {
+          RCLCPP_WARN(
+            logger_,
+            "num_threads=%d exceeds available cores (%d). Ignoring.",
+            new_value, available_cores);
+          result.successful = false;
+          result.reason = "num_threads exceeds available cores";
+          return result;
+        }
+        num_threads_ = new_value;
+        RCLCPP_INFO(
+          logger_,
+          "Updated num_threads to %d %s",
+          num_threads_,
+          num_threads_ == -1 ? "(auto)" : "");
+#else
+        RCLCPP_WARN(
+          logger_,
+          "num_threads parameter ignored - OpenMP support not available. "
+          "Inflation layer will use single thread.");
+        num_threads_ = new_value;
+#endif
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
