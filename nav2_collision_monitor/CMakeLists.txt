@@ -31,6 +31,7 @@ include_directories(
 set(dependencies
   rclcpp
   rclcpp_components
+  rclcpp_lifecycle
   sensor_msgs
   geometry_msgs
   std_msgs
@@ -41,6 +42,9 @@ set(dependencies
   nav2_costmap_2d
   nav2_msgs
   visualization_msgs
+  rosgraph_msgs
+  nav2_ros_common
+  point_cloud_transport
 )
 
 set(monitor_executable_name collision_monitor)
@@ -170,19 +174,7 @@ endif()
 ament_export_include_directories(include)
 ament_export_libraries(${monitor_library_name} ${detector_library_name})
 ament_export_dependencies(
-  geometry_msgs
-  nav2_costmap_2d
-  nav2_msgs
-  nav2_util
-  rosgraph_msgs
-  rclcpp
-  rclcpp_lifecycle
-  sensor_msgs
-  tf2
-  tf2_ros
-  nav2_ros_common
-  visualization_msgs
-  point_cloud_transport
+  ${dependencies}
 )
 ament_export_targets(export_${PROJECT_NAME})
 
