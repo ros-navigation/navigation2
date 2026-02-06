@@ -397,123 +397,122 @@ TEST_F(TestNode, testCostFunctionCorrectness)
 /**
  * Test inflation around a large obstacle square on a large map
  * This tests the inflation layer's performance and correctness at scale
- * Commented out due to OOM crash risk in CI
  */
-// TEST_F(TestNode, testLargeScaleInflation)
-// {
-//   const double inflation_radius = 10.5;
-//   initNode(inflation_radius);
-//   tf2_ros::Buffer tf(node_->get_clock());
-//   nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
+TEST_F(TestNode, testLargeScaleInflation)
+  {
+    const double inflation_radius = 10.5;
+    initNode(inflation_radius);
+    tf2_ros::Buffer tf(node_->get_clock());
+    nav2_costmap_2d::LayeredCostmap layers("frame", false, false);
 
-//   // Create a 9000x9000 map
-//   layers.resizeMap(9000, 9000, 1, 0, 0);
+    // Create a 9000x9000 map
+    layers.resizeMap(9000, 9000, 1, 0, 0);
 
-//   std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
+    std::vector<Point> polygon = setRadii(layers, 5.0, 6.25);
 
-//   std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
-//   addObstacleLayer(layers, tf, node_, olayer);
+    std::shared_ptr<nav2_costmap_2d::ObstacleLayer> olayer = nullptr;
+    addObstacleLayer(layers, tf, node_, olayer);
 
-//   std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
-//   addInflationLayer(layers, tf, node_, ilayer);
+    std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
+    addInflationLayer(layers, tf, node_, ilayer);
 
-//   layers.setFootprint(polygon);
+    layers.setFootprint(polygon);
 
-//   // Create a 5000x5000 lethal square centered in the map
-//   // Square goes from (2000, 2000) to (6999, 6999)
-//   const unsigned int square_start = 2000;
-//   const unsigned int square_end = 6999;
+    // Create a 5000x5000 lethal square centered in the map
+    // Square goes from (2000, 2000) to (6999, 6999)
+    const unsigned int square_start = 2000;
+    const unsigned int square_end = 6999;
 
-//   // First, update the map to initialize all layers
-//   layers.updateMap(0, 0, 0);
-//   nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
+    // First, update the map to initialize all layers
+    layers.updateMap(0, 0, 0);
+    nav2_costmap_2d::Costmap2D * costmap = layers.getCostmap();
 
-//   // Directly set costs in the costmap for efficiency (instead of adding 25M observations)
-//   for (unsigned int x = square_start; x <= square_end; ++x) {
-//     for (unsigned int y = square_start; y <= square_end; ++y) {
-//       costmap->setCost(x, y, nav2_costmap_2d::LETHAL_OBSTACLE);
-//     }
-//   }
+    // Directly set costs in the costmap for efficiency (instead of adding 25M observations)
+    for (unsigned int x = square_start; x <= square_end; ++x) {
+    for (unsigned int y = square_start; y <= square_end; ++y) {
+      costmap->setCost(x, y, nav2_costmap_2d::LETHAL_OBSTACLE);
+    }
+    }
 
-//   // Now run inflation on the updated costmap
-//   ilayer->updateCosts(*costmap, 0, 0, 9000, 9000);
+    // Now run inflation on the updated costmap
+    ilayer->updateCosts(*costmap, 0, 0, 9000, 9000);
 
-//   const int inflation_cells = static_cast<int>(std::ceil(inflation_radius /
-//     costmap->getResolution()));
+    const int inflation_cells = static_cast<int>(std::ceil(inflation_radius /
+      costmap->getResolution()));
 
-//   // Check all cells around the square perimeter within the inflation radius
-//   // This validates the inflation correctness comprehensively
+    // Check all cells around the square perimeter within the inflation radius
+    // This validates the inflation correctness comprehensively
 
-//   // Top edge: all cells above the square within inflation radius
-//   for (unsigned int x = square_start; x <= square_end; ++x) {
-//     for (int offset = 1; offset <= inflation_cells; ++offset) {
-//       const int test_y = static_cast<int>(square_start) - offset;
-//       if (test_y >= 0) {
-//         const unsigned char actual_cost = costmap->getCost(x, test_y);
-//         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
-//         ASSERT_EQ(actual_cost, expected_cost)
-//           << "Top edge: at (" << x << ", " << test_y << ") " << offset << " cells away";
-//       }
-//     }
-//   }
+    // Top edge: all cells above the square within inflation radius
+    for (unsigned int x = square_start; x <= square_end; ++x) {
+    for (int offset = 1; offset <= inflation_cells; ++offset) {
+      const int test_y = static_cast<int>(square_start) - offset;
+      if (test_y >= 0) {
+        const unsigned char actual_cost = costmap->getCost(x, test_y);
+        const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
+        ASSERT_EQ(actual_cost, expected_cost)
+            << "Top edge: at (" << x << ", " << test_y << ") " << offset << " cells away";
+      }
+    }
+    }
 
-//   // Bottom edge: all cells below the square within inflation radius
-//   for (unsigned int x = square_start; x <= square_end; ++x) {
-//     for (int offset = 1; offset <= inflation_cells; ++offset) {
-//       const unsigned int test_y = square_end + offset;
-//       if (test_y < costmap->getSizeInCellsY()) {
-//         const unsigned char actual_cost = costmap->getCost(x, test_y);
-//         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
-//         ASSERT_EQ(actual_cost, expected_cost)
-//           << "Bottom edge: at (" << x << ", " << test_y << ") " << offset << " cells away";
-//       }
-//     }
-//   }
+    // Bottom edge: all cells below the square within inflation radius
+    for (unsigned int x = square_start; x <= square_end; ++x) {
+    for (int offset = 1; offset <= inflation_cells; ++offset) {
+      const unsigned int test_y = square_end + offset;
+      if (test_y < costmap->getSizeInCellsY()) {
+        const unsigned char actual_cost = costmap->getCost(x, test_y);
+        const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
+        ASSERT_EQ(actual_cost, expected_cost)
+            << "Bottom edge: at (" << x << ", " << test_y << ") " << offset << " cells away";
+      }
+    }
+    }
 
-//   // Left edge: all cells to the left of the square within inflation radius
-//   for (unsigned int y = square_start; y <= square_end; ++y) {
-//     for (int offset = 1; offset <= inflation_cells; ++offset) {
-//       const int test_x = static_cast<int>(square_start) - offset;
-//       if (test_x >= 0) {
-//         const unsigned char actual_cost = costmap->getCost(test_x, y);
-//         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
-//         ASSERT_EQ(actual_cost, expected_cost)
-//           << "Left edge: at (" << test_x << ", " << y << ") " << offset << " cells away";
-//       }
-//     }
-//   }
+    // Left edge: all cells to the left of the square within inflation radius
+    for (unsigned int y = square_start; y <= square_end; ++y) {
+    for (int offset = 1; offset <= inflation_cells; ++offset) {
+      const int test_x = static_cast<int>(square_start) - offset;
+      if (test_x >= 0) {
+        const unsigned char actual_cost = costmap->getCost(test_x, y);
+        const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
+        ASSERT_EQ(actual_cost, expected_cost)
+            << "Left edge: at (" << test_x << ", " << y << ") " << offset << " cells away";
+      }
+    }
+    }
 
-//   // Right edge: all cells to the right of the square within inflation radius
-//   for (unsigned int y = square_start; y <= square_end; ++y) {
-//     for (int offset = 1; offset <= inflation_cells; ++offset) {
-//       const unsigned int test_x = square_end + offset;
-//       if (test_x < costmap->getSizeInCellsX()) {
-//         const unsigned char actual_cost = costmap->getCost(test_x, y);
-//         const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
-//         ASSERT_EQ(actual_cost, expected_cost)
-//           << "Right edge: at (" << test_x << ", " << y << ") " << offset << " cells away";
-//       }
-//     }
-//   }
+    // Right edge: all cells to the right of the square within inflation radius
+    for (unsigned int y = square_start; y <= square_end; ++y) {
+    for (int offset = 1; offset <= inflation_cells; ++offset) {
+      const unsigned int test_x = square_end + offset;
+      if (test_x < costmap->getSizeInCellsX()) {
+        const unsigned char actual_cost = costmap->getCost(test_x, y);
+        const unsigned char expected_cost = ilayer->computeCost(static_cast<double>(offset));
+        ASSERT_EQ(actual_cost, expected_cost)
+            << "Right edge: at (" << test_x << ", " << y << ") " << offset << " cells away";
+      }
+    }
+    }
 
-//   // Additionally, verify that cells just outside the inflation radius are free space
-//   // Check a point far from any obstacle
-//   const unsigned int far_x = 100;
-//   const unsigned int far_y = 100;
-//   ASSERT_EQ(costmap->getCost(far_x, far_y), nav2_costmap_2d::FREE_SPACE)
-//     << "Cell far from obstacles should be FREE_SPACE";
+    // Additionally, verify that cells just outside the inflation radius are free space
+    // Check a point far from any obstacle
+    const unsigned int far_x = 100;
+    const unsigned int far_y = 100;
+    ASSERT_EQ(costmap->getCost(far_x, far_y), nav2_costmap_2d::FREE_SPACE)
+      << "Cell far from obstacles should be FREE_SPACE";
 
-//   // Verify cells just outside the square but within inflation radius have appropriate costs
-//   const int test_x_signed = static_cast<int>(square_start) - inflation_cells / 2;
-//   const int test_y_signed = static_cast<int>(square_start) - inflation_cells / 2;
-//   if (test_x_signed >= 0 && test_y_signed >= 0) {
-//     const unsigned int test_x = static_cast<unsigned int>(test_x_signed);
-//     const unsigned int test_y = static_cast<unsigned int>(test_y_signed);
-//     const unsigned char cost = costmap->getCost(test_x, test_y);
-//     ASSERT_GT(cost, nav2_costmap_2d::FREE_SPACE)
-//       << "Cell within inflation radius should have inflated cost";
-//   }
-// }
+    // Verify cells just outside the square but within inflation radius have appropriate costs
+    const int test_x_signed = static_cast<int>(square_start) - inflation_cells / 2;
+    const int test_y_signed = static_cast<int>(square_start) - inflation_cells / 2;
+    if (test_x_signed >= 0 && test_y_signed >= 0) {
+    const unsigned int test_x = static_cast<unsigned int>(test_x_signed);
+    const unsigned int test_y = static_cast<unsigned int>(test_y_signed);
+    const unsigned char cost = costmap->getCost(test_x, test_y);
+    ASSERT_GT(cost, nav2_costmap_2d::FREE_SPACE)
+        << "Cell within inflation radius should have inflated cost";
+    }
+}
 
 /**
  * Test that there is no regression and that costs do not get
