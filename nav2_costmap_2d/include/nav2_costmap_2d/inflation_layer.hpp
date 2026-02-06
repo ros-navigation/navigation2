@@ -220,9 +220,11 @@ protected:
   double inflation_radius_, inscribed_radius_, cost_scaling_factor_;
   bool inflate_unknown_, inflate_around_unknown_;
   unsigned int cell_inflation_radius_;
-  int cost_lut_precision_;
   int num_threads_;  // Number of OpenMP threads (-1 = auto)
   double resolution_;
+
+  // Cost LUT precision: 10 samples per cell provides smooth gradients
+  static constexpr int COST_LUT_PRECISION = 10;
   std::vector<unsigned char> cost_lut_;
   double last_min_x_, last_min_y_, last_max_x_, last_max_y_;
 

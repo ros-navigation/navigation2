@@ -48,7 +48,6 @@ InflationLayer::InflationLayer()
   inflate_unknown_(false),
   inflate_around_unknown_(false),
   cell_inflation_radius_(0),
-  cost_lut_precision_(100),
   num_threads_(-1),
   resolution_(0),
   last_min_x_(std::numeric_limits<double>::lowest()),
@@ -84,8 +83,6 @@ InflationLayer::onInitialize()
     inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
     inflate_around_unknown_ = node->declare_or_get_parameter(
       name_ + "." + "inflate_around_unknown", false);
-    cost_lut_precision_ = node->declare_or_get_parameter(
-      name_ + "." + "cost_lut_precision", 100);
     num_threads_ = node->declare_or_get_parameter(
       name_ + "." + "num_threads", -1);
 
@@ -209,7 +206,7 @@ InflationLayer::applyInflation(
   const float cell_inflation_radius_f = static_cast<float>(cell_inflation_radius_);
   const int lut_max = static_cast<int>(cost_lut_.size() - 1);
   const unsigned char * lut_data = cost_lut_.data();
-  const int lut_precision = cost_lut_precision_;
+  const int lut_precision = COST_LUT_PRECISION;
   const bool inflate_unk = inflate_unknown_;
 
 #ifdef _OPENMP
@@ -322,10 +319,10 @@ InflationLayer::computeCaches()
   }
 
   // Generate cost lookup table for distance -> cost mapping
-  const unsigned int max_dist_scaled = cell_inflation_radius_ * cost_lut_precision_ + 1;
+  const unsigned int max_dist_scaled = cell_inflation_radius_ * COST_LUT_PRECISION + 1;
   cost_lut_.resize(max_dist_scaled + 1);
   for (unsigned int d_scaled = 0; d_scaled <= max_dist_scaled; ++d_scaled) {
-    const double distance = static_cast<double>(d_scaled) / cost_lut_precision_;
+    const double distance = static_cast<double>(d_scaled) / COST_LUT_PRECISION;
     cost_lut_[d_scaled] = computeCost(distance);
   }
 }
@@ -366,13 +363,7 @@ InflationLayer::dynamicParametersCallback(
         need_cache_recompute = true;
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + "." + "cost_lut_precision" &&
-        cost_lut_precision_ != parameter.as_int())
-      {
-        cost_lut_precision_ = parameter.as_int();
-        need_reinflation_ = true;
-        need_cache_recompute = true;
-      } else if (param_name == name_ + "." + "num_threads" && // NOLINT
+      if (param_name == name_ + "." + "num_threads" && // NOLINT
         num_threads_ != parameter.as_int())
       {
         int new_value = parameter.as_int();
