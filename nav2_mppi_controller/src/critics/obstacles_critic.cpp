@@ -16,6 +16,7 @@
 #include <cmath>
 #include "nav2_mppi_controller/critics/obstacles_critic.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/legacy_inflation_layer.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
@@ -77,15 +78,24 @@ float ObstaclesCritic::findCircumscribedCost(
     return circumscribed_cost_;
   }
 
-  // check if the costmap has an inflation layer
+  // check if the costmap has an inflation layer (try both modern and legacy)
   const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
     costmap,
     inflation_layer_name_);
+  const auto legacy_inflation_layer = nav2_costmap_2d::LegacyInflationLayer::getInflationLayer(
+    costmap,
+    inflation_layer_name_);
+
   if (inflation_layer != nullptr) {
     const double resolution = costmap->getCostmap()->getResolution();
     result = inflation_layer->computeCost(circum_radius / resolution);
     inflation_scale_factor_ = static_cast<float>(inflation_layer->getCostScalingFactor());
     inflation_radius_ = static_cast<float>(inflation_layer->getInflationRadius());
+  } else if (legacy_inflation_layer != nullptr) {
+    const double resolution = costmap->getCostmap()->getResolution();
+    result = legacy_inflation_layer->computeCost(circum_radius / resolution);
+    inflation_scale_factor_ = static_cast<float>(legacy_inflation_layer->getCostScalingFactor());
+    inflation_radius_ = static_cast<float>(legacy_inflation_layer->getInflationRadius());
   } else {
     RCLCPP_WARN(
       logger_,
