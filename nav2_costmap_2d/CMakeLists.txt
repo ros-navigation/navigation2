@@ -29,8 +29,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-# OpenMP enabled for testing
-set(ENABLE_OPENMP ON)
+option(ENABLE_OPENMP "Enable OpenMP parallelization" ON)
 
 if(ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
