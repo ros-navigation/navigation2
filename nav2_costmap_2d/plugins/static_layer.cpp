@@ -492,7 +492,9 @@ StaticLayer::dynamicParametersCallback(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   rcl_interfaces::msg::SetParametersResult result;
-
+  
+  bool needs_full_update = false; 
+  
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -514,17 +516,12 @@ StaticLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-
-        x_ = y_ = 0;
-        width_ = size_x_;
-        height_ = size_y_;
-        has_updated_data_ = true;
-        current_ = false;
-      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
-        footprint_clearing_enabled_ = parameter.as_bool();
+        needs_full_update = true; 
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled"){
+        footprint_clearing_enabled_ = parameter.as_bool(); 
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
         if (footprint_clearing_enabled_) {
-          restore_cleared_footprint_ = parameter.as_bool();
+            restore_cleared_footprint_ = parameter.as_bool();
         } else {
           RCLCPP_WARN(
             logger_, "restore_cleared_footprint cannot be used "
@@ -533,8 +530,21 @@ StaticLayer::dynamicParametersCallback(
       }
     }
   }
+
+  // If a parameter that requires a full costmap update has changed, set the update bounds
+  if (needs_full_update) {
+    x_ = y_ = 0;
+    width_ = size_x_;
+    height_ = size_y_;
+    has_updated_data_ = true;
+    current_ = false;
+    }
   result.successful = true;
   return result;
-}
 
 }  // namespace nav2_costmap_2d
+
+}
+
+
+
