@@ -486,63 +486,66 @@ bool StaticLayer::isEqual(double a, double b, double epsilon)
   * @brief Callback executed when a parameter change is detected
   * @param event ParameterEvent message
   */
-rcl_interfaces::msg::SetParametersResult
-StaticLayer::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
-{
-  std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
-  rcl_interfaces::msg::SetParametersResult result;
-  
-  bool needs_full_update = false; 
-  
-  for (auto parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
+  rcl_interfaces::msg::SetParametersResult
+  StaticLayer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
+  {
+    std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+    rcl_interfaces::msg::SetParametersResult result;
 
-    if (param_name == name_ + "." + "map_subscribe_transient_local" ||
-      param_name == name_ + "." + "map_topic" ||
-      param_name == name_ + "." + "subscribe_to_updates")
-    {
-      RCLCPP_WARN(
-        logger_, "%s is not a dynamic parameter "
-        "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
-    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "transform_tolerance") {
-        transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
+    bool needs_full_update = false;
+
+    for (auto parameter : parameters) {
+      const auto & param_type = parameter.get_type();
+      const auto & param_name = parameter.get_name();
+      if (param_name.find(name_ + ".") != 0) {
+        continue;
       }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
-        enabled_ = parameter.as_bool();
-        needs_full_update = true; 
-      } else if (param_name == name_ + "." + "footprint_clearing_enabled"){
-        footprint_clearing_enabled_ = parameter.as_bool(); 
-      } else if (param_name == name_ + "." + "restore_cleared_footprint") {
-        if (footprint_clearing_enabled_) {
-            restore_cleared_footprint_ = parameter.as_bool();
-        } else {
-          RCLCPP_WARN(
-            logger_, "restore_cleared_footprint cannot be used "
-            "when footprint_clearing_enabled is False. Rejecting parameter update.");
+
+      if (param_name == name_ + "." + "map_subscribe_transient_local" ||
+        param_name == name_ + "." + "map_topic" ||
+        param_name == name_ + "." + "subscribe_to_updates")
+      {
+        RCLCPP_WARN(
+          logger_, "%s is not a dynamic parameter "
+          "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
+
+      } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
+        if (param_name == name_ + "." + "transform_tolerance") {
+          transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
+        }
+
+      } else if (param_type == ParameterType::PARAMETER_BOOL) {
+
+        if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
+          enabled_ = parameter.as_bool();
+          needs_full_update = true;
+
+        } else if (param_name == name_ + "." + "footprint_clearing_enabled")
+        {
+          footprint_clearing_enabled_ = parameter.as_bool();
+        } else if (param_name == name_ + "." + "restore_cleared_footprint") {
+          if (footprint_clearing_enabled_) {
+              restore_cleared_footprint_ = parameter.as_bool();
+          } else {
+            RCLCPP_WARN(
+              logger_, "restore_cleared_footprint cannot be used "
+              "when footprint_clearing_enabled is False. Rejecting parameter update.");
+          }
         }
       }
-    }
-  }
+    }  
 
-  // If a parameter that requires a full costmap update has changed, set the update bounds
-  if (needs_full_update) {
-    x_ = y_ = 0;
-    width_ = size_x_;
-    height_ = size_y_;
-    has_updated_data_ = true;
-    current_ = false;
+    if (needs_full_update) {
+      x_ = y_ = 0;
+      width_ = size_x_;
+      height_ = size_y_;
+      has_updated_data_ = true;
+      current_ = false;
     }
-  result.successful = true;
-  return result;
 
-}  // namespace nav2_costmap_2d
+    result.successful = true;
+    return result;
+  } // namespace nav2_costmap_2d
 
 }
 

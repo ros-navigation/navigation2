@@ -445,8 +445,7 @@ InflationLayer::dynamicParametersCallback(
     }
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "inflation_radius" &&
-        inflation_radius_ != parameter.as_double())
+      if (param_name == name_ + "." + "inflation_radius" && inflation_radius_ != parameter.as_double())
       {
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
