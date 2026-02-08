@@ -114,42 +114,36 @@ protected:
    * @note Returns squared distance to avoid sqrt() computation
    * @note Handles degenerate (zero-length) segments
    */
-  inline float distSqToSegment(float px, float py, Eigen::Index seg_idx)
-  {
-    const float x1 = path_x_cache_(seg_idx);
-    const float y1 = path_y_cache_(seg_idx);
-    const float dx = segment_dx_(seg_idx);
-    const float dy = segment_dy_(seg_idx);
-    const float inv_len_sq = segment_inv_len_sq_(seg_idx);
-
-    if (inv_len_sq < 1e-6f) {
-      // Degenerate segment, return distance to point
-      const float dpx = px - x1;
-      const float dpy = py - y1;
-      return dpx * dpx + dpy * dpy;
-    }
-
-    // Project point onto segment, clamped to [0,1]
-    const float t = std::max(0.0f, std::min(1.0f, ((px - x1) * dx + (py - y1) * dy) * inv_len_sq));
-
-    const float closest_x = x1 + t * dx;
-    const float closest_y = y1 + t * dy;
-
-    const float dist_x = px - closest_x;
-    const float dist_y = py - closest_y;
-
-    return dist_x * dist_x + dist_y * dist_y;
+inline float distSqToSegment(float px, float py, Eigen::Index seg_idx) const
+{
+  const float dpx = px - path_x_cache_(seg_idx);
+  const float dpy = py - path_y_cache_(seg_idx);
+  
+  const float inv_len_sq = segment_inv_len_sq_(seg_idx);
+  if (inv_len_sq < 1e-6f) [[unlikely]] {
+    return dpx * dpx + dpy * dpy;
   }
+
+  const float dx = segment_dx_(seg_idx);
+  const float dy = segment_dy_(seg_idx);
+  const float t = std::clamp((dpx * dx + dpy * dy) * inv_len_sq, 0.0f, 1.0f);
+  
+  const float dist_x = dpx - t * dx;
+  const float dist_y = dpy - t * dy;
+
+  return dist_x * dist_x + dist_y * dist_y;
+}
 
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
   float threshold_to_consider_{0};
   float max_path_occupancy_ratio_{0};
-  bool use_geometric_alignment_{false};
-  bool score_arc_length_{true};
-  double search_window_{2.0};
   bool use_path_orientations_{false};
-  float lookahead_distance_{5.0};
+  bool score_arc_length_{true};
+  bool use_geometric_alignment_;
+  double search_window_;
+  float lookahead_distance_;
+  float early_termination_distance_;
 
   unsigned int power_{0};
   float weight_{0};
