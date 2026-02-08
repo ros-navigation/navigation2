@@ -31,9 +31,10 @@ void PathAlignCritic::initialize()
   getParam(threshold_to_consider_, "threshold_to_consider", 0.5f);
   getParam(use_path_orientations_, "use_path_orientations", false);
   getParam(use_geometric_alignment_, "use_geometric_alignment", false);
-  getParam(search_window_, "search_window", 0.5);
   getParam(score_arc_length_, "score_arc_length", true);
-  getParam(lookahead_distance_, "lookahead_distance", 1.0f);
+  getParam(search_window_, "search_window", 0.3);
+  getParam(lookahead_distance_, "lookahead_distance", 0.7f);
+  getParam(early_termination_distance_, "early_termination_distance", 0.025f);
 
   if (!score_arc_length_ && !use_geometric_alignment_) {
     RCLCPP_WARN(logger_,
@@ -341,10 +342,21 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
 
   closest_seg_idx = std::clamp(closest_seg_idx, Eigen::Index(0), num_segments - 1);
 
-  // Limit search to window around hint (exploits path locality)
+  float min_dist_sq = distSqToSegment(px, py, closest_seg_idx);
+  Eigen::Index best_seg = closest_seg_idx;
+
+  // Early termination if already very close
+  const float good_enough_dist_sq = early_termination_distance_ * early_termination_distance_;
+  if (min_dist_sq < good_enough_dist_sq) {
+    return std::sqrt(min_dist_sq);
+  }
+  
+  // Adaptive search window - smaller if hint is good
+  const float adaptive_window = (min_dist_sq < 0.01f) ? search_window_ * 0.5f : search_window_;
+  
   const float hint_distance = cumulative_distances_(closest_seg_idx);
-  const float start_distance = std::max(0.0f, hint_distance - static_cast<float>(search_window_));
-  const float end_distance = hint_distance + static_cast<float>(search_window_);
+  const float start_distance = std::max(0.0f, hint_distance - adaptive_window);
+  const float end_distance = hint_distance + adaptive_window;
 
   const Eigen::Index start_idx = static_cast<Eigen::Index>(
     utils::findClosestPathPtBinary(
@@ -352,18 +364,22 @@ float PathAlignCritic::computeMinDistanceToPath(float px, float py, Eigen::Index
       path_size_cache_,
       start_distance));
 
-  float min_dist_sq = std::numeric_limits<float>::max();
-  Eigen::Index best_seg = closest_seg_idx;
-
   for (Eigen::Index seg_idx = start_idx; seg_idx < num_segments; ++seg_idx) {
     if (cumulative_distances_(seg_idx) > end_distance) {break;}
     if (segment_len_sq_(seg_idx) < 1e-6f) {continue;}
+    if (seg_idx == closest_seg_idx) {continue;} // Already checked
 
     const float dist_sq = distSqToSegment(px, py, seg_idx);
 
     if (dist_sq < min_dist_sq) {
       min_dist_sq = dist_sq;
       best_seg = seg_idx;
+      
+      // Early exit if found very close match
+      if (min_dist_sq < good_enough_dist_sq) {
+        closest_seg_idx = best_seg;
+        return std::sqrt(min_dist_sq);
+      }
     }
   }
 
