@@ -15,8 +15,6 @@
 
 #include <cmath>
 #include "nav2_mppi_controller/critics/cost_critic.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
-#include "nav2_costmap_2d/legacy_inflation_layer.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 
 namespace mppi::critics
@@ -93,14 +91,10 @@ float CostCritic::findCircumscribedCost(
     return circumscribed_cost_;
   }
 
-  // check if the costmap has an inflation layer (try both modern and legacy)
+  // check if the costmap has an inflation layer
   const auto inflation_layer = nav2_costmap_2d::InflationLayer::getInflationLayer(
     costmap,
     inflation_layer_name_);
-  const auto legacy_inflation_layer = nav2_costmap_2d::LegacyInflationLayer::getInflationLayer(
-    costmap,
-    inflation_layer_name_);
-
   if (inflation_layer != nullptr) {
     const double resolution = costmap->getCostmap()->getResolution();
     double inflation_radius = inflation_layer->getInflationRadius();
@@ -117,22 +111,6 @@ float CostCritic::findCircumscribedCost(
       return result;
     }
     result = inflation_layer->computeCost(circum_radius / resolution);
-  } else if (legacy_inflation_layer != nullptr) {
-    const double resolution = costmap->getCostmap()->getResolution();
-    double inflation_radius = legacy_inflation_layer->getInflationRadius();
-    if (inflation_radius < circum_radius) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("computeCircumscribedCost"),
-        "The inflation radius (%f) is smaller than the circumscribed radius (%f) "
-        "If this is an SE2-collision checking plugin, it cannot use costmap potential "
-        "field to speed up collision checking by only checking the full footprint "
-        "when robot is within possibly-inscribed radius of an obstacle. This may "
-        "significantly slow down planning times!",
-        inflation_radius, circum_radius);
-      result = 0.0;
-      return result;
-    }
-    result = legacy_inflation_layer->computeCost(circum_radius / resolution);
   } else {
     RCLCPP_WARN(
       logger_,
