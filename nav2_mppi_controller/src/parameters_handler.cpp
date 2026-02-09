@@ -81,13 +81,16 @@ ParametersHandler::dynamicParamsCallback(
       }
     }
 
-    for (auto & post_cb : post_callbacks_) {
-      post_cb();
+    // Only call post callbacks if all updates were successful
+    if (result.successful) {
+      for (auto & post_cb : post_callbacks_) {
+        post_cb();
+      }
     }
   }
 
   if (!result.successful) {
-    RCLCPP_ERROR(logger_, result.reason.c_str());
+    RCLCPP_WARN(logger_, "%s", result.reason.c_str());
   }
   return result;
 }
