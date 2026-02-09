@@ -128,6 +128,24 @@ public:
   }
 
   /**
+    * @brief Check if verbose mode is enabled
+    * @return True if verbose logging is enabled
+    */
+  bool isVerbose() const
+  {
+    return verbose_;
+  }
+
+  /**
+    * @brief Get the logger
+    * @return Logger reference
+    */
+  rclcpp::Logger & getLogger()
+  {
+    return logger_;
+  }
+
+  /**
     * @brief register a function to be called when setting a parameter
     *
     * The callback function is expected to behave as follows.
