@@ -29,7 +29,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(point_cloud_transport REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-option(ENABLE_OPENMP "Enable OpenMP parallelization" ON)
+option(ENABLE_OPENMP "Enable OpenMP parallelization" OFF)
 
 if(ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
@@ -81,6 +81,7 @@ add_library(layers SHARED
   plugins/range_sensor_layer.cpp
   plugins/denoise_layer.cpp
   plugins/plugin_container_layer.cpp
+  src/inflation_layer_interface.cpp
 )
 target_include_directories(layers
   PUBLIC
