@@ -45,7 +45,7 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
@@ -79,7 +79,7 @@ public:
  * @brief Layer to convolve costmap by robot's radius or footprint to prevent
  * collisions and largely simply collision checking
  */
-class LegacyInflationLayer : public Layer
+class LegacyInflationLayer : public InflationLayerInterface
 {
 public:
   /**
@@ -147,7 +147,7 @@ public:
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
    * @return A cost value for the distance */
-  inline unsigned char computeCost(double distance) const
+  inline unsigned char computeCost(double distance) const override
   {
     unsigned char cost = 0;
     if (distance == 0) {
@@ -183,23 +183,20 @@ public:
     return nullptr;
   }
 
-  // Provide a typedef to ease future code maintenance
-  typedef std::recursive_mutex mutex_t;
-
   /**
    * @brief Get the mutex of the inflation information
    */
-  mutex_t * getMutex()
+  mutex_t * getMutex() override
   {
     return access_;
   }
 
-  double getCostScalingFactor()
+  double getCostScalingFactor() override
   {
     return cost_scaling_factor_;
   }
 
-  double getInflationRadius()
+  double getInflationRadius() override
   {
     return inflation_radius_;
   }
