@@ -194,7 +194,7 @@ protected:
   unsigned int _dim_3_size;
   GridCollisionChecker * _collision_checker;
   std::list<std::unique_ptr<NodeT>> _detached_nodes;
-  NodeContext * _ctx;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

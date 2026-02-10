@@ -292,7 +292,7 @@ protected:
   GoalStateVector _goals_state;
   CoordinateVector _goals_coordinate;
   Coordinates _ref_goal_coord;
-  NodeContext * _ctx;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

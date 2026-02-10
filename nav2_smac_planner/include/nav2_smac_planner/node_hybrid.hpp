@@ -377,7 +377,7 @@ private:
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;
   bool _is_node_valid{false};
-  NodeContext * _ctx;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

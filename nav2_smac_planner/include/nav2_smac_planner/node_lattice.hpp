@@ -391,7 +391,7 @@ private:
   MotionPrimitive * _motion_primitive;
   bool _backwards;
   bool _is_node_valid{false};
-  NodeContext * _ctx;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

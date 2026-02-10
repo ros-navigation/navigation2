@@ -276,7 +276,7 @@ private:
   bool _was_visited;
   bool _is_queued;
   bool _in_collision{false};
-  NodeContext * _ctx;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner
