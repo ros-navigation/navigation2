@@ -32,9 +32,30 @@ namespace nav2_controller
 class PoseProgressChecker : public SimpleProgressChecker
 {
 public:
+  /**
+   * @brief Construct a new Pose Progress Checker object
+   */
+  PoseProgressChecker() = default;
+
+  /**
+   * @brief Destroy the Pose Progress Checker object
+   */
+  ~PoseProgressChecker();
+
+  /**
+   * @brief Initialize the goal checker
+   * @param parent Weak pointer to the lifecycle node
+   * @param plugin_name Name of the plugin
+   */
   void initialize(
     const nav2::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) override;
+
+  /**
+   * @brief Checks if the robot has moved compare to previous
+   * @param current_pose Current pose of the robot
+   * @return true, if the robot has moved enough, false otherwise
+   */
   bool check(geometry_msgs::msg::PoseStamped & current_pose) override;
 
 protected:
@@ -45,6 +66,12 @@ protected:
    */
   bool isRobotMovedEnough(const geometry_msgs::msg::Pose & pose);
 
+  /**
+   * @brief Calculates angle difference between two poses
+   * @param pose1 First pose
+   * @param pose2 Second pose
+   * @return Angle difference in radians
+   */
   static double poseAngleDistance(
     const geometry_msgs::msg::Pose &,
     const geometry_msgs::msg::Pose &);
@@ -52,15 +79,31 @@ protected:
   double required_movement_angle_;
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex mutex_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
   std::string plugin_name_;
+  nav2::LifecycleNode::WeakPtr node_;
+  rclcpp::Logger logger_{rclcpp::get_logger("pose_progress_checker")};
 
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param parameters list of changed parameters
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 };
 }  // namespace nav2_controller
 
