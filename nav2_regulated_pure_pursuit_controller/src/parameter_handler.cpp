@@ -128,10 +128,28 @@ ParameterHandler::ParameterHandler(
   }
   params_.use_collision_detection = node->declare_or_get_parameter(
     plugin_name_ + ".use_collision_detection", true);
+  if (params_.use_collision_detection && !params_.use_velocity_scaled_lookahead_dist &&
+    params_.min_distance_to_obstacle > params_.lookahead_dist)
+  {
+    RCLCPP_WARN(
+      logger_, "min_distance_to_obstacle (%.02f) is greater than lookahead_dist (%.02f). "
+      "The collision check distance will be capped by lookahead_dist.",
+      params_.min_distance_to_obstacle, params_.lookahead_dist);
+  }
+  if (params_.use_collision_detection && params_.use_velocity_scaled_lookahead_dist &&
+    params_.min_distance_to_obstacle > params_.max_lookahead_dist)
+  {
+    RCLCPP_WARN(
+      logger_, "min_distance_to_obstacle (%.02f) is greater than max_lookahead_dist (%.02f). "
+      "The collision check distance will be capped by max_lookahead_dist.",
+      params_.min_distance_to_obstacle, params_.max_lookahead_dist);
+  }
   params_.stateful =
     node->declare_or_get_parameter(plugin_name_ + ".stateful", true);
   params_.use_dynamic_window =
     node->declare_or_get_parameter(plugin_name_ + ".use_dynamic_window", false);
+  params_.allow_obstacle_checking_beyond_goal =
+    node->declare_or_get_parameter(plugin_name_ + ".allow_obstacle_checking_beyond_goal", false);
 
   if (params_.inflation_cost_scaling_factor <= 0.0) {
     RCLCPP_WARN(
