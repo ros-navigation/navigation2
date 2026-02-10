@@ -14,6 +14,8 @@
 
 #include "nav2_collision_monitor/velocity_polygon.hpp"
 
+#include <cmath>
+
 #include "nav2_util/node_utils.hpp"
 
 namespace nav2_collision_monitor
@@ -172,33 +174,33 @@ bool VelocityPolygon::isInRange(
   // 1. Always check angular range first
   bool in_range =
     (cmd_vel_in.tw <= sub_polygon.theta_max_ &&
-     cmd_vel_in.tw >= sub_polygon.theta_min_);
+    cmd_vel_in.tw >= sub_polygon.theta_min_);
 
   if (holonomic_) {
     // 2. For holonomic robots: use speed magnitude + direction
-    const double direction = std::atan2(cmd_vel_in.y, cmd_vel_in.x);
-    const double magnitude = std::sqrt(cmd_vel_in.x * cmd_vel_in.x +
-                               cmd_vel_in.y * cmd_vel_in.y);
+    const double magnitude = std::hypot(cmd_vel_in.x, cmd_vel_in.y);
+    // Direction is undefined at rest; choose 0 and rely on configured direction ranges.
+    const double direction = (magnitude > 0.0) ? std::atan2(cmd_vel_in.y, cmd_vel_in.x) : 0.0;
 
     // Linear range on speed magnitude
     in_range &= (magnitude <= sub_polygon.linear_max_ &&
-                 magnitude >= sub_polygon.linear_min_);
+      magnitude >= sub_polygon.linear_min_);
 
     // Direction range
     if (sub_polygon.direction_start_angle_ <= sub_polygon.direction_end_angle_) {
       in_range &=
         (direction >= sub_polygon.direction_start_angle_ &&
-         direction <= sub_polygon.direction_end_angle_);
+        direction <= sub_polygon.direction_end_angle_);
     } else {
       in_range &=
         (direction >= sub_polygon.direction_start_angle_ ||
-         direction <= sub_polygon.direction_end_angle_);
+        direction <= sub_polygon.direction_end_angle_);
     }
   } else {
     // 3. Non-holonomic: keep x-based behavior
     in_range &=
       (cmd_vel_in.x <= sub_polygon.linear_max_ &&
-       cmd_vel_in.x >= sub_polygon.linear_min_);
+      cmd_vel_in.x >= sub_polygon.linear_min_);
   }
 
   return in_range;

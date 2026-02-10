@@ -149,7 +149,7 @@ protected:
     const std::string & sub_polygon_name,
     const double linear_min, const double linear_max,
     const double theta_min, const double theta_max,
-    const double direction_end_angle, const double direction_start_angle,
+    const double direction_start_angle, const double direction_end_angle,
     const std::string & polygon_points, const bool is_holonomic);
 
   // Creating routines
@@ -246,14 +246,14 @@ void Tester::setVelocityPolygonParameters(const bool is_holonomic)
       SUB_POLYGON_FORWARD_NAME, 0.0, 0.5, -1.0, 1.0, -M_PI_4, M_PI_4, FORWARD_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_BACKWARD_NAME, -0.5, 0.0, -1.0, 1.0, 0.75 * M_PI, -0.75 * M_PI,
+      SUB_POLYGON_BACKWARD_NAME, 0.0, 0.5, -1.0, 1.0, 0.75 * M_PI, -0.75 * M_PI,
       BACKWARD_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_LEFT_NAME, -0.5, 0.5, -1.0, 1.0, M_PI_4, 0.75 * M_PI, LEFT_POLYGON_STR,
+      SUB_POLYGON_LEFT_NAME, 0.0, 0.5, -1.0, 1.0, M_PI_4, 0.75 * M_PI, LEFT_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_RIGHT_NAME, -0.5, 0.5, -1.0, 1.0, -0.75 * M_PI, -M_PI_4,
+      SUB_POLYGON_RIGHT_NAME, 0.0, 0.5, -1.0, 1.0, -0.75 * M_PI, -M_PI_4,
       RIGHT_POLYGON_STR, is_holonomic);
 
     velocity_polygons = {SUB_POLYGON_FORWARD_NAME, SUB_POLYGON_BACKWARD_NAME, SUB_POLYGON_LEFT_NAME,
