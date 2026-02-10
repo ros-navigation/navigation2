@@ -127,6 +127,7 @@ bool FeasiblePathHandler::isWithinInversionTolerances(
 
 void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
   if (enforce_path_inversion_ || enforce_path_rotation_) {
