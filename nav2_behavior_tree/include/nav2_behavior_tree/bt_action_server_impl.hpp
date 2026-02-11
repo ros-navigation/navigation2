@@ -255,16 +255,6 @@ bool BtActionServer<ActionT, NodeT>::registerAllTreesFromDirectories()
           }
           // Check for duplicate BT IDs across files and warn if any are found
           for (const auto & current_bt_id : bt_ids) {
-            std::cout << "current bt id: " << current_bt_id << std::endl;
-
-            if (current_bt_id.empty()) {
-              RCLCPP_ERROR(
-                logger_,
-                "Skipping empty BT ID in file %s",
-                entry.path().string().c_str());
-              continue;
-            }
-
             auto [it, inserted] = used_bt_id.insert(current_bt_id);
             if (!inserted) {
               RCLCPP_WARN(
