@@ -98,6 +98,12 @@ public:
   void setGrootMonitoring(const bool enable, const unsigned server_port);
 
   /**
+   * @brief Register all BTs from the search directories
+   * @return bool true on SUCCESS and false on FAILURE
+   */
+  bool registerAllTreesFromDirectories();
+
+  /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename_or_id The file containing the new BT, uses default filename if empty or BT ID
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename_or_id. false
@@ -105,12 +111,6 @@ public:
    */
   bool loadBehaviorTree(
     const std::string & bt_xml_filename_or_id = "");
-
-  /** @brief Extract BehaviorTree ID from XML file
-   * @param filename The file containing the BT
-   * @return std::string BehaviorTree ID if found, empty string otherwise
-   */
-  std::string extractBehaviorTreeID(const std::string & file_or_id);
 
   /**
    * @brief Getter function for BT Blackboard

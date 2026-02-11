@@ -87,11 +87,11 @@ public:
     BT::Blackboard::Ptr blackboard);
 
   /**
-   * @brief Extract BehaviorTree ID from BT file path or BT ID
-   * @param file_or_id
-   * @return std::string
+   * @brief Extract BehaviorTree IDs from BT file path
+   * @param filename
+   * @return std::vector<std::string> Vector of BT IDs found in the file
    */
-  std::string extractBehaviorTreeID(const std::string & file_or_id);
+  std::vector<std::string> extractBehaviorTreeIDs(const std::string & filename);
 
   /**
  * @brief Function to create a BT from a BehaviorTree ID
