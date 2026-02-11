@@ -27,6 +27,8 @@ namespace nav2_smac_planner
 {
 
 typedef std::pair<float, uint64_t> NodeHeuristicPair;
+typedef std::vector<float> LookupTable;
+typedef std::pair<double, double> TrigValues;
 
 /**
  * @struct nav2_smac_planner::SearchInfo
@@ -190,6 +192,63 @@ struct GoalState
 typedef std::vector<MotionPrimitive> MotionPrimitives;
 typedef std::vector<MotionPrimitive *> MotionPrimitivePtrs;
 
+/**
+ * @class nav2_smac_planner::Coordinates
+ * @brief Implementation of coordinate2d structure
+ */
+struct Coordinates2D
+{
+  Coordinates2D() {}
+  Coordinates2D(const float & x_in, const float & y_in)
+  : x(x_in), y(y_in)
+  {}
+
+  inline bool operator==(const Coordinates2D & rhs) const
+  {
+    return this->x == rhs.x && this->y == rhs.y;
+  }
+
+  inline bool operator!=(const Coordinates2D & rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  float x, y;
+};
+
+/**
+ * @class nav2_smac_planner::Coordinates
+ * @brief Implementation of coordinate structure
+ */
+struct Coordinates
+{
+  /**
+   * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
+   */
+  Coordinates() {}
+
+  /**
+   * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
+   * @param x_in X coordinate
+   * @param y_in Y coordinate
+   * @param theta_in Theta coordinate
+   */
+  Coordinates(const float & x_in, const float & y_in, const float & theta_in)
+  : x(x_in), y(y_in), theta(theta_in)
+  {}
+
+  inline bool operator==(const Coordinates & rhs) const
+  {
+    return this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta;
+  }
+
+  inline bool operator!=(const Coordinates & rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+  float x, y, theta;
+};
 }  // namespace nav2_smac_planner
 
 #endif  // NAV2_SMAC_PLANNER__TYPES_HPP_
