@@ -718,7 +718,7 @@ TEST_F(TestNode, testDynParamsSet)
 {
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
 
-  costmap->set_parameter(rclcpp::Parameter("global_frame", std::string("base_link")));
+  costmap->declare_parameter("global_frame", rclcpp::ParameterValue(std::string("base_link")));
   costmap->on_configure(rclcpp_lifecycle::State());
 
   costmap->on_activate(rclcpp_lifecycle::State());
@@ -734,18 +734,54 @@ TEST_F(TestNode, testDynParamsSet)
     rclcpp::Parameter("inflation_layer.cost_scaling_factor", 0.0),
     rclcpp::Parameter("inflation_layer.inflate_unknown", true),
     rclcpp::Parameter("inflation_layer.inflate_around_unknown", true),
-    rclcpp::Parameter("inflation_layer.enabled", false)
+    rclcpp::Parameter("inflation_layer.enabled", false),
+    rclcpp::Parameter("inflation_layer.num_threads", 1)
   });
 
   rclcpp::spin_until_future_complete(
     costmap->get_node_base_interface(),
     results);
 
+  EXPECT_TRUE(results.get().successful);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.inflation_radius").as_double(), 0.0);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.cost_scaling_factor").as_double(), 0.0);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_unknown").as_bool(), true);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.inflate_around_unknown").as_bool(), true);
   EXPECT_EQ(costmap->get_parameter("inflation_layer.enabled").as_bool(), false);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.num_threads").as_int(), 1);
+
+  // Test setting num_threads back to auto-detection (-1)
+  auto results2 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.num_threads", -1)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results2);
+
+  EXPECT_TRUE(results2.get().successful);
+  EXPECT_EQ(costmap->get_parameter("inflation_layer.num_threads").as_int(), -1);
+
+  // Test that invalid num_threads value (-2) is rejected
+  auto results3 = parameter_client->set_parameters_atomically(
+  {
+    rclcpp::Parameter("inflation_layer.num_threads", -2)
+  });
+
+  rclcpp::spin_until_future_complete(
+    costmap->get_node_base_interface(),
+    results3);
+
+  // With OpenMP, -2 should be rejected; without OpenMP, any value is accepted
+  // Either way, verify the parameter value is consistent with the result
+  auto result3_val = results3.get();
+  if (result3_val.successful) {
+    EXPECT_EQ(costmap->get_parameter("inflation_layer.num_threads").as_int(), -2);
+  } else {
+    // Value should remain unchanged at -1
+    EXPECT_EQ(costmap->get_parameter("inflation_layer.num_threads").as_int(), -1);
+  }
 
   costmap->on_deactivate(rclcpp_lifecycle::State());
   costmap->on_cleanup(rclcpp_lifecycle::State());
