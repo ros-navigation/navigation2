@@ -27,8 +27,6 @@ namespace nav2_costmap_2d
 
 // Forward declarations
 class Costmap2DROS;
-class InflationLayer;
-class LegacyInflationLayer;
 
 /**
  * @class InflationLayerInterface

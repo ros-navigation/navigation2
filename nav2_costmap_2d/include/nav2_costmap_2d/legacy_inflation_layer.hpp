@@ -47,7 +47,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_costmap_2d/layered_costmap.hpp"
-#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -161,26 +160,6 @@ public:
       cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
     }
     return cost;
-  }
-
-  static std::shared_ptr<nav2_costmap_2d::LegacyInflationLayer> getInflationLayer(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros,
-    const std::string layer_name = "")
-  {
-    const auto layered_costmap = costmap_ros->getLayeredCostmap();
-    for (auto layer = layered_costmap->getPlugins()->begin();
-      layer != layered_costmap->getPlugins()->end();
-      ++layer)
-    {
-      auto inflation_layer =
-        std::dynamic_pointer_cast<nav2_costmap_2d::LegacyInflationLayer>(*layer);
-      if (inflation_layer) {
-        if (layer_name.empty() || inflation_layer->getName() == layer_name) {
-          return inflation_layer;
-        }
-      }
-    }
-    return nullptr;
   }
 
   /**

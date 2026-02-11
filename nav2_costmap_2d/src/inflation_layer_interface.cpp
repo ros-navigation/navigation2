@@ -14,8 +14,6 @@
 
 #include "nav2_costmap_2d/inflation_layer_interface.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_costmap_2d/inflation_layer.hpp"
-#include "nav2_costmap_2d/legacy_inflation_layer.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -29,21 +27,11 @@ std::shared_ptr<InflationLayerInterface> InflationLayerInterface::getInflationLa
     layer != layered_costmap->getPlugins()->end();
     ++layer)
   {
-    // First try the modern InflationLayer
     auto inflation_layer =
-      std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayer>(*layer);
+      std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayerInterface>(*layer);
     if (inflation_layer) {
       if (layer_name.empty() || inflation_layer->getName() == layer_name) {
         return inflation_layer;
-      }
-    }
-
-    // Then try the LegacyInflationLayer
-    auto legacy_inflation_layer =
-      std::dynamic_pointer_cast<nav2_costmap_2d::LegacyInflationLayer>(*layer);
-    if (legacy_inflation_layer) {
-      if (layer_name.empty() || legacy_inflation_layer->getName() == layer_name) {
-        return legacy_inflation_layer;
       }
     }
   }
