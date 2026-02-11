@@ -25,9 +25,10 @@
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
+#include "nav2_smac_planner/obstacle_heuristic.hpp"
+#include "nav2_smac_planner/distance_heuristic.hpp"
 #include "nav2_smac_planner/node_hybrid.hpp"
 #include "nav2_smac_planner/utils.hpp"
-#include "nav2_smac_planner/nav2_smac_planner_common_visibility_control.hpp"
 
 namespace nav2_smac_planner
 {
@@ -129,11 +130,27 @@ public:
   typedef NodeHybrid::Coordinates Coordinates;
   typedef NodeHybrid::CoordinateVector CoordinateVector;
 
+  struct NodeContext
+  {
+    /**
+     * @brief A constructor for nav2_smac_planner::NodeContext
+     */
+    NodeContext()
+    {
+      obstacle_heuristic = std::make_unique<ObstacleHeuristic>();
+      distance_heuristic = std::make_unique<DistanceHeuristic<NodeLattice>>();
+    }
+
+    LatticeMotionTable motion_table;
+    std::unique_ptr<ObstacleHeuristic> obstacle_heuristic;
+    std::unique_ptr<DistanceHeuristic<NodeLattice>> distance_heuristic;
+  };
+
   /**
    * @brief A constructor for nav2_smac_planner::NodeLattice
    * @param index The index of this node for self-reference
    */
-  explicit NodeLattice(const uint64_t index);
+  explicit NodeLattice(const uint64_t index, NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeLattice
@@ -280,15 +297,16 @@ public:
    * @param x X coordinate of point
    * @param y Y coordinate of point
    * @param angle Theta coordinate of point
+   * @param width Width of costmap
+   * @param angle_quantization Number of theta bins
    * @return Index
    */
   static inline uint64_t getIndex(
-    const unsigned int & x, const unsigned int & y, const unsigned int & angle)
+    const unsigned int & x, const unsigned int & y, const unsigned int & angle,
+    const unsigned int & width, const unsigned int & angle_quantization)
   {
     // Hybrid-A* and State Lattice share a coordinate system
-    return NodeHybrid::getIndex(
-      x, y, angle, motion_table.size_x,
-      motion_table.num_angle_quantization);
+    return NodeHybrid::getIndex(x, y, angle, width, angle_quantization);
   }
 
   /**
@@ -315,7 +333,7 @@ public:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  static float getHeuristicCost(
+  float getHeuristicCost(
     const Coordinates & node_coords,
     const CoordinateVector & goals_coords);
 
@@ -328,71 +346,12 @@ public:
    * @param search_info Search info to use
    */
   static void initMotionModel(
+    NodeContext * ctx,
     const MotionModel & motion_model,
     unsigned int & size_x,
     unsigned int & size_y,
     unsigned int & angle_quantization,
     SearchInfo & search_info);
-
-  /**
-   * @brief Compute the SE2 distance heuristic
-   * @param lookup_table_dim Size, in costmap pixels, of the
-   * each lookup table dimension to populate
-   * @param motion_model Motion model to use for state space
-   * @param dim_3_size Number of quantization bins for caching
-   * @param search_info Info containing minimum radius to use
-   */
-  static void precomputeDistanceHeuristic(
-    const float & lookup_table_dim,
-    const MotionModel & motion_model,
-    const unsigned int & dim_3_size,
-    const SearchInfo & search_info);
-
-  /**
-   * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use
-   * @param goal_coords Coordinates to start heuristic expansion at
-   */
-  static void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y,
-    const bool downsample_obstacle_heuristic)
-  {
-    // State Lattice and Hybrid-A* share this heuristics
-    NodeHybrid::resetObstacleHeuristic(costmap_ros, start_x, start_y, goal_x, goal_y,
-      downsample_obstacle_heuristic);
-  }
-
-  /**
-   * @brief Compute the Obstacle heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @return heuristic Heuristic value
-   */
-  static float getObstacleHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const double & cost_penalty,
-    const bool use_quadratic_cost_penalty,
-    const bool downsample_obstacle_heuristic)
-  {
-    return NodeHybrid::getObstacleHeuristic(node_coords, goal_coords, cost_penalty,
-      use_quadratic_cost_penalty, downsample_obstacle_heuristic);
-  }
-
-  /**
-   * @brief Compute the Distance heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @param obstacle_heuristic Value of the obstacle heuristic to compute
-   * additional motion heuristics if required
-   * @return heuristic Heuristic value
-   */
-  static float getDistanceHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & obstacle_heuristic);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -423,10 +382,6 @@ public:
 
   NodeLattice * parent;
   Coordinates pose;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LatticeMotionTable motion_table;
-  // Dubin / Reeds-Shepp lookup and size for dereferencing
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
 
 private:
   float _cell_cost;
@@ -436,6 +391,7 @@ private:
   MotionPrimitive * _motion_primitive;
   bool _backwards;
   bool _is_node_valid{false};
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner
