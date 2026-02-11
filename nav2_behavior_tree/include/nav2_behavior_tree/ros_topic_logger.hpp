@@ -45,7 +45,7 @@ public:
   {
     auto node = ros_node.lock();
     clock_ = node->get_clock();
-    logger_ = node->get_logger();
+    logger_ = node->get_logger().get_child("ros_topic_logger");
     log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
       "behavior_tree_log");
   }
