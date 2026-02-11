@@ -143,7 +143,7 @@ public:
               auto [it, inserted] = used_bt_id.insert(current_bt_id);
               if (!inserted) {
                 std::cout << "[behavior_tree_handler]: Warning: Duplicate BT IDs found. "
-                            "Make sure to have all BT IDs unique! "
+                  "Make sure to have all BT IDs unique! "
                           << "ID: " << current_bt_id
                           << " File: " << entry.path().string() << "\n";
               }
