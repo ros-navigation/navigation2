@@ -119,7 +119,6 @@ public:
         kXmlExtension.size(), kXmlExtension) != 0);
 
     std::set<std::string> registered_ids;
-    std::vector<std::string> conflicting_files;
     std::string main_id;
 
     auto register_all_bt_files = [&](const std::string & skip_file = "") {
@@ -138,7 +137,8 @@ public:
               continue;
             }
             if (registered_ids.count(id)) {
-              conflicting_files.push_back(entry.path().string());
+              std::cerr << "Skipping conflicting BT file " << entry.path() << " (duplicate ID " <<
+                id << ")" << "\n";
               continue;
             }
             std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
@@ -167,20 +167,6 @@ public:
       // file_or_id is an ID: register all files, skipping conflicts
       main_id = file_or_id;
       register_all_bt_files();
-    }
-
-    // Log all conflicting files once at the end
-    if (!conflicting_files.empty()) {
-      std::string files_list;
-      for (const auto & file : conflicting_files) {
-        if (!files_list.empty()) {
-          files_list += ", ";
-        }
-        files_list += file;
-      }
-      std::cerr << "Skipping conflicting BT XML files, multiple files have the same ID. "
-                << "Please set unique behavior tree IDs. This may affect loading of subtrees. "
-                << "Files not loaded: " << files_list << "\n";
     }
 
     // Create the tree with the specified ID
@@ -451,18 +437,15 @@ TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithFileSpecified) {
 
   EXPECT_TRUE(result);
 
-  // Verify the new message format
-  EXPECT_NE(
-    log_output.find("Skipping conflicting BT XML files, multiple files have the same ID."),
-    std::string::npos) << "Should warn about duplicate IDs";
-  EXPECT_NE(log_output.find("Please set unique behavior tree IDs"), std::string::npos)
-    << "Should provide guidance about unique IDs";
-  EXPECT_NE(log_output.find("Files not loaded:"), std::string::npos)
-    << "Should list files not loaded";
-  EXPECT_NE(log_output.find(dup2_file), std::string::npos)
-    << "Should mention the skipped file";
+  bool found_conflict =
+    log_output.find(
+    "Skipping conflicting BT file \"" + dup2_file +
+    "\" (duplicate ID DuplicateTree)") != std::string::npos;
+  EXPECT_TRUE(found_conflict);
 
   EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos);
+  EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos)
+    << "Should warn about duplicate ID";
   EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
 
   std::filesystem::remove_all(tmp_dir);
@@ -607,7 +590,7 @@ TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithIDSpecified) {
 
   EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos)
     << "Should have registered at least one BT file";
-  EXPECT_NE(log_output.find("Skipping conflicting BT XML files"), std::string::npos)
+  EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos)
     << "Should warn about duplicate IDs";
   EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos)
     << "Should have created BT from the given ID";
@@ -621,7 +604,7 @@ TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithIDSpecified) {
     << "At least one duplicate file should have been registered";
   EXPECT_FALSE(registered_dup1 && registered_dup2)
     << "Only one of the duplicate files should be registered as the main tree";
-  EXPECT_NE(log_output.find("Skipping conflicting BT XML files"), std::string::npos);
+  EXPECT_NE(log_output.find("Skipping conflicting BT file"), std::string::npos);
   EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
 
 

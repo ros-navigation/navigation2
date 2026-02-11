@@ -261,7 +261,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
 
   std::set<std::string> registered_ids;
-  std::vector<std::string> conflicting_files;
   std::string main_id;
   auto register_all_bt_files = [&](const std::string & skip_file = "") {
       for (const auto & directory : search_directories_) {
@@ -279,7 +278,9 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
           if (registered_ids.count(id)) {
-            conflicting_files.push_back(entry.path().string());
+            RCLCPP_WARN(
+              logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
+              entry.path().c_str(), id.c_str());
             continue;
           }
 
@@ -316,23 +317,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       // file_or_id is an ID: register all files, skipping conflicts
       main_id = file_or_id;
       register_all_bt_files();
-    }
-
-    // Log all conflicting files once at the end
-    if (!conflicting_files.empty()) {
-      std::string files_list;
-      for (const auto & file : conflicting_files) {
-        if (!files_list.empty()) {
-          files_list += ", ";
-        }
-        files_list += file;
-      }
-      RCLCPP_WARN(
-        logger_,
-        "Skipping conflicting BT XML files, multiple files have the same ID. "
-        "Please set unique behavior tree IDs. This may affect loading of subtrees. "
-        "Files not loaded: %s",
-        files_list.c_str());
     }
   } catch (const std::exception & e) {
     setInternalError(
