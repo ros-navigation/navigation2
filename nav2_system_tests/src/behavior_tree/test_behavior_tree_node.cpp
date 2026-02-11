@@ -453,7 +453,7 @@ TEST_F(BehaviorTreeTestFixture, TestLoadBehaviorTreeMissingAndDuplicateIDs)
 
   // Assert that the error log for the missing ID was found
   EXPECT_NE(log_output.find("[behavior_tree_handler]: Skipping BT file " + missing_id_file +
-      " (missing ID)"), std::string::npos);
+      " (no valid BehaviorTree IDs found)"), std::string::npos);
 
   // Assert that the warning log for the duplicate ID was found
   EXPECT_NE(
