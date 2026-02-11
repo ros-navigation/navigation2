@@ -116,9 +116,15 @@ def main() -> None:
             )
 
             print(
-                'Tracking error: '
-                + '{:.2f}'.format(feedback.tracking_error)
+                'Position error: '
+                + '{:.2f}'.format(feedback.position_tracking_error)
                 + ' meters.'
+            )
+
+            print(
+                'Heading error: '
+                + '{:.2f}'.format(feedback.heading_tracking_error)
+                + ' radians.'
             )
 
             # Some navigation timeout to demo cancellation

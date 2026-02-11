@@ -58,6 +58,7 @@ bool validateMsg(const double & num)
 
 const double MAX_COVARIANCE = 1e9;
 const double MIN_COVARIANCE = 0;
+const double MIN_MAP_RESOLUTION = 1e-6;
 
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
@@ -157,6 +158,8 @@ bool validateMsg(const nav_msgs::msg::MapMetaData & msg)
   // check sub-type
   if (!validateMsg(msg.origin)) {return false;}
   if (!validateMsg(msg.resolution)) {return false;}
+
+  if (msg.resolution < MIN_MAP_RESOLUTION) {return false;}
 
   // logic check
   // 1> we don't need an empty map

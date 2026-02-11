@@ -42,7 +42,7 @@ TEST(GraphSaver, test_invalid_plugin)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   // Set dummy parameter
@@ -61,7 +61,7 @@ TEST(GraphSaver, test_empty_filename)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -82,7 +82,7 @@ TEST(GraphSaver, test_api)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -121,7 +121,7 @@ TEST(GraphSaver, test_transformation_api)
 
   nav2::declare_parameter_if_not_declared(
     node, "graph_filepath", rclcpp::ParameterValue(
-      ament_index_cpp::get_package_share_directory("nav2_route") +
+      nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
   GraphLoader graph_loader(node, tf, frame);
@@ -131,7 +131,7 @@ TEST(GraphSaver, test_transformation_api)
   GraphToIDMap graph_to_id_map;
   std::string filepath;
   filepath =
-    ament_index_cpp::get_package_share_directory("nav2_route") +
+    nav2::get_package_share_directory("nav2_route") +
     "/graphs/aws_graph.geojson";
   graph_loader.loadGraphFromFile(graph, graph_to_id_map, filepath);
 

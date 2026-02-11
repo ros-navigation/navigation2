@@ -160,6 +160,9 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   default_server_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("default_server_timeout", 20));
 
+  default_cancel_timeout_ = std::chrono::milliseconds(
+    node->declare_or_get_parameter("default_cancel_timeout", 50));
+
   wait_for_service_timeout_ = std::chrono::milliseconds(
     node->declare_or_get_parameter("wait_for_service_timeout", 1000));
 
@@ -178,6 +181,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   // Put items on the blackboard
   blackboard_->template set<nav2::LifecycleNode::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("server_timeout", default_server_timeout_);  // NOLINT
+  blackboard_->template set<std::chrono::milliseconds>("cancel_timeout", default_cancel_timeout_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);  // NOLINT
   blackboard_->template set<std::chrono::milliseconds>(
     "wait_for_service_timeout",
@@ -257,6 +261,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
 
   std::set<std::string> registered_ids;
+  std::vector<std::string> conflicting_files;
   std::string main_id;
   auto register_all_bt_files = [&](const std::string & skip_file = "") {
       for (const auto & directory : search_directories_) {
@@ -274,9 +279,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
           if (registered_ids.count(id)) {
-            RCLCPP_WARN(
-              logger_, "Skipping conflicting BT file %s (duplicate ID %s)",
-              entry.path().c_str(), id.c_str());
+            conflicting_files.push_back(entry.path().string());
             continue;
           }
 
@@ -314,6 +317,23 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       main_id = file_or_id;
       register_all_bt_files();
     }
+
+    // Log all conflicting files once at the end
+    if (!conflicting_files.empty()) {
+      std::string files_list;
+      for (const auto & file : conflicting_files) {
+        if (!files_list.empty()) {
+          files_list += ", ";
+        }
+        files_list += file;
+      }
+      RCLCPP_WARN(
+        logger_,
+        "Skipping conflicting BT XML files, multiple files have the same ID. "
+        "Please set unique behavior tree IDs. This may affect loading of subtrees. "
+        "Files not loaded: %s",
+        files_list.c_str());
+    }
   } catch (const std::exception & e) {
     setInternalError(
       ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
@@ -331,6 +351,8 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       blackboard->template set("node", client_node_);
       blackboard->template set<std::chrono::milliseconds>("server_timeout",
           default_server_timeout_);
+      blackboard->template set<std::chrono::milliseconds>("cancel_timeout",
+        default_cancel_timeout_);
       blackboard->template set<std::chrono::milliseconds>("bt_loop_duration", bt_loop_duration_);
       blackboard->template set<std::chrono::milliseconds>(
         "wait_for_service_timeout",

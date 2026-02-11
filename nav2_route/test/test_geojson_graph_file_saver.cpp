@@ -319,7 +319,7 @@ TEST(GeoJsonGraphFileSaver, simple_graph)
 
 TEST(GeoJsonGraphFileSaver, sample_graph)
 {
-  auto file_path = ament_index_cpp::get_package_share_directory("nav2_route") +
+  auto file_path = nav2::get_package_share_directory("nav2_route") +
     "/graphs/sample_graph.geojson";
 
   Graph graph;

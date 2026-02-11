@@ -195,7 +195,7 @@ TEST(FollowingServerTests, ErrorExceptions)
 TEST(FollowingServerTests, GetPoseAtDistance)
 {
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
-  node->set_parameter(rclcpp::Parameter("base_frame", rclcpp::ParameterValue("my_frame")));
+  node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
   node->setUsingDedicatedThread();
 
@@ -217,7 +217,7 @@ TEST(FollowingServerTests, GetPoseAtDistance)
 TEST(FollowingServerTests, IsGoalReached)
 {
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
-  node->set_parameter(rclcpp::Parameter("base_frame", rclcpp::ParameterValue("my_frame")));
+  node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
   node->setUsingDedicatedThread();
 
@@ -244,8 +244,8 @@ TEST(FollowingServerTests, RefinedPose)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
 
   // Set filter coefficient to 0, so no filtering is done
-  node->set_parameter(rclcpp::Parameter("filter_coef", rclcpp::ParameterValue(0.0)));
-  node->set_parameter(rclcpp::Parameter("base_frame", rclcpp::ParameterValue("my_frame")));
+  node->declare_parameter("filter_coef", rclcpp::ParameterValue(0.0));
+  node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());
 
@@ -290,7 +290,7 @@ TEST(FollowingServerTests, GetFramePose)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
 
   // Set filter coefficient to 0, so no filtering is done
-  node->set_parameter(rclcpp::Parameter("filter_coef", rclcpp::ParameterValue(0.0)));
+  node->declare_parameter("filter_coef", rclcpp::ParameterValue(0.0));
 
   node->on_configure(rclcpp_lifecycle::State());
   node->on_activate(rclcpp_lifecycle::State());

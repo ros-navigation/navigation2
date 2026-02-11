@@ -21,6 +21,7 @@
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -68,7 +69,7 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
 {
   auto node = parent_node.lock();
   std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+    nav2::get_package_share_directory("nav2_bt_navigator");
 
   auto default_bt_xml_filename = node->declare_or_get_parameter(
     "default_nav_through_poses_bt_xml",
@@ -208,7 +209,8 @@ NavigateThroughPosesNavigator::onLoop()
   res = blackboard->get(
     tracking_feedback_blackboard_id_,
     tracking_feedback);
-  feedback_msg->tracking_error = tracking_feedback.tracking_error;
+  feedback_msg->position_tracking_error = tracking_feedback.position_tracking_error;
+  feedback_msg->heading_tracking_error = tracking_feedback.heading_tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -289,10 +291,13 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
   blackboard->set("number_recoveries", 0);  // NOLINT
   previous_path_ = nav_msgs::msg::Path();
 
-  // Update the goal pose on the blackboard
+  // Update the goal pose and path on the blackboard
   blackboard->set<nav_msgs::msg::Goals>(
     goals_blackboard_id_,
     std::move(goals_array));
+  blackboard->set<nav_msgs::msg::Path>(
+    path_blackboard_id_,
+    nav_msgs::msg::Path());
 
   // Reset the waypoint states vector in the blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());

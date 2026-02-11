@@ -61,11 +61,26 @@ Mixing the proximity and curvature regulated linear velocities with the time-sca
 
 Note: The maximum allowed time to collision is thresholded by the lookahead point, starting in Humble. This is such that collision checking isn't significantly overshooting the path, which can cause issues in constrained environments. For example, if there were a straight-line path going towards a wall that then turned left, if this parameter was set to high, then it would detect a collision past the point of actual robot intended motion. Thusly, if a robot is moving fast, selecting further out lookahead points is not only a matter of behavioral stability for Pure Pursuit, but also gives a robot further predictive collision detection capabilities. The max allowable time parameter is still in place for slow commands, as described in detail above.
 
+## Dynamic Window Pure Pursuit Features
+
+This controller also implements the Dynamic Window Pure Pursuit (DWPP) algorithm, developed by [Fumiya Ohnishi](https://www.linkedin.com/in/fumiya-ohnishi-23b124202).
+Unlike conventional Pure Pursuit variants, DWPP computes command velocities that track the path as accurately as possible while respecting velocity and acceleration constraints. In particular, it automatically slows down in sharp turns without manual tuning, thereby reducing path tracking errors.
+
+- Fumiya Ohnishi and Masaki Takahashi, **DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints**, arXiv:2601.15006., 2026. https://arxiv.org/abs/2601.15006
+
+
 ## Configuration
 
 | Parameter | Description |
 |-----|----|
-| `desired_linear_vel` | The desired maximum linear velocity to use. |
+| `max_linear_vel` | The maximum linear velocity to use. Previously `desired_linear_vel` |
+| `max_angular_accel` | The maximum angular acceleration to use. |
+| `min_linear_vel` | The minimum linear velocity used when `use_dynamic_window` is `true`. |
+| `max_angular_vel` | The maximum angular velocity used when `use_dynamic_window` is `true`. |
+| `min_angular_vel` | The minimum angular velocity used when `use_dynamic_window` is `true`. |
+| `max_linear_accel` | The maximum linear acceleration used when `use_dynamic_window` is `true`. |
+| `max_linear_decel` | The maximum linear deceleration used when `use_dynamic_window` is `true`. |
+| `max_angular_decel` | The maximum angular deceleration used when `use_dynamic_window` is `true`. |
 | `lookahead_dist` | The lookahead distance to use to find the lookahead point |
 | `min_lookahead_dist` | The minimum lookahead distance threshold when using velocity scaled lookahead distances |
 | `max_lookahead_dist` | The maximum lookahead distance threshold when using velocity scaled lookahead distances |
@@ -87,9 +102,9 @@ Note: The maximum allowed time to collision is thresholded by the lookahead poin
 | `curvature_lookahead_dist` | Distance to lookahead to determine curvature for velocity regulation purposes. Only used if `use_fixed_curvature_lookahead` is enabled. |
 | `use_rotate_to_heading` | Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types except ackermann, which cannot rotate in place. |
 | `rotate_to_heading_min_angle` | The difference in the path orientation and the starting robot orientation to trigger a rotate in place, if `use_rotate_to_heading` is enabled. |
-| `max_angular_accel` | Maximum allowable angular acceleration while rotating to heading, if enabled |
 | `interpolate_curvature_after_goal` | Needs use_fixed_curvature_lookahead to be true. Interpolate a carrot after the goal dedicated to the curvature calculation (to avoid oscillations at the end of the path) |
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
+| `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
 
 Example fully-described XML with default parameter values:
 
@@ -115,7 +130,14 @@ controller_server:
       stateful: True
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.5
+      max_linear_vel: 0.5
+      min_linear_vel: -0.5
+      max_angular_vel: 2.5
+      min_angular_vel: -2.5
+      max_linear_accel: 2.5
+      max_linear_decel: -2.5
+      max_angular_accel: 3.2
+      max_angular_decel: -3.2
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9
@@ -134,11 +156,11 @@ controller_server:
       curvature_lookahead_dist: 1.0
       use_rotate_to_heading: true
       rotate_to_heading_min_angle: 0.785
-      max_angular_accel: 3.2
       interpolate_curvature_after_goal: false
       cost_scaling_dist: 0.3
       cost_scaling_gain: 1.0
       inflation_cost_scaling_factor: 3.0
+      use_dynamic_window: false
 ```
 
 ## Topics
@@ -161,3 +183,7 @@ To tune to get Pure Pursuit behaviors, set all boolean parameters to false and m
 Currently, there is no rotate to goal behaviors, so it is expected that the path approach orientations are the orientations of the goal or the goal checker has been set with a generous `min_theta_velocity_threshold`. Implementations for rotating to goal heading are on the way.
 
 The choice of lookahead distances are highly dependent on robot size, responsiveness, controller update rate, and speed. Please make sure to tune this for your platform, although the `regulated` features do largely make heavy tuning of this value unnecessary. If you see wiggling, increase the distance or scale. If it's not converging as fast to the path as you'd like, decrease it.
+
+When `use_dynamic_window` is set to True, the velocity, acceleration, and deceleration limits are enforced during the velocity command computation.
+Note that the velocity smoother clips the velocity commands output by this controller based on its own velocity and acceleration constraints before publishing cmd_vel.
+Therefore, the velocity smoother’s `max_velocity`, `min_velocity`, `max_accel`, and `max_decel` parameters must be consistent or greater than this controller’s corresponding velocity, acceleration, and deceleration settings.
