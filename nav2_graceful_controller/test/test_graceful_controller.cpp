@@ -1005,12 +1005,15 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
 
   auto costmap = costmap_ros->getCostmap();
   unsigned int mx, my;
-  costmap->worldToMap(5.5, 5.0, mx, my);
-
-  // Case 1: Safe Cost
-  // Safety threshold = 252 - 10 = 242.
-  // We set obstacle cost to 230 (< 242).
-  costmap->setCost(mx, my, 230);
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 5; j++) {
+      costmap->worldToMap(5.25 + i * 0.1, 4.75 + j * 0.1, mx, my);
+      // Case 1: Safe Cost
+      // Safety threshold = 252 - 10 = 242.
+      // We set obstacle cost to 230 (< 242).
+      costmap->setCost(mx, my, 230);
+    }
+  }
 
   auto [closest_point1, pruned_plan_end1] = path_handler.findPlanSegment(robot_pose);
   nav_msgs::msg::Path transformed_plan1 = path_handler.transformLocalPlan(closest_point1,
@@ -1027,11 +1030,16 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
   EXPECT_GT(cmd_vel_safe.twist.linear.x, 0.0);
   EXPECT_NEAR(cmd_vel_safe.twist.angular.z, 0.0, 1e-3);
 
-  // Case 2: Risky Cost (but valid)
-  // We set obstacle cost to 250 (>= 242).
-  // This should trigger the avoidance logic.
-  costmap->setCost(mx, my, 250);
-  costmap->worldToMap(5.5, 5.3, mx, my);
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 5; j++) {
+      costmap->worldToMap(5.25 + i * 0.1, 4.75 + j * 0.1, mx, my);
+      // Case 2: Risky Cost (but valid)
+      // We set obstacle cost to 250 (>= 242).
+      // This should trigger the avoidance logic.
+      costmap->setCost(mx, my, 250);
+    }
+  }
+  costmap->worldToMap(5.5, 5.4, mx, my);
   costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
 
   auto [closest_point2, pruned_plan_end2] = path_handler.findPlanSegment(robot_pose);
