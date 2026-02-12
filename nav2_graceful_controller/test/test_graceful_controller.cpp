@@ -928,6 +928,8 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
   costmap_ros->declare_parameter("width", rclcpp::ParameterValue(10));
   costmap_ros->declare_parameter("height", rclcpp::ParameterValue(10));
   costmap_ros->declare_parameter("resolution", rclcpp::ParameterValue(0.1));
+  costmap_ros->declare_parameter(
+    "footprint", rclcpp::ParameterValue("[[-0.2, -0.2], [0.2, -0.2], [0.2, 0.2], [-0.2, 0.2]]"));
   costmap_ros->on_configure(rclcpp_lifecycle::State());
 
   // Create controller
@@ -948,6 +950,9 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
     {rclcpp::Parameter("test.prefer_final_rotation", true),
       rclcpp::Parameter("test.obstacle_cost_margin", cost_margin),
       rclcpp::Parameter("test.slowdown_radius", 0.1),
+      rclcpp::Parameter("test.footprint_scaling_linear_vel", 0.2),
+      rclcpp::Parameter("test.footprint_scaling_factor", 1.0),
+      rclcpp::Parameter("test.footprint_scaling_step", 0.1),
       rclcpp::Parameter("test.max_lookahead", 2.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), fut);
 
@@ -1026,6 +1031,8 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
   // We set obstacle cost to 250 (>= 242).
   // This should trigger the avoidance logic.
   costmap->setCost(mx, my, 250);
+  costmap->worldToMap(5.5, 5.3, mx, my);
+  costmap->setCost(mx, my, nav2_costmap_2d::LETHAL_OBSTACLE);
 
   auto [closest_point2, pruned_plan_end2] = path_handler.findPlanSegment(robot_pose);
   nav_msgs::msg::Path transformed_plan2 = path_handler.transformLocalPlan(closest_point2,
