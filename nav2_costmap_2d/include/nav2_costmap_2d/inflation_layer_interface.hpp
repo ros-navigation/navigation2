@@ -21,12 +21,10 @@
 
 #include "nav2_costmap_2d/layer.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_costmap_2d
 {
-
-// Forward declarations
-class Costmap2DROS;
 
 /**
  * @class InflationLayerInterface
@@ -72,9 +70,25 @@ public:
    * @param layer_name Optional name of the specific layer to find
    * @return Shared pointer to the inflation layer interface, or nullptr if not found
    */
-  static std::shared_ptr<InflationLayerInterface> getInflationLayer(
+  static inline std::shared_ptr<InflationLayerInterface> getInflationLayer(
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros,
-    const std::string layer_name = "");
+    const std::string layer_name = "")
+  {
+    const auto layered_costmap = costmap_ros->getLayeredCostmap();
+    for (auto layer = layered_costmap->getPlugins()->begin();
+      layer != layered_costmap->getPlugins()->end();
+      ++layer)
+    {
+      auto inflation_layer =
+        std::dynamic_pointer_cast<nav2_costmap_2d::InflationLayerInterface>(*layer);
+      if (inflation_layer) {
+        if (layer_name.empty() || inflation_layer->getName() == layer_name) {
+          return inflation_layer;
+        }
+      }
+    }
+    return nullptr;
+  }
 };
 
 }  // namespace nav2_costmap_2d
