@@ -513,7 +513,7 @@ VoxelLayer::dynamicParametersCallback(
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "min_obstacle_height" &&
-        min_obstacle_height_ != parameter.as_double()) 
+        min_obstacle_height_ != parameter.as_double())
       {
         min_obstacle_height_ = parameter.as_double();
         current_ = false;
@@ -537,12 +537,12 @@ VoxelLayer::dynamicParametersCallback(
       }
 
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + "." + "enabled" && 
-        enabled_ != parameter.as_bool()) 
+      if (param_name == name_ + "." + "enabled" &&
+        enabled_ != parameter.as_bool())
       {
         enabled_ = parameter.as_bool();
         current_ = false;
-      } else if (param_name == name_ + "." + "footprint_clearing_enabled"){
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "publish_voxel_map") {
         RCLCPP_WARN(

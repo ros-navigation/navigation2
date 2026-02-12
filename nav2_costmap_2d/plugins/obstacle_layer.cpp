@@ -381,7 +381,7 @@ ObstacleLayer::dynamicParametersCallback(
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
         current_ = false;
-      } else if (param_name == name_ + "." + "footprint_clearing_enabled"){
+      } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       }
     } else if (param_type == ParameterType::PARAMETER_INTEGER) {
