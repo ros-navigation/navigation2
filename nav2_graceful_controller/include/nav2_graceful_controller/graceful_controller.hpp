@@ -117,7 +117,6 @@ protected:
    * @param trajectory Trajectory to validate in simulation
    * @param costmap_transform Transform between global and local costmap
    * @param cmd_vel Initial command velocity to validate in simulation
-   * @param max_velocity Maximum velocity to validate in simulation
    * @return true if target pose is valid, false otherwise
    */
   bool validateTargetPose(
@@ -125,8 +124,7 @@ protected:
     double dist_to_target,
     nav_msgs::msg::Path & trajectory,
     geometry_msgs::msg::TransformStamped & costmap_transform,
-    geometry_msgs::msg::TwistStamped & cmd_vel,
-    double & max_velocity);
+    geometry_msgs::msg::TwistStamped & cmd_vel);
 
   /**
    * @brief Validate a given target pose for calculating command velocity
