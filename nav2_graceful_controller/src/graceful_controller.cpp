@@ -222,66 +222,10 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     }
 
     // Compute velocity at this moment if valid target pose is found
-    if (dist_to_goal < params_->max_lookahead) {
-      if (params_->prefer_final_rotation) {
-        // Avoid instability and big sweeping turns at the end of paths by
-        // ignoring final heading
-        double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
-        auto final_rotation_target_pose = target_pose;
-        final_rotation_target_pose.pose.orientation =
-          nav2_util::geometry_utils::orientationAroundZAxis(yaw);
-        nav_msgs::msg::Path final_rotation_local_plan;
-        geometry_msgs::msg::TwistStamped final_rotation_cmd_vel;
-
-        if (validateTargetPose(
-              final_rotation_target_pose, dist_to_target, final_rotation_local_plan,
-              costmap_transform,
-              final_rotation_cmd_vel))
-        {
-          // Determine the maximum valid cost based on robot footprint type
-          double max_valid_cost = costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
-            static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
-
-          // Check if the final rotation path is risky
-          double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
-          if (safety_threshold < 0.0) {
-            RCLCPP_WARN(
-              logger_, "obstacle_cost_margin (%d) is higher than max cost (%d).",
-              params_->obstacle_cost_margin, nav2_costmap_2d::MAX_NON_OBSTACLE);
-            throw nav2_core::NoValidControl("obstacle_cost_margin is higher than max cost.");
-          }
-          if (getMaxCost(final_rotation_local_plan, costmap_transform) >= safety_threshold) {
-            // Try to find a better approach by searching spiral curves
-            nav_msgs::msg::Path best_spiral_plan;
-            geometry_msgs::msg::TwistStamped best_spiral_cmd_vel;
-            if (findBestApproachTrajectory(
-                  target_pose, dist_to_target, costmap_transform, max_valid_cost,
-                  best_spiral_plan,
-                  best_spiral_cmd_vel))
-            {
-              final_rotation_local_plan = best_spiral_plan;
-              final_rotation_cmd_vel = best_spiral_cmd_vel;
-            }
-          }
-          // Publish the selected target_pose
-          motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(
-            target_pose));
-          // Publish marker for slowdown radius around motion target for debugging / visualization
-          auto slowdown_marker = nav2_graceful_controller::createSlowdownMarker(target_pose,
-            params_->slowdown_radius);
-          slowdown_pub_->publish(std::make_unique<visualization_msgs::msg::Marker>(
-            slowdown_marker));
-          // Publish the local plan
-          local_plan.header = transformed_plan.header;
-          local_plan_pub_->publish(std::make_unique<nav_msgs::msg::Path>(local_plan));
-          // Successfully found velocity command
-          return final_rotation_cmd_vel;
-        }
-      }
-    }
-
-    if (validateTargetPose(target_pose, dist_to_target, local_plan, costmap_transform,
-      cmd_vel))
+    if (
+      validateTargetPoseOnApproach(target_pose, dist_to_target, dist_to_goal, local_plan,
+        costmap_transform, cmd_vel) ||
+      validateTargetPose(target_pose, dist_to_target, local_plan, costmap_transform, cmd_vel))
     {
       // Publish the selected target_pose
       motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
@@ -362,6 +306,44 @@ bool GracefulController::validateTargetPose(
   } while (sim_linear_velocity >= params_->footprint_scaling_linear_vel);
 
   // Validation not successful
+  return false;
+}
+
+bool GracefulController::validateTargetPoseOnApproach(
+  geometry_msgs::msg::PoseStamped & target_pose, double dist_to_target, double dist_to_goal,
+  nav_msgs::msg::Path & trajectory, geometry_msgs::msg::TransformStamped & costmap_transform,
+  geometry_msgs::msg::TwistStamped & cmd_vel)
+{
+  if (dist_to_goal >= params_->max_lookahead || !params_->prefer_final_rotation) {
+    return false;
+  }
+  // Avoid instability and big sweeping turns at the end of paths by
+  // ignoring final heading
+  double yaw = std::atan2(target_pose.pose.position.y, target_pose.pose.position.x);
+  target_pose.pose.orientation =
+    nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+
+  if (validateTargetPose(target_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
+    // Determine the maximum valid cost based on robot footprint type
+    double max_valid_cost =
+      costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
+      static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
+
+    // Check if the final rotation path is risky
+    double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
+    if (safety_threshold < 0.0) {
+      RCLCPP_WARN(
+        logger_, "obstacle_cost_margin (%d) is higher than max cost (%d).",
+        params_->obstacle_cost_margin, nav2_costmap_2d::MAX_NON_OBSTACLE);
+      throw nav2_core::NoValidControl("obstacle_cost_margin is higher than max cost.");
+    }
+    if (getMaxCost(trajectory, costmap_transform) >= safety_threshold) {
+      // Try to find a better approach by searching spiral curves
+      findBestApproachTrajectory(
+            target_pose, dist_to_target, costmap_transform, max_valid_cost, trajectory, cmd_vel);
+    }
+    return true;
+  }
   return false;
 }
 
@@ -578,7 +560,7 @@ void GracefulController::validateOrientations(
 }
 
 bool GracefulController::findBestApproachTrajectory(
-  const geometry_msgs::msg::PoseStamped & target_pose, double dist_to_target,
+  geometry_msgs::msg::PoseStamped & target_pose, double dist_to_target,
   geometry_msgs::msg::TransformStamped & costmap_transform, double safety_cost,
   nav_msgs::msg::Path & best_trajectory, geometry_msgs::msg::TwistStamped & best_cmd_vel)
 {
@@ -602,20 +584,37 @@ bool GracefulController::findBestApproachTrajectory(
     {
       double candidate_cost = getMaxCost(candidate_path, costmap_transform);
 
+      bool reversing = false;
+      if (params_->allow_backward && target_pose.pose.position.x < 0.0) {
+        reversing = true;
+      }
       // Calculate ETA
-      double speed = std::abs(candidate_cmd_vel.twist.linear.x);
-      // Avoid division by zero
-      if (speed < 1e-3) {speed = 1e-3;}
-
-      double path_len = nav2_util::geometry_utils::calculate_path_length(candidate_path);
-      double eta = path_len / speed;
+      double eta = 0.0;
+      for (size_t j = 1; j < candidate_path.poses.size(); ++j) {
+        auto current_pose = candidate_path.poses[j - 1];
+        auto next_pose = candidate_path.poses[j];
+        auto cmd = control_law_->calculateRegularVelocity(candidate_pose.pose, current_pose.pose,
+          reversing);
+        double speed = std::abs(cmd.linear.x);
+        // Avoid division by zero
+        if (speed < 1e-3) {
+          speed = 1e-3;
+        }
+        double step_dist = nav2_util::geometry_utils::euclidean_distance(
+          current_pose.pose, next_pose.pose);
+        double step_time = step_dist / speed;
+        eta += step_time;
+      }
 
       // Selection logic: Pick the fastest among the safe ones
       if (eta < best_eta) {
         best_eta = eta;
-        best_trajectory = candidate_path;
-        best_cmd_vel = candidate_cmd_vel;
         found_valid = candidate_cost < safety_cost;
+        if (found_valid) {
+          best_trajectory = candidate_path;
+          best_cmd_vel = candidate_cmd_vel;
+          target_pose = candidate_pose;
+        }
       }
     }
   }
