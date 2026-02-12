@@ -240,6 +240,7 @@ bool BtActionServer<ActionT, NodeT>::registerAllTreesFromDirectories()
 {
   namespace fs = std::filesystem;
   std::unordered_set<std::string> used_bt_id;
+  std::vector<std::string> conflicting_files;
   for (const auto & directory : search_directories_) {
     try {
       for (const auto & entry : fs::directory_iterator(directory)) {
@@ -253,16 +254,11 @@ bool BtActionServer<ActionT, NodeT>::registerAllTreesFromDirectories()
               entry.path().string().c_str());
             continue;
           }
-          // Check for duplicate BT IDs across files and warn if any are found
+          // Check for duplicate BT IDs across files
           for (const auto & current_bt_id : bt_ids) {
             auto [it, inserted] = used_bt_id.insert(current_bt_id);
             if (!inserted) {
-              RCLCPP_WARN(
-                logger_,
-                "Duplicate BT IDs found. Make sure all BT IDs are unique! "
-                "ID: %s File: %s",
-                current_bt_id.c_str(),
-                entry.path().string().c_str());
+              conflicting_files.push_back(entry.path().string());
             }
           }
           bt_->registerTreeFromFile(entry.path().string());
@@ -274,6 +270,24 @@ bool BtActionServer<ActionT, NodeT>::registerAllTreesFromDirectories()
       return false;
     }
   }
+
+  // Log all conflicting files once at the end
+  if (!conflicting_files.empty()) {
+    std::string files_list;
+    for (const auto & file : conflicting_files) {
+      if (!files_list.empty()) {
+        files_list += ", ";
+      }
+      files_list += file;
+    }
+    RCLCPP_WARN(
+      logger_,
+      "Skipping conflicting BT XML files, multiple files have the same ID. "
+      "Please set unique behavior tree IDs. This may affect loading of subtrees. "
+      "Files not loaded: %s",
+      files_list.c_str());
+  }
+
   return true;
 }
 
@@ -303,12 +317,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   // Try to load the main BT tree
   try {
     if(!is_bt_id) {
-      // Read the input BT XML from the specified file into a string
-      std::ifstream xml_file(file_or_id);
-      if (!xml_file.good()) {
-        RCLCPP_ERROR(logger_, "Couldn't open input XML file: %s", file_or_id.c_str());
-        return false;
-      }
       tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
     } else {
       if (!registerAllTreesFromDirectories()) {
@@ -331,7 +339,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     }
   } catch (const std::exception & e) {
     setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Exception when creating BT tree: ") + e.what());
+      std::string("Exception when loading BT: ") + e.what());
     return false;
   }
 
