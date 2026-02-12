@@ -127,6 +127,24 @@ protected:
     geometry_msgs::msg::TwistStamped & cmd_vel);
 
   /**
+   * @brief Validate a given target pose for calculating command velocity
+   * @param target_pose Target pose to validate
+   * @param dist_to_target Distance to target pose
+   * @param dist_to_goal Distance to navigation goal
+   * @param trajectory Trajectory to validate in simulation
+   * @param costmap_transform Transform between global and local costmap
+   * @param cmd_vel Initial command velocity to validate in simulation
+   * @return true if target pose is valid, false otherwise
+   */
+  bool validateTargetPoseOnApproach(
+    geometry_msgs::msg::PoseStamped & target_pose,
+    double dist_to_target,
+    double dist_to_goal,
+    nav_msgs::msg::Path & trajectory,
+    geometry_msgs::msg::TransformStamped & costmap_transform,
+    geometry_msgs::msg::TwistStamped & cmd_vel);
+
+  /**
    * @brief Find the best approach trajectory by searching multiple orientations
    * @param target_pose Base target pose (position will be used)
    * @param dist_to_target Distance to target
@@ -137,7 +155,7 @@ protected:
    * @return true if a valid trajectory was found
    */
   bool findBestApproachTrajectory(
-    const geometry_msgs::msg::PoseStamped & target_pose,
+    geometry_msgs::msg::PoseStamped & target_pose,
     double dist_to_target,
     geometry_msgs::msg::TransformStamped & costmap_transform,
     double safety_cost,

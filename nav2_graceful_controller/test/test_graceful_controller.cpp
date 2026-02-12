@@ -73,18 +73,6 @@ public:
       angle_to_target);
   }
 
-  bool findBestApproachTrajectory(
-    const geometry_msgs::msg::PoseStamped & target_pose,
-    const double & dist_to_target,
-    geometry_msgs::msg::TransformStamped & costmap_transform,
-    const double & safety_cost,
-    nav_msgs::msg::Path & best_trajectory,
-    geometry_msgs::msg::TwistStamped & best_cmd_vel)
-  {
-    return nav2_graceful_controller::GracefulController::findBestApproachTrajectory(
-      target_pose, dist_to_target, costmap_transform, safety_cost, best_trajectory, best_cmd_vel);
-  }
-
   double getSpeedLinearMax() {return params_->v_linear_max;}
 };
 
