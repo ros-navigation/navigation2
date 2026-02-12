@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
+#include <cmath>
+#include <limits>
+
 #include "nav2_ros_common/validate_messages.hpp"
 
 TEST(ValidateMessagesTest, DoubleValueCheck) {
@@ -213,7 +217,8 @@ TEST(ValidateMessagesTest, MapMetaDataCheck) {
   EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
 
   // Test borderline resolution message (minimum accepted)
-  valid_map_meta_data.resolution = 1e-6;
+  valid_map_meta_data.resolution = std::nextafterf(
+    1e-6f, std::numeric_limits<float>::infinity());
   EXPECT_TRUE(nav2::validateMsg(valid_map_meta_data));
 
   // Test invalid MapMetaData message with zero width
@@ -245,7 +250,8 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   EXPECT_TRUE(nav2::validateMsg(valid_occupancy_grid));
 
   // Test borderline resolution message
-  valid_occupancy_grid.info.resolution = 1e-6;
+  valid_occupancy_grid.info.resolution = std::nextafterf(
+    1e-6f, std::numeric_limits<float>::infinity());
   EXPECT_TRUE(nav2::validateMsg(valid_occupancy_grid));
 
   // Test invalid resolution message (too small)
