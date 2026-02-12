@@ -16,6 +16,7 @@
 #ifndef  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
 #define  NAV2_UTIL__VALIDATE_MESSAGES_HPP_
 
+#include <array>
 #include <cmath>
 #include <iostream>
 
@@ -140,6 +141,7 @@ bool validateMsg(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   // check sub-type
   if (!validateMsg(msg.header)) {return false;}
   if (!validateMsg(msg.pose)) {return false;}
+  if (!validateMsg(msg.pose.covariance)) {return false;}
   return true;
 }
 
