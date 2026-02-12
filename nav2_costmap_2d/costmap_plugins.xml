@@ -1,7 +1,10 @@
 <class_libraries>
   <library path="layers">
     <class type="nav2_costmap_2d::InflationLayer"  base_class_type="nav2_costmap_2d::Layer">
-      <description>Inflates obstacles to speed collision checking and to make robot prefer to stay away from obstacles.</description>
+      <description>OpenMP-accelerated inflation layer using Felzenszwalb-Huttenlocher distance transform for improved performance.</description>
+    </class>
+    <class type="nav2_costmap_2d::LegacyInflationLayer"  base_class_type="nav2_costmap_2d::Layer">
+      <description>Legacy inflation layer using traditional CellData-based algorithm (original Navigation2 implementation).</description>
     </class>
     <class type="nav2_costmap_2d::ObstacleLayer"   base_class_type="nav2_costmap_2d::Layer">
       <description>Listens to laser scan and point cloud messages and marks and clears grid cells.</description>
