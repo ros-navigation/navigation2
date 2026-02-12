@@ -98,7 +98,6 @@ public:
 
   /**
     * @brief Visualize all trajectory data in one call
-    * @param plan Transformed plan to visualize
     * @param optimal_trajectory Optimal trajectory
     * @param control_sequence Control sequence for optimal trajectory
     * @param model_dt Model time step
@@ -109,7 +108,6 @@ public:
     * @param critic_costs Per-critic costs for each trajectory
     */
   void visualize(
-    nav_msgs::msg::Path plan,
     const Eigen::ArrayXXf & optimal_trajectory,
     const models::ControlSequence & control_sequence,
     float model_dt,
@@ -121,9 +119,8 @@ public:
 
   /**
     * @brief Visualize without optimizer (for testing)
-    * @param plan Transformed plan to visualize
     */
-  void visualize(nav_msgs::msg::Path plan);
+  void visualize();
 
   /**
     * @brief Reset object

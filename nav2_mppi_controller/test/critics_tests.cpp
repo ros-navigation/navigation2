@@ -289,7 +289,7 @@ TEST(CriticTests, GoalAngleCriticSymmetric)
   Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
   float model_dt = 0.1;
   CriticData data =
-  {state, generated_trajectories, path, goal, costs, model_dt,
+  {state, generated_trajectories, path, goal, costs, std::nullopt, model_dt,
     false, nullptr, nullptr, std::nullopt, std::nullopt};
   data.motion_model = std::make_shared<DiffDriveMotionModel>();
 

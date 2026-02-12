@@ -62,7 +62,7 @@ TEST(TrajectoryVisualizerTests, VisPathRepub)
   TrajectoryVisualizer vis;
   vis.on_configure(node, "my_name", "map", parameters_handler.get());
   vis.on_activate();
-  vis.visualize(pub_path);
+  vis.visualize();
 
   executor.spin_some();
   EXPECT_EQ(received_path.poses.size(), 5u);
@@ -173,7 +173,7 @@ TEST(TrajectoryVisualizerTests, VisCandidateTrajectories)
   vis.on_activate();
   vis.add(candidate_trajectories, costs, {}, cmd_stamp);
   nav_msgs::msg::Path bogus_path;
-  vis.visualize(bogus_path);
+  vis.visualize();
 
   executor.spin_some();
   // 200 trajectories / 5 trajectory_step = 40 LINE_STRIP markers
