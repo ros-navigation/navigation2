@@ -14,13 +14,15 @@
 
 #include "nav2_collision_monitor/velocity_polygon.hpp"
 
-#include "nav2_ros_common/node_utils.hpp"
+#include <cmath>
+
+#include "nav2_util/node_utils.hpp"
 
 namespace nav2_collision_monitor
 {
 
 VelocityPolygon::VelocityPolygon(
-  const nav2::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
+  const nav2_util::LifecycleNode::WeakPtr & node, const std::string & polygon_name,
   const std::shared_ptr<tf2_ros::Buffer> tf_buffer, const std::string & base_frame_id,
   const tf2::Duration & transform_tolerance)
 : Polygon::Polygon(node, polygon_name, tf_buffer, base_frame_id, transform_tolerance)
@@ -50,50 +52,78 @@ bool VelocityPolygon::getParameters(
 
   try {
     // Get velocity_polygons parameter
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".velocity_polygons", rclcpp::PARAMETER_STRING_ARRAY);
     std::vector<std::string> velocity_polygons =
-      node->declare_or_get_parameter<std::vector<std::string>>(
-      polygon_name_ + ".velocity_polygons");
+      node->get_parameter(polygon_name_ + ".velocity_polygons").as_string_array();
 
     // holonomic param
-    holonomic_ = node->declare_or_get_parameter(
-      polygon_name_ + ".holonomic", false);
+    nav2_util::declare_parameter_if_not_declared(
+      node, polygon_name_ + ".holonomic", rclcpp::ParameterValue(false));
+    holonomic_ = node->get_parameter(polygon_name_ + ".holonomic").as_bool();
 
     for (std::string velocity_polygon_name : velocity_polygons) {
       // polygon points parameter
       std::vector<Point> poly;
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name + ".points", rclcpp::PARAMETER_STRING);
       std::string poly_string =
-        node->declare_or_get_parameter<std::string>(
-        polygon_name_ + "." + velocity_polygon_name + ".points");
+        node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".points").as_string();
 
       if (!getPolygonFromString(poly_string, poly)) {
         return false;
       }
 
       // linear_min param
-      double linear_min = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_min");
+      double linear_min;
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name + ".linear_min",
+        rclcpp::PARAMETER_DOUBLE);
+      linear_min = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_min")
+        .as_double();
 
       // linear_max param
-      double linear_max = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".linear_max");
+      double linear_max;
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name + ".linear_max",
+        rclcpp::PARAMETER_DOUBLE);
+      linear_max = node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".linear_max")
+        .as_double();
 
       // theta_min param
-      double theta_min = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_min");
+      double theta_min;
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name + ".theta_min",
+        rclcpp::PARAMETER_DOUBLE);
+      theta_min =
+        node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".theta_min").as_double();
 
       // theta_max param
-      double theta_max = node->declare_or_get_parameter<double>(
-        polygon_name_ + "." + velocity_polygon_name + ".theta_max");
+      double theta_max;
+      nav2_util::declare_parameter_if_not_declared(
+        node, polygon_name_ + "." + velocity_polygon_name + ".theta_max",
+        rclcpp::PARAMETER_DOUBLE);
+      theta_max =
+        node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".theta_max").as_double();
 
       // direction_end_angle param and direction_start_angle param
       double direction_end_angle = 0.0;
       double direction_start_angle = 0.0;
       if (holonomic_) {
-        direction_end_angle = node->declare_or_get_parameter(
-          polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle", M_PI);
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle",
+          rclcpp::ParameterValue(M_PI));
+        direction_end_angle =
+          node->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".direction_end_angle")
+          .as_double();
 
-        direction_start_angle = node->declare_or_get_parameter(
-          polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle", -M_PI);
+        nav2_util::declare_parameter_if_not_declared(
+          node, polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle",
+          rclcpp::ParameterValue(-M_PI));
+        direction_start_angle =
+          node
+          ->get_parameter(polygon_name_ + "." + velocity_polygon_name + ".direction_start_angle")
+          .as_double();
       }
 
       SubPolygonParameter sub_polygon = {
@@ -141,13 +171,22 @@ void VelocityPolygon::updatePolygon(const Velocity & cmd_vel_in)
 bool VelocityPolygon::isInRange(
   const Velocity & cmd_vel_in, const SubPolygonParameter & sub_polygon)
 {
+  // 1. Always check angular range first
   bool in_range =
-    (cmd_vel_in.x <= sub_polygon.linear_max_ && cmd_vel_in.x >= sub_polygon.linear_min_ &&
-    cmd_vel_in.tw <= sub_polygon.theta_max_ && cmd_vel_in.tw >= sub_polygon.theta_min_);
+    (cmd_vel_in.tw <= sub_polygon.theta_max_ &&
+    cmd_vel_in.tw >= sub_polygon.theta_min_);
 
   if (holonomic_) {
-    // Additionally check if moving direction in angle range(start -> end) for holonomic case
-    const double direction = std::atan2(cmd_vel_in.y, cmd_vel_in.x);
+    // 2. For holonomic robots: use speed magnitude + direction
+    const double magnitude = std::hypot(cmd_vel_in.x, cmd_vel_in.y);
+    // Direction is undefined at rest; choose 0 and rely on configured direction ranges.
+    const double direction = (magnitude > 0.0) ? std::atan2(cmd_vel_in.y, cmd_vel_in.x) : 0.0;
+
+    // Linear range on speed magnitude
+    in_range &= (magnitude <= sub_polygon.linear_max_ &&
+      magnitude >= sub_polygon.linear_min_);
+
+    // Direction range
     if (sub_polygon.direction_start_angle_ <= sub_polygon.direction_end_angle_) {
       in_range &=
         (direction >= sub_polygon.direction_start_angle_ &&
@@ -157,6 +196,11 @@ bool VelocityPolygon::isInRange(
         (direction >= sub_polygon.direction_start_angle_ ||
         direction <= sub_polygon.direction_end_angle_);
     }
+  } else {
+    // 3. Non-holonomic: keep x-based behavior
+    in_range &=
+      (cmd_vel_in.x <= sub_polygon.linear_max_ &&
+      cmd_vel_in.x >= sub_polygon.linear_min_);
   }
 
   return in_range;
