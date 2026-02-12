@@ -481,9 +481,7 @@ double GracefulController::getMaxCost(
     if (costmap_ros_->getCostmap()->worldToMap(costmap_pose.pose.position.x,
         costmap_pose.pose.position.y, mx, my))
     {
-      double cost;
-      cost = collision_checker_->pointCost(mx, my);
-      max_cost = std::max(max_cost, cost);
+      max_cost = std::max(max_cost, collision_checker_->pointCost(mx, my));
     }
   }
 
