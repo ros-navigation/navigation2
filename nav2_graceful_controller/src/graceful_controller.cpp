@@ -239,11 +239,17 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
               final_rotation_cmd_vel))
         {
           // Determine the maximum valid cost based on robot footprint type
-          double max_valid_cost = costmap_ros_->getUseRadius() ? nav2_costmap_2d::MAX_NON_OBSTACLE :
-            nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+          double max_valid_cost = costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
+            static_cast<double>(nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 
           // Check if the final rotation path is risky
-          double safety_threshold = max_valid_cost - params_->obstacle_cost_margin;
+          double safety_threshold = max_valid_cost - static_cast<double>(params_->obstacle_cost_margin);
+          if (safety_threshold < 0.0) {
+            RCLCPP_WARN(
+              logger_, "obstacle_cost_margin (%d) is higher than max cost (%d).",
+              params_->obstacle_cost_margin, nav2_costmap_2d::MAX_NON_OBSTACLE);
+            throw nav2_core::NoValidControl("obstacle_cost_margin is higher than max cost.");
+          }
           if (getMaxCost(final_rotation_local_plan, costmap_transform) >= safety_threshold) {
             // Try to find a better approach by searching spiral curves
             nav_msgs::msg::Path best_spiral_plan;
