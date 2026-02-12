@@ -222,10 +222,12 @@ geometry_msgs::msg::TwistStamped GracefulController::computeVelocityCommands(
     }
 
     // Compute velocity at this moment if valid target pose is found
+    double max_velocity;
     if (
       validateTargetPoseOnApproach(target_pose, dist_to_target, dist_to_goal, local_plan,
         costmap_transform, cmd_vel) ||
-      validateTargetPose(target_pose, dist_to_target, local_plan, costmap_transform, cmd_vel))
+      validateTargetPose(target_pose, dist_to_target, local_plan, costmap_transform, cmd_vel,
+        max_velocity))
     {
       // Publish the selected target_pose
       motion_target_pub_->publish(std::make_unique<geometry_msgs::msg::PoseStamped>(target_pose));
@@ -277,7 +279,8 @@ void GracefulController::setSpeedLimit(
 bool GracefulController::validateTargetPose(
   geometry_msgs::msg::PoseStamped & target_pose, double dist_to_target,
   nav_msgs::msg::Path & trajectory, geometry_msgs::msg::TransformStamped & costmap_transform,
-  geometry_msgs::msg::TwistStamped & cmd_vel)
+  geometry_msgs::msg::TwistStamped & cmd_vel,
+  double & max_velocity)
 {
   // Continue if target_pose is too far away from robot
   if (dist_to_target > params_->max_lookahead) {
@@ -293,17 +296,16 @@ bool GracefulController::validateTargetPose(
   }
 
   // Actually simulate the path
-  double sim_linear_velocity = params_->v_linear_max;
+  max_velocity = params_->v_linear_max;
   do {
-    control_law_->setSpeedLimit(params_->v_linear_min, sim_linear_velocity,
-      params_->v_angular_max);
+    control_law_->setSpeedLimit(params_->v_linear_min, max_velocity, params_->v_angular_max);
     if (simulateTrajectory(target_pose, costmap_transform, trajectory, cmd_vel, reversing)) {
       // Successfully simulated to target_pose
       return true;
     }
     // Reduce velocity and try again for same target_pose
-    sim_linear_velocity -= params_->footprint_scaling_step;
-  } while (sim_linear_velocity >= params_->footprint_scaling_linear_vel);
+    max_velocity -= params_->footprint_scaling_step;
+  } while (max_velocity >= params_->footprint_scaling_linear_vel);
 
   // Validation not successful
   return false;
@@ -323,7 +325,10 @@ bool GracefulController::validateTargetPoseOnApproach(
   target_pose.pose.orientation =
     nav2_util::geometry_utils::orientationAroundZAxis(yaw);
 
-  if (validateTargetPose(target_pose, dist_to_target, trajectory, costmap_transform, cmd_vel)) {
+  double max_velocity;
+  if (validateTargetPose(target_pose, dist_to_target, trajectory, costmap_transform, cmd_vel,
+      max_velocity))
+  {
     // Determine the maximum valid cost based on robot footprint type
     double max_valid_cost =
       costmap_ros_->getUseRadius() ? static_cast<double>(nav2_costmap_2d::MAX_NON_OBSTACLE) :
@@ -574,13 +579,14 @@ bool GracefulController::findBestApproachTrajectory(
     auto candidate_pose = target_pose;
     candidate_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(angle);
 
-    nav_msgs::msg::Path candidate_path;
-    geometry_msgs::msg::TwistStamped candidate_cmd_vel;
+    nav_msgs::msg::Path candidate_path = best_trajectory;
+    geometry_msgs::msg::TwistStamped candidate_cmd_vel = best_cmd_vel;
 
     // Validate the candidate
+    double max_velocity;
     if (validateTargetPose(
           candidate_pose, dist_to_target, candidate_path, costmap_transform,
-          candidate_cmd_vel))
+          candidate_cmd_vel, max_velocity))
     {
       double candidate_cost = getMaxCost(candidate_path, costmap_transform);
 
@@ -590,6 +596,7 @@ bool GracefulController::findBestApproachTrajectory(
       }
       // Calculate ETA
       double eta = 0.0;
+      control_law_->setSpeedLimit(params_->v_linear_min, max_velocity, params_->v_angular_max);
       for (size_t j = 1; j < candidate_path.poses.size(); ++j) {
         auto current_pose = candidate_path.poses[j - 1];
         auto next_pose = candidate_path.poses[j];
