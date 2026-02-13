@@ -514,6 +514,12 @@ StaticLayer::dynamicParametersCallback(
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
+
+        x_ = y_ = 0;
+        width_ = size_x_;
+        height_ = size_y_;
+        has_updated_data_ = true;
+        current_ = false;
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
@@ -527,17 +533,8 @@ StaticLayer::dynamicParametersCallback(
       }
     }
   }
-
-  if (needs_full_update) {
-    x_ = y_ = 0;
-    width_ = size_x_;
-    height_ = size_y_;
-    has_updated_data_ = true;
-    current_ = false;
-  }
-
   result.successful = true;
   return result;
-}   // namespace nav2_costmap_2d
+}   
 
-}
+}  // namespace nav2_costmap_2d
