@@ -39,21 +39,13 @@ void TrajectoryVisualizer::on_configure(
   getParam(publish_optimal_path_, "publish_optimal_path", false);
   getParam(footprint_downsample_factor_, "footprint_downsample_factor", 3);
 
-  if (publish_trajectories_with_total_cost_ || publish_trajectories_with_individual_cost_) {
-    trajectories_publisher_ =
-      node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
-  }
-  if (publish_optimal_path_) {
-    optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
-  }
-  if (publish_optimal_footprints_) {
-    optimal_footprints_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "~/optimal_footprints");
-  }
-  if (publish_optimal_trajectory_msg_) {
-    optimal_trajectory_msg_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
-      "~/optimal_trajectory");
-  }
+  trajectories_publisher_ =
+    node->create_publisher<visualization_msgs::msg::MarkerArray>("~/candidate_trajectories");
+  optimal_path_pub_ = node->create_publisher<nav_msgs::msg::Path>("~/optimal_path");
+  optimal_footprints_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "~/optimal_footprints");
+  optimal_trajectory_msg_pub_ = node->create_publisher<nav2_msgs::msg::Trajectory>(
+    "~/optimal_trajectory");
 
   reset();
 }
@@ -152,11 +144,6 @@ void TrajectoryVisualizer::add(
   const std::vector<std::pair<std::string, Eigen::ArrayXf>> & individual_critics_cost,
   const builtin_interfaces::msg::Time & cmd_stamp)
 {
-  // Check if we should visualize per-critic costs
-  bool visualize_per_critic = !individual_critics_cost.empty() &&
-    publish_trajectories_with_individual_cost_ &&
-    trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0;
-
   size_t n_rows = trajectories.x.rows();
   points_->markers.reserve(n_rows / trajectory_step_);
 
@@ -164,6 +151,10 @@ void TrajectoryVisualizer::add(
   if (publish_trajectories_with_total_cost_) {
     createTrajectoryMarkers(trajectories, total_costs, "Total Costs", cmd_stamp);
   }
+
+  // Check if we should visualize per-critic costs
+  bool visualize_per_critic = !individual_critics_cost.empty() &&
+    publish_trajectories_with_individual_cost_;
 
   // Visualize each critic's contribution if requested
   if (visualize_per_critic) {
@@ -297,24 +288,17 @@ void TrajectoryVisualizer::visualize(
   header.stamp = stamp;
   header.frame_id = costmap_ros->getGlobalFrameID();
 
-  // Visualize trajectories with total costs
-  if (publish_trajectories_with_total_cost_ ||
-    (!publish_trajectories_with_individual_cost_ || critic_costs.empty()))
-  {
-    add(candidate_trajectories, costs, {}, stamp);
-  }
-
-  // Visualize trajectories with individual critic costs
-  if (publish_trajectories_with_individual_cost_ && !critic_costs.empty()) {
-    add(candidate_trajectories, costs, critic_costs, stamp);
-  }
-
   // Add optimal trajectory to populate optimal_path_
   if (publish_optimal_path_ && optimal_trajectory.rows() > 0) {
     add(optimal_trajectory, "Optimal Trajectory", stamp);
   }
 
-  // Publish trajectories
+  if (publish_trajectories_with_total_cost_ || publish_trajectories_with_individual_cost_)
+  {
+    add(candidate_trajectories, costs, critic_costs, stamp);
+  }
+
+    // Publish trajectories
   if (trajectories_publisher_ && trajectories_publisher_->get_subscription_count() > 0) {
     trajectories_publisher_->publish(std::move(points_));
   }

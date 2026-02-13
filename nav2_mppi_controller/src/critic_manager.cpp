@@ -40,9 +40,9 @@ void CriticManager::getParams()
 
   // Read visualization parameters from Visualization namespace
   auto getVisualizerParam = parameters_handler_->getParamGetter(name_ + ".Visualization");
-  getVisualizerParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Static);
+  getVisualizerParam(publish_critics_stats_, "publish_critics_stats", false, ParameterType::Dynamic);
   getVisualizerParam(visualize_per_critic_costs_, "publish_trajectories_with_individual_cost",
-      false, ParameterType::Static);
+      false, ParameterType::Dynamic);
 }
 
 void CriticManager::loadCritics()
