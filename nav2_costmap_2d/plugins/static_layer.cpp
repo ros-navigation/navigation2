@@ -535,6 +535,6 @@ StaticLayer::dynamicParametersCallback(
   }
   result.successful = true;
   return result;
-}   
+}
 
 }  // namespace nav2_costmap_2d
