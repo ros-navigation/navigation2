@@ -53,44 +53,15 @@ public:
   : nav2::ServiceServer<nav2_msgs::srv::IsPathValid>(
       "is_path_valid",                                    // 1. service_name
       node,                                               // 2. node
-      std::bind(&IsPathValidService::callback, this,       // 3. callback
+      std::bind(&IsPathValidService::callback, this,      // 3. callback
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
       // 4. callback_group defaults to nullptr as per your wrapper
   ),
     costmap_ros_(costmap_ros),
     costmap_update_timeout_(costmap_update_timeout),
-    logger_(node.lock()->get_logger())  // <--- INITIALIZE LOGGER HERE
+    logger_(node.lock()->get_logger())
   {
     costmap_ = costmap_ros_->getCostmap();
-  }
-
-  /**
-   * @brief Initialize the service
-   */
-  void initialize()
-  {
-    auto node = node_.lock();
-    if (!node) {
-      throw std::runtime_error("Failed to lock node in initialize");
-    }
-
-    costmap_ = costmap_ros_->getCostmap();
-
-    // service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
-    //   "is_path_valid",
-    //   node,
-    //   std::bind(
-    //     &IsPathValidService::callback, this,
-    //     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  }
-
-  /**
-   * @brief Reset the service
-   */
-  void reset()
-  {
-    service_.reset();
-    costmap_ = nullptr;
   }
 
 private:
@@ -295,12 +266,10 @@ private:
     }
   }
 
-  nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Duration costmap_update_timeout_;
   rclcpp::Logger logger_;
-  nav2::ServiceServer<nav2_msgs::srv::IsPathValid>::SharedPtr service_;
 };
 
 }  // namespace nav2_planner

@@ -138,13 +138,13 @@ void RouteTracker::publishFeedback(
   action_server_->publish_feedback(std::move(feedback));
 }
 
-void RouteTracker::on_activate()
+void RouteTracker::activate()
 {
-  operations_manager_->on_activate();
+  operations_manager_->activate();
 }
-void RouteTracker::on_deactivate()
+void RouteTracker::deactivate()
 {
-  operations_manager_->on_deactivate();
+  operations_manager_->deactivate();
 }
 
 TrackerResult RouteTracker::trackRoute(

@@ -105,8 +105,6 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   // Test API for the edge scorer to maintain proper state when a plugin
   // rejects and edge. Also covers the DynamicEdgesScorer plugin to demonstrate.
   auto node = std::make_shared<nav2::LifecycleNode>("route_server");
-  // auto node_thread = std::make_unique<nav2::NodeThread>(node);
-  // auto node2 = std::make_shared<rclcpp::Node>("my_node2");
   std::shared_ptr<tf2_ros::Buffer> tf_buffer;
 
   node->declare_parameter(
@@ -115,13 +113,6 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
     node, "DynamicEdgesScorer.plugin",
     rclcpp::ParameterValue(std::string{"nav2_route::DynamicEdgesScorer"}));
 
-  // ASSERT_EQ(
-  //   node->configure().id(),
-  //   lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-  // 5. Transition to ACTIVE
-  // ASSERT_EQ(
-  //   node->activate().id(),
-  //   lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
   node->configure();
   node->activate();
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
@@ -131,7 +122,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
   EdgeScorer scorer(node, tf_buffer, costmap_subscriber);
   EXPECT_EQ(scorer.numPlugins(), 1);  // AdjustEdgesScorer
 
-  scorer.on_activate();
+  scorer.activate();
 
   // Send service to set an edge as invalid
   auto srv_client =

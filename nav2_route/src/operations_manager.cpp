@@ -87,28 +87,28 @@ void OperationsManager::findGraphOperationsToProcess(
   }
 }
 
-void OperationsManager::on_activate()
+void OperationsManager::activate()
 {
   for (auto & op : query_operations_) {
-    op->on_activate();
+    op->activate();
   }
   for (auto & op : change_operations_) {
-    op->on_activate();
+    op->activate();
   }
   for (auto & it : graph_operations_) {
-    it.second->on_activate();
+    it.second->activate();
   }
 }
-void OperationsManager::on_deactivate()
+void OperationsManager::deactivate()
 {
   for (auto & op : query_operations_) {
-    op->on_deactivate();
+    op->deactivate();
   }
   for (auto & op : change_operations_) {
-    op->on_deactivate();
+    op->deactivate();
   }
   for (auto & it : graph_operations_) {
-    it.second->on_deactivate();
+    it.second->deactivate();
   }
 }
 

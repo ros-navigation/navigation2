@@ -88,8 +88,8 @@ public:
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) = 0;
 
-  virtual void on_activate() {}
-  virtual void on_deactivate() {}
+  virtual void activate() {}
+  virtual void deactivate() {}
 
   /**
    * @brief An API to get the name of a particular operation for triggering, query

@@ -38,17 +38,17 @@ void RoutePlanner::configure(
   edge_scorer_ = std::make_unique<EdgeScorer>(node, tf_buffer, costmap_subscriber);
 }
 
-void RoutePlanner::on_activate()
+void RoutePlanner::activate()
 {
   if(edge_scorer_) {
-    edge_scorer_->on_activate();
+    edge_scorer_->activate();
   }
 }
 
-void RoutePlanner::on_deactivate()
+void RoutePlanner::deactivate()
 {
   if(edge_scorer_) {
-    edge_scorer_->on_deactivate();
+    edge_scorer_->deactivate();
   }
 }
 

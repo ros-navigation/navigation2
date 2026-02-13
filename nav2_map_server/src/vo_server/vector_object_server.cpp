@@ -78,6 +78,7 @@ nav2::CallbackReturn
 VectorObjectServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
+
   add_shapes_service_->on_activate();
   get_shapes_service_->on_activate();
   remove_shapes_service_->on_activate();

@@ -54,6 +54,16 @@ public:
     const std::string & name) override;
 
   /**
+   * @brief Activate
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate
+   */
+  void deactivate();
+
+  /**
    * @brief Get name of the plugin for parameter scope mapping
    * @return Name
    */
@@ -94,9 +104,6 @@ public:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
     std::shared_ptr<std_srvs::srv::Trigger::Response> response);
-
-  void on_activate() override;
-  void on_deactivate() override;
 
 protected:
   std::string name_;
