@@ -102,9 +102,9 @@ public:
     return blackboard;
   }
 
-  std::string extractBehaviorTreeID(const std::string & file_or_id)
+  nav2_behavior_tree::BTInfo parseTreeInfo(const std::string & filename)
   {
-    return bt_engine_->extractBehaviorTreeID(file_or_id);
+    return bt_engine_->parseTreeInfo(filename);
   }
 
   bool loadBehaviorTree(
@@ -132,18 +132,29 @@ public:
               continue;
             }
 
-            auto id = bt_engine_->extractBehaviorTreeID(entry.path().string());
-            if (id.empty()) {
+            auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
+            if (tree_info.all_ids.empty()) {
               std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
               continue;
             }
-            if (registered_ids.count(id)) {
+          // Check for conflicts with all IDs in the file
+            bool conflict_found = false;
+            for (const auto & id : tree_info.all_ids) {
+              if (registered_ids.count(id)) {
+                conflict_found = true;
+                break;
+              }
+            }
+            if (conflict_found) {
               conflicting_files.push_back(entry.path().string());
               continue;
             }
+
             std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
             factory_.registerBehaviorTreeFromFile(entry.path().string());
-            registered_ids.insert(id);
+            for (const auto & id : tree_info.all_ids) {
+              registered_ids.insert(id);
+            }
           }
         }
       };
@@ -151,15 +162,16 @@ public:
     if (!is_bt_id) {
       // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      main_id = bt_engine_->extractBehaviorTreeID(main_file);
+      auto tree_info = bt_engine_->parseTreeInfo(main_file);
 
-      if (main_id.empty()) {
+      if (tree_info.main_id.empty()) {
         std::cerr << "Failed to extract ID from " << main_file << "\n";
         return false;
       }
+      main_id = tree_info.main_id;
       std::cout << "Registering Tree from File: " << main_file << "\n";
       factory_.registerBehaviorTreeFromFile(main_file);
-      registered_ids.insert(main_id);
+      registered_ids.insert(tree_info.main_id);
 
       // Register all other trees, skipping conflicts with main_id
       register_all_bt_files(main_file);
@@ -347,8 +359,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     };
 
   // 1. Empty string input triggers "Empty file branch
-  auto empty_id = bt_handler->extractBehaviorTreeID("");
-  EXPECT_TRUE(empty_id.empty());
+  auto tree_info = bt_handler->parseTreeInfo("");
+  EXPECT_TRUE(tree_info.main_id.empty());
 
   // 2. Valid XML with ID
   std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
@@ -360,19 +372,19 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto id = bt_handler->extractBehaviorTreeID(valid_xml);
-  EXPECT_FALSE(id.empty());
-  EXPECT_EQ(id, "TestTree");
+  auto id_info = bt_handler->parseTreeInfo(valid_xml);
+  EXPECT_FALSE(id_info.main_id.empty());
+  EXPECT_EQ(id_info.main_id, "TestTree");
 
   // 3. Malformed XML (parser error)
   std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
   write_file(malformed_xml, "<root><invalid></root>");
-  auto missing_id = bt_handler->extractBehaviorTreeID(malformed_xml);
-  EXPECT_TRUE(missing_id.empty());
+  auto missing_id = bt_handler->parseTreeInfo(malformed_xml);
+  EXPECT_TRUE(missing_id.main_id.empty());
 
   // 4. File does not exist
-  auto not_found = bt_handler->extractBehaviorTreeID("/tmp/does_not_exist.xml");
-  EXPECT_TRUE(not_found.empty());
+  auto not_found = bt_handler->parseTreeInfo("/tmp/non_existent_file.xml");
+  EXPECT_TRUE(not_found.main_id.empty());
 
   // 6. No root element
   std::string no_root_file = "/tmp/extract_bt_id_no_root.xml";
@@ -380,8 +392,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     no_root_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<!-- no root element, just a comment -->\n");
-  auto no_root_id = bt_handler->extractBehaviorTreeID(no_root_file);
-  EXPECT_TRUE(no_root_id.empty());
+  auto no_root_id = bt_handler->parseTreeInfo(no_root_file);
+  EXPECT_TRUE(no_root_id.main_id.empty());
 
   // 7. No <BehaviorTree> child
   std::string no_bt_element = "/tmp/extract_bt_id_no_bt.xml";
@@ -391,8 +403,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "<root BTCPP_format=\"4\">\n"
     "  <Dummy />\n"
     "</root>\n");
-  auto no_bt_id = bt_handler->extractBehaviorTreeID(no_bt_element);
-  EXPECT_TRUE(no_bt_id.empty());
+  auto no_bt_id = bt_handler->parseTreeInfo(no_bt_element);
+  EXPECT_TRUE(no_bt_id.main_id.empty());
 
   // 8. No ID attribute
   std::string no_id_attr = "/tmp/extract_bt_id_no_id.xml";
@@ -404,8 +416,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto no_id = bt_handler->extractBehaviorTreeID(no_id_attr);
-  EXPECT_TRUE(no_id.empty());
+  auto no_id = bt_handler->parseTreeInfo(no_id_attr);
+  EXPECT_TRUE(no_id.main_id.empty());
 
   // Cleanup
   std::remove(valid_xml.c_str());
