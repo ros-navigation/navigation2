@@ -74,6 +74,17 @@ public:
     const geometry_msgs::msg::PoseStamped & goal,
     const std::string & planner_id);
 
+  /**
+   * @brief Method to get plan from the desired plugin without obstacles
+   * @param start starting pose
+   * @param goal goal request
+   * @return Path
+   */
+  nav_msgs::msg::Path getPlanWithoutObstacles(
+    const geometry_msgs::msg::PoseStamped & start,
+    const geometry_msgs::msg::PoseStamped & goal,
+    const std::string & planner_id);
+
 protected:
   /**
    * @brief Configure member variables and initializes planner
