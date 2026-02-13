@@ -100,8 +100,15 @@ public:
     const geometry_msgs::msg::PoseStamped & pose,
     const ReroutingState & rerouting_info);
 
-  void on_activate();
-  void on_deactivate();
+  /**
+   * @brief Activate the operations manager, prepare for processing
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate the operations manager, clear state
+   */
+  void deactivate();
 
 protected:
   /**
