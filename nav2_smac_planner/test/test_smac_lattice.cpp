@@ -56,6 +56,11 @@ public:
     return _max_on_approach_iterations;
   }
 
+  double getMaxPlanningTime()
+  {
+    return _max_planning_time;
+  }
+
   nav2_smac_planner::GoalHeadingMode getGoalHeadingMode()
   {
     return _goal_heading_mode;
@@ -221,7 +226,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.allow_unknown", false),
-      rclcpp::Parameter("test.max_iterations", -1),
+      rclcpp::Parameter("test.max_iterations", 100),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
@@ -257,6 +262,12 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test invalid max planning time
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.max_planning_time", -1.0));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getMaxPlanningTime(), 10.0);
 
   // test coarse resolution edge cases.
   // Negative coarse search resolution

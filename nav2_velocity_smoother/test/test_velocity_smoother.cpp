@@ -821,6 +821,12 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
+  // Test negative odom duration rejection
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("odom_duration", -1.0)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
   // test full state after major changes
   smoother->deactivate(state);
   smoother->cleanup(state);

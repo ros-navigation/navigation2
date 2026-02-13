@@ -125,23 +125,10 @@ rclcpp::Duration Source::getSourceTimeout() const
 }
 
 rcl_interfaces::msg::SetParametersResult Source::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & parameters)
+  const std::vector<rclcpp::Parameter> & /*parameters*/)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (const auto & parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0) {
-        RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >=0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
-        result.successful = false;
-      }
-    }
-  }
   return result;
 }
 
