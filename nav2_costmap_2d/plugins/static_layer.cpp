@@ -506,9 +506,8 @@ StaticLayer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters
       param_name == name_ + "." + "subscribe_to_updates")
     {
       RCLCPP_WARN(
-          logger_, "%s is not a dynamic parameter "
-          "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
-
+        logger_, "%s is not a dynamic parameter "
+        "cannot be changed while running. Rejecting parameter update.", param_name.c_str());
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == name_ + "." + "transform_tolerance") {
         transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
@@ -527,8 +526,8 @@ StaticLayer::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters
           restore_cleared_footprint_ = parameter.as_bool();
         } else {
           RCLCPP_WARN(
-              logger_, "restore_cleared_footprint cannot be used "
-              "when footprint_clearing_enabled is False. Rejecting parameter update.");
+            logger_, "restore_cleared_footprint cannot be used "
+            "when footprint_clearing_enabled is False. Rejecting parameter update.");
         }
       }
     }
