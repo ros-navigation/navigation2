@@ -557,38 +557,44 @@ PlannerServer::getPlanWithoutObstacles(
     "(%.2f, %.2f).", start.pose.position.x, start.pose.position.y,
     goal.pose.position.x, goal.pose.position.y);
 
+  bool has_obstacle_layer = false;
+  bool original_enabled = true;
   try {
     // Check if obstacle layer exists in plugins
     auto plugins = costmap_ros_->get_parameter("plugins").as_string_array();
-    
-    bool has_obstacle_layer = false;
-    for (const auto& plugin : plugins) {
+
+    for (const auto & plugin : plugins) {
       if (plugin.find("obstacle_layer") != std::string::npos) {
         has_obstacle_layer = true;
         break;
       }
     }
-    
+
     // If no obstacle layer, use normal planning
     if (!has_obstacle_layer) {
       return getPlan(start, goal, planner_id);
     }
-    
+
     // Save original state and disable obstacle layer
-    bool original_enabled = costmap_ros_->get_parameter("obstacle_layer.enabled").as_bool();
+    original_enabled = costmap_ros_->get_parameter("obstacle_layer.enabled").as_bool();
     costmap_ros_->set_parameter(rclcpp::Parameter("obstacle_layer.enabled", false));
     costmap_ros_->updateMap();
-    
+
     // Plan with filtered costmap
     auto path = getPlan(start, goal, planner_id);
-    
+
     // Restore obstacle layer
     costmap_ros_->set_parameter(rclcpp::Parameter("obstacle_layer.enabled", original_enabled));
-    
+
     return path;
-    
-  } catch (const std::exception& ex) {
-    RCLCPP_WARN(get_logger(), "Failed to plan without obstacles: %s. Using normal planning.", ex.what());
+
+  } catch (const std::exception & ex) {
+    RCLCPP_WARN(
+      get_logger(), "Failed to plan without obstacles: %s. Using normal planning.", ex.what());
+    if (has_obstacle_layer) {
+      costmap_ros_->set_parameter(rclcpp::Parameter("obstacle_layer.enabled", original_enabled));
+      costmap_ros_->updateMap();
+    }
     return getPlan(start, goal, planner_id);
   }
 }
