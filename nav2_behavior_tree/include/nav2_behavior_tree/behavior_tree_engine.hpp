@@ -40,7 +40,8 @@ enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
  * @struct nav2_behavior_tree::BTInfo
  * @brief A struct to hold Behavior Tree ID information
  */
-struct BTInfo {
+struct BTInfo
+{
   std::string main_id;
   std::vector<std::string> all_ids;
 };
@@ -94,7 +95,7 @@ public:
   BT::Tree createTreeFromFile(
     const std::string & file_path,
     BT::Blackboard::Ptr blackboard);
-  
+
   /**
    * @brief Function to parse Behavior Tree information from an XML file
    * @param filename Path to BT XML file

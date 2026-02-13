@@ -123,41 +123,41 @@ public:
     std::string main_id;
 
     auto register_all_bt_files = [&](const std::string & skip_file = "") {
-      for (const auto & directory : search_directories) {
-        for (const auto & entry : fs::directory_iterator(directory)) {
-          if (entry.path().extension() != ".xml") {
-            continue;
-          }
-          if (!skip_file.empty() && entry.path().string() == skip_file) {
-            continue;
-          }
+        for (const auto & directory : search_directories) {
+          for (const auto & entry : fs::directory_iterator(directory)) {
+            if (entry.path().extension() != ".xml") {
+              continue;
+            }
+            if (!skip_file.empty() && entry.path().string() == skip_file) {
+              continue;
+            }
 
-          auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
-          if (tree_info.all_ids.empty()) {
-            std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
-            continue;
-          }
+            auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
+            if (tree_info.all_ids.empty()) {
+              std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
+              continue;
+            }
           // Check for conflicts with all IDs in the file
-          bool conflict_found = false;
-          for (const auto& id : tree_info.all_ids) {
-            if (registered_ids.count(id)) {
-              conflict_found = true;
-              break;
+            bool conflict_found = false;
+            for (const auto & id : tree_info.all_ids) {
+              if (registered_ids.count(id)) {
+                conflict_found = true;
+                break;
+              }
+            }
+            if (conflict_found) {
+              conflicting_files.push_back(entry.path().string());
+              continue;
+            }
+
+            std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
+            factory_.registerBehaviorTreeFromFile(entry.path().string());
+            for (const auto & id : tree_info.all_ids) {
+              registered_ids.insert(id);
             }
           }
-          if (conflict_found) {
-            conflicting_files.push_back(entry.path().string());
-            continue;
-          }
-
-          std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
-          factory_.registerBehaviorTreeFromFile(entry.path().string());
-          for (const auto& id : tree_info.all_ids) {
-            registered_ids.insert(id);
-          }
         }
-      }
-    };
+      };
 
     if (!is_bt_id) {
       // file_or_id is a filename: register it first

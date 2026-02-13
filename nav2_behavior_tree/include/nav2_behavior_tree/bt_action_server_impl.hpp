@@ -280,7 +280,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
           }
           // Check for conflicts with all IDs in the file
           bool conflict_found = false;
-          for (const auto& id : tree_info.all_ids) {
+          for (const auto & id : tree_info.all_ids) {
             if (registered_ids.count(id)) {
               conflict_found = true;
               break;
@@ -293,7 +293,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 
           RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
           bt_->registerTreeFromFile(entry.path().string());
-          for (const auto& id : tree_info.all_ids) {
+          for (const auto & id : tree_info.all_ids) {
             registered_ids.insert(id);
           }
         }
@@ -312,7 +312,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
       main_id = tree_info.main_id;
       RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
       bt_->registerTreeFromFile(main_file);
-      for (const auto& id : tree_info.all_ids) {
+      for (const auto & id : tree_info.all_ids) {
         registered_ids.insert(id);
       }
 

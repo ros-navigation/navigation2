@@ -120,7 +120,7 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
   }
 
   tinyxml2::XMLElement * root = doc.RootElement();
-  if (!root) return info;
+  if (!root) {return info;}
 
   // First try to get main_tree_to_execute attribute
   const char * main_attr = root->Attribute("main_tree_to_execute");
@@ -129,7 +129,9 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
   }
 
   // Loop through all BehaviorTree elements to get all IDs
-  for (auto* bt = root->FirstChildElement("BehaviorTree"); bt; bt = bt->NextSiblingElement("BehaviorTree")) {
+  for (auto * bt = root->FirstChildElement("BehaviorTree"); bt;
+    bt = bt->NextSiblingElement("BehaviorTree"))
+  {
     const char * id = bt->Attribute("ID");
     if (id) {
       info.all_ids.emplace_back(id);
