@@ -173,8 +173,6 @@ TEST(OperationsManagerTest, test_processing_speed_on_status)
 TEST(OperationsManagerTest, test_rerouting_service_on_query)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("route_server");
-  // auto node_thread = std::make_unique<nav2::NodeThread>(node);
-  // auto node_int = std::make_shared<rclcpp::Node>("my_node2");
 
   // Enable rerouting service, which conducts on query (not status change)
   node->declare_parameter(
@@ -185,13 +183,6 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
   OperationsManager manager(node, costmap_subscriber);
 
-  // ASSERT_EQ(
-  //   node->configure().id(),
-  //   lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
-  // 5. Transition to ACTIVE
-  // ASSERT_EQ(
-  //   node->activate().id(),
-  //   lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
   node->configure();
   node->activate();
 

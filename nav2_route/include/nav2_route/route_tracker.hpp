@@ -65,6 +65,16 @@ public:
     const std::string & base_frame);
 
   /**
+   * @brief Activate route tracker
+   */
+  void activate();
+
+  /**
+   * @brief Deactivate route tracker
+   */
+  void deactivate();
+
+  /**
    * @brief Determine if a node is to be considered achieved at the current position
    * @param pose Current robot pose to query
    * @param state Tracker state
@@ -115,9 +125,6 @@ public:
   TrackerResult trackRoute(
     const Route & route, const nav_msgs::msg::Path & path,
     ReroutingState & rerouting_info);
-
-  void on_activate();
-  void on_deactivate();
 
 protected:
   nav2_msgs::msg::Route route_msg_;
