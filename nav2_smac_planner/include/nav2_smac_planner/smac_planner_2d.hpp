@@ -92,11 +92,23 @@ public:
 
 protected:
   /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   std::unique_ptr<AStarAlgorithm<Node2D>> _a_star;
   GridCollisionChecker _collision_checker;
@@ -123,7 +135,8 @@ protected:
   nav2::LifecycleNode::WeakPtr _node;
 
   // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _dyn_params_handler;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr _post_set_params_handler;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr _on_set_params_handler;
 };
 
 }  // namespace nav2_smac_planner
