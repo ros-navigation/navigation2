@@ -70,11 +70,11 @@ Costmap2DPublisher::Costmap2DPublisher(
   // TODO(bpwilcox): port onNewSubscription functionality for publisher
   costmap_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     topic_name,
-    custom_qos);
+    nav2::qos::LatchedPublisherQoS());
 
   costmap_raw_pub_ = node->create_publisher<nav2_costmap_2d::Costmap2DStamped>(
     topic_name + "_raw",
-    custom_qos);
+    nav2::qos::LatchedPublisherQoS());
 
   costmap_update_pub_ = node->create_publisher<map_msgs::msg::OccupancyGridUpdate>(
     topic_name + "_updates", nav2::qos::LatchedPublisherQoS());

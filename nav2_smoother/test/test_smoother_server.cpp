@@ -153,8 +153,7 @@ public:
     CostmapAdapter::convert_to_custom(
       *msg, *stamped);
 
-    std::atomic_store(&costmap_msg_, stamped);
-    costmap_received_ = true;
+    costmapCallback(stamped);
   }
 };
 

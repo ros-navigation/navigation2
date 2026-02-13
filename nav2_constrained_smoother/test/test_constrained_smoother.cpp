@@ -88,8 +88,7 @@ public:
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>::
     convert_to_custom(*msg, *stamped);
 
-    std::atomic_store(&costmap_msg_, stamped);
-    costmap_received_ = true;
+    costmapCallback(stamped);
   }
 };
 

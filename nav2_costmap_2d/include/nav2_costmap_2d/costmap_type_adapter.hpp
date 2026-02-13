@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "std_msgs/msg/header.hpp"
-#include "rclcpp/rclcpp/type_adapter.hpp"
+#include "rclcpp/type_adapter.hpp"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
