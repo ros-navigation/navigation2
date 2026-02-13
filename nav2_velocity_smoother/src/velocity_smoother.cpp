@@ -559,7 +559,8 @@ rcl_interfaces::msg::SetParametersResult VelocitySmoother::validateParameterUpda
         if (parameter.as_string() != "OPEN_LOOP" && parameter.as_string() != "CLOSED_LOOP") {
           RCLCPP_WARN(
             get_logger(),
-            "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP. Ignoring parameter update."); // NOLINT
+            "Invalid feedback_type, options are OPEN_LOOP and CLOSED_LOOP. "
+            "Ignoring parameter update.");
           result.successful = false;
           break;
         }
