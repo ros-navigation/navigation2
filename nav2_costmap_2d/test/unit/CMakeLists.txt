@@ -13,6 +13,11 @@ target_link_libraries(costmap_cost_service_test
   nav2_costmap_2d_core
 )
 
+nav2_add_gtest(clear_costmap_service_test clear_costmap_service_test.cpp)
+target_link_libraries(clear_costmap_service_test
+  nav2_costmap_2d_core
+)
+
 nav2_add_gtest(declare_parameter_test declare_parameter_test.cpp)
 target_link_libraries(declare_parameter_test
   nav2_costmap_2d_core
