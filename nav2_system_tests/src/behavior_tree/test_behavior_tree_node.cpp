@@ -168,6 +168,7 @@ public:
         std::cerr << "Failed to extract ID from " << main_file << "\n";
         return false;
       }
+      main_id = tree_info.main_id;
       std::cout << "Registering Tree from File: " << main_file << "\n";
       factory_.registerBehaviorTreeFromFile(main_file);
       registered_ids.insert(tree_info.main_id);
