@@ -105,56 +105,42 @@ BehaviorTreeEngine::createTreeFromFile(
   return factory_.createTreeFromFile(file_path, blackboard);
 }
 
-std::vector<std::string> BehaviorTreeEngine::extractBehaviorTreeIDs(
-  const std::string & filename)
+BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
 {
-  std::vector<std::string> ids;
+  BTInfo info;
   if (filename.empty()) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("BehaviorTreeEngine"),
-      "Error: Empty BT file passed to extractBehaviorTreeID");
-    return ids;
-  }
-  tinyxml2::XMLDocument doc;
-  if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("BehaviorTreeEngine"), "Error: Could not open or parse file %s",
-      filename.c_str());
-    return ids;
-  }
-  tinyxml2::XMLElement * rootElement = doc.RootElement();
-  if (!rootElement) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("BehaviorTreeEngine"), "Error: Root element not found in %s",
-      filename.c_str());
-    return ids;
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Empty BT file path.");
+    return info;
   }
 
-  // Loop through all <BehaviorTree> elements and extract their IDs
-  for (tinyxml2::XMLElement * btElement =
-    rootElement->FirstChildElement("BehaviorTree");
-    btElement != nullptr;
-    btElement = btElement->NextSiblingElement("BehaviorTree"))
-  {
-    const char * idValue = btElement->Attribute("ID");
-    if (idValue) {
-      ids.emplace_back(idValue);
-    } else {
-      RCLCPP_WARN(
-        rclcpp::get_logger("BehaviorTreeEngine"),
-        "<BehaviorTree> without ID in %s",
-        filename.c_str());
+  tinyxml2::XMLDocument doc;
+  if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Could not parse: %s", filename.c_str());
+    return info;
+  }
+
+  tinyxml2::XMLElement * root = doc.RootElement();
+  if (!root) return info;
+
+  // First try to get main_tree_to_execute attribute
+  const char * main_attr = root->Attribute("main_tree_to_execute");
+  if (main_attr) {
+    info.main_id = main_attr;
+  }
+
+  // Loop through all BehaviorTree elements to get all IDs
+  for (auto* bt = root->FirstChildElement("BehaviorTree"); bt; bt = bt->NextSiblingElement("BehaviorTree")) {
+    const char * id = bt->Attribute("ID");
+    if (id) {
+      info.all_ids.emplace_back(id);
+      // Fallback if no main_tree_to_execute was set, the first BT found becomes the main_id
+      if (info.main_id.empty()) {
+        info.main_id = id;
+      }
     }
   }
 
-  if (ids.empty()) {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("BehaviorTreeEngine"),
-      "No <BehaviorTree> elements with ID found in %s",
-      filename.c_str());
-  }
-
-  return ids;
+  return info;
 }
 
 BT::Tree

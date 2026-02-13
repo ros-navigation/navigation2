@@ -98,12 +98,6 @@ public:
   void setGrootMonitoring(const bool enable, const unsigned server_port);
 
   /**
-   * @brief Register all BTs from the search directories
-   * @return bool true on SUCCESS and false on FAILURE
-   */
-  bool registerAllTreesFromDirectories();
-
-  /**
    * @brief Replace current BT with another one
    * @param bt_xml_filename_or_id The file containing the new BT, uses default filename if empty or BT ID
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename_or_id. false

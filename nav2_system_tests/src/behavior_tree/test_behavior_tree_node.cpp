@@ -102,9 +102,9 @@ public:
     return blackboard;
   }
 
-  std::vector<std::string> extractBehaviorTreeIDs(const std::string & filename)
+  nav2_behavior_tree::BTInfo parseTreeInfo(const std::string & filename)
   {
-    return bt_engine_->extractBehaviorTreeIDs(filename);
+    return bt_engine_->parseTreeInfo(filename);
   }
 
   bool loadBehaviorTree(
@@ -112,67 +112,95 @@ public:
     const std::vector<std::string> & search_directories)
   {
     namespace fs = std::filesystem;
-    bool is_bt_id = false;
-    if ((file_or_id.length() < 4) ||
-      file_or_id.substr(file_or_id.length() - 4) != ".xml")
-    {
-      is_bt_id = true;
-    }
-    // Register all XML behavior subtrees in the directories
-    std::unordered_set<std::string> used_bt_id;
-    for (const auto & directory : search_directories) {
-      try {
+    const std::string kXmlExtension = ".xml";
+    const bool is_bt_id = (file_or_id.length() < kXmlExtension.size()) ||
+      (file_or_id.compare(
+        file_or_id.length() - kXmlExtension.size(),
+        kXmlExtension.size(), kXmlExtension) != 0);
+
+    std::set<std::string> registered_ids;
+    std::vector<std::string> conflicting_files;
+    std::string main_id;
+
+    auto register_all_bt_files = [&](const std::string & skip_file = "") {
+      for (const auto & directory : search_directories) {
         for (const auto & entry : fs::directory_iterator(directory)) {
-          if (entry.path().extension() == ".xml") {
-            auto bt_ids = bt_engine_->extractBehaviorTreeIDs(entry.path().string());
+          if (entry.path().extension() != ".xml") {
+            continue;
+          }
+          if (!skip_file.empty() && entry.path().string() == skip_file) {
+            continue;
+          }
 
-            if (bt_ids.empty()) {
-              std::cerr << "[behavior_tree_handler]: Skipping BT file "
-                        << entry.path().string()
-                        << " (no valid BehaviorTree IDs found)\n";
-              continue;
+          auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
+          if (tree_info.all_ids.empty()) {
+            std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
+            continue;
+          }
+          // Check for conflicts with all IDs in the file
+          bool conflict_found = false;
+          for (const auto& id : tree_info.all_ids) {
+            if (registered_ids.count(id)) {
+              conflict_found = true;
+              break;
             }
+          }
+          if (conflict_found) {
+            conflicting_files.push_back(entry.path().string());
+            continue;
+          }
 
-            for (const auto & current_bt_id : bt_ids) {
-              if (current_bt_id.empty()) {
-                std::cerr << "[behavior_tree_handler]: Skipping empty BT ID in file "
-                          << entry.path().string() << "\n";
-                continue;
-              }
-
-              auto [it, inserted] = used_bt_id.insert(current_bt_id);
-              if (!inserted) {
-                std::cout << "[behavior_tree_handler]: Warning: Duplicate BT IDs found. "
-                  "Make sure to have all BT IDs unique! "
-                          << "ID: " << current_bt_id
-                          << " File: " << entry.path().string() << "\n";
-              }
-            }
-            factory_.registerBehaviorTreeFromFile(entry.path().string());
+          std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
+          factory_.registerBehaviorTreeFromFile(entry.path().string());
+          for (const auto& id : tree_info.all_ids) {
+            registered_ids.insert(id);
           }
         }
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(node_->get_logger(),
-          "Exception reading behavior tree directory: %s", e.what());
+      }
+    };
+
+    if (!is_bt_id) {
+      // file_or_id is a filename: register it first
+      std::string main_file = file_or_id;
+      auto tree_info = bt_engine_->parseTreeInfo(main_file);
+
+      if (tree_info.main_id.empty()) {
+        std::cerr << "Failed to extract ID from " << main_file << "\n";
         return false;
       }
+      std::cout << "Registering Tree from File: " << main_file << "\n";
+      factory_.registerBehaviorTreeFromFile(main_file);
+      registered_ids.insert(tree_info.main_id);
+
+      // Register all other trees, skipping conflicts with main_id
+      register_all_bt_files(main_file);
+    } else {
+      // file_or_id is an ID: register all files, skipping conflicts
+      main_id = file_or_id;
+      register_all_bt_files();
     }
 
-    // Create and populate the blackboard
-    blackboard = setBlackboardVariables();
-
-    // Build the tree from the ID (resolved from <root> or <BehaviorTree ID>)
-    try {
-      if(!is_bt_id) {
-        tree = factory_.createTreeFromFile(file_or_id, blackboard);
-        RCLCPP_WARN(node_->get_logger(),
-          "Loading BT using file path. This is deprecated. Please use the BT ID instead.");
-      } else {
-        tree = factory_.createTree(file_or_id, blackboard);
+    // Log all conflicting files once at the end
+    if (!conflicting_files.empty()) {
+      std::string files_list;
+      for (const auto & file : conflicting_files) {
+        if (!files_list.empty()) {
+          files_list += ", ";
+        }
+        files_list += file;
       }
+      std::cerr << "Skipping conflicting BT XML files, multiple files have the same ID. "
+                << "Please set unique behavior tree IDs. This may affect loading of subtrees. "
+                << "Files not loaded: " << files_list << "\n";
+    }
+
+    // Create the tree with the specified ID
+    blackboard = setBlackboardVariables();
+    try {
+      tree = factory_.createTree(main_id, blackboard);
+      std::cout << "Created BT from ID: " << main_id << "\n";
     } catch (BT::RuntimeError & exp) {
-      RCLCPP_ERROR(node_->get_logger(),
-        "Failed to create BT %s: %s", file_or_id.c_str(), exp.what());
+      std::cerr << "Failed to create BT " << main_id << ": " << exp.what() << "\n";
       return false;
     }
 
@@ -302,6 +330,7 @@ TEST_F(BehaviorTreeTestFixture, TestWrongBTFormatXML)
     main_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
+    "  <include path=\"/tmp/valid_subtree.xml\">\n"
     "  <BehaviorTree ID=\"MainTree\">\n"
     "    <Subtree ID=\"NoopTree\"/>\n"
     "  </BehaviorTree>\n"
@@ -329,8 +358,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     };
 
   // 1. Empty string input triggers "Empty file branch
-  auto empty_id = bt_handler->extractBehaviorTreeIDs("");
-  EXPECT_TRUE(empty_id.empty());
+  auto tree_info = bt_handler->parseTreeInfo("");
+  EXPECT_TRUE(tree_info.main_id.empty());
 
   // 2. Valid XML with ID
   std::string valid_xml = "/tmp/extract_bt_id_valid.xml";
@@ -342,19 +371,19 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto id = bt_handler->extractBehaviorTreeIDs(valid_xml);
-  EXPECT_FALSE(id.empty());
-  EXPECT_EQ(id[0], "TestTree");
+  auto id_info = bt_handler->parseTreeInfo(valid_xml);
+  EXPECT_FALSE(id_info.main_id.empty());
+  EXPECT_EQ(id_info.main_id, "TestTree");
 
   // 3. Malformed XML (parser error)
   std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
   write_file(malformed_xml, "<root><invalid></root>");
-  auto missing_id = bt_handler->extractBehaviorTreeIDs(malformed_xml);
-  EXPECT_TRUE(missing_id.empty());
+  auto missing_id = bt_handler->parseTreeInfo(malformed_xml);
+  EXPECT_TRUE(missing_id.main_id.empty());
 
   // 4. File does not exist
-  auto not_found = bt_handler->extractBehaviorTreeIDs("/tmp/does_not_exist.xml");
-  EXPECT_TRUE(not_found.empty());
+  auto not_found = bt_handler->parseTreeInfo("/tmp/non_existent_file.xml");
+  EXPECT_TRUE(not_found.main_id.empty());
 
   // 6. No root element
   std::string no_root_file = "/tmp/extract_bt_id_no_root.xml";
@@ -362,8 +391,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     no_root_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<!-- no root element, just a comment -->\n");
-  auto no_root_id = bt_handler->extractBehaviorTreeIDs(no_root_file);
-  EXPECT_TRUE(no_root_id.empty());
+  auto no_root_id = bt_handler->parseTreeInfo(no_root_file);
+  EXPECT_TRUE(no_root_id.main_id.empty());
 
   // 7. No <BehaviorTree> child
   std::string no_bt_element = "/tmp/extract_bt_id_no_bt.xml";
@@ -373,8 +402,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "<root BTCPP_format=\"4\">\n"
     "  <Dummy />\n"
     "</root>\n");
-  auto no_bt_id = bt_handler->extractBehaviorTreeIDs(no_bt_element);
-  EXPECT_TRUE(no_bt_id.empty());
+  auto no_bt_id = bt_handler->parseTreeInfo(no_bt_element);
+  EXPECT_TRUE(no_bt_id.main_id.empty());
 
   // 8. No ID attribute
   std::string no_id_attr = "/tmp/extract_bt_id_no_id.xml";
@@ -386,8 +415,8 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto no_id = bt_handler->extractBehaviorTreeIDs(no_id_attr);
-  EXPECT_TRUE(no_id.empty());
+  auto no_id = bt_handler->parseTreeInfo(no_id_attr);
+  EXPECT_TRUE(no_id.main_id.empty());
 
   // Cleanup
   std::remove(valid_xml.c_str());
@@ -397,27 +426,14 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   std::remove(no_id_attr.c_str());
 }
 
-TEST_F(BehaviorTreeTestFixture, TestLoadBehaviorTreeMissingAndDuplicateIDs)
-{
+TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithFileSpecified) {
   auto write_file = [](const std::string & path, const std::string & content) {
       std::ofstream ofs(path);
       ofs << content;
     };
-
-  std::string tmp_dir = "/tmp/bt_test_dir";
+  std::string tmp_dir = "/tmp/bt_test_dup_file";
   std::filesystem::create_directories(tmp_dir);
 
-  // 1. File with missing ID (should be skipped)
-  std::string missing_id_file = tmp_dir + "/missing_id.xml";
-  write_file(missing_id_file,
-    "<?xml version=\"1.0\"?>\n"
-    "<root BTCPP_format=\"4\">\n"
-    "  <BehaviorTree>\n"
-    "    <AlwaysSuccess />\n"
-    "  </BehaviorTree>\n"
-    "</root>\n");
-
-  // 2. Two files with the same ID (should trigger duplicate warning)
   std::string dup1_file = tmp_dir + "/dup1.xml";
   std::string dup2_file = tmp_dir + "/dup2.xml";
   std::string dup_bt_content =
@@ -430,52 +446,249 @@ TEST_F(BehaviorTreeTestFixture, TestLoadBehaviorTreeMissingAndDuplicateIDs)
   write_file(dup1_file, dup_bt_content);
   write_file(dup2_file, dup_bt_content);
 
-  // Redirect cout and cerr to a stringstream
   std::stringstream captured_output;
-  std::streambuf * old_cout_buf = std::cout.rdbuf();
-  std::streambuf * old_cerr_buf = std::cerr.rdbuf();
-
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
   std::cout.rdbuf(captured_output.rdbuf());
   std::cerr.rdbuf(captured_output.rdbuf());
 
-  std::vector<std::string> search_dirs = {tmp_dir};
-  bool result = bt_handler->loadBehaviorTree("DuplicateTree", search_dirs);
+  bool result = bt_handler->loadBehaviorTree(dup1_file, {tmp_dir});
 
-  // Restore cout and cerr
-  std::cout.rdbuf(old_cout_buf);
-  std::cerr.rdbuf(old_cerr_buf);
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
 
-  // Check the captured output for the expected log messages
   std::string log_output = captured_output.str();
+  std::cout << "Captured:\n" << log_output << std::endl;
 
-  // Assert that the function returned true
   EXPECT_TRUE(result);
 
-  // Assert that the error log for the missing ID was found
-  EXPECT_NE(log_output.find("[behavior_tree_handler]: Skipping BT file " + missing_id_file +
-      " (no valid BehaviorTree IDs found)"), std::string::npos);
-
-  // Assert that the warning log for the duplicate ID was found
+  // Verify the new message format
   EXPECT_NE(
-    log_output.find(
-      "Warning: Duplicate BT IDs found. Make sure to have all BT IDs unique! "
-      "ID: DuplicateTree File: "), std::string::npos);
+    log_output.find("Skipping conflicting BT XML files, multiple files have the same ID."),
+    std::string::npos) << "Should warn about duplicate IDs";
+  EXPECT_NE(log_output.find("Please set unique behavior tree IDs"), std::string::npos)
+    << "Should provide guidance about unique IDs";
+  EXPECT_NE(log_output.find("Files not loaded:"), std::string::npos)
+    << "Should list files not loaded";
+  EXPECT_NE(log_output.find(dup2_file), std::string::npos)
+    << "Should mention the skipped file";
 
-  // Cleanup
+  EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos);
+  EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
+
   std::filesystem::remove_all(tmp_dir);
 }
 
-TEST_F(BehaviorTreeTestFixture, TestLoadByIdInsteadOfFile)
-{
-  const auto root_dir = std::filesystem::path(
-    nav2::get_package_share_directory("nav2_bt_navigator")
-    ) / "behavior_trees";
-  std::vector<std::string> search_directories = {root_dir.string()};
+TEST_F(BehaviorTreeTestFixture, TestAllUniqueIDsWithFileSpecified) {
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+  std::string tmp_dir = "/tmp/bt_test_unique_file";
+  std::filesystem::create_directories(tmp_dir);
 
-  // Load by BT ID instead of file
-  EXPECT_TRUE(bt_handler->loadBehaviorTree("NavigateToPoseWReplanningAndRecovery",
-      search_directories));
+  // Two unique BT files
+  std::string file1 = tmp_dir + "/tree1.xml";
+  std::string file2 = tmp_dir + "/tree2.xml";
+
+  std::string bt_content1 =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"Tree1\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+  std::string bt_content2 =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"Tree2\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+
+  write_file(file1, bt_content1);
+  write_file(file2, bt_content2);
+
+  // Redirect streams
+  std::stringstream captured_output;
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
+  bool result = bt_handler->loadBehaviorTree(file1, {tmp_dir});
+
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
+
+  std::string log_output = captured_output.str();
+  EXPECT_TRUE(result);
+
+  EXPECT_NE(log_output.find("Registering Tree from File: " + file2), std::string::npos);
+  EXPECT_NE(log_output.find("Registering Tree from File: " + file1), std::string::npos);
+
+  std::filesystem::remove_all(tmp_dir);
 }
+
+TEST_F(BehaviorTreeTestFixture, TestAllUniqueIDsWithIDSpecified) {
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+  std::string tmp_dir = "/tmp/bt_test_unique_id";
+  std::filesystem::create_directories(tmp_dir);
+
+  // Two unique BT files
+  std::string file1 = tmp_dir + "/tree1.xml";
+  std::string file2 = tmp_dir + "/tree2.xml";
+
+  std::string bt_content1 =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"Tree1\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+  std::string bt_content2 =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"Tree2\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+
+  write_file(file1, bt_content1);
+  write_file(file2, bt_content2);
+
+  std::stringstream captured_output;
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
+  bool result = bt_handler->loadBehaviorTree("Tree1", {tmp_dir});
+
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
+
+  std::string log_output = captured_output.str();
+  EXPECT_TRUE(result);
+
+  EXPECT_NE(log_output.find("Registering Tree from File: " + file2), std::string::npos);
+  EXPECT_NE(log_output.find("Created BT from ID: Tree1"), std::string::npos);
+
+  std::filesystem::remove_all(tmp_dir);
+}
+
+TEST_F(BehaviorTreeTestFixture, TestDuplicateIDsWithIDSpecified) {
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+  std::string tmp_dir = "/tmp/bt_test_dup_id";
+  std::filesystem::create_directories(tmp_dir);
+
+  std::string dup1_file = tmp_dir + "/dup1.xml";
+  std::string dup2_file = tmp_dir + "/dup2.xml";
+  std::string dup_bt_content =
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"DuplicateTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n";
+  write_file(dup1_file, dup_bt_content);
+  write_file(dup2_file, dup_bt_content);
+
+  std::stringstream captured_output;
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
+  bool result = bt_handler->loadBehaviorTree("DuplicateTree", {tmp_dir});
+
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
+
+  std::string log_output = captured_output.str();
+  std::cout << "Captured:\n" << log_output << std::endl;
+
+  EXPECT_TRUE(result) << "Tree should still load despite duplicate IDs";
+
+  EXPECT_NE(log_output.find("Registering Tree from File"), std::string::npos)
+    << "Should have registered at least one BT file";
+  EXPECT_NE(log_output.find("Skipping conflicting BT XML files"), std::string::npos)
+    << "Should warn about duplicate IDs";
+  EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos)
+    << "Should have created BT from the given ID";
+
+  bool registered_dup1 =
+    log_output.find("Registering Tree from File: " + dup1_file) != std::string::npos;
+  bool registered_dup2 =
+    log_output.find("Registering Tree from File: " + dup2_file) != std::string::npos;
+
+  EXPECT_TRUE(registered_dup1 || registered_dup2)
+    << "At least one duplicate file should have been registered";
+  EXPECT_FALSE(registered_dup1 && registered_dup2)
+    << "Only one of the duplicate files should be registered as the main tree";
+  EXPECT_NE(log_output.find("Skipping conflicting BT XML files"), std::string::npos);
+  EXPECT_NE(log_output.find("Created BT from ID: DuplicateTree"), std::string::npos);
+
+
+  std::filesystem::remove_all(tmp_dir);
+}
+
+TEST_F(BehaviorTreeTestFixture, TestSkipFilesWithMissingID) {
+  auto write_file = [](const std::string & path, const std::string & content) {
+      std::ofstream ofs(path);
+      ofs << content;
+    };
+
+  std::string tmp_dir = "/tmp/bt_test_missing_id";
+  std::filesystem::create_directories(tmp_dir);
+
+  // File with missing ID
+  std::string no_id_file = tmp_dir + "/no_id.xml";
+  write_file(
+    no_id_file,
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree>\n"  // No ID attribute
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  std::string valid_file = tmp_dir + "/valid.xml";
+  write_file(
+    valid_file,
+    "<?xml version=\"1.0\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"ValidTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+
+  std::stringstream captured_output;
+  std::streambuf * old_cout = std::cout.rdbuf();
+  std::streambuf * old_cerr = std::cerr.rdbuf();
+  std::cout.rdbuf(captured_output.rdbuf());
+  std::cerr.rdbuf(captured_output.rdbuf());
+
+  bool result = bt_handler->loadBehaviorTree(valid_file, {tmp_dir});
+
+  std::cout.rdbuf(old_cout);
+  std::cerr.rdbuf(old_cerr);
+
+  std::string log_output = captured_output.str();
+
+  EXPECT_TRUE(result);
+  EXPECT_NE(log_output.find("Skipping BT file"), std::string::npos);
+  EXPECT_NE(log_output.find("(missing ID)"), std::string::npos);
+
+  std::filesystem::remove_all(tmp_dir);
+}
+
 
 /**
  * Test scenario:

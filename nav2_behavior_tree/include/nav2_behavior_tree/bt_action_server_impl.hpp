@@ -21,7 +21,7 @@
 #include <limits>
 #include <memory>
 #include <set>
-#include <unordered_set>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -236,64 +236,10 @@ void BtActionServer<ActionT, NodeT>::setGrootMonitoring(
 }
 
 template<class ActionT, class NodeT>
-bool BtActionServer<ActionT, NodeT>::registerAllTreesFromDirectories()
-{
-  namespace fs = std::filesystem;
-  std::unordered_set<std::string> used_bt_id;
-  std::vector<std::string> conflicting_files;
-  for (const auto & directory : search_directories_) {
-    try {
-      for (const auto & entry : fs::directory_iterator(directory)) {
-        if (entry.path().extension() == ".xml") {
-          auto bt_ids = bt_->extractBehaviorTreeIDs(entry.path().string());
-
-          if (bt_ids.empty()) {
-            RCLCPP_ERROR(
-              logger_,
-              "Skipping BT file %s (no valid BehaviorTree IDs found)",
-              entry.path().string().c_str());
-            continue;
-          }
-          // Check for duplicate BT IDs across files
-          for (const auto & current_bt_id : bt_ids) {
-            auto [it, inserted] = used_bt_id.insert(current_bt_id);
-            if (!inserted) {
-              conflicting_files.push_back(entry.path().string());
-            }
-          }
-          bt_->registerTreeFromFile(entry.path().string());
-        }
-      }
-    } catch (const std::exception & e) {
-      setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-        "Exception reading behavior tree directory: " + std::string(e.what()));
-      return false;
-    }
-  }
-
-  // Log all conflicting files once at the end
-  if (!conflicting_files.empty()) {
-    std::string files_list;
-    for (const auto & file : conflicting_files) {
-      if (!files_list.empty()) {
-        files_list += ", ";
-      }
-      files_list += file;
-    }
-    RCLCPP_WARN(
-      logger_,
-      "Skipping conflicting BT XML files, multiple files have the same ID. "
-      "Please set unique behavior tree IDs. This may affect loading of subtrees. "
-      "Files not loaded: %s",
-      files_list.c_str());
-  }
-
-  return true;
-}
-
-template<class ActionT, class NodeT>
 bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml_filename_or_id)
 {
+  namespace fs = std::filesystem;
+
   // Empty argument is default for backward compatibility
   auto file_or_id =
     bt_xml_filename_or_id.empty() ? default_bt_xml_filename_or_id_ : bt_xml_filename_or_id;
@@ -314,16 +260,104 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     is_bt_id = true;
   }
 
-  // Try to load the main BT tree
+  std::set<std::string> registered_ids;
+  std::vector<std::string> conflicting_files;
+  std::string main_id;
+  auto register_all_bt_files = [&](const std::string & skip_file = "") {
+      for (const auto & directory : search_directories_) {
+        for (const auto & entry : fs::directory_iterator(directory)) {
+          if (entry.path().extension() != ".xml") {
+            continue;
+          }
+          if (!skip_file.empty() && entry.path().string() == skip_file) {
+            continue;
+          }
+
+          auto tree_info = bt_->parseTreeInfo(entry.path().string());
+          if (tree_info.all_ids.empty()) {
+            RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
+            continue;
+          }
+          // Check for conflicts with all IDs in the file
+          bool conflict_found = false;
+          for (const auto& id : tree_info.all_ids) {
+            if (registered_ids.count(id)) {
+              conflict_found = true;
+              break;
+            }
+          }
+          if (conflict_found) {
+            conflicting_files.push_back(entry.path().string());
+            continue;
+          }
+
+          RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", entry.path().string().c_str());
+          bt_->registerTreeFromFile(entry.path().string());
+          for (const auto& id : tree_info.all_ids) {
+            registered_ids.insert(id);
+          }
+        }
+      }
+    };
+
   try {
-    if(!is_bt_id) {
-      tree_ = bt_->createTreeFromFile(file_or_id, blackboard_);
-    } else {
-      if (!registerAllTreesFromDirectories()) {
+    if (!is_bt_id) {
+      // file_or_id is a filename: register it first
+      std::string main_file = file_or_id;
+      auto tree_info = bt_->parseTreeInfo(main_file);
+      if (tree_info.main_id.empty()) {
+        RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
         return false;
       }
-      tree_ = bt_->createTree(file_or_id, blackboard_);
+      main_id = tree_info.main_id;
+      RCLCPP_DEBUG(logger_, "Registering Tree from File: %s", main_file.c_str());
+      bt_->registerTreeFromFile(main_file);
+      for (const auto& id : tree_info.all_ids) {
+        registered_ids.insert(id);
+      }
+
+      // When a filename is specified, it must be register first
+      // and treat it as the "main" tree to execute.
+      // This ensures the requested tree is always available
+      // and prioritized, even if other files in the directory have duplicate IDs.
+      // The lambda then skips this main file to avoid
+      // re-registering it or logging a duplicate warning.
+      // In contrast, when an ID is specified, it's unknown which file is "main"
+      // so all files are registered and conflicts are handled in the lambda.
+      register_all_bt_files(main_file);
+    } else {
+      // file_or_id is an ID: register all files, skipping conflicts
+      main_id = file_or_id;
+      register_all_bt_files();
     }
+
+    // Log all conflicting files once at the end
+    if (!conflicting_files.empty()) {
+      std::string files_list;
+      for (const auto & file : conflicting_files) {
+        if (!files_list.empty()) {
+          files_list += ", ";
+        }
+        files_list += file;
+      }
+      RCLCPP_WARN(
+        logger_,
+        "Skipping conflicting BT XML files, multiple files have the same ID. "
+        "Please set unique behavior tree IDs. This may affect loading of subtrees. "
+        "Files not loaded: %s",
+        files_list.c_str());
+    }
+  } catch (const std::exception & e) {
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      "Exception registering behavior trees: " + std::string(e.what()));
+    return false;
+  }
+
+  // Create the tree with the specified ID
+  try {
+    tree_ = bt_->createTree(main_id, blackboard_);
+    RCLCPP_INFO(logger_, "Created BT from ID: %s", main_id.c_str());
 
     for (auto & subtree : tree_.subtrees) {
       auto & blackboard = subtree->blackboard;
@@ -338,8 +372,9 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
         wait_for_service_timeout_);
     }
   } catch (const std::exception & e) {
-    setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
-      std::string("Exception when loading BT: ") + e.what());
+    setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+      std::string("Exception when creating BT tree from ID: ") + e.what());
     return false;
   }
 
