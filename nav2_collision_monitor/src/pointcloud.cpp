@@ -50,6 +50,15 @@ PointCloud::~PointCloud()
   #else
   data_sub_.reset();
   #endif
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 void PointCloud::configure()
@@ -80,14 +89,21 @@ void PointCloud::configure()
   #endif
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&PointCloud::dynamicParametersCallback, this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &PointCloud::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &PointCloud::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 }
 
 bool PointCloud::getData(
   const rclcpp::Time & curr_time,
   std::vector<Point> & data)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   // Ignore data from the source if it is not being published yet or
   // not published for a long time
   if (data_ == nullptr) {
@@ -180,11 +196,34 @@ void PointCloud::dataCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
   data_ = msg;
 }
 
-rcl_interfaces::msg::SetParametersResult
-PointCloud::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult PointCloud::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & parameter : parameters) {
+    const auto & param_type = parameter.get_type();
+    const auto & param_name = parameter.get_name();
+    if (param_name.find(source_name_ + ".") != 0) {
+      continue;
+    }
+    if (param_type == ParameterType::PARAMETER_DOUBLE) {
+      if (parameter.as_double() < 0.0) {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >=0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      }
+    }
+  }
+  return result;
+}
+
+void PointCloud::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
 
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
@@ -208,8 +247,6 @@ PointCloud::dynamicParametersCallback(
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_collision_monitor

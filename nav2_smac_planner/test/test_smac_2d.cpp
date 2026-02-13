@@ -117,8 +117,8 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
       rclcpp::Parameter("test.downsample_costmap", false),
       rclcpp::Parameter("test.allow_unknown", false),
       rclcpp::Parameter("test.downsampling_factor", 2),
-      rclcpp::Parameter("test.max_iterations", -1),
-      rclcpp::Parameter("test.max_on_approach_iterations", -1),
+      rclcpp::Parameter("test.max_iterations", 10000),
+      rclcpp::Parameter("test.max_on_approach_iterations", 100),
       rclcpp::Parameter("test.terminal_checking_interval", 100),
       rclcpp::Parameter("test.use_final_approach_orientation", false)});
 
@@ -134,13 +134,31 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   EXPECT_EQ(node2D->get_parameter("test.downsample_costmap").as_bool(), false);
   EXPECT_EQ(node2D->get_parameter("test.allow_unknown").as_bool(), false);
   EXPECT_EQ(node2D->get_parameter("test.downsampling_factor").as_int(), 2);
-  EXPECT_EQ(node2D->get_parameter("test.max_iterations").as_int(), -1);
+  EXPECT_EQ(node2D->get_parameter("test.max_iterations").as_int(), 10000);
   EXPECT_EQ(node2D->get_parameter("test.use_final_approach_orientation").as_bool(), false);
   EXPECT_EQ(
     node2D->get_parameter("test.max_on_approach_iterations").as_int(),
-    -1);
+    100);
   EXPECT_EQ(
     node2D->get_parameter("test.terminal_checking_interval").as_int(),
+    100);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_iterations", -1)});
+  rclcpp::spin_until_future_complete(
+    node2D->get_node_base_interface(),
+    results);
+  // Invalid value should not change the previous value
+  EXPECT_EQ(node2D->get_parameter("test.max_iterations").as_int(), 10000);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_on_approach_iterations", -5)});
+  rclcpp::spin_until_future_complete(
+    node2D->get_node_base_interface(),
+    results);
+  // Invalid value should not change the previous value
+  EXPECT_EQ(
+    node2D->get_parameter("test.max_on_approach_iterations").as_int(),
     100);
 
   results = rec_param->set_parameters_atomically(

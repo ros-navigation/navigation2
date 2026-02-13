@@ -35,7 +35,10 @@ class HybridWrap : public nav2_smac_planner::SmacPlannerHybrid
 public:
   void callDynamicParams(std::vector<rclcpp::Parameter> parameters)
   {
-    dynamicParametersCallback(parameters);
+    auto result = validateParameterUpdatesCallback(parameters);
+    if (result.successful) {
+      updateParametersCallback(parameters);
+    }
   }
 
   int getCoarseSearchResolution()
@@ -238,7 +241,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.downsampling_factor", 2),
       rclcpp::Parameter("test.angle_quantization_bins", 72),
       rclcpp::Parameter("test.allow_unknown", false),
-      rclcpp::Parameter("test.max_iterations", -1),
+      rclcpp::Parameter("test.max_iterations", 1000),
       rclcpp::Parameter("test.minimum_turning_radius", 1.0),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
@@ -256,7 +259,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.terminal_checking_interval", 42),
       rclcpp::Parameter("test.motion_model_for_search", std::string("REEDS_SHEPP")),
       rclcpp::Parameter("test.goal_heading_mode", std::string("BIDIRECTIONAL")),
-      rclcpp::Parameter("test.coarse_search_resolution", -1)});
+      rclcpp::Parameter("test.coarse_search_resolution", 1)});
 
   rclcpp::spin_until_future_complete(
     nodeSE2->get_node_base_interface(),
@@ -266,7 +269,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
   EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 72);
   EXPECT_EQ(nodeSE2->get_parameter("test.allow_unknown").as_bool(), false);
-  EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
+  EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), 1000);
   EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
@@ -295,7 +298,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
     nodeSE2->get_node_base_interface(),
     results2);
   EXPECT_EQ(nodeSE2->get_parameter("resolution").as_double(), 0.2);
-  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), -1);
+  EXPECT_EQ(nodeSE2->get_parameter("test.coarse_search_resolution").as_int(), 1);
   EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
 
   // test coarse resolution edge cases. Consider when coarse resolution
@@ -310,7 +313,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.coarse_search_resolution", 4));
   parameters.push_back(rclcpp::Parameter("test.angle_quantization_bins", 87));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
-  EXPECT_EQ(planner->getCoarseSearchResolution(), 1);
+  EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
 
   // test invalid goal heading mode does not modify current
   // goal heading mode
