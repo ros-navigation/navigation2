@@ -162,6 +162,14 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
     100);
 
   results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.max_planning_time", -10.0)});
+  rclcpp::spin_until_future_complete(
+    node2D->get_node_base_interface(),
+    results);
+  // Invalid value should not change the previous value
+  EXPECT_EQ(node2D->get_parameter("test.max_planning_time").as_double(), 2.0);
+
+  results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.downsample_costmap", true)});
 
   rclcpp::spin_until_future_complete(
