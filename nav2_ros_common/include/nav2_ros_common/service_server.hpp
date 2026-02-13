@@ -23,14 +23,13 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "rclcpp_lifecycle/managed_entity.hpp"
-#include "nav2_ros_common/qos_profiles.hpp"
 
 namespace nav2
 {
 
 /**
  * @class nav2::ServiceServer
- * @brief A simple wrapper on ROS2 services server
+ * @brief A simple wrapper on ROS2 services server that integrates with Lifecycle states.
  */
 template<class ServiceT>
 class ServiceServer : public rclcpp_lifecycle::SimpleManagedEntity
@@ -42,38 +41,53 @@ public:
   using ResponseType = typename ServiceT::Response;
   using CallbackType = std::function<void (const std::shared_ptr<rmw_request_id_t>,
       const std::shared_ptr<RequestType>, std::shared_ptr<ResponseType>)>;
-  // using SharedPtr = std::shared_ptr<ServiceServer<ServiceT>>;
-  // using UniquePtr = std::unique_ptr<ServiceServer<ServiceT>>;
 
+  /**
+   * @brief Constructor for nav2::ServiceServer
+   */
   template<typename NodeT>
   explicit ServiceServer(
     const std::string & service_name,
     const NodeT & node,
     CallbackType callback,
-    // const rclcpp::QoS & qos = rclcpp::ServicesQoS(),
-    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr,
+    const rclcpp::QoS & qos = rclcpp::ServicesQoS())
   : service_name_(service_name),
     callback_(callback),
-    logger_(get_node_ptr(node)->get_logger())
+    logger_(rclcpp::get_logger("ServiceServer"))
   {
-    auto node_ptr = get_node_ptr(node);
+    // Resolve node pointer to handle both shared_ptr and weak_ptr cases
+    auto node_shared_ptr = resolve_node(node);
+    auto node_base = node_shared_ptr->get_node_base_interface();
 
-    // logger_ = node_ptr->get_logger();
+    logger_ = rclcpp::get_logger(node_base->get_fully_qualified_name());
+
     server_ = rclcpp::create_service<ServiceT>(
-      node_ptr->get_node_base_interface(),
-      node_ptr->get_node_services_interface(),
+      node_base,
+      node_shared_ptr->get_node_services_interface(),
       service_name,
       [this](const std::shared_ptr<rmw_request_id_t> request_header,
       const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
         this->handle_service(request_header, request, response);
       },
-      rclcpp::ServicesQoS(),  // Use consistent QoS settings
+      qos,
       callback_group);
 
     nav2::setIntrospectionMode(
       this->server_,
-      node_ptr->get_node_parameters_interface(), node_ptr->get_clock());
+      node_shared_ptr->get_node_parameters_interface(),
+      node_shared_ptr->get_node_clock_interface()->get_clock());
   }
+
+  /**
+   * @brief Activate the service server
+   */
+  void activate() {this->on_activate();}
+
+  /**
+   * @brief Deactivate the service server
+   */
+  void deactivate() {this->on_deactivate();}
 
 protected:
   void handle_service(
@@ -82,60 +96,37 @@ protected:
     std::shared_ptr<ResponseType> response)
   {
     if (!this->is_activated()) {
-      // Set failure in response if node not active
-      try_set_success(response, false);
-      try_set_message(response, "Service call rejected: Node not in  active state");
-
       RCLCPP_DEBUG(
-        logger_,
-        "Service '%s' called while not activated",
+        logger_, "Service '%s' called while not activated. Rejecting request.",
         service_name_.c_str());
       return;
     }
-
     callback_(request_header, request, response);
   }
 
 private:
+  /**
+   * @brief Internal utilities to resolve shared_ptr from diverse node pointer .
+   */
   template<typename T>
-  std::shared_ptr<T> get_node_ptr(const std::shared_ptr<T> & ptr) {return ptr;}
+  std::shared_ptr<T> resolve_node(std::shared_ptr<T> ptr) {return ptr;}
 
   template<typename T>
-  std::shared_ptr<T> get_node_ptr(const std::weak_ptr<T> & ptr)
+  std::shared_ptr<T> resolve_node(std::weak_ptr<T> ptr)
   {
     auto locked = ptr.lock();
     if (!locked) {
-      throw std::runtime_error("Node expire before creating service:" + service_name_);
+      throw std::runtime_error("Node expired before creating service: " + service_name_);
     }
     return locked;
   }
 
-  // SFINAE helpers for bool and message field
-  template<typename R>
-  auto try_set_success(std::shared_ptr<R> r, bool val) -> decltype(r->success, void())
-  {
-    r->success = val;
-  }
-  void try_set_success(...) {}
-
-  template<typename R>
-  auto try_set_message(std::shared_ptr<R> r, const std::string & m) -> decltype(r->message, void())
-  {
-    r->message = m;
-  }
-  template<typename R>
-  auto try_set_message(std::shared_ptr<R> r, const std::string & m) -> decltype(r->error_msg,
-  void()) {r->error_msg = m;}
-  void try_set_message(...) {}
-
   std::string service_name_;
   CallbackType callback_;
   typename rclcpp::Service<ServiceT>::SharedPtr server_;
-  // rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_;
 };
 
 }  // namespace nav2
-
 
 #endif  // NAV2_ROS_COMMON__SERVICE_SERVER_HPP_
