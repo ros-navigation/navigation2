@@ -94,7 +94,7 @@ void PathAlignCritic::score(CriticData & data)
   Eigen::ArrayXf cost(data.costs.rows());
   cost.setZero();
 
-  // Find integrated distance in the path
+  // Find integrated arc-length distance along the path = total dist traveled along the path to each path point
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
   std::vector<utils::Pose2D> path(path_segments_count);
   float dx = 0.0f, dy = 0.0f;
