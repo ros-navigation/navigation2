@@ -41,6 +41,15 @@ void PathAlignCritic::initialize()
     }
   }
 
+  // TODO
+  // if (visualize_occupancy_check_point_) {
+  //   auto node = parent_.lock();
+  //   if (node) {
+  //     occupancy_check_point_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(
+  //       "PathAlignCritic/occupancy_check_point", 1);
+  //     occupancy_check_point_pub_->on_activate();
+  //   }
+  // }
   RCLCPP_INFO(
     logger_,
     "ReferenceTrajectoryCritic instantiated with %d power and %f weight",
@@ -61,42 +70,20 @@ void PathAlignCritic::score(CriticData & data)
     return;
   }
 
-  // use the whole local path as reference path
-  const size_t path_segments_count = data.path.x.size() - 1;
-
-  // Visualize target pose if enabled
-  if (visualize_furthest_point_ && path_segments_count > 0 &&
-    furthest_point_pub_->get_subscription_count() > 0)
-  {
-    auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
-    furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
-    furthest_point->header.stamp = clock_->now();
-    furthest_point->pose.position.x = data.path.x(path_segments_count);
-    furthest_point->pose.position.y = data.path.y(path_segments_count);
-    furthest_point->pose.position.z = 0.0;
-    tf2::Quaternion quat;
-    quat.setRPY(0.0, 0.0, data.path.yaws(path_segments_count));
-    furthest_point->pose.orientation = tf2::toMsg(quat);
-    furthest_point_pub_->publish(std::move(furthest_point));
-  }
-
-  // Don't apply when dynamic obstacles are blocking significant proportions of the local path
-  const float path_segments_count_flt = static_cast<float>(path_segments_count);
-  utils::setPathCostsIfNotSet(data, costmap_ros_);
-  std::vector<bool> & path_pts_valid = *data.path_pts_valid;
-  float invalid_ctr = 0.0f;
-  for (size_t i = 0; i < path_segments_count; i++) {
-    if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
-    if (invalid_ctr / path_segments_count_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
-      return;
-    }
-  }
-
   const size_t batch_size = data.trajectories.x.rows();
   Eigen::ArrayXf cost(data.costs.rows());
   cost.setZero();
 
+  const size_t path_size = data.path.x.size();
+
+  constexpr float occupancy_check_distance = 5.0; // TODO make into a parameter
+                                                  // TODO what if smaller than furthest_reached_path_point
+  size_t occupancy_check_distance_idx = path_size; // initialize to max, in case the whole path is within the occupancy_check_distance
+
   // Find integrated arc-length distance along the path = total dist traveled along the path to each path point
+  // TODO path_segments_count can be reduced, but should be at least max(occupancy_check_distance_idx, furthest_reached_path_point)
+  //      but we don't have occupancy_check_distance_idx before the next loop... so maybe we can break the loop when reached
+  const size_t path_segments_count = path_size;
   std::vector<float> path_integrated_distances(path_segments_count, 0.0f);
   std::vector<utils::Pose2D> path(path_segments_count);
   float dx = 0.0f, dy = 0.0f;
@@ -109,6 +96,41 @@ void PathAlignCritic::score(CriticData & data)
     dx = data.path.x(i) - pose.x;
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
+
+    // find the first path point that is further along the path than the occupancy_check_distance
+    if (path_integrated_distances[i] > occupancy_check_distance && occupancy_check_distance_idx == path_size) {
+      occupancy_check_distance_idx = i;
+    }
+  }
+
+  // Visualize target pose if enabled
+  // TODO separate publisher for furthest_point_pub_ (published before <offset_from_furthest_ check, like upstream)
+  // TODO and a publisher for occupancy_check_distance point
+  if (visualize_furthest_point_ && occupancy_check_distance_idx > 0 &&
+    furthest_point_pub_->get_subscription_count() > 0)
+  {
+    auto furthest_point = std::make_unique<geometry_msgs::msg::PoseStamped>();
+    furthest_point->header.frame_id = costmap_ros_->getGlobalFrameID();
+    furthest_point->header.stamp = clock_->now();
+    furthest_point->pose.position.x = data.path.x(occupancy_check_distance_idx);
+    furthest_point->pose.position.y = data.path.y(occupancy_check_distance_idx);
+    furthest_point->pose.position.z = 0.0;
+    tf2::Quaternion quat;
+    quat.setRPY(0.0, 0.0, data.path.yaws(occupancy_check_distance_idx));
+    furthest_point->pose.orientation = tf2::toMsg(quat);
+    furthest_point_pub_->publish(std::move(furthest_point));
+  }
+
+  // Don't apply when dynamic obstacles are blocking significant proportions of the path up to occupancy_check_distance
+  const float occupancy_check_distance_idx_flt = static_cast<float>(occupancy_check_distance_idx);
+  utils::setPathCostsIfNotSet(data, costmap_ros_);
+  std::vector<bool> & path_pts_valid = *data.path_pts_valid;
+  float invalid_ctr = 0.0f;
+  for (size_t i = 0; i < occupancy_check_distance_idx; i++) {
+    if (!path_pts_valid[i]) {invalid_ctr += 1.0f;}
+    if (invalid_ctr / occupancy_check_distance_idx_flt > max_path_occupancy_ratio_ && invalid_ctr > 2.0f) {
+      return;
+    }
   }
 
   // Finish populating the path vector
