@@ -493,8 +493,6 @@ StaticLayer::dynamicParametersCallback(
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   rcl_interfaces::msg::SetParametersResult result;
 
-  bool needs_full_update = false;
-
   for (auto parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
