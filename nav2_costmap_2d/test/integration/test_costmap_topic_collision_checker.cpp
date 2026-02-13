@@ -57,13 +57,7 @@ public:
   void setCostmap(
     const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> & msg)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
-
-    processCurrentCostmapMsg();
+    costmapCallback(msg);
   }
 };
 

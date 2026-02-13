@@ -167,8 +167,10 @@ private:
     costmap_update_pub_;
 
   // Publisher for raw costmap values as msg::Costmap from layered costmap
-  rclcpp_lifecycle::LifecyclePublisher<nav2_costmap_2d::Costmap2DStamped>::SharedPtr
+  nav2::Publisher<nav2_costmap_2d::Costmap2DStamped>::SharedPtr
     costmap_raw_pub_;
+  nav2::Publisher<nav2_msgs::msg::CostmapUpdate>::SharedPtr
+    costmap_raw_update_pub_;
 
   // Service for getting the costmaps
   nav2::ServiceServer<nav2_msgs::srv::GetCostmap>::SharedPtr

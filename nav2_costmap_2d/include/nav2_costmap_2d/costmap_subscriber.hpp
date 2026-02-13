@@ -17,10 +17,13 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
-#include "nav2_util/lifecycle_node.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/msg/costmap_update.hpp"
+#include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
 namespace nav2_costmap_2d
@@ -48,9 +51,7 @@ public:
   {
     logger_ = parent->get_logger();
 
-    // Could be using a user rclcpp::Node, so need to use the Nav2 factory to create the
-    // subscription to convert nav2::LifecycleNode, rclcpp::Node or rclcpp_lifecycle::LifecycleNode
-    costmap_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::Costmap>(
+    costmap_sub_ = nav2::interfaces::create_subscription<nav2_costmap_2d::Costmap2DStamped>(
       parent, topic_name_,
       std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
       nav2::qos::LatchedSubscriptionQoS(3), callback_group);
@@ -74,26 +75,29 @@ public:
    * @brief Callback for the costmap topic
    */
   void costmapCallback(const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> msg);
+  /**
+   * @brief Callback for the costmap's update topic
+   */
+  void costmapUpdateCallback(const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & update_msg);
+
+  std::string getFrameID() const
+  {
+    return frame_id_;
+  }
 
 protected:
   bool isCostmapReceived() {return costmap_ != nullptr;}
-  void processCurrentCostmapMsg();
 
-  bool haveCostmapParametersChanged();
-  bool hasCostmapSizeChanged();
-  bool hasCostmapResolutionChanged();
-  bool hasCostmapOriginPositionChanged();
-
-  nav2::Subscription<nav2_msgs::msg::Costmap>::SharedPtr costmap_sub_;
+  nav2::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
   nav2::Subscription<nav2_msgs::msg::CostmapUpdate>::SharedPtr costmap_update_sub_;
 
   std::shared_ptr<Costmap2D> costmap_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> costmap_msg_;
   std::string topic_name_;
-  bool costmap_received_{false};
-  rclcpp::Subscription<nav2_costmap_2d::Costmap2DStamped>::SharedPtr costmap_sub_;
+  std::string frame_id_;
+  std::mutex costmap_msg_mutex_;
+  rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 };
 
-}
+}  // namespace nav2_costmap_2d
 
 #endif  // NAV2_COSTMAP_2D__COSTMAP_SUBSCRIBER_HPP_
