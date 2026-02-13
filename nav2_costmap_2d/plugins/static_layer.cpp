@@ -511,13 +511,9 @@ StaticLayer::dynamicParametersCallback(
       if (param_name == name_ + "." + "transform_tolerance") {
         transform_tolerance_ = tf2::durationFromSec(parameter.as_double());
       }
-
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
-
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
         enabled_ = parameter.as_bool();
-        needs_full_update = true;
-
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
