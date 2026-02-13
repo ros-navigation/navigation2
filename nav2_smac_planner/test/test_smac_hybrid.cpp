@@ -320,7 +320,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.minimum_turning_radius").as_double(),
     1.0);
-  
+
   // test setting max iterations to negative value does not modify current
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.max_iterations", -10)});
@@ -344,7 +344,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.angle_quantization_bins").as_int(),
     72);
-  
+
   // test unknown motion model
   results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.motion_model_for_search", std::string("INVALID"))});
