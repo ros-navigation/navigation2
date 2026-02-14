@@ -33,6 +33,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 
 #include "nav2_planner/planner_server.hpp"
+#include "nav2_ros_common/service_server.hpp"
 
 using namespace std::chrono_literals;
 using rcl_interfaces::msg::ParameterType;
@@ -185,7 +186,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
     it->second->activate();
   }
 
-  is_path_valid_service_->initialize();
+  is_path_valid_service_->on_activate();
 
   // Add callback for dynamic parameters
   dyn_params_handler_ = add_on_set_parameters_callback(
@@ -220,7 +221,9 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
     it->second->deactivate();
   }
 
-  is_path_valid_service_->reset();
+  if(is_path_valid_service_) {
+    is_path_valid_service_->on_deactivate();
+  }
 
   dyn_params_handler_.reset();
 

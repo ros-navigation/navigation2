@@ -144,6 +144,8 @@ TEST(DatabaseTests, reloadDbService)
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
   opennav_docking::DockDatabase db;
   db.initialize(node, nullptr);
+  node->configure();
+  node->activate();
 
   // Call service with a filepath
   auto client =

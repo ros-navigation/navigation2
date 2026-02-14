@@ -62,6 +62,16 @@ public:
     const std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber);
 
   /**
+   * @brief Activate the route planner, prepare for planning
+   */
+  virtual void activate();
+
+  /**
+   * @brief Deactivate the route planner, clear state
+   */
+  virtual void deactivate();
+
+  /**
    * @brief Find the route from start to goal on the graph
    * @param graph Graph to search
    * @param start Start index in the graph of the start node

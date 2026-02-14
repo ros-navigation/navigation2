@@ -92,11 +92,13 @@ void CostmapFilter::onInitialize()
 
 void CostmapFilter::activate()
 {
+  enable_service_->on_activate();
   initializeFilter(filter_info_topic_);
 }
 
 void CostmapFilter::deactivate()
 {
+  enable_service_->on_deactivate();
   resetFilter();
 }
 
