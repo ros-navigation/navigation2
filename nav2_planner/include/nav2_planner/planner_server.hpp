@@ -41,6 +41,7 @@
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_planner/is_path_valid_service.hpp"
+#include "nav2_planner/parameter_handler.hpp"
 
 namespace nav2_planner
 {
@@ -212,31 +213,17 @@ protected:
     const std::exception & ex,
     std::string & msg);
 
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
-
   // Our action server implements the ComputePathToPose action
   typename ActionServerToPose::SharedPtr action_server_pose_;
   typename ActionServerThroughPoses::SharedPtr action_server_poses_;
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-  std::mutex dynamic_params_lock_;
+  // Parameter handler
+  std::unique_ptr<nav2_planner::ParameterHandler> param_handler_;
+  Parameters * params_;
 
   // Planner
   PlannerMap planners_;
   pluginlib::ClassLoader<nav2_core::GlobalPlanner> gp_loader_;
-  std::vector<std::string> default_ids_;
-  std::vector<std::string> default_types_;
-  std::vector<std::string> planner_ids_;
-  std::vector<std::string> planner_types_;
-  bool partial_plan_allowed_;
-  double max_planner_duration_;
-  rclcpp::Duration costmap_update_timeout_;
   std::string planner_ids_concat_;
 
   // TF buffer
