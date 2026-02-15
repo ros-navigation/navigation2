@@ -517,18 +517,18 @@ VoxelLayer::dynamicParametersCallback(
       {
         min_obstacle_height_ = parameter.as_double();
         current_ = false;
-      } else if (param_name == name_ + "." + "max_obstacle_height" && // NOLINT(readability/braces)
+      } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
         max_obstacle_height_ != parameter.as_double())
       {
         max_obstacle_height_ = parameter.as_double();
         current_ = false;
-      } else if (param_name == name_ + "." + "origin_z" && // NOLINT(readability/braces)
+      } else if (param_name == name_ + "." + "origin_z" &&  // NOLINT(readability/braces)
         origin_z_ != parameter.as_double())
       {
         origin_z_ = parameter.as_double();
         resize_map_needed = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "z_resolution" && // NOLINT(readability/braces)
+      } else if (param_name == name_ + "." + "z_resolution" &&  // NOLINT(readability/braces)
         z_resolution_ != parameter.as_double())
       {
         z_resolution_ = parameter.as_double();
