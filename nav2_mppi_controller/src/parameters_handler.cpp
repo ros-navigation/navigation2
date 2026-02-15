@@ -74,10 +74,21 @@ ParametersHandler::dynamicParamsCallback(
 
     for (auto & param : plugin_params) {
       const std::string & param_name = param.get_name();
-      if (auto callback = get_param_callbacks_.find(param_name);
-        callback != get_param_callbacks_.end())
+      if (auto pre_callback = get_pre_callbacks_.find(param_name);
+        pre_callback != get_pre_callbacks_.end())
       {
-        callback->second(param, result);
+        pre_callback->second(param, result);
+      }
+    }
+
+    if (result.successful) {
+      for (auto & param : plugin_params) {
+        const std::string & param_name = param.get_name();
+        if (auto callback = get_param_callbacks_.find(param_name);
+          callback != get_param_callbacks_.end())
+        {
+          callback->second(param, result);
+        }
       }
     }
 
