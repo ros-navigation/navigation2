@@ -371,7 +371,7 @@ ObstacleLayer::dynamicParametersCallback(
       {
         min_obstacle_height_ = parameter.as_double();
         current_ = false;
-      } else if (param_name == name_ + "." + "max_obstacle_height" &&
+      } else if (param_name == name_ + "." + "max_obstacle_height" && // NOLINT(readability/braces)
         max_obstacle_height_ != parameter.as_double())
       {
         max_obstacle_height_ = parameter.as_double();
