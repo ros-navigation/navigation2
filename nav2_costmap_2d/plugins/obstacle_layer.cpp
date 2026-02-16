@@ -305,10 +305,16 @@ ObstacleLayer::dynamicParametersCallback(
     const auto & param_name = parameter.get_name();
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + "." + "min_obstacle_height") {
+      if (param_name == name_ + "." + "min_obstacle_height" &&
+        min_obstacle_height_ != parameter.as_double())
+      {
         min_obstacle_height_ = parameter.as_double();
-      } else if (param_name == name_ + "." + "max_obstacle_height") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "max_obstacle_height" &&  // NOLINT(readability/braces)
+        max_obstacle_height_ != parameter.as_double())
+      {
         max_obstacle_height_ = parameter.as_double();
+        current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled" && enabled_ != parameter.as_bool()) {
