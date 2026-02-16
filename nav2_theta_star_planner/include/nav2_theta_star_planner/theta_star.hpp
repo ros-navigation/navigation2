@@ -67,7 +67,7 @@ public:
   /// the x-directional and y-directional lengths of the map respectively
   int size_x_, size_y_;
 
-  ThetaStar(Parameters * params);
+  explicit ThetaStar(Parameters * params);
 
   ~ThetaStar() = default;
 

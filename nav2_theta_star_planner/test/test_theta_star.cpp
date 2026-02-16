@@ -25,7 +25,7 @@
 class test_theta_star : public nav2_theta_star_planner::ThetaStar
 {
 public:
-  test_theta_star(nav2_theta_star_planner::Parameters * params)
+  explicit test_theta_star(nav2_theta_star_planner::Parameters * params)
   : ThetaStar(params) {}
   int getSizeOfNodePosition()
   {

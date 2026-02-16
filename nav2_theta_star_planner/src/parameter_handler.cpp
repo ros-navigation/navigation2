@@ -52,7 +52,6 @@ ParameterHandler::ParameterHandler(
     plugin_name_ + ".terminal_checking_interval", 5000);
   params_.use_final_approach_orientation = node->declare_or_get_parameter(
     plugin_name_ + ".use_final_approach_orientation", false);
-
 }
 
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
