@@ -29,40 +29,21 @@ void ThetaStarPlanner::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  planner_ = std::make_unique<theta_star::ThetaStar>();
   parent_node_ = parent;
   auto node = parent_node_.lock();
   logger_ = node->get_logger();
   clock_ = node->get_clock();
   name_ = name;
   tf_ = tf;
-  planner_->costmap_ = costmap_ros->getCostmap();
   global_frame_ = costmap_ros->getGlobalFrameID();
 
-  planner_->how_many_corners_ = node->declare_or_get_parameter(
-    name_ + ".how_many_corners", 8);
-
-  if (planner_->how_many_corners_ != 8 && planner_->how_many_corners_ != 4) {
-    planner_->how_many_corners_ = 8;
-    RCLCPP_WARN(logger_, "Your value for - .how_many_corners  was overridden, and is now set to 8");
-  }
-
-  planner_->allow_unknown_ = node->declare_or_get_parameter(
-    name_ + ".allow_unknown", true);
-
-  planner_->w_euc_cost_ = node->declare_or_get_parameter(
-    name_ + ".w_euc_cost", 1.0);
-
-  planner_->w_traversal_cost_ = node->declare_or_get_parameter(
-    name_ + ".w_traversal_cost", 2.0);
-
-  planner_->w_heuristic_cost_ = planner_->w_euc_cost_ < 1.0 ? planner_->w_euc_cost_ : 1.0;
-
-  planner_->terminal_checking_interval_ = node->declare_or_get_parameter(
-    name_ + ".terminal_checking_interval", 5000);
-
-  use_final_approach_orientation_ = node->declare_or_get_parameter(
-    name + ".use_final_approach_orientation", false);
+  // Handles storage and dynamic configuration of parameters.
+  // Returns pointer to data current param settings.
+  param_handler_ = std::make_unique<ParameterHandler>(
+    node, name_, logger_);
+  params_ = param_handler_->getParams();
+  planner_ = std::make_unique<ThetaStar>(params_);
+  planner_->costmap_ = costmap_ros->getCostmap();
 }
 
 void ThetaStarPlanner::cleanup()
@@ -74,20 +55,14 @@ void ThetaStarPlanner::cleanup()
 void ThetaStarPlanner::activate()
 {
   RCLCPP_INFO(logger_, "Activating plugin %s of type nav2_theta_star_planner", name_.c_str());
-  // Add callback for dynamic parameters
-  auto node = parent_node_.lock();
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&ThetaStarPlanner::dynamicParametersCallback, this, std::placeholders::_1));
+  param_handler_->activate();
 }
 
 void ThetaStarPlanner::deactivate()
 {
   RCLCPP_INFO(logger_, "Deactivating plugin %s of type nav2_theta_star_planner", name_.c_str());
   auto node = parent_node_.lock();
-  if (node && dyn_params_handler_) {
-    node->remove_on_set_parameters_callback(dyn_params_handler_.get());
-  }
-  dyn_params_handler_.reset();
+  param_handler_->deactivate();
 }
 
 nav_msgs::msg::Path ThetaStarPlanner::createPlan(
@@ -135,7 +110,9 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
     // if we have a different start and goal orientation, set the unique path pose to the goal
     // orientation, unless use_final_approach_orientation=true where we need it to be the start
     // orientation to avoid movement from the local planner
-    if (start.pose.orientation != goal.pose.orientation && !use_final_approach_orientation_) {
+    if (start.pose.orientation != goal.pose.orientation &&
+      !params_->use_final_approach_orientation)
+    {
       pose.pose.orientation = goal.pose.orientation;
     }
     global_path.poses.push_back(pose);
@@ -158,7 +135,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   // previous pose to set the orientation to the 'final approach' orientation of the robot so
   // it does not rotate.
   // And deal with corner case of plan of length 1
-  if (use_final_approach_orientation_) {
+  if (params_->use_final_approach_orientation) {
     if (plan_size == 1) {
       global_path.poses.back().pose.orientation = start.pose.orientation;
     } else if (plan_size > 1) {
@@ -224,42 +201,6 @@ nav_msgs::msg::Path ThetaStarPlanner::linearInterpolation(
   }
 
   return pa;
-}
-
-rcl_interfaces::msg::SetParametersResult
-ThetaStarPlanner::dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters)
-{
-  rcl_interfaces::msg::SetParametersResult result;
-  for (auto parameter : parameters) {
-    const auto & param_type = parameter.get_type();
-    const auto & param_name = parameter.get_name();
-    if (param_name.find(name_ + ".") != 0) {
-      continue;
-    }
-    if (param_type == ParameterType::PARAMETER_INTEGER) {
-      if (param_name == name_ + ".how_many_corners") {
-        planner_->how_many_corners_ = parameter.as_int();
-      }
-      if (param_name == name_ + ".terminal_checking_interval") {
-        planner_->terminal_checking_interval_ = parameter.as_int();
-      }
-    } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (param_name == name_ + ".w_euc_cost") {
-        planner_->w_euc_cost_ = parameter.as_double();
-      } else if (param_name == name_ + ".w_traversal_cost") {
-        planner_->w_traversal_cost_ = parameter.as_double();
-      }
-    } else if (param_type == ParameterType::PARAMETER_BOOL) {
-      if (param_name == name_ + ".use_final_approach_orientation") {
-        use_final_approach_orientation_ = parameter.as_bool();
-      } else if (param_name == name_ + ".allow_unknown") {
-        planner_->allow_unknown_ = parameter.as_bool();
-      }
-    }
-  }
-
-  result.successful = true;
-  return result;
 }
 
 }  // namespace nav2_theta_star_planner

@@ -69,12 +69,31 @@ public:
   void start();
 
   /**
-    * @brief Dynamic parameter callback
-    * @param parameter Parameter changes to process
-    * @return Set Parameter Result
+    * @brief Pre parameter change callback
+    * This callback is executed before parameters are updated.
+    * It allows for modification of incoming parameter changes before they are applied.
+    * @param parameters List of parameters that are being updated.
     */
-  rcl_interfaces::msg::SetParametersResult dynamicParamsCallback(
-    std::vector<rclcpp::Parameter> parameters);
+  void modifyParametersCallback(std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+    * @brief Validate incoming parameter updates before applying them.
+    * This callback is triggered when one or more parameters are about to be updated.
+    * It checks the validity of parameter values and rejects updates that would lead
+    * to invalid or inconsistent configurations
+    * @param parameters List of parameters that are being updated.
+    * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
+    */
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   /**
     * @brief Get an object to retrieve parameters
@@ -89,6 +108,14 @@ public:
     */
   template<typename T>
   void addPostCallback(T && callback);
+
+    /**
+      * @brief Set a callback to process after parameter changes for a specific parameter
+      * @param name Name of parameter
+      * @param callback Callback function
+      */
+  template<typename T>
+  void addPostCallback(const std::string & name, T && callback);
 
   /**
     * @brief Set a callback to process before parameter changes
@@ -167,8 +194,12 @@ protected:
 
   std::mutex parameters_change_mutex_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
+  rclcpp::node_interfaces::PreSetParametersCallbackHandle::SharedPtr
+    pre_set_param_handler_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr
     on_set_param_handler_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr
+    post_set_param_handler_;
   nav2::LifecycleNode::WeakPtr node_;
   std::string node_name_;
   std::string name_;
@@ -177,6 +208,8 @@ protected:
 
   std::unordered_map<std::string, std::function<get_param_func_t>> get_param_callbacks_;
   std::unordered_map<std::string, std::function<get_param_func_t>> get_pre_callbacks_;
+  std::unordered_map<std::string,
+    std::function<void(const rclcpp::Parameter &)>> get_post_callbacks_;
 
   std::vector<std::function<pre_callback_t>> pre_callbacks_;
   std::vector<std::function<post_callback_t>> post_callbacks_;
@@ -203,6 +236,12 @@ template<typename T>
 void ParametersHandler::addPostCallback(T && callback)
 {
   post_callbacks_.push_back(callback);
+}
+
+template<typename T>
+void ParametersHandler::addPostCallback(const std::string & name, T && callback)
+{
+  get_post_callbacks_[name] = callback;
 }
 
 template<typename T>
@@ -239,13 +278,21 @@ template<typename T>
 void ParametersHandler::setParamCallback(
   T & setting, const std::string & name, ParameterType param_type)
 {
-  if (get_param_callbacks_.find(name) != get_param_callbacks_.end()) {
+  if (param_type == ParameterType::Dynamic &&
+    get_post_callbacks_.find(name) != get_post_callbacks_.end())
+  {
+    return;
+  }
+
+  if (param_type == ParameterType::Static &&
+    get_param_callbacks_.find(name) != get_param_callbacks_.end())
+  {
     return;
   }
 
   auto dynamic_callback =
     [this, &setting, name](
-    const rclcpp::Parameter & param, rcl_interfaces::msg::SetParametersResult & /*result*/) {
+    const rclcpp::Parameter & param) {
       setting = as<T>(param);
       if (verbose_) {
         RCLCPP_INFO(logger_, "Dynamic parameter changed: %s", std::to_string(param).c_str());
@@ -264,7 +311,7 @@ void ParametersHandler::setParamCallback(
     };
 
   if (param_type == ParameterType::Dynamic) {
-    addParamCallback(name, dynamic_callback);
+    addPostCallback(name, dynamic_callback);
   } else {
     addParamCallback(name, static_callback);
   }

@@ -42,7 +42,7 @@ public:
 
   std::optional<bool> getDockBackward()
   {
-    return dock_backwards_;
+    return params_->dock_backwards;
   }
 };
 
