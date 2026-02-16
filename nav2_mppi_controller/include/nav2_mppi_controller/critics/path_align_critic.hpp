@@ -51,6 +51,7 @@ protected:
   size_t offset_from_furthest_{0};
   int trajectory_point_step_{0};
   float threshold_to_consider_{0};
+  float occupancy_check_min_distance_{0};
   float max_path_occupancy_ratio_{0};
   bool use_path_orientations_{false};
   unsigned int power_{0};
@@ -58,6 +59,9 @@ protected:
 
   bool visualize_furthest_point_{false};
   nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr furthest_point_pub_;
+
+  bool visualize_occupancy_check_distance_{false};
+  nav2::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr occupancy_check_dist_pub_;
 };
 
 }  // namespace mppi::critics
