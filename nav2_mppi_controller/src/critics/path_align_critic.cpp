@@ -86,9 +86,6 @@ void PathAlignCritic::score(CriticData & data)
   cost.setZero();
 
   // Find integrated arc-length distance along the path = total dist traveled along the path to each path point
-  // TODO the integration doesn't have to be until the end of the path but should be at least
-  //      max(occupancy_check_distance_idx, furthest_reached_path_point)
-  //      but we don't have occupancy_check_distance_idx before the next loop... so maybe we can break the loop when reached
   const size_t path_segments_count = data.path.x.size() - 1;
   // initialize the occupancy check id to max, in case the entire path is within the distance
   size_t occupancy_check_distance_idx = path_segments_count;
@@ -105,9 +102,10 @@ void PathAlignCritic::score(CriticData & data)
     dy = data.path.y(i) - pose.y;
     path_integrated_distances[i] = path_integrated_distances[i - 1] + sqrtf(dx * dx + dy * dy);
 
-    // find the first path point that is further along the path than the occupancy_check_min_distance_
-    // TODO what if smaller than furthest_reached_path_point
-    if (path_integrated_distances[i] > occupancy_check_min_distance_ && occupancy_check_distance_idx == path_segments_count) {
+    // find the first path point that is further along the path than the occupancy_check_min_distance_ and
+    if (occupancy_check_distance_idx == path_segments_count &&
+        path_integrated_distances[i] > occupancy_check_min_distance_ &&
+        i >= *data.furthest_reached_path_point) {
       occupancy_check_distance_idx = i;
     }
   }
