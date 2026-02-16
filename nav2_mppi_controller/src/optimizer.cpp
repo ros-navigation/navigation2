@@ -297,6 +297,11 @@ void Optimizer::prepare(
 {
   state_.pose = robot_pose;
   state_.speed = settings_.open_loop ? last_command_vel_ : robot_speed;
+  state_.robot_speed = robot_speed;
+  std::cout << "last_command_vel_.linear.x: " << last_command_vel_.linear.x << std::endl;
+  std::cout << "robot_speed.linear.x: " << robot_speed.linear.x << std::endl;
+  std::cout << "state_.speed.linear.x: " << state_.speed.linear.x << std::endl;
+
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
   costs_.setZero(settings_.batch_size);

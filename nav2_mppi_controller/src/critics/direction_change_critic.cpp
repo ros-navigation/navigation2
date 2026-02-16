@@ -48,6 +48,7 @@ void DirectionChangeCritic::score(CriticData & data)
 
   constexpr size_t penalize_up_to_idx = 2;
   const float current_speed = data.state.speed.linear.x;
+  std::cout << "critic speed: " << current_speed << std::endl;
   // Process in-place using Eigen views to avoid allocations
   auto vx_view = data.state.vx.leftCols(penalize_up_to_idx);
 

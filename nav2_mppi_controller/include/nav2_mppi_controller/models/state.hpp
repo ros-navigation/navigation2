@@ -40,6 +40,7 @@ struct State
 
   geometry_msgs::msg::PoseStamped pose;
   geometry_msgs::msg::Twist speed;
+  geometry_msgs::msg::Twist robot_speed;
   float local_path_length;
 
   /**
