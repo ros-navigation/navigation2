@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+
 #include "nav2_mppi_controller/critic_manager.hpp"
 
 namespace mppi
@@ -97,6 +99,23 @@ void CriticManager::evalTrajectoriesScores(
     data.individual_critics_cost->reserve(critics_.size());
   }
 
+  // Averaging accumulators (static for debug profiling)
+  static size_t eval_count = 0;
+  static std::vector<double> critic_time_accum;
+  static double eval_total_accum = 0.0;
+  constexpr size_t kAvgWindow = 50;
+
+  if (critic_time_accum.size() != critics_.size()) {
+    critic_time_accum.assign(critics_.size(), 0.0);
+    eval_count = 0;
+    eval_total_accum = 0.0;
+  }
+
+  constexpr double kCriticsThresholdUs = 33000.0;  // 30ms
+  std::vector<double> call_critic_times(critics_.size(), 0.0);
+
+  auto eval_start = std::chrono::steady_clock::now();
+
   for (size_t i = 0; i < critics_.size(); ++i) {
     if (data.fail_flag) {
       break;
@@ -108,7 +127,13 @@ void CriticManager::evalTrajectoriesScores(
       costs_before = data.costs;
     }
 
+    auto critic_start = std::chrono::steady_clock::now();
     critics_[i]->score(data);
+    auto critic_end = std::chrono::steady_clock::now();
+    double critic_us =
+      std::chrono::duration<double, std::micro>(critic_end - critic_start).count();
+    critic_time_accum[i] += critic_us;
+    call_critic_times[i] = critic_us;
 
     // Calculate cost contribution from this critic
     if (visualize_per_critic_costs_ || publish_critics_stats_) {
@@ -128,6 +153,33 @@ void CriticManager::evalTrajectoriesScores(
         stats_msg->changed.push_back(costs_sum != 0.0f);
       }
     }
+  }
+
+  auto eval_end = std::chrono::steady_clock::now();
+  double eval_this_us =
+    std::chrono::duration<double, std::micro>(eval_end - eval_start).count();
+  eval_total_accum += eval_this_us;
+  eval_count++;
+
+  // Print if this evaluation exceeded threshold
+  if (eval_this_us > kCriticsThresholdUs) {
+    std::cout << "[SLOW critics] " << eval_this_us / 1000.0 << "ms:";
+    for (size_t i = 0; i < critics_.size(); ++i) {
+      std::cout << " " << critic_names_[i] << "=" << call_critic_times[i] << "us";
+    }
+    std::cout << std::endl;
+  }
+
+  if (eval_count >= kAvgWindow) {
+    std::cout << "--- Critics avg over " << kAvgWindow << " evals (total="
+      << eval_total_accum / kAvgWindow << " us) ---" << std::endl;
+    for (size_t i = 0; i < critics_.size(); ++i) {
+      std::cout << "  " << critic_names_[i] << ": "
+        << critic_time_accum[i] / kAvgWindow << " us" << std::endl;
+    }
+    std::fill(critic_time_accum.begin(), critic_time_accum.end(), 0.0);
+    eval_total_accum = 0.0;
+    eval_count = 0;
   }
 
   // Publish statistics if enabled

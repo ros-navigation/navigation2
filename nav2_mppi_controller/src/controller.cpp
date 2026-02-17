@@ -17,7 +17,7 @@
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
 
-// #define BENCHMARK_TESTING
+#define BENCHMARK_TESTING
 
 namespace nav2_mppi_controller
 {

@@ -261,11 +261,48 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
 
 void Optimizer::optimize()
 {
+  // Averaging accumulators (static for debug profiling)
+  static size_t opt_count = 0;
+  static double gen_accum = 0.0, eval_accum = 0.0, update_accum = 0.0;
+  constexpr size_t kAvgWindow = 50;
+
+  constexpr double kThresholdUs = 50000.0;  // 40ms
+  double call_gen = 0.0, call_eval = 0.0, call_update = 0.0;
+
   for (size_t i = 0; i < settings_.iteration_count; ++i) {
+    auto t0 = std::chrono::steady_clock::now();
     generateNoisedTrajectories();
+    auto t1 = std::chrono::steady_clock::now();
     critic_manager_.evalTrajectoriesScores(critics_data_);
+    auto t2 = std::chrono::steady_clock::now();
     updateControlSequence();
+    auto t3 = std::chrono::steady_clock::now();
     generated_trajectories_.costs = costs_;
+    call_gen += std::chrono::duration<double, std::micro>(t1 - t0).count();
+    call_eval += std::chrono::duration<double, std::micro>(t2 - t1).count();
+    call_update += std::chrono::duration<double, std::micro>(t3 - t2).count();
+  }
+
+  gen_accum += call_gen;
+  eval_accum += call_eval;
+  update_accum += call_update;
+  opt_count++;
+
+  // Print if this iteration exceeded threshold
+  double call_total = call_gen + call_eval + call_update;
+  if (call_total > kThresholdUs) {
+    std::cout << "[SLOW optimize] " << call_total / 1000.0 << "ms: generateNoised="
+      << call_gen << "us evalCritics=" << call_eval << "us updateCtrl="
+      << call_update << "us" << std::endl;
+  }
+
+  if (opt_count >= kAvgWindow) {
+    std::cout << "optimize avg(" << kAvgWindow << "): generateNoised="
+      << gen_accum / kAvgWindow << "us evalCritics="
+      << eval_accum / kAvgWindow << "us updateCtrl="
+      << update_accum / kAvgWindow << "us" << std::endl;
+    gen_accum = eval_accum = update_accum = 0.0;
+    opt_count = 0;
   }
 }
 
