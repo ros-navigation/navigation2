@@ -51,7 +51,6 @@ void DirectionChangeCritic::score(CriticData & data)
   // Process in-place using Eigen views to avoid allocations
   auto vx_view = data.state.vx.leftCols(penalize_up_to_idx);
 
-  // TODO also penalize change direction in wz (and vy for holonomic case) . maybe add a flag to enable/disable wz
   if (power_ > 1u) {
     data.costs += ((vx_view * current_speed < 0.0f).select(
       (vx_view - current_speed).abs(), 0.0f).rowwise().sum() * weight_).pow(power_);
