@@ -99,9 +99,10 @@ public:
   /**
    * @brief Function to parse Behavior Tree information from an XML file
    * @param filename Path to BT XML file
+   * @param main_id_required If true, will log an error if no main ID is found and return empty main_id in that case
    * @return BTInfo Struct containing BT ID information
    */
-  BTInfo parseTreeInfo(const std::string & filename);
+  BTInfo parseTreeInfo(const std::string & filename, bool main_id_required = false);
 
   /**
  * @brief Function to create a BT from a BehaviorTree ID
