@@ -93,14 +93,14 @@ int EdgeScorer::numPlugins() const
 void EdgeScorer::activate()
 {
   for (auto & plugin : plugins_) {
-    plugin->on_activate();
+    plugin->activate();
   }
 }
 
 void EdgeScorer::deactivate()
 {
   for (auto & plugin : plugins_) {
-    plugin->on_deactivate();
+    plugin->deactivate();
   }
 }
 
