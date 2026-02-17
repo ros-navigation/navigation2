@@ -133,13 +133,13 @@ public:
             }
 
             auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
-            if (tree_info.all_ids.empty()) {
+            if (tree_info.behavior_tree_ids.empty()) {
               std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
               continue;
             }
           // Check for conflicts with all IDs in the file
             bool conflict_found = false;
-            for (const auto & id : tree_info.all_ids) {
+            for (const auto & id : tree_info.behavior_tree_ids) {
               if (registered_ids.count(id)) {
                 conflict_found = true;
                 break;
@@ -152,7 +152,7 @@ public:
 
             std::cout << "Registering Tree from File: " << entry.path().string() << "\n";
             factory_.registerBehaviorTreeFromFile(entry.path().string());
-            for (const auto & id : tree_info.all_ids) {
+            for (const auto & id : tree_info.behavior_tree_ids) {
               registered_ids.insert(id);
             }
           }

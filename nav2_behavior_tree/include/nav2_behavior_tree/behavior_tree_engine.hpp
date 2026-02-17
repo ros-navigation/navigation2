@@ -43,7 +43,7 @@ enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
 struct BTInfo
 {
   std::string main_id;
-  std::vector<std::string> all_ids;
+  std::vector<std::string> behavior_tree_ids;
 };
 
 /**
