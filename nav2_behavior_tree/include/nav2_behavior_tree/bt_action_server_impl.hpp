@@ -170,7 +170,7 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
     "always_reload_bt_xml", false);
 
   log_idle_ = node->declare_or_get_parameter(
-    "bt_log_idle_transitions", false);
+    "bt_log_idle_transitions", true);
 
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();

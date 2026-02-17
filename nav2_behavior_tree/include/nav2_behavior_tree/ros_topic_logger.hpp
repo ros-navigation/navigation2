@@ -45,7 +45,7 @@ public:
   RosTopicLogger(
     const nav2::LifecycleNode::WeakPtr & ros_node,
     const BT::Tree & tree,
-    bool log_idle = false)
+    bool log_idle = true)
   : StatusChangeLogger(tree.rootNode())
   {
     auto node = ros_node.lock();

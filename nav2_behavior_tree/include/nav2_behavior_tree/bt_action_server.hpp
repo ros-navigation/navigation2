@@ -295,7 +295,7 @@ protected:
   bool always_reload_bt_ = false;
 
   // Whether to log BT transitions to IDLE state
-  bool log_idle_ = false;
+  bool log_idle_ = true;
 
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;
