@@ -45,10 +45,9 @@ void DirectionChangeCritic::score(CriticData & data)
 
   // Penalize the magnitude of velocity difference when crossing zero (direction change)
   // Calculate |vx - current_speed| only where signs differ, otherwise 0
-
+  // Use robot_speed from feedback, as it better represents the actual direction of motion
   constexpr size_t penalize_up_to_idx = 2;
-  const float current_speed = data.state.speed.linear.x;
-  std::cout << "critic speed: " << current_speed << std::endl;
+  const float current_speed = data.state.robot_speed.linear.x;
   // Process in-place using Eigen views to avoid allocations
   auto vx_view = data.state.vx.leftCols(penalize_up_to_idx);
 
