@@ -151,7 +151,8 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
     } else if (info.behavior_tree_ids.size() > 1) {
       RCLCPP_ERROR(
         rclcpp::get_logger("BehaviorTreeEngine"),
-        "Multiple BehaviorTree elements found in %s but no main_tree_to_execute attribute specified.",
+        "Multiple BehaviorTree elements found in %s "
+        "but no main_tree_to_execute attribute specified.",
         filename.c_str());
     }
   }
