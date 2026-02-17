@@ -241,7 +241,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
       rclcpp::Parameter("test.downsampling_factor", 2),
       rclcpp::Parameter("test.angle_quantization_bins", 72),
       rclcpp::Parameter("test.allow_unknown", false),
-      rclcpp::Parameter("test.max_iterations", 1000),
+      rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.minimum_turning_radius", 1.0),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
@@ -269,7 +269,7 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
   EXPECT_EQ(nodeSE2->get_parameter("test.angle_quantization_bins").as_int(), 72);
   EXPECT_EQ(nodeSE2->get_parameter("test.allow_unknown").as_bool(), false);
-  EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), 1000);
+  EXPECT_EQ(nodeSE2->get_parameter("test.max_iterations").as_int(), -1);
   EXPECT_EQ(nodeSE2->get_parameter("test.minimum_turning_radius").as_double(), 1.0);
   EXPECT_EQ(nodeSE2->get_parameter("test.cache_obstacle_heuristic").as_bool(), true);
   EXPECT_EQ(nodeSE2->get_parameter("test.reverse_penalty").as_double(), 5.0);
@@ -320,14 +320,6 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   EXPECT_EQ(
     nodeSE2->get_parameter("test.minimum_turning_radius").as_double(),
     1.0);
-
-  // test setting max iterations to negative value does not modify current
-  results = rec_param->set_parameters_atomically(
-    {rclcpp::Parameter("test.max_iterations", -10)});
-  rclcpp::spin_until_future_complete(
-    nodeSE2->get_node_base_interface(),
-    results);
-  EXPECT_EQ(planner->getMaxIterations(), 1000);
 
   // test angle_quantizations % _coarse_search_resolution != 0
   results = rec_param->set_parameters_atomically(

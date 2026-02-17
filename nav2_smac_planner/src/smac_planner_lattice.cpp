@@ -543,7 +543,9 @@ rcl_interfaces::msg::SetParametersResult SmacPlannerLattice::validateParameterUp
           " of angular bins configured. Ignoring parameter update!"
         );
         result.successful = false;
-      } else if (parameter.as_int() <= 0) {
+      } else if (parameter.as_int() <= 0 && (param_name != _name + ".max_iterations" && // NOLINT
+        param_name != _name + ".max_on_approach_iterations"))
+      {
         RCLCPP_WARN(
         _logger, "The value of parameter '%s' is incorrectly set to %ld, "
         "it should be >0. Ignoring parameter update.",
@@ -651,9 +653,21 @@ SmacPlannerLattice::updateParametersCallback(const std::vector<rclcpp::Parameter
       if (param_name == _name + ".max_iterations") {
         reinit_a_star = true;
         _max_iterations = parameter.as_int();
+        if (_max_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "maximum iteration selected as <= 0, "
+            "disabling maximum iterations.");
+          _max_iterations = std::numeric_limits<int>::max();
+        }
       } else if (param_name == _name + ".max_on_approach_iterations") {
         reinit_a_star = true;
         _max_on_approach_iterations = parameter.as_int();
+        if (_max_on_approach_iterations <= 0) {
+          RCLCPP_INFO(
+            _logger, "On approach iteration selected as <= 0, "
+            "disabling tolerance and on approach iterations.");
+          _max_on_approach_iterations = std::numeric_limits<int>::max();
+        }
       } else if (param_name == _name + ".terminal_checking_interval") {
         reinit_a_star = true;
         _terminal_checking_interval = parameter.as_int();

@@ -226,7 +226,7 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
 
   auto results = rec_param->set_parameters_atomically(
     {rclcpp::Parameter("test.allow_unknown", false),
-      rclcpp::Parameter("test.max_iterations", 100),
+      rclcpp::Parameter("test.max_iterations", -1),
       rclcpp::Parameter("test.cache_obstacle_heuristic", true),
       rclcpp::Parameter("test.reverse_penalty", 5.0),
       rclcpp::Parameter("test.change_penalty", 1.0),
