@@ -237,6 +237,22 @@ TEST(ThetaStarPlanner, test_theta_star_reconfigure)
   rclcpp::spin_until_future_complete(
     life_node->get_node_base_interface(),
     results);
+
+  // Try setting invalid value for how_many_corners
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.how_many_corners", 5)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.how_many_corners").as_int(), 8);
+
+  // Try setting invalid value for w_euc_cost
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.w_euc_cost", -1.0)});
+  rclcpp::spin_until_future_complete(
+    life_node->get_node_base_interface(),
+    results);
+  EXPECT_EQ(life_node->get_parameter("test.w_euc_cost").as_double(), 1.0);
 }
 
 int main(int argc, char ** argv)

@@ -103,8 +103,7 @@ ParameterHandler::updateParametersCallback(
     if (param_type == ParameterType::PARAMETER_INTEGER) {
       if (param_name == plugin_name_ + ".how_many_corners") {
         params_.how_many_corners = parameter.as_int();
-      }
-      if (param_name == plugin_name_ + ".terminal_checking_interval") {
+      } else if (param_name == plugin_name_ + ".terminal_checking_interval") {
         params_.terminal_checking_interval = parameter.as_int();
       }
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
