@@ -185,6 +185,54 @@ void Costmap2DPublisher::prepareCostmap()
   costmap_raw_->costmap = std::make_shared<nav2_costmap_2d::Costmap2D>(*costmap_);
 }
 
+std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGridUpdateMsg()
+{
+  auto update = std::make_unique<map_msgs::msg::OccupancyGridUpdate>();
+
+  update->header.stamp = clock_->now();
+  update->header.frame_id = global_frame_;
+  update->x = x0_;
+  update->y = y0_;
+  update->width = xn_ - x0_;
+  update->height = yn_ - y0_;
+  update->data.resize(update->width * update->height);
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
+  std::uint32_t i = 0;
+  for (std::uint32_t y = y0_; y < yn_; y++) {
+    std::uint32_t row_start = y * map_width + x0_;
+    std::transform(
+      costmap_data + row_start, costmap_data + row_start + update->width,
+      update->data.begin() + i,
+      [](unsigned char c) {return cost_translation_table_[c];});
+    i += update->width;
+  }
+  return update;
+}
+
+std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmapUpdateMsg()
+{
+  auto msg = std::make_unique<nav2_msgs::msg::CostmapUpdate>();
+
+  msg->header.stamp = clock_->now();
+  msg->header.frame_id = global_frame_;
+  msg->x = x0_;
+  msg->y = y0_;
+  msg->size_x = xn_ - x0_;
+  msg->size_y = yn_ - y0_;
+  msg->data.resize(msg->size_x * msg->size_y);
+  const std::uint32_t map_width = costmap_->getSizeInCellsX();
+  unsigned char * costmap_data = costmap_->getCharMap();
+
+  std::uint32_t i = 0;
+  for (std::uint32_t y = y0_; y < yn_; y++) {
+    std::uint32_t row_start = y * map_width + x0_;
+    std::copy_n(costmap_data + row_start, msg->size_x, msg->data.begin() + i);
+    i += msg->size_x;
+  }
+  return msg;
+}
+
 void Costmap2DPublisher::publishCostmap()
 {
   auto const costmap_layer = dynamic_cast<CostmapLayer *>(costmap_);

@@ -49,7 +49,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   using CostmapAdapter =
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
 
@@ -130,7 +130,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   using CostmapAdapter =
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
   auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
@@ -237,7 +237,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   costmap_msg->metadata.size_y = 100;
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   using CostmapAdapter =
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
   auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();

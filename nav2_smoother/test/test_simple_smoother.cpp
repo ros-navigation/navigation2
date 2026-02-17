@@ -22,6 +22,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_smoother/simple_smoother.hpp"
+#include "nav2_core/smoother_exceptions.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "nav2_costmap_2d/costmap_type_adapter.hpp"
 
@@ -64,7 +65,7 @@ TEST(SmootherTest, test_simple_smoother)
   }
 
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> dummy_costmap;
-  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(parent, "dummy_topic");
+  dummy_costmap = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, "dummy_topic");
   using CostmapAdapter =
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>;
 
