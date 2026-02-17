@@ -102,9 +102,9 @@ public:
     return blackboard;
   }
 
-  nav2_behavior_tree::BTInfo parseTreeInfo(const std::string & filename)
+  nav2_behavior_tree::BTInfo parseTreeInfo(const std::string & filename, bool main_id_required)
   {
-    return bt_engine_->parseTreeInfo(filename);
+    return bt_engine_->parseTreeInfo(filename, main_id_required);
   }
 
   bool loadBehaviorTree(
@@ -132,7 +132,7 @@ public:
               continue;
             }
 
-            auto tree_info = bt_engine_->parseTreeInfo(entry.path().string());
+            auto tree_info = bt_engine_->parseTreeInfo(entry.path().string(), false);
             if (tree_info.behavior_tree_ids.empty()) {
               std::cerr << "Skipping BT file " << entry.path() << " (missing ID)" << "\n";
               continue;
@@ -162,7 +162,7 @@ public:
     if (!is_bt_id) {
       // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      auto tree_info = bt_engine_->parseTreeInfo(main_file);
+      auto tree_info = bt_engine_->parseTreeInfo(main_file, true);
 
       if (tree_info.main_id.empty()) {
         std::cerr << "Failed to extract ID from " << main_file << "\n";
@@ -359,7 +359,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     };
 
   // 1. Empty string input triggers "Empty file branch
-  auto tree_info = bt_handler->parseTreeInfo("");
+  auto tree_info = bt_handler->parseTreeInfo("", true);
   EXPECT_TRUE(tree_info.main_id.empty());
 
   // 2. Valid XML with ID
@@ -372,18 +372,18 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto id_info = bt_handler->parseTreeInfo(valid_xml);
+  auto id_info = bt_handler->parseTreeInfo(valid_xml, true);
   EXPECT_FALSE(id_info.main_id.empty());
   EXPECT_EQ(id_info.main_id, "TestTree");
 
   // 3. Malformed XML (parser error)
   std::string malformed_xml = "/tmp/extract_bt_id_malformed.xml";
   write_file(malformed_xml, "<root><invalid></root>");
-  auto missing_id = bt_handler->parseTreeInfo(malformed_xml);
+  auto missing_id = bt_handler->parseTreeInfo(malformed_xml, true);
   EXPECT_TRUE(missing_id.main_id.empty());
 
   // 4. File does not exist
-  auto not_found = bt_handler->parseTreeInfo("/tmp/non_existent_file.xml");
+  auto not_found = bt_handler->parseTreeInfo("/tmp/non_existent_file.xml", true);
   EXPECT_TRUE(not_found.main_id.empty());
 
   // 6. No root element
@@ -392,7 +392,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     no_root_file,
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<!-- no root element, just a comment -->\n");
-  auto no_root_id = bt_handler->parseTreeInfo(no_root_file);
+  auto no_root_id = bt_handler->parseTreeInfo(no_root_file, true);
   EXPECT_TRUE(no_root_id.main_id.empty());
 
   // 7. No <BehaviorTree> child
@@ -403,7 +403,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "<root BTCPP_format=\"4\">\n"
     "  <Dummy />\n"
     "</root>\n");
-  auto no_bt_id = bt_handler->parseTreeInfo(no_bt_element);
+  auto no_bt_id = bt_handler->parseTreeInfo(no_bt_element, true);
   EXPECT_TRUE(no_bt_id.main_id.empty());
 
   // 8. No ID attribute
@@ -416,7 +416,7 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
     "    <AlwaysSuccess />\n"
     "  </BehaviorTree>\n"
     "</root>\n");
-  auto no_id = bt_handler->parseTreeInfo(no_id_attr);
+  auto no_id = bt_handler->parseTreeInfo(no_id_attr, true);
   EXPECT_TRUE(no_id.main_id.empty());
 
   // Cleanup
