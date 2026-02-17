@@ -245,6 +245,18 @@ LifecycleManager::createLifecyclePublishers()
 }
 
 void
+LifecycleManager::destroyLifecycleServiceServers()
+{
+  message("Destroying lifecycle service servers");
+
+  manager_srv_->on_deactivate();
+  is_active_srv_->on_deactivate();
+
+  manager_srv_.reset();
+  is_active_srv_.reset();
+}
+
+void
 LifecycleManager::destroyLifecycleServiceClients()
 {
   message("Destroying lifecycle service clients");
@@ -416,6 +428,7 @@ LifecycleManager::shutdown()
   message("Shutting down managed nodes...");
   shutdownAllNodes();
   destroyLifecycleServiceClients();
+  destroyLifecycleServiceServers();
   destroyLifecyclePublishers();
   message("Managed nodes have been shut down");
   return true;

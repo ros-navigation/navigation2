@@ -50,77 +50,41 @@ public:
     const std::string & service_name,
     const NodeT & node,
     CallbackType callback,
-    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr,
-    const rclcpp::QoS & qos = rclcpp::ServicesQoS())
+    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
   : service_name_(service_name),
     callback_(callback),
-    logger_(rclcpp::get_logger("ServiceServer"))
+    logger_(node->get_logger())
   {
-    // Resolve node pointer to handle both shared_ptr and weak_ptr cases
-    auto node_shared_ptr = resolve_node(node);
-    auto node_base = node_shared_ptr->get_node_base_interface();
-
-    logger_ = rclcpp::get_logger(node_base->get_fully_qualified_name());
-
     server_ = rclcpp::create_service<ServiceT>(
-      node_base,
-      node_shared_ptr->get_node_services_interface(),
+      node->get_node_base_interface(),
+      node->get_node_services_interface(),
       service_name,
-      [this](const std::shared_ptr<rmw_request_id_t> request_header,
-      const std::shared_ptr<RequestType> request, std::shared_ptr<ResponseType> response) {
-        this->handle_service(request_header, request, response);
-      },
-      qos,
+      std::bind(&ServiceServer::handle_service, this, std::placeholders::_1,
+            std::placeholders::_2, std::placeholders::_3),
+      rclcpp::ServicesQoS(),  // Use consistent QoS settings
       callback_group);
 
     nav2::setIntrospectionMode(
       this->server_,
-      node_shared_ptr->get_node_parameters_interface(),
-      node_shared_ptr->get_node_clock_interface()->get_clock());
+      node->get_node_parameters_interface(), node->get_clock());
   }
-
-  /**
-   * @brief Activate the service server
-   */
-  void activate() {this->on_activate();}
-
-  /**
-   * @brief Deactivate the service server
-   */
-  void deactivate() {this->on_deactivate();}
 
 protected:
   void handle_service(
-    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<rmw_request_id_t> header,
     const std::shared_ptr<RequestType> request,
     std::shared_ptr<ResponseType> response)
   {
     if (!this->is_activated()) {
       RCLCPP_DEBUG(
-        logger_, "Service '%s' called while not activated. Rejecting request.",
-        service_name_.c_str());
+      logger_, "Service '%s' called while not activated. Rejecting request.",
+      service_name_.c_str());
       return;
     }
-    callback_(request_header, request, response);
+    callback_(header, request, response);
   }
 
 private:
-  /**
-   * @brief Internal utilities to resolve shared_ptr from diverse node pointer .
-   */
-  template<typename T>
-  std::shared_ptr<T> resolve_node(std::shared_ptr<T> ptr) {return ptr;}
-
-  template<typename T>
-  std::shared_ptr<T> resolve_node(std::weak_ptr<T> ptr)
-  {
-    auto locked = ptr.lock();
-    if (!locked) {
-      throw std::runtime_error("Node expired before creating service: " + service_name_);
-    }
-    return locked;
-  }
-
   std::string service_name_;
   CallbackType callback_;
   typename rclcpp::Service<ServiceT>::SharedPtr server_;

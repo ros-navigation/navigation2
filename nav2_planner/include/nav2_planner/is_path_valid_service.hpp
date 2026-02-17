@@ -51,9 +51,9 @@ public:
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
     const rclcpp::Duration & costmap_update_timeout)
   : nav2::ServiceServer<nav2_msgs::srv::IsPathValid>(
-      "is_path_valid",                                    // 1. service_name
-      node,                                               // 2. node
-      std::bind(&IsPathValidService::callback, this,      // 3. callback
+      "is_path_valid",
+      node.lock(),
+      std::bind(&IsPathValidService::callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
       // 4. callback_group defaults to nullptr as per your wrapper
   ),

@@ -81,8 +81,8 @@ public:
    */
   virtual void prepare() {}
 
-  virtual void on_activate() {}
-  virtual void on_deactivate() {}
+  virtual void activate() {}
+  virtual void deactivate() {}
 };
 
 }  // namespace nav2_route
