@@ -121,7 +121,8 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
 
   tinyxml2::XMLElement * root = doc.RootElement();
   if (!root) {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "No root element in: %s", filename.c_str());
+    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "No root element in: %s",
+      filename.c_str());
     return info;
   }
 
