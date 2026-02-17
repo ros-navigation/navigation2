@@ -169,6 +169,9 @@ bool BtActionServer<ActionT, NodeT>::on_configure()
   always_reload_bt_ = node->declare_or_get_parameter(
     "always_reload_bt_xml", false);
 
+  log_idle_ = node->declare_or_get_parameter(
+    "bt_log_idle_transitions", true);
+
   // Get error code id names to grab off of the blackboard
   error_code_name_prefixes_ = node->get_parameter("error_code_name_prefixes").as_string_array();
 
@@ -366,7 +369,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
   }
 
   // Optional logging and monitoring
-  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_);
+  topic_logger_ = std::make_unique<RosTopicLogger>(client_node_, tree_, log_idle_);
   current_bt_file_or_id_ = file_or_id;
 
   if (enable_groot_monitoring_) {

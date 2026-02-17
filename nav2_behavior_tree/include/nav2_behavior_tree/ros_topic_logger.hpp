@@ -40,8 +40,12 @@ public:
    * @brief A constructor for nav2_behavior_tree::RosTopicLogger
    * @param ros_node Weak pointer to parent nav2::LifecycleNode
    * @param tree BT to monitor
+   * @param log_idle Whether to enable logging transitions to IDLE state
    */
-  RosTopicLogger(const nav2::LifecycleNode::WeakPtr & ros_node, const BT::Tree & tree)
+  RosTopicLogger(
+    const nav2::LifecycleNode::WeakPtr & ros_node,
+    const BT::Tree & tree,
+    bool log_idle = true)
   : StatusChangeLogger(tree.rootNode())
   {
     auto node = ros_node.lock();
@@ -49,6 +53,7 @@ public:
     logger_ = node->get_logger().get_child("ros_topic_logger");
     log_pub_ = node->create_publisher<nav2_msgs::msg::BehaviorTreeLog>(
       "behavior_tree_log");
+    enableTransitionToIdle(log_idle);
   }
 
   /**

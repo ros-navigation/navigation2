@@ -294,6 +294,9 @@ protected:
   // should the BT be reloaded even if the same xml filename is requested?
   bool always_reload_bt_ = false;
 
+  // Whether to log BT transitions to IDLE state
+  bool log_idle_ = true;
+
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;
   int groot_server_port_ = 1667;
