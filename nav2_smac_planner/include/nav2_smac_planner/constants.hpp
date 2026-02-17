@@ -26,6 +26,7 @@ enum class MotionModel
   DUBIN = 2,
   REEDS_SHEPP = 3,
   STATE_LATTICE = 4,
+  OMNI = 5,
 };
 
 enum class GoalHeadingMode
@@ -47,6 +48,8 @@ inline std::string toString(const MotionModel & n)
       return "Reeds-Shepp";
     case MotionModel::STATE_LATTICE:
       return "State Lattice";
+    case MotionModel::OMNI:
+      return "Omni";
     default:
       return "Unknown";
   }
@@ -62,6 +65,8 @@ inline MotionModel fromString(const std::string & n)
     return MotionModel::REEDS_SHEPP;
   } else if (n == "STATE_LATTICE") {
     return MotionModel::STATE_LATTICE;
+  } else if (n == "OMNI") {
+    return MotionModel::OMNI;
   } else {
     return MotionModel::UNKNOWN;
   }
