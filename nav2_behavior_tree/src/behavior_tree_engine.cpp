@@ -146,7 +146,8 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename, bool main
     // If main_tree_to_execute attribute is not set, we first check the number of BehaviorTree tags
     if (info.main_id.empty()) {
       // If only one BehaviorTree tag is found, we can use that as the main ID
-      // If multiple are found, we log an error since we don't know which one to use as the main tree
+      // If multiple are found, we log an error since we don't know 
+      // which one to use as the main tree
       if (info.behavior_tree_ids.size() == 1) {
         info.main_id = info.behavior_tree_ids[0];
       } else if (info.behavior_tree_ids.size() > 1) {
