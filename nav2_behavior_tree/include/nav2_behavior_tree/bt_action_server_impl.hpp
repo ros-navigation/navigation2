@@ -273,7 +273,7 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
             continue;
           }
 
-          auto tree_info = bt_->parseTreeInfo(entry.path().string(), false);
+          auto tree_info = bt_->parseTreeInfo(entry.path().string());
           if (tree_info.behavior_tree_ids.empty()) {
             RCLCPP_ERROR(logger_, "Skipping BT file %s (missing ID)", entry.path().c_str());
             continue;
@@ -304,9 +304,12 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     if (!is_bt_id) {
       // file_or_id is a filename: register it first
       std::string main_file = file_or_id;
-      auto tree_info = bt_->parseTreeInfo(main_file, true);
+      auto tree_info = bt_->parseTreeInfo(main_file);
       if (tree_info.main_id.empty()) {
         RCLCPP_ERROR(logger_, "Failed to extract ID from %s", main_file.c_str());
+        setInternalError(
+          ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+          "Failed to extract ID from " + main_file);
         return false;
       }
       main_id = tree_info.main_id;

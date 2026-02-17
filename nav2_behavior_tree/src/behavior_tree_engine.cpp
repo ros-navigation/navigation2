@@ -105,7 +105,7 @@ BehaviorTreeEngine::createTreeFromFile(
   return factory_.createTreeFromFile(file_path, blackboard);
 }
 
-BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename, bool main_id_required)
+BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename)
 {
   BTInfo info;
   if (filename.empty()) {
@@ -136,27 +136,23 @@ BTInfo BehaviorTreeEngine::parseTreeInfo(const std::string & filename, bool main
     }
   }
 
-  if (main_id_required) {
-    // First try to get main_tree_to_execute attribute
-    const char * main_attr = root->Attribute("main_tree_to_execute");
-    if (main_attr) {
-      info.main_id = main_attr;
-    }
+  // First try to get main_tree_to_execute attribute
+  const char * main_attr = root->Attribute("main_tree_to_execute");
+  if (main_attr) {
+    info.main_id = main_attr;
+  }
 
-    // If main_tree_to_execute attribute is not set, we first check the number of BehaviorTree tags
-    if (info.main_id.empty()) {
-      // If only one BehaviorTree tag is found, we can use that as the main ID
-      // If multiple are found, we log an error since we don't know
-      // which one to use as the main tree
-      if (info.behavior_tree_ids.size() == 1) {
-        info.main_id = info.behavior_tree_ids[0];
-      } else if (info.behavior_tree_ids.size() > 1) {
-        RCLCPP_ERROR(
-          rclcpp::get_logger("BehaviorTreeEngine"),
-          "Multiple BehaviorTree elements found in %s "
-          "but no main_tree_to_execute attribute specified.",
-          filename.c_str());
-      }
+  // If main_tree_to_execute attribute is not set, we first check the number of BehaviorTree tags
+  if (info.main_id.empty()) {
+    // If only one BehaviorTree tag is found, we can use that as the main ID
+    // If multiple are found, we throw an error since we don't know
+    // which one to use as the main tree
+    if (info.behavior_tree_ids.size() == 1) {
+      info.main_id = info.behavior_tree_ids[0];
+    } else if (info.behavior_tree_ids.size() > 1) {
+      throw std::runtime_error(
+              "Multiple BehaviorTree elements found in " + filename +
+              " but no main_tree_to_execute attribute specified. Unable to determine main tree.");
     }
   }
 
