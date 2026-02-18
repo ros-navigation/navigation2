@@ -27,6 +27,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
+#include "nav2_costmap_2d/costmap_type_adapter.hpp"
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.hpp"
@@ -83,13 +84,11 @@ public:
 
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
-    costmap_msg_ = msg;
-    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
-      msg->metadata.size_x, msg->metadata.size_y,
-      msg->metadata.resolution, msg->metadata.origin.position.x,
-      msg->metadata.origin.position.y);
+    auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
+    rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>::
+    convert_to_custom(*msg, *stamped);
 
-    processCurrentCostmapMsg();
+    costmapCallback(*stamped);
   }
 };
 
@@ -823,8 +822,8 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   node_lifecycle_->set_parameter(
     rclcpp::Parameter(
       "SmoothPath.cost_check_points",
-      std::vector<double>({-0.05, 0.0, 0.5, -0.45, 0.0, 0.5})  // x1, y1, weight1, x2, y2, weight2
-  ));
+      // x1, y1, weight1, x2, y2, weight2
+      std::vector<double>({-0.05, 0.0, 0.5, -0.45, 0.0, 0.5})));
   reloadParams();
 
   // cost improvement is different for path smoothed by original optimizer
@@ -869,8 +868,8 @@ TEST_F(SmootherTest, testingObstacleAvoidanceNearCusps)
   node_lifecycle_->set_parameter(
     rclcpp::Parameter(
       "SmoothPath.cost_check_points",
-      std::vector<double>({-0.05, 0.0, 1.0, -0.45, 0.0, 1.0})  // x1, y1, weight1, x2, y2, weight2
-  ));
+      // x1, y1, weight1, x2, y2, weight2
+      std::vector<double>({-0.05, 0.0, 1.0, -0.45, 0.0, 1.0})));
   reloadParams();
   std::vector<Eigen::Vector3d> smoothed_path_scc_unnormalized;
   EXPECT_TRUE(smoothPath(cusp_near_obstacle, smoothed_path_scc_unnormalized));
