@@ -86,8 +86,9 @@ void PathAlignCritic::score(CriticData & data)
   cost.setZero();
 
   // Find integrated arc-length distance along the path = total dist traveled along the path to each
-  // path point loop until end of path, to guarantee don't truncate long trajectories when furthest
-  // reached path is small (e.g. when all traj curve away from the path)
+  // path point
+  // loop until end of path, to guarantee don't truncate long trajectories when
+  // furthest_reached_path_point is small (e.g. when all trajectories curve away from the path)
   const size_t path_segments_count = data.path.x.size() - 1;
   // initialize the occupancy check id to max, in case the entire path is within the distance
   size_t occupancy_check_distance_idx = path_segments_count;
@@ -181,6 +182,10 @@ void PathAlignCritic::score(CriticData & data)
     path_pt = 0u;
     float Tx_m1 = T_x(t, 0);
     float Ty_m1 = T_y(t, 0);
+    // At each (strided) traj point, find the path point whose integrated arc-length distance along
+    // the path is closest to the trajectory point's integrated distance along the trajectory.
+    // if that path point is not in collision, compute the Euclidean distance between the matching
+    // path pt & traj pt the total cost is the average of those distances across the trajectory
     for (int p = 1; p < traj_sampled_size; p++) {
       const float Tx = T_x(t, p);
       const float Ty = T_y(t, p);
