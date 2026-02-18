@@ -70,6 +70,7 @@ nav_msgs::msg::Path ThetaStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & goal,
   std::function<bool()> cancel_checker)
 {
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   nav_msgs::msg::Path global_path;
   auto start_time = std::chrono::steady_clock::now();
 
