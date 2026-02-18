@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef OPENNAV_FOLLOWING___PARAMETER_HANDLER_HPP_
-#define OPENNAV_FOLLOWING___PARAMETER_HANDLER_HPP_
+#ifndef OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_
+#define OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -104,4 +104,4 @@ protected:
 
 }  // namespace opennav_following
 
-#endif  // OPENNAV_FOLLOWING___PARAMETER_HANDLER_HPP_
+#endif  // OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_
