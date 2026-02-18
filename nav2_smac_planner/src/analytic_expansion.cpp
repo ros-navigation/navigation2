@@ -135,6 +135,12 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
         float score = std::numeric_limits<float>::max();
         float min_turn_rad = node->motion_table.min_turning_radius;
         const float max_min_turn_rad = 4.0 * min_turn_rad;  // Up to 4x the turning radius
+
+        // SE2 produces straight-line paths independent of turning radius, skip refinement
+        if (node->motion_table.motion_model == MotionModel::OMNI) {
+          return setAnalyticPath(node, goal_node, analytic_nodes);
+        }
+
         while (min_turn_rad < max_min_turn_rad) {
           min_turn_rad += 0.5;  // In Grid Coords, 1/2 cell steps
           ompl::base::StateSpacePtr state_space;
