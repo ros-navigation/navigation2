@@ -419,6 +419,55 @@ TEST_F(BehaviorTreeTestFixture, TestExtractBehaviorTreeID)
   auto no_id = bt_handler->parseTreeInfo(no_id_attr);
   EXPECT_TRUE(no_id.main_id.empty());
 
+  // 9. Maintree and subtree defined in the same file, with subtree defined first
+  std::string main_and_subtree = "/tmp/extract_bt_id_main_and_subtree.xml";
+  write_file(
+    main_and_subtree,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
+    "  <BehaviorTree ID=\"SubTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "  <BehaviorTree ID=\"MainTree\">\n"
+    "    <Subtree ID=\"SubTree\"/>\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  auto main_and_subtree_info = bt_handler->parseTreeInfo(main_and_subtree);
+  EXPECT_FALSE(main_and_subtree_info.main_id.empty());
+  EXPECT_EQ(main_and_subtree_info.main_id, "MainTree");
+
+  // 10. Maintree and subtree defined in the same file, with MainTree defined first
+  std::string main_and_subtree_2 = "/tmp/extract_bt_id_main_and_subtree_2.xml";
+  write_file(
+    main_and_subtree_2,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\" main_tree_to_execute=\"MainTree\">\n"
+    "  <BehaviorTree ID=\"MainTree\">\n"
+    "    <Subtree ID=\"SubTree\"/>\n"
+    "  </BehaviorTree>\n"
+    "  <BehaviorTree ID=\"SubTree\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  auto main_and_subtree_2_info = bt_handler->parseTreeInfo(main_and_subtree_2);
+  EXPECT_FALSE(main_and_subtree_2_info.main_id.empty());
+  EXPECT_EQ(main_and_subtree_2_info.main_id, "MainTree");
+
+  // 11. Multiple <BehaviorTree> elements but no main_tree_to_execute attribute, should throw
+  std::string multiple_bt_no_main = "/tmp/extract_bt_id_multiple_bt_no_main.xml";
+  write_file(
+    multiple_bt_no_main,
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<root BTCPP_format=\"4\">\n"
+    "  <BehaviorTree ID=\"Tree1\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "  <BehaviorTree ID=\"Tree2\">\n"
+    "    <AlwaysSuccess />\n"
+    "  </BehaviorTree>\n"
+    "</root>\n");
+  EXPECT_THROW(bt_handler->parseTreeInfo(multiple_bt_no_main), std::runtime_error);
+
   // Cleanup
   std::remove(valid_xml.c_str());
   std::remove(malformed_xml.c_str());
