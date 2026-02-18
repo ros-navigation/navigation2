@@ -88,7 +88,14 @@ public:
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) = 0;
 
+  /**
+   * @brief Activate operation plugin to allow processing of service requests
+   */
   virtual void activate() {}
+
+  /**
+   * @brief Deactivate operation plugin to stop processing of service requests
+   */
   virtual void deactivate() {}
 
   /**

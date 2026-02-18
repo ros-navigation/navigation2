@@ -42,13 +42,18 @@ void DynamicEdgesScorer::configure(
 
 void DynamicEdgesScorer::activate()
 {
-  service_->on_activate();
+  if(service_) {
+    service_->on_activate();
+  }
 }
 
 void DynamicEdgesScorer::deactivate()
 {
-  service_->on_deactivate();
+  if(service_) {
+    service_->on_deactivate();
+  }
 }
+
 void DynamicEdgesScorer::closedEdgesCb(
   const std::shared_ptr<rmw_request_id_t>,
   const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,

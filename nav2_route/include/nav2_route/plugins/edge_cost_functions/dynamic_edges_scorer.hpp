@@ -83,7 +83,14 @@ public:
     const std::shared_ptr<nav2_msgs::srv::DynamicEdges::Request> request,
     std::shared_ptr<nav2_msgs::srv::DynamicEdges::Response> response);
 
+  /**
+   * @brief Activate plugin to allow processing of service requests and scoring
+   */
   void activate();
+
+  /**
+   * @brief Deactivate plugin to stop processing of service requests and scoring
+   */
   void deactivate();
 
 protected:
