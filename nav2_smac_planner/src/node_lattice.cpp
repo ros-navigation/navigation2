@@ -383,10 +383,10 @@ void NodeLattice::initMotionModel(
   unsigned int & /*num_angle_quantization*/,
   SearchInfo & search_info)
 {
-  if (motion_model != MotionModel::STATE_LATTICE) {
+  if (motion_model != MotionModel::STATE_LATTICE && motion_model != MotionModel::OMNI) {
     throw std::runtime_error(
             "Invalid motion model for Lattice node. Please select"
-            " STATE_LATTICE and provide a valid lattice file.");
+            " STATE_LATTICE or OMNI and provide a valid lattice file.");
   }
 
   ctx->motion_table.initMotionModel(size_x, search_info);

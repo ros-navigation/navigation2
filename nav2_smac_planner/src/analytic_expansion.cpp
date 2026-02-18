@@ -59,7 +59,7 @@ typename AnalyticExpansion<NodeT>::NodePtr AnalyticExpansion<NodeT>::tryAnalytic
 {
   // This must be a valid motion model for analytic expansion to be attempted
   if (_motion_model == MotionModel::DUBIN || _motion_model == MotionModel::REEDS_SHEPP ||
-    _motion_model == MotionModel::STATE_LATTICE)
+    _motion_model == MotionModel::STATE_LATTICE || _motion_model == MotionModel::OMNI)
   {
     // See if we are closer and should be expanding more often
     const Coordinates node_coords =
