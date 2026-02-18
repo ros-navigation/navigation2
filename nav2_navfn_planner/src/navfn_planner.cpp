@@ -125,6 +125,7 @@ nav_msgs::msg::Path NavfnPlanner::createPlan(
 #ifdef BENCHMARK_TESTING
   steady_clock::time_point a = steady_clock::now();
 #endif
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   unsigned int mx_start, my_start, mx_goal, my_goal;
   if (!costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx_start, my_start)) {
     throw nav2_core::StartOutsideMapBounds(
