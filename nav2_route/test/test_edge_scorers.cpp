@@ -115,6 +115,7 @@ TEST(EdgeScorersTest, test_invalid_edge_scoring)
 
   node->configure();
   node->activate();
+
   auto node_thread = std::make_unique<nav2::NodeThread>(node);
   auto node2 = std::make_shared<rclcpp::Node>("my_node2");
 

@@ -142,6 +142,7 @@ void RouteTracker::activate()
 {
   operations_manager_->activate();
 }
+
 void RouteTracker::deactivate()
 {
   operations_manager_->deactivate();

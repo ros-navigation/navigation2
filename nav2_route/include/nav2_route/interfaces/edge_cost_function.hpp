@@ -81,7 +81,14 @@ public:
    */
   virtual void prepare() {}
 
+  /**
+   * @brief Activate scorer plugin to allow processing of service requests and scoring
+   */
   virtual void activate() {}
+
+  /**
+   * @brief Deactivate scorer plugin to stop processing of service requests and scoring
+   */
   virtual void deactivate() {}
 };
 

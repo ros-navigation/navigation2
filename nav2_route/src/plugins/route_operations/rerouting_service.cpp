@@ -49,11 +49,16 @@ void ReroutingService::serviceCb(
 
 void ReroutingService::activate()
 {
-  service_->on_activate();
+  if(service_) {
+    service_->on_activate();
+  }
 }
+
 void ReroutingService::deactivate()
 {
-  service_->on_deactivate();
+  if(service_) {
+    service_->on_deactivate();
+  }
 }
 
 OperationResult ReroutingService::perform(

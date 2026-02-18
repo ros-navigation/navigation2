@@ -99,6 +99,7 @@ void OperationsManager::activate()
     it.second->activate();
   }
 }
+
 void OperationsManager::deactivate()
 {
   for (auto & op : query_operations_) {
