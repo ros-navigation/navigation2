@@ -55,7 +55,6 @@ public:
       node.lock(),
       std::bind(&IsPathValidService::callback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
-      // 4. callback_group defaults to nullptr as per your wrapper
   ),
     costmap_ros_(costmap_ros),
     costmap_update_timeout_(costmap_update_timeout),
