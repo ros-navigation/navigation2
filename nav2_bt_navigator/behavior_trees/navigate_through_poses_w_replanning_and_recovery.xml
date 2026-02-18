@@ -20,7 +20,7 @@
                   <GlobalUpdatedGoal/>
                 </Inverter>
                 <IsGoalNearby path="{path}" proximity_threshold="4.0" max_robot_pose_search_dist="1.5"/>
-                <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="2.0" distance_backward="0.0" />
+                <TruncatePathLocal input_path="{path}" output_path="{remaining_path}" distance_forward="-1" distance_backward="0.0" />
                 <IsPathValid path="{remaining_path}"/>
               </ReactiveSequence>
               <ReactiveSequence>
