@@ -57,7 +57,7 @@ TEST(SmootherTest, test_sg_smoother_basics)
   CostmapAdapter::convert_to_custom(
     *costmap_msg, *stamped);
 
-  dummy_costmap->costmapCallback(stamped);
+  dummy_costmap->costmapCallback(*stamped);
 
 
   // Make smoother
@@ -137,7 +137,7 @@ TEST(SmootherTest, test_sg_smoother_noisey_path)
   CostmapAdapter::convert_to_custom(
     *costmap_msg, *stamped);
 
-  dummy_costmap->costmapCallback(stamped);
+  dummy_costmap->costmapCallback(*stamped);
 
 
   // Make smoother
@@ -244,7 +244,7 @@ TEST(SmootherTest, test_sg_smoother_reversing)
   CostmapAdapter::convert_to_custom(
     *costmap_msg, *stamped);
 
-  dummy_costmap->costmapCallback(stamped);
+  dummy_costmap->costmapCallback(*stamped);
 
 
   // Make smoother

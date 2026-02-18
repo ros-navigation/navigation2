@@ -88,7 +88,7 @@ public:
     rclcpp::TypeAdapter<nav2_costmap_2d::Costmap2DStamped, nav2_msgs::msg::Costmap>::
     convert_to_custom(*msg, *stamped);
 
-    costmapCallback(stamped);
+    costmapCallback(*stamped);
   }
 };
 

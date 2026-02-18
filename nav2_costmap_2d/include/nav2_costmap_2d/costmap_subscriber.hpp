@@ -53,12 +53,16 @@ public:
 
     costmap_sub_ = nav2::interfaces::create_subscription<nav2_costmap_2d::Costmap2DStamped>(
       parent, topic_name_,
-      std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1),
+      [this](const nav2_costmap_2d::Costmap2DStamped & msg) {
+        costmapCallback(msg);
+      },
       nav2::qos::LatchedSubscriptionQoS(3), callback_group);
 
     costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
       parent, topic_name_ + "_updates",
-      std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1),
+      [this](const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & msg) {
+        costmapUpdateCallback(msg);
+      },
       nav2::qos::LatchedSubscriptionQoS(), callback_group);
   }
 
@@ -74,7 +78,7 @@ public:
   /**
    * @brief Callback for the costmap topic
    */
-  void costmapCallback(const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> msg);
+  void costmapCallback(const nav2_costmap_2d::Costmap2DStamped & msg);
   /**
    * @brief Callback for the costmap's update topic
    */

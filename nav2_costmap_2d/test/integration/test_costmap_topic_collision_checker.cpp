@@ -57,7 +57,7 @@ public:
   void setCostmap(
     const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> & msg)
   {
-    costmapCallback(msg);
+    costmapCallback(*msg);
   }
 };
 

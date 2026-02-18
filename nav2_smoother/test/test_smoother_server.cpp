@@ -154,7 +154,7 @@ public:
     CostmapAdapter::convert_to_custom(
       *msg, *stamped);
 
-    costmapCallback(stamped);
+    costmapCallback(*stamped);
   }
 };
 

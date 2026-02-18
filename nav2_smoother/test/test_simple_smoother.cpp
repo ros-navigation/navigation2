@@ -72,7 +72,7 @@ TEST(SmootherTest, test_simple_smoother)
   auto stamped = std::make_shared<nav2_costmap_2d::Costmap2DStamped>();
   CostmapAdapter::convert_to_custom(
     *costmap_msg, *stamped);
-  dummy_costmap->costmapCallback(stamped);
+  dummy_costmap->costmapCallback(*stamped);
 
 
   // Make smoother

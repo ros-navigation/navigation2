@@ -29,15 +29,19 @@ CostmapSubscriber::CostmapSubscriber(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  costmap_sub_ = node->create_subscription<nav2_costmap_2d::Costmap2DStamped>(
-    topic_name_,
-    nav2::qos::LatchedSubscriptionQoS(3),
-    std::bind(&CostmapSubscriber::costmapCallback, this, std::placeholders::_1));
+  costmap_sub_ = nav2::interfaces::create_subscription<nav2_costmap_2d::Costmap2DStamped>(
+    node, topic_name_,
+    [this](const nav2_costmap_2d::Costmap2DStamped & msg) {
+      costmapCallback(msg);
+    },
+    nav2::qos::LatchedSubscriptionQoS(3));
 
-  costmap_update_sub_ = node->create_subscription<nav2_msgs::msg::CostmapUpdate>(
-    topic_name_ + "_updates",
-    nav2::qos::LatchedSubscriptionQoS(),
-    std::bind(&CostmapSubscriber::costmapUpdateCallback, this, std::placeholders::_1));
+  costmap_update_sub_ = nav2::interfaces::create_subscription<nav2_msgs::msg::CostmapUpdate>(
+    node, topic_name_ + "_updates",
+    [this](const nav2_msgs::msg::CostmapUpdate::ConstSharedPtr & msg) {
+      costmapUpdateCallback(msg);
+    },
+    nav2::qos::LatchedSubscriptionQoS());
 }
 
 std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
@@ -49,14 +53,14 @@ std::shared_ptr<Costmap2D> CostmapSubscriber::getCostmap()
 }
 
 void CostmapSubscriber::costmapCallback(
-  const std::shared_ptr<nav2_costmap_2d::Costmap2DStamped> msg)
+  const nav2_costmap_2d::Costmap2DStamped & msg)
 {
   std::lock_guard<std::mutex> lock(costmap_msg_mutex_);
-  if (!msg || !msg->costmap) {
+  if (!msg.costmap) {
     return;
   }
-  costmap_ = msg->costmap;
-  frame_id_ = msg->header.frame_id;
+  costmap_ = msg.costmap;
+  frame_id_ = msg.header.frame_id;
 }
 
 void CostmapSubscriber::costmapUpdateCallback(
