@@ -68,6 +68,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
   // Get feature parameters
   odom_topic_ = node->declare_or_get_parameter("odom_topic", std::string("odom"));
   odom_duration_ = node->declare_or_get_parameter("odom_duration", 0.1);
+  odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration_, odom_topic_);
   deadband_velocities_ = node->declare_or_get_parameter(
     "deadband_velocity", std::vector<double>{0.0, 0.0, 0.0});
   double velocity_timeout_dbl = node->declare_or_get_parameter("velocity_timeout", 1.0);
@@ -130,7 +131,6 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State & state)
     open_loop_ = true;
   } else if (feedback_type == "CLOSED_LOOP") {
     open_loop_ = false;
-    odom_smoother_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration_, odom_topic_);
   } else {
     RCLCPP_ERROR(
       get_logger(),
@@ -622,11 +622,6 @@ void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parame
             std::make_unique<nav2_util::OdomSmoother>(
             shared_from_this(), odom_duration_, odom_topic_);
         }
-      } else if (param_name == "odom_topic") {
-        odom_topic_ = parameter.as_string();
-        odom_smoother_ =
-          std::make_unique<nav2_util::OdomSmoother>(
-          shared_from_this(), odom_duration_, odom_topic_);
       }
     }
   }
