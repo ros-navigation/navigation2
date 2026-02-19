@@ -264,7 +264,6 @@ nav2::CallbackReturn
 Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Activating");
-  get_cost_service_->on_activate();
 
   // First, make sure that the transform between the robot base frame
   // and the global frame is available
@@ -322,6 +321,8 @@ Costmap2DROS::on_activate(const rclcpp_lifecycle::State & /*state*/)
   // Add callback for dynamic parameters
   dyn_params_handler = this->add_on_set_parameters_callback(
     std::bind(&Costmap2DROS::dynamicParametersCallback, this, _1));
+
+  get_cost_service_->on_activate();
 
   return nav2::CallbackReturn::SUCCESS;
 }
