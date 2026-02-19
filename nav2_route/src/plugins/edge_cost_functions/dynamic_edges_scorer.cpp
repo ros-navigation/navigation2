@@ -42,16 +42,12 @@ void DynamicEdgesScorer::configure(
 
 void DynamicEdgesScorer::activate()
 {
-  if(service_) {
-    service_->on_activate();
-  }
+  service_->on_activate();
 }
 
 void DynamicEdgesScorer::deactivate()
 {
-  if(service_) {
-    service_->on_deactivate();
-  }
+  service_->on_deactivate();
 }
 
 void DynamicEdgesScorer::closedEdgesCb(

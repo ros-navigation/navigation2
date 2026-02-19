@@ -23,6 +23,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "rclcpp_lifecycle/managed_entity.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 namespace nav2
 {
@@ -67,6 +68,17 @@ public:
     nav2::setIntrospectionMode(
       this->server_,
       node->get_node_parameters_interface(), node->get_clock());
+
+    auto lifecycle_node = std::dynamic_pointer_cast<rclcpp_lifecycle::LifecycleNode>(node);
+    if (lifecycle_node &&
+      lifecycle_node->get_current_state().id() ==
+      lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+      this->on_activate();
+      RCLCPP_INFO(
+          logger_, "Service '%s' auto activated (node already active)",
+          service_name_.c_str());
+    }
   }
 
 protected:

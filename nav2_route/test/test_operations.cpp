@@ -213,7 +213,6 @@ TEST(OperationsManagerTest, test_rerouting_service_on_query)
     "route_server/ReroutingService/reroute", node_int);
   auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto resp = srv_client.invoke(req, std::chrono::nanoseconds(1000000000));
-  ASSERT_NE(resp, nullptr) << "Service call failed - service may not be active";
   EXPECT_TRUE(resp->success);
 
   // Check values are correct after service call
