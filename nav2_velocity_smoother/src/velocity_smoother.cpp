@@ -311,6 +311,7 @@ double VelocitySmoother::applyConstraints(
 
 void VelocitySmoother::smootherTimer()
 {
+  std::lock_guard<std::mutex> lock(mutex_);
   // Wait until the first command is received
   if (!received_first_command_) {
     return;
@@ -572,6 +573,8 @@ rcl_interfaces::msg::SetParametersResult VelocitySmoother::validateParameterUpda
 
 void VelocitySmoother::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
+  std::lock_guard<std::mutex> lock(mutex_);
+
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();

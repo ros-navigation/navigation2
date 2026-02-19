@@ -368,6 +368,12 @@ TEST(SmacTest, test_smac_se2_reconfigure)
   parameters.push_back(rclcpp::Parameter("test.goal_heading_mode", std::string("invalid")));
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getGoalHeadingMode(), nav2_smac_planner::GoalHeadingMode::BIDIRECTIONAL);
+
+  // test invalid downsampling factor
+  parameters.clear();
+  parameters.push_back(rclcpp::Parameter("test.downsampling_factor", -1));
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(nodeSE2->get_parameter("test.downsampling_factor").as_int(), 2);
 }
 
 int main(int argc, char ** argv)

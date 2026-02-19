@@ -157,6 +157,17 @@ TEST(SmacTest, test_smac_2d_reconfigure) {
   rclcpp::spin_until_future_complete(
     node2D->get_node_base_interface(),
     results);
+
+  EXPECT_EQ(node2D->get_parameter("test.downsample_costmap").as_bool(), true);
+
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("test.downsampling_factor", 0)});
+
+  rclcpp::spin_until_future_complete(
+    node2D->get_node_base_interface(),
+    results);
+
+  EXPECT_EQ(node2D->get_parameter("test.downsampling_factor").as_int(), 2);
 }
 
 int main(int argc, char ** argv)
