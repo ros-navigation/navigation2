@@ -67,16 +67,17 @@ void ParametersHandler::start()
 void ParametersHandler::modifyParametersCallback(
   std::vector<rclcpp::Parameter> & parameters)
 {
-  std::vector<rclcpp::Parameter> plugin_params;
+  bool found = false;
   for (auto & param : parameters) {
     const std::string & param_name = param.get_name();
     if (param_name.find(name_ + ".") != 0) {
       continue;
     }
-    plugin_params.push_back(param);
+    found = true;
+    break;
   }
 
-  if (!plugin_params.empty()) {
+  if (found) {
     for (auto & pre_cb : pre_callbacks_) {
       pre_cb();
     }
