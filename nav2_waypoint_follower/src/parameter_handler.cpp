@@ -38,6 +38,9 @@ ParameterHandler::ParameterHandler(
     node->declare_or_get_parameter("waypoint_task_executor_plugin",
     std::string("wait_at_waypoint"));
   params_.global_frame_id = node->declare_or_get_parameter("global_frame_id", std::string("map"));
+  nav2::declare_parameter_if_not_declared(
+    node, std::string("wait_at_waypoint.plugin"),
+    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
   params_.waypoint_task_executor_type = nav2::get_plugin_type_param(
     node,
     params_.waypoint_task_executor_id);

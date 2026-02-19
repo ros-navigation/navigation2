@@ -46,18 +46,8 @@ WaypointFollower::on_configure(const rclcpp_lifecycle::State & state)
 
   auto node = shared_from_this();
 
-  nav2::declare_parameter_if_not_declared(
-    this, std::string("wait_at_waypoint.plugin"),
-    rclcpp::ParameterValue(std::string("nav2_waypoint_follower::WaitAtWaypoint")));
-
-  try {
-    param_handler_ = std::make_unique<ParameterHandler>(
-      node, get_logger());
-  } catch (const std::exception & ex) {
-    RCLCPP_FATAL(get_logger(), "%s", ex.what());
-    on_cleanup(state);
-    return nav2::CallbackReturn::FAILURE;
-  }
+  param_handler_ = std::make_unique<ParameterHandler>(
+    node, get_logger());
   params_ = param_handler_->getParams();
 
   callback_group_ = create_callback_group(

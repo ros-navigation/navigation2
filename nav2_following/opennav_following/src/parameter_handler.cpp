@@ -83,7 +83,16 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0 && param_name != "static_object_timeout") {
+      if (parameter.as_double() <= 0.0 &&
+        (param_name == "controller_frequency" || param_name == "detection_timeout" ||
+        param_name == "rotate_to_object_timeout"))
+      {
+        RCLCPP_WARN(
+        logger_, "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0 && param_name != "static_object_timeout") {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >=0. Ignoring parameter update.",

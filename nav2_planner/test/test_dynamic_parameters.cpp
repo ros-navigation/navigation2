@@ -23,6 +23,17 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
+TEST(WPTest, test_parameter_exceptions)
+{
+  std::string nodeName = "test_node";
+  auto node = std::make_shared<nav2::LifecycleNode>(nodeName);
+  std::vector<std::string> invalid_ids = {"invalid_planner"};
+  node->declare_parameter("planner_plugins", invalid_ids);
+  node->declare_parameter("invalid_planner.plugin", rclcpp::PARAMETER_STRING);
+  EXPECT_THROW(std::make_unique<nav2_planner::ParameterHandler>(node, node->get_logger()),
+    std::runtime_error);
+}
+
 TEST(WPTest, test_dynamic_parameters)
 {
   std::string nodeName = "test_node";

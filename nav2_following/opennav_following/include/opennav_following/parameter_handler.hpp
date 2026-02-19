@@ -97,9 +97,6 @@ protected:
    * @param parameters List of parameters that have been updated.
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
-
-  const std::vector<std::string> default_ids_{"GridBased"};
-  const std::vector<std::string> default_types_{"nav2_navfn_planner::NavfnPlanner"};
 };
 
 }  // namespace opennav_following

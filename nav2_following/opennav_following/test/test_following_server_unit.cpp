@@ -376,6 +376,17 @@ TEST(FollowingServerTests, DynamicParams)
   EXPECT_EQ(node->get_parameter("search_by_rotating").as_bool(), true);
   EXPECT_EQ(node->get_parameter("search_angle").as_double(), 8.0);
   EXPECT_EQ(node->get_parameter("transform_tolerance").as_double(), 9.0);
+
+  // Now, set invalid parameters and check that they are not set
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", 0.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("controller_frequency").as_double(), 1.0);
+
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("linear_tolerance", -1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+  EXPECT_EQ(node->get_parameter("linear_tolerance").as_double(), 6.0);
 }
 
 }  // namespace opennav_following
