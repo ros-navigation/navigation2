@@ -19,6 +19,8 @@
 #include "std_srvs/srv/empty.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "gtest/gtest.h"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 using nav2::ServiceServer;
 using std::string;
@@ -162,6 +164,46 @@ TEST(ServiceServer, accepts_requests_after_activation)
   EXPECT_EQ(a, 0);
 }
 
+TEST(ServiceServer, auto_activates_when_node_already_active)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("test_node_auto_activate");
+  node->configure();
+  node->activate();
+
+  ASSERT_EQ(
+    node->get_current_state().id(),
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE);
+
+  int a = 0;
+  auto callback = [&a](
+    const std::shared_ptr<rmw_request_id_t>,
+    const std::shared_ptr<std_srvs::srv::Empty::Request>,
+    std::shared_ptr<std_srvs::srv::Empty::Response>) {
+      a = 1;
+    };
+
+  auto server = std::make_shared<ServiceServer<std_srvs::srv::Empty>>(
+    "empty_srv_auto", node, callback);
+
+  ASSERT_TRUE(server->is_activated());
+
+  auto client_node = rclcpp::Node::make_shared("client_node_auto");
+  auto client = client_node->create_client<std_srvs::srv::Empty>("empty_srv_auto");
+
+  rclcpp::executors::SingleThreadedExecutor node_executor;
+  node_executor.add_node(node->get_node_base_interface());
+  rclcpp::executors::SingleThreadedExecutor client_node_executor;
+  client_node_executor.add_node(client_node);
+
+  ASSERT_TRUE(client->wait_for_service(std::chrono::seconds(1)));
+
+  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+  client->async_send_request(req);
+  node_executor.spin_some();
+  client_node_executor.spin_some();
+
+  EXPECT_EQ(a, 1);
+}
 
 int main(int argc, char ** argv)
 {
