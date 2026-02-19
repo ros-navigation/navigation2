@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_ROTATION_SHIM_CONTROLLER__PARAMETER_HANDLER_HPP_
-#define NAV2_ROTATION_SHIM_CONTROLLER__PARAMETER_HANDLER_HPP_
+#ifndef NAV2_NAVFN_PLANNER__PARAMETER_HANDLER_HPP_
+#define NAV2_NAVFN_PLANNER__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -26,34 +26,30 @@
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_rotation_shim_controller
+namespace nav2_navfn_planner
 {
 
 struct Parameters
 {
-  double forward_sampling_distance;
-  double angular_dist_threshold;
-  double angular_disengage_threshold;
-  double rotate_to_heading_angular_vel;
-  double max_angular_accel;
-  double simulate_ahead_time;
-  double control_duration;
-  bool rotate_to_goal_heading;
-  bool rotate_to_heading_once;
-  bool closed_loop;
-  bool use_path_orientations;
-  std::string primary_controller;
+   // Whether or not the planner should be allowed to plan through unknown space
+  bool allow_unknown;
+  bool use_final_approach_orientation;
+  // If the goal is obstructed, the tolerance specifies how many meters the planner
+  // can relax the constraint in x and y before failing
+  double tolerance;
+  // Whether to use the astar planner or default dijkstras
+  bool use_astar;
 };
 
 /**
- * @class nav2_rotation_shim_controller::ParameterHandler
- * @brief Handles parameters and dynamic parameters for Rotation Shim
+ * @class nav2_navfn_planner::ParameterHandler
+ * @brief Handles parameters and dynamic parameters for Navfn
  */
 class ParameterHandler : public nav2_util::ParameterHandler<Parameters>
 {
 public:
   /**
-   * @brief Constructor for nav2_rotation_shim_controller::ParameterHandler
+   * @brief Constructor for nav2_navfn_planner::ParameterHandler
    */
   ParameterHandler(
     const nav2::LifecycleNode::SharedPtr & node,
@@ -84,6 +80,6 @@ protected:
   std::string plugin_name_;
 };
 
-}  // namespace nav2_rotation_shim_controller
+}  // namespace nav2_navfn_planner
 
-#endif  // NAV2_ROTATION_SHIM_CONTROLLER__PARAMETER_HANDLER_HPP_
+#endif  // NAV2_NAVFN_PLANNER__PARAMETER_HANDLER_HPP_

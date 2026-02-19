@@ -23,6 +23,7 @@ set(executable_name opennav_following)
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
+  src/parameter_handler.cpp
   src/following_server.cpp
 )
 target_include_directories(${library_name}

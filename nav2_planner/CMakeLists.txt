@@ -25,6 +25,7 @@ set(executable_name planner_server)
 set(library_name ${executable_name}_core)
 
 add_library(${library_name} SHARED
+  src/parameter_handler.cpp
   src/planner_server.cpp
 )
 target_include_directories(${library_name}

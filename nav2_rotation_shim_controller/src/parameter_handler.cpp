@@ -31,10 +31,9 @@ using rcl_interfaces::msg::ParameterType;
 ParameterHandler::ParameterHandler(
   const nav2::LifecycleNode::SharedPtr & node,
   std::string & plugin_name, rclcpp::Logger & logger)
+: nav2_util::ParameterHandler<Parameters>(node, logger)
 {
-  node_ = node;
   plugin_name_ = plugin_name;
-  logger_ = logger;
 
   params_.angular_dist_threshold = node->declare_or_get_parameter(plugin_name_ +
     ".angular_dist_threshold", 0.785);  // 45 deg
@@ -76,35 +75,6 @@ ParameterHandler::ParameterHandler(
   params_.control_duration = 1.0 / control_frequency;
 }
 
-void ParameterHandler::activate()
-{
-  auto node = node_.lock();
-  post_set_params_handler_ = node->add_post_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::updateParametersCallback,
-      this, std::placeholders::_1));
-  on_set_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(
-      &ParameterHandler::validateParameterUpdatesCallback,
-      this, std::placeholders::_1));
-}
-
-void ParameterHandler::deactivate()
-{
-  auto node = node_.lock();
-  if (post_set_params_handler_ && node) {
-    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
-  }
-  post_set_params_handler_.reset();
-  if (on_set_params_handler_ && node) {
-    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
-  }
-  on_set_params_handler_.reset();
-}
-
-ParameterHandler::~ParameterHandler()
-{
-}
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {

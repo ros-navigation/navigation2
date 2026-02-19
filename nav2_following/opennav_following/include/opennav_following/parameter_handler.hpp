@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
-#define NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
+#ifndef OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_
+#define OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_
 
 #include <string>
 #include <vector>
@@ -26,42 +26,53 @@
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 
-namespace nav2_controller
+namespace opennav_following
 {
 
 struct Parameters
 {
+  // Frequency to run control loops
   double controller_frequency;
-  double min_x_velocity_threshold;
-  double min_y_velocity_threshold;
-  double min_theta_velocity_threshold;
-  std::string speed_limit_topic;
-  double failure_tolerance;
-  bool use_realtime_priority;
-  bool publish_zero_velocity;
-  rclcpp::Duration costmap_update_timeout{0, 0};
+  // Timeout to detect the object
+  double detection_timeout;
+  // Timeout to detect the object while rotating to it
+  double rotate_to_object_timeout;
+  // Timeout after which a static object is considered as goal reached
+  double static_object_timeout;
+  // Tolerances for arriving at the safe_distance pose
+  double linear_tolerance, angular_tolerance;
+  // Maximum number of times the robot will retry to approach the object
+  int max_retries;
+  // This is the root frame of the robot - typically "base_link"
+  std::string base_frame;
+  // This is our fixed frame for controlling - typically "odom"
+  std::string fixed_frame;
+  // Desired distance to keep from the object
+  double desired_distance;
+  // Skip perception orientation
+  bool skip_orientation;
+  // Should the robot search for the object by rotating or go to last known heading
+  bool search_by_rotating;
+  // Search angle relative to current robot orientation when rotating to find objects
+  double search_angle;
+  // Tolerance for transforming coordinates
+  double transform_tolerance;
+  // Parameters for OdomSmoother
   std::string odom_topic;
   double odom_duration;
-  double search_window;
-  std::vector<std::string> progress_checker_ids;
-  std::vector<std::string> progress_checker_types;
-  std::vector<std::string> goal_checker_ids;
-  std::vector<std::string> goal_checker_types;
-  std::vector<std::string> controller_ids;
-  std::vector<std::string> controller_types;
-  std::vector<std::string> path_handler_ids;
-  std::vector<std::string> path_handler_types;
+  bool use_collision_detection;
+  double filter_coef;
 };
 
 /**
- * @class nav2_controller::ParameterHandler
- * @brief Handles parameters and dynamic parameters for Controller Server
+ * @class opennav_following::ParameterHandler
+ * @brief Handles parameters and dynamic parameters for Planner Server
  */
 class ParameterHandler : public nav2_util::ParameterHandler<Parameters>
 {
 public:
   /**
-   * @brief Constructor for nav2_controller::ParameterHandler
+   * @brief Constructor for opennav_following::ParameterHandler
    */
   ParameterHandler(
     const nav2::LifecycleNode::SharedPtr & node,
@@ -86,19 +97,8 @@ protected:
    * @param parameters List of parameters that have been updated.
    */
   void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters) override;
-
-  const std::vector<std::string> default_progress_checker_ids_{"progress_checker"};
-  const std::vector<std::string> default_progress_checker_types_{
-    "nav2_controller::SimpleProgressChecker"};
-  const std::vector<std::string> default_goal_checker_ids_{"goal_checker"};
-  const std::vector<std::string> default_goal_checker_types_{"nav2_controller::SimpleGoalChecker"};
-  const std::vector<std::string> default_controller_ids_{"FollowPath"};
-  const std::vector<std::string> default_controller_types_{"nav2_mppi_controller::MPPIController"};
-  const std::vector<std::string> default_path_handler_ids_{"PathHandler"};
-  const std::vector<std::string> default_path_handler_types_{
-    "nav2_controller::FeasiblePathHandler"};
 };
 
-}  // namespace nav2_controller
+}  // namespace opennav_following
 
-#endif  // NAV2_CONTROLLER__PARAMETER_HANDLER_HPP_
+#endif  // OPENNAV_FOLLOWING__PARAMETER_HANDLER_HPP_

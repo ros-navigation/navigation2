@@ -33,6 +33,7 @@
 #include "nav2_util/odometry_utils.hpp"
 #include "opennav_docking/controller.hpp"
 #include "opennav_docking/pose_filter.hpp"
+#include "opennav_following/parameter_handler.hpp"
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 
@@ -208,47 +209,16 @@ protected:
    */
   bool isGoalReached(const geometry_msgs::msg::PoseStamped & goal_pose);
 
-  /**
-   * @brief Callback executed when a parameter change is detected
-   * @param event ParameterEvent message
-   */
-  rcl_interfaces::msg::SetParametersResult
-  dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+  // Parameter handler
+  std::unique_ptr<opennav_following::ParameterHandler> param_handler_;
+  Parameters * params_;
 
-  // Dynamic parameters handler
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
-
-  // Mutex for dynamic parameters
-  std::mutex dynamic_params_lock_;
-
-  // Frequency to run control loops
-  double controller_frequency_;
-  // Timeout to detect the object while rotating to it
-  double rotate_to_object_timeout_;
-  // Timeout after which a static object is considered as goal reached
-  double static_object_timeout_;
   // Time when object became static
   rclcpp::Time static_object_start_time_;
   // Flag to track if we've initialized the static timer
   bool static_timer_initialized_;
-  // Tolerance for transforming coordinates
-  double transform_tolerance_;
-  // Tolerances for arriving at the safe_distance pose
-  double linear_tolerance_, angular_tolerance_;
   // Maximum number of times the robot will retry to approach the object
-  int max_retries_, num_retries_;
-  // This is the root frame of the robot - typically "base_link"
-  std::string base_frame_;
-  // This is our fixed frame for controlling - typically "odom"
-  std::string fixed_frame_;
-  // Desired distance to keep from the object
-  double desired_distance_;
-  // Skip perception orientation
-  bool skip_orientation_;
-  // Should the robot search for the object by rotating or go to last known heading
-  bool search_by_rotating_;
-  // Search angle relative to current robot orientation when rotating to find objects
-  double search_angle_;
+  int num_retries_;
 
   // Timestamp of the last time a iteration was started
   rclcpp::Time iteration_start_time_;
@@ -268,7 +238,6 @@ protected:
 
   // Filtering of detected poses
   std::unique_ptr<opennav_docking::PoseFilter> filter_;
-  double detection_timeout_;
 
   std::unique_ptr<nav2_util::TwistPublisher> vel_publisher_;
   std::unique_ptr<nav2_util::OdomSmoother> odom_sub_;
