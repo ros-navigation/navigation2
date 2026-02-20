@@ -264,7 +264,7 @@ void Optimizer::optimize()
   // Averaging accumulators (static for debug profiling)
   static size_t opt_count = 0;
   static double gen_accum = 0.0, eval_accum = 0.0, update_accum = 0.0;
-  constexpr size_t kAvgWindow = 50;
+  constexpr size_t kAvgWindow = 200;
 
   constexpr double kThresholdUs = 50000.0;  // 40ms
   double call_gen = 0.0, call_eval = 0.0, call_update = 0.0;

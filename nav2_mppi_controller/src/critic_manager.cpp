@@ -103,7 +103,7 @@ void CriticManager::evalTrajectoriesScores(
   static size_t eval_count = 0;
   static std::vector<double> critic_time_accum;
   static double eval_total_accum = 0.0;
-  constexpr size_t kAvgWindow = 50;
+  constexpr size_t kAvgWindow = 200;
 
   if (critic_time_accum.size() != critics_.size()) {
     critic_time_accum.assign(critics_.size(), 0.0);
