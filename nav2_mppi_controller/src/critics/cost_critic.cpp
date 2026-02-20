@@ -145,9 +145,11 @@ void CostCritic::score(CriticData & data)
   size_x_ = costmap->getSizeInCellsX();
   size_y_ = costmap->getSizeInCellsY();
 
+  nav2_costmap_2d::Footprint footprint;
   if (consider_footprint_) {
     // footprint may have changed since initialization if user has dynamic footprints
     possible_collision_cost_ = findCircumscribedCost(costmap_ros_);
+    footprint = costmap_ros_->getRobotFootprint();
   }
 
   // If near the goal, don't apply the preferential term since the goal is near obstacles
@@ -215,7 +217,7 @@ void CostCritic::score(CriticData & data)
         footprint_checks++;
       }
 
-      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j))) {
+      if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j), footprint)) {
         traj_cost = collision_cost_;
         trajectory_collide = true;
         collisions++;
