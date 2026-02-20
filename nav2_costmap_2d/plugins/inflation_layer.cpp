@@ -452,10 +452,10 @@ rcl_interfaces::msg::SetParametersResult InflationLayer::validateParameterUpdate
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() <= 0.0) {
+      if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
         logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >0. Ignoring parameter update.",
+        "it should be >=0. Ignoring parameter update.",
         param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
@@ -500,12 +500,14 @@ InflationLayer::updateParametersCallback(
         enabled_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "inflate_unknown") {
+      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
+        inflate_unknown_ != parameter.as_bool())
+      {
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
         current_ = false;
-      } else if (param_name == name_ + "." + "inflate_unknown" && // NOLINT
-        inflate_unknown_ != parameter.as_bool())
+      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
+        inflate_around_unknown_ != parameter.as_bool())
       {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;

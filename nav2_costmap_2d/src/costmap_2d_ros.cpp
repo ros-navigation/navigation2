@@ -762,7 +762,17 @@ rcl_interfaces::msg::SetParametersResult Costmap2DROS::validateParameterUpdatesC
       continue;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
-      if (parameter.as_double() < 0.0 && (param_name == "origin_x" || param_name == "origin_y")) {
+      if (parameter.as_double() <= 0.0 &&
+        (param_name == "resolution" || param_name == "publish_frequency"))
+      {
+        RCLCPP_WARN(
+        get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
+        "it should be >0. Ignoring parameter update.",
+        param_name.c_str(), parameter.as_double());
+        result.successful = false;
+      } else if (parameter.as_double() < 0.0 && // NOLINT
+        (param_name != "origin_x" || param_name != "origin_y"))
+      {
         RCLCPP_WARN(
         get_logger(), "The value of parameter '%s' is incorrectly set to %f, "
         "it should be >0. Ignoring parameter update.",
@@ -812,7 +822,6 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
     if (param_name.find('.') != std::string::npos) {
       continue;
     }
-
 
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "robot_radius") {

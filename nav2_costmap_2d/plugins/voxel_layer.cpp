@@ -525,7 +525,7 @@ rcl_interfaces::msg::SetParametersResult VoxelLayer::validateParameterUpdatesCal
       RCLCPP_WARN(
         logger_, "publish voxel map is not a dynamic parameter "
         "cannot be changed while running. Rejecting parameter update.");
-      continue;
+      result.successful = false;
     } else if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() < 0.0) {
         RCLCPP_WARN(
