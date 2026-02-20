@@ -42,9 +42,6 @@ BT::NodeStatus TimeExpiredCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-  }
-
-  if (!BT::isStatusActive(status())) {
     start_ = node_->now();
     return BT::NodeStatus::FAILURE;
   }

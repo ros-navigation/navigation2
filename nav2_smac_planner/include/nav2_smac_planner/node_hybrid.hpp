@@ -26,26 +26,13 @@
 #include "nav2_smac_planner/types.hpp"
 #include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_smac_planner/costmap_downsampler.hpp"
-#include "nav2_smac_planner/nav2_smac_planner_common_visibility_control.hpp"
+#include "nav2_smac_planner/obstacle_heuristic.hpp"
+#include "nav2_smac_planner/distance_heuristic.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
 
 namespace nav2_smac_planner
 {
-
-typedef std::vector<float> LookupTable;
-typedef std::pair<double, double> TrigValues;
-
-typedef std::pair<float, uint64_t> ObstacleHeuristicElement;
-struct ObstacleHeuristicComparator
-{
-  bool operator()(const ObstacleHeuristicElement & a, const ObstacleHeuristicElement & b) const
-  {
-    return a.first > b.first;
-  }
-};
-
-typedef std::vector<ObstacleHeuristicElement> ObstacleHeuristicQueue;
 
 // Must forward declare
 class NodeHybrid;
@@ -146,48 +133,28 @@ public:
   typedef NodeHybrid * NodePtr;
   typedef std::unique_ptr<std::vector<NodeHybrid>> Graph;
   typedef std::vector<NodePtr> NodeVector;
-
-  /**
-   * @class nav2_smac_planner::NodeHybrid::Coordinates
-   * @brief NodeHybrid implementation of coordinate structure
-   */
-  struct Coordinates
-  {
-    /**
-     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
-     */
-    Coordinates() {}
-
-    /**
-     * @brief A constructor for nav2_smac_planner::NodeHybrid::Coordinates
-     * @param x_in X coordinate
-     * @param y_in Y coordinate
-     * @param theta_in Theta coordinate
-     */
-    Coordinates(const float & x_in, const float & y_in, const float & theta_in)
-    : x(x_in), y(y_in), theta(theta_in)
-    {}
-
-    inline bool operator==(const Coordinates & rhs) const
-    {
-      return this->x == rhs.x && this->y == rhs.y && this->theta == rhs.theta;
-    }
-
-    inline bool operator!=(const Coordinates & rhs) const
-    {
-      return !(*this == rhs);
-    }
-
-    float x, y, theta;
-  };
-
+  using Coordinates = nav2_smac_planner::Coordinates;
   typedef std::vector<Coordinates> CoordinateVector;
 
+  struct NodeContext
+  {
+    /**
+     * @brief A constructor for nav2_smac_planner::NodeContext
+     */
+    NodeContext()
+    {
+      obstacle_heuristic = std::make_unique<ObstacleHeuristic>();
+      distance_heuristic = std::make_unique<DistanceHeuristic<NodeHybrid>>();
+    }
+    HybridMotionTable motion_table;
+    std::unique_ptr<ObstacleHeuristic> obstacle_heuristic;
+    std::unique_ptr<DistanceHeuristic<NodeHybrid>> distance_heuristic;
+  };
   /**
    * @brief A constructor for nav2_smac_planner::NodeHybrid
    * @param index The index of this node for self-reference
    */
-  explicit NodeHybrid(const uint64_t index);
+  explicit NodeHybrid(const uint64_t index, NodeContext * ctx);
 
   /**
    * @brief A destructor for nav2_smac_planner::NodeHybrid
@@ -336,21 +303,6 @@ public:
   }
 
   /**
-   * @brief Get index at coordinates
-   * @param x X coordinate of point
-   * @param y Y coordinate of point
-   * @param angle Theta coordinate of point
-   * @return Index
-   */
-  static inline uint64_t getIndex(
-    const unsigned int & x, const unsigned int & y, const unsigned int & angle)
-  {
-    return getIndex(
-      x, y, angle, motion_table.size_x,
-      motion_table.num_angle_quantization);
-  }
-
-  /**
    * @brief Get coordinates at index
    * @param index Index of point
    * @param width Width of costmap
@@ -373,7 +325,7 @@ public:
    * @param node Node index of new
    * @return Heuristic cost between the nodes
    */
-  static float getHeuristicCost(
+  float getHeuristicCost(
     const Coordinates & node_coords,
     const CoordinateVector & goals_coords);
 
@@ -386,59 +338,12 @@ public:
    * @param search_info Search info to use
    */
   static void initMotionModel(
+    NodeContext * ctx,
     const MotionModel & motion_model,
     unsigned int & size_x,
     unsigned int & size_y,
     unsigned int & angle_quantization,
     SearchInfo & search_info);
-
-  /**
-   * @brief Compute the SE2 distance heuristic
-   * @param lookup_table_dim Size, in costmap pixels, of the
-   * each lookup table dimension to populate
-   * @param motion_model Motion model to use for state space
-   * @param dim_3_size Number of quantization bins for caching
-   * @param search_info Info containing minimum radius to use
-   */
-  static void precomputeDistanceHeuristic(
-    const float & lookup_table_dim,
-    const MotionModel & motion_model,
-    const unsigned int & dim_3_size,
-    const SearchInfo & search_info);
-
-  /**
-   * @brief Compute the Obstacle heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @return heuristic Heuristic value
-   */
-  static float getObstacleHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & cost_penalty);
-
-  /**
-   * @brief Compute the Distance heuristic
-   * @param node_coords Coordinates to get heuristic at
-   * @param goal_coords Coordinates to compute heuristic to
-   * @param obstacle_heuristic Value of the obstacle heuristic to compute
-   * additional motion heuristics if required
-   * @return heuristic Heuristic value
-   */
-  static float getDistanceHeuristic(
-    const Coordinates & node_coords,
-    const Coordinates & goal_coords,
-    const float & obstacle_heuristic);
-
-  /**
-   * @brief reset the obstacle heuristic state
-   * @param costmap_ros Costmap to use
-   * @param goal_coords Coordinates to start heuristic expansion at
-   */
-  static void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    const unsigned int & start_x, const unsigned int & start_y,
-    const unsigned int & goal_x, const unsigned int & goal_y);
 
   /**
    * @brief Retrieve all valid neighbors of a node.
@@ -461,29 +366,8 @@ public:
    */
   bool backtracePath(CoordinateVector & path);
 
-  /**
-    * @brief Destroy shared pointer assets at the end of the process that don't
-    * require normal destruction handling
-    */
-  static void destroyStaticAssets()
-  {
-    costmap_ros.reset();
-  }
-
   NodeHybrid * parent;
   Coordinates pose;
-
-  // Constants required across all nodes but don't want to allocate more than once
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float travel_distance_cost;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static HybridMotionTable motion_table;
-  // Wavefront lookup and queue for continuing to expand as needed
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable obstacle_heuristic_lookup_table;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static ObstacleHeuristicQueue obstacle_heuristic_queue;
-
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
-  // Dubin / Reeds-Shepp lookup and size for dereferencing
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static LookupTable dist_heuristic_lookup_table;
-  NAV2_SMAC_PLANNER_COMMON_EXPORT static float size_lookup;
 
 private:
   float _cell_cost;
@@ -493,6 +377,7 @@ private:
   unsigned int _motion_primitive_index;
   TurnDirection _turn_dir;
   bool _is_node_valid{false};
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

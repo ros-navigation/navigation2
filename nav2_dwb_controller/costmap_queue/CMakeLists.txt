@@ -33,12 +33,12 @@ if(BUILD_TESTING)
 
   ament_find_gtest()
 
-  ament_add_gtest(mbq_test test/mbq_test.cpp)
+  nav2_add_gtest(mbq_test test/mbq_test.cpp)
   target_link_libraries(mbq_test
     ${PROJECT_NAME}
   )
 
-  ament_add_gtest(utest test/utest.cpp)
+  nav2_add_gtest(utest test/utest.cpp)
   target_link_libraries(utest
     ${PROJECT_NAME}
     nav2_costmap_2d::nav2_costmap_2d_core

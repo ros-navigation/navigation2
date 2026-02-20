@@ -28,10 +28,10 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "nav2_regulated_pure_pursuit_controller/path_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
+#include "nav2_regulated_pure_pursuit_controller/dynamic_window_pure_pursuit_functions.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -82,28 +82,27 @@ public:
 
   /**
    * @brief Compute the best command given the current pose and velocity, with possible debug information
-   *
-   * Same as above computeVelocityCommands, but with debug results.
-   * If the results pointer is not null, additional information about the twists
-   * evaluated will be in results after the call.
-   *
    * @param pose      Current robot pose
    * @param velocity  Current robot velocity
    * @param goal_checker   Ptr to the goal checker for this task in case useful in computing commands
+   * @param transformed_global_plan The global plan after being processed by the path handler
+   * @param global_goal The last pose of the global plan
    * @return          Best command
    */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
-    nav2_core::GoalChecker * /*goal_checker*/) override;
+    nav2_core::GoalChecker * /*goal_checker*/,
+    const nav_msgs::msg::Path & transformed_global_plan,
+    const geometry_msgs::msg::PoseStamped & global_goal) override;
 
   bool cancel() override;
 
   /**
-   * @brief nav2_core setPlan - Sets the global plan
-   * @param path The global plan
+   * @brief nav2_core newPathReceived - Receives a new plan from the Planner Server
+   * @param raw_global_path The global plan from the Planner Server
    */
-  void setPlan(const nav_msgs::msg::Path & path) override;
+  void newPathReceived(const nav_msgs::msg::Path & raw_global_path) override;
 
   /**
    * @brief Limits the maximum linear speed of the robot.
@@ -174,13 +173,6 @@ protected:
     const double & pose_cost, const nav_msgs::msg::Path & path,
     double & linear_vel, double & sign);
 
-  /**
-   * @brief checks for the cusp position
-   * @param pose Pose input to determine the cusp position
-   * @return robot distance from the cusp
-   */
-  double findVelocitySignChange(const nav_msgs::msg::Path & transformed_plan);
-
   nav2::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::string plugin_name_;
@@ -195,13 +187,12 @@ protected:
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
   bool has_reached_xy_tolerance_ = false;
+  geometry_msgs::msg::Twist last_command_velocity_;
 
-  nav2::Publisher<nav_msgs::msg::Path>::SharedPtr global_path_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
   nav2::Publisher<std_msgs::msg::Bool>::SharedPtr is_rotating_to_heading_pub_;
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
-  std::unique_ptr<nav2_regulated_pure_pursuit_controller::PathHandler> path_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;
 };

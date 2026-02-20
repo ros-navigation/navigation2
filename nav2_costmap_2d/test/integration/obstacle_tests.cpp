@@ -101,6 +101,7 @@ public:
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
     node_->declare_parameter("use_maximum", rclcpp::ParameterValue(false));
     node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    node_->declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
     node_->declare_parameter(
       "unknown_cost_value",
       rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
@@ -336,11 +337,10 @@ TEST_F(TestNode, testRepeatedResets) {
   // Set parameters
   auto plugins = layers.getPlugins();
   for_each(
-    begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+    begin(*plugins), end(*plugins), [this, &layer_dummy](const auto & plugin) {
       string layer_param = layer_dummy.first + "_" + plugin->getName();
 
-      // Notice we are using Layer::declareParameter
-      plugin->declareParameter(layer_param, rclcpp::ParameterValue(layer_dummy.second));
+      node_->declare_parameter(layer_param, rclcpp::ParameterValue(layer_dummy.second));
     });
 
   // Check that all parameters have been set
@@ -350,9 +350,9 @@ TEST_F(TestNode, testRepeatedResets) {
   // layer-level param
   ASSERT_TRUE(
     all_of(
-      begin(*plugins), end(*plugins), [&layer_dummy](const auto & plugin) {
+      begin(*plugins), end(*plugins), [this, &layer_dummy](const auto & plugin) {
         string layer_param = layer_dummy.first + "_" + plugin->getName();
-        return plugin->hasParameter(layer_param);
+        return node_->has_parameter(layer_param);
       }));
 
   // Reset all layers. Parameters should be declared if not declared, otherwise skipped.
@@ -580,6 +580,7 @@ public:
     node_ = std::make_shared<TestLifecycleNode>("obstacle_test_node");
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(true));
     node_->declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
+    node_->declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
     node_->declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
     node_->declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
     node_->declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
@@ -618,7 +619,7 @@ TEST_F(TestNodeWithoutUnknownOverwrite, testMaxWithoutUnknownOverwriteCombinatio
   ASSERT_EQ(unknown_count, 100);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

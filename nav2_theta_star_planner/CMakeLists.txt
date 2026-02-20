@@ -71,7 +71,7 @@ if(BUILD_TESTING)
 
   ament_find_gtest()
 
-  ament_add_gtest(test_theta_star test/test_theta_star.cpp)
+  nav2_add_gtest(test_theta_star test/test_theta_star.cpp)
   target_link_libraries(test_theta_star
     ${library_name}
     ${geometry_msgs_TARGETS}

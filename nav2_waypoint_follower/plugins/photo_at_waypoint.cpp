@@ -39,24 +39,15 @@ void PhotoAtWaypoint::initialize(
 
   curr_frame_msg_ = std::make_shared<sensor_msgs::msg::Image>();
 
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".enabled",
-    rclcpp::ParameterValue(true));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".image_topic",
-    rclcpp::ParameterValue("/camera/color/image_raw"));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".save_dir",
-    rclcpp::ParameterValue("/tmp/waypoint_images"));
-  nav2::declare_parameter_if_not_declared(
-    node, plugin_name + ".image_format",
-    rclcpp::ParameterValue("png"));
-
   std::string save_dir_as_string;
-  node->get_parameter(plugin_name + ".enabled", is_enabled_);
-  node->get_parameter(plugin_name + ".image_topic", image_topic_);
-  node->get_parameter(plugin_name + ".save_dir", save_dir_as_string);
-  node->get_parameter(plugin_name + ".image_format", image_format_);
+  save_dir_as_string = node->declare_or_get_parameter(
+    plugin_name + ".save_dir", std::string("/tmp/waypoint_images"));
+  image_topic_ = node->declare_or_get_parameter(
+    plugin_name + ".image_topic", std::string("/camera/color/image_raw"));
+  image_format_ = node->declare_or_get_parameter(
+    plugin_name + ".image_format", std::string("png"));
+  is_enabled_ = node->declare_or_get_parameter(
+    plugin_name + ".enabled", true);
 
   // get inputted save directory and make sure it exists, if not log and create  it
   save_dir_ = save_dir_as_string;
@@ -135,14 +126,14 @@ bool PhotoAtWaypoint::processAtWaypoint(
   return true;
 }
 
-void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
+void PhotoAtWaypoint::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   std::lock_guard<std::mutex> guard(global_mutex_);
   curr_frame_msg_ = msg;
 }
 
 void PhotoAtWaypoint::deepCopyMsg2Mat(
-  const sensor_msgs::msg::Image::SharedPtr & msg,
+  const sensor_msgs::msg::Image::ConstSharedPtr & msg,
   cv::Mat & mat)
 {
   cv_bridge::CvImageConstPtr cv_bridge_ptr = cv_bridge::toCvShare(msg, msg->encoding);

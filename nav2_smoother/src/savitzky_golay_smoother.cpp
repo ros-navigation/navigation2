@@ -21,7 +21,6 @@ namespace nav2_smoother
 {
 using namespace nav2_util::geometry_utils;  // NOLINT
 using namespace std::chrono;  // NOLINT
-using nav2::declare_parameter_if_not_declared;
 using nav2_util::PathSegment;
 
 void SavitzkyGolaySmoother::configure(
@@ -33,24 +32,20 @@ void SavitzkyGolaySmoother::configure(
   auto node = parent.lock();
   logger_ = node->get_logger();
 
-  declare_parameter_if_not_declared(
-    node, name + ".do_refinement", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".refinement_num", rclcpp::ParameterValue(2));
-  declare_parameter_if_not_declared(
-    node, name + ".enforce_path_inversion", rclcpp::ParameterValue(true));
-  declare_parameter_if_not_declared(
-    node, name + ".window_size", rclcpp::ParameterValue(7));
-  declare_parameter_if_not_declared(
-    node, name + ".poly_order", rclcpp::ParameterValue(3));
-  node->get_parameter(name + ".do_refinement", do_refinement_);
-  node->get_parameter(name + ".refinement_num", refinement_num_);
-  node->get_parameter(name + ".enforce_path_inversion", enforce_path_inversion_);
-  node->get_parameter(name + ".window_size", window_size_);
-  node->get_parameter(name + ".poly_order", poly_order_);
+  do_refinement_ = node->declare_or_get_parameter(
+    name + ".do_refinement", true);
+  refinement_num_ = node->declare_or_get_parameter(
+    name + ".refinement_num", 2);
+  enforce_path_inversion_ = node->declare_or_get_parameter(
+    name + ".enforce_path_inversion", true);
+  window_size_ = node->declare_or_get_parameter(
+    name + ".window_size", 7);
+  poly_order_ = node->declare_or_get_parameter(
+    name + ".poly_order", 3);
+
   if (window_size_ % 2 == 0 || window_size_ <= 2) {
     throw nav2_core::SmootherException(
-      "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
+            "Savitzky-Golay Smoother requires an odd window size of 3 or greater");
   }
   half_window_size_ = (window_size_ - 1) / 2;
   calculateCoefficients();
@@ -61,10 +56,11 @@ void SavitzkyGolaySmoother::configure(
 void SavitzkyGolaySmoother::calculateCoefficients()
 {
   // We construct the Vandermonde matrix here
-  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(window_size_, -half_window_size_,
-      half_window_size_);
+  Eigen::VectorXd v = Eigen::VectorXd::LinSpaced(
+    window_size_, -half_window_size_,
+    half_window_size_);
   Eigen::MatrixXd x = Eigen::MatrixXd::Ones(window_size_, poly_order_ + 1);
-  for(int i = 1; i <= poly_order_; i++) {
+  for (int i = 1; i <= poly_order_; i++) {
     x.col(i) = (x.col(i - 1).array() * v.array()).matrix();
   }
   // Compute the pseudoinverse of X, (X^T * X)^-1 * X^T
@@ -146,7 +142,7 @@ bool SavitzkyGolaySmoother::smoothImpl(
       for (unsigned int idx = 1; idx != path_size - 1; idx++) {
         Eigen::Vector2d accum(0.0, 0.0);
 
-        for(int j = -half_window_size_; j <= half_window_size_; j++) {
+        for (int j = -half_window_size_; j <= half_window_size_; j++) {
           int path_idx = std::clamp<int>(idx + j, 0, path_size - 1);
           accum += sg_coeffs_(j + half_window_size_) * init_plan_pts[path_idx];
         }
@@ -156,16 +152,18 @@ bool SavitzkyGolaySmoother::smoothImpl(
     };
 
   std::vector<Eigen::Vector2d> initial_path_poses(path.poses.size());
-  std::transform(path.poses.begin(), path.poses.end(),
-               initial_path_poses.begin(), toEigenVec);
+  std::transform(
+    path.poses.begin(), path.poses.end(),
+    initial_path_poses.begin(), toEigenVec);
   applyFilterOverAxes(path.poses, initial_path_poses);
 
   // Let's do additional refinement, it shouldn't take more than a couple milliseconds
   if (do_refinement_) {
     for (int i = 0; i < refinement_num_; i++) {
       std::vector<Eigen::Vector2d> reined_initial_path_poses(path.poses.size());
-      std::transform(path.poses.begin(), path.poses.end(),
-                       reined_initial_path_poses.begin(), toEigenVec);
+      std::transform(
+        path.poses.begin(), path.poses.end(),
+        reined_initial_path_poses.begin(), toEigenVec);
       applyFilterOverAxes(path.poses, reined_initial_path_poses);
     }
   }

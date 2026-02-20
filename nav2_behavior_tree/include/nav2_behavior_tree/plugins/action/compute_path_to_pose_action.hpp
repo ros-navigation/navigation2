@@ -27,8 +27,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathToPose
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class ComputePathToPoseAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
 {
@@ -94,7 +93,7 @@ public:
         BT::InputPort<geometry_msgs::msg::PoseStamped>(
           "start",
           "Used as the planner start pose instead of the current robot pose, if use_start is"
-                   " not false (i.e. not provided or set to true)"),
+          " not false (i.e. not provided or set to true)"),
         BT::InputPort<bool>(
           "use_start", "For using or not using (i.e. ignoring) the provided start pose"),
         BT::InputPort<std::string>(

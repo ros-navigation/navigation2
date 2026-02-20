@@ -93,22 +93,18 @@ InflationLayer::~InflationLayer()
 void
 InflationLayer::onInitialize()
 {
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("inflation_radius", rclcpp::ParameterValue(0.55));
-  declareParameter("cost_scaling_factor", rclcpp::ParameterValue(10.0));
-  declareParameter("inflate_unknown", rclcpp::ParameterValue(false));
-  declareParameter("inflate_around_unknown", rclcpp::ParameterValue(false));
-
   {
     auto node = node_.lock();
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
     }
-    node->get_parameter(name_ + "." + "enabled", enabled_);
-    node->get_parameter(name_ + "." + "inflation_radius", inflation_radius_);
-    node->get_parameter(name_ + "." + "cost_scaling_factor", cost_scaling_factor_);
-    node->get_parameter(name_ + "." + "inflate_unknown", inflate_unknown_);
-    node->get_parameter(name_ + "." + "inflate_around_unknown", inflate_around_unknown_);
+    enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+    inflation_radius_ = node->declare_or_get_parameter(name_ + "." + "inflation_radius", 0.55);
+    cost_scaling_factor_ = node->declare_or_get_parameter(
+      name_ + "." + "cost_scaling_factor", 10.0);
+    inflate_unknown_ = node->declare_or_get_parameter(name_ + "." + "inflate_unknown", false);
+    inflate_around_unknown_ = node->declare_or_get_parameter(
+      name_ + "." + "inflate_around_unknown", false);
 
     post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
@@ -147,10 +143,10 @@ InflationLayer::updateBounds(
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
   if (need_reinflation_) {
-    last_min_x_ = *min_x;
-    last_min_y_ = *min_y;
-    last_max_x_ = *max_x;
-    last_max_y_ = *max_y;
+    // Reset last_* to "no expansion" values so the next cycle won't
+    // merge with these full-map bounds (avoids double full-map update after reset)
+    last_min_x_ = last_min_y_ = std::numeric_limits<double>::max();
+    last_max_x_ = last_max_y_ = std::numeric_limits<double>::lowest();
 
     *min_x = std::numeric_limits<double>::lowest();
     *min_y = std::numeric_limits<double>::lowest();
@@ -480,10 +476,14 @@ InflationLayer::updateParametersCallback(
         inflation_radius_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
-      } else if (param_name == name_ + "." + "cost_scaling_factor") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "cost_scaling_factor" && // NOLINT
+        getCostScalingFactor() != parameter.as_double())
+      {
         cost_scaling_factor_ = parameter.as_double();
         need_reinflation_ = true;
         need_cache_recompute = true;
+        current_ = false;
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == name_ + "." + "enabled") {
@@ -493,9 +493,13 @@ InflationLayer::updateParametersCallback(
       } else if (param_name == name_ + "." + "inflate_unknown") {
         inflate_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
-      } else if (param_name == name_ + "." + "inflate_around_unknown") {
+        current_ = false;
+      } else if (param_name == name_ + "." + "inflate_around_unknown" && // NOLINT
+        inflate_around_unknown_ != parameter.as_bool())
+      {
         inflate_around_unknown_ = parameter.as_bool();
         need_reinflation_ = true;
+        current_ = false;
       }
     }
   }

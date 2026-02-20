@@ -51,9 +51,6 @@ BT::NodeStatus DistanceTraveledCondition::tick()
 {
   if (!BT::isStatusActive(status())) {
     initialize();
-  }
-
-  if (!BT::isStatusActive(status())) {
     if (!nav2_util::getCurrentPose(
         start_pose_, *tf_, global_frame_, robot_base_frame_,
         transform_tolerance_))

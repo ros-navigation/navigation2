@@ -16,6 +16,7 @@
 #ifndef  NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_
 #define  NAV2_ROS_COMMON__VALIDATE_MESSAGES_HPP_
 
+#include <array>
 #include <cmath>
 #include <iostream>
 
@@ -56,6 +57,10 @@ bool validateMsg(const double & num)
   return true;
 }
 
+const double MAX_COVARIANCE = 1e9;
+const double MIN_COVARIANCE = 0;
+const double MIN_MAP_RESOLUTION = 1e-6;
+
 template<size_t N>
 bool validateMsg(const std::array<double, N> & msg)
 {
@@ -65,6 +70,10 @@ bool validateMsg(const std::array<double, N> & msg)
    */
   for (const auto & element : msg) {
     if (!validateMsg(element)) {return false;}
+
+    if (std::abs(element) > MAX_COVARIANCE || element < MIN_COVARIANCE) {
+      return false;
+    }
   }
 
   return true;
@@ -140,6 +149,7 @@ bool validateMsg(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
   // check sub-type
   if (!validateMsg(msg.header)) {return false;}
   if (!validateMsg(msg.pose)) {return false;}
+  if (!validateMsg(msg.pose.covariance)) {return false;}
   return true;
 }
 
@@ -150,6 +160,8 @@ bool validateMsg(const nav_msgs::msg::MapMetaData & msg)
   // check sub-type
   if (!validateMsg(msg.origin)) {return false;}
   if (!validateMsg(msg.resolution)) {return false;}
+
+  if (msg.resolution < MIN_MAP_RESOLUTION) {return false;}
 
   // logic check
   // 1> we don't need an empty map

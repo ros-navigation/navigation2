@@ -67,7 +67,9 @@ BehaviorTreeEngine::run(
 
       result = tree->tickOnce();
 
-      onLoop();
+      if (result == BT::NodeStatus::RUNNING || result == BT::NodeStatus::IDLE) {
+        onLoop();
+      }
 
       if (!loopRate.sleep()) {
         RCLCPP_DEBUG_THROTTLE(
@@ -106,36 +108,41 @@ BehaviorTreeEngine::createTreeFromFile(
 std::string BehaviorTreeEngine::extractBehaviorTreeID(
   const std::string & bt_file)
 {
-  if(bt_file.empty()) {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
-        "Error: Empty BT file passed to extractBehaviorTreeID");
+  if (bt_file.empty()) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Error: Empty BT file passed to extractBehaviorTreeID");
     return "";
   }
   tinyxml2::XMLDocument doc;
   if (doc.LoadFile(bt_file.c_str()) != tinyxml2::XML_SUCCESS) {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Error: Could not open or parse file %s",
-        bt_file.c_str());
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"), "Error: Could not open or parse file %s",
+      bt_file.c_str());
     return "";
   }
   tinyxml2::XMLElement * rootElement = doc.RootElement();
   if (!rootElement) {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"), "Error: Root element not found in %s",
-        bt_file.c_str());
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"), "Error: Root element not found in %s",
+      bt_file.c_str());
     return "";
   }
   tinyxml2::XMLElement * btElement = rootElement->FirstChildElement("BehaviorTree");
   if (!btElement) {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
-        "Error: <BehaviorTree> element not found in %s", bt_file.c_str());
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Error: <BehaviorTree> element not found in %s", bt_file.c_str());
     return "";
   }
   const char * idValue = btElement->Attribute("ID");
   if (idValue) {
     return std::string(idValue);
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("BehaviorTreeEngine"),
-        "Error: ID attribute not found on <BehaviorTree> element in %s",
-        bt_file.c_str());
+    RCLCPP_ERROR(
+      rclcpp::get_logger("BehaviorTreeEngine"),
+      "Error: ID attribute not found on <BehaviorTree> element in %s",
+      bt_file.c_str());
     return "";
   }
 }

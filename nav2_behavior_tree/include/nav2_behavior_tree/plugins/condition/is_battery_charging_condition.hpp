@@ -30,8 +30,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::ConditionNode that listens to a battery topic and
  * returns SUCCESS when battery is charging and FAILURE otherwise
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class IsBatteryChargingCondition : public BT::ConditionNode
 {
@@ -79,7 +78,7 @@ private:
    * @brief Callback function for battery topic
    * @param msg Shared pointer to sensor_msgs::msg::BatteryState message
    */
-  void batteryCallback(sensor_msgs::msg::BatteryState::SharedPtr msg);
+  void batteryCallback(const sensor_msgs::msg::BatteryState::ConstSharedPtr & msg);
 
   rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::executors::SingleThreadedExecutor callback_group_executor_;

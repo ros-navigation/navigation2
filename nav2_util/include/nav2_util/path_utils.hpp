@@ -18,13 +18,18 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <string>
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2/utils.hpp"
+#include "angles/angles.h"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/robot_utils.hpp"
 namespace nav2_util
 {
 
@@ -55,6 +60,55 @@ PathSearchResult distance_from_path(
   const geometry_msgs::msg::Pose & robot_pose,
   const size_t start_index = 0,
   const double search_window_length = std::numeric_limits<double>::max());
+
+/**
+  * @brief get an arbitrary path in a target frame
+  * @param input_path Path to transform
+  * @param transformed_path Output transformation
+  * @param tf_buffer TF buffer to use for the transformation
+  * @param target_frame Frame to transform into
+  * @param transform_timeout TF Timeout to use for transformation
+  * @return bool Whether it could be transformed successfully
+  */
+bool transformPathInTargetFrame(
+  const nav_msgs::msg::Path & input_path,
+  nav_msgs::msg::Path & transformed_path,
+  tf2_ros::Buffer & tf_buffer, const std::string target_frame,
+  const double transform_timeout = 0.1);
+
+/**
+ * @brief Find the iterator of the first pose at which there is an inversion or in place rotation on the path,
+ * @param path to check for inversion or rotation
+ * @param enforce_path_inversion Whether to enable check for inversion
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
+ * @return the first point after the inversion or in place rotation found in the path
+ */
+unsigned int findFirstPathConstraint(
+  nav_msgs::msg::Path & path,
+  bool enforce_path_inversion,
+  float rotation_threshold);
+
+/**
+ * @brief Find and remove poses after the first constraint in the path
+ * @param path to check for inversion or rotation
+ * @param enforce_path_inversion Whether to enable check for inversion
+ * @param rotation_threshold Minimum rotation angle to consider an in-place rotation (0 to disable rotation check)
+ * @return The location of the inversion or rotation, return 0 if none exist
+ */
+unsigned int removePosesAfterFirstConstraint(
+  nav_msgs::msg::Path & path,
+  bool enforce_path_inversion,
+  float rotation_threshold);
+
+/**
+ * @brief Checks if the global path is updated
+ * @param new_path new path to the goal
+ * @param old_path current path to the goal
+ * @return whether the path is updated for the current goal
+ */
+bool isPathUpdated(
+  nav_msgs::msg::Path & new_path,
+  nav_msgs::msg::Path & old_path);
 
 }  // namespace nav2_util
 

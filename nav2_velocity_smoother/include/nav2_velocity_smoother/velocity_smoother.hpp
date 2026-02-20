@@ -117,8 +117,8 @@ protected:
    * @brief Callback for incoming velocity commands
    * @param msg Twist message
    */
-  void inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
-  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void inputCommandCallback(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
+  void inputCommandStampedCallback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
 
   /**
    * @brief Main worker timer function
@@ -126,11 +126,23 @@ protected:
   void smootherTimer();
 
   /**
-   * @brief Dynamic reconfigure callback
-   * @param parameters Parameter list to change
+   * @brief Validate incoming parameter updates before applying them.
+   * This callback is triggered when one or more parameters are about to be updated.
+   * It checks the validity of parameter values and rejects updates that would lead
+   * to invalid or inconsistent configurations
+   * @param parameters List of parameters that are being updated.
+   * @return rcl_interfaces::msg::SetParametersResult Result indicating whether the update is accepted.
    */
-  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(
-    std::vector<rclcpp::Parameter> parameters);
+  rcl_interfaces::msg::SetParametersResult validateParameterUpdatesCallback(
+    const std::vector<rclcpp::Parameter> & parameters);
+
+  /**
+   * @brief Apply parameter updates after validation
+   * This callback is executed when parameters have been successfully updated.
+   * It updates the internal configuration of the node with the new parameter values.
+   * @param parameters List of parameters that have been updated.
+   */
+  void updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters);
 
   // Network interfaces
   std::unique_ptr<nav2_util::OdomSmoother> odom_smoother_;
@@ -140,7 +152,7 @@ protected:
 
   rclcpp::Clock::SharedPtr clock_;
   geometry_msgs::msg::TwistStamped last_cmd_;
-  geometry_msgs::msg::TwistStamped::SharedPtr command_;
+  geometry_msgs::msg::TwistStamped command_;
 
   // Parameters
   double smoothing_frequency_;
@@ -150,6 +162,7 @@ protected:
   bool stopped_{true};
   bool scale_velocities_;
   bool is_6dof_;
+  bool received_first_command_;
   std::vector<double> max_velocities_;
   std::vector<double> min_velocities_;
   std::vector<double> max_accels_;
@@ -158,7 +171,9 @@ protected:
   rclcpp::Duration velocity_timeout_{0, 0};
   rclcpp::Time last_command_time_;
 
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
+  std::mutex mutex_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr post_set_params_handler_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr on_set_params_handler_;
 };
 
 }  // namespace nav2_velocity_smoother

@@ -79,10 +79,10 @@ void KeepoutFilter::initializeFilter(
 
   global_frame_ = layered_costmap_->getGlobalFrameID();
 
-  declareParameter("override_lethal_cost", rclcpp::ParameterValue(false));
-  node->get_parameter(name_ + "." + "override_lethal_cost", override_lethal_cost_);
-  declareParameter("lethal_override_cost", rclcpp::ParameterValue(MAX_NON_OBSTACLE));
-  node->get_parameter(name_ + "." + "lethal_override_cost", lethal_override_cost_);
+  override_lethal_cost_ = node->declare_or_get_parameter(name_ + "." + "override_lethal_cost",
+    false);
+  lethal_override_cost_ = node->declare_or_get_parameter(name_ + "." + "lethal_override_cost",
+    MAX_NON_OBSTACLE);
 
   // clamp lethal_override_cost_ in case if higher than MAX_NON_OBSTACLE is given
   lethal_override_cost_ = \
@@ -92,7 +92,7 @@ void KeepoutFilter::initializeFilter(
 }
 
 void KeepoutFilter::filterInfoCallback(
-  const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -133,11 +133,11 @@ void KeepoutFilter::filterInfoCallback(
   mask_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
     mask_topic_,
     std::bind(&KeepoutFilter::maskCallback, this, std::placeholders::_1),
-    nav2::qos::LatchedSubscriptionQoS());
+    nav2::qos::LatchedSubscriptionQoS(3));
 }
 
 void KeepoutFilter::maskCallback(
-  const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+  const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & msg)
 {
   std::lock_guard<CostmapFilter::mutex_t> guard(*getMutex());
 
@@ -176,8 +176,15 @@ void KeepoutFilter::updateBounds(
 
   CostmapFilter::updateBounds(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 
+  if (!filter_mask_) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 2000,
+      "KeepoutFilter: Filter mask was not received");
+    return;
+  }
+
   // If new keepout zone received
-  if(has_updated_data_) {
+  if (has_updated_data_) {
     double wx, wy;
     layered_costmap_->getCostmap()->mapToWorld(x_, y_, wx, wy);
     *min_x = std::min(wx, *min_x);
@@ -202,8 +209,9 @@ void KeepoutFilter::updateBounds(
     geometry_msgs::msg::Pose mask_pose;
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
       unsigned int mask_robot_i, mask_robot_j;
-      if (nav2_util::worldToMap(filter_mask_, mask_pose.position.x, mask_pose.position.y,
-        mask_robot_i, mask_robot_j))
+      if (nav2_util::worldToMap(
+          filter_mask_, mask_pose.position.x, mask_pose.position.y,
+          mask_robot_i, mask_robot_j))
       {
         auto data = getMaskCost(filter_mask_, mask_robot_i, mask_robot_j);
         is_pose_lethal_ = (data == INSCRIBED_INFLATED_OBSTACLE || data == LETHAL_OBSTACLE);
@@ -267,8 +275,8 @@ void KeepoutFilter::process(
         mask_frame, global_frame_, tf2::TimePointZero,
         transform_tolerance_);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
+      RCLCPP_ERROR_THROTTLE(
+        logger_, *(clock_), 2000,
         "KeepoutFilter: Failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
         global_frame_.c_str(), mask_frame.c_str(), ex.what());

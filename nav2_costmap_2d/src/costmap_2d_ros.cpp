@@ -78,12 +78,16 @@ rclcpp::NodeOptions getChildNodeOptions(
   const rclcpp::NodeOptions & parent_options)
 {
   std::vector<std::string> new_arguments = parent_options.arguments();
-  nav2::replaceOrAddArgument(new_arguments, "-r", "__ns",
-      "__ns:=" + nav2::add_namespaces(parent_namespace, name));
+  bool use_intra_process_comms = parent_options.use_intra_process_comms();
+  nav2::replaceOrAddArgument(
+    new_arguments, "-r", "__ns",
+    "__ns:=" + nav2::add_namespaces(parent_namespace, name));
   nav2::replaceOrAddArgument(new_arguments, "-r", "__node", name + ":" + "__node:=" + name);
-  nav2::replaceOrAddArgument(new_arguments, "-p", "use_sim_time",
-      "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
-  return rclcpp::NodeOptions().arguments(new_arguments);
+  nav2::replaceOrAddArgument(
+    new_arguments, "-p", "use_sim_time",
+    "use_sim_time:=" + std::string(use_sim_time ? "true" : "false"));
+  return rclcpp::NodeOptions().use_intra_process_comms(use_intra_process_comms).arguments(
+    new_arguments);
 }
 
 Costmap2DROS::Costmap2DROS(
@@ -107,33 +111,11 @@ Costmap2DROS::Costmap2DROS(
 void Costmap2DROS::init()
 {
   RCLCPP_INFO(get_logger(), "Creating Costmap");
-
-  declare_parameter("always_send_full_costmap", rclcpp::ParameterValue(false));
-  declare_parameter("map_vis_z", rclcpp::ParameterValue(0.0));
-  declare_parameter("footprint_padding", rclcpp::ParameterValue(0.01f));
-  declare_parameter("footprint", rclcpp::ParameterValue(std::string("[]")));
-  declare_parameter("global_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter("height", rclcpp::ParameterValue(5));
-  declare_parameter("width", rclcpp::ParameterValue(5));
   declare_parameter("lethal_cost_threshold", rclcpp::ParameterValue(100));
-  declare_parameter("observation_sources", rclcpp::ParameterValue(std::string("")));
-  declare_parameter("origin_x", rclcpp::ParameterValue(0.0));
-  declare_parameter("origin_y", rclcpp::ParameterValue(0.0));
-  declare_parameter("plugins", rclcpp::ParameterValue(default_plugins_));
-  declare_parameter("filters", rclcpp::ParameterValue(std::vector<std::string>()));
-  declare_parameter("publish_frequency", rclcpp::ParameterValue(1.0));
-  declare_parameter("resolution", rclcpp::ParameterValue(0.1));
-  declare_parameter("robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter("robot_radius", rclcpp::ParameterValue(0.1));
-  declare_parameter("rolling_window", rclcpp::ParameterValue(false));
-  declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
-  declare_parameter("transform_tolerance", rclcpp::ParameterValue(0.3));
-  declare_parameter("initial_transform_timeout", rclcpp::ParameterValue(60.0));
   declare_parameter("trinary_costmap", rclcpp::ParameterValue(true));
   declare_parameter("unknown_cost_value", rclcpp::ParameterValue(static_cast<unsigned char>(0xff)));
-  declare_parameter("update_frequency", rclcpp::ParameterValue(5.0));
+  declare_parameter("inscribed_obstacle_cost_value", rclcpp::ParameterValue(99));
   declare_parameter("use_maximum", rclcpp::ParameterValue(false));
-  declare_parameter("subscribe_to_stamped_footprint", rclcpp::ParameterValue(false));
 }
 
 Costmap2DROS::~Costmap2DROS()
@@ -186,11 +168,13 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
     layered_costmap_->addPlugin(plugin);
 
     try {
-      plugin->initialize(layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
-          shared_from_this(), callback_group_);
+      plugin->initialize(
+        layered_costmap_.get(), plugin_names_[i], tf_buffer_.get(),
+        shared_from_this(), callback_group_);
     } catch (const std::exception & e) {
-      RCLCPP_ERROR(get_logger(), "Failed to initialize costmap plugin %s! %s.",
-          plugin_names_[i].c_str(), e.what());
+      RCLCPP_ERROR(
+        get_logger(), "Failed to initialize costmap plugin %s! %s.",
+        plugin_names_[i].c_str(), e.what());
       return nav2::CallbackReturn::FAILURE;
     }
 
@@ -221,11 +205,11 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Create the publishers and subscribers
   if (subscribe_to_stamped_footprint_) {
     footprint_stamped_sub_ = create_subscription<geometry_msgs::msg::PolygonStamped>(
-      "footprint", [this](const geometry_msgs::msg::PolygonStamped::SharedPtr footprint)
+      "footprint", [this](const geometry_msgs::msg::PolygonStamped::ConstSharedPtr & footprint)
       {setRobotFootprintPolygon(footprint->polygon);});
   } else {
     footprint_sub_ = create_subscription<geometry_msgs::msg::Polygon>(
-      "footprint", [this](const geometry_msgs::msg::Polygon::SharedPtr footprint)
+      "footprint", [this](const geometry_msgs::msg::Polygon::ConstSharedPtr & footprint)
       {setRobotFootprintPolygon(*footprint);});
   }
 
@@ -263,7 +247,8 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Service to get the cost at a point
   get_cost_service_ = create_service<nav2_msgs::srv::GetCosts>(
     std::string("get_cost_") + get_name(),
-    std::bind(&Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
+    std::bind(
+      &Costmap2DROS::getCostsCallback, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
 
   // Add cleaning service
@@ -408,27 +393,46 @@ Costmap2DROS::getParameters()
   RCLCPP_DEBUG(get_logger(), " getParameters");
 
   // Get all of the required parameters
-  get_parameter("always_send_full_costmap", always_send_full_costmap_);
-  get_parameter("map_vis_z", map_vis_z_);
-  get_parameter("footprint", footprint_);
-  get_parameter("footprint_padding", footprint_padding_);
-  get_parameter("global_frame", global_frame_);
-  get_parameter("height", map_height_meters_);
-  get_parameter("origin_x", origin_x_);
-  get_parameter("origin_y", origin_y_);
-  get_parameter("publish_frequency", map_publish_frequency_);
-  get_parameter("resolution", resolution_);
-  get_parameter("robot_base_frame", robot_base_frame_);
-  get_parameter("robot_radius", robot_radius_);
-  get_parameter("rolling_window", rolling_window_);
-  get_parameter("track_unknown_space", track_unknown_space_);
-  get_parameter("transform_tolerance", transform_tolerance_);
-  get_parameter("initial_transform_timeout", initial_transform_timeout_);
-  get_parameter("update_frequency", map_update_frequency_);
-  get_parameter("width", map_width_meters_);
-  get_parameter("plugins", plugin_names_);
-  get_parameter("filters", filter_names_);
-  get_parameter("subscribe_to_stamped_footprint", subscribe_to_stamped_footprint_);
+  always_send_full_costmap_ = declare_or_get_parameter(
+    "always_send_full_costmap", false);
+  map_vis_z_ = declare_or_get_parameter("map_vis_z", 0.0);
+  footprint_padding_ = declare_or_get_parameter("footprint_padding", 0.01f);
+  footprint_ = declare_or_get_parameter(
+    "footprint", std::string("[]"));
+  global_frame_ = declare_or_get_parameter(
+    "global_frame", std::string("map"));
+  map_height_meters_ = declare_or_get_parameter(
+    "height", 5);
+  map_width_meters_ = declare_or_get_parameter(
+    "width", 5);
+  origin_x_ = declare_or_get_parameter(
+    "origin_x", 0.0);
+  origin_y_ = declare_or_get_parameter(
+    "origin_y", 0.0);
+  plugin_names_ = declare_or_get_parameter(
+    "plugins", default_plugins_);
+  filter_names_ = declare_or_get_parameter(
+    "filters", std::vector<std::string>());
+  map_publish_frequency_ = declare_or_get_parameter(
+    "publish_frequency", 1.0);
+  resolution_ = declare_or_get_parameter(
+    "resolution", 0.1);
+  robot_base_frame_ = declare_or_get_parameter(
+    "robot_base_frame", std::string("base_link"));
+  robot_radius_ = declare_or_get_parameter(
+    "robot_radius", 0.1);
+  rolling_window_ = declare_or_get_parameter(
+    "rolling_window", false);
+  track_unknown_space_ = declare_or_get_parameter(
+    "track_unknown_space", false);
+  transform_tolerance_ = declare_or_get_parameter(
+    "transform_tolerance", 0.3);
+  initial_transform_timeout_ = declare_or_get_parameter(
+    "initial_transform_timeout", 60.0);
+  map_update_frequency_ = declare_or_get_parameter(
+    "update_frequency", 5.0);
+  subscribe_to_stamped_footprint_ = declare_or_get_parameter(
+    "subscribe_to_stamped_footprint", false);
 
   auto node = shared_from_this();
 
@@ -607,6 +611,19 @@ Costmap2DROS::updateMap()
       footprint_pub_->publish(std::move(footprint));
       initialized_ = true;
     }
+  }
+}
+
+void
+Costmap2DROS::waitUntilCurrent(const rclcpp::Duration & timeout)
+{
+  rclcpp::Rate r(100);
+  auto waiting_start = now();
+  while (!isCurrent()) {
+    if (now() - waiting_start > timeout) {
+      throw std::runtime_error("Costmap timed out waiting for update");
+    }
+    r.sleep();
   }
 }
 
@@ -890,7 +907,7 @@ void Costmap2DROS::getCostsCallback(
     } else {
       RCLCPP_DEBUG(
         get_logger(), "Received request to get cost at point (%f, %f)",
-          pose_transformed.pose.position.x,
+        pose_transformed.pose.position.x,
         pose_transformed.pose.position.y);
 
       bool in_bounds = costmap->worldToMap(

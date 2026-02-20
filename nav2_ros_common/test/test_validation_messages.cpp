@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
+#include <cmath>
+#include <limits>
+
 #include "nav2_ros_common/validate_messages.hpp"
 
 TEST(ValidateMessagesTest, DoubleValueCheck) {
@@ -198,6 +202,25 @@ TEST(ValidateMessagesTest, MapMetaDataCheck) {
   invalid_map_meta_data.origin = valid_origin;
   EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
 
+  // Test invalid resolution message (infinity)
+  invalid_map_meta_data.resolution = std::numeric_limits<double>::infinity();
+  invalid_map_meta_data.width = 100;
+  invalid_map_meta_data.height = 100;
+  invalid_map_meta_data.origin = valid_origin;
+  EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
+
+  // Test invalid resolution message (too small)
+  invalid_map_meta_data.resolution = 1e-7;
+  invalid_map_meta_data.width = 100;
+  invalid_map_meta_data.height = 100;
+  invalid_map_meta_data.origin = valid_origin;
+  EXPECT_FALSE(nav2::validateMsg(invalid_map_meta_data));
+
+  // Test borderline resolution message (minimum accepted)
+  valid_map_meta_data.resolution = std::nextafterf(
+    1e-6f, std::numeric_limits<float>::infinity());
+  EXPECT_TRUE(nav2::validateMsg(valid_map_meta_data));
+
   // Test invalid MapMetaData message with zero width
   invalid_map_meta_data.resolution = 0.05;
   invalid_map_meta_data.width = 0;
@@ -213,9 +236,38 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   valid_occupancy_grid.info.resolution = 0.05;
   valid_occupancy_grid.info.width = 100;
   valid_occupancy_grid.info.height = 100;
+  geometry_msgs::msg::Pose valid_origin;
+  valid_origin.position.x = 0.0;
+  valid_origin.position.y = 0.0;
+  valid_origin.position.z = 0.0;
+  valid_origin.orientation.x = 0.0;
+  valid_origin.orientation.y = 0.0;
+  valid_origin.orientation.z = 0.0;
+  valid_origin.orientation.w = 1.0;
+  valid_occupancy_grid.info.origin = valid_origin;
   std::vector<int8_t> data(100 * 100, 0);   // Initialize with zeros
   valid_occupancy_grid.data = data;
   EXPECT_TRUE(nav2::validateMsg(valid_occupancy_grid));
+
+  // Test borderline resolution message
+  valid_occupancy_grid.info.resolution = std::nextafterf(
+    1e-6f, std::numeric_limits<float>::infinity());
+  EXPECT_TRUE(nav2::validateMsg(valid_occupancy_grid));
+
+  // Test invalid resolution message (too small)
+  nav_msgs::msg::OccupancyGrid invalid_resolution_occupancy_grid = valid_occupancy_grid;
+  invalid_resolution_occupancy_grid.info.resolution = 1e-7;
+  EXPECT_FALSE(nav2::validateMsg(invalid_resolution_occupancy_grid));
+
+  // Test invalid resolution message (infinity)
+  invalid_resolution_occupancy_grid = valid_occupancy_grid;
+  invalid_resolution_occupancy_grid.info.resolution = std::numeric_limits<double>::infinity();
+  EXPECT_FALSE(nav2::validateMsg(invalid_resolution_occupancy_grid));
+
+  // Test invalid resolution message (NaN)
+  invalid_resolution_occupancy_grid = valid_occupancy_grid;
+  invalid_resolution_occupancy_grid.info.resolution = std::numeric_limits<double>::quiet_NaN();
+  EXPECT_FALSE(nav2::validateMsg(invalid_resolution_occupancy_grid));
 
   // Test invalid header message with wrong data size
   nav_msgs::msg::OccupancyGrid invalid_occupancy_grid;
@@ -223,6 +275,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
+  invalid_occupancy_grid.info.origin = valid_origin;
   invalid_occupancy_grid.data = data;
   EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 
@@ -231,6 +284,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 0;    // Incorrect width
   invalid_occupancy_grid.info.height = 100;
+  invalid_occupancy_grid.info.origin = valid_origin;
   invalid_occupancy_grid.data = data;
   EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
 
@@ -239,6 +293,7 @@ TEST(ValidateMessagesTest, OccupancyGridCheck) {
   invalid_occupancy_grid.info.resolution = 0.05;
   invalid_occupancy_grid.info.width = 100;
   invalid_occupancy_grid.info.height = 100;
+  invalid_occupancy_grid.info.origin = valid_origin;
   std::vector<int8_t> invalid_data(100 * 99, 0);   // Incorrect data size
   invalid_occupancy_grid.data = invalid_data;
   EXPECT_FALSE(nav2::validateMsg(invalid_occupancy_grid));
@@ -320,6 +375,44 @@ TEST(ValidateMessagesTest, PoseWithCovarianceCheck) {
   invalidate_msg2.pose.orientation.w = -0.32979028309372299;
 
   EXPECT_FALSE(nav2::validateMsg(invalidate_msg2));
+
+  // Test over MAX value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg3;
+
+  invalidate_msg3.covariance[0] = 2e9;  // > MAX_COVARIANCE (1e9)
+  for (size_t i = 1; i < invalidate_msg3.covariance.size(); ++i) {
+    invalidate_msg3.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg3.pose.position.x = 0.0;
+  invalidate_msg3.pose.position.y = 0.0;
+  invalidate_msg3.pose.position.z = 0.0;
+
+  invalidate_msg3.pose.orientation.x = 0.0;
+  invalidate_msg3.pose.orientation.y = 0.0;
+  invalidate_msg3.pose.orientation.z = 0.0;
+  invalidate_msg3.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg3));
+
+  // Test below MIN value PoseWithCovariance message
+  geometry_msgs::msg::PoseWithCovariance invalidate_msg4;
+
+  invalidate_msg4.covariance[0] = -0.01;  // < MIN_COVARIANCE (0)
+  for (size_t i = 1; i < invalidate_msg4.covariance.size(); ++i) {
+    invalidate_msg4.covariance[i] = 0.01;  // Valid value
+  }
+
+  invalidate_msg4.pose.position.x = 0.0;
+  invalidate_msg4.pose.position.y = 0.0;
+  invalidate_msg4.pose.position.z = 0.0;
+
+  invalidate_msg4.pose.orientation.x = 0.0;
+  invalidate_msg4.pose.orientation.y = 0.0;
+  invalidate_msg4.pose.orientation.z = 0.0;
+  invalidate_msg4.pose.orientation.w = 1.0;
+
+  EXPECT_FALSE(nav2::validateMsg(invalidate_msg4));
 }
 
 TEST(ValidateMessagesTest, PoseWithCovarianceStampedCheck) {

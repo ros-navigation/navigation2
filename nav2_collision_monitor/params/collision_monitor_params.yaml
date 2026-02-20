@@ -1,6 +1,6 @@
 collision_monitor:
   ros__parameters:
-    enabled: True
+    enabled: true
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
@@ -8,7 +8,7 @@ collision_monitor:
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.5
     source_timeout: 5.0
-    base_shift_correction: True
+    base_shift_correction: true
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
@@ -22,18 +22,18 @@ collision_monitor:
       points: "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]"
       action_type: "stop"
       min_points: 4
-      visualize: True
+      visualize: true
       polygon_pub_topic: "polygon_stop"
-      enabled: True
+      enabled: true
     PolygonSlow:
       type: "polygon"
       points: "[[0.4, 0.4], [0.4, -0.4], [-0.4, -0.4], [-0.4, 0.4]]"
       action_type: "slowdown"
       min_points: 4
       slowdown_ratio: 0.3
-      visualize: True
+      visualize: true
       polygon_pub_topic: "polygon_slowdown"
-      enabled: True
+      enabled: true
     PolygonLimit:
       type: "polygon"
       points: "[[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]]"
@@ -41,9 +41,9 @@ collision_monitor:
       min_points: 4
       linear_limit: 0.4
       angular_limit: 0.5
-      visualize: True
+      visualize: true
       polygon_pub_topic: "polygon_limit"
-      enabled: True
+      enabled: true
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
@@ -51,14 +51,14 @@ collision_monitor:
       time_before_collision: 2.0
       simulation_time_step: 0.1
       min_points: 6
-      visualize: False
-      enabled: True
+      visualize: false
+      enabled: true
     VelocityPolygonStop:
       type: "velocity_polygon"
       action_type: "stop"
       min_points: 6
-      visualize: True
-      enabled: True
+      visualize: true
+      enabled: true
       polygon_pub_topic: "velocity_polygon_stop"
       velocity_polygons: ["rotation", "translation_forward", "translation_backward", "stopped"]
       holonomic: false
@@ -93,12 +93,18 @@ collision_monitor:
     scan:
       type: "scan"
       topic: "scan"
-      enabled: True
+      enabled: true
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       transport_type: "raw" # Options: raw, zlib, draco, zstd
       min_height: 0.1
       max_height: 0.5
-      use_global_height: False
-      enabled: True
+      use_global_height: false
+      enabled: true
+    # costmap:
+    #   type: "costmap"
+    #   topic: "local_costmap/costmap"
+    #   cost_threshold: 254
+    #   enabled: true
+    #   treat_unknown_as_obstacle: true

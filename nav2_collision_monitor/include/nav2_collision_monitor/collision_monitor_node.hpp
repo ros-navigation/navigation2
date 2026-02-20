@@ -43,6 +43,7 @@
 #include "nav2_collision_monitor/scan.hpp"
 #include "nav2_collision_monitor/pointcloud.hpp"
 #include "nav2_collision_monitor/range.hpp"
+#include "nav2_collision_monitor/costmap.hpp"
 #include "nav2_collision_monitor/polygon_source.hpp"
 
 namespace nav2_collision_monitor
@@ -102,8 +103,8 @@ protected:
    * @brief Callback for input cmd_vel
    * @param msg Input cmd_vel message
    */
-  void cmdVelInCallbackStamped(geometry_msgs::msg::TwistStamped::SharedPtr msg);
-  void cmdVelInCallbackUnstamped(geometry_msgs::msg::Twist::SharedPtr msg);
+  void cmdVelInCallbackStamped(const geometry_msgs::msg::TwistStamped::ConstSharedPtr & msg);
+  void cmdVelInCallbackUnstamped(const geometry_msgs::msg::Twist::ConstSharedPtr & msg);
   /**
    * @brief Publishes output cmd_vel. If robot was stopped more than stop_pub_timeout_ seconds,
    * quit to publish 0-velocity.

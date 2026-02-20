@@ -119,18 +119,26 @@ protected:
   void computeAndTrackRoute();
 
   /**
-   * @brief Abstract method combining finding the starting/ending nodes and the route planner
-   * to find the Node locations of interest and route to the goal
-   * @param goal The request goal information
-   * @param blocked_ids The IDs of blocked graphs / edges
-   * @param updated_start_id The nodeID of an updated starting point when tracking
-   * a route that corresponds to the next point to route to from to continue progress
-   * @return A route of the request
+   * @brief Compute a route to the goal, incorporating rerouting information.
+   *
+   * This method combines finding the starting and ending nodes with the route
+   * planner to determine the relevant node locations and compute the route.
+   * The provided ReroutingState can specify:
+   *   - an updated starting node ID when tracking a previous route,
+   *   - an overridden starting pose for rerouting,
+   *   - optional constraints such as blocked elements to avoid (if provided).
+   *
+   * This allows progress to continue smoothly when re-planning or recovering
+   * from partial execution of a previous route.
+   *
+   * @param goal The request goal information.
+   * @param rerouting_info State describing updated start and rerouting context.
+   * @return A route from the selected start node to the goal.
    */
   template<typename GoalT>
   Route findRoute(
     const std::shared_ptr<const GoalT> goal,
-    ReroutingState & rerouting_info = ReroutingState());
+    ReroutingState & rerouting_info);
 
   /**
    * @brief Main processing called by both action server callbacks to centralize
@@ -193,6 +201,12 @@ protected:
     std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response);
 
   /**
+   * @brief Publish the route msg
+   * @param route to create message from and publish
+   */
+  void publishRoute(const Route & route);
+
+  /**
    * @brief Log exception warnings, templated by action message type
    * @param goal Goal that failed
    * @param exception Exception message
@@ -207,9 +221,12 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
 
-  // Publish the route for visualization
+  // Publish the route graph for visualization
   nav2::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     graph_vis_publisher_;
+
+  // Route publisher
+  nav2::Publisher<nav2_msgs::msg::Route>::SharedPtr route_publisher_;
 
   // Set or modify graph
   nav2::ServiceServer<nav2_msgs::srv::SetRouteGraph>::SharedPtr set_graph_service_;

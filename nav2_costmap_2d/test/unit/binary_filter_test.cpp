@@ -111,18 +111,17 @@ public:
       std::bind(&BinaryStateSubscriber::binaryStateCallback, this, std::placeholders::_1));
 
     // Initialize with default state
-    msg_ = std::make_shared<std_msgs::msg::Bool>();
-    msg_->data = default_state;
+    msg_.data = default_state;
   }
 
   void binaryStateCallback(
-    const std_msgs::msg::Bool::SharedPtr msg)
+    const std_msgs::msg::Bool::ConstSharedPtr & msg)
   {
-    msg_ = msg;
+    msg_ = *msg;
     binary_state_updated_ = true;
   }
 
-  std_msgs::msg::Bool::SharedPtr getBinaryState()
+  std_msgs::msg::Bool getBinaryState()
   {
     return msg_;
   }
@@ -139,7 +138,7 @@ public:
 
 private:
   nav2::Subscription<std_msgs::msg::Bool>::SharedPtr subscriber_;
-  std_msgs::msg::Bool::SharedPtr msg_;
+  std_msgs::msg::Bool msg_;
   bool binary_state_updated_;
 };  // BinaryStateSubscriber
 
@@ -240,11 +239,11 @@ protected:
 
 private:
   void waitSome(const std::chrono::nanoseconds & duration);
-  std_msgs::msg::Bool::SharedPtr getBinaryState();
-  std_msgs::msg::Bool::SharedPtr waitBinaryState();
+  std_msgs::msg::Bool getBinaryState();
+  std_msgs::msg::Bool waitBinaryState();
   bool getSign(
     unsigned int x, unsigned int y, double base, double multiplier, double flip_threshold);
-  void verifyBinaryState(bool sign, std_msgs::msg::Bool::SharedPtr state);
+  void verifyBinaryState(bool sign, std_msgs::msg::Bool state);
 
   const unsigned int width_ = 10;
   const unsigned int height_ = 11;
@@ -326,14 +325,14 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   }
 }
 
-std_msgs::msg::Bool::SharedPtr TestNode::getBinaryState()
+std_msgs::msg::Bool TestNode::getBinaryState()
 {
   std::this_thread::sleep_for(100ms);
   binary_state_subscriber_executor_.spin_some();
   return binary_state_subscriber_->getBinaryState();
 }
 
-std_msgs::msg::Bool::SharedPtr TestNode::waitBinaryState()
+std_msgs::msg::Bool TestNode::waitBinaryState()
 {
   const std::chrono::nanoseconds timeout = 500ms;
 
@@ -347,7 +346,7 @@ std_msgs::msg::Bool::SharedPtr TestNode::waitBinaryState()
     binary_state_subscriber_executor_.spin_some();
     std::this_thread::sleep_for(10ms);
   }
-  return nullptr;
+  return std_msgs::msg::Bool();
 }
 
 void TestNode::setDefaultState(bool default_state)
@@ -445,13 +444,12 @@ bool TestNode::getSign(
   return base + cost * multiplier > flip_threshold;
 }
 
-void TestNode::verifyBinaryState(bool sign, std_msgs::msg::Bool::SharedPtr state)
+void TestNode::verifyBinaryState(bool sign, std_msgs::msg::Bool state)
 {
-  ASSERT_TRUE(state != nullptr);
   if (sign) {
-    EXPECT_FALSE(state->data == default_state_);
+    EXPECT_FALSE(state.data == default_state_);
   } else {
-    EXPECT_TRUE(state->data == default_state_);
+    EXPECT_TRUE(state.data == default_state_);
   }
 }
 
@@ -464,7 +462,7 @@ void TestNode::testFullMask(
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  std_msgs::msg::Bool::SharedPtr binary_state;
+  std_msgs::msg::Bool binary_state;
 
   unsigned int x, y;
   bool prev_sign = false;
@@ -514,7 +512,7 @@ void TestNode::testFullMask(
   }
 
   // data = -1 (unknown)
-  bool prev_state = binary_state->data;
+  bool prev_state = binary_state.data;
   pose.position.x = -tr_x;
   pose.position.y = -tr_y;
   pose.position.z = 0.0;
@@ -522,8 +520,7 @@ void TestNode::testFullMask(
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
-  ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, prev_state);  // Binary state won't be updated
+  ASSERT_EQ(binary_state.data, prev_state);  // Binary state won't be updated
 }
 
 void TestNode::testSimpleMask(
@@ -535,7 +532,7 @@ void TestNode::testSimpleMask(
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  std_msgs::msg::Bool::SharedPtr binary_state;
+  std_msgs::msg::Bool binary_state;
 
   unsigned int x, y;
   bool prev_sign = false;
@@ -604,7 +601,7 @@ void TestNode::testSimpleMask(
   verifyBinaryState(sign, binary_state);
 
   // data = -1 (unknown)
-  bool prev_state = binary_state->data;
+  bool prev_state = binary_state.data;
   pose.position.x = -tr_x;
   pose.position.y = -tr_y;
   pose.position.z = 0.0;
@@ -612,8 +609,7 @@ void TestNode::testSimpleMask(
   publishTransform();
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
-  ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, prev_state);  // Binary state won't be updated
+  ASSERT_EQ(binary_state.data, prev_state);  // Binary state won't be updated
 }
 
 void TestNode::testOutOfMask()
@@ -629,7 +625,7 @@ void TestNode::testOutOfMask()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  std_msgs::msg::Bool::SharedPtr binary_state;
+  std_msgs::msg::Bool binary_state;
 
   // data = <some_middle_value>
   pose.position.x = width_ / 2 - 1;
@@ -648,8 +644,7 @@ void TestNode::testOutOfMask()
   pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
-  ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, default_state_);
+  ASSERT_EQ(binary_state.data, default_state_);
 
   pose.position.x = width_ + 1.0;
   pose.position.y = height_ + 1.0;
@@ -657,8 +652,7 @@ void TestNode::testOutOfMask()
   pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = getBinaryState();
-  ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, default_state_);
+  ASSERT_EQ(binary_state.data, default_state_);
 }
 
 
@@ -670,7 +664,7 @@ void TestNode::testIncorrectTF()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  std_msgs::msg::Bool::SharedPtr binary_state;
+  std_msgs::msg::Bool binary_state;
 
   // data = <some_middle_value>
   pose.position.x = width_ / 2 - 1;
@@ -680,7 +674,7 @@ void TestNode::testIncorrectTF()
 
   binary_filter_->process(*master_grid_, min_i, min_j, max_i, max_j, pose);
   binary_state = waitBinaryState();
-  ASSERT_TRUE(binary_state == nullptr);
+  ASSERT_TRUE(binary_state == std_msgs::msg::Bool());
 }
 
 void TestNode::testResetFilter()
@@ -696,7 +690,7 @@ void TestNode::testResetFilter()
   const int max_j = height_ + 4;
 
   geometry_msgs::msg::Pose pose;
-  std_msgs::msg::Bool::SharedPtr binary_state;
+  std_msgs::msg::Bool binary_state;
 
   // Switch-on binary filter
   pose.position.x = width_ / 2 - 1;
@@ -708,13 +702,12 @@ void TestNode::testResetFilter()
   binary_state = waitBinaryState();
   verifyBinaryState(getSign(pose.position.x, pose.position.y, base,
     multiplier, flip_threshold), binary_state);
-  binary_state_ = binary_state->data;
+  binary_state_ = binary_state.data;
 
   // Reset binary filter and check its state was reset to default
   binary_filter_->resetFilter();
   binary_state = waitBinaryState();
-  ASSERT_TRUE(binary_state != nullptr);
-  ASSERT_EQ(binary_state->data, binary_state_);
+  ASSERT_EQ(binary_state.data, binary_state_);
 }
 
 

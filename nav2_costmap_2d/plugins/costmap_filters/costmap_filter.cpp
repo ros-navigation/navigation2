@@ -70,22 +70,19 @@ void CostmapFilter::onInitialize()
   }
 
   try {
-    // Declare common for all costmap filters parameters
-    declareParameter("enabled", rclcpp::ParameterValue(true));
-    declareParameter("filter_info_topic", rclcpp::PARAMETER_STRING);
-    declareParameter("transform_tolerance", rclcpp::ParameterValue(0.1));
-
     // Get parameters
-    node->get_parameter(name_ + "." + "enabled", enabled_);
-    filter_info_topic_ = node->get_parameter(name_ + "." + "filter_info_topic").as_string();
-    double transform_tolerance {};
-    node->get_parameter(name_ + "." + "transform_tolerance", transform_tolerance);
+    enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+    filter_info_topic_ = node->declare_or_get_parameter<std::string>(name_ + "." +
+      "filter_info_topic");
+    double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
+      0.1);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
 
     // Costmap Filter enabling service
     enable_service_ = node->create_service<std_srvs::srv::SetBool>(
       name_ + "/toggle_filter",
-      std::bind(&CostmapFilter::enableCallback, this, std::placeholders::_1,
+      std::bind(
+        &CostmapFilter::enableCallback, this, std::placeholders::_1,
         std::placeholders::_2, std::placeholders::_3));
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(logger_, "Parameter problem: %s", ex.what());
@@ -171,8 +168,8 @@ bool CostmapFilter::transformPose(
     try {
       tf_->transform(in, out, mask_frame, transform_tolerance_);
     } catch (tf2::TransformException & ex) {
-      RCLCPP_ERROR(
-        logger_,
+      RCLCPP_ERROR_THROTTLE(
+        logger_, *(clock_), 2000,
         "CostmapFilter: failed to get costmap frame (%s) "
         "transformation to mask frame (%s) with error: %s",
         global_frame.c_str(), mask_frame.c_str(), ex.what());

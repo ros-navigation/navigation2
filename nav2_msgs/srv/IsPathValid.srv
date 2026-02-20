@@ -3,6 +3,10 @@
 nav_msgs/Path path
 uint8 max_cost 254
 bool consider_unknown_as_obstacle false
+string layer_name ""
+string footprint ""
+bool check_full_path false
 ---
+bool success
 bool is_valid
 int32[] invalid_pose_indices

@@ -52,8 +52,16 @@ Polygon::~Polygon()
   polygon_sub_.reset();
   polygon_pub_.reset();
   poly_.clear();
-  dyn_params_handler_.reset();
   node_clock_.reset();
+  auto node = node_.lock();
+  if (post_set_params_handler_ && node) {
+    node->remove_post_set_parameters_callback(post_set_params_handler_.get());
+  }
+  post_set_params_handler_.reset();
+  if (on_set_params_handler_ && node) {
+    node->remove_on_set_parameters_callback(on_set_params_handler_.get());
+  }
+  on_set_params_handler_.reset();
 }
 
 bool Polygon::configure()
@@ -100,8 +108,14 @@ bool Polygon::configure()
   }
 
   // Add callback for dynamic parameters
-  dyn_params_handler_ = node->add_on_set_parameters_callback(
-    std::bind(&Polygon::dynamicParametersCallback, this, std::placeholders::_1));
+  post_set_params_handler_ = node->add_post_set_parameters_callback(
+    std::bind(
+      &Polygon::updateParametersCallback,
+      this, std::placeholders::_1));
+  on_set_params_handler_ = node->add_on_set_parameters_callback(
+    std::bind(
+      &Polygon::validateParameterUpdatesCallback,
+      this, std::placeholders::_1));
 
   return true;
 }
@@ -132,6 +146,7 @@ ActionType Polygon::getActionType() const
 
 bool Polygon::getEnabled() const
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   return enabled_;
 }
 
@@ -537,16 +552,23 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
   polygon_ = *msg;
 }
 
-rcl_interfaces::msg::SetParametersResult
-Polygon::dynamicParametersCallback(
-  std::vector<rclcpp::Parameter> parameters)
+rcl_interfaces::msg::SetParametersResult Polygon::validateParameterUpdatesCallback(
+  const std::vector<rclcpp::Parameter> & /*parameters*/)
 {
   rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  return result;
+}
 
-  for (auto parameter : parameters) {
+void Polygon::updateParametersCallback(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
-    if(param_name.find(polygon_name_ + ".") != 0) {
+    if (param_name.find(polygon_name_ + ".") != 0) {
       continue;
     }
     if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
@@ -555,8 +577,6 @@ Polygon::dynamicParametersCallback(
       }
     }
   }
-  result.successful = true;
-  return result;
 }
 
 void Polygon::polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)

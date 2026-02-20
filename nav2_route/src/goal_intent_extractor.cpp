@@ -42,33 +42,20 @@ void GoalIntentExtractor::configure(
   node_spatial_tree_ = std::make_shared<NodeSpatialTree>();
   node_spatial_tree_->computeTree(graph);
 
-  nav2::declare_parameter_if_not_declared(
-    node, "prune_goal", rclcpp::ParameterValue(true));
-  prune_goal_ = node->get_parameter("prune_goal").as_bool();
+  prune_goal_ = node->declare_or_get_parameter("prune_goal", true);
 
-  nav2::declare_parameter_if_not_declared(
-    node, "max_prune_dist_from_edge", rclcpp::ParameterValue(8.0));
   max_dist_from_edge_ = static_cast<float>(
-    node->get_parameter("max_prune_dist_from_edge").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "min_prune_dist_from_goal", rclcpp::ParameterValue(0.15));
+    node->declare_or_get_parameter("max_prune_dist_from_edge", 8.0));
   min_dist_from_goal_ = static_cast<float>(
-    node->get_parameter("min_prune_dist_from_goal").as_double());
-  nav2::declare_parameter_if_not_declared(
-    node, "min_prune_dist_from_start", rclcpp::ParameterValue(0.10));
+    node->declare_or_get_parameter("min_prune_dist_from_goal", 0.15));
   min_dist_from_start_ = static_cast<float>(
-    node->get_parameter("min_prune_dist_from_start").as_double());
+    node->declare_or_get_parameter("min_prune_dist_from_start", 0.10));
 
-  nav2::declare_parameter_if_not_declared(
-    node, "enable_nn_search", rclcpp::ParameterValue(true));
-  enable_search_ = node->get_parameter("enable_nn_search").as_bool();
-  nav2::declare_parameter_if_not_declared(
-    node, "max_nn_search_iterations", rclcpp::ParameterValue(10000));
-  max_nn_search_iterations_ = node->get_parameter("max_nn_search_iterations").as_int();
+  enable_search_ = node->declare_or_get_parameter("enable_nn_search", true);
+  max_nn_search_iterations_ = node->declare_or_get_parameter(
+    "max_nn_search_iterations", 10000);
 
-  nav2::declare_parameter_if_not_declared(
-    node, "num_nearest_nodes", rclcpp::ParameterValue(5));
-  int num_of_nearest_nodes = node->get_parameter("num_nearest_nodes").as_int();
+  int num_of_nearest_nodes = node->declare_or_get_parameter("num_nearest_nodes", 5);
   node_spatial_tree_->setNumOfNearestNodes(num_of_nearest_nodes);
 }
 
@@ -182,7 +169,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     auto transformed_start = transformPose(start_, costmap_frame_id);
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
-      candidate_nodes.front().pose.position, transformed_start.pose.position))
+        candidate_nodes.front().pose.position, transformed_start.pose.position))
     {
       if (los_checker.isInCollision()) {
         GoalIntentSearch::BreadthFirstSearch bfs(costmap);
@@ -210,7 +197,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     auto transformed_end = transformPose(goal_, costmap_frame_id);
     GoalIntentSearch::LoSCollisionChecker los_checker(costmap);
     if (los_checker.worldToMap(
-      candidate_nodes.front().pose.position, transformed_end.pose.position))
+        candidate_nodes.front().pose.position, transformed_end.pose.position))
     {
       if (los_checker.isInCollision()) {
         GoalIntentSearch::BreadthFirstSearch bfs(costmap);

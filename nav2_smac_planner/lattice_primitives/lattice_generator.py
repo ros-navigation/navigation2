@@ -13,8 +13,11 @@
 # limitations under the License. Reserved.
 
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
-from typing import Any, Dict, List, Tuple, TypedDict
+from functools import partial
+import os
+from typing import Any, cast, Dict, List, Tuple, TypedDict
 
 from nav2_smac_planner.lattice_primitives.helper import angle_difference, interpolate_yaws
 from nav2_smac_planner.lattice_primitives.trajectory import (AnyFloat, FloatNDArray, Path,
@@ -30,6 +33,7 @@ class ConfigDict(TypedDict):
     stopping_threshold: int
     num_of_headings: int
     motion_model: str
+    trajectory_distinctness_ratio: float
 
 
 class LatticeGenerator:
@@ -63,6 +67,7 @@ class LatticeGenerator:
         self.turning_radius = config['turning_radius']
         self.stopping_threshold = config['stopping_threshold']
         self.num_of_headings = config['num_of_headings']
+        self.trajectory_distinctness_ratio = config['trajectory_distinctness_ratio']
         self.headings = self._get_heading_discretization(config['num_of_headings'])
 
         self.motion_model = self.MotionModel[config['motion_model'].upper()]
@@ -107,7 +112,7 @@ class LatticeGenerator:
 
         return np.array(positions)
 
-    def _get_heading_discretization(self, number_of_headings: int) -> List[int]:
+    def _get_heading_discretization(self, number_of_headings: int) -> List[float]:
         """
         Calculate the heading discretization based on the number of headings.
 
@@ -173,7 +178,9 @@ class LatticeGenerator:
         return np.linalg.norm(q - projected_point)
 
     def _is_minimal_trajectory(
-        self, trajectory: Trajectory, prior_end_poses: index.Rtree
+        self, trajectory: Trajectory, prior_end_poses: index.Rtree,
+        trajectories_by_heading: Dict[float, List[Tuple[Any, float]]],
+        target_point: FloatNDArray, target_heading: float,
     ) -> bool:
         """
         Determine whether a trajectory is a minimal trajectory.
@@ -218,13 +225,21 @@ class LatticeGenerator:
             for prior_end_pose in prior_end_poses.intersection(
                 (left_bb, bottom_bb, right_bb, top_bb), objects='raw'
             ):
+                pose = cast(FloatNDArray, prior_end_pose)
                 if (
-                    self._point_to_line_distance(p1, p2, prior_end_pose[:-1])
+                    self._point_to_line_distance(p1, p2, pose[:-1])
                     < self.DISTANCE_THRESHOLD
-                    and angle_difference(yaw, prior_end_pose[-1])
+                    and angle_difference(yaw, pose[-1])
                     < self.ROTATION_THRESHOLD
                 ):
                     return False
+
+        current_length = float(trajectory.parameters.total_length)
+        # Iterate through the local trajectories with the same target heading
+        for prev_pos in trajectories_by_heading[target_heading]:
+            dist = np.linalg.norm(target_point - prev_pos)
+            if dist < self.trajectory_distinctness_ratio * float(current_length):
+                return False
 
         return True
 
@@ -266,7 +281,7 @@ class LatticeGenerator:
             a list of trajectories that begin at that angle
 
         """
-        quadrant1_end_poses: Dict[int, List[Tuple[Any, int]]] = defaultdict(list)
+        quadrant1_end_poses: Dict[float, List[Tuple[Any, float]]] = defaultdict(list)
 
         # Since we only compute for quadrant 1 we only need headings between
         # 0 and 90 degrees
@@ -274,82 +289,112 @@ class LatticeGenerator:
             filter(lambda x: 0 <= x and x <= np.pi / 2, self.headings)
         )
 
-        # Use the minimum trajectory length to find the starting wave front
-        min_trajectory_length = self._compute_min_trajectory_length()
-        wave_front_start_pos = int(
-            np.round(min_trajectory_length / self.grid_resolution)
-        )
+        num_cpus = os.cpu_count() or 1
+        max_workers = min(len(initial_headings), max(1, num_cpus - 1))
 
-        for start_heading in initial_headings:
-            iterations_without_trajectory = 0
-
-            prior_end_poses = index.Index()
-
-            wave_front_cur_pos = wave_front_start_pos
-
-            # To get target headings: sort headings radially and remove those
-            # that are more than 90 degrees away
-            target_headings = sorted(
-                self.headings, key=lambda x: (abs(x - start_heading), -x)
-            )
-            target_headings = list(
-                filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
-            )
-
-            while iterations_without_trajectory < self.stopping_threshold:
-                iterations_without_trajectory += 1
-
-                # Generate x,y coordinates for current wave front
-                positions = self._get_wave_front_points(wave_front_cur_pos)
-
-                for target_point in positions:
-                    for target_heading in target_headings:
-                        # Use 10% of grid separation for finer granularity
-                        # when checking if trajectory overlaps another already
-                        # seen trajectory
-                        trajectory = self.trajectory_generator.generate_trajectory(
-                            target_point,
-                            start_heading,
-                            target_heading,
-                            0.1 * self.grid_resolution,
-                        )
-
-                        if trajectory is not None:
-                            # Check if path overlaps something in minimal
-                            # spanning set
-                            if self._is_minimal_trajectory(trajectory, prior_end_poses):
-
-                                # Add end pose to minimal set
-                                new_end_pose = np.array(
-                                    [target_point[0], target_point[1], target_heading]
-                                )
-
-                                quadrant1_end_poses[start_heading].append(
-                                    (target_point, target_heading)
-                                )
-
-                                # Create a new bounding box in the RTree
-                                # for this trajectory
-                                left_bb = target_point[0] - self.DISTANCE_THRESHOLD
-                                right_bb = target_point[0] + self.DISTANCE_THRESHOLD
-                                bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
-                                top_bb = target_point[1] + self.DISTANCE_THRESHOLD
-
-                                prior_end_poses.insert(
-                                    0,
-                                    (left_bb, bottom_bb, right_bb, top_bb),
-                                    new_end_pose,
-                                )
-
-                                iterations_without_trajectory = 0
-
-                wave_front_cur_pos += 1
+        compute_func = partial(self._compute_for_single_heading)
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            # compute results in parallel
+            results = list(executor.map(compute_func, initial_headings))
+            for heading, trajectories in results:
+                quadrant1_end_poses[heading] = trajectories
 
         # Once we have found the minimal trajectory set for quadrant 1
         # we can leverage symmetry to create the complete minimal set
         return self._create_complete_minimal_spanning_set(quadrant1_end_poses)
 
-    def _flip_angle(self, angle: int, flip_type: Flip) -> float:
+    def _compute_for_single_heading(self, start_heading: float
+                                    ) -> Tuple[float, List[Tuple[FloatNDArray, float]]]:
+        """
+        Compute the minimal trajectory set for a specific starting heading.
+
+        This function runs in a separate process.
+
+        Args
+        ----
+        start_heading: float
+            The initial heading angle in radians
+
+        Returns
+        -------
+        Dict[float, List[Tuple[FloatNDArray, float]]]
+            The start_heading and the list of discovered minimal trajectories
+
+        """
+        trajectories_by_heading: Dict[float, List[Tuple[FloatNDArray, float]]] = defaultdict(list)
+        local_trajectories: List[Tuple[FloatNDArray, float]] = []
+        prior_end_poses = index.Index()
+        # Use the minimum trajectory length to find the starting wave front
+        min_trajectory_length = self._compute_min_trajectory_length()
+        wave_front_start_pos = int(
+            np.round(min_trajectory_length / self.grid_resolution)
+        )
+        wave_front_cur_pos = wave_front_start_pos
+        iterations_without_trajectory = 0
+
+        # To get target headings: sort headings radially and remove those
+        # that are more than 90 degrees away
+        target_headings = sorted(
+            self.headings, key=lambda x: (abs(x - start_heading), -x)
+        )
+        target_headings = list(
+            filter(lambda x: abs(start_heading - x) <= np.pi / 2, target_headings)
+        )
+
+        while iterations_without_trajectory < self.stopping_threshold:
+            iterations_without_trajectory += 1
+
+            # Generate x,y coordinates for current wave front
+            positions = self._get_wave_front_points(wave_front_cur_pos)
+
+            for target_point in positions:
+                for target_heading in target_headings:
+                    # Use 10% of grid separation for finer granularity
+                    # when checking if trajectory overlaps another already
+                    # seen trajectory
+                    trajectory = self.trajectory_generator.generate_trajectory(
+                        target_point,
+                        start_heading,
+                        target_heading,
+                        0.1 * self.grid_resolution,
+                    )
+
+                    if trajectory is not None:
+                        # Check if path overlaps something in minimal
+                        # spanning set
+                        if self._is_minimal_trajectory(trajectory, prior_end_poses,
+                                                       trajectories_by_heading, target_point,
+                                                       target_heading):
+                            trajectories_by_heading[target_heading].append((target_point))
+                            # Add end pose to minimal set
+                            new_end_pose = np.array(
+                                [target_point[0], target_point[1], target_heading]
+                            )
+
+                            local_trajectories.append(
+                                (target_point, target_heading)
+                            )
+
+                            # Create a new bounding box in the RTree
+                            # for this trajectory
+                            left_bb = target_point[0] - self.DISTANCE_THRESHOLD
+                            right_bb = target_point[0] + self.DISTANCE_THRESHOLD
+                            bottom_bb = target_point[1] - self.DISTANCE_THRESHOLD
+                            top_bb = target_point[1] + self.DISTANCE_THRESHOLD
+
+                            prior_end_poses.insert(
+                                0,
+                                (left_bb, bottom_bb, right_bb, top_bb),
+                                new_end_pose,
+                            )
+
+                            iterations_without_trajectory = 0
+
+            wave_front_cur_pos += 1
+
+        return start_heading, local_trajectories
+
+    def _flip_angle(self, angle: float, flip_type: Flip) -> float:
         """
         Return the the appropriate flip of the angle in self.headings.
 
@@ -381,7 +426,7 @@ class LatticeGenerator:
         return self.headings[int(heading_idx)]
 
     def _create_complete_minimal_spanning_set(
-        self, single_quadrant_minimal_set: Dict[int, List[Tuple[Any, int]]]
+        self, single_quadrant_minimal_set: Dict[float, List[Tuple[Any, float]]]
     ) -> Dict[float, List[Trajectory]]:
         """
         Create the full minimal spanning set from a single quadrant set.

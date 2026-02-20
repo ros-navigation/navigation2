@@ -28,22 +28,6 @@ DockingServer::DockingServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("docking_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
-
-  declare_parameter("controller_frequency", 50.0);
-  declare_parameter("initial_perception_timeout", 5.0);
-  declare_parameter("wait_charge_timeout", 5.0);
-  declare_parameter("dock_approach_timeout", 30.0);
-  declare_parameter("rotate_to_dock_timeout", 10.0);
-  declare_parameter("undock_linear_tolerance", 0.05);
-  declare_parameter("undock_angular_tolerance", 0.05);
-  declare_parameter("max_retries", 3);
-  declare_parameter("base_frame", "base_link");
-  declare_parameter("fixed_frame", "odom");
-  declare_parameter("dock_backwards", rclcpp::PARAMETER_BOOL);
-  declare_parameter("dock_prestaging_tolerance", 0.5);
-  declare_parameter("odom_topic", "odom");
-  declare_parameter("odom_duration", 0.3);
-  declare_parameter("rotation_angular_tolerance", 0.05);
 }
 
 nav2::CallbackReturn
@@ -52,40 +36,36 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   RCLCPP_INFO(get_logger(), "Configuring %s", get_name());
   auto node = shared_from_this();
 
-  get_parameter("controller_frequency", controller_frequency_);
-  get_parameter("initial_perception_timeout", initial_perception_timeout_);
-  get_parameter("wait_charge_timeout", wait_charge_timeout_);
-  get_parameter("dock_approach_timeout", dock_approach_timeout_);
-  get_parameter("rotate_to_dock_timeout", rotate_to_dock_timeout_);
-  get_parameter("undock_linear_tolerance", undock_linear_tolerance_);
-  get_parameter("undock_angular_tolerance", undock_angular_tolerance_);
-  get_parameter("max_retries", max_retries_);
-  get_parameter("base_frame", base_frame_);
-  get_parameter("fixed_frame", fixed_frame_);
-  get_parameter("dock_prestaging_tolerance", dock_prestaging_tolerance_);
-  get_parameter("rotation_angular_tolerance", rotation_angular_tolerance_);
+  controller_frequency_ = node->declare_or_get_parameter("controller_frequency", 50.0);
+  initial_perception_timeout_ = node->declare_or_get_parameter("initial_perception_timeout", 5.0);
+  wait_charge_timeout_ = node->declare_or_get_parameter("wait_charge_timeout", 5.0);
+  dock_approach_timeout_ = node->declare_or_get_parameter("dock_approach_timeout", 30.0);
+  rotate_to_dock_timeout_ = node->declare_or_get_parameter("rotate_to_dock_timeout", 10.0);
+  undock_linear_tolerance_ = node->declare_or_get_parameter("undock_linear_tolerance", 0.05);
+  undock_angular_tolerance_ = node->declare_or_get_parameter("undock_angular_tolerance", 0.05);
+  max_retries_ = node->declare_or_get_parameter("max_retries", 3);
+  base_frame_ = node->declare_or_get_parameter("base_frame", std::string("base_link"));
+  fixed_frame_ = node->declare_or_get_parameter("fixed_frame", std::string("odom"));
+  dock_prestaging_tolerance_ = node->declare_or_get_parameter("dock_prestaging_tolerance", 0.5);
+  rotation_angular_tolerance_ = node->declare_or_get_parameter("rotation_angular_tolerance", 0.05);
 
   RCLCPP_INFO(get_logger(), "Controller frequency set to %.4fHz", controller_frequency_);
 
   // Check the dock_backwards deprecated parameter
-  bool dock_backwards = false;
   try {
-    if (get_parameter("dock_backwards", dock_backwards)) {
-      dock_backwards_ = dock_backwards;
-      RCLCPP_WARN(get_logger(), "Parameter dock_backwards is deprecated. "
+    dock_backwards_ = node->declare_or_get_parameter<bool>("dock_backwards");
+    RCLCPP_WARN(
+      get_logger(), "Parameter dock_backwards is deprecated. "
       "Please use the dock_direction parameter in your dock plugin instead.");
-    }
-  } catch (rclcpp::exceptions::ParameterUninitializedException & ex) {
+  } catch (...) {
   }
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(node->get_clock());
 
   // Create odom subscriber for backward blind docking
-  std::string odom_topic;
-  get_parameter("odom_topic", odom_topic);
-  double odom_duration;
-  get_parameter("odom_duration", odom_duration);
+  std::string odom_topic = node->declare_or_get_parameter("odom_topic", std::string("odom"));
+  double odom_duration = node->declare_or_get_parameter("odom_duration", 0.3);
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, odom_duration, odom_topic);
 
   // Create the action servers for dock / undock
@@ -445,7 +425,7 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
   while (!dock->plugin->getRefinedPose(dock_pose, dock->id)) {
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToDetectDock(
-        "Failed initial dock detection: Timeout exceeded");
+              "Failed initial dock detection: Timeout exceeded");
     }
 
     if (checkAndWarnIfCancelled<DockRobot>(docking_action_server_, "dock_robot") ||

@@ -27,8 +27,7 @@ namespace nav2_behavior_tree
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::FollowPath
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class FollowPathAction : public BtActionNode<nav2_msgs::action::FollowPath>
 {
@@ -82,6 +81,11 @@ public:
     std::shared_ptr<const Action::Feedback> feedback) override;
 
   /**
+   * @brief Function to set all feedbacks and output ports to be null values
+   */
+  void resetFeedbackAndOutputPorts();
+
+  /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
@@ -96,6 +100,9 @@ public:
         BT::InputPort<std::string>("controller_id", ""),
         BT::InputPort<std::string>("goal_checker_id", ""),
         BT::InputPort<std::string>("progress_checker_id", ""),
+        BT::InputPort<std::string>("path_handler_id", ""),
+        BT::OutputPort<nav2_msgs::msg::TrackingFeedback>("tracking_feedback",
+          "Tracking feedback from controller server"),
         BT::OutputPort<ActionResult::_error_code_type>(
           "error_code_id", "The follow path error code"),
         BT::OutputPort<std::string>(

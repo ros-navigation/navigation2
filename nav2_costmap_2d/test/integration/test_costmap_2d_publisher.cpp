@@ -87,7 +87,7 @@ public:
     layer_sub_ = node->create_subscription<nav2_msgs::msg::Costmap>(
       topic_name,
       std::bind(&LayerSubscriber::layerCallback, this, std::placeholders::_1),
-      nav2::qos::LatchedSubscriptionQoS(),
+      nav2::qos::LatchedSubscriptionQoS(3),
       callback_group_);
 
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
@@ -100,10 +100,10 @@ public:
     executor_thread_.reset();
   }
 
-  std::promise<nav2_msgs::msg::Costmap::SharedPtr> layer_promise_;
+  std::promise<nav2_msgs::msg::Costmap::ConstSharedPtr> layer_promise_;
 
 protected:
-  void layerCallback(const nav2_msgs::msg::Costmap::SharedPtr layer)
+  void layerCallback(const nav2_msgs::msg::Costmap::ConstSharedPtr layer)
   {
     if (!callback_hit_ && (layer->data.size() == 100)) {
       layer_promise_.set_value(layer);
@@ -168,7 +168,7 @@ TEST_F(CostmapRosTestFixture, costmap_pub_test)
   SUCCEED();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

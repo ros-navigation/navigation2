@@ -19,6 +19,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 nav2_package()
 
@@ -41,6 +42,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   rclcpp_action::rclcpp_action
   tf2_geometry_msgs::tf2_geometry_msgs
   bondcpp::bondcpp
+  ament_index_cpp::ament_index_cpp
 )
 
 install(DIRECTORY include/
@@ -80,6 +82,7 @@ ament_export_dependencies(
   tf2_geometry_msgs
   tf2_ros
   pluginlib
+  ament_index_cpp
 )
 
 ament_export_targets(${PROJECT_NAME})

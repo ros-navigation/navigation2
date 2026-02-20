@@ -285,11 +285,17 @@ protected:
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
 
+  // Default timeout value when cancelling actions during node halt
+  std::chrono::milliseconds default_cancel_timeout_;
+
   // The timeout value for waiting for a service to response
   std::chrono::milliseconds wait_for_service_timeout_;
 
   // should the BT be reloaded even if the same xml filename is requested?
   bool always_reload_bt_ = false;
+
+  // Whether to log BT transitions to IDLE state
+  bool log_idle_ = true;
 
   // Parameters for Groot2 monitoring
   bool enable_groot_monitoring_ = false;

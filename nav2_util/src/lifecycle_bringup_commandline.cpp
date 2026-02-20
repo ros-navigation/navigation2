@@ -51,11 +51,12 @@ void usage()
   }
 
 inline void startupLifecycleNode(
+  rclcpp::Node::SharedPtr node,
   const std::string & node_name,
   const std::chrono::seconds service_call_timeout,
   const int retries)
 {
-  LifecycleServiceClient sc(node_name);
+  LifecycleServiceClient sc(node_name, node);
 
   // Despite waiting for the service to be available and using reliable transport
   // service calls still frequently hang. To get reliable startup it's necessary
@@ -69,12 +70,13 @@ inline void startupLifecycleNode(
 }
 
 inline void startup_lifecycle_nodes(
+  rclcpp::Node::SharedPtr node,
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout,
   const int retries = 3)
 {
   for (const auto & node_name : node_names) {
-    startupLifecycleNode(node_name, service_call_timeout, retries);
+    startupLifecycleNode(node, node_name, service_call_timeout, retries);
   }
 }
 
@@ -85,7 +87,9 @@ int main(int argc, char * argv[])
     usage();
   }
   rclcpp::init(0, nullptr);
+  auto node = std::make_shared<rclcpp::Node>("lifecycle_bringup_client");
   startup_lifecycle_nodes(
+    node,
     std::vector<std::string>(argv + 1, argv + argc),
     10s);
   rclcpp::shutdown();

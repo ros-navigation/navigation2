@@ -37,6 +37,7 @@
  *         David V. Lu!!
  *********************************************************************/
 #include "nav2_costmap_2d/costmap_2d_publisher.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 
 #include <string>
 #include <memory>
@@ -59,7 +60,6 @@ Costmap2DPublisher::Costmap2DPublisher(
 : costmap_(costmap),
   global_frame_(global_frame),
   topic_name_(topic_name),
-  active_(false),
   always_send_full_costmap_(always_send_full_costmap),
   map_vis_z_(map_vis_z)
 {
@@ -152,7 +152,8 @@ void Costmap2DPublisher::prepareGrid()
   grid_->data.resize(grid_->info.width * grid_->info.height);
 
   unsigned char * data = costmap_->getCharMap();
-  std::transform(data, data + grid_->data.size(), grid_->data.begin(),
+  std::transform(
+    data, data + grid_->data.size(), grid_->data.begin(),
     [](unsigned char c) {return cost_translation_table_[c];});
 }
 
@@ -201,8 +202,9 @@ std::unique_ptr<map_msgs::msg::OccupancyGridUpdate> Costmap2DPublisher::createGr
   std::uint32_t i = 0;
   for (std::uint32_t y = y0_; y < yn_; y++) {
     std::uint32_t row_start = y * map_width + x0_;
-    std::transform(costmap_data + row_start, costmap_data + row_start + update->width,
-        update->data.begin() + i,
+    std::transform(
+      costmap_data + row_start, costmap_data + row_start + update->width,
+      update->data.begin() + i,
       [](unsigned char c) {return cost_translation_table_[c];});
     i += update->width;
   }
@@ -234,6 +236,11 @@ std::unique_ptr<nav2_msgs::msg::CostmapUpdate> Costmap2DPublisher::createCostmap
 
 void Costmap2DPublisher::publishCostmap()
 {
+  auto const costmap_layer = dynamic_cast<CostmapLayer *>(costmap_);
+  if (costmap_layer != nullptr && !costmap_layer->isEnabled()) {
+    return;
+  }
+
   float resolution = costmap_->getResolution();
   if (always_send_full_costmap_ || grid_resolution_ != resolution ||
     grid_width_ != costmap_->getSizeInCellsX() ||

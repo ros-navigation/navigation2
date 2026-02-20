@@ -33,15 +33,13 @@
  */
 
 #include "dwb_plugins/kinematic_parameters.hpp"
-
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 using std::placeholders::_1;
 
@@ -55,7 +53,10 @@ KinematicsHandler::KinematicsHandler()
 
 KinematicsHandler::~KinematicsHandler()
 {
-  delete kinematics_.load();
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr != nullptr) {
+    delete ptr;
+  }
 }
 
 void KinematicsHandler::initialize(
@@ -66,49 +67,36 @@ void KinematicsHandler::initialize(
   plugin_name_ = plugin_name;
   logger_ = nh->get_logger();
 
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".min_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".max_vel_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".max_vel_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".min_speed_xy",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".max_speed_xy",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".min_speed_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".acc_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".acc_lim_theta",
-    rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_x", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(nh, plugin_name + ".decel_lim_y", rclcpp::ParameterValue(0.0));
-  declare_parameter_if_not_declared(
-    nh, plugin_name + ".decel_lim_theta",
-    rclcpp::ParameterValue(0.0));
-
   KinematicParameters kinematics;
 
-  nh->get_parameter(plugin_name + ".min_vel_x", kinematics.min_vel_x_);
-  nh->get_parameter(plugin_name + ".min_vel_y", kinematics.min_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_x", kinematics.max_vel_x_);
-  nh->get_parameter(plugin_name + ".max_vel_y", kinematics.max_vel_y_);
-  nh->get_parameter(plugin_name + ".max_vel_theta", kinematics.max_vel_theta_);
-  nh->get_parameter(plugin_name + ".min_speed_xy", kinematics.min_speed_xy_);
-  nh->get_parameter(plugin_name + ".max_speed_xy", kinematics.max_speed_xy_);
-  nh->get_parameter(plugin_name + ".min_speed_theta", kinematics.min_speed_theta_);
-  nh->get_parameter(plugin_name + ".acc_lim_x", kinematics.acc_lim_x_);
-  nh->get_parameter(plugin_name + ".acc_lim_y", kinematics.acc_lim_y_);
-  nh->get_parameter(plugin_name + ".acc_lim_theta", kinematics.acc_lim_theta_);
-  nh->get_parameter(plugin_name + ".decel_lim_x", kinematics.decel_lim_x_);
-  nh->get_parameter(plugin_name + ".decel_lim_y", kinematics.decel_lim_y_);
-  nh->get_parameter(plugin_name + ".decel_lim_theta", kinematics.decel_lim_theta_);
+  kinematics.min_vel_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_vel_x", 0.0);
+  kinematics.min_vel_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_vel_y", 0.0);
+  kinematics.max_vel_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_x", 0.0);
+  kinematics.max_vel_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_y", 0.0);
+  kinematics.max_vel_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_vel_theta", 0.0);
+  kinematics.min_speed_xy_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_speed_xy", 0.0);
+  kinematics.max_speed_xy_ = nh->declare_or_get_parameter(
+    plugin_name + ".max_speed_xy", 0.0);
+  kinematics.min_speed_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".min_speed_theta", 0.0);
+  kinematics.acc_lim_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_x", 0.0);
+  kinematics.acc_lim_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_y", 0.0);
+  kinematics.acc_lim_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".acc_lim_theta", 0.0);
+  kinematics.decel_lim_x_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_x", 0.0);
+  kinematics.decel_lim_y_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_y", 0.0);
+  kinematics.decel_lim_theta_ = nh->declare_or_get_parameter(
+    plugin_name + ".decel_lim_theta", 0.0);
 
   kinematics.base_max_vel_x_ = kinematics.max_vel_x_;
   kinematics.base_max_vel_y_ = kinematics.max_vel_y_;
@@ -151,7 +139,11 @@ void KinematicsHandler::deactivate()
 void KinematicsHandler::setSpeedLimit(
   const double & speed_limit, const bool & percentage)
 {
-  KinematicParameters kinematics(*kinematics_.load());
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
   if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
     // Restore default value
@@ -189,11 +181,11 @@ void KinematicsHandler::setSpeedLimit(
 }
 
 rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpdatesCallback(
-  std::vector<rclcpp::Parameter> parameters)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -208,9 +200,9 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         param_name == plugin_name_ + ".acc_lim_theta"))
       {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be >= 0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be >= 0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       } else if (parameter.as_double() > 0.0 && // NOLINT
         (param_name == plugin_name_ + ".decel_lim_x" ||
@@ -218,9 +210,9 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
         param_name == plugin_name_ + ".decel_lim_theta"))
       {
         RCLCPP_WARN(
-        logger_, "The value of parameter '%s' is incorrectly set to %f, "
-        "it should be <= 0. Ignoring parameter update.",
-        param_name.c_str(), parameter.as_double());
+          logger_, "The value of parameter '%s' is incorrectly set to %f, "
+          "it should be <= 0. Ignoring parameter update.",
+          param_name.c_str(), parameter.as_double());
         result.successful = false;
       }
     }
@@ -229,12 +221,16 @@ rcl_interfaces::msg::SetParametersResult KinematicsHandler::validateParameterUpd
 }
 
 void
-KinematicsHandler::updateParametersCallback(std::vector<rclcpp::Parameter> parameters)
+KinematicsHandler::updateParametersCallback(const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
-  KinematicParameters kinematics(*kinematics_.load());
+  KinematicParameters * ptr = kinematics_.load();
+  if (ptr == nullptr) {
+    return;   // Nothing to update
+  }
+  KinematicParameters kinematics(*ptr);
 
-  for (auto parameter : parameters) {
+  for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find(plugin_name_ + ".") != 0) {
@@ -284,8 +280,11 @@ KinematicsHandler::updateParametersCallback(std::vector<rclcpp::Parameter> param
 
 void KinematicsHandler::update_kinematics(KinematicParameters kinematics)
 {
-  delete kinematics_.load();
-  kinematics_.store(new KinematicParameters(kinematics));
+  KinematicParameters * new_kinematics = new KinematicParameters(kinematics);
+  KinematicParameters * old_kinematics = kinematics_.exchange(new_kinematics);
+  if (old_kinematics != nullptr) {
+    delete old_kinematics;
+  }
 }
 
 }  // namespace dwb_plugins

@@ -47,10 +47,11 @@ public:
   typedef std::vector<GoalState<NodeT>> GoalStateVector;
   typedef typename NodeT::Coordinates Coordinates;
   typedef typename NodeT::CoordinateVector CoordinateVector;
+  using NodeContext = typename NodeT::NodeContext;
 
-   /**
-   * @brief Constructor: Initializes empty goal state. sets and coordinate lists.
-   */
+  /**
+  * @brief Constructor: Initializes empty goal state. sets and coordinate lists.
+  */
   GoalManager()
   : _goals_set(NodeSet()),
     _goals_state(GoalStateVector()),
@@ -63,6 +64,15 @@ public:
    * @brief Destructor for the GoalManager
    */
   ~GoalManager() = default;
+
+  /**
+   * @brief Sets the node context for goal nodes
+   * @param ctx Pointer to the NodeContext
+   */
+  void setContext(NodeContext * ctx)
+  {
+    _ctx = ctx;
+  }
 
   /**
    * @brief Checks if the goals set is empty
@@ -134,7 +144,7 @@ public:
     const auto size_x = collision_checker->getCostmap()->getSizeInCellsX();
     const auto size_y = collision_checker->getCostmap()->getSizeInCellsY();
 
-    auto getIndexFromPoint = [&size_x] (const Coordinates & point) {
+    auto getIndexFromPoint = [this, &size_x](const Coordinates & point) {
         unsigned int index = 0;
 
         const auto mx = static_cast<unsigned int>(point.x);
@@ -142,7 +152,8 @@ public:
 
         if constexpr (!std::is_same_v<NodeT, Node2D>) {
           const auto angle = static_cast<unsigned int>(point.theta);
-          index = NodeT::getIndex(mx, my, angle);
+          index = NodeT::getIndex(mx, my, angle, _ctx->motion_table.size_x,
+                                  _ctx->motion_table.num_angle_quantization);
         } else {
           index = NodeT::getIndex(mx, my, size_x);
         }
@@ -169,7 +180,7 @@ public:
           continue;
         }
 
-        NodeT current_node(getIndexFromPoint(m));
+        NodeT current_node(getIndexFromPoint(m), _ctx);
         current_node.setPose(m);
 
         if (current_node.isNodeValid(traverse_unknown, collision_checker)) {
@@ -197,8 +208,9 @@ public:
   {
     // Make sure that there was a  goal clear before this was run
     if (!_goals_set.empty() || !_goals_coordinate.empty()) {
-      throw std::runtime_error("Goal set should be cleared before calling "
-        "removeinvalidgoals");
+      throw std::runtime_error(
+              "Goal set should be cleared before calling "
+              "removeinvalidgoals");
     }
     for (unsigned int i = 0; i < _goals_state.size(); i++) {
       if (_goals_state[i].goal->isNodeValid(traverse_unknown, collision_checker) ||
@@ -280,6 +292,7 @@ protected:
   GoalStateVector _goals_state;
   CoordinateVector _goals_coordinate;
   Coordinates _ref_goal_coord;
+  NodeContext * _ctx = nullptr;
 };
 
 }  // namespace nav2_smac_planner

@@ -56,6 +56,7 @@ public:
   typedef typename NodeVector::iterator NeighborIterator;
   typedef std::function<bool (const uint64_t &, NodeT * &)> NodeGetter;
   typedef GoalManager<NodeT> GoalManagerT;
+  using NodeContext = typename NodeT::NodeContext;
 
 
   /**
@@ -205,6 +206,12 @@ public:
    */
   GoalManagerT getGoalManager();
 
+  /**
+   * @brief Get pointer to shared node context
+   * @return Node context pointer
+   */
+  NodeContext * getContext();
+
 protected:
   /**
    * @brief Get pointer to next goal in open set
@@ -256,6 +263,16 @@ protected:
   inline void clearGraph();
 
   /**
+   * @brief Get index at coordinates
+   * @param x X coordinate of point
+   * @param y Y coordinate of point
+   * @param dim3 Z coordinate / theta bin of point
+   * @return Index
+   */
+  inline uint64_t getIndex(
+    const unsigned int & x, const unsigned int & y, const unsigned int & dim3);
+
+  /**
    * @brief Check if node has been visited
    * @param current_node Node to check if visited
    * @return if node has been visited
@@ -294,6 +311,7 @@ protected:
   GridCollisionChecker * _collision_checker;
   nav2_costmap_2d::Costmap2D * _costmap;
   std::unique_ptr<AnalyticExpansion<NodeT>> _expander;
+  std::shared_ptr<NodeContext> _shared_ctx;
 };
 
 }  // namespace nav2_smac_planner

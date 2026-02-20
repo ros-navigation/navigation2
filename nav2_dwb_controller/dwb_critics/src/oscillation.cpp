@@ -37,7 +37,6 @@
 #include <cmath>
 #include <string>
 #include <vector>
-#include "nav2_ros_common/node_utils.hpp"
 #include "dwb_core/exceptions.hpp"
 #include "pluginlib/class_list_macros.hpp"
 #include "angles/angles.h"
@@ -98,8 +97,9 @@ void OscillationCritic::onInit()
 
   clock_ = node->get_clock();
 
-  oscillation_reset_dist_ = node->declare_or_get_parameter(dwb_plugin_name_ + "." + name_ +
-      ".oscillation_reset_dist", 0.05);
+  oscillation_reset_dist_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ +
+    ".oscillation_reset_dist", 0.05);
   oscillation_reset_dist_sq_ = oscillation_reset_dist_ * oscillation_reset_dist_;
   oscillation_reset_angle_ = node->declare_or_get_parameter(
     dwb_plugin_name_ + "." + name_ + ".oscillation_reset_angle", 0.2);
@@ -107,39 +107,8 @@ void OscillationCritic::onInit()
     node->declare_or_get_parameter(
       dwb_plugin_name_ + "." + name_ + ".oscillation_reset_time", -1.0));
 
-  nav2::declare_parameter_if_not_declared(
-    node,
-    dwb_plugin_name_ + "." + name_ + ".x_only_threshold", rclcpp::ParameterValue(0.05));
-
-  /**
-   * Historical Parameter Loading
-   * If x_only_threshold is set, use that.
-   * If min_speed_xy is set in the namespace (as it is often used for trajectory generation), use that.
-   * If min_trans_vel is set in the namespace, as it used to be used for trajectory generation, complain then use that.
-   * Otherwise, set x_only_threshold_ to 0.05
-   */
-  node->get_parameter(dwb_plugin_name_ + "." + name_ + ".x_only_threshold", x_only_threshold_);
-  // TODO(crdelsey): How to handle searchParam?
-  // std::string resolved_name;
-  // if (node->hasParam("x_only_threshold"))
-  // {
-  //   node->param("x_only_threshold", x_only_threshold_);
-  // }
-  // else if (node->searchParam("min_speed_xy", resolved_name))
-  // {
-  //   node->param(resolved_name, x_only_threshold_);
-  // }
-  // else if (node->searchParam("min_trans_vel", resolved_name))
-  // {
-  //   ROS_WARN_NAMED("OscillationCritic",
-  //     "Parameter min_trans_vel is deprecated. "
-  //     "Please use the name min_speed_xy or x_only_threshold instead.");
-  //   node->param(resolved_name, x_only_threshold_);
-  // }
-  // else
-  // {
-  //   x_only_threshold_ = 0.05;
-  // }
+  x_only_threshold_ = node->declare_or_get_parameter(
+    dwb_plugin_name_ + "." + name_ + ".x_only_threshold", 0.05);
 
   reset();
 }
@@ -185,7 +154,7 @@ bool OscillationCritic::resetAvailable()
     tf2::fromMsg(prev_stationary_pose_.orientation, prev_stationary_pose_q);
 
     double th_diff = angles::shortest_angular_distance(
-       tf2::getYaw(pose_q), tf2::getYaw(prev_stationary_pose_q));
+      tf2::getYaw(pose_q), tf2::getYaw(prev_stationary_pose_q));
 
     if (fabs(th_diff) > oscillation_reset_angle_) {
       return true;

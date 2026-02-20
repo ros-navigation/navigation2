@@ -53,6 +53,7 @@ PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::StaticLayer, nav2_costmap_2d::Layer)
 
 using nav2_costmap_2d::NO_INFORMATION;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 using nav2_costmap_2d::FREE_SPACE;
 using rcl_interfaces::msg::ParameterType;
 
@@ -77,7 +78,7 @@ StaticLayer::onInitialize()
 
   rclcpp::QoS map_qos = nav2::qos::StandardTopicQoS();  // initialize to default
   if (map_subscribe_transient_local_) {
-    map_qos = nav2::qos::LatchedSubscriptionQoS();
+    map_qos = nav2::qos::LatchedSubscriptionQoS(3);
   }
 
   RCLCPP_INFO(
@@ -146,31 +147,27 @@ StaticLayer::getParameters()
   int temp_lethal_threshold = 0;
   double temp_tf_tol = 0.0;
 
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("subscribe_to_updates", rclcpp::ParameterValue(false));
-  declareParameter("map_subscribe_transient_local", rclcpp::ParameterValue(true));
-  declareParameter("transform_tolerance", rclcpp::ParameterValue(0.0));
-  declareParameter("map_topic", rclcpp::ParameterValue("map"));
-  declareParameter("footprint_clearing_enabled", rclcpp::ParameterValue(false));
-  declareParameter("restore_cleared_footprint", rclcpp::ParameterValue(true));
-
   auto node = node_.lock();
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
 
-  node->get_parameter(name_ + "." + "enabled", enabled_);
-  node->get_parameter(name_ + "." + "subscribe_to_updates", subscribe_to_updates_);
-  node->get_parameter(name_ + "." + "footprint_clearing_enabled", footprint_clearing_enabled_);
-  node->get_parameter(name_ + "." + "restore_cleared_footprint", restore_cleared_footprint_);
-  node->get_parameter(name_ + "." + "map_topic", map_topic_);
+  enabled_ = node->declare_or_get_parameter(name_ + "." + "enabled", true);
+  subscribe_to_updates_ = node->declare_or_get_parameter(
+    name_ + "." + "subscribe_to_updates", false);
+  footprint_clearing_enabled_ = node->declare_or_get_parameter(
+    name_ + "." + "footprint_clearing_enabled", false);
+  restore_cleared_footprint_ = node->declare_or_get_parameter(
+    name_ + "." + "restore_cleared_footprint", true);
+  map_topic_ = node->declare_or_get_parameter(
+    name_ + "." + "map_topic", std::string("map"));
   map_topic_ = joinWithParentNamespace(map_topic_);
-  node->get_parameter(
-    name_ + "." + "map_subscribe_transient_local",
-    map_subscribe_transient_local_);
+  map_subscribe_transient_local_ = node->declare_or_get_parameter(
+    name_ + "." + "map_subscribe_transient_local", true);
   node->get_parameter("track_unknown_space", track_unknown_space_);
   node->get_parameter("use_maximum", use_maximum_);
   node->get_parameter("lethal_cost_threshold", temp_lethal_threshold);
+  node->get_parameter("inscribed_obstacle_cost_value", inscribed_obstacle_cost_value_);
   node->get_parameter("unknown_cost_value", unknown_cost_value_);
   node->get_parameter("trinary_costmap", trinary_costmap_);
   node->get_parameter("transform_tolerance", temp_tf_tol);
@@ -275,6 +272,8 @@ StaticLayer::interpretValue(unsigned char value)
     return NO_INFORMATION;
   } else if (!track_unknown_space_ && value == unknown_cost_value_) {
     return FREE_SPACE;
+  } else if (value == inscribed_obstacle_cost_value_) {
+    return INSCRIBED_INFLATED_OBSTACLE;
   } else if (value >= lethal_threshold_) {
     return LETHAL_OBSTACLE;
   } else if (trinary_costmap_) {
@@ -286,7 +285,7 @@ StaticLayer::interpretValue(unsigned char value)
 }
 
 void
-StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map)
+StaticLayer::incomingMap(const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & new_map)
 {
   if (!nav2::validateMsg(*new_map)) {
     RCLCPP_ERROR(logger_, "Received map message is malformed. Rejecting.");
@@ -559,7 +558,13 @@ StaticLayer::updateParametersCallback(
       } else if (param_name == name_ + "." + "footprint_clearing_enabled") {
         footprint_clearing_enabled_ = parameter.as_bool();
       } else if (param_name == name_ + "." + "restore_cleared_footprint") {
-        restore_cleared_footprint_ = parameter.as_bool();
+        if (footprint_clearing_enabled_) {
+          restore_cleared_footprint_ = parameter.as_bool();
+        } else {
+          RCLCPP_WARN(
+            logger_, "restore_cleared_footprint cannot be used "
+            "when footprint_clearing_enabled is False. Rejecting parameter update.");
+        }
       }
     }
   }

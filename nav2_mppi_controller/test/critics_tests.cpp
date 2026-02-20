@@ -175,7 +175,7 @@ TEST(CriticTests, CostCriticMisAlignedParams) {
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
-   auto getParam = param_handler.getParamGetter("critic");
+  auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", true);
   costmap_ros->on_configure(lstate);
@@ -196,7 +196,7 @@ TEST(CriticTests, CostCriticAlignedParams) {
   std::string name = "test";
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
-   auto getParam = param_handler.getParamGetter("critic");
+  auto getParam = param_handler.getParamGetter("critic");
   bool consider_footprint;
   getParam(consider_footprint, "consider_footprint", false);
   costmap_ros->on_configure(lstate);
@@ -267,6 +267,66 @@ TEST(CriticTests, GoalAngleCritic)
   critic.score(data);
   EXPECT_GT(costs.sum(), 0);
   EXPECT_NEAR(costs(0), 9.42, 0.02);  // (3.14 - 0.0) * 3.0 weight
+}
+
+TEST(CriticTests, GoalAngleCriticSymmetric)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+
+  models::State state;
+  models::ControlSequence control_sequence;
+  models::Trajectories generated_trajectories;
+  generated_trajectories.reset(1000, 30);
+  models::Path path;
+  geometry_msgs::msg::Pose goal;
+  path.reset(10);
+  Eigen::ArrayXf costs = Eigen::ArrayXf::Zero(1000);
+  float model_dt = 0.1;
+  CriticData data =
+  {state, generated_trajectories, path, goal, costs, model_dt,
+    false, nullptr, nullptr, std::nullopt, std::nullopt};
+  data.motion_model = std::make_shared<DiffDriveMotionModel>();
+
+  // Make sure initializes correctly
+  auto getParam = param_handler.getParamGetter("critic");
+  bool symmetric_yaw_tolerance = true;
+  getParam(symmetric_yaw_tolerance, "symmetric_yaw_tolerance", true);
+  GoalAngleCritic critic;
+  critic.on_configure(node, "mppi", "critic", costmap_ros, &param_handler);
+  EXPECT_EQ(critic.getName(), "critic");
+
+  // provide state poses and path too far from `threshold_to_consider` to consider
+  state.pose.pose.position.x = 9.7;
+  path.x(9) = 10.0;
+  path.y(9) = 0.0;
+  path.yaws(9) = 3.14;
+  goal.position.x = 10.0;
+  goal.position.y = 0.0;
+  goal.orientation.x = 0.0;
+  goal.orientation.y = 0.0;
+  goal.orientation.z = 1.0;
+  goal.orientation.w = 0.0;
+  state.local_path_length = std::abs(state.pose.pose.position.x - goal.position.x);
+
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  EXPECT_NEAR(costs(0), 0, 0.02);  // Should be zero cost due to symmetry
+
+  path.yaws(9) = 0.0;
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  EXPECT_NEAR(costs(0), 0, 0.02);  // (0.0 - 0.0) * 3.0 weight
+
+  path.yaws(9) = 1.57;
+  critic.score(data);
+  EXPECT_GT(costs.sum(), 0);
+  EXPECT_NEAR(costs(0), 4.71, 0.02);  // (1.57 - 0.0) * 3.0 weight
 }
 
 TEST(CriticTests, GoalCritic)
@@ -566,7 +626,7 @@ TEST(CriticTests, TwirlingCritic)
   // Now try again with some wiggling noise
   std::mt19937 engine;
   std::normal_distribution<float> normal_dist = std::normal_distribution(0.0f, 0.5f);
-  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&] () {return normal_dist(engine);});
+  state.wz.row(0) = Eigen::ArrayXf::NullaryExpr(30, [&]() {return normal_dist(engine);});
   critic.score(data);
   EXPECT_NEAR(costs(0), 2.581, 4e-1);  // (mean of noise with mu=0, sigma=0.5 * 10.0 weight
 }

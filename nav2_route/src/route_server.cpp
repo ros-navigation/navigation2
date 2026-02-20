@@ -14,7 +14,6 @@
 
 #include "nav2_route/route_server.hpp"
 
-using nav2::declare_parameter_if_not_declared;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -42,6 +41,8 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     node->create_publisher<visualization_msgs::msg::MarkerArray>(
     "route_graph", nav2::qos::LatchedPublisherQoS());
 
+  route_publisher_ = create_publisher<nav2_msgs::msg::Route>("route");
+
   compute_route_server_ = create_action_server<ComputeRoute>(
     "compute_route",
     std::bind(&RouteServer::computeRoute, this),
@@ -58,22 +59,16 @@ RouteServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
       &RouteServer::setRouteGraph, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  declare_parameter_if_not_declared(
-    node, "route_frame", rclcpp::ParameterValue(std::string("map")));
-  declare_parameter_if_not_declared(
-    node, "base_frame", rclcpp::ParameterValue(std::string("base_link")));
-  declare_parameter_if_not_declared(
-    node, "max_planning_time", rclcpp::ParameterValue(2.0));
-
-  route_frame_ = node->get_parameter("route_frame").as_string();
-  base_frame_ = node->get_parameter("base_frame").as_string();
-  max_planning_time_ = node->get_parameter("max_planning_time").as_double();
+  route_frame_ = this->declare_or_get_parameter(
+    "route_frame", std::string("map"));
+  base_frame_ = this->declare_or_get_parameter(
+    "base_frame", std::string("base_link"));
+  max_planning_time_ = this->declare_or_get_parameter(
+    "max_planning_time", 2.0);
 
   // Create costmap subscriber
-  nav2::declare_parameter_if_not_declared(
-    node, "costmap_topic",
-    rclcpp::ParameterValue(std::string("global_costmap/costmap_raw")));
-  std::string costmap_topic = node->get_parameter("costmap_topic").as_string();
+  std::string costmap_topic = this->declare_or_get_parameter(
+    "costmap_topic", std::string("global_costmap/costmap_raw"));
   costmap_subscriber_ = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
 
   try {
@@ -111,6 +106,7 @@ RouteServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   compute_and_track_route_server_->activate();
   graph_vis_publisher_->on_activate();
   graph_vis_publisher_->publish(utils::toMsg(graph_, route_frame_, this->now()));
+  route_publisher_->on_activate();
   createBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -122,6 +118,7 @@ RouteServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   compute_route_server_->deactivate();
   compute_and_track_route_server_->deactivate();
   graph_vis_publisher_->on_deactivate();
+  route_publisher_->on_deactivate();
   destroyBond();
   return nav2::CallbackReturn::SUCCESS;
 }
@@ -139,6 +136,7 @@ RouteServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   path_converter_.reset();
   goal_intent_extractor_.reset();
   graph_vis_publisher_.reset();
+  route_publisher_.reset();
   transform_listener_.reset();
   tf_.reset();
   graph_.clear();
@@ -271,8 +269,10 @@ RouteServer::processRouteRequest(
 
       // Find the route
       Route route = findRoute(goal, rerouting_info);
-      RCLCPP_INFO(get_logger(), "Route found with %zu nodes and %zu edges",
+      RCLCPP_INFO(
+        get_logger(), "Route found with %zu nodes and %zu edges",
         route.edges.size() + 1u, route.edges.size());
+      publishRoute(route);
       auto path = path_converter_->densify(route, rerouting_info, route_frame_, this->now());
 
       if (std::is_same<ActionT, ComputeAndTrackRoute>::value) {
@@ -382,6 +382,16 @@ void RouteServer::setRouteGraph(
     get_logger(),
     "Failed to set new route graph: %s!", request->graph_filepath.c_str());
   response->success = false;
+}
+
+void
+RouteServer::publishRoute(const Route & route)
+{
+  if (route_publisher_->is_activated() && route_publisher_->get_subscription_count() > 0) {
+    auto msg = std::make_unique<nav2_msgs::msg::Route>(
+      utils::toMsg(route, route_frame_, this->now()));
+    route_publisher_->publish(std::move(msg));
+  }
 }
 
 template<typename GoalT>

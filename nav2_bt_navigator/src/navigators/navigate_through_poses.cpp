@@ -17,7 +17,11 @@
 #include <set>
 #include <memory>
 #include <limits>
+#include <stdexcept>
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
+#include "nav2_util/path_utils.hpp"
+#include "nav2_msgs/msg/tracking_feedback.hpp"
+#include "nav2_ros_common/node_utils.hpp"
 
 namespace nav2_bt_navigator
 {
@@ -34,9 +38,15 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".goals_blackboard_id", std::string("goals"));
   path_blackboard_id_ =
     node->declare_or_get_parameter(getName() + ".path_blackboard_id", std::string("path"));
+  tracking_feedback_blackboard_id_ = node->declare_or_get_parameter(
+    getName() + ".tracking_feedback_blackboard_id",
+    std::string("tracking_feedback"));
   waypoint_statuses_blackboard_id_ =
-    node->declare_or_get_parameter(getName() + ".waypoint_statuses_blackboard_id",
-      std::string("waypoint_statuses"));
+    node->declare_or_get_parameter(
+    getName() + ".waypoint_statuses_blackboard_id",
+    std::string("waypoint_statuses"));
+
+  search_window_ = node->declare_or_get_parameter(getName() + "search_window", 2.0);
 
   // Odometry smoother object for getting current speed
   odom_smoother_ = odom_smoother;
@@ -47,8 +57,8 @@ NavigateThroughPosesNavigator::configure(
     node->declare_or_get_parameter(getName() + ".groot_server_port", 1669);
 
   bt_action_server_->setGrootMonitoring(
-      enable_groot_monitoring,
-      groot_server_port);
+    enable_groot_monitoring,
+    groot_server_port);
 
   return true;
 }
@@ -59,7 +69,7 @@ NavigateThroughPosesNavigator::getDefaultBTFilepath(
 {
   auto node = parent_node.lock();
   std::string pkg_share_dir =
-    ament_index_cpp::get_package_share_directory("nav2_bt_navigator");
+    nav2::get_package_share_directory("nav2_bt_navigator");
 
   auto default_bt_xml_filename = node->declare_or_get_parameter(
     "default_nav_through_poses_bt_xml",
@@ -73,7 +83,8 @@ bool
 NavigateThroughPosesNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
   if (!bt_action_server_->loadBehaviorTree(goal->behavior_tree)) {
-    bt_action_server_->setInternalError(ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
+    bt_action_server_->setInternalError(
+      ActionT::Result::FAILED_TO_LOAD_BEHAVIOR_TREE,
       "Error loading BT: " + goal->behavior_tree + ". Navigation canceled.");
     return false;
   }
@@ -88,13 +99,15 @@ NavigateThroughPosesNavigator::goalCompleted(
 {
   if (result->error_code == 0) {
     if (bt_action_server_->populateInternalError(result)) {
-      RCLCPP_WARN(logger_,
+      RCLCPP_WARN(
+        logger_,
         "NavigateThroughPosesNavigator::goalCompleted, internal error %d:'%s'.",
         result->error_code,
         result->error_msg.c_str());
     }
   } else {
-    RCLCPP_WARN(logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
+    RCLCPP_WARN(
+      logger_, "NavigateThroughPosesNavigator::goalCompleted error %d:'%s'.",
       result->error_code,
       result->error_msg.c_str());
   }
@@ -152,25 +165,21 @@ NavigateThroughPosesNavigator::onLoop()
   nav_msgs::msg::Path current_path;
   res = blackboard->get(path_blackboard_id_, current_path);
   if (res && current_path.poses.size() > 0u) {
+    // Reset start index if path is updated
+    if (nav2_util::isPathUpdated(current_path,
+        previous_path_) || previous_path_.poses.size() == 0u)
+    {
+      start_index_ = 0;
+      previous_path_ = current_path;
+    }
     // Find the closest pose to current pose on global path
-    auto find_closest_pose_idx =
-      [&current_pose, &current_path]() {
-        size_t closest_pose_idx = 0;
-        double curr_min_dist = std::numeric_limits<double>::max();
-        for (size_t curr_idx = 0; curr_idx < current_path.poses.size(); ++curr_idx) {
-          double curr_dist = nav2_util::geometry_utils::euclidean_distance(
-            current_pose, current_path.poses[curr_idx]);
-          if (curr_dist < curr_min_dist) {
-            curr_min_dist = curr_dist;
-            closest_pose_idx = curr_idx;
-          }
-        }
-        return closest_pose_idx;
-      };
+    const auto path_search_result = nav2_util::distance_from_path(
+      current_path, current_pose.pose, start_index_, search_window_);
 
     // Calculate distance on the path
+    start_index_ = path_search_result.closest_segment_index;
     double distance_remaining =
-      nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
+      nav2_util::geometry_utils::calculate_path_length(current_path, start_index_);
 
     // Default value for time remaining
     rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
@@ -196,6 +205,12 @@ NavigateThroughPosesNavigator::onLoop()
   feedback_msg->current_pose = current_pose;
   feedback_msg->navigation_time = clock_->now() - start_time_;
   feedback_msg->number_of_poses_remaining = goal_poses.goals.size();
+  nav2_msgs::msg::TrackingFeedback tracking_feedback;
+  res = blackboard->get(
+    tracking_feedback_blackboard_id_,
+    tracking_feedback);
+  feedback_msg->position_tracking_error = tracking_feedback.position_tracking_error;
+  feedback_msg->heading_tracking_error = tracking_feedback.heading_tracking_error;
 
   bt_action_server_->publishFeedback(feedback_msg);
 }
@@ -213,11 +228,9 @@ NavigateThroughPosesNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
     // if pending goal has an empty behavior_tree field, it requests the default BT file
     // accept the pending goal if the current goal is running the default BT file
     if (!initializeGoalPoses(bt_action_server_->acceptPendingGoal())) {
-      RCLCPP_WARN(
-        logger_,
+      throw std::runtime_error(
         "Preemption request was rejected since the goal poses could not be "
-        "transformed. For now, continuing to track the last goal until completion.");
-      bt_action_server_->terminatePendingGoal();
+        "transformed.");
     }
   } else {
     RCLCPP_WARN(
@@ -240,7 +253,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
       feedback_utils_.global_frame, feedback_utils_.robot_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+    bt_action_server_->setInternalError(
+      ActionT::Result::TF_ERROR,
       "Initial robot pose is not available.");
     return false;
   }
@@ -252,7 +266,8 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
         goal_pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
         feedback_utils_.transform_tolerance))
     {
-      bt_action_server_->setInternalError(ActionT::Result::TF_ERROR,
+      bt_action_server_->setInternalError(
+        ActionT::Result::TF_ERROR,
         "Failed to transform a goal pose (" + std::to_string(i) + ") provided with frame_id '" +
         goal_pose.header.frame_id +
         "' to the global frame '" +
@@ -267,26 +282,32 @@ NavigateThroughPosesNavigator::initializeGoalPoses(ActionT::Goal::ConstSharedPtr
     RCLCPP_INFO(
       logger_, "Begin navigating from current location through %zu poses to (%.2f, %.2f)",
       goals_array.goals.size(), goals_array.goals.back().pose.position.x,
-        goals_array.goals.back().pose.position.y);
+      goals_array.goals.back().pose.position.y);
   }
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
   auto blackboard = bt_action_server_->getBlackboard();
   blackboard->set("number_recoveries", 0);  // NOLINT
+  previous_path_ = nav_msgs::msg::Path();
 
-  // Update the goal pose on the blackboard
-  blackboard->set<nav_msgs::msg::Goals>(goals_blackboard_id_,
-      std::move(goals_array));
+  // Update the goal pose and path on the blackboard
+  blackboard->set<nav_msgs::msg::Goals>(
+    goals_blackboard_id_,
+    std::move(goals_array));
+  blackboard->set<nav_msgs::msg::Path>(
+    path_blackboard_id_,
+    nav_msgs::msg::Path());
 
   // Reset the waypoint states vector in the blackboard
   std::vector<nav2_msgs::msg::WaypointStatus> waypoint_statuses(goals_array.goals.size());
-  for (size_t waypoint_index = 0 ; waypoint_index < goals_array.goals.size() ; ++waypoint_index) {
+  for (size_t waypoint_index = 0; waypoint_index < goals_array.goals.size(); ++waypoint_index) {
     waypoint_statuses[waypoint_index].waypoint_index = waypoint_index;
     waypoint_statuses[waypoint_index].waypoint_pose = goals_array.goals[waypoint_index];
   }
-  blackboard->set<decltype(waypoint_statuses)>(waypoint_statuses_blackboard_id_,
-      std::move(waypoint_statuses));
+  blackboard->set<decltype(waypoint_statuses)>(
+    waypoint_statuses_blackboard_id_,
+    std::move(waypoint_statuses));
 
   return true;
 }

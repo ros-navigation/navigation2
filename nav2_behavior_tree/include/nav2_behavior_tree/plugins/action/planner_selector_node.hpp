@@ -35,7 +35,7 @@ namespace nav2_behavior_tree
  * to get the decision about what planner must be used. It is usually used before of
  * the ComputePathToPoseAction. The selected_planner output port is passed to planner_id
  * input port of the ComputePathToPoseAction
- * @note This is an Asynchronous node. It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class PlannerSelector : public BT::SyncActionNode
 {
@@ -92,7 +92,7 @@ private:
    *
    * @param msg the message with the id of the planner_selector
    */
-  void callbackPlannerSelect(const std_msgs::msg::String::SharedPtr msg);
+  void callbackPlannerSelect(const std_msgs::msg::String::ConstSharedPtr & msg);
 
 
   nav2::Subscription<std_msgs::msg::String>::SharedPtr planner_selector_sub_;

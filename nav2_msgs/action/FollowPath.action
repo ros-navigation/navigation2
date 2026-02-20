@@ -3,6 +3,7 @@ nav_msgs/Path path
 string controller_id
 string goal_checker_id
 string progress_checker_id
+string path_handler_id
 ---
 # result definition
 
@@ -24,5 +25,6 @@ string error_msg
 ---
 # feedback definition
 # Real-time tracking error indicating which side of the path the robot is on
-# If the tracking_error is positive, the robot is to the left of the path
+# If the position_tracking_error is positive, the robot is to the left of the path
+# If the heading_tracking_error is positive, the robot heading is rotated to the right of the path direction
 nav2_msgs/TrackingFeedback tracking_feedback

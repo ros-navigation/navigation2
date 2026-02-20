@@ -72,18 +72,11 @@ public:
     access_ = new mutex_t();
 
     info_server_ = std::make_shared<InfoServerWrapper>();
-    try {
-      info_server_->set_parameter(rclcpp::Parameter("filter_info_topic", FILTER_INFO_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("type", TYPE));
-      info_server_->set_parameter(rclcpp::Parameter("mask_topic", MASK_TOPIC));
-      info_server_->set_parameter(rclcpp::Parameter("base", BASE));
-      info_server_->set_parameter(rclcpp::Parameter("multiplier", MULTIPLIER));
-    } catch (rclcpp::exceptions::ParameterNotDeclaredException & ex) {
-      RCLCPP_ERROR(
-        info_server_->get_logger(),
-        "Error while setting parameters for CostmapFilterInfoServer: %s", ex.what());
-      throw;
-    }
+    info_server_->declare_parameter("filter_info_topic", FILTER_INFO_TOPIC);
+    info_server_->declare_parameter("type", TYPE);
+    info_server_->declare_parameter("mask_topic", MASK_TOPIC);
+    info_server_->declare_parameter("base", BASE);
+    info_server_->declare_parameter("multiplier", MULTIPLIER);
 
     info_server_->start();
 
@@ -117,10 +110,10 @@ public:
 
 protected:
   std::shared_ptr<InfoServerWrapper> info_server_;
-  nav2_msgs::msg::CostmapFilterInfo::SharedPtr info_;
+  nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr info_;
 
 private:
-  void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::SharedPtr msg)
+  void infoCallback(const nav2_msgs::msg::CostmapFilterInfo::ConstSharedPtr msg)
   {
     std::lock_guard<mutex_t> guard(*getMutex());
     info_ = msg;
@@ -173,7 +166,7 @@ TEST_F(InfoServerTester, testCostmapFilterInfoDeactivateActivate)
   EXPECT_NEAR(info_->multiplier, MULTIPLIER, EPSILON);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -5,25 +5,31 @@ collision_detector:
     odom_frame_id: "odom"
     transform_tolerance: 0.5
     source_timeout: 5.0
-    base_shift_correction: True
+    base_shift_correction: true
     polygons: ["PolygonFront"]
     PolygonFront:
       type: "polygon"
       points: "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]"
       action_type: "none"
       min_points: 4
-      visualize: True
+      visualize: true
       polygon_pub_topic: "polygon_front"
-      enabled: True
+      enabled: true
     observation_sources: ["scan"]
     scan:
       type: "scan"
       topic: "scan"
-      enabled: True
+      enabled: true
     pointcloud:
       type: "pointcloud"
       topic: "/intel_realsense_r200_depth/points"
       transport_type: "raw" # Options: raw, zlib, draco, zstd
       min_height: 0.1
       max_height: 0.5
-      enabled: True
+      enabled: true
+    # costmap:
+    #   type: "costmap"
+    #   topic: "local_costmap/costmap"
+    #   cost_threshold: 254
+    #   treat_unknown_as_obstacle: true
+    #   enabled: true

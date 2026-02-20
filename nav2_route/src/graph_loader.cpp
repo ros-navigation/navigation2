@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "nav2_route/graph_loader.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
 namespace nav2_route
 {
@@ -31,14 +30,12 @@ GraphLoader::GraphLoader(
   tf_ = tf;
   route_frame_ = frame;
 
-  nav2::declare_parameter_if_not_declared(
-    node, "graph_filepath", rclcpp::ParameterValue(std::string("")));
-  graph_filepath_ = node->get_parameter("graph_filepath").as_string();
+  graph_filepath_ = node->declare_or_get_parameter(
+    "graph_filepath", std::string(""));
 
   // Default Graph Parser
-  nav2::declare_parameter_if_not_declared(
-    node, "graph_file_loader", rclcpp::ParameterValue(default_plugin_id_));
-  auto graph_file_loader_id = node->get_parameter("graph_file_loader").as_string();
+  auto graph_file_loader_id = node->declare_or_get_parameter(
+    "graph_file_loader", default_plugin_id_);
   if (graph_file_loader_id == default_plugin_id_) {
     nav2::declare_parameter_if_not_declared(
       node, default_plugin_id_ + ".plugin",

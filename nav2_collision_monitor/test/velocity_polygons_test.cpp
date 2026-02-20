@@ -87,14 +87,14 @@ public:
     return nav2::CallbackReturn::SUCCESS;
   }
 
-  void polygonCallback(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
+  void polygonCallback(geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg)
   {
     polygon_received_ = msg;
   }
 
 private:
   nav2::Subscription<geometry_msgs::msg::PolygonStamped>::SharedPtr polygon_sub_;
-  geometry_msgs::msg::PolygonStamped::SharedPtr polygon_received_;
+  geometry_msgs::msg::PolygonStamped::ConstSharedPtr polygon_received_;
 };  // TestNode
 
 class VelocityPolygonWrapper : public nav2_collision_monitor::VelocityPolygon
@@ -231,14 +231,14 @@ void Tester::setVelocityPolygonParameters(const bool is_holonomic)
       SUB_POLYGON_FORWARD_NAME, 0.0, 0.5, -1.0, 1.0, -M_PI_4, M_PI_4, FORWARD_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_BACKWARD_NAME, -0.5, 0.0, -1.0, 1.0, 0.75 * M_PI, -0.75 * M_PI,
+      SUB_POLYGON_BACKWARD_NAME, 0.0, 0.5, -1.0, 1.0, 0.75 * M_PI, -0.75 * M_PI,
       BACKWARD_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_LEFT_NAME, -0.5, 0.5, -1.0, 1.0, M_PI_4, 0.75 * M_PI, LEFT_POLYGON_STR,
+      SUB_POLYGON_LEFT_NAME, 0.0, 0.5, -1.0, 1.0, M_PI_4, 0.75 * M_PI, LEFT_POLYGON_STR,
       is_holonomic);
     addPolygonVelocitySubPolygon(
-      SUB_POLYGON_RIGHT_NAME, -0.5, 0.5, -1.0, 1.0, -0.75 * M_PI, -M_PI_4,
+      SUB_POLYGON_RIGHT_NAME, 0.0, 0.5, -1.0, 1.0, -0.75 * M_PI, -M_PI_4,
       RIGHT_POLYGON_STR, is_holonomic);
 
     velocity_polygons = {SUB_POLYGON_FORWARD_NAME, SUB_POLYGON_BACKWARD_NAME, SUB_POLYGON_LEFT_NAME,

@@ -41,9 +41,8 @@ public:
   void cleanup(const rclcpp_lifecycle::State & state) {this->on_cleanup(state);}
   void shutdown(const rclcpp_lifecycle::State & state) {this->on_shutdown(state);}
 
-  bool isOdomSmoother() {return odom_smoother_ ? true : false;}
   bool hasCommandMsg() {return last_command_time_.nanoseconds() != 0;}
-  geometry_msgs::msg::TwistStamped::SharedPtr lastCommandMsg() {return command_;}
+  geometry_msgs::msg::TwistStamped lastCommandMsg() {return command_;}
 
   void sendCommandMsg(geometry_msgs::msg::TwistStamped::SharedPtr msg)
   {
@@ -84,9 +83,9 @@ TEST(VelocitySmootherTest, openLoopTestTimer6dof)
   auto subscription = nav2_util::TwistSubscriber(
     smoother,
     "cmd_vel_smoothed",
-    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+    [&](geometry_msgs::msg::Twist::ConstSharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
-    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
 
@@ -142,9 +141,9 @@ TEST(VelocitySmootherTest, openLoopTestTimer)
   auto subscription = nav2_util::TwistSubscriber(
     smoother,
     "cmd_vel_smoothed",
-    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+    [&](geometry_msgs::msg::Twist::ConstSharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
-    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
 
@@ -197,9 +196,9 @@ TEST(VelocitySmootherTest, approxClosedLoopTestTimer)
   auto subscription = nav2_util::TwistSubscriber(
     smoother,
     "cmd_vel_smoothed",
-    [&](geometry_msgs::msg::Twist::SharedPtr msg) {
+    [&](geometry_msgs::msg::Twist::ConstSharedPtr msg) {
       linear_vels.push_back(msg->linear.x);
-    }, [&](geometry_msgs::msg::TwistStamped::SharedPtr msg) {
+    }, [&](geometry_msgs::msg::TwistStamped::ConstSharedPtr msg) {
       linear_vels.push_back(msg->twist.linear.x);
     });
 
@@ -647,7 +646,7 @@ TEST(VelocitySmootherTest, testCommandCallback)
   executor.spin_some();
 
   EXPECT_TRUE(smoother->hasCommandMsg());
-  EXPECT_EQ(smoother->lastCommandMsg()->twist.linear.x, 100.0);
+  EXPECT_EQ(smoother->lastCommandMsg().twist.linear.x, 100.0);
 }
 
 TEST(VelocitySmootherTest, testClosedLoopSub)
@@ -658,7 +657,6 @@ TEST(VelocitySmootherTest, testClosedLoopSub)
   smoother->set_parameter(rclcpp::Parameter("feedback", std::string("CLOSED_LOOP")));
   rclcpp_lifecycle::State state;
   smoother->configure(state);
-  EXPECT_TRUE(smoother->isOdomSmoother());
 }
 
 TEST(VelocitySmootherTest, testInvalidParams)
@@ -697,7 +695,7 @@ TEST(VelocitySmootherTest, testInvalidParamsAccelDecel)
 }
 
 TEST(VelocitySmootherTest, testDifferentParamsSize) {
-   auto smoother =
+  auto smoother =
     std::make_shared<VelSmootherShim>();
 
   std::vector<double> max_vel{0.5, 0.5, 0.5, 2.5, 2.5, 2.5};
@@ -716,7 +714,7 @@ TEST(VelocitySmootherTest, testDifferentParamsSize) {
 }
 
 TEST(VelocitySmootherTest, testInvalidParamsSize) {
-   auto smoother =
+  auto smoother =
     std::make_shared<VelSmootherShim>();
 
   std::vector<double> bad_max_vel{0.5, 0.5, 0.5, 2.5};
@@ -735,7 +733,6 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   rclcpp_lifecycle::State state;
   smoother->configure(state);
   smoother->activate(state);
-  EXPECT_FALSE(smoother->isOdomSmoother());
 
   auto rec_param = std::make_shared<rclcpp::AsyncParametersClient>(
     smoother->get_node_base_interface(), smoother->get_node_topics_interface(),
@@ -759,7 +756,6 @@ TEST(VelocitySmootherTest, testDynamicParameter)
       rclcpp::Parameter("min_velocity", min_vel),
       rclcpp::Parameter("max_accel", max_accel),
       rclcpp::Parameter("max_decel", min_accel),
-      rclcpp::Parameter("odom_topic", std::string("TEST")),
       rclcpp::Parameter("odom_duration", 2.0),
       rclcpp::Parameter("velocity_timeout", 4.0),
       rclcpp::Parameter("deadband_velocity", deadband)});
@@ -775,7 +771,6 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   EXPECT_EQ(smoother->get_parameter("min_velocity").as_double_array(), min_vel);
   EXPECT_EQ(smoother->get_parameter("max_accel").as_double_array(), max_accel);
   EXPECT_EQ(smoother->get_parameter("max_decel").as_double_array(), min_accel);
-  EXPECT_EQ(smoother->get_parameter("odom_topic").as_string(), std::string("TEST"));
   EXPECT_EQ(smoother->get_parameter("odom_duration").as_double(), 2.0);
   EXPECT_EQ(smoother->get_parameter("velocity_timeout").as_double(), 4.0);
   EXPECT_EQ(smoother->get_parameter("deadband_velocity").as_double_array(), deadband);
@@ -809,6 +804,24 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
   EXPECT_FALSE(results.get().successful);
 
+  // Test zero smoothing_frequency rejection
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("smoothing_frequency", 0.0)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
+  // Test negative smoothing_frequency rejection
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("smoothing_frequency", -1.0)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
+  // Test negative odom duration rejection
+  results = rec_param->set_parameters_atomically(
+    {rclcpp::Parameter("odom_duration", -1.0)});
+  rclcpp::spin_until_future_complete(smoother->get_node_base_interface(), results);
+  EXPECT_FALSE(results.get().successful);
+
   // test full state after major changes
   smoother->deactivate(state);
   smoother->cleanup(state);
@@ -816,7 +829,7 @@ TEST(VelocitySmootherTest, testDynamicParameter)
   smoother.reset();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
 

@@ -107,9 +107,8 @@ protected:
     logger_ = node->get_logger();
     node_ = node;
 
-    nav2::declare_parameter_if_not_declared(
-      node, getName() + ".service_name", rclcpp::ParameterValue(""));
-    main_srv_name_ = node->get_parameter(getName() + ".service_name").as_string();
+    main_srv_name_ = node->declare_or_get_parameter(
+      getName() + ".service_name", std::string(""));
 
     configureEvent(node, name);
 
@@ -161,16 +160,16 @@ protected:
         auto node = node_.lock();
         if (!node) {
           throw nav2_core::OperationFailed(
-            "Route operation service (" + getName() + ") failed to lock node.");
+                  "Route operation service (" + getName() + ") failed to lock node.");
         }
         auto client =
-          node->create_client<SrvT>(srv_name, true);
+          node->template create_client<SrvT>(srv_name, true);
         response = client->invoke(req, std::chrono::nanoseconds(500ms));
       }
     } catch (const std::exception & e) {
       throw nav2_core::OperationFailed(
-        "Route operation service (" + getName() + ") failed to call service: " +
-        srv_name + " at Node " + std::to_string(node_achieved->nodeid));
+              "Route operation service (" + getName() + ") failed to call service: " +
+              srv_name + " at Node " + std::to_string(node_achieved->nodeid));
     }
 
     RCLCPP_INFO(

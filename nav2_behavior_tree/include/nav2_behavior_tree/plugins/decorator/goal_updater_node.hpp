@@ -36,8 +36,7 @@ namespace nav2_behavior_tree
 /**
  * @brief A BT::DecoratorNode that subscribes to a goal topic and updates
  * the current goal on the blackboard
- * @note This is an Asynchronous (long-running) node which may return a RUNNING state while executing.
- *       It will re-initialize when halted.
+ * @note It will re-initialize when halted.
  */
 class GoalUpdater : public BT::DecoratorNode
 {
@@ -64,10 +63,12 @@ public:
     return {
       BT::InputPort<geometry_msgs::msg::PoseStamped>("input_goal", "Original Goal"),
       BT::InputPort<nav_msgs::msg::Goals>("input_goals", "Original Goals"),
-      BT::OutputPort<geometry_msgs::msg::PoseStamped>("output_goal",
-          "Received Goal by subscription"),
-      BT::OutputPort<nav_msgs::msg::Goals>("output_goals",
-          "Received Goals by subscription")
+      BT::OutputPort<geometry_msgs::msg::PoseStamped>(
+        "output_goal",
+        "Received Goal by subscription"),
+      BT::OutputPort<nav_msgs::msg::Goals>(
+        "output_goals",
+        "Received Goals by subscription")
     };
   }
 
@@ -90,13 +91,13 @@ private:
    * @brief Callback function for goal update topic
    * @param msg Shared pointer to geometry_msgs::msg::PoseStamped message
    */
-  void callback_updated_goal(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  void callback_updated_goal(const geometry_msgs::msg::PoseStamped::ConstSharedPtr & msg);
 
   /**
    * @brief Callback function for goals update topic
    * @param msg Shared pointer to nav_msgs::msg::Goals message
    */
-  void callback_updated_goals(const nav_msgs::msg::Goals::SharedPtr msg);
+  void callback_updated_goals(const nav_msgs::msg::Goals::ConstSharedPtr & msg);
 
   nav2::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
   nav2::Subscription<nav_msgs::msg::Goals>::SharedPtr goals_sub_;
