@@ -180,7 +180,7 @@ void CostCritic::score(CriticData & data)
     Eigen::Stride<-1, -1>(outer_stride, 1));
 
   // Debug profiling counters
-  size_t footprint_checks = 0;
+  footprint_checks_ = 0;
   size_t point_lookups = 0;
   size_t free_skips = 0;
   size_t collisions = 0;
@@ -208,13 +208,6 @@ void CostCritic::score(CriticData & data)
           free_skips++;
           continue;  // In free space
         }
-      }
-
-      // Count footprint checks (when inCollision will call footprintCostAtPose)
-      if (consider_footprint_ &&
-        (pose_cost >= possible_collision_cost_ || possible_collision_cost_ < 1.0f))
-      {
-        footprint_checks++;
       }
 
       if (inCollision(pose_cost, Tx, Ty, traj_yaw(i, j), footprint)) {
@@ -251,7 +244,7 @@ void CostCritic::score(CriticData & data)
   constexpr double kSlowThresholdUs = 30000.0;
 
   score_us_accum += score_us;
-  fp_checks_accum += footprint_checks;
+  fp_checks_accum += footprint_checks_;
   point_lookups_accum += point_lookups;
   free_skips_accum += free_skips;
   collisions_accum += collisions;
@@ -260,7 +253,7 @@ void CostCritic::score(CriticData & data)
   // Print per-call if slow
   if (score_us > kSlowThresholdUs) {
     std::cout << "[SLOW CostCritic] " << score_us << "us"
-      << " fp_checks=" << footprint_checks
+      << " fp_checks=" << footprint_checks_
       << " lookups=" << point_lookups
       << " free=" << free_skips
       << " collisions=" << collisions << std::endl;

@@ -145,6 +145,7 @@ protected:
   std::string inflation_layer_name_;
 
   unsigned int power_{0};
+  size_t footprint_checks_;
 };
 
 }  // namespace mppi::critics
