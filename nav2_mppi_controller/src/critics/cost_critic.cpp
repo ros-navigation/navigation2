@@ -39,7 +39,7 @@ void CostCritic::initialize()
 
   // Normalize weight when parameter is changed dynamically as well
   auto weightDynamicCb = [&](
-    const rclcpp::Parameter & weight, rcl_interfaces::msg::SetParametersResult & /*result*/) {
+    const rclcpp::Parameter & weight) {
       weight_ = weight.as_double() / 254.0f;
     };
   parameters_handler_->addParamCallback(name_ + ".cost_weight", weightDynamicCb);
