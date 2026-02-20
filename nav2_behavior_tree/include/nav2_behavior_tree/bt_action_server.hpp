@@ -106,12 +106,6 @@ public:
   bool loadBehaviorTree(
     const std::string & bt_xml_filename_or_id = "");
 
-  /** @brief Extract BehaviorTree ID from XML file
-   * @param filename The file containing the BT
-   * @return std::string BehaviorTree ID if found, empty string otherwise
-   */
-  std::string extractBehaviorTreeID(const std::string & file_or_id);
-
   /**
    * @brief Getter function for BT Blackboard
    * @return BT::Blackboard::Ptr Shared pointer to current BT blackboard
